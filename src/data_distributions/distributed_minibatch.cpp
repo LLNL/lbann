@@ -101,16 +101,14 @@ bool lbann::distributed_minibatch::is_data_set_processed() {
   m_local_reader_done = !update_data_reader(is_active_reader);
 
   /// Once all of the readers have finished their part of the mini-batch indicate that the epoch is finished
-  if(m_cur_step_in_epoch == (num_iterations_per_epoch - 1)) {
+  if(get_current_step_in_epoch() == (num_iterations_per_epoch - 1)) {
     m_local_reader_done = false;
     m_root = 0; /// When the epoch is finished, make sure that the root node for distributing data is reset because
     /// if the number of parallel readers does not evenly divide the data set size, the epoch will finish
     /// without all of the parallel readers participating in the last round.
     m_num_data_per_epoch = 0;
-    m_cur_step_in_epoch = 0;
     return true;
   } else {
-    m_cur_step_in_epoch++;
     return false;
   }
 }

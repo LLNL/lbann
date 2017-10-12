@@ -31,8 +31,6 @@ lbann::generic_data_distribution::generic_data_distribution(lbann_comm *comm, in
   : m_comm(comm), m_requested_max_num_parallel_readers(num_parallel_readers), m_data_readers(data_readers) {
   m_root = 0;
   m_num_samples_in_batch = 0;
-
-  m_cur_step_in_epoch = 0;
 }
 
 lbann::generic_data_reader *lbann::generic_data_distribution::get_data_reader(execution_mode mode) {
@@ -75,6 +73,15 @@ int lbann::generic_data_distribution::get_num_iterations_per_epoch(execution_mod
 
 int lbann::generic_data_distribution::get_num_iterations_per_epoch() {
   return get_num_iterations_per_epoch(get_execution_mode());
+}
+
+int lbann::generic_data_distribution::get_current_step_in_epoch(execution_mode mode) {
+  generic_data_reader *data_reader = get_data_reader(mode);
+  return data_reader->get_current_step_in_epoch();
+}
+
+int lbann::generic_data_distribution::get_current_step_in_epoch() {
+  return get_current_step_in_epoch(get_execution_mode());
 }
 
 int lbann::generic_data_distribution::get_mini_batch_size(execution_mode mode) {

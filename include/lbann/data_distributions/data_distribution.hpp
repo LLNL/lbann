@@ -51,6 +51,8 @@ public:
   virtual int get_num_parallel_readers();
   virtual int get_num_iterations_per_epoch(execution_mode mode);
   virtual int get_num_iterations_per_epoch();
+  virtual int get_current_step_in_epoch(execution_mode mode);
+  virtual int get_current_step_in_epoch();
   virtual int get_mini_batch_size(execution_mode mode);
   virtual int get_last_mini_batch_size(execution_mode mode);
   virtual int get_last_mini_batch_size();
@@ -108,8 +110,7 @@ public:
 
   std::map<execution_mode, generic_data_reader *> m_data_readers;
 
-  int m_cur_step_in_epoch;
-
+  // BVE FIXME this will be wrong for LTFB
   int m_num_data_per_epoch;
 };
 }
