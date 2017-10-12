@@ -170,7 +170,7 @@ if(CUDA_FOUND)
   if(WITH_CUDNN)
     include(cuDNN)
   endif()
-  set(CUDA_LINK_LIBRARIES_KEYWORD PUBLIC)
+  set(CUDA_LINK_LIBRARIES_KEYWORD ${LBANN_PUBLIC_LINK_FLAG})
 endif()
 
 include(Elemental)
