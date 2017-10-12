@@ -264,6 +264,8 @@ class cudnn_manager {
 #endif // #ifdef __LIB_CUDNN
 };
 
+#ifdef __LIB_CUDNN
+
 /** Copy cuDNN tensor descriptor. */
 void copy_tensor_cudnn_desc(const cudnnTensorDescriptor_t& src,
                             cudnnTensorDescriptor_t& dst);
@@ -287,6 +289,8 @@ void copy_activation_cudnn_desc(const cudnnActivationDescriptor_t& src,
 /** Copy cuDNN local response normalization descriptor. */
 void copy_lrn_cudnn_desc(const cudnnLRNDescriptor_t& src,
                          cudnnLRNDescriptor_t& dst);
+
+#endif // #ifdef __LIB_CUDNN
 
 }
 
