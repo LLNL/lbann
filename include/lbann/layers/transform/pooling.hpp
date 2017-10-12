@@ -68,7 +68,7 @@ class pooling_layer : public transform {
 
 #ifdef __LIB_CUDNN
   /// Pooling descriptor
-  cudnnPoolingDescriptor_t m_pooling_desc;
+  cudnnPoolingDescriptor_t m_pooling_cudnn_desc;
 #endif // __LIB_CUDNN
 
   friend class unpooling_layer<T_layout>;
@@ -82,7 +82,7 @@ class pooling_layer : public transform {
                 int pool_pad,
                 int pool_stride,
                 pool_mode pool_mode,
-                cudnn::cudnn_manager *cudnn = NULL)
+                cudnn::cudnn_manager *cudnn = nullptr)
     : pooling_layer(index,
                     comm,
                     num_data_dims,
@@ -100,7 +100,7 @@ class pooling_layer : public transform {
                 const int *pool_pads,
                 const int *pool_strides,
                 pool_mode pool_mode,
-                cudnn::cudnn_manager *cudnn = NULL)
+                cudnn::cudnn_manager *cudnn = nullptr)
     : transform(index, comm),
       m_pool_mode(pool_mode) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
@@ -121,7 +121,7 @@ class pooling_layer : public transform {
   #ifdef __LIB_CUDNN
 
     // Initialize cuDNN objects
-    m_pooling_desc = NULL;
+    m_pooling_cudnn_desc = nullptr;
 
     // Initialize GPU memory if using GPU
     if(cudnn) {
@@ -138,9 +138,14 @@ class pooling_layer : public transform {
     m_pool_dims(other.m_pool_dims),
     m_pool_pads(other.m_pool_pads),
     m_pool_strides(other.m_pool_strides),
-    m_pool_size(other.m_pool_size) {
-    m_max_pool_indices = other.m_max_pool_indices;
+    m_pool_size(other.m_pool_size),
+    m_max_pool_indices(other.m_max_pool_indices) {
+  #ifdef __LIB_CUDNN
+    m_pooling_cudnn_desc = nullptr;
+    cudnn::copy_pooling_cudnn_desc(other.m_pooling_cudnn_desc, m_pooling_cudnn_desc);
+  #endif // __LIB_CUDNN
   }
+
   pooling_layer& operator=(const pooling_layer& other){
     transform::operator=(other);
     m_pool_mode = other.m_pool_mode;
@@ -149,6 +154,9 @@ class pooling_layer : public transform {
     m_pool_strides = other.m_pool_strides;
     m_pool_size = other.m_pool_size;
     m_max_pool_indices = other.m_max_pool_indices;
+  #ifdef __LIB_CUDNN
+    cudnn::copy_pooling_cudnn_desc(other.m_pooling_cudnn_desc, m_pooling_cudnn_desc);
+  #endif // __LIB_CUDNN
     return *this;
   }
     
@@ -177,8 +185,8 @@ class pooling_layer : public transform {
   ~pooling_layer() {
   #ifdef __LIB_CUDNN
     // Destroy cuDNN objects
-    if(m_pooling_desc) {
-      CHECK_CUDNN(cudnnDestroyPoolingDescriptor(m_pooling_desc));
+    if(m_pooling_cudnn_desc) {
+      CHECK_CUDNN(cudnnDestroyPoolingDescriptor(m_pooling_cudnn_desc));
     }
   #endif // __LIB_CUDNN
   }
@@ -229,8 +237,8 @@ class pooling_layer : public transform {
     default:
       throw lbann_exception("pooling_layer: no GPU implementation for pooling mode");
     }
-    CHECK_CUDNN(cudnnCreatePoolingDescriptor(&m_pooling_desc));
-    CHECK_CUDNN(cudnnSetPoolingNdDescriptor(m_pooling_desc,
+    CHECK_CUDNN(cudnnCreatePoolingDescriptor(&m_pooling_cudnn_desc));
+    CHECK_CUDNN(cudnnSetPoolingNdDescriptor(m_pooling_cudnn_desc,
                                             cudnn_pool_mode,
                                             CUDNN_PROPAGATE_NAN,
                                             m_pool_dims.size(),
@@ -278,7 +286,7 @@ class pooling_layer : public transform {
       CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
                                  this->m_cudnn->get_stream(i)));
       CHECK_CUDNN(cudnnPoolingForward(this->m_cudnn->get_handle(i),
-                                      m_pooling_desc,
+                                      m_pooling_cudnn_desc,
                                       &one,
                                       this->m_prev_neurons_cudnn_desc,
                                       this->m_prev_activations_d[i],
@@ -309,7 +317,7 @@ class pooling_layer : public transform {
       CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
                                  this->m_cudnn->get_stream(i)));
       CHECK_CUDNN(cudnnPoolingBackward(this->m_cudnn->get_handle(i),
-                                       m_pooling_desc,
+                                       m_pooling_cudnn_desc,
                                        &one,
                                        this->m_neurons_cudnn_desc,
                                        this->m_activations_d[i],

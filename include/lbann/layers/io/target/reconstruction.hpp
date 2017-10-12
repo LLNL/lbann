@@ -37,22 +37,28 @@ namespace lbann {
 template <data_layout T_layout>
 class reconstruction_layer : public target_layer {
  private:
+
+  /** Original layer to reconstruct. */
   Layer *m_original_layer;
-  double aggregate_cost;
-  long num_forwardprop_steps;
-  AbsDistMat *original_layer_act_v;
 
  public:
   /// @todo note that the reconstruction layer used to use weight_initialization::glorot_uniform
   reconstruction_layer(int index,
                        lbann_comm *comm,
                        Layer *original_layer)
-    :  target_layer(comm, {}, false), m_original_layer(original_layer) {
+    :  target_layer(comm, {}, false),
+       m_original_layer(original_layer) {
     // Setup the data distribution
     initialize_distributed_matrices();
     this->m_index = index;
-    aggregate_cost = 0.0;
-    num_forwardprop_steps = 0;
+  }
+
+  reconstruction_layer(const reconstruction_layer& other) :
+    target_layer(other),
+    m_original_layer(other.m_original_layer) {}
+
+  reconstruction_layer& operator=(const reconstruction_layer& other) {
+    m_original_layer = other.m_original_layer;
   }
 
   reconstruction_layer* copy() const {
@@ -70,48 +76,39 @@ class reconstruction_layer : public target_layer {
 
   void setup_dims() {
     target_layer::setup_dims();
-    this->m_num_neurons = m_original_layer->get_num_neurons();
     this->m_neuron_dims = m_original_layer->get_neuron_dims();
     this->m_num_neuron_dims = m_original_layer->get_num_neuron_dims();
-  }
-
- protected:
-  void fp_set_std_matrix_view() {
-    int64_t cur_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
-
-    target_layer::fp_set_std_matrix_view();
-
-    //view of original layer
-    AbsDistMat& orig_acts = m_original_layer->get_activations();
-    original_layer_act_v = orig_acts.Construct(orig_acts.Grid(),orig_acts.Root());
-    El::View(*original_layer_act_v, orig_acts, El::ALL, El::IR(0, cur_mini_batch_size));
-  }
-
-
-  void fp_compute() {
-     //Copy prev (decoder) activations for greedy layer wise training
-    El::Copy(*this->m_prev_activations,*this->m_activations_v);
-    // Compute cost will be sum of squared error of fp_input (linearly transformed to m_activations)
-    // and original layer fp_input/original input
-    this->m_neural_network_model->m_obj_fn->compute_value(*this->m_prev_activations,
-                                                          *original_layer_act_v);
-    //compute metric
-    int64_t cur_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
-    for (auto&& m : this->m_neural_network_model->get_metrics()) {
-      double num_errors = m->compute_metric(*this->m_prev_activations, *original_layer_act_v);
-      m->record_error(num_errors, cur_mini_batch_size);
+    this->m_num_neurons = m_original_layer->get_num_neurons();
+    if(this->m_num_neurons != this->m_num_prev_neurons) {
+      throw lbann_exception("reconstruction_layer: original layer and reconstruction layer do not have the same number of neurons");
     }
   }
 
-  void bp_compute() {
-    // Compute error signal
-    this->m_neural_network_model->m_obj_fn->compute_gradient(*this->m_prev_activations,
-                                                             *original_layer_act_v,
-                                                             *this->m_error_signal_v);
+ protected:
 
-    //m_prev_error_signal_v is the error computed by objective function
-    //is really not previous, but computed in this layer
-    //@todo: rename as obj_error_signal
+  void fp_compute() {
+
+    // Get activations from original layer
+    m_original_layer->get_fp_output(*this->m_activations_v, this);
+
+    // Compute and record the objective function score
+    objective_functions::objective_function *obj_fn = this->m_neural_network_model->m_obj_fn;
+    obj_fn->compute_value(*this->m_prev_activations,
+                          *this->m_activations_v);
+
+    // Compute metrics
+    const int curr_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
+    for (auto&& m : this->m_neural_network_model->get_metrics()) {
+      double num_errors = m->compute_metric(*this->m_prev_activations, *this->m_activations_v);
+      m->record_error(num_errors, curr_mini_batch_size);
+    }
+
+  }
+
+  void bp_compute() {
+    this->m_neural_network_model->m_obj_fn->compute_gradient(*this->m_prev_activations,
+                                                             *this->m_activations_v,
+                                                             *this->m_error_signal_v);
   }
 
  public:

@@ -53,7 +53,7 @@ class local_response_normalization_layer : public regularizer_layer {
 
 #ifdef __LIB_CUDNN
   /// Pooling descriptor
-  cudnnLRNDescriptor_t m_lrn_desc;
+  cudnnLRNDescriptor_t m_lrn_cudnn_desc;
 #endif // __LIB_CUDNN
 
  public:
@@ -64,7 +64,7 @@ class local_response_normalization_layer : public regularizer_layer {
    DataType lrn_alpha,
    DataType lrn_beta,
    DataType lrn_k,
-   cudnn::cudnn_manager *cudnn = NULL)
+   cudnn::cudnn_manager *cudnn = nullptr)
     : regularizer_layer(index, comm),
       m_window_width(window_width), m_lrn_alpha(lrn_alpha), m_lrn_beta(lrn_beta),
       m_lrn_k(lrn_k) {
@@ -76,7 +76,7 @@ class local_response_normalization_layer : public regularizer_layer {
   #ifdef __LIB_CUDNN
 
     // Initialize cuDNN objects
-    m_lrn_desc = NULL;
+    m_lrn_cudnn_desc = nullptr;
 
     // Initialize GPU memory if using GPU
     if(cudnn) {
@@ -86,16 +86,34 @@ class local_response_normalization_layer : public regularizer_layer {
   #endif // __LIB_CUDNN
   }
 
-  local_response_normalization_layer(
-    const local_response_normalization_layer&) = default;
-  local_response_normalization_layer& operator=(
-    const local_response_normalization_layer&) = default;
+  local_response_normalization_layer(const local_response_normalization_layer& other) :
+    regularizer_layer(other),
+    m_window_width(other.m_window_width),
+    m_lrn_alpha(other.m_lrn_alpha),
+    m_lrn_beta(other.m_lrn_beta),
+    m_lrn_k(other.m_lrn_k) {
+  #ifdef __LIB_CUDNN
+    m_lrn_cudnn_desc = nullptr;
+    cudnn::copy_lrn_cudnn_desc(other.m_lrn_cudnn_desc, m_lrn_cudnn_desc);
+  #endif // __LIB_CUDNN
+  }
+
+  local_response_normalization_layer& operator=(const local_response_normalization_layer& other) {
+    regularizer_layer::operator=(other);
+    m_window_width = other.m_window_width;
+    m_lrn_alpha = other.m_lrn_alpha;
+    m_lrn_beta = other.m_lrn_beta;
+    m_lrn_k = other.m_lrn_k;
+  #ifdef __LIB_CUDNN
+    cudnn::copy_lrn_cudnn_desc(other.m_lrn_cudnn_desc, m_lrn_cudnn_desc);
+  #endif // __LIB_CUDNN
+  }
 
   ~local_response_normalization_layer() {
   #ifdef __LIB_CUDNN
     // Destroy cuDNN objects
-    if(m_lrn_desc) {
-      CHECK_CUDNN(cudnnDestroyLRNDescriptor(m_lrn_desc));
+    if(m_lrn_cudnn_desc) {
+      CHECK_CUDNN(cudnnDestroyLRNDescriptor(m_lrn_cudnn_desc));
     }
   #endif // __LIB_CUDNN
   }
@@ -126,8 +144,8 @@ class local_response_normalization_layer : public regularizer_layer {
   #else
 
     // Initialize local response normalization descriptor
-    CHECK_CUDNN(cudnnCreateLRNDescriptor(&m_lrn_desc));
-    CHECK_CUDNN(cudnnSetLRNDescriptor(m_lrn_desc,
+    CHECK_CUDNN(cudnnCreateLRNDescriptor(&m_lrn_cudnn_desc));
+    CHECK_CUDNN(cudnnSetLRNDescriptor(m_lrn_cudnn_desc,
                                       (unsigned int) m_window_width,
                                       (double) m_lrn_alpha,
                                       (double) m_lrn_beta,
@@ -170,7 +188,7 @@ class local_response_normalization_layer : public regularizer_layer {
       CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
                                  this->m_cudnn->get_stream(i)));
       CHECK_CUDNN(cudnnLRNCrossChannelForward(this->m_cudnn->get_handle(i),
-                                              m_lrn_desc,
+                                              m_lrn_cudnn_desc,
                                               CUDNN_LRN_CROSS_CHANNEL_DIM1,
                                               &one,
                                               this->m_prev_neurons_cudnn_desc,
@@ -202,7 +220,7 @@ class local_response_normalization_layer : public regularizer_layer {
       CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
                                  this->m_cudnn->get_stream(i)));
       CHECK_CUDNN(cudnnLRNCrossChannelBackward(this->m_cudnn->get_handle(i),
-                                               m_lrn_desc,
+                                               m_lrn_cudnn_desc,
                                                CUDNN_LRN_CROSS_CHANNEL_DIM1,
                                                &one,
                                                this->m_neurons_cudnn_desc,

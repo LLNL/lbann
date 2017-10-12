@@ -210,10 +210,18 @@ class cudnn_manager {
   /** Synchronize the default stream. */
   void synchronize();
 
-    /** Synchronize all streams. */
+  /** Synchronize all streams. */
   void synchronize_all();
-  
 
+  /** Create copy of GPU data.
+   *  The GPU memory allocated in this function must be deallocated
+   *  elsewhere.
+   */
+  std::vector<DataType*> copy(const std::vector<DataType*>& gpu_data,
+                              int height,
+                              int width_per_gpu,
+                              int leading_dim = 0);
+  
   /** Pin matrix memory.
    *  Pinned memory accelerates memory transfers with GPU, but may
    *  degrade system performance. This function assumes that the
@@ -255,6 +263,30 @@ class cudnn_manager {
 
 #endif // #ifdef __LIB_CUDNN
 };
+
+/** Copy cuDNN tensor descriptor. */
+void copy_tensor_cudnn_desc(const cudnnTensorDescriptor_t& src,
+                            cudnnTensorDescriptor_t& dst);
+
+/** Copy cuDNN convolution kernel descriptor. */
+void copy_kernel_cudnn_desc(const cudnnFilterDescriptor_t& src,
+                            cudnnFilterDescriptor_t& dst);
+
+/** Copy cuDNN convolution descriptor. */
+void copy_convolution_cudnn_desc(const cudnnConvolutionDescriptor_t& src,
+                                 cudnnConvolutionDescriptor_t& dst);
+
+/** Copy cuDNN pooling descriptor. */
+void copy_pooling_cudnn_desc(const cudnnPoolingDescriptor_t& src,
+                             cudnnPoolingDescriptor_t& dst);
+
+/** Copy cuDNN activation descriptor. */
+void copy_activation_cudnn_desc(const cudnnActivationDescriptor_t& src,
+                                cudnnActivationDescriptor_t& dst);
+
+/** Copy cuDNN local response normalization descriptor. */
+void copy_lrn_cudnn_desc(const cudnnLRNDescriptor_t& src,
+                         cudnnLRNDescriptor_t& dst);
 
 }
 

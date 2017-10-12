@@ -62,15 +62,6 @@ class base_convolution_layer : public learning {
   /** Size of convolutional kernel. */
   int m_kernel_size;
   
-  /** View into convolutional kernel weights. */
-  AbsDistMat *m_kernel_weights_v;
-  /** View into convolutional kernel weights gradient. */
-  AbsDistMat *m_kernel_weights_gradient_v;
-  /** View into bias weights. */
-  AbsDistMat *m_bias_weights_v;
-  /** View into bias weights gradient. */
-  AbsDistMat *m_bias_weights_gradient_v;
-
   /** Weight initialization scheme. */
   weight_initialization m_weight_initialization;
 
@@ -80,6 +71,15 @@ class base_convolution_layer : public learning {
   DataType m_bias_scaling_factor;
   /** Initial value for bias. */
   DataType m_bias_initial_value;
+
+  /** View into convolutional kernel weights. */
+  AbsDistMat *m_kernel_weights_v;
+  /** View into convolutional kernel weights gradient. */
+  AbsDistMat *m_kernel_weights_gradient_v;
+  /** View into bias weights. */
+  AbsDistMat *m_bias_weights_v;
+  /** View into bias weights gradient. */
+  AbsDistMat *m_bias_weights_gradient_v;
 
 #ifdef __LIB_CUDNN
 
@@ -158,45 +158,148 @@ class base_convolution_layer : public learning {
   }
 
   base_convolution_layer(const base_convolution_layer& other) :
-    learning(other) {
-    m_kernel_dims               = other.m_kernel_dims;
-    m_conv_pads                 = other.m_conv_pads;
-    m_conv_strides              = other.m_conv_strides;
-    m_kernel_weights_v          = other.m_kernel_weights_v->Copy();
+    learning(other),
+    m_kernel_dims(other.m_kernel_dims),
+    m_conv_pads(other.m_conv_pads),
+    m_conv_strides(other.m_conv_strides),
+    m_kernel_size(other.m_kernel_size),
+    m_weight_initialization(other.m_weight_initialization),
+    m_bias_scaling_factor(other.m_bias_scaling_factor),
+    m_bias_initial_value(other.m_bias_initial_value)
+  #ifdef __LIB_CUDNN
+    ,
+    m_convolution_cudnn_algorithm(other.m_convolution_cudnn_algorithm),
+    m_transposed_convolution_cudnn_algorithm(other.m_transposed_convolution_cudnn_algorithm),
+    m_kernel_gradient_cudnn_algorithm(other.m_kernel_gradient_cudnn_algorithm)
+  #endif // __LIB_CUDNN
+  {
+
+    // Copy matrices
+    m_kernel_weights_v = other.m_kernel_weights_v->Copy();
     m_kernel_weights_gradient_v = other.m_kernel_weights_gradient_v->Copy();
-    m_bias_weights_v            = other.m_bias_weights_v->Copy();
-    m_bias_weights_gradient_v   = other.m_bias_weights_gradient_v->Copy();
-    m_weight_initialization     = other.m_weight_initialization;
-    m_bias_scaling_factor       = other.m_bias_scaling_factor;
-    /// @todo GPU objects
-    setup_views();  // Update views.
+    m_bias_weights_v = other.m_bias_weights_v->Copy();
+    m_bias_weights_gradient_v = other.m_bias_weights_gradient_v->Copy();
+
+  #ifdef __LIB_CUDNN
+
+    // Copy cuDNN objects
+    m_bias_cudnn_desc = nullptr;
+    m_kernel_cudnn_desc = nullptr;
+    m_convolution_cudnn_desc = nullptr;
+    cudnn::copy_tensor_cudnn_desc(other.m_bias_cudnn_desc,
+                                  m_bias_cudnn_desc);
+    cudnn::copy_kernel_cudnn_desc(other.m_kernel_cudnn_desc,
+                                  m_kernel_cudnn_desc);
+    cudnn::copy_convolution_cudnn_desc(other.m_convolution_cudnn_desc,
+                                       m_convolution_cudnn_desc);
+
+    // Copy GPU data
+    m_kernel_weights_d = m_cudnn->copy(other.m_kernel_weights_d,
+                                       this->m_kernel_weights_v->Height(),
+                                       this->m_kernel_weights_v->Width());
+    m_kernel_weights_gradient_d = m_cudnn->copy(other.m_kernel_weights_gradient_d,
+                                                this->m_kernel_weights_gradient_v->Height(),
+                                                this->m_kernel_weights_gradient_v->Width());
+    m_bias_weights_d = m_cudnn->copy(other.m_bias_weights_d,
+                                     this->m_bias_weights_v->Height(),
+                                     this->m_bias_weights_v->Width());
+    m_bias_weights_gradient_d = m_cudnn->copy(other.m_bias_weights_gradient_d,
+                                              this->m_bias_weights_gradient_v->Height(),
+                                              this->m_bias_weights_gradient_v->Width());
+
+    // Copy staging matrices for GPU memory transfers
+    m_kernel_weights_gradient_per_gpu = other.m_kernel_weights_gradient_per_gpu->Copy();
+    m_bias_weights_gradient_per_gpu = other.m_bias_weights_gradient_per_gpu->Copy();
+
+  #endif // __LIB_CUDNN
+
+    // Update views
+    setup_views();
+
     // Update optimizer parameters if needed.
     if(this->m_optimizer->get_parameters()) {
       this->m_optimizer->set_parameters(this->m_weights);
     }
+
   }
 
   base_convolution_layer& operator=(const base_convolution_layer& other) {
     learning::operator=(other);
-    m_kernel_dims  = other.m_kernel_dims;
-    m_conv_pads    = other.m_conv_pads;
+    m_kernel_dims = other.m_kernel_dims;
+    m_conv_pads = other.m_conv_pads;
     m_conv_strides = other.m_conv_strides;
-    if(m_kernel_weights_v)          delete m_kernel_weights_v;
-    if(m_kernel_weights_gradient_v) delete m_kernel_weights_gradient_v;
-    if(m_bias_weights_v)            delete m_bias_weights_v;
-    if(m_bias_weights_gradient_v)   delete m_bias_weights_gradient_v;
-    m_kernel_weights_v          = other.m_kernel_weights_v->Copy();
-    m_kernel_weights_gradient_v = other.m_kernel_weights_gradient_v->Copy();
-    m_bias_weights_v            = other.m_bias_weights_v->Copy();
-    m_bias_weights_gradient_v   = other.m_bias_weights_gradient_v->Copy();
-    m_weight_initialization     = other.m_weight_initialization;
-    m_bias_scaling_factor       = other.m_bias_scaling_factor;
-    /// @todo GPU objects
-    setup_views();  // Update views.
+    m_kernel_size = other.m_kernel_size;
+    m_weight_initialization = other.m_weight_initialization;
+    m_bias_scaling_factor = other.m_bias_scaling_factor;
+    m_bias_initial_value = other.m_bias_initial_value;
+  #ifdef __LIB_CUDNN
+    m_convolution_cudnn_algorithm = other.m_convolution_cudnn_algorithm;
+    m_transposed_convolution_cudnn_algorithm = other.m_transposed_convolution_cudnn_algorithm;
+    m_kernel_gradient_cudnn_algorithm = other.m_kernel_gradient_cudnn_algorithm;
+  #endif // __LIB_CUDNN
+
+    // Copy matrices
+  #define COPY_MATRIX(src, dst)                 \
+    do {                                        \
+      if(src != nullptr && dst != nullptr) {    \
+        El::Copy(*src, *dst);                   \
+      }                                         \
+      if(src != nullptr && dst == nullptr) {    \
+        dst = src->Copy();                      \
+      }                                         \
+      if(src == nullptr && dst != nullptr) {    \
+        delete dst;                             \
+        dst = nullptr;                          \
+      }                                         \
+    } while(false)
+    COPY_MATRIX(other.m_kernel_weights_v, m_kernel_weights_v);
+    COPY_MATRIX(other.m_kernel_weights_gradient_v, m_kernel_weights_gradient_v);
+    COPY_MATRIX(other.m_bias_weights_v, m_bias_weights_v);
+    COPY_MATRIX(other.m_bias_weights_gradient_v, m_bias_weights_gradient_v);
+  #ifdef __LIB_CUDNN
+    COPY_MATRIX(other.m_kernel_weights_gradient_per_gpu, m_kernel_weights_gradient_per_gpu);
+    COPY_MATRIX(other.m_bias_weights_gradient_per_gpu, m_bias_weights_gradient_per_gpu);
+  #endif // __LIB_CUDNN
+  #undef COPY_MATRIX
+
+  #ifdef __LIB_CUDNN
+
+    // Copy cuDNN objects
+    cudnn::copy_tensor_cudnn_desc(other.m_bias_cudnn_desc,
+                                  m_bias_cudnn_desc);
+    cudnn::copy_kernel_cudnn_desc(other.m_kernel_cudnn_desc,
+                                  m_kernel_cudnn_desc);
+    cudnn::copy_convolution_cudnn_desc(other.m_convolution_cudnn_desc,
+                                       m_convolution_cudnn_desc);
+
+    // Copy GPU data
+    m_cudnn->deallocate_on_gpus(m_kernel_weights_d);
+    m_cudnn->deallocate_on_gpus(m_kernel_weights_gradient_d);
+    m_cudnn->deallocate_on_gpus(m_bias_weights_d);
+    m_cudnn->deallocate_on_gpus(m_bias_weights_gradient_d);
+    m_kernel_weights_d = m_cudnn->copy(other.m_kernel_weights_d,
+                                       this->m_kernel_weights_v->Height(),
+                                       this->m_kernel_weights_v->Width());
+    m_kernel_weights_gradient_d = m_cudnn->copy(other.m_kernel_weights_gradient_d,
+                                                this->m_kernel_weights_gradient_v->Height(),
+                                                this->m_kernel_weights_gradient_v->Width());
+    m_bias_weights_d = m_cudnn->copy(other.m_bias_weights_d,
+                                     this->m_bias_weights_v->Height(),
+                                     this->m_bias_weights_v->Width());
+    m_bias_weights_gradient_d = m_cudnn->copy(other.m_bias_weights_gradient_d,
+                                              this->m_bias_weights_gradient_v->Height(),
+                                              this->m_bias_weights_gradient_v->Width());
+
+  #endif // __LIB_CUDNN
+
+    // Update views
+    setup_views();
+
     // Update optimizer parameters if needed.
     if (this->m_optimizer->get_parameters()) {
       this->m_optimizer->set_parameters(this->m_weights);
     }
+
     return *this;
   }
 
