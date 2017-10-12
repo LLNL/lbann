@@ -1,15 +1,18 @@
-import os, sys, re
+import os, sys, re, commands 
 import pytest
 
 
-def run_lbann(test='accuracy_test.sh',model='mnist',optimizer='adagrad',epochs=5,nodes=4,procs=2,iterative=0):
-    CMD = './' + test + ' -m ' + model + ' -o ' + optimizer + ' -N %d -n %d -e %d'% (nodes, procs, epochs)
+def run_lbann(executable, test='accuracy_test.sh',model='mnist',optimizer='adagrad',epochs=2,nodes=1,procs=2,iterative=0):
+    lbann_dir = commands.getstatusoutput('git rev-parse --show-toplevel')
+    test_cmd = lbann_dir[1] + '/bamboo/integration_tests/accuracy_tests/' + test
+    CMD = test_cmd + ' -exe ' + executable +  ' -m ' + model + ' -o ' + optimizer + ' -N %d -n %d -e %d'% (nodes, procs, epochs)
     if iterative == 1:
         CMD = CMD + ' -i'
         print CMD
     if os.system(CMD) != 0:
-         print 'LBANN failed during execution. Please check the Bamboo build log'
-         sys.exit(1)
+        #print(CMD)
+        print 'LBANN failed during execution. Please check the Bamboo build log'
+        sys.exit(1)
         
 
 
@@ -30,25 +33,21 @@ def fetch_true(master,model,model_num,epochs):
     return true_acc
 
 
-def test_accuracy_mnist(log):
+def test_accuracy_mnist(log,exe):
     
     # use run_lbann calls here to generate accuracy files. All generated accuracies will be tested in the below assertion loop
     # Default to MNIST with adagrad and 5 epochs. 
-    run_lbann(iterative=1)
+    run_lbann(exe)
     general_assert('mnist') 
     
-    # When running in something like Bamboo we don't really need these accuracy files sticking around, but give the option for Users outside of Bamboo
-    # Probably break this off into a clean up function
+    #if log == 0:
+    #    os.system("rm res_mnist*")
+
+def test_accuracy_alexnet(log,exe):
+    run_lbann(exe, model='alexnet')
+    general_assert('alexnet')
     if log == 0:
-        os.system("rm trimmed*")
-
-#def test_accuracy_alexnet(log):
-#    run_lbann(iterative=1,model='alexnet')
-#    general_assert('alexnet')
-#    if log == 0:
-#        os.system("rm trimmed*")
-
-#def test_accuracy_resnet(log):
+        os.system("rm res_alexnet*")
 #    run_lbann(iterative=1,model='resnet')
 #    general_assert('resnet')
 #    if log == 0:
@@ -56,7 +55,7 @@ def test_accuracy_mnist(log):
 
 def general_assert(model):
     for filename in os.listdir(os.getcwd()):
-        if filename.startswith('trimmed_res_'+model):
+        if filename.startswith('res_'+model):
             #intro = re.search('trimmed_res_',filename)
             #trailing = re.search('[0-9]',filename)
             #model = filename[intro.end():trailing.start()-1]
@@ -65,8 +64,6 @@ def general_assert(model):
             epochs = numbers[1]
 
             test_acc = data_format(filename)
-            true_acc = fetch_true('master.txt',model,model_num,epochs)
+            true_acc = fetch_true('integration_tests/accuracy_tests/masters.txt',model,model_num,epochs)
             for test, true in zip(test_acc,true_acc):
                 assert true <= test
-
-
