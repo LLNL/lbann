@@ -43,20 +43,20 @@ class relu_layer : public entrywise_activation_layer {
 
 #ifdef __LIB_CUDNN
   /// Activation descriptor
-  cudnnActivationDescriptor_t m_activation_desc;
+  cudnnActivationDescriptor_t m_activation_cudnn_desc;
 #endif
 
  public:
   relu_layer(int index,
              lbann_comm *comm,
-             cudnn::cudnn_manager *cudnn = NULL) :
+             cudnn::cudnn_manager *cudnn = nullptr) :
     entrywise_activation_layer(index, comm) {
 
     initialize_distributed_matrices();
 
   #ifdef __LIB_CUDNN
 
-    m_activation_desc = NULL;
+    m_activation_cudnn_desc = nullptr;
 
     if(cudnn) {
       this->m_using_gpus = true;
@@ -66,18 +66,30 @@ class relu_layer : public entrywise_activation_layer {
   #endif // #ifdef __LIB_CUDNN
 
   }
-  relu_layer(const relu_layer&) = default;
-  relu_layer& operator=(const relu_layer&) = default;
+
+  relu_layer(const relu_layer& other) :
+    entrywise_activation_layer(other) {
+  #ifdef __LIB_CUDNN
+    m_activation_cudnn_desc = nullptr;
+    cudnn::copy_activation_cudnn_desc(other.m_activation_cudnn_desc,
+                                      m_activation_cudnn_desc);
+  #endif // __LIB_CUDNN
+  }
+
+  relu_layer& operator=(const relu_layer& other) {
+    entrywise_activation_layer::operator=(other);
+#ifdef __LIB_CUDNN
+    cudnn::copy_activation_cudnn_desc(other.m_activation_cudnn_desc,
+                                      m_activation_cudnn_desc);
+#endif // __LIB_CUDNN
+  }
 
   virtual ~relu_layer() {
-
   #ifdef __LIB_CUDNN
-    // Destroy cuDNN objects
-    if(m_activation_desc) {
-      CHECK_CUDNN(cudnnDestroyActivationDescriptor(m_activation_desc));
+    if(m_activation_cudnn_desc) {
+      CHECK_CUDNN(cudnnDestroyActivationDescriptor(m_activation_cudnn_desc));
     }
   #endif
-
   }
 
   relu_layer* copy() const { return new relu_layer(*this); }
@@ -102,8 +114,8 @@ class relu_layer : public entrywise_activation_layer {
   #else
 
     // Initialize activation descriptor
-    CHECK_CUDNN(cudnnCreateActivationDescriptor(&m_activation_desc));
-    CHECK_CUDNN(cudnnSetActivationDescriptor(m_activation_desc,
+    CHECK_CUDNN(cudnnCreateActivationDescriptor(&m_activation_cudnn_desc));
+    CHECK_CUDNN(cudnnSetActivationDescriptor(m_activation_cudnn_desc,
                                              CUDNN_ACTIVATION_RELU,
                                              CUDNN_PROPAGATE_NAN,
                                              0.0));
@@ -136,7 +148,7 @@ class relu_layer : public entrywise_activation_layer {
       CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
                                  this->m_cudnn->get_stream(i)));
       CHECK_CUDNN(cudnnActivationForward(this->m_cudnn->get_handle(i),
-                                         m_activation_desc,
+                                         m_activation_cudnn_desc,
                                          &one,
                                          this->m_prev_neurons_cudnn_desc,
                                          this->m_prev_activations_d[i],
@@ -164,7 +176,7 @@ class relu_layer : public entrywise_activation_layer {
       CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
                                  this->m_cudnn->get_stream(i)));
       CHECK_CUDNN(cudnnActivationBackward(this->m_cudnn->get_handle(i),
-                                          m_activation_desc,
+                                          m_activation_cudnn_desc,
                                           &one,
                                           this->m_prev_neurons_cudnn_desc,
                                           this->m_prev_activations_d[i],

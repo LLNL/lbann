@@ -127,33 +127,50 @@ Layer::Layer(const Layer& other) :
   m_execution_mode(other.m_execution_mode),
   m_neural_network_model(other.m_neural_network_model),
   m_using_gpus(other.m_using_gpus),
-  m_cudnn(other.m_cudnn),
-  fp_time(other.fp_time),
-  fp_compute_time(other.fp_compute_time),
-  bp_time(other.bp_time),
-  bp_compute_time(other.bp_compute_time),
-  update_time(other.update_time) {
-  // No cuDNN support yet.
+  m_cudnn(other.m_cudnn)
 #ifdef __LIB_CUDNN
-  throw lbann_exception(
-    std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
-    "cannot copy layers with cuDNN enabled");
+  ,
+  m_mini_batch_size_per_gpu(other.m_mini_batch_size_per_gpu),
+  m_copy_fp_input_to_gpus(other.m_copy_fp_input_to_gpus),
+  m_copy_fp_output_from_gpus(other.m_copy_fp_output_from_gpus),
+  m_copy_bp_input_to_gpus(other.m_copy_bp_input_to_gpus),
+  m_copy_bp_output_from_gpus(other.m_copy_bp_output_from_gpus)
 #endif // __LIB_CUDNN
+{
+  fp_time = other.fp_time;
+  fp_compute_time = other.fp_compute_time;
+  bp_time = other.bp_time;
+  bp_compute_time = other.bp_compute_time;
+  update_time = other.update_time;
   m_prev_activations = other.m_prev_activations->Copy();
   m_activations = other.m_activations->Copy();
   m_activations_v = other.m_activations_v->Copy();
   m_prev_error_signal = other.m_prev_error_signal->Copy();
   m_error_signal = other.m_error_signal->Copy();
   m_error_signal_v = other.m_error_signal_v->Copy();
+#ifdef __LIB_CUDNN
+  m_prev_activations_d = m_cudnn->copy(other.m_prev_activations_d,
+                                       m_num_prev_neurons,
+                                       m_mini_batch_size_per_gpu);
+  m_activations_d = m_cudnn->copy(other.m_activations_d,
+                                  m_num_neurons,
+                                  m_mini_batch_size_per_gpu);
+  m_prev_error_signal_d = m_cudnn->copy(other.m_prev_error_signal_d,
+                                        m_num_neurons,
+                                        m_mini_batch_size_per_gpu);
+  m_error_signal_d = m_cudnn->copy(other.m_error_signal_d,
+                                   m_num_prev_neurons,
+                                   m_mini_batch_size_per_gpu);
+  m_prev_neurons_cudnn_desc = nullptr;
+  m_neurons_cudnn_desc = nullptr;
+  cudnn::copy_tensor_cudnn_desc(other.m_prev_neurons_cudnn_desc,
+                                m_prev_neurons_cudnn_desc);
+  cudnn::copy_tensor_cudnn_desc(other.m_neurons_cudnn_desc,
+                                m_neurons_cudnn_desc);
+#endif // __LIB_CUDNN
 }
 
 Layer& Layer::operator=(const Layer& other) {
-  // No cuDNN support yet.
-#ifdef __LIB_CUDNN
-  throw lbann_exception(
-    std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
-    "cannot copy layers with cuDNN enabled");
-#endif // __LIB_CUDNN
   m_index = other.m_index;
   m_comm = other.m_comm;
   m_num_neurons = other.m_num_neurons;
@@ -175,35 +192,68 @@ Layer& Layer::operator=(const Layer& other) {
   bp_time = other.bp_time;
   bp_compute_time = other.bp_compute_time;
   update_time = other.update_time;
+#ifdef __LIB_CUDNN
+  m_mini_batch_size_per_gpu = other.m_mini_batch_size_per_gpu;
+  m_copy_fp_input_to_gpus = other.m_copy_fp_input_to_gpus;
+  m_copy_fp_output_from_gpus = other.m_copy_fp_output_from_gpus;
+  m_copy_bp_input_to_gpus = other.m_copy_bp_input_to_gpus;
+  m_copy_bp_output_from_gpus = other.m_copy_bp_output_from_gpus;
+#endif // __LIB_CUDNN
 
   // Free allocated memory and copy data from other matrix
-#define FREE_AND_COPY_MATRIX(matrix, other_matrix)      \
-  do {                                                  \
-    if(matrix != nullptr) {                             \
-      delete matrix;                                    \
-      matrix = nullptr;                                 \
-    }                                                   \
-    if(other_matrix != nullptr) {                       \
-      matrix = other_matrix->Copy();                    \
-    }                                                   \
+#define COPY_MATRIX(src, dst)                   \
+  do {                                          \
+    if(src != nullptr && dst != nullptr) {      \
+      El::Copy(*src, *dst);                     \
+    }                                           \
+    if(src != nullptr && dst == nullptr) {      \
+      dst = src->Copy();                        \
+    }                                           \
+    if(src == nullptr && dst != nullptr) {      \
+      delete dst;                               \
+      dst = nullptr;                            \
+    }                                           \
   } while(false)
-  FREE_AND_COPY_MATRIX(m_prev_activations, other.m_prev_activations);
-  FREE_AND_COPY_MATRIX(m_activations, other.m_activations);
-  FREE_AND_COPY_MATRIX(m_prev_error_signal, other.m_prev_error_signal);
-  FREE_AND_COPY_MATRIX(m_error_signal, other.m_error_signal);
-  FREE_AND_COPY_MATRIX(m_activations_v, other.m_activations_v);
-  FREE_AND_COPY_MATRIX(m_error_signal_v, other.m_error_signal_v);
-#undef FREE_AND_COPY_MATRIX
+  COPY_MATRIX(other.m_prev_activations, m_prev_activations);
+  COPY_MATRIX(other.m_activations, m_activations);
+  COPY_MATRIX(other.m_prev_error_signal, m_prev_error_signal);
+  COPY_MATRIX(other.m_error_signal, m_error_signal);
+  COPY_MATRIX(other.m_activations_v, m_activations_v);
+  COPY_MATRIX(other.m_error_signal_v, m_error_signal_v);
+#undef COPY_MATRIX
+
+#ifdef __LIB_CUDNN
+  m_cudnn->deallocate_on_gpus(m_prev_activations_d);
+  m_cudnn->deallocate_on_gpus(m_activations_d);
+  m_cudnn->deallocate_on_gpus(m_prev_error_signal_d);
+  m_cudnn->deallocate_on_gpus(m_error_signal_d);
+  m_prev_activations_d = m_cudnn->copy(other.m_prev_activations_d,
+                                       m_num_prev_neurons,
+                                       m_mini_batch_size_per_gpu);
+  m_activations_d = m_cudnn->copy(other.m_activations_d,
+                                  m_num_neurons,
+                                  m_mini_batch_size_per_gpu);
+  m_prev_error_signal_d = m_cudnn->copy(other.m_prev_error_signal_d,
+                                        m_num_neurons,
+                                        m_mini_batch_size_per_gpu);
+  m_error_signal_d = m_cudnn->copy(other.m_error_signal_d,
+                                   m_num_prev_neurons,
+                                   m_mini_batch_size_per_gpu);
+  cudnn::copy_tensor_cudnn_desc(other.m_prev_neurons_cudnn_desc,
+                                m_prev_neurons_cudnn_desc);
+  cudnn::copy_tensor_cudnn_desc(other.m_neurons_cudnn_desc,
+                                m_neurons_cudnn_desc);
+#endif // __LIB_CUDNN
 
   return *this;
 }
 
 Layer::~Layer() {
 #ifdef __LIB_CUDNN
-  if(m_prev_neurons_cudnn_desc) {
+  if(m_prev_neurons_cudnn_desc != nullptr) {
     CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_prev_neurons_cudnn_desc));
   }
-  if(m_neurons_cudnn_desc) {
+  if(m_neurons_cudnn_desc != nullptr) {
     CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_neurons_cudnn_desc));
   }
   if(m_cudnn) {

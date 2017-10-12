@@ -539,6 +539,20 @@ void cudnn_manager::set_work_space_size(int i, size_t size) {
   }
 }
 
+std::vector<DataType*> cudnn_manager::copy(const std::vector<DataType*>& gpu_data,
+                                           int height,
+                                           int width_per_gpu,
+                                           int leading_dim) {
+  leading_dim = std::max(leading_dim, height);
+  std::vector<DataType*> output_gpu_data;
+  if(!gpu_data.empty()) {
+    allocate_on_gpus(output_gpu_data, leading_dim, width_per_gpu);
+    copy_on_gpus(output_gpu_data, gpu_data, height, width_per_gpu,
+                 leading_dim, leading_dim);
+  }
+  return output_gpu_data;
+}
+
 void cudnn_manager::pin_matrix(AbsDistMat& mat) {  
 
   // Get local matrix
@@ -649,6 +663,224 @@ void cudnn_manager::check_error() {
       throw lbann::lbann_exception("CUDA error");
     }
   }
+}
+
+void cudnn::copy_tensor_cudnn_desc(const cudnnTensorDescriptor_t& src,
+                                   cudnnTensorDescriptor_t& dst) {
+
+  // Create or destroy descriptor if needed
+  if(src != nullptr && dst == nullptr) {
+    CHECK_CUDNN(cudnnCreateTensorDescriptor(&dst));
+  }
+  else if(src == nullptr && dst != nullptr) {
+    CHECK_CUDNN(cudnnDestroyTensorDescriptor(dst));
+    dst = nullptr;
+  }
+
+  // Copy descriptor data if needed
+  if(src != nullptr) {
+      cudnnDataType_t data_type;
+      int num_dims;
+      CHECK_CUDNN(cudnnGetTensorNdDescriptor(src,
+                                             0,
+                                             &data_type,
+                                             &num_dims,
+                                             nullptr,
+                                             nullptr));
+      std::vector<int> dims(num_dims), strides(num_dims);
+      CHECK_CUDNN(cudnnGetTensorNdDescriptor(src,
+                                             num_dims,
+                                             &data_type,
+                                             &num_dims,
+                                             dims.data(),
+                                             strides.data()));
+      CHECK_CUDNN(cudnnSetTensorNdDescriptor(dst,
+                                             data_type,
+                                             num_dims,
+                                             dims.data(),
+                                             strides.data()));
+  }
+
+}
+
+void cudnn::copy_kernel_cudnn_desc(const cudnnFilterDescriptor_t& src,
+                                   cudnnFilterDescriptor_t& dst) {
+
+  // Create or destroy descriptor if needed
+  if(src != nullptr && dst == nullptr) {
+    CHECK_CUDNN(cudnnCreateFilterDescriptor(&dst));
+  }
+  else if(src == nullptr && dst != nullptr) {
+    CHECK_CUDNN(cudnnDestroyFilterDescriptor(dst));
+    dst = nullptr;
+  }
+
+  // Copy descriptor data if needed
+  if(src != nullptr) {
+    cudnnDataType_t data_type;
+    cudnnTensorFormat_t format;
+    int num_dims;
+    CHECK_CUDNN(cudnnGetFilterNdDescriptor(src,
+                                           0,
+                                           &data_type,
+                                           &format,
+                                           &num_dims,
+                                           nullptr));
+    std::vector<int> dims(num_dims);
+    CHECK_CUDNN(cudnnGetFilterNdDescriptor(src,
+                                           num_dims,
+                                           &data_type,
+                                           &format,
+                                           &num_dims,
+                                           dims.data()));
+    CHECK_CUDNN(cudnnSetFilterNdDescriptor(dst,
+                                           data_type,
+                                           format,
+                                           num_dims,
+                                           dims.data()));
+  }
+
+}
+
+void cudnn::copy_convolution_cudnn_desc(const cudnnConvolutionDescriptor_t& src,
+                                        cudnnConvolutionDescriptor_t& dst) {
+
+  // Create or destroy descriptor if needed
+  if(src != nullptr && dst == nullptr) {
+    CHECK_CUDNN(cudnnCreateConvolutionDescriptor(&dst));
+  }
+  else if(src == nullptr && dst != nullptr) {
+    CHECK_CUDNN(cudnnDestroyConvolutionDescriptor(dst));
+    dst = nullptr;
+  }
+
+  // Copy descriptor data if needed
+  if(src != nullptr) {
+    cudnnConvolutionMode_t mode;
+    cudnnDataType_t data_type;
+    int num_dims;
+    CHECK_CUDNN(cudnnGetConvolutionNdDescriptor(src,
+                                                0,
+                                                &num_dims,
+                                                nullptr,
+                                                nullptr,
+                                                nullptr,
+                                                &mode,
+                                                &data_type));
+    std::vector<int> pads(num_dims), strides(num_dims), upscales(num_dims);
+    CHECK_CUDNN(cudnnGetConvolutionNdDescriptor(src,
+                                                num_dims,
+                                                &num_dims,
+                                                pads.data(),
+                                                strides.data(),
+                                                upscales.data(),
+                                                &mode,
+                                                &data_type));
+    CHECK_CUDNN(cudnnSetConvolutionNdDescriptor(dst,
+                                                num_dims,
+                                                pads.data(),
+                                                strides.data(),
+                                                upscales.data(),
+                                                mode,
+                                                data_type));
+  }
+
+}
+
+void cudnn::copy_pooling_cudnn_desc(const cudnnPoolingDescriptor_t& src,
+                                    cudnnPoolingDescriptor_t& dst) {
+
+  // Create or destroy descriptor if needed
+  if(src != nullptr && dst == nullptr) {
+    CHECK_CUDNN(cudnnCreatePoolingDescriptor(&dst));
+  }
+  else if(src == nullptr && dst != nullptr) {
+    CHECK_CUDNN(cudnnDestroyPoolingDescriptor(dst));
+    dst = nullptr;
+  }
+
+  // Copy descriptor data if needed
+  if(src != nullptr) {
+    cudnnPoolingMode_t mode;
+    cudnnNanPropagation_t nan_propagation;
+    int num_dims;
+    CHECK_CUDNN(cudnnGetPoolingNdDescriptor(src,
+                                            0,
+                                            &mode,
+                                            &nan_propagation,
+                                            &num_dims,
+                                            nullptr,
+                                            nullptr,
+                                            nullptr));
+    std::vector<int> dims(num_dims), pads(num_dims), strides(num_dims);
+    CHECK_CUDNN(cudnnGetPoolingNdDescriptor(src,
+                                            0,
+                                            &mode,
+                                            &nan_propagation,
+                                            &num_dims,
+                                            dims.data(),
+                                            pads.data(),
+                                            strides.data()));
+    CHECK_CUDNN(cudnnSetPoolingNdDescriptor(dst,
+                                            mode,
+                                            nan_propagation,
+                                            num_dims,
+                                            dims.data(),
+                                            pads.data(),
+                                            strides.data()));
+  }
+
+}
+
+void cudnn::copy_activation_cudnn_desc(const cudnnActivationDescriptor_t& src,
+                                       cudnnActivationDescriptor_t& dst) {
+
+  // Create or destroy descriptor if needed
+  if(src != nullptr && dst == nullptr) {
+    CHECK_CUDNN(cudnnCreateActivationDescriptor(&dst));
+  }
+  else if(src == nullptr && dst != nullptr) {
+    CHECK_CUDNN(cudnnDestroyActivationDescriptor(dst));
+    dst = nullptr;
+  }
+
+  // Copy descriptor data if needed
+  if(src != nullptr) {
+    cudnnActivationMode_t mode;
+    cudnnNanPropagation_t nan_propagation;
+    double relu_ceiling;
+    CHECK_CUDNN(cudnnGetActivationDescriptor(src,
+                                             &mode,
+                                             &nan_propagation,
+                                             &relu_ceiling));
+    CHECK_CUDNN(cudnnSetActivationDescriptor(dst,
+                                             mode,
+                                             nan_propagation,
+                                             relu_ceiling));
+  }
+
+}
+
+void cudnn::copy_lrn_cudnn_desc(const cudnnLRNDescriptor_t& src,
+                                cudnnLRNDescriptor_t& dst) {
+
+  // Create or destroy descriptor if needed
+  if(src != nullptr && dst == nullptr) {
+    CHECK_CUDNN(cudnnCreateLRNDescriptor(&dst));
+  }
+  else if(src == nullptr && dst != nullptr) {
+    CHECK_CUDNN(cudnnDestroyLRNDescriptor(dst));
+    dst = nullptr;
+  }
+
+  // Copy descriptor data if needed
+  if(src != nullptr) {
+    unsigned n;
+    double alpha, beta, k;
+    CHECK_CUDNN(cudnnGetLRNDescriptor(src, &n, &alpha, &beta, &k));
+    CHECK_CUDNN(cudnnSetLRNDescriptor(dst, n, alpha, beta, k));
+  }
+
 }
 
 #endif // #ifdef __LIB_CUDNN
