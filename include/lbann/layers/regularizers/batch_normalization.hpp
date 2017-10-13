@@ -555,7 +555,7 @@ class batch_normalization : public learning_regularizer {
     tensor_dims[1] = this->m_neuron_dims[0];
     tensor_strides[0] = tensor_dims[1];
     CHECK_CUDNN(cudnnSetTensorNdDescriptor(m_channel_tensor_cudnn_desc,
-                                           this->m_cudnn->get_cudnn_data_type(),
+                                           cudnn::get_cudnn_data_type(),
                                            tensor_dims.size(),
                                            tensor_dims.data(),
                                            tensor_strides.data()));

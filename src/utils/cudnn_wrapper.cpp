@@ -408,25 +408,6 @@ void cudnn_manager::cudnn_manager::synchronize_all() {
   }
 }
 
-void cudnn_manager::print_version() const {
-  std::cout << "cudnnGetVersion() : " << (int)cudnnGetVersion() << " , "
-            << "CUDNN_VERSION from cudnn.h : " << CUDNN_VERSION
-            << std::endl;
-}
-
-cudnnDataType_t cudnn_manager::get_cudnn_data_type() const {
-  switch(sizeof(DataType)) {
-  case 2:
-    return CUDNN_DATA_HALF;
-  case 4:
-    return CUDNN_DATA_FLOAT;
-  case 8:
-    return CUDNN_DATA_DOUBLE;
-  default:
-    throw lbann::lbann_exception("cudnn_wrapper: invalid data type for cuDNN");
-  }
-}
-
 int cudnn_manager::get_num_gpus() const {
   return m_num_gpus;
 }
@@ -692,6 +673,58 @@ void cudnn_manager::check_error() {
       throw lbann::lbann_exception("CUDA error");
     }
   }
+}
+
+void cudnn::print_version() {
+  std::cout << "cudnnGetVersion() : " << (int)cudnnGetVersion() << " , "
+            << "CUDNN_VERSION from cudnn.h : " << CUDNN_VERSION
+            << std::endl;
+}
+
+cudnnDataType_t cudnn::get_cudnn_data_type() {
+  switch(sizeof(DataType)) {
+  case 2:
+    return CUDNN_DATA_HALF;
+  case 4:
+    return CUDNN_DATA_FLOAT;
+  case 8:
+    return CUDNN_DATA_DOUBLE;
+  default:
+    throw lbann::lbann_exception("cudnn_wrapper: invalid data type for cuDNN");
+  }
+}
+
+void cudnn::set_tensor_cudnn_desc(cudnnTensorDescriptor_t& desc,
+                                  int num_samples,
+                                  const std::vector<int>& sample_dims) {
+
+  // Create tensor descriptor if needed
+  if(desc == nullptr) {
+    CHECK_CUDNN(cudnnCreateTensorDescriptor(&desc));
+  }
+
+  // Determine tensor dimensions
+  // Note: cuDNN tensors should have at least 4 dimension
+  std::vector<int> dims = sample_dims;
+  dims.insert(dims.begin(), num_samples);
+  while(dims.size() < 4) {
+    dims.push_back(1);
+  }
+
+  // Determine tensor strides
+  std::vector<int> strides(dims.size());
+  strides.back() = 1;
+  for(int i=dims.size()-1; i>0; --i) {
+    strides[i-1] = strides[i] * dims[i];
+  }
+
+  // Set cuDNN tensor descriptor
+  CHECK_CUDNN(cudnnSetTensorNdDescriptor(desc,
+                                         cudnn::get_cudnn_data_type(),
+                                         dims.size(),
+                                         dims.data(),
+                                         strides.data()));
+
 }
 
 void cudnn::copy_tensor_cudnn_desc(const cudnnTensorDescriptor_t& src,

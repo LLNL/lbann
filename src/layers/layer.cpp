@@ -100,6 +100,8 @@ Layer::Layer(const int index, lbann_comm *comm)
   // Initialize GPU information
   m_using_gpus = false;
 #ifdef __LIB_CUDNN
+  m_mini_batch_size_per_gpu = 0;
+  m_max_mini_batch_size_per_gpu = 0;
   m_copy_fp_input_to_gpus = false;
   m_copy_fp_output_from_gpus = false;
   m_copy_bp_input_to_gpus = false;
@@ -131,6 +133,7 @@ Layer::Layer(const Layer& other) :
 #ifdef __LIB_CUDNN
   ,
   m_mini_batch_size_per_gpu(other.m_mini_batch_size_per_gpu),
+  m_max_mini_batch_size_per_gpu(other.m_max_mini_batch_size_per_gpu),
   m_copy_fp_input_to_gpus(other.m_copy_fp_input_to_gpus),
   m_copy_fp_output_from_gpus(other.m_copy_fp_output_from_gpus),
   m_copy_bp_input_to_gpus(other.m_copy_bp_input_to_gpus),
@@ -194,6 +197,7 @@ Layer& Layer::operator=(const Layer& other) {
   update_time = other.update_time;
 #ifdef __LIB_CUDNN
   m_mini_batch_size_per_gpu = other.m_mini_batch_size_per_gpu;
+  m_max_mini_batch_size_per_gpu = other.m_max_mini_batch_size_per_gpu;
   m_copy_fp_input_to_gpus = other.m_copy_fp_input_to_gpus;
   m_copy_fp_output_from_gpus = other.m_copy_fp_output_from_gpus;
   m_copy_bp_input_to_gpus = other.m_copy_bp_input_to_gpus;
@@ -285,13 +289,27 @@ void Layer::forward_prop() {
   if(!m_parent_layers.empty()) {
     m_parent_layers.front()->get_fp_output(*m_prev_activations, this);
   } else {
-    const int cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
-    El::Zeros(*m_prev_activations, m_num_prev_neurons, cur_mini_batch_size);
+    const int mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
+    El::Zeros(*m_prev_activations, m_num_prev_neurons, mini_batch_size);
   }
 
 #ifdef __LIB_CUDNN
-  // Transfer inputs from CPU to GPUs if needed
   if(m_using_gpus) {
+
+    // Determine mini-batch size per GPU
+    const int num_gpus = m_cudnn->get_num_gpus();
+    const int local_mini_batch_size = m_activations_v->LocalWidth();
+    m_mini_batch_size_per_gpu = (local_mini_batch_size + num_gpus - 1) / num_gpus;
+
+    // Set tensor descriptors
+    cudnn::set_tensor_cudnn_desc(m_prev_neurons_cudnn_desc,
+                                 m_mini_batch_size_per_gpu,
+                                 m_prev_neuron_dims);
+    cudnn::set_tensor_cudnn_desc(m_neurons_cudnn_desc,
+                                 m_mini_batch_size_per_gpu,
+                                 m_neuron_dims);
+
+    // Transfer inputs from CPU to GPUs if needed
     if(m_copy_fp_input_to_gpus) {
       m_cudnn->scatter_to_gpus(m_prev_activations_d,
                                m_prev_activations->LockedMatrix(),
@@ -301,6 +319,7 @@ void Layer::forward_prop() {
         m_parent_layers.front()->get_gpu_fp_output(m_prev_activations_d, this);
       }
     }
+
   }
 #endif // __LIB_CUDNN
 
@@ -325,21 +344,34 @@ void Layer::forward_prop() {
 void Layer::back_prop() {
   double bp_start = get_time();
 
-  // Set the view for all of the standard matrices based on the
-  // current mini-batch size
+  // Set matrix views based on current mini-batch size
   bp_set_std_matrix_view();
 
   // Get incoming error signal and convert matrix distribution if necessary
   if(!m_child_layers.empty()) {
     m_child_layers.front()->get_bp_output(*m_prev_error_signal, this);
   } else {
-    const int cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
-    El::Zeros(*m_prev_error_signal, m_num_neurons, cur_mini_batch_size);
+    const int mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
+    El::Zeros(*m_prev_error_signal, m_num_neurons, mini_batch_size);
   }
 
 #ifdef __LIB_CUDNN
-  // Transfer inputs from CPU to GPUs if needed
   if(m_using_gpus) {
+
+    // Determine mini-batch size per GPU
+    const int num_gpus = m_cudnn->get_num_gpus();
+    const int local_mini_batch_size = m_activations_v->LocalWidth();
+    m_mini_batch_size_per_gpu = (local_mini_batch_size + num_gpus - 1) / num_gpus;
+
+    // Set tensor descriptors
+    cudnn::set_tensor_cudnn_desc(m_prev_neurons_cudnn_desc,
+                                 m_mini_batch_size_per_gpu,
+                                 m_prev_neuron_dims);
+    cudnn::set_tensor_cudnn_desc(m_neurons_cudnn_desc,
+                                 m_mini_batch_size_per_gpu,
+                                 m_neuron_dims);
+
+    // Transfer inputs from CPU to GPUs if needed
     if(m_copy_bp_input_to_gpus) {
       m_cudnn->scatter_to_gpus(m_prev_error_signal_d,
                                m_prev_error_signal->LockedMatrix(),
@@ -349,6 +381,7 @@ void Layer::back_prop() {
         m_child_layers.front()->get_gpu_bp_output(m_prev_error_signal_d, this);
       }
     }
+
   }
 #endif // __LIB_CUDNN
 
@@ -503,61 +536,30 @@ void Layer::setup_gpu() {
   const int local_mini_batch_size =
     (m_neural_network_model->get_max_mini_batch_size() + num_processes - 1) /
     num_processes;
-  m_mini_batch_size_per_gpu = (local_mini_batch_size + num_gpus - 1) / num_gpus;
+  m_max_mini_batch_size_per_gpu = (local_mini_batch_size + num_gpus - 1) / num_gpus;
+  m_mini_batch_size_per_gpu = m_max_mini_batch_size_per_gpu;
 
-  // Initialize descriptors
-  CHECK_CUDNN(cudnnCreateTensorDescriptor(&m_prev_neurons_cudnn_desc));
-  CHECK_CUDNN(cudnnCreateTensorDescriptor(&m_neurons_cudnn_desc));
-
-  // Set input tensor descriptor
-  std::vector<int> input_dims = m_prev_neuron_dims;
-  input_dims.insert(input_dims.begin(), m_mini_batch_size_per_gpu);
-  // Tensor descriptor must have at least 4 dimensions
-  while (input_dims.size() < 4) {
-    input_dims.push_back(1);
-  }
-  std::vector<int> input_strides(input_dims.size());
-  input_strides[input_strides.size()-1]  = 1;
-  for(int i=input_strides.size()-2; i>=0; --i) {
-    input_strides[i] = input_strides[i+1] * input_dims[i+1];
-  }
-  CHECK_CUDNN(cudnnSetTensorNdDescriptor(m_prev_neurons_cudnn_desc,
-                                         m_cudnn->get_cudnn_data_type(),
-                                         input_dims.size(),
-                                         input_dims.data(),
-                                         input_strides.data()));
-
-  // Set output tensor descriptor
-  std::vector<int> output_dims = m_neuron_dims;
-  output_dims.insert(output_dims.begin(), m_mini_batch_size_per_gpu);
-  // Tensor descriptor must have at least 4 dimensions
-  while (output_dims.size() < 4) {
-    output_dims.push_back(1);
-  }
-  std::vector<int> output_strides(output_dims.size());
-  output_strides[output_strides.size()-1]  = 1;
-  for(int i=output_strides.size()-2; i>=0; --i) {
-    output_strides[i] = output_strides[i+1] * output_dims[i+1];
-  }
-  CHECK_CUDNN(cudnnSetTensorNdDescriptor(m_neurons_cudnn_desc,
-                                         m_cudnn->get_cudnn_data_type(),
-                                         output_dims.size(),
-                                         output_dims.data(),
-                                         output_strides.data()));
+  // Set tensor descriptors
+  cudnn::set_tensor_cudnn_desc(m_prev_neurons_cudnn_desc,
+                               m_mini_batch_size_per_gpu,
+                               m_prev_neuron_dims);
+  cudnn::set_tensor_cudnn_desc(m_neurons_cudnn_desc,
+                               m_mini_batch_size_per_gpu,
+                               m_neuron_dims);
 
   // Allocate GPU memory
   m_cudnn->allocate_on_gpus(m_activations_d,
                             m_num_neurons,
-                            m_mini_batch_size_per_gpu);
+                            m_max_mini_batch_size_per_gpu);
   m_cudnn->allocate_on_gpus(m_error_signal_d,
                             m_num_prev_neurons,
-                            m_mini_batch_size_per_gpu);
+                            m_max_mini_batch_size_per_gpu);
   m_cudnn->allocate_on_gpus(m_prev_activations_d,
                             m_num_prev_neurons,
-                            m_mini_batch_size_per_gpu);
+                            m_max_mini_batch_size_per_gpu);
   m_cudnn->allocate_on_gpus(m_prev_error_signal_d,
                             m_num_neurons,
-                            m_mini_batch_size_per_gpu);
+                            m_max_mini_batch_size_per_gpu);
 
 #endif // __LIB_CUDNN
 }
@@ -590,14 +592,14 @@ bool Layer::loadFromCheckpointShared(persist& p) {
 }
 
 void Layer::fp_set_std_matrix_view() {
-  const int cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
-  El::View(*m_activations_v, *m_activations, El::ALL, El::IR(0, cur_mini_batch_size));
+  int mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
+  El::View(*m_activations_v, *m_activations, El::ALL, El::IR(0, mini_batch_size));
 }
 
 void Layer::bp_set_std_matrix_view() {
-  const int cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
-  El::View(*m_activations_v, *m_activations, El::ALL, El::IR(0, cur_mini_batch_size));
-  El::View(*m_error_signal_v, *m_error_signal, El::ALL, El::IR(0, cur_mini_batch_size));
+  int mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
+  El::View(*m_activations_v, *m_activations, El::ALL, El::IR(0, mini_batch_size));
+  El::View(*m_error_signal_v, *m_error_signal, El::ALL, El::IR(0, mini_batch_size));
 }
 
 #ifdef __LIB_CUDNN

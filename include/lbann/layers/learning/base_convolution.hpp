@@ -383,7 +383,7 @@ class base_convolution_layer : public learning {
 
     // Set kernel descriptor
     CHECK_CUDNN(cudnnSetFilterNdDescriptor(m_kernel_cudnn_desc,
-                                           this->m_cudnn->get_cudnn_data_type(),
+                                           cudnn::get_cudnn_data_type(),
                                            CUDNN_TENSOR_NCHW,
                                            m_kernel_dims.size(),
                                            m_kernel_dims.data()));
@@ -397,7 +397,7 @@ class base_convolution_layer : public learning {
                                                 m_conv_strides.data(),
                                                 conv_upscales.data(),
                                                 CUDNN_CROSS_CORRELATION,
-                                                this->m_cudnn->get_cudnn_data_type()));
+                                                cudnn::get_cudnn_data_type()));
 
     // Set bias tensor descriptor
     std::vector<int> bias_dims(this->m_num_neuron_dims+1, 1);
@@ -405,7 +405,7 @@ class base_convolution_layer : public learning {
     std::vector<int> bias_strides(this->m_num_neuron_dims+1, 1);
     bias_strides[0] = bias_dims[1];
     CHECK_CUDNN(cudnnSetTensorNdDescriptor(m_bias_cudnn_desc,
-                                           this->m_cudnn->get_cudnn_data_type(),
+                                           cudnn::get_cudnn_data_type(),
                                            bias_dims.size(),
                                            bias_dims.data(),
                                            bias_strides.data()));

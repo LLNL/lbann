@@ -300,6 +300,8 @@ class Layer {
 
   /** Number of mini-batch samples per GPU. */
   int m_mini_batch_size_per_gpu;
+  /** Maximum number of mini-batch samples per GPU. */
+  int m_max_mini_batch_size_per_gpu;
 
   /** GPU memory for activations from "previous" layer. */
   std::vector<DataType*> m_prev_activations_d;
