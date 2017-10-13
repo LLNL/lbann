@@ -86,6 +86,7 @@ bool lbann::distributed_minibatch::is_data_set_processed() {
   // will have distributed it.
   int num_parallel_readers = get_num_parallel_readers();
   int num_iterations_per_epoch = get_num_iterations_per_epoch();
+  int current_step_in_epoch = get_current_step_in_epoch(); // Get the current step before the update function increments it
 
   bool is_active_reader = (m_comm->get_rank_in_model() < num_parallel_readers) 
     && ((m_comm->get_rank_in_model()+1)%num_parallel_readers == m_root);
@@ -101,7 +102,7 @@ bool lbann::distributed_minibatch::is_data_set_processed() {
   m_local_reader_done = !update_data_reader(is_active_reader);
 
   /// Once all of the readers have finished their part of the mini-batch indicate that the epoch is finished
-  if(get_current_step_in_epoch() == (num_iterations_per_epoch - 1)) {
+  if(current_step_in_epoch == (num_iterations_per_epoch - 1)) {
     m_local_reader_done = false;
     m_root = 0; /// When the epoch is finished, make sure that the root node for distributing data is reset because
     /// if the number of parallel readers does not evenly divide the data set size, the epoch will finish

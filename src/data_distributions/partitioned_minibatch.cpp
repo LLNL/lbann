@@ -63,10 +63,11 @@ void lbann::partitioned_minibatch::distribute_from_local_matrix(Mat& M_local, Ci
 
 bool lbann::partitioned_minibatch::is_data_set_processed() {
   int num_iterations_per_epoch = get_num_iterations_per_epoch();
+  int current_step_in_epoch = get_current_step_in_epoch(); // Get the current step before the update function increments it
 
   m_local_reader_done = !update_data_reader(true);
 
-  if(get_current_step_in_epoch() == (num_iterations_per_epoch - 1)) {
+  if(current_step_in_epoch == (num_iterations_per_epoch - 1)) {
     m_local_reader_done = false;
     m_root = 0; /// When the epoch is finished, make sure that the root node for distributing data is reset because
     /// if the number of parallel readers does not evenly divide the data set size, the epoch will finish
