@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_numpy_reader .hpp .cpp
+// data_reader_numpy .hpp .cpp - generic_data_reader class for numpy dataset
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_numpy.hpp"
