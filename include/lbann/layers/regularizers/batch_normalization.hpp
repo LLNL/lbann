@@ -370,28 +370,28 @@ class batch_normalization : public learning_regularizer {
     m_cudnn->deallocate_on_gpus(m_var_gradient_d);
     m_mean_d = m_cudnn->copy(other.m_mean_d,
                              m_mean_v->Height(),
-                             m_mean_v->Width);
+                             m_mean_v->Width());
     m_var_d = m_cudnn->copy(other.m_var_d,
                             m_var_v->Height(),
-                            m_var_v->Width);
+                            m_var_v->Width());
     m_scale_d = m_cudnn->copy(other.m_scale_d,
                               m_scale_v->Height(),
-                              m_scale_v->Width);
+                              m_scale_v->Width());
     m_bias_d = m_cudnn->copy(other.m_bias_d,
                              m_bias_v->Height(),
-                             m_bias_v->Width);
+                             m_bias_v->Width());
     m_scale_gradient_d = m_cudnn->copy(other.m_scale_gradient_d,
                                        m_scale_gradient_v->Height(),
-                                       m_scale_gradient_v->Width);
+                                       m_scale_gradient_v->Width());
     m_bias_gradient_d = m_cudnn->copy(other.m_bias_gradient_d,
                                       m_bias_gradient_v->Height(),
-                                      m_bias_gradient_v->Width);
+                                      m_bias_gradient_v->Width());
     m_mean_gradient_d = m_cudnn->copy(other.m_mean_gradient_d,
                                       m_mean_gradient_v->Height(),
-                                      m_mean_gradient_v->Width);
+                                      m_mean_gradient_v->Width());
     m_var_gradient_d = m_cudnn->copy(other.m_var_gradient_d,
                                      m_var_gradient_v->Height(),
-                                     m_var_gradient_v->Width);
+                                     m_var_gradient_v->Width());
 
     // Copy pinned workspace
     if(m_pinned_workspace != nullptr) {

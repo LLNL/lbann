@@ -46,12 +46,12 @@ class deep_neural_network : public sequential_model {
   deep_neural_network(const deep_neural_network&) = default;
   deep_neural_network& operator=(const deep_neural_network&) = default;
 
-  virtual deep_neural_network* copy() const { return new deep_neural_network(*this); }
+  virtual deep_neural_network* copy() const override { return new deep_neural_network(*this); }
 
   /// Destructor
   ~deep_neural_network();
 
-  virtual std::string name() const { return "deep neural network"; }
+  virtual std::string name() const override { return "deep neural network"; }
 
   /// Compute layer summaries
   virtual void summarize_stats(lbann_summary& summarizer) override;

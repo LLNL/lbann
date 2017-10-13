@@ -50,17 +50,17 @@ class greedy_layerwise_autoencoder : public sequential_model {
   /// Destructor
   ~greedy_layerwise_autoencoder();
 
-  virtual greedy_layerwise_autoencoder* copy() const {
+  virtual greedy_layerwise_autoencoder* copy() const override {
     throw lbann_exception("greedy_layerwise_autoencoder doesn't support copying");
   }
 
-  virtual std::string name() const { return "greedy layerwise autoencoder"; }
+  virtual std::string name() const override { return "greedy layerwise autoencoder"; }
 
   /// Save model to shared checkpoint
-  bool save_to_checkpoint_shared(persist& p);
+  bool save_to_checkpoint_shared(persist& p) override;
 
   /// Restore model from shared checkpoint
-  bool load_from_checkpoint_shared(persist& p);
+  bool load_from_checkpoint_shared(persist& p) override;
 
   /// Compute layer summaries
   virtual void summarize_stats(lbann_summary& summarizer) override;
