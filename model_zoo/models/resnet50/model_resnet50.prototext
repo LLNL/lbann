@@ -51,14 +51,16 @@ model {
 
   layer {
     name: "0"
-    parent: "0"
+    parents: "0"
+    children: ""
     data_layout: "data_parallel"
     input_partitioned_minibatch {
     }
   }
   layer {
     name: "1"
-    parent: "0"
+    parents: "0"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -73,7 +75,8 @@ model {
   }
   layer {
     name: "2"
-    parent: "1"
+    parents: "1"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -84,14 +87,16 @@ model {
   }
   layer {
     name: "3"
-    parent: "2"
+    parents: "2"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "4"
-    parent: "3"
+    parents: "3"
+    children: ""
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
@@ -103,7 +108,8 @@ model {
   }
   layer {
     name: "5"
-    parent: "4"
+    parents: "4"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -118,7 +124,8 @@ model {
   }
   layer {
     name: "6"
-    parent: "5"
+    parents: "5"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -129,7 +136,8 @@ model {
   }
   layer {
     name: "7"
-    parent: "6"
+    parents: "6"
+    children: ""
     data_layout: "data_parallel"
     slice {
       slice_axis: 0
@@ -139,14 +147,16 @@ model {
   }
   layer {
     name: "8"
-    parent: "7"
+    parents: "7"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "9"
-    parent: "8"
+    parents: "8"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -161,7 +171,8 @@ model {
   }
   layer {
     name: "10"
-    parent: "9"
+    parents: "9"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -172,14 +183,16 @@ model {
   }
   layer {
     name: "11"
-    parent: "10"
+    parents: "10"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "12"
-    parent: "11"
+    parents: "11"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -194,7 +207,8 @@ model {
   }
   layer {
     name: "13"
-    parent: "12"
+    parents: "12"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -205,7 +219,8 @@ model {
   }
   layer {
     name: "14"
-    parent: "13"
+    parents: "13"
+    children: ""
     data_layout: "data_parallel"
     sum {
       parents: "7"
@@ -213,14 +228,16 @@ model {
   }
   layer {
     name: "15"
-    parent: "14"
+    parents: "14"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "16"
-    parent: "15"
+    parents: "15"
+    children: ""
     data_layout: "data_parallel"
     split {
       children: "25"
@@ -228,7 +245,8 @@ model {
   }
   layer {
     name: "17"
-    parent: "16"
+    parents: "16"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -243,7 +261,8 @@ model {
   }
   layer {
     name: "18"
-    parent: "17"
+    parents: "17"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -254,14 +273,16 @@ model {
   }
   layer {
     name: "19"
-    parent: "18"
+    parents: "18"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "20"
-    parent: "19"
+    parents: "19"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -276,7 +297,8 @@ model {
   }
   layer {
     name: "21"
-    parent: "20"
+    parents: "20"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -287,14 +309,16 @@ model {
   }
   layer {
     name: "22"
-    parent: "21"
+    parents: "21"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "23"
-    parent: "22"
+    parents: "22"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -309,7 +333,8 @@ model {
   }
   layer {
     name: "24"
-    parent: "23"
+    parents: "23"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -320,7 +345,8 @@ model {
   }
   layer {
     name: "25"
-    parent: "24"
+    parents: "24"
+    children: ""
     data_layout: "data_parallel"
     sum {
       parents: "16"
@@ -328,14 +354,16 @@ model {
   }
   layer {
     name: "26"
-    parent: "25"
+    parents: "25"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "27"
-    parent: "26"
+    parents: "26"
+    children: ""
     data_layout: "data_parallel"
     split {
       children: "36"
@@ -343,7 +371,8 @@ model {
   }
   layer {
     name: "28"
-    parent: "27"
+    parents: "27"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -358,7 +387,8 @@ model {
   }
   layer {
     name: "29"
-    parent: "28"
+    parents: "28"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -369,14 +399,16 @@ model {
   }
   layer {
     name: "30"
-    parent: "29"
+    parents: "29"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "31"
-    parent: "30"
+    parents: "30"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -391,7 +423,8 @@ model {
   }
   layer {
     name: "32"
-    parent: "31"
+    parents: "31"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -402,14 +435,16 @@ model {
   }
   layer {
     name: "33"
-    parent: "32"
+    parents: "32"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "34"
-    parent: "33"
+    parents: "33"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -424,7 +459,8 @@ model {
   }
   layer {
     name: "35"
-    parent: "34"
+    parents: "34"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -435,7 +471,8 @@ model {
   }
   layer {
     name: "36"
-    parent: "35"
+    parents: "35"
+    children: ""
     data_layout: "data_parallel"
     sum {
       parents: "27"
@@ -443,14 +480,16 @@ model {
   }
   layer {
     name: "37"
-    parent: "36"
+    parents: "36"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "38"
-    parent: "37"
+    parents: "37"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -465,7 +504,8 @@ model {
   }
   layer {
     name: "39"
-    parent: "38"
+    parents: "38"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -476,7 +516,8 @@ model {
   }
   layer {
     name: "40"
-    parent: "39"
+    parents: "39"
+    children: ""
     data_layout: "data_parallel"
     slice {
       slice_axis: 0
@@ -486,14 +527,16 @@ model {
   }
   layer {
     name: "41"
-    parent: "40"
+    parents: "40"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "42"
-    parent: "41"
+    parents: "41"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -508,7 +551,8 @@ model {
   }
   layer {
     name: "43"
-    parent: "42"
+    parents: "42"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -519,14 +563,16 @@ model {
   }
   layer {
     name: "44"
-    parent: "43"
+    parents: "43"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "45"
-    parent: "44"
+    parents: "44"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -541,7 +587,8 @@ model {
   }
   layer {
     name: "46"
-    parent: "45"
+    parents: "45"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -552,7 +599,8 @@ model {
   }
   layer {
     name: "47"
-    parent: "46"
+    parents: "46"
+    children: ""
     data_layout: "data_parallel"
     sum {
       parents: "40"
@@ -560,14 +608,16 @@ model {
   }
   layer {
     name: "48"
-    parent: "47"
+    parents: "47"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "49"
-    parent: "48"
+    parents: "48"
+    children: ""
     data_layout: "data_parallel"
     split {
       children: "58"
@@ -575,7 +625,8 @@ model {
   }
   layer {
     name: "50"
-    parent: "49"
+    parents: "49"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -590,7 +641,8 @@ model {
   }
   layer {
     name: "51"
-    parent: "50"
+    parents: "50"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -601,14 +653,16 @@ model {
   }
   layer {
     name: "52"
-    parent: "51"
+    parents: "51"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "53"
-    parent: "52"
+    parents: "52"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -623,7 +677,8 @@ model {
   }
   layer {
     name: "54"
-    parent: "53"
+    parents: "53"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -634,14 +689,16 @@ model {
   }
   layer {
     name: "55"
-    parent: "54"
+    parents: "54"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "56"
-    parent: "55"
+    parents: "55"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -656,7 +713,8 @@ model {
   }
   layer {
     name: "57"
-    parent: "56"
+    parents: "56"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -667,7 +725,8 @@ model {
   }
   layer {
     name: "58"
-    parent: "57"
+    parents: "57"
+    children: ""
     data_layout: "data_parallel"
     sum {
       parents: "49"
@@ -675,14 +734,16 @@ model {
   }
   layer {
     name: "59"
-    parent: "58"
+    parents: "58"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "60"
-    parent: "59"
+    parents: "59"
+    children: ""
     data_layout: "data_parallel"
     split {
       children: "69"
@@ -690,7 +751,8 @@ model {
   }
   layer {
     name: "61"
-    parent: "60"
+    parents: "60"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -705,7 +767,8 @@ model {
   }
   layer {
     name: "62"
-    parent: "61"
+    parents: "61"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -716,14 +779,16 @@ model {
   }
   layer {
     name: "63"
-    parent: "62"
+    parents: "62"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "64"
-    parent: "63"
+    parents: "63"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -738,7 +803,8 @@ model {
   }
   layer {
     name: "65"
-    parent: "64"
+    parents: "64"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -749,14 +815,16 @@ model {
   }
   layer {
     name: "66"
-    parent: "65"
+    parents: "65"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "67"
-    parent: "66"
+    parents: "66"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -771,7 +839,8 @@ model {
   }
   layer {
     name: "68"
-    parent: "67"
+    parents: "67"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -782,7 +851,8 @@ model {
   }
   layer {
     name: "69"
-    parent: "68"
+    parents: "68"
+    children: ""
     data_layout: "data_parallel"
     sum {
       parents: "60"
@@ -790,14 +860,16 @@ model {
   }
   layer {
     name: "70"
-    parent: "69"
+    parents: "69"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "71"
-    parent: "70"
+    parents: "70"
+    children: ""
     data_layout: "data_parallel"
     split {
       children: "80"
@@ -805,7 +877,8 @@ model {
   }
   layer {
     name: "72"
-    parent: "71"
+    parents: "71"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -820,7 +893,8 @@ model {
   }
   layer {
     name: "73"
-    parent: "72"
+    parents: "72"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -831,14 +905,16 @@ model {
   }
   layer {
     name: "74"
-    parent: "73"
+    parents: "73"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "75"
-    parent: "74"
+    parents: "74"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -853,7 +929,8 @@ model {
   }
   layer {
     name: "76"
-    parent: "75"
+    parents: "75"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -864,14 +941,16 @@ model {
   }
   layer {
     name: "77"
-    parent: "76"
+    parents: "76"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "78"
-    parent: "77"
+    parents: "77"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -886,7 +965,8 @@ model {
   }
   layer {
     name: "79"
-    parent: "78"
+    parents: "78"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -897,7 +977,8 @@ model {
   }
   layer {
     name: "80"
-    parent: "79"
+    parents: "79"
+    children: ""
     data_layout: "data_parallel"
     sum {
       parents: "71"
@@ -905,14 +986,16 @@ model {
   }
   layer {
     name: "81"
-    parent: "80"
+    parents: "80"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "82"
-    parent: "81"
+    parents: "81"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -927,7 +1010,8 @@ model {
   }
   layer {
     name: "83"
-    parent: "82"
+    parents: "82"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -938,7 +1022,8 @@ model {
   }
   layer {
     name: "84"
-    parent: "83"
+    parents: "83"
+    children: ""
     data_layout: "data_parallel"
     slice {
       slice_axis: 0
@@ -948,14 +1033,16 @@ model {
   }
   layer {
     name: "85"
-    parent: "84"
+    parents: "84"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "86"
-    parent: "85"
+    parents: "85"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -970,7 +1057,8 @@ model {
   }
   layer {
     name: "87"
-    parent: "86"
+    parents: "86"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -981,14 +1069,16 @@ model {
   }
   layer {
     name: "88"
-    parent: "87"
+    parents: "87"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "89"
-    parent: "88"
+    parents: "88"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1003,7 +1093,8 @@ model {
   }
   layer {
     name: "90"
-    parent: "89"
+    parents: "89"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1014,7 +1105,8 @@ model {
   }
   layer {
     name: "91"
-    parent: "90"
+    parents: "90"
+    children: ""
     data_layout: "data_parallel"
     sum {
       parents: "84"
@@ -1022,14 +1114,16 @@ model {
   }
   layer {
     name: "92"
-    parent: "91"
+    parents: "91"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "93"
-    parent: "92"
+    parents: "92"
+    children: ""
     data_layout: "data_parallel"
     split {
       children: "102"
@@ -1037,7 +1131,8 @@ model {
   }
   layer {
     name: "94"
-    parent: "93"
+    parents: "93"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1052,7 +1147,8 @@ model {
   }
   layer {
     name: "95"
-    parent: "94"
+    parents: "94"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1063,14 +1159,16 @@ model {
   }
   layer {
     name: "96"
-    parent: "95"
+    parents: "95"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "97"
-    parent: "96"
+    parents: "96"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1085,7 +1183,8 @@ model {
   }
   layer {
     name: "98"
-    parent: "97"
+    parents: "97"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1096,14 +1195,16 @@ model {
   }
   layer {
     name: "99"
-    parent: "98"
+    parents: "98"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "100"
-    parent: "99"
+    parents: "99"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1118,7 +1219,8 @@ model {
   }
   layer {
     name: "101"
-    parent: "100"
+    parents: "100"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1129,7 +1231,8 @@ model {
   }
   layer {
     name: "102"
-    parent: "101"
+    parents: "101"
+    children: ""
     data_layout: "data_parallel"
     sum {
       parents: "93"
@@ -1137,14 +1240,16 @@ model {
   }
   layer {
     name: "103"
-    parent: "102"
+    parents: "102"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "104"
-    parent: "103"
+    parents: "103"
+    children: ""
     data_layout: "data_parallel"
     split {
       children: "113"
@@ -1152,7 +1257,8 @@ model {
   }
   layer {
     name: "105"
-    parent: "104"
+    parents: "104"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1167,7 +1273,8 @@ model {
   }
   layer {
     name: "106"
-    parent: "105"
+    parents: "105"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1178,14 +1285,16 @@ model {
   }
   layer {
     name: "107"
-    parent: "106"
+    parents: "106"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "108"
-    parent: "107"
+    parents: "107"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1200,7 +1309,8 @@ model {
   }
   layer {
     name: "109"
-    parent: "108"
+    parents: "108"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1211,14 +1321,16 @@ model {
   }
   layer {
     name: "110"
-    parent: "109"
+    parents: "109"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "111"
-    parent: "110"
+    parents: "110"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1233,7 +1345,8 @@ model {
   }
   layer {
     name: "112"
-    parent: "111"
+    parents: "111"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1244,7 +1357,8 @@ model {
   }
   layer {
     name: "113"
-    parent: "112"
+    parents: "112"
+    children: ""
     data_layout: "data_parallel"
     sum {
       parents: "104"
@@ -1252,14 +1366,16 @@ model {
   }
   layer {
     name: "114"
-    parent: "113"
+    parents: "113"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "115"
-    parent: "114"
+    parents: "114"
+    children: ""
     data_layout: "data_parallel"
     split {
       children: "124"
@@ -1267,7 +1383,8 @@ model {
   }
   layer {
     name: "116"
-    parent: "115"
+    parents: "115"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1282,7 +1399,8 @@ model {
   }
   layer {
     name: "117"
-    parent: "116"
+    parents: "116"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1293,14 +1411,16 @@ model {
   }
   layer {
     name: "118"
-    parent: "117"
+    parents: "117"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "119"
-    parent: "118"
+    parents: "118"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1315,7 +1435,8 @@ model {
   }
   layer {
     name: "120"
-    parent: "119"
+    parents: "119"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1326,14 +1447,16 @@ model {
   }
   layer {
     name: "121"
-    parent: "120"
+    parents: "120"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "122"
-    parent: "121"
+    parents: "121"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1348,7 +1471,8 @@ model {
   }
   layer {
     name: "123"
-    parent: "122"
+    parents: "122"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1359,7 +1483,8 @@ model {
   }
   layer {
     name: "124"
-    parent: "123"
+    parents: "123"
+    children: ""
     data_layout: "data_parallel"
     sum {
       parents: "115"
@@ -1367,14 +1492,16 @@ model {
   }
   layer {
     name: "125"
-    parent: "124"
+    parents: "124"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "126"
-    parent: "125"
+    parents: "125"
+    children: ""
     data_layout: "data_parallel"
     split {
       children: "135"
@@ -1382,7 +1509,8 @@ model {
   }
   layer {
     name: "127"
-    parent: "126"
+    parents: "126"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1397,7 +1525,8 @@ model {
   }
   layer {
     name: "128"
-    parent: "127"
+    parents: "127"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1408,14 +1537,16 @@ model {
   }
   layer {
     name: "129"
-    parent: "128"
+    parents: "128"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "130"
-    parent: "129"
+    parents: "129"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1430,7 +1561,8 @@ model {
   }
   layer {
     name: "131"
-    parent: "130"
+    parents: "130"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1441,14 +1573,16 @@ model {
   }
   layer {
     name: "132"
-    parent: "131"
+    parents: "131"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "133"
-    parent: "132"
+    parents: "132"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1463,7 +1597,8 @@ model {
   }
   layer {
     name: "134"
-    parent: "133"
+    parents: "133"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1474,7 +1609,8 @@ model {
   }
   layer {
     name: "135"
-    parent: "134"
+    parents: "134"
+    children: ""
     data_layout: "data_parallel"
     sum {
       parents: "126"
@@ -1482,14 +1618,16 @@ model {
   }
   layer {
     name: "136"
-    parent: "135"
+    parents: "135"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "137"
-    parent: "136"
+    parents: "136"
+    children: ""
     data_layout: "data_parallel"
     split {
       children: "146"
@@ -1497,7 +1635,8 @@ model {
   }
   layer {
     name: "138"
-    parent: "137"
+    parents: "137"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1512,7 +1651,8 @@ model {
   }
   layer {
     name: "139"
-    parent: "138"
+    parents: "138"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1523,14 +1663,16 @@ model {
   }
   layer {
     name: "140"
-    parent: "139"
+    parents: "139"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "141"
-    parent: "140"
+    parents: "140"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1545,7 +1687,8 @@ model {
   }
   layer {
     name: "142"
-    parent: "141"
+    parents: "141"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1556,14 +1699,16 @@ model {
   }
   layer {
     name: "143"
-    parent: "142"
+    parents: "142"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "144"
-    parent: "143"
+    parents: "143"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1578,7 +1723,8 @@ model {
   }
   layer {
     name: "145"
-    parent: "144"
+    parents: "144"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1589,7 +1735,8 @@ model {
   }
   layer {
     name: "146"
-    parent: "145"
+    parents: "145"
+    children: ""
     data_layout: "data_parallel"
     sum {
       parents: "137"
@@ -1597,14 +1744,16 @@ model {
   }
   layer {
     name: "147"
-    parent: "146"
+    parents: "146"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "148"
-    parent: "147"
+    parents: "147"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1619,7 +1768,8 @@ model {
   }
   layer {
     name: "149"
-    parent: "148"
+    parents: "148"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1630,7 +1780,8 @@ model {
   }
   layer {
     name: "150"
-    parent: "149"
+    parents: "149"
+    children: ""
     data_layout: "data_parallel"
     slice {
       slice_axis: 0
@@ -1640,14 +1791,16 @@ model {
   }
   layer {
     name: "151"
-    parent: "150"
+    parents: "150"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "152"
-    parent: "151"
+    parents: "151"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1662,7 +1815,8 @@ model {
   }
   layer {
     name: "153"
-    parent: "152"
+    parents: "152"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1673,14 +1827,16 @@ model {
   }
   layer {
     name: "154"
-    parent: "153"
+    parents: "153"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "155"
-    parent: "154"
+    parents: "154"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1695,7 +1851,8 @@ model {
   }
   layer {
     name: "156"
-    parent: "155"
+    parents: "155"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1706,7 +1863,8 @@ model {
   }
   layer {
     name: "157"
-    parent: "156"
+    parents: "156"
+    children: ""
     data_layout: "data_parallel"
     sum {
       parents: "150"
@@ -1714,14 +1872,16 @@ model {
   }
   layer {
     name: "158"
-    parent: "157"
+    parents: "157"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "159"
-    parent: "158"
+    parents: "158"
+    children: ""
     data_layout: "data_parallel"
     split {
       children: "168"
@@ -1729,7 +1889,8 @@ model {
   }
   layer {
     name: "160"
-    parent: "159"
+    parents: "159"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1744,7 +1905,8 @@ model {
   }
   layer {
     name: "161"
-    parent: "160"
+    parents: "160"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1755,14 +1917,16 @@ model {
   }
   layer {
     name: "162"
-    parent: "161"
+    parents: "161"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "163"
-    parent: "162"
+    parents: "162"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1777,7 +1941,8 @@ model {
   }
   layer {
     name: "164"
-    parent: "163"
+    parents: "163"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1788,14 +1953,16 @@ model {
   }
   layer {
     name: "165"
-    parent: "164"
+    parents: "164"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "166"
-    parent: "165"
+    parents: "165"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1810,7 +1977,8 @@ model {
   }
   layer {
     name: "167"
-    parent: "166"
+    parents: "166"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1821,7 +1989,8 @@ model {
   }
   layer {
     name: "168"
-    parent: "167"
+    parents: "167"
+    children: ""
     data_layout: "data_parallel"
     sum {
       parents: "159"
@@ -1829,14 +1998,16 @@ model {
   }
   layer {
     name: "169"
-    parent: "168"
+    parents: "168"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "170"
-    parent: "169"
+    parents: "169"
+    children: ""
     data_layout: "data_parallel"
     split {
       children: "179"
@@ -1844,7 +2015,8 @@ model {
   }
   layer {
     name: "171"
-    parent: "170"
+    parents: "170"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1859,7 +2031,8 @@ model {
   }
   layer {
     name: "172"
-    parent: "171"
+    parents: "171"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1870,14 +2043,16 @@ model {
   }
   layer {
     name: "173"
-    parent: "172"
+    parents: "172"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "174"
-    parent: "173"
+    parents: "173"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1892,7 +2067,8 @@ model {
   }
   layer {
     name: "175"
-    parent: "174"
+    parents: "174"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1903,14 +2079,16 @@ model {
   }
   layer {
     name: "176"
-    parent: "175"
+    parents: "175"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "177"
-    parent: "176"
+    parents: "176"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1925,7 +2103,8 @@ model {
   }
   layer {
     name: "178"
-    parent: "177"
+    parents: "177"
+    children: ""
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1936,7 +2115,8 @@ model {
   }
   layer {
     name: "179"
-    parent: "178"
+    parents: "178"
+    children: ""
     data_layout: "data_parallel"
     sum {
       parents: "170"
@@ -1944,14 +2124,16 @@ model {
   }
   layer {
     name: "180"
-    parent: "179"
+    parents: "179"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
     name: "181"
-    parent: "180"
+    parents: "180"
+    children: ""
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
@@ -1963,7 +2145,8 @@ model {
   }
   layer {
     name: "182"
-    parent: "181"
+    parents: "181"
+    children: ""
     data_layout: "model_parallel"
     fully_connected {
     num_neurons: 1000
@@ -1974,14 +2157,16 @@ model {
   }
   layer {
     name: "183"
-    parent: "182"
+    parents: "182"
+    children: ""
     data_layout: "model_parallel"
     softmax {
     }
   }
   layer {
     name: "184"
-    parent: "183"
+    parents: "183"
+    children: ""
     data_layout: "data_parallel"
     target_partitioned_minibatch {
       shared_data_reader: true

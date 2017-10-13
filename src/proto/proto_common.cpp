@@ -13,6 +13,51 @@
 
 using namespace lbann;
 
+//maps: layer name (from prototext) to the lbann::layer
+std::unordered_map<std::string, Layer*> name_mapping;
+
+//maps: layer index (wrt lbann::sequential_model) to the lbann::layer
+std::unordered_map<uint, Layer*> index_mapping;
+
+//maps: layer name (from prototext)  to layer index (wrt lbann::sequential_model)
+std::unordered_map<std::string, uint> name_to_index;
+
+void add_parent_and_child_pointers(std::vector<lbann_data::Layer> &proto_layers, bool master) {
+  std::unordered_map<std::string, std::unordered_set<std::string> > name_to_parents;
+  std::unordered_map<std::string, std::unordered_set<std::string> > name_to_children;
+
+  std::string w;
+  for (size_t i=0; i<proto_layers.size(); i++) {
+    std::string name = proto_layers[i].name();
+    std::string parents = proto_layers[i].parents();
+    std::string children = proto_layers[i].children();
+    std::stringstream s1(parents);
+    std::stringstream s2(children);
+    while (s1 >> w) {
+      name_to_parents[name].insert(w);
+      name_to_children[w].insert(name);
+    }
+    while (s2 >> w) {
+      name_to_parents[w].insert(name);
+      name_to_children[name].insert(w);
+    }
+  }
+
+  for (auto t : name_to_parents) {
+    Layer *layer = name_mapping[t.first];
+    for (auto t2 : t.second) {
+      layer->add_parent_layer(name_mapping[t2]);
+    }
+  }
+
+  for (auto t : name_to_children) {
+    Layer *layer = name_mapping[t.first];
+    for (auto t2 : t.second) {
+      layer->add_child_layer(name_mapping[t2]);
+    }
+  }
+}
+
 lbann_callback_imcomm::comm_type get_comm_type(const string &s, bool master)
 {
   if (s == "none") {
@@ -58,19 +103,6 @@ pool_mode get_pool_mode(const string& s, bool master)
     }
   }
 }
-
-/*
-void get_prev_neurons_and_index( lbann::sequential_model *model, int& prev_num_neurons, int& cur_index)
-{
-  std::vector<Layer *>& layers = model->get_layers();
-  prev_num_neurons = -1;
-  if(layers.size() != 0) {
-    Layer *prev_layer = layers.back();
-    prev_num_neurons = prev_layer->get_num_neurons();
-  }
-  cur_index = layers.size();
-}
-*/
 
 weight_initialization get_weight_initialization(const string& s, bool master)
 {
@@ -130,7 +162,7 @@ struct transform_layers {
 };
 
 
-void finish_transform_layers(lbann_comm *comm, std::vector<transform_layers> &layers, std::unordered_map<std::string, Layer*> name_mapping) {
+void finish_transform_layers(lbann_comm *comm, std::vector<transform_layers> &layers) {
   bool master = comm->am_world_master();
   
   if (master) {
@@ -182,14 +214,22 @@ void finish_transform_layers(lbann_comm *comm, std::vector<transform_layers> &la
   }
 }
 
-void get_proto_layers(std::vector<lbann_data::Layer> &proto_layers, const lbann_data::Model& m, lbann_comm *comm) {
+void get_proto_layers(std::vector<lbann_data::Layer> &proto_layers, const lbann_data::Model& m, lbann_comm *comm, bool is_sequential) {
   bool master = comm->am_world_master();
   std::stringstream err;
   proto_layers.clear();
   int size = m.layer_size();
-  std::set<std::string> n;
+
+  if (not is_sequential) {
+    for (int j=0; j<size; j++) {
+      const lbann_data::Layer& layer = m.layer(j);
+      proto_layers.push_back(layer);
+    }
+    return;
+  }
 
   //fill in name_to_parent map, name_to_layer map, and check for duplicate names
+  std::set<std::string> n;
   std::unordered_map<std::string, std::string> name_to_parent;
   std::unordered_map<std::string, lbann_data::Layer> name_to_layer;
   for (int j=0; j<size; j++) {
@@ -214,7 +254,7 @@ void get_proto_layers(std::vector<lbann_data::Layer> &proto_layers, const lbann_
       }
     }
 
-    std::string parent = layer.parent();
+    std::string parent = layer.parents();
     name_to_layer[name] = layer;
     if (n.find(name) != n.end()) {
       if (master) {
@@ -303,13 +343,9 @@ void get_proto_layers(std::vector<lbann_data::Layer> &proto_layers, const lbann_
 
 void add_layers(
   lbann::model *model,
-  //lbann::sequential_model *model,
   std::map<execution_mode, generic_data_reader *>& data_readers,
   cudnn::cudnn_manager *cudnn,
-  const lbann_data::LbannPB& p,
-  std::unordered_map<std::string,Layer*> &name_mapping,
-  std::unordered_map<uint,Layer*> &index_mapping,
-  std::unordered_map<std::string, uint> &name_to_index)
+  const lbann_data::LbannPB& p)
 {
   lbann_comm *comm = model->get_comm();
   bool master = comm->am_world_master();
@@ -324,7 +360,7 @@ void add_layers(
 
   const lbann_data::Model& m = p.model();
   std::vector<lbann_data::Layer> proto_layers;
-  get_proto_layers(proto_layers, m, comm);
+  get_proto_layers(proto_layers, m, comm, true);
 
   Layer *d = 0;
 
@@ -489,7 +525,7 @@ void add_layers(
     else if (layer.has_slice()) {
       const lbann_data::Slice &ell = layer.slice();
       std::string i;
-      std::stringstream s(ell.children());
+      std::stringstream s(layer.children());
       vector<std::string> children;
       while (s >> i) {
         children.push_back(i);
@@ -511,10 +547,10 @@ void add_layers(
     // LAYER: sum
     //////////////////////////////////////////////////////////////////
     else if (layer.has_sum()) {
-      const lbann_data::Sum &ell = layer.sum();
+      //const lbann_data::Sum &ell = layer.sum();
       std::string i;
       std::vector<std::string> parents;
-      std::stringstream s(ell.parents());
+      std::stringstream s(layer.parents());
       while (s >> i) {
         parents.push_back(i);
       }
@@ -527,10 +563,10 @@ void add_layers(
     // LAYER: split
     //////////////////////////////////////////////////////////////////
     else if (layer.has_split()) {
-      const lbann_data::Split &ell = layer.split();
+      //const lbann_data::Split &ell = layer.split();
       std::string i;
       vector<std::string> children;
-      std::stringstream s(ell.children());
+      std::stringstream s(layer.children());
       while (s >> i) {
         children.push_back(i);
       }
@@ -1088,7 +1124,8 @@ void add_layers(
     name_to_index[layer.name()] = layer_id;
   }
 
-  finish_transform_layers(comm, t_layers, name_mapping); 
+  finish_transform_layers(comm, t_layers);
+  add_parent_and_child_pointers(proto_layers, master);
 }
 
 lbann_summary * construct_summarizer(const lbann_data::Model &m, lbann_comm *comm) {
@@ -1121,12 +1158,8 @@ lbann_summary * construct_summarizer(const lbann_data::Model &m, lbann_comm *com
 void init_callbacks(
   lbann_comm *comm,
   lbann::model *model,
-  //lbann::sequential_model *model,
   std::map<execution_mode, lbann::generic_data_reader *>& data_readers,
-  const lbann_data::LbannPB& p,
-  const std::unordered_map<std::string,Layer*> &name_mapping,
-  const std::unordered_map<uint,Layer*> &index_mapping,
-  const std::unordered_map<std::string, uint> &name_to_index)
+  const lbann_data::LbannPB& p)
 {
   std::stringstream err;
   bool master = comm->am_world_master();
@@ -1595,6 +1628,8 @@ model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac, const lban
   //instantiate the network; layers will be added in a separate function call
   if (name == "dnn") {
     model = new deep_neural_network(mini_batch_size, comm, obj, optimizer_fac);
+  } else if (name == "dag_model") {
+    model = new dag_model(mini_batch_size, comm, obj, optimizer_fac);
   } else if (name == "greedy_layerwise_autoencoder") {
     model = new greedy_layerwise_autoencoder(mini_batch_size, comm, obj, optimizer_fac);
   } else {
@@ -2018,9 +2053,17 @@ void set_data_readers_filenames(std::string which, lbann_data::LbannPB& p)
 void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
 {
   bool master = comm->am_world_master();
+  std::stringstream err;
 
   options *opts = options::get();
   lbann_data::Model *model = p.mutable_model();
+
+  if (opts->has_string("dag")) {
+    if (master) {
+      std::cout << "\nchanging model from " << model->name() << " to: dag\n\n";
+    }
+    model->set_name("dag");
+  }
 
   if (opts->has_string("data_filedir_train") or opts->has_string("data_filename_train")
       or opts->has_string("label_filename_train")) {
@@ -2125,7 +2168,6 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
       a->set_nesterov(nesterov);
       opt->set_allocated_sgd(a);
     } else {
-      std::stringstream err;
       err << __FILE__ << " " << __LINE__
           << " :: unknown string for --optimizer: " << opt_string
           << " should be on of: adagrad, adam, hypergradient_adam, rmsprop, sgd";
@@ -2220,6 +2262,7 @@ void print_help(lbann::lbann_comm *comm)
        "        e.g: --use_cudnn, then a value of '1' is assigned)\n"
        "\n"
        "General:\n"
+       "  --dag_model\n"
        "  --mini_batch_size=<int>\n"
        "  --num_epochs=<int>\n"
        "  --block_size=<int>\n"

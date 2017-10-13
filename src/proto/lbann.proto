@@ -321,7 +321,8 @@ message CallbackGradientCheck {
 
 message Layer {
    string name = 50; 
-   string parent = 51;
+   string parents = 151;
+   string children = 152;
    string data_layout = 52;
    bool num_neurons_from_data_reader = 53;
 
@@ -484,17 +485,14 @@ message Concatenation {
 }
 
 message Slice {
-  string children = 1; //should be space-separated list of indices, e.g, "2 6 7"
   int64 slice_axis = 2;
   string slice_points = 3; //should be space-separated list of ints, e.g, "2 6 7"
 }
 
 message Split {
-  string children = 1; //should be space-separated list of indices, e.g, "2 6 7"
 }
 
 message Sum {
-  string parents = 1; //should be space-separated list of indices, e.g, "2 6 7"
 }
 
 /////////////////////

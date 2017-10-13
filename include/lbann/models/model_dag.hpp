@@ -62,6 +62,9 @@ class dag_model : public model {
     m_layers = layers;
   }
 
+  virtual dag_model* copy() const override { return new dag_model(*this); }
+
+
   /** Add layer to model.
    *  It is assumed that the layer's parent and child pointers are
    *  initialized externally. The model takes responsibility for
@@ -98,6 +101,12 @@ class dag_model : public model {
    *  expensive.
    */
   virtual void summarize_matrices(lbann_summary& summarizer) override;
+
+  virtual std::string name() const override { return "dag_model"; }
+
+  //@todo I copied this from sequential_model; at_epoch_start is pure abstract
+  //      in model; can we move the definition below, and in sequential_model, to model?
+  virtual bool at_epoch_start() override;
 
  private:
   /** List of layers.

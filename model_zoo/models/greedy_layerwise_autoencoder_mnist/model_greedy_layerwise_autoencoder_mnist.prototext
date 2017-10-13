@@ -42,7 +42,8 @@ model {
   #######
   layer {
     name: "1"
-    parent: "1"
+    parents: "1"
+    children: ""
     data_layout: "model_parallel"
     input_distributed_minibatch {
     }
@@ -52,7 +53,8 @@ model {
   #################
   layer {
     name: "2"
-    parent: "1"
+    parents: "1"
+    children: ""
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 100
@@ -65,7 +67,8 @@ model {
   #########
   layer {
     name: "3"
-    parent: "2"
+    parents: "2"
+    children: ""
     data_layout: "model_parallel"
     sigmoid {
     }
@@ -75,7 +78,8 @@ model {
   #################
   layer {
     name: "5"
-    parent: "3"
+    parents: "3"
+    children: ""
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 784
@@ -88,7 +92,8 @@ model {
   #########
   layer {
     name: "6"
-    parent: "5"
+    parents: "5"
+    children: ""
     data_layout: "model_parallel"
     sigmoid {
     }
@@ -98,7 +103,8 @@ model {
   #################
   layer {
     name: "19"
-    parent: "18"
+    parents: "18"
+    children: ""
     data_layout: "model_parallel"
     reconstruction {
       original_layer: 1
@@ -109,7 +115,8 @@ model {
   #################
   layer {
     name: "8"
-    parent: "6"
+    parents: "6"
+    children: ""
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 50
@@ -122,7 +129,8 @@ model {
   ######
   layer {
     name: "9"
-    parent: "8"
+    parents: "8"
+    children: ""
     data_layout: "model_parallel"
     relu {
     }
@@ -132,7 +140,8 @@ model {
   #################
   layer {
     name: "10"
-    parent: "9"
+    parents: "9"
+    children: ""
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 100
@@ -145,7 +154,8 @@ model {
   #########
   layer {
     name: "6"
-    parent: "5"
+    parents: "5"
+    children: ""
     data_layout: "model_parallel"
     sigmoid {
     }
@@ -155,7 +165,8 @@ model {
   #################
   layer {
     name: "19"
-    parent: "18"
+    parents: "18"
+    children: ""
     data_layout: "model_parallel"
     reconstruction {
       original_layer: 6

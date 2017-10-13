@@ -39,7 +39,8 @@ model {
   #######
   layer {
     name: "1"
-    parent: "1"
+    parents: "1"
+    children: ""
     data_layout: "model_parallel"
     input_distributed_minibatch {
     }
@@ -49,7 +50,8 @@ model {
   #################
   layer {
     name: "2"
-    parent: "1"
+    parents: "1"
+    children: ""
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 1000
@@ -62,7 +64,8 @@ model {
   ######
   layer {
     name: "3"
-    parent: "2"
+    parents: "2"
+    children: ""
     data_layout: "model_parallel"
     relu {
     }
@@ -72,7 +75,8 @@ model {
   #################
   layer {
     name: "5"
-    parent: "3"
+    parents: "3"
+    children: ""
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 500
@@ -85,7 +89,8 @@ model {
   #######
   layer {
     name: "6"
-    parent: "5"
+    parents: "5"
+    children: ""
     data_layout: "model_parallel"
     relu {
     }
@@ -95,7 +100,8 @@ model {
   #################
   layer {
     name: "8"
-    parent: "6"
+    parents: "6"
+    children: ""
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 250
@@ -109,7 +115,8 @@ model {
   #######
   layer {
     name: "9"
-    parent: "8"
+    parents: "8"
+    children: ""
     data_layout: "model_parallel"
     relu {
     }
@@ -119,7 +126,8 @@ model {
   #################
   layer {
     name: "10"
-    parent: "9"
+    parents: "9"
+    children: ""
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 30
@@ -132,7 +140,8 @@ model {
   #################
   layer {
     name: "11"
-    parent: "10"
+    parents: "10"
+    children: ""
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 250
@@ -145,7 +154,8 @@ model {
   #######
   layer {
     name: "12"
-    parent: "11"
+    parents: "11"
+    children: ""
     data_layout: "model_parallel"
     relu {
     }
@@ -155,7 +165,8 @@ model {
   #################
   layer {
     name: "13"
-    parent: "12"
+    parents: "12"
+    children: ""
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 500
@@ -169,7 +180,8 @@ model {
   #######
   layer {
     name: "14"
-    parent: "13"
+    parents: "13"
+    children: ""
     data_layout: "model_parallel"
     relu {
     }
@@ -179,7 +191,8 @@ model {
   #################
   layer {
     name: "15"
-    parent: "14"
+    parents: "14"
+    children: ""
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 1000
@@ -192,7 +205,8 @@ model {
   #######
   layer {
     name: "16"
-    parent: "15"
+    parents: "15"
+    children: ""
     data_layout: "model_parallel"
     relu {
     }
@@ -202,7 +216,8 @@ model {
   #################
   layer {
     name: "17"
-    parent: "16"
+    parents: "16"
+    children: ""
     data_layout: "model_parallel"
     num_neurons_from_data_reader: true
     fully_connected {
@@ -216,7 +231,8 @@ model {
   #######
   layer {
     name: "18"
-    parent: "17"
+    parents: "17"
+    children: ""
     data_layout: "model_parallel"
     sigmoid {
     }
@@ -228,7 +244,8 @@ model {
   #################
   layer {
     name: "19"
-    parent: "18"
+    parents: "18"
+    children: ""
     data_layout: "model_parallel"
     reconstruction {
       original_layer: 1

@@ -389,4 +389,11 @@ bool dag_model::evaluate_mini_batch() {
   return data_set_processed;
 }
 
+bool dag_model::at_epoch_start() { 
+    // use mini batch index in data reader to signify start of epoch
+    io_layer *input = (io_layer *) m_layers[0];
+    bool flag = input->at_new_epoch();
+    return flag;
+}
+
 }  // namespace lbann

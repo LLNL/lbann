@@ -38,7 +38,8 @@ model {
   #######
   layer {
     name: "1"
-    parent: "1"
+    parents: "1"
+    children: ""
     data_layout: "data_parallel"
     input_partitioned_minibatch {
     }
@@ -49,7 +50,8 @@ model {
   #############
   layer {
     name: "2"
-    parent: "1"
+    parents: "1"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -69,7 +71,8 @@ model {
   ######
   layer {
     name: "3"
-    parent: "2"
+    parents: "2"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
@@ -82,7 +85,8 @@ model {
   #############
   layer {
     name: "6"
-    parent: "4"
+    parents: "4"
+    children: ""
     data_layout: "data_parallel"
     deconvolution {
       num_dims: 2
@@ -102,7 +106,8 @@ model {
   #######
   layer {
     name: "7"
-    parent: "6"
+    parents: "6"
+    children: ""
     data_layout: "data_parallel"
     sigmoid {
     }
@@ -114,7 +119,8 @@ model {
   #################
   layer {
     name: "10"
-    parent: "9"
+    parents: "9"
+    children: ""
     data_layout: "data_parallel"
     reconstruction {
       original_layer: 1

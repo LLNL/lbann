@@ -162,17 +162,8 @@ int main(int argc, char *argv[]) {
     // Initalize model
     // @todo: not all callbacks code is in place
     model *model = init_model(comm, optimizer_fac, pb);
-    //sequential_model *model = init_model(comm, optimizer_fac, pb);
-
-    //maps: layer name (from prototext) to the lbann::layer
-    std::unordered_map<std::string, Layer*> name_mapping;
-    //maps: layer index (wrt lbann::sequential_model) to the lbann::layer
-    std::unordered_map<uint, Layer*> index_mapping;
-    //maps: layer name (from prototext)  to layer index (wrt lbann::sequential_model)
-    std::unordered_map<std::string, uint> name_to_index;
-
-    add_layers(model, data_readers, cudnn, pb, name_mapping, index_mapping, name_to_index);
-    init_callbacks(comm, model, data_readers, pb, name_mapping, index_mapping, name_to_index);
+    add_layers(model, data_readers, cudnn, pb);
+    init_callbacks(comm, model, data_readers, pb);
     model->setup();
 
     // restart model from checkpoint if we have one
