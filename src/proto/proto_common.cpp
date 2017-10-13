@@ -1628,10 +1628,13 @@ model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac, const lban
   //instantiate the network; layers will be added in a separate function call
   if (name == "dnn") {
     model = new deep_neural_network(mini_batch_size, comm, obj, optimizer_fac);
+    if (master) std::cout << "instantiating deep_neural_network\n";
   } else if (name == "dag_model") {
     model = new dag_model(mini_batch_size, comm, obj, optimizer_fac);
+    if (master) std::cout << "instantiating dag_model\n";
   } else if (name == "greedy_layerwise_autoencoder") {
     model = new greedy_layerwise_autoencoder(mini_batch_size, comm, obj, optimizer_fac);
+    if (master) std::cout << "instantiating greedy_layerwise_autoencoder\n";
   } else {
     if (master) {
       err << __FILE__ << " " << __LINE__
@@ -2058,11 +2061,11 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
   options *opts = options::get();
   lbann_data::Model *model = p.mutable_model();
 
-  if (opts->has_string("dag")) {
+  if (opts->has_string("dag_model")) {
     if (master) {
       std::cout << "\nchanging model from " << model->name() << " to: dag\n\n";
     }
-    model->set_name("dag");
+    model->set_name("dag_model");
   }
 
   if (opts->has_string("data_filedir_train") or opts->has_string("data_filename_train")
