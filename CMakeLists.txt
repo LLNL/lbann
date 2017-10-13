@@ -328,8 +328,8 @@ if(WITH_TOPO_AWARE)
   find_package(HWLOC)
 
   if (HWLOC_FOUND)
+    target_include_directories(src SYSTEM PUBLIC ${HWLOC_INCLUDE_PATH})
     target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} ${HWLOC_LIBRARIES})
-    target_include_directories(lbann PUBLIC ${HWLOC_INCLUDE_PATH})
   else()
     message(FATAL_ERROR "Requested WITH_TOPO_AWARE but HWLOC not found. "
       "Try specifying HWLOC_DIR as the root of an HWLOC install. "
