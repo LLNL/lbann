@@ -38,7 +38,7 @@ function HELP {
   exit 1
 }
 
-while getopts "b:c:de:ghm:t:" opt; do
+while getopts "b:c:de:ghm:st:" opt; do
   case $opt in
     b)
       BLAS=$OPTARG
