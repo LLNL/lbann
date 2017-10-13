@@ -118,12 +118,7 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus)
 
 cudnn_manager::~cudnn_manager() {
   // Free work spaces
-  for(size_t i=0u; i<m_gpus.size(); ++i) {
-    if(m_work_space_sizes[i]) {
-      FORCE_CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-      FORCE_CHECK_CUDA(cudaFree(m_work_spaces[i]));
-    }
-  }
+  free_work_spaces();
 
   // Destroy cuDNN handles
   for(size_t i=0u; i<m_gpus.size(); ++i) {
@@ -143,6 +138,9 @@ cudnn_manager::~cudnn_manager() {
 void cudnn_manager::cudnn_manager::allocate_on_gpus(std::vector<DataType *>& gpu_data,
                                                     int height,
                                                     int width_per_gpu) {
+
+  // Free work spaces
+  free_work_spaces();
 
   if(!gpu_data.empty()) {
     // Check that list of pointers has valid number of entries
@@ -171,6 +169,9 @@ void cudnn_manager::cudnn_manager::allocate_on_gpus(std::vector<DataType *>& gpu
 }
 
 void cudnn_manager::cudnn_manager::deallocate_on_gpus(std::vector<DataType *>& gpu_data) {
+
+  // Free work spaces
+  free_work_spaces();
 
   // Stop if list of pointers is empty
   if(gpu_data.empty()) {
@@ -407,25 +408,6 @@ void cudnn_manager::cudnn_manager::synchronize_all() {
   }
 }
 
-void cudnn_manager::print_version() const {
-  std::cout << "cudnnGetVersion() : " << (int)cudnnGetVersion() << " , "
-            << "CUDNN_VERSION from cudnn.h : " << CUDNN_VERSION
-            << std::endl;
-}
-
-cudnnDataType_t cudnn_manager::get_cudnn_data_type() const {
-  switch(sizeof(DataType)) {
-  case 2:
-    return CUDNN_DATA_HALF;
-  case 4:
-    return CUDNN_DATA_FLOAT;
-  case 8:
-    return CUDNN_DATA_DOUBLE;
-  default:
-    throw lbann::lbann_exception("cudnn_wrapper: invalid data type for cuDNN");
-  }
-}
-
 int cudnn_manager::get_num_gpus() const {
   return m_num_gpus;
 }
@@ -495,14 +477,11 @@ const cublasHandle_t& cudnn_manager::get_cublas_handle(int i) const {
 }
 
 std::vector<void *> cudnn_manager::get_work_spaces() {
+  std::vector<void *> work_spaces;
   for(int i=0; i<m_num_gpus; ++i) {
-    if(m_work_spaces[i] == nullptr && m_work_space_sizes[i] > 0) {
-      CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-      FORCE_CHECK_CUDA(cudaMalloc((void **) &m_work_spaces[i],
-                                  m_work_space_sizes[i]));
-    }
+    work_spaces.push_back(get_work_space(i));
   }
-  return m_work_spaces;
+  return work_spaces;
 }
 
 void *cudnn_manager::get_work_space(int i) {
@@ -523,19 +502,49 @@ size_t cudnn_manager::get_work_space_size(int i) const {
 }
 
 void cudnn_manager::set_work_space_size(int i, size_t size) {
-  if(m_work_spaces.empty()) {
-    m_work_spaces.assign(m_num_gpus, nullptr);
-  }
-  if(m_work_space_sizes.empty()) {
-    m_work_space_sizes.assign(m_num_gpus, 0);
-  }
   if(m_work_space_sizes[i] != size) {
     m_work_space_sizes[i] = size;
     if(m_work_spaces[i] != nullptr) {
       CHECK_CUDA(cudaSetDevice(m_gpus[i]));
       CHECK_CUDA(cudaFree(m_work_spaces[i]));
-      m_work_spaces[i] = nullptr;
     }
+    m_work_spaces[i] = nullptr;
+  }
+}
+
+void cudnn_manager::set_maximum_work_space_size(int i) {
+
+  // Search parameters for work space size
+  const size_t min_work_space_size = 1024;
+  const double decay_factor = 0.8;
+  size_t free_memory, total_memory;
+  CHECK_CUDA(cudaMemGetInfo(&free_memory, &total_memory));
+
+  // Clear work space
+  set_work_space_size(i, 0);
+
+  // Try allocating work spaces until we find a valid size
+  size_t work_space_size = free_memory;
+  void* work_space = nullptr;
+  while(work_space_size > min_work_space_size && work_space == nullptr) {
+    CHECK_CUDA(cudaSetDevice(m_gpus[i]));
+    cudaError_t status = cudaMalloc(&work_space, work_space_size);
+    if(status != cudaErrorMemoryAllocation) {
+      FORCE_CHECK_CUDA(status);
+      m_work_spaces[i] = work_space;
+      m_work_space_sizes[i] = work_space_size;
+    }
+    else {
+      work_space = nullptr;
+    }
+    work_space_size = decay_factor * work_space_size;
+  }
+
+}
+
+void cudnn_manager::free_work_spaces() {
+  for(int i=0; i<m_num_gpus; ++i) {
+    set_work_space_size(i, 0);
   }
 }
 
@@ -543,6 +552,7 @@ std::vector<DataType*> cudnn_manager::copy(const std::vector<DataType*>& gpu_dat
                                            int height,
                                            int width_per_gpu,
                                            int leading_dim) {
+  free_work_spaces();
   leading_dim = std::max(leading_dim, height);
   std::vector<DataType*> output_gpu_data;
   if(!gpu_data.empty()) {
@@ -663,6 +673,58 @@ void cudnn_manager::check_error() {
       throw lbann::lbann_exception("CUDA error");
     }
   }
+}
+
+void cudnn::print_version() {
+  std::cout << "cudnnGetVersion() : " << (int)cudnnGetVersion() << " , "
+            << "CUDNN_VERSION from cudnn.h : " << CUDNN_VERSION
+            << std::endl;
+}
+
+cudnnDataType_t cudnn::get_cudnn_data_type() {
+  switch(sizeof(DataType)) {
+  case 2:
+    return CUDNN_DATA_HALF;
+  case 4:
+    return CUDNN_DATA_FLOAT;
+  case 8:
+    return CUDNN_DATA_DOUBLE;
+  default:
+    throw lbann::lbann_exception("cudnn_wrapper: invalid data type for cuDNN");
+  }
+}
+
+void cudnn::set_tensor_cudnn_desc(cudnnTensorDescriptor_t& desc,
+                                  int num_samples,
+                                  const std::vector<int>& sample_dims) {
+
+  // Create tensor descriptor if needed
+  if(desc == nullptr) {
+    CHECK_CUDNN(cudnnCreateTensorDescriptor(&desc));
+  }
+
+  // Determine tensor dimensions
+  // Note: cuDNN tensors should have at least 4 dimension
+  std::vector<int> dims = sample_dims;
+  dims.insert(dims.begin(), num_samples);
+  while(dims.size() < 4) {
+    dims.push_back(1);
+  }
+
+  // Determine tensor strides
+  std::vector<int> strides(dims.size());
+  strides.back() = 1;
+  for(int i=dims.size()-1; i>0; --i) {
+    strides[i-1] = strides[i] * dims[i];
+  }
+
+  // Set cuDNN tensor descriptor
+  CHECK_CUDNN(cudnnSetTensorNdDescriptor(desc,
+                                         cudnn::get_cudnn_data_type(),
+                                         dims.size(),
+                                         dims.data(),
+                                         strides.data()));
+
 }
 
 void cudnn::copy_tensor_cudnn_desc(const cudnnTensorDescriptor_t& src,

@@ -361,7 +361,7 @@ template<> inline void softmax_layer<data_layout::DATA_PARALLEL>::fp_compute_cud
     const Int local_height = activations_local.Height();
     CHECK_CUDNN(cudnnSetTensor4dDescriptor(m_cudnn_desc,
                                            CUDNN_TENSOR_NCHW,
-                                           this->m_cudnn->get_cudnn_data_type(),                                           
+                                           cudnn::get_cudnn_data_type(),                                           
                                            this->m_mini_batch_size_per_gpu,
                                            local_height, 1, 1));
 
