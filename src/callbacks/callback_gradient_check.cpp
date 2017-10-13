@@ -94,6 +94,9 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
     if (layer == nullptr) {
       continue;
     }
+    if (comm->am_world_master()) {
+      std::cout << "Checking layer " << layer_index << std::endl;
+    }
 
     // Get weights and gradients
     auto& weights = layer->get_weights();
@@ -102,55 +105,78 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
     // Iterate through weights in current layer
     for (El::Int col = 0; col < weights.Width(); ++col) {
       for (El::Int row = 0; row < weights.Height(); ++row) {
-        const DataType initial_weight = weights.Get(row, col);
+        const bool weight_local = weights.IsLocal(row, col);
+        DataType initial_weight = DataType(0);
+        El::Int local_row = 0;
+        El::Int local_col = 0;
+        if (weight_local) {
+          local_row = weights.LocalRow(row);
+          local_col = weights.LocalCol(col);
+          initial_weight = weights.GetLocal(local_row, local_col);
+        }
 
         // Compute objective function values
-        weights.Set(row, col, initial_weight + 2 * step_size);
+        if (weight_local) {
+          weights.SetLocal(local_row, local_col,
+                           initial_weight + 2 * step_size);
+        }
         const DataType f_2h = compute_objective_function(m);
-        weights.Set(row, col, initial_weight + step_size);
+        if (weight_local) {
+          weights.SetLocal(local_row, local_col, initial_weight + step_size);
+        }
         const DataType f_h = compute_objective_function(m);
-        weights.Set(row, col, initial_weight - step_size);
+        if (weight_local) {
+          weights.SetLocal(local_row, local_col, initial_weight - step_size);
+        }
         const DataType f_nh = compute_objective_function(m);
-        weights.Set(row, col, initial_weight - 2 * step_size);
+        if (weight_local) {
+          weights.SetLocal(local_row, local_col,
+                           initial_weight - 2 * step_size);
+        }
         const DataType f_n2h = compute_objective_function(m);
-        
-        // Compute relative error in gradient
-        const DataType analytical_gradient = weights_gradient.Get(row, col);
-        const DataType numerical_gradient
-          = (- f_2h + 8 * f_h - 8 * f_nh + f_n2h) / (12 * step_size);
-        const DataType error = std::fabs(analytical_gradient - numerical_gradient);
-        DataType relative_error = DataType(0);
-        if (error != DataType(0)) {
-          relative_error = error / std::max(std::fabs(analytical_gradient),
-                                            std::fabs(numerical_gradient));
-        }
-        
-        // Print warning if relative error is large
-        if (error > expected_error && comm->am_world_master()) {
-          std::cout << "  GRADIENT ERROR: Layer " << layer_index << ", "
-                    << "entry (" << row << "," << col << ")" << std::endl;
-          std::cout << "    Weight              = " << initial_weight << std::endl
-                    << "    Analytical gradient = " << analytical_gradient << std::endl
-                    << "    Numerical gradient  = " << numerical_gradient << std::endl
-                    << "    Error               = " << error << std::endl
-                    << "    Relative error      = " << relative_error << std::endl;
-          if (m_fail_on_error) {
-            throw lbann_exception("callback_gradient_check: found large error in gradient");
+
+        // Compute relative error in gradient.
+        // Only the owner of this entry participates.
+        if (weights.DistRank() == weights.Owner(row, col)) {
+          const DataType analytical_gradient =
+            weights_gradient.GetLocal(local_row, local_col);
+          const DataType numerical_gradient
+            = (- f_2h + 8 * f_h - 8 * f_nh + f_n2h) / (12 * step_size);
+          const DataType error = std::fabs(analytical_gradient - numerical_gradient);
+          DataType relative_error = DataType(0);
+          if (error != DataType(0)) {
+            relative_error = error / std::max(std::fabs(analytical_gradient),
+                                              std::fabs(numerical_gradient));
           }
-        }
-        else if (m_verbose && comm->am_world_master()) {
-          std::cout << "  Layer " << layer_index << ", "
-                    << "entry (" << row << "," << col << ")" << std::endl;
-          std::cout << "    Weight              = " << initial_weight << std::endl
-                    << "    Analytical gradient = " << analytical_gradient << std::endl
-                    << "    Numerical gradient  = " << numerical_gradient << std::endl
-                    << "    Error               = " << error << std::endl
-                    << "    Relative error      = " << relative_error << std::endl;
+        
+          // Print warning if relative error is large
+          if (error > expected_error) {
+            std::cout << "  GRADIENT ERROR: Layer " << layer_index << ", "
+                      << "entry (" << row << "," << col << ")" << std::endl;
+            std::cout << "    Weight              = " << initial_weight << std::endl
+                      << "    Analytical gradient = " << analytical_gradient << std::endl
+                      << "    Numerical gradient  = " << numerical_gradient << std::endl
+                      << "    Error               = " << error << std::endl
+                      << "    Relative error      = " << relative_error << std::endl;
+            if (m_fail_on_error) {
+              throw lbann_exception("callback_gradient_check: found large error in gradient");
+            }
+          }
+          else if (m_verbose) {
+            std::cout << "  Layer " << layer_index << ", "
+                      << "entry (" << row << "," << col << ")" << std::endl;
+            std::cout << "    Weight              = " << initial_weight << std::endl
+                      << "    Analytical gradient = " << analytical_gradient << std::endl
+                      << "    Numerical gradient  = " << numerical_gradient << std::endl
+                      << "    Error               = " << error << std::endl
+                      << "    Relative error      = " << relative_error << std::endl;
+          }
         }
 
         // Reset weight
-        weights.Set(row, col, initial_weight);
-        
+        if (weight_local) {
+          weights.SetLocal(local_row, local_col, initial_weight);
+        }        
       }
     }
 
