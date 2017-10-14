@@ -22,40 +22,46 @@ std::unordered_map<uint, Layer*> index_mapping;
 //maps: layer name (from prototext)  to layer index (wrt lbann::sequential_model)
 std::unordered_map<std::string, uint> name_to_index;
 
-void add_parent_and_child_pointers(std::vector<lbann_data::Layer> &proto_layers, bool master) {
-  std::unordered_map<std::string, std::unordered_set<std::string> > name_to_parents;
-  std::unordered_map<std::string, std::unordered_set<std::string> > name_to_children;
+void add_parent_and_child_pointers(std::vector<lbann_data::Layer> &proto_layers) {
+  std::string name;
+  std::stringstream ss;
 
-  std::string w;
+  // Set each layer's parents and children
+  // Note: This must be done first to preserve order of
+  // parents/children
   for (size_t i=0; i<proto_layers.size(); i++) {
-    std::string name = proto_layers[i].name();
-    std::string parents = proto_layers[i].parents();
-    std::string children = proto_layers[i].children();
-    std::stringstream s1(parents);
-    std::stringstream s2(children);
-    while (s1 >> w) {
-      name_to_parents[name].insert(w);
-      name_to_children[w].insert(name);
+    Layer *layer = name_mapping[proto_layers[i].name()];
+    ss.clear();
+    ss.str(proto_layers[i].parents());
+    while (ss >> name) {
+      Layer *parent_layer = name_mapping[name];
+      layer->add_parent_layer(parent_layer);
     }
-    while (s2 >> w) {
-      name_to_parents[w].insert(name);
-      name_to_children[name].insert(w);
-    }
-  }
-
-  for (auto t : name_to_parents) {
-    Layer *layer = name_mapping[t.first];
-    for (auto t2 : t.second) {
-      layer->add_parent_layer(name_mapping[t2]);
+    ss.clear();
+    ss.str(proto_layers[i].children());
+    while (ss >> name) {
+      Layer *child_layer = name_mapping[name];
+      layer->add_child_layer(child_layer);
     }
   }
 
-  for (auto t : name_to_children) {
-    Layer *layer = name_mapping[t.first];
-    for (auto t2 : t.second) {
-      layer->add_child_layer(name_mapping[t2]);
+  // Make sure parent and child relationships are reciprocated
+  for (size_t i=0; i<proto_layers.size(); i++) {
+    Layer *layer = name_mapping[proto_layers[i].name()];
+    ss.clear();
+    ss.str(proto_layers[i].parents());
+    while (ss >> name) {
+      Layer *parent_layer = name_mapping[name];
+      parent_layer->add_child_layer(layer);
+    }
+    ss.clear();
+    ss.str(proto_layers[i].children());
+    while (ss >> name) {
+      Layer *child_layer = name_mapping[name];
+      child_layer->add_parent_layer(layer);
     }
   }
+
 }
 
 lbann_callback_imcomm::comm_type get_comm_type(const string &s, bool master)
@@ -153,85 +159,12 @@ data_layout get_data_layout(const string& s, const char *file, int line, bool ma
   }
 }
 
-struct transform_layers {
-  transform_layers(Layer* layer, std::vector<std::string> &childs)
-    : the_layer(layer), children(childs) {}
-
-  Layer * the_layer;
-  std::vector<std::string> children;  //may also be parents
-};
-
-
-void finish_transform_layers(lbann_comm *comm, std::vector<transform_layers> &layers) {
-  bool master = comm->am_world_master();
-  
-  if (master) {
-    for (size_t h=0; h<layers.size(); h++) {
-      for (size_t k = 0; k<layers[h].children.size(); k++) {
-        std::string name = layers[h].children[k];
-        if (name_mapping.find(name) == name_mapping.end()) {
-          std::stringstream err;
-          err << __FILE__ << " " << __LINE__ << " :: "
-              << " failed to find layer with the prototext name: "
-              << name << " which is either a child or a parent in a transform layer";
-          throw lbann_exception(err.str());
-        }
-      }
-    }
-  }
-
-  for (size_t h=0; h<layers.size(); h++) {
-    std::string name = layers[h].the_layer->get_name();
-    if (name == "slice") {
-      slice_layer<> *s = (slice_layer<>*)layers[h].the_layer;
-      for (size_t k = 0; k<layers[h].children.size(); k++) {
-        std::string child_id = layers[h].children[k];
-        Layer * child = name_mapping[child_id];
-        s->add_child_layer(child);
-      }
-    } else if (name == "split") {
-      for (size_t k = 0; k<layers[h].children.size(); k++) {
-        split_layer<> *s = (split_layer<>*)layers[h].the_layer;
-        std::string child_id = layers[h].children[k];
-        Layer * child = name_mapping[child_id];
-        s->add_child_layer(child);
-      }
-    } else if (name == "sum") {
-      for (size_t k = 0; k<layers[h].children.size(); k++) {
-        sum_layer<> *s = (sum_layer<>*)layers[h].the_layer;
-        std::string parent_id = layers[h].children[k];
-        Layer * parent = name_mapping[parent_id];
-        s->add_parent_layer(parent);
-      }
-    } else {
-      if (master) {
-        std::stringstream err;
-        err << __FILE__ << " " << __LINE__ << " :: unknown layer name: " << name
-            << " should be: slice, split, sum";
-        throw lbann_exception(err.str());
-      }
-    }
-  }
-}
-
 void get_proto_layers(std::vector<lbann_data::Layer> &proto_layers, const lbann_data::Model& m, lbann_comm *comm, bool is_sequential) {
   bool master = comm->am_world_master();
   std::stringstream err;
   proto_layers.clear();
   int size = m.layer_size();
 
-  if (not is_sequential) {
-    for (int j=0; j<size; j++) {
-      const lbann_data::Layer& layer = m.layer(j);
-      proto_layers.push_back(layer);
-    }
-    return;
-  }
-
-  //fill in name_to_parent map, name_to_layer map, and check for duplicate names
-  std::set<std::string> n;
-  std::unordered_map<std::string, std::string> name_to_parent;
-  std::unordered_map<std::string, lbann_data::Layer> name_to_layer;
   for (int j=0; j<size; j++) {
     const lbann_data::Layer& layer = m.layer(j);
     std::string name = layer.name();
@@ -239,105 +172,23 @@ void get_proto_layers(std::vector<lbann_data::Layer> &proto_layers, const lbann_
     //ensure no whitespace in name
     std::stringstream s;
     s << name;
-    std::string testme;
-    int sanity = 0;
-    while (s >> testme) {
-      ++sanity;
+    std::string token;
+    int num_tokens = 0;
+    while (s >> token) {
+      ++num_tokens;
     }
-    if (sanity != 1) {
+    if (num_tokens != 1) {
       if (master) {
         err << __FILE__ << " " << __LINE__ << " :: "
             << " error in layer name: " << name
             << ". Must be a single token (no whitespace);"
-            << " token count: " << sanity << " name: " << name;
+            << " token count: " << num_tokens << " name: " << name;
         throw lbann_exception(err.str());
       }
     }
 
-    std::string parent = layer.parents();
-    name_to_layer[name] = layer;
-    if (n.find(name) != n.end()) {
-      if (master) {
-        err << __FILE__ << " " << __LINE__ << " :: "
-            << " duplicate layer name: " << name;
-        throw lbann_exception(err.str());
-      }
-    }
-    n.insert(name);
-    name_to_parent[name] = parent;
+    proto_layers.push_back(layer);
   }
-
-  //find the input layer (first layer)
-  std::string input("none");
-  for (auto it : name_to_parent) {
-    if (it.first == it.second) {
-      if (input != "none") {
-       if (master) {
-        err << __FILE__ << " " << __LINE__ << " :: "
-            << " there are at least two layers where name = parent;"
-            << " there should be exactly one, which is the input layer";
-        throw lbann_exception(err.str());
-       }  
-      }
-      input = it.first;
-    }
-  }
-  if (input == "none") {
-    if (master) {
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "there should be exactly one layer -- the input layer --"
-          << " with name = parent; we didn't find any";
-      throw lbann_exception(err.str());
-    }
-  }
-
-  //find the output layer (final layer)
-  std::unordered_set<std::string> parents;
-  for (auto it : name_to_parent) {
-    parents.insert(it.second);
-  }
-  std::string tail = "none";
-  for (auto it : name_to_parent) {
-    if (parents.find(it.first) == parents.end()) {
-      if (tail != "none") {
-        if (master) {
-          err << __FILE__ << " " << __LINE__ << " :: "
-              << "there should be exactly one layer that is not a parent"
-              << " to any other layer; we found two: "
-              << tail << " " << it.first;
-          throw lbann_exception(err.str());
-        }
-      }
-      tail = it.first;
-    }
-  }
-  if (tail == "none") {
-    if (master) {
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "there should be exactly one layer that is not a parent;"
-          << " we didn't find any";
-      throw lbann_exception(err.str());
-    }
-  }
-
-  std::string cur = tail;
-  proto_layers.push_back(name_to_layer[cur]);
-  do {
-    cur = name_to_parent[cur];
-    proto_layers.push_back(name_to_layer[cur]);
-  } while (name_to_parent[cur] != cur);
-
-  if (proto_layers.size() != name_to_parent.size()) {
-    if (master) {
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "there are layers in your prototext file that were not added"
-          << " to the model; please check your 'name' and 'parent' fields.\n"
-          << " proto_layers.size(): " << proto_layers.size()
-          << " name_to_parent.size(): " << name_to_parent.size();
-      throw lbann_exception(err.str());
-    }
-  }
-  std::reverse(proto_layers.begin(), proto_layers.end());
 }
 
 
@@ -363,10 +214,6 @@ void add_layers(
   get_proto_layers(proto_layers, m, comm, true);
 
   Layer *d = 0;
-
-  //need to keep track of slice and other layers, so we can push back
-  //their children after all layers have been added
-  std::vector<transform_layers> t_layers;
 
   for (size_t layer_id = 0; layer_id < proto_layers.size(); layer_id++) {
     const lbann_data::Layer& layer = proto_layers[layer_id];
@@ -520,59 +367,39 @@ void add_layers(
     }
 
     //////////////////////////////////////////////////////////////////
+    // LAYER: concatenation
+    //////////////////////////////////////////////////////////////////
+    else if (layer.has_concatenation()) {
+      const lbann_data::Concatenation &ell = layer.concatenation();
+      d = new concatenation_layer<>(layer_id, comm, ell.concatenation_axis(), cudnn);
+    }
+
+    //////////////////////////////////////////////////////////////////
     // LAYER: slice
     //////////////////////////////////////////////////////////////////
     else if (layer.has_slice()) {
       const lbann_data::Slice &ell = layer.slice();
-      std::string i;
-      std::stringstream s(layer.children());
-      vector<std::string> children;
-      while (s >> i) {
-        children.push_back(i);
-      }
-
-      s.clear();
-      s.str(ell.slice_points());
+      std::stringstream s(ell.slice_points());
       vector<int> slice_points;
-      int ii;
-      while (s >> ii) {
-        slice_points.push_back(ii);
+      int i;
+      while (s >> i) {
+        slice_points.push_back(i);
       }
       d = new slice_layer<>(layer_id, comm, ell.slice_axis(), slice_points, cudnn);
-      transform_layers record(d, children);
-      t_layers.push_back(record);
     }
 
     //////////////////////////////////////////////////////////////////
     // LAYER: sum
     //////////////////////////////////////////////////////////////////
     else if (layer.has_sum()) {
-      //const lbann_data::Sum &ell = layer.sum();
-      std::string i;
-      std::vector<std::string> parents;
-      std::stringstream s(layer.parents());
-      while (s >> i) {
-        parents.push_back(i);
-      }
       d = new sum_layer<>(layer_id, comm, cudnn);
-      transform_layers record(d, parents);
-      t_layers.push_back(record);
     }
 
     //////////////////////////////////////////////////////////////////
     // LAYER: split
     //////////////////////////////////////////////////////////////////
     else if (layer.has_split()) {
-      //const lbann_data::Split &ell = layer.split();
-      std::string i;
-      vector<std::string> children;
-      std::stringstream s(layer.children());
-      while (s >> i) {
-        children.push_back(i);
-      }
       d = new split_layer<>(layer_id, comm, cudnn);
-      transform_layers record(d, children);
-      t_layers.push_back(record);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -1124,8 +951,7 @@ void add_layers(
     name_to_index[layer.name()] = layer_id;
   }
 
-  finish_transform_layers(comm, t_layers);
-  add_parent_and_child_pointers(proto_layers, master);
+  add_parent_and_child_pointers(proto_layers);
 }
 
 lbann_summary * construct_summarizer(const lbann_data::Model &m, lbann_comm *comm) {

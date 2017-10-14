@@ -187,10 +187,11 @@ void dag_model::topologically_sort_layers() {
   }
 
   // Record topologically sorted ordering
-  for (Layer*& layer : m_layers) {
-    layer = const_cast<Layer*>(sorted_stack.top());
+  m_layers.clear();
+  while (!sorted_stack.empty()) {
+    m_layers.push_back(const_cast<Layer*>(sorted_stack.top()));
     sorted_stack.pop();
-  }  
+  }
   
 }
 

@@ -228,7 +228,7 @@ class concatenation_layer : public transform {
   #endif // __LIB_CUDNN
     }
     else {
-      El::LockedView(*this->m_error_signal_v, *this->m_prev_error_signal_v);
+      El::LockedView(*this->m_error_signal_v, *this->m_prev_error_signal);
     }
   }
 
