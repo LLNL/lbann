@@ -47,7 +47,7 @@ public :
 
   softplus_layer* copy() const { return new softplus_layer(*this); }
 
-  std::string get_name() const { return "softplus"; }
+  std::string get_type() const { return "softplus"; }
 
   virtual inline void initialize_distributed_matrices() {
     entrywise_activation_layer::initialize_distributed_matrices<T_layout>();

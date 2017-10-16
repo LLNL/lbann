@@ -193,7 +193,7 @@ class pooling_layer : public transform {
 
   pooling_layer* copy() const { return new pooling_layer(*this); }
 
-  std::string get_name() const { return "pooling"; }
+  std::string get_type() const { return "pooling"; }
   
   virtual inline void initialize_distributed_matrices();
 

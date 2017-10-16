@@ -116,7 +116,7 @@ class softmax_layer : public activation_layer {
 
   softmax_layer* copy() const { return new softmax_layer(*this); }
 
-  std::string get_name() const { return "softmax"; }
+  std::string get_type() const { return "softmax"; }
 
   std::string get_description() const {
     return std::string {} + " softmax" + " dataLayout: " 

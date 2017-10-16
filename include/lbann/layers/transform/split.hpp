@@ -78,7 +78,7 @@ class split_layer : public transform {
     std::stringstream s;
     s << " split; children: ";
     for (size_t h=0; h<this->m_child_layers.size(); h++) {
-      s << this->m_child_layers[h]->get_index() << " " << this->m_child_layers[h]->get_name() << " ";
+      s << this->m_child_layers[h]->get_index() << " " << this->m_child_layers[h]->get_type() << " ";
     }
     s << " dataLayout: " << this->get_data_layout_string(get_data_layout());
     return s.str();
@@ -86,7 +86,7 @@ class split_layer : public transform {
 
   split_layer* copy() const { return new split_layer(*this); }
 
-  std::string get_name() const { return "split"; }
+  std::string get_type() const { return "split"; }
 
   virtual inline void initialize_distributed_matrices() {
     transform::initialize_distributed_matrices<T_layout>();

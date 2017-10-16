@@ -113,7 +113,7 @@ class concatenation_layer : public transform {
 
   concatenation_layer* copy() const { return new concatenation_layer(*this); }
 
-  std::string get_name() const { return "concatenation"; }
+  std::string get_type() const { return "concatenation"; }
 
   virtual inline void initialize_distributed_matrices();
   virtual data_layout get_data_layout() const { return T_layout; }

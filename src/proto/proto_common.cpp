@@ -945,6 +945,7 @@ void add_layers(
       }
     }
 
+    d->set_name(layer.name());
     model->add(d);
     name_mapping[layer.name()] = d;
     index_mapping[layer_id] = d;
@@ -1176,7 +1177,7 @@ void init_callbacks(
           which.insert(name_to_index.find(a)->second);
           /*
           if (master) {
-            cout << "CALLBACK: imcomm: prototext layer name " << a << " maps to model layer " << name_mapping.find(a)->second << "; layer name: " << the_layers[a]->get_name() << std::endl;
+            cout << "CALLBACK: imcomm: prototext layer name " << a << " maps to model layer " << name_mapping.find(a)->second << "; layer name: " << the_layers[a]->get_type() << std::endl;
           }
           */
         }
@@ -1888,6 +1889,13 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
   lbann_data::Model *model = p.mutable_model();
 
   if (opts->has_string("dag_model")) {
+    std::string sanity = model->name();
+    if (sanity != "dnn") {
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << " the current network model is: " << model->name()
+          << "; you can only change the model to 'dag_model' if the current model is 'dnn'";
+      throw lbann_exception(err.str());
+    }
     if (master) {
       std::cout << "\nchanging model from " << model->name() << " to: dag\n\n";
     }

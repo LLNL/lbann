@@ -129,7 +129,7 @@ void dag_model::setup() {
     layer->setup();
     layer->check_setup();
     if (m_comm->am_world_master()) {
-      std::cout << "[" << std::setw(18) << layer->get_name() <<  "] Set up a layer with input " << std::setw(7) << layer->get_num_prev_neurons() << " and " << std::setw(7) << layer->get_num_neurons() << " neurons."  << std::endl;
+      std::cout << "[" << std::setw(18) << layer->get_type() <<  "] Set up a layer with input " << std::setw(7) << layer->get_num_prev_neurons() << " and " << std::setw(7) << layer->get_num_neurons() << " neurons."  << std::endl;
     }
   }
 

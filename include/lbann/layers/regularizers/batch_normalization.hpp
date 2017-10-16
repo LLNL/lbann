@@ -469,7 +469,7 @@ class batch_normalization : public learning_regularizer {
 
   batch_normalization* copy() const { return new batch_normalization(*this); }
 
-  std::string get_name() const { return "batch normalization"; }
+  std::string get_type() const { return "batch normalization"; }
 
   void initialize_distributed_matrices() {
     regularizer_layer::initialize_distributed_matrices<T_layout>();

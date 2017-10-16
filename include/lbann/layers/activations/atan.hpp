@@ -47,7 +47,7 @@ class atan_layer : public entrywise_activation_layer {
 
   atan_layer* copy() const { return new atan_layer(*this); }
 
-  std::string get_name() const { return "atan"; }
+  std::string get_type() const { return "atan"; }
 
   virtual inline void initialize_distributed_matrices() {
     entrywise_activation_layer::initialize_distributed_matrices<T_layout>();

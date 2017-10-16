@@ -66,7 +66,7 @@ class reconstruction_layer : public target_layer {
     return nullptr;
   }
 
-  std::string get_name() const { return "reconstruction"; }
+  virtual std::string get_type() const override { return "reconstruction"; }
 
   //virtual inline void initialize_distributed_matrices();
   virtual inline void initialize_distributed_matrices() {

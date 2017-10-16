@@ -122,7 +122,7 @@ class local_response_normalization_layer : public regularizer_layer {
     return new local_response_normalization_layer(*this);
   }
 
-  std::string get_name() const { return "local response normalization"; }
+  std::string get_type() const { return "local response normalization"; }
 
   std::string get_description() const {
     return " LRN window width: " + std::to_string(m_window_width) + " alpha: " +

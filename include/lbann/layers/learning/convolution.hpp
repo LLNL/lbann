@@ -174,7 +174,7 @@ class convolution_layer : public base_convolution_layer {
 
   convolution_layer* copy() const { return new convolution_layer(*this); }
 
-  std::string get_name() const { return "convolution"; }
+  std::string get_type() const { return "convolution"; }
 
   void initialize_distributed_matrices() {
     base_convolution_layer::initialize_distributed_matrices<T_layout>();

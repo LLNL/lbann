@@ -94,7 +94,7 @@ class relu_layer : public entrywise_activation_layer {
 
   relu_layer* copy() const { return new relu_layer(*this); }
 
-  std::string get_name() const { return "relu"; }
+  std::string get_type() const { return "relu"; }
 
   /** Returns description of ctor params */
   std::string get_description() const {

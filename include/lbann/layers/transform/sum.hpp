@@ -78,7 +78,7 @@ class sum_layer : public transform {
     std::stringstream s;
      s << " sum; parents: ";
      for (size_t i=0; i<this->m_parent_layers.size(); i++) {
-       s << this->m_parent_layers[i]->get_index() << " " << this->m_parent_layers[i]->get_name() << " ";
+       s << this->m_parent_layers[i]->get_index() << " " << this->m_parent_layers[i]->get_type() << " ";
      }
      s << " dataLayout: " << this->get_data_layout_string(get_data_layout());
      return s.str();
@@ -86,7 +86,7 @@ class sum_layer : public transform {
 
   sum_layer* copy() const { return new sum_layer(*this); }
 
-  std::string get_name() const { return "sum"; }
+  std::string get_type() const { return "sum"; }
 
   virtual inline void initialize_distributed_matrices() {
     transform::initialize_distributed_matrices<T_layout>();

@@ -91,7 +91,7 @@ class selu_dropout : public regularizer_layer {
 
   selu_dropout* copy() const { return new selu_dropout(*this); }
 
-  std::string get_name() const { return "selu dropout"; }
+  std::string get_type() const { return "selu dropout"; }
 
   virtual inline void initialize_distributed_matrices();
   virtual data_layout get_data_layout() const { return T_layout; }

@@ -137,7 +137,7 @@ class target_layer : public io_layer {
 
     if(this->m_num_prev_neurons != this->m_num_neurons) {
       err << __FILE__ << " " << __LINE__ 
-          << " :: " << get_name() << " this->m_num_prev_neurons != this->m_num_neurons; this->m_num_prev_neurons= " << this->m_num_prev_neurons << " this->m_num_neurons= " << this->m_num_neurons << endl;
+          << " :: " << get_type() << " this->m_num_prev_neurons != this->m_num_neurons; this->m_num_prev_neurons= " << this->m_num_prev_neurons << " this->m_num_neurons= " << this->m_num_neurons << endl;
       throw lbann_exception(err.str());
     }
 

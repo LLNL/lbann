@@ -120,7 +120,7 @@ class slice_layer : public transform {
     s << " slice; slice_axis: "
       << m_slice_axis << " children: ";
     for (size_t h=0; h<this->m_child_layers.size(); h++) {
-      s << this->m_child_layers[h]->get_index() << " " << this->m_child_layers[h]->get_name() << " ";
+      s << this->m_child_layers[h]->get_index() << " " << this->m_child_layers[h]->get_type() << " ";
     }
     s << " slice_points: ";
     for (size_t h=0; h<this->m_slice_points.size(); h++) {
@@ -132,7 +132,7 @@ class slice_layer : public transform {
 
   slice_layer* copy() const { return new slice_layer(*this); }
 
-  std::string get_name() const { return "slice"; }
+  std::string get_type() const { return "slice"; }
 
   virtual inline void initialize_distributed_matrices();
   virtual data_layout get_data_layout() const { return T_layout; }

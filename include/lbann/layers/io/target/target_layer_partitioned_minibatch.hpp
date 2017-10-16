@@ -62,7 +62,7 @@ class target_layer_partitioned_minibatch : public target_layer, public partition
     return nullptr;
   }
 
-  std::string get_name() const { return "target:partitioned"; }
+  std::string get_type() const { return "target:partitioned"; }
 
   virtual inline void initialize_distributed_matrices() {
     target_layer::initialize_distributed_matrices<T_layout>();

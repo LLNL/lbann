@@ -54,7 +54,7 @@ class selu_layer : public entrywise_activation_layer {
 
   selu_layer* copy() const { return new selu_layer(*this); }
 
-  std::string get_name() const { return "SELU"; }
+  std::string get_type() const { return "SELU"; }
 
   virtual inline void initialize_distributed_matrices() {
     entrywise_activation_layer::initialize_distributed_matrices<T_layout>();

@@ -237,7 +237,7 @@ class fully_connected_layer : public learning {
     return new fully_connected_layer(*this);
   }
 
-  std::string get_name() const { return "fully connected"; }
+  std::string get_type() const { return "fully connected"; }
 
   virtual inline void initialize_distributed_matrices();
   virtual data_layout get_data_layout() const { return T_layout; }

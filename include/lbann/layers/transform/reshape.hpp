@@ -46,7 +46,7 @@ class reshape_layer : public transform {
   }
   reshape_layer* copy() const { return new reshape_layer(*this); }
 
-  std::string get_name() const { return "reshape"; }
+  std::string get_type() const { return "reshape"; }
 
   virtual inline void initialize_distributed_matrices() {
     transform::initialize_distributed_matrices<T_layout>();

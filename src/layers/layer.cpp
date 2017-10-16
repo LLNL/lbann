@@ -80,7 +80,8 @@ Layer::Layer(const int index, lbann_comm *comm)
   : m_index(index),
     m_comm(comm),
     m_execution_mode(execution_mode::training),
-    m_cudnn(nullptr) {
+    m_cudnn(nullptr),
+    m_name("none") {
 
   // Initialize neuron tensor dimensions
   m_num_neurons = 0;
@@ -170,6 +171,7 @@ Layer::Layer(const Layer& other) :
                                 m_prev_neurons_cudnn_desc);
   cudnn::copy_tensor_cudnn_desc(other.m_neurons_cudnn_desc,
                                 m_neurons_cudnn_desc);
+  m_name = other.m_name;
 #endif // __LIB_CUDNN
 }
 
@@ -247,6 +249,7 @@ Layer& Layer::operator=(const Layer& other) {
                                 m_prev_neurons_cudnn_desc);
   cudnn::copy_tensor_cudnn_desc(other.m_neurons_cudnn_desc,
                                 m_neurons_cudnn_desc);
+  m_name = other.m_name;
 #endif // __LIB_CUDNN
 
   return *this;

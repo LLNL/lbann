@@ -168,7 +168,7 @@ void greedy_layerwise_autoencoder::remove_mirror(uint32_t layer_index) {
 //@todo Rewrite to get and copy all reconstruction indices to a vector(queue)
 void greedy_layerwise_autoencoder::set_end_index() {
   for (size_t l =m_start_index+1; l < m_layers.size(); l++) {
-    if(m_layers[l]->get_name() == "reconstruction") {
+    if(m_layers[l]->get_type() == "reconstruction") {
       m_end_index = l;
      return;
    }

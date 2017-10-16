@@ -47,7 +47,7 @@ class sigmoid_layer : public entrywise_activation_layer {
 
   sigmoid_layer* copy() const { return new sigmoid_layer(*this); }
 
-  std::string get_name() const { return "sigmoid"; }
+  std::string get_type() const { return "sigmoid"; }
 
   virtual inline void initialize_distributed_matrices() {
     entrywise_activation_layer::initialize_distributed_matrices<T_layout>();

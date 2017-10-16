@@ -88,12 +88,20 @@ class Layer {
   /** Validate that the setup is reasonable. */
   virtual void check_setup();
 
-  /** Return this layer's name */
-  virtual std::string get_name() const = 0;
+  /** Return this layer's type, e.g: "fully connected," "batch normalization," etc. */
+  virtual std::string get_type() const = 0;
+
+  /** Returns this layer's name; this is an arbitrary string, e.g, assigned in a prototext file. */
+  virtual std::string get_name() const { return m_name; }
+
+  /** Sets this layer's name; this is an arbitrary string, e.g, assigned in a prototext file. */
+  virtual void set_name(std::string name) { m_name = name; }
   
   /** Returns a description of the parameters passed to the ctor */
   virtual std::string get_description() const { 
-    return std::string {} + get_name() + " - DESCRIPTION NOT IMPLEMENTED FOR THIS LAYER";
+    return std::string {} + get_type() + " - DESCRIPTION NOT IMPLEMENTED FOR THIS LAYER\n"
+     + " to get a description, you need to edit the class file by adding this method:\n"
+     + " virtual std::string get_descrciption() const override";
   }
   /** Returns a description of the topology */
   virtual std::string get_topo_description() const { return ""; };
@@ -338,6 +346,8 @@ class Layer {
   double bp_compute_time;
   /** Time spent in updates. */
   double update_time;
+
+  std::string m_name;
 };
 }
 

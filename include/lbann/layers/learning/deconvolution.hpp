@@ -150,7 +150,7 @@ class deconvolution_layer : public base_convolution_layer {
 
   deconvolution_layer* copy() const { return new deconvolution_layer(*this); }
 
-  std::string get_name() const { return "deconvolution"; }
+  std::string get_type() const { return "deconvolution"; }
 
   void initialize_distributed_matrices() {
     base_convolution_layer::initialize_distributed_matrices<T_layout>();
