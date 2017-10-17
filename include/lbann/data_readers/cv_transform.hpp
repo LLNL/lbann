@@ -104,10 +104,7 @@ inline cv_transform *cv_transform::clone() const {
   return static_cast<cv_transform *>(NULL);
 }
 
-inline std::ostream& operator<<(std::ostream& os, const cv_transform& tr) {
-  tr.print(os);
-  return os;
-}
+std::ostream& operator<<(std::ostream& os, const cv_transform& tr);
 
 } // end of namespace lbann
 #endif // __LIB_OPENCV
