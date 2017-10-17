@@ -88,8 +88,6 @@ model {
   #######
   layer {
     name: "1"
-    parents: "1"
-    children: ""
     data_layout: "data_parallel"
     input_partitioned_minibatch {
     }
@@ -100,8 +98,6 @@ model {
   #############
   layer {
     name: "2"
-    parents: "1"
-    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -121,8 +117,6 @@ model {
   ######
   layer {
     name: "3"
-    parents: "2"
-    children: ""
     data_layout: "data_parallel"
     relu {
     }
@@ -133,8 +127,6 @@ model {
   #############
   layer {
     name: "4"
-    parents: "3"
-    children: ""
     data_layout: "data_parallel"
     local_response_normalization {
       window_width: 5
@@ -149,8 +141,6 @@ model {
   #########
   layer {
     name: "5"
-    parents: "4"
-    children: ""
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
@@ -167,8 +157,6 @@ model {
   #############
   layer {
     name: "6"
-    parents: "5"
-    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -189,8 +177,6 @@ model {
   ######
   layer {
     name: "7"
-    parents: "6"
-    children: ""
     data_layout: "data_parallel"
     relu {
     }
@@ -201,8 +187,6 @@ model {
   #############
   layer {
     name: "8"
-    parents: "7"
-    children: ""
     data_layout: "data_parallel"
     local_response_normalization {
       window_width: 5
@@ -218,8 +202,6 @@ model {
   #########
   layer {
     name: "9"
-    parents: "8"
-    children: ""
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
@@ -236,8 +218,6 @@ model {
   #############
   layer {
     name: "10"
-    parents: "9"
-    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -257,8 +237,6 @@ model {
   ######
   layer {
     name: "11"
-    parents: "10"
-    children: ""
     data_layout: "data_parallel"
     relu {
     }
@@ -269,8 +247,6 @@ model {
   #############
   layer {
     name: "12"
-    parents: "11"
-    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -291,8 +267,6 @@ model {
   ######
   layer {
     name: "13"
-    parents: "12"
-    children: ""
     data_layout: "data_parallel"
     relu {
     }
@@ -303,8 +277,6 @@ model {
   #############
   layer {
     name: "14"
-    parents: "13"
-    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -325,8 +297,6 @@ model {
   ######
   layer {
     name: "15"
-    parents: "14"
-    children: ""
     data_layout: "data_parallel"
     relu {
     }
@@ -337,8 +307,6 @@ model {
   #########
   layer {
     name: "16"
-    parents: "15"
-    children: ""
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
@@ -356,8 +324,6 @@ model {
   #################
   layer {
     name: "17"
-    parents: "16"
-    children: ""
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 4096
@@ -373,8 +339,6 @@ model {
   ######
   layer {
     name: "18"
-    parents: "17"
-    children: ""
     data_layout: "model_parallel"
     relu {
     }
@@ -385,8 +349,6 @@ model {
   #########
   layer {
     name: "19"
-    parents: "18"
-    children: ""
     data_layout: "model_parallel"
     dropout {
       keep_prob: 0.5
@@ -398,8 +360,6 @@ model {
   #################
   layer {
     name: "20"
-    parents: "19"
-    children: ""
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 4096
@@ -415,8 +375,6 @@ model {
   ######
   layer {
     name: "21"
-    parents: "20"
-    children: ""
     data_layout: "model_parallel"
     relu {
     }
@@ -427,8 +385,6 @@ model {
   #########
   layer {
     name: "22"
-    parents: "21"
-    children: ""
     data_layout: "model_parallel"
     dropout {
       keep_prob: 0.5
@@ -440,8 +396,6 @@ model {
   #################
   layer {
     name: "23"
-    parents: "22"
-    children: ""
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 1000
@@ -456,8 +410,6 @@ model {
   #########
   layer {
     name: "24"
-    parents: "23"
-    children: ""
     data_layout: "model_parallel"
     softmax {
     }
@@ -468,8 +420,6 @@ model {
   ########
   layer {
     name: "25"
-    parents: "24"
-    children: ""
     data_layout: "data_parallel"
     target_partitioned_minibatch {
       shared_data_reader: true

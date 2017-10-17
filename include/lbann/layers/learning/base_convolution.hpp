@@ -376,12 +376,8 @@ class base_convolution_layer : public learning {
     throw lbann_exception("base_convolution_layer: cuDNN not detected");
   #else
 
-    // Initialize descriptors
-    CHECK_CUDNN(cudnnCreateTensorDescriptor(&m_bias_cudnn_desc));
-    CHECK_CUDNN(cudnnCreateFilterDescriptor(&m_kernel_cudnn_desc));
-    CHECK_CUDNN(cudnnCreateConvolutionDescriptor(&m_convolution_cudnn_desc));
-
     // Set kernel descriptor
+    CHECK_CUDNN(cudnnCreateFilterDescriptor(&m_kernel_cudnn_desc));
     CHECK_CUDNN(cudnnSetFilterNdDescriptor(m_kernel_cudnn_desc,
                                            cudnn::get_cudnn_data_type(),
                                            CUDNN_TENSOR_NCHW,
@@ -390,6 +386,7 @@ class base_convolution_layer : public learning {
 
     // Set convolution descriptor
     // Note: upscales are not supported as of cuDNN v5.1
+    CHECK_CUDNN(cudnnCreateConvolutionDescriptor(&m_convolution_cudnn_desc));
     std::vector<int> conv_upscales(this->m_num_neuron_dims-1, 1);
     CHECK_CUDNN(cudnnSetConvolutionNdDescriptor(m_convolution_cudnn_desc,
                                                 m_conv_pads.size(),
@@ -400,15 +397,9 @@ class base_convolution_layer : public learning {
                                                 cudnn::get_cudnn_data_type()));
 
     // Set bias tensor descriptor
-    std::vector<int> bias_dims(this->m_num_neuron_dims+1, 1);
-    bias_dims[1] = this->m_neuron_dims[0];
-    std::vector<int> bias_strides(this->m_num_neuron_dims+1, 1);
-    bias_strides[0] = bias_dims[1];
-    CHECK_CUDNN(cudnnSetTensorNdDescriptor(m_bias_cudnn_desc,
-                                           cudnn::get_cudnn_data_type(),
-                                           bias_dims.size(),
-                                           bias_dims.data(),
-                                           bias_strides.data()));
+    std::vector<int> bias_dims(this->m_num_neuron_dims, 1);
+    bias_dims[0] = this->m_neuron_dims[0];
+    cudnn::set_tensor_cudnn_desc(m_bias_cudnn_desc, 1, bias_dims);
 
     // Allocate GPU memory
     this->m_cudnn->allocate_on_gpus(this->m_kernel_weights_d,

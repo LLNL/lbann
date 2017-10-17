@@ -150,40 +150,30 @@ void dag_model::topologically_sort_layers() {
   for (const Layer* layer : m_layers) {
     is_sorted[layer] = false;
     is_visited[layer] = false;
+    search_stack.push(layer);
   }
 
-  // Iterate through layers that have not already been sorted
-  for (const Layer* source_layer : m_layers) {
-    if (is_sorted[source_layer]) {
-      continue;
-    }
-
-    // Perform depth-first search starting from source layer
-    search_stack.push(source_layer);
-    while(!search_stack.empty()) {
-      const Layer* search_layer = search_stack.top();
-
-      if (is_visited[search_layer]) {
+  // Perform depth-first searches until DAG has been traversed
+  while(!search_stack.empty()) {
+    const Layer* layer = search_stack.top();
+    search_stack.pop();
+    if (!is_sorted[layer]) {
+      if (is_visited[layer]) {
         // Move search layer to sorted stack if we have visited already
-        search_stack.pop();
-        sorted_stack.push(search_layer);
-        is_sorted[search_layer] = true;
-      }
-      else {
+        sorted_stack.push(layer);
+        is_sorted[layer] = true;
+      } else {
         // Visit search layer by adding children to search stack
-        is_visited[search_layer] = true;
-        for (const Layer* child_layer : search_layer->get_child_layers()) {
-          if (!is_sorted[child_layer]) {
-            if (is_visited[child_layer]) {
-              throw lbann_exception("model_dag: detected a cycle in network graph");
-            }
-            search_stack.push(child_layer);
+        search_stack.push(layer);
+        is_visited[layer] = true;
+        for (const Layer* child_layer : layer->get_child_layers()) {
+          if (is_visited[child_layer] && !is_sorted[child_layer]) {
+            throw lbann_exception("model_dag: detected a cycle in network graph");
           }
+          search_stack.push(child_layer);
         }
       }
-
     }
-
   }
 
   // Record topologically sorted ordering
