@@ -123,7 +123,7 @@ class fully_connected_layer : public learning {
                         optimizer *opt,
                         bool has_bias = true,
                         DataType bias_initial_value = DataType(0),
-                        cudnn::cudnn_manager *cudnn = NULL)
+                        cudnn::cudnn_manager *cudnn = nullptr)
     : learning(index, comm, opt),
       m_weight_initialization(init) {
 
@@ -276,7 +276,7 @@ class fully_connected_layer : public learning {
     El::Fill(*m_bias_weights_v, m_bias_initial_value);
 
     // Initialize optimizer
-    if (this->m_optimizer != NULL) {
+    if (this->m_optimizer != nullptr) {
 #if !(defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA))
       this->m_optimizer->setup(this->m_weights);
 #else
@@ -333,47 +333,18 @@ class fully_connected_layer : public learning {
 
     // CUDNN setup
     FORCE_CHECK_CUDNN(cudnnCreateTensorDescriptor(&m_bias_weights_desc));
-
-    // Two ways to create tensor descriptor. Should be identical.
-#if 1
-    std::vector<int> bias_dims(4, 1);
-    bias_dims[3] = this->m_bias_weights_v->Height();
-    std::vector<int> bias_strides(4, 1);
-    for (int i = 2; i >=0; --i) {
-      bias_strides[i] = bias_strides[i+1] * bias_dims[i+1];
-    }
-    FORCE_CHECK_CUDNN(cudnnSetTensorNdDescriptor(m_bias_weights_desc,
-                                                 cudnn::get_cudnn_data_type(),
-                                                 bias_dims.size(),
-                                                 bias_dims.data(),
-                                                 bias_strides.data()));
-#else    
     FORCE_CHECK_CUDNN(cudnnSetTensor4dDescriptor(m_bias_weights_desc,
                                                  CUDNN_TENSOR_NCHW,
                                                  this->m_cudnn->get_cudnn_data_type(),
                                                  1, 1, 1, m_bias_weights_v->Height()));
-#endif
     FORCE_CHECK_CUDNN(cudnnCreateTensorDescriptor(&m_activations_desc));    
-#if 1
-    bias_dims[3] = this->m_bias_weights_v->Height();
-    bias_dims[2] = m_mini_batch_size_per_gpu;
-    for (int i = 2; i >=0; --i) {
-      bias_strides[i] = bias_strides[i+1] * bias_dims[i+1];
-    }
-    FORCE_CHECK_CUDNN(cudnnSetTensorNdDescriptor(m_activations_desc,
-                                                 cudnn::get_cudnn_data_type(),
-                                                 bias_dims.size(),
-                                                 bias_dims.data(),
-                                                 bias_strides.data()));
-#else
     FORCE_CHECK_CUDNN(cudnnSetTensor4dDescriptor(m_activations_desc,
                                                  CUDNN_TENSOR_NCHW,
                                                  this->m_cudnn->get_cudnn_data_type(),
                                                  1, 1, m_mini_batch_size_per_gpu,
                                                  m_bias_weights_v->Height()));
-#endif
 
-    if (this->m_optimizer != NULL) {
+    if (this->m_optimizer != nullptr) {
       this->m_optimizer->setup_gpu(this->m_weights, this->m_weights_d);
     }
     
