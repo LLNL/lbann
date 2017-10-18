@@ -242,14 +242,15 @@ void cv_normalizer::set_transform(const std::vector<channel_trans_t>& _trans) {
 
 
 /**
- * In case that undoing normalization is required, this call lets it occur
- * during copying from El::Matrix<DataType> data to a cv::Mat image while
- * avoiding reading the image twice.
+ * In case that undoing normalization is required, this call arranges it to
+ * occur during copying from El::Matrix<DataType> data to a cv::Mat image
+ * while avoiding reading the image twice.
  */
 bool cv_normalizer::determine_inverse_transform() {
   m_enabled = false; // unless this method is successful, stays disabled
   const size_t NCh = m_trans.size();
   if (NCh == 0u) {
+    m_trans.clear();
     return false;
   }
 
@@ -257,6 +258,7 @@ bool cv_normalizer::determine_inverse_transform() {
 
   for (size_t ch=0u; ch < NCh; ++ch) {
     if (m_trans[ch].first == 0.0) {
+      m_trans.clear();
       return false;
     }
     trans_reverse[ch] =
@@ -265,8 +267,7 @@ bool cv_normalizer::determine_inverse_transform() {
   }
   trans_reverse.swap(m_trans);
 
-  m_enabled = true;
-  return true;
+  return (m_enabled = true);
 }
 
 
@@ -323,13 +324,14 @@ bool cv_normalizer::compute_mean_stddev(const cv::Mat& image,
 }
 
 std::ostream& cv_normalizer::print(std::ostream& os) const {
-  os << "m_mean_subtraction: " << (m_mean_subtraction? "true" : "false") << std::endl
-     << "m_unit_variance: " << (m_unit_variance? "true" : "false") << std::endl
-     << "m_unit_scale: " << (m_unit_scale? "true" : "false") << std::endl
-     << "m_z_score: " << (m_z_score? "true" : "false") << std::endl;
-  os << "transform:";
+  os << "cv_normalizer:" << std::endl
+     << " - m_mean_subtraction: " << (m_mean_subtraction? "true" : "false") << std::endl
+     << " - m_unit_variance: " << (m_unit_variance? "true" : "false") << std::endl
+     << " - m_unit_scale: " << (m_unit_scale? "true" : "false") << std::endl
+     << " - m_z_score: " << (m_z_score? "true" : "false") << std::endl;
+  os << " - transform:";
   for (const channel_trans_t& tr: m_trans) {
-    os << ' ' << tr.first << ' ' << tr.second;
+    os << " [" << tr.first << ' ' << tr.second << "]";
   }
   os << std::endl;
 

@@ -77,9 +77,7 @@ class cv_colorizer : public cv_transform {
     return m_enabled;
   }
 
-  virtual std::ostream& print(std::ostream& os) const {
-    return os;
-  }
+  virtual std::ostream& print(std::ostream& os) const;
 };
 
 } // end of namespace lbann

@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_cv_cropper .cpp .hpp - functions to crop images
+// cv_cropper .cpp .hpp - functions to crop images
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/cv_cropper.hpp"
@@ -31,7 +31,6 @@
 #include "lbann/utils/random.hpp"
 #include <algorithm>
 #include <ostream>
-//#include <iostream>
 
 #ifdef __LIB_OPENCV
 namespace lbann {
@@ -41,7 +40,6 @@ cv_cropper::cv_cropper()
     m_rand_crop(false), m_is_roi_set(false),
     m_roi_size(std::pair<int,int>(0,0)),
     m_zoom(1.0), m_interpolation(cv::INTER_AREA) {
-  //check_enabled(); // enable if default parameter changes
 }
 
 
@@ -61,7 +59,7 @@ void cv_cropper::set(const unsigned int width, const unsigned int height,
     m_is_roi_set = true;
     m_roi_size = roi_sz;
   } else if (!((roi_sz.first == 0) && (roi_sz.second == 0))) {
-    // Fall back to the default. TODO: Alternatively, we can generate exception here.
+    // Fall back to the default. Alternatively, we can generate exception here.
     m_is_roi_set = false;
     m_roi_size = std::pair<int, int>(0, 0);
   } else {
@@ -108,8 +106,7 @@ bool cv_cropper::determine_transform(const cv::Mat& image) {
     }
   }
 
-  m_enabled = true;
-  return true;
+  return (m_enabled = true);
 }
 
 
@@ -156,10 +153,11 @@ bool cv_cropper::apply(cv::Mat& image) {
 
 
 std::ostream& cv_cropper::print(std::ostream& os) const {
-  os << "m_width: " << m_width << std::endl
-     << "m_height: " << m_height << std::endl
-     << "m_roi_size: " << m_roi_size.first << " " << m_roi_size.second << std::endl
-     << "m_zoom: " << m_zoom << std::endl;
+  os << "cv_cropper:" << std::endl
+     << " - m_width: " << m_width << std::endl
+     << " - m_height: " << m_height << std::endl
+     << " - m_roi_size: " << m_roi_size.first << " " << m_roi_size.second << std::endl
+     << " - m_zoom: " << m_zoom << std::endl;
   return os;
 }
 

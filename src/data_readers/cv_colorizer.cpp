@@ -42,39 +42,47 @@ cv_colorizer& cv_colorizer::operator=(const cv_colorizer& rhs) {
   return *this;
 }
 
+cv_colorizer *cv_colorizer::clone() const {
+  return (new cv_colorizer(*this));
+}
+
 bool cv_colorizer::determine_transform(const cv::Mat& image) {
+  // enable colorizing transform if the given image is in grayscale
   m_enabled = m_gray = (!image.empty() && (image.channels() == 1));
   return m_enabled;
 }
 
 bool cv_colorizer::determine_inverse_transform() {
+  // Enable inverse transform only if grayscale to color transform has been applied
   m_enabled = m_gray;
+  // indicate that the current image is a color image
   m_gray = false;
-  return true;
+  return m_enabled;
 }
 
 bool cv_colorizer::apply(cv::Mat& image) {
-  if (!m_enabled) {
-    return true;
-  }
+  // Currently, condition checking is based on the return of determine_transform()
+  //if (!m_enabled) return true;
+  m_enabled = false; // turn off as the transform is applied once
   _LBANN_SILENT_EXCEPTION(image.empty(), "", false);
 
-  if (!m_gray) {
+  if (!m_gray) { // color
     cv::Mat image_dst;
     cv::cvtColor(image, image_dst, cv::COLOR_BGR2GRAY);
     image = image_dst;
-  } else {
+  } else { // gray
     cv::Mat image_dst;
     cv::cvtColor(image, image_dst, cv::COLOR_GRAY2BGR);
     image = image_dst;
   }
 
-  m_enabled = false;
   return true;
 }
 
-cv_colorizer *cv_colorizer::clone() const {
-  return (new cv_colorizer(*this));
+std::ostream& cv_colorizer::print(std::ostream& os) const {
+  os << "cv_colorizer:" << std::endl
+     << " - " << (m_gray? "grayscale" : "color") << std::endl;
+  return os;
 }
 
 std::ostream& operator<<(std::ostream& os, const cv_colorizer& tr) {
