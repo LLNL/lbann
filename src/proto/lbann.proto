@@ -92,6 +92,8 @@ message Model {
   int64 checkpoint_epochs = 31;
   int64 checkpoint_steps = 32;
   double checkpoint_secs = 33;
+
+  int64 random_seed = 34;
 }
 
 //========================================================================
