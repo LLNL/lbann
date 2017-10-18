@@ -1569,22 +1569,6 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       // set up the image preprocessor
       std::shared_ptr<cv_process> pp = std::make_shared<cv_process>();
 
-      // set up the normalizer
-      std::unique_ptr<lbann::cv_normalizer> normalizer(new(lbann::cv_normalizer));
-      normalizer->unit_scale(preprocessor.scale());
-      normalizer->subtract_mean(preprocessor.subtract_mean());
-      normalizer->unit_variance(preprocessor.unit_variance());
-      normalizer->z_score(preprocessor.z_score());
-      pp->set_normalizer(std::move(normalizer));
-      //if (master) cout << "normalizer is set" << endl;
-
-      // set up a custom transform (colorizer)
-      if (!preprocessor.no_colorize()) {
-        std::unique_ptr<lbann::cv_colorizer> colorizer(new(lbann::cv_colorizer));
-        pp->set_custom_transform2(std::move(colorizer));
-        //if (master) cout << "colorizer is set" << endl;
-      }
-
       // set up augmenter if necessary
       if (!preprocessor.disable_augmentation() &&
           (preprocessor.horizontal_flip() ||
@@ -1601,9 +1585,25 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
                        preprocessor.horizontal_shift(),
                        preprocessor.vertical_shift(),
                        preprocessor.shear_range());
-        pp->set_augmenter(std::move(augmenter));
+        pp->add_transform(std::move(augmenter));
         //if (master) cout << "augmenter is set" << endl;
       }
+
+      // set up a custom transform (colorizer)
+      if (!preprocessor.no_colorize()) {
+        std::unique_ptr<lbann::cv_colorizer> colorizer(new(lbann::cv_colorizer));
+        pp->add_transform(std::move(colorizer));
+        //if (master) cout << "colorizer is set" << endl;
+      }
+
+      // set up the normalizer
+      std::unique_ptr<lbann::cv_normalizer> normalizer(new(lbann::cv_normalizer));
+      normalizer->unit_scale(preprocessor.scale());
+      normalizer->subtract_mean(preprocessor.subtract_mean());
+      normalizer->unit_variance(preprocessor.unit_variance());
+      normalizer->z_score(preprocessor.z_score());
+      pp->add_normalizer(std::move(normalizer));
+      //if (master) cout << "normalizer is set" << endl;
 
       if (name == "imagenet_cv") {
         reader = new imagenet_reader_cv(mini_batch_size, pp, shuffle);
