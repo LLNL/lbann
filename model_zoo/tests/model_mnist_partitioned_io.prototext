@@ -73,7 +73,7 @@ model {
   ######################
   layer {
     name: "1"
-    parents: "0"
+    parents: "1"
     children: ""
     data_layout: "data_parallel"
     input_partitioned_minibatch {
