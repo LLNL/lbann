@@ -194,6 +194,7 @@ class learning : public Layer, public optimizable_layer {
                                 return x;			
 			      };  
 			    }));
+      delete workspace;
     }
   }
     
