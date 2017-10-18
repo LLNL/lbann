@@ -96,7 +96,7 @@ Note: User must include the -B singularity command, to bind any necessary files 
    2. Run a test experiment from the main lbann directory using the following command:
    To Verify functionality of LBANN with a test MNIST experiment. Using the following command:
  ```
-  srun -n2 build/catalyst.llnl.gov/model_zoo/lbann \
+  srun -n2 build/catalyst.llnl.gov/model_zoo/lbann \model_conv_autoencoder_cifar10.prototext
 --model=model_zoo/tests/model_mnist_distributed_io.prototext \
 --reader=model_zoo/data_readers/data_reader_mnist.prototext \
 --optimizer=model_zoo/optimizers/opt_adagrad.prototext
@@ -120,12 +120,7 @@ Note: User must include the -B singularity command, to bind any necessary files 
   LBANN performance will vary on a machine to machine basis. Results will also vary, but should not do so significantly. 
 
 ## Running other models
-Launch an MPI job using the proper command for your system (srun, mpirun, mpiexec etc), calling the lbann executable found in lbann/build/$YourBuildSys/model_zoo. This executable requires three command line arguments. These arguments are prototext files specifying the model, optimizer and data reader for the execution. The files can be found in lbann/model_zoo/prototext. Models can be adjusted by altering these files. Example execution:
-```
-srun -n2 catalyst.llnl.gov/model_zoo/lbann
---model=../model_zoo/tests/model_mnist_distributed_io.prototext
---reader=../model_zoo/data_readers/data_reader_mnist.prototext
---optimizer=../model_zoo/optimizers/opt_adagrad.prototext
-```
+There are various prototext models under the lbann/model_zoo/models/ directory: alexnet, autoencoder_mnist, lenet_mnist, etc. Each of these directories should have a script called *runme.py*. Run this script with no command line parameters for complete usage. Basically, these scripts generate command lines similar to the one above (in the *Verifying LBANN on LC* section). The scripts take two required arguments: --nodes=`<int>` and --tasks=`<int>`. The "tasks" option is used to specify the number of tasks per node, hence, the total number of tasks (cores) is: nodes\*tasks. The generated command lines are designed to be executed using *srun* on LC systems, so you may need to modify, e.g, substitute mpirun, depending on your specific system.
 
+Note: some directories contain multiple models, e.g, as of this writing, the autoencoder_cifar10 directory contains both *model_autoencoder_cifar10.prototext* and *model_conv_autoencoder_cifar10.prototext*. In these cases there may be multiple python scripts, e.g, *runme_conv.py*.
 

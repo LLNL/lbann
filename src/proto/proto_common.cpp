@@ -1952,6 +1952,9 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
   if (opts->has_bool("use_cudnn")) {
     model->set_use_cudnn(opts->get_int("use_cudnn"));
   }
+  if (opts->has_int("random_seed")) {
+    model->set_random_seed(opts->get_int("random_seed"));
+  }
 
 
   if (opts->has_string("opt")) {
@@ -2033,6 +2036,7 @@ void print_parameters(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
        << "  num_gpus:             " << m.num_gpus()  << endl
        << "  num_parallel_readers: " << m.num_parallel_readers()  << endl
        << "  use_cudnn:            " << m.use_cudnn()  << endl
+       << "  random_seed:          " << m.random_seed() << endl
        << "  objective_function:   " << m.objective_function()  << endl
        << "  data_layout:          " << m.data_layout()  << endl
        << "     (only used for metrics)\n"
@@ -2107,6 +2111,7 @@ void print_help(lbann::lbann_comm *comm)
        "  --num_gpus=<int>\n"
        "  --use_cudnn=<bool>\n"
        "     has no effect unless lbann was compiled with: __LIB_CUDNN\n"
+       "  --random_seed=<int>\n"
        "  --objective_function<string>\n"
        "      <string> must be: categorical_cross_entropy or mean_squared_error\n"
        "  --data_layout<string>\n"
