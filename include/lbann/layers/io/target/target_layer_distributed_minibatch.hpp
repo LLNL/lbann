@@ -45,13 +45,20 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
   CircMat Ys; /** Distributed matrix used to stage local data to layer output */
 
  public:
-  target_layer_distributed_minibatch(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
+  target_layer_distributed_minibatch(lbann_comm *comm, io_layer *input_layer, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
     : generic_data_distribution(comm, num_parallel_readers, data_readers),
-      target_layer(comm, data_readers, shared_data_reader, for_regression),
+      target_layer(comm, input_layer, data_readers, for_regression),
       distributed_minibatch(comm, num_parallel_readers, data_readers),
       Ys(comm->get_model_grid()) {
     // Setup the data distribution
     initialize_distributed_matrices();
+
+    // if(!dynamic_cast<input_layer_distributed_minibatch*>(input_layer)) {
+    //   std::stringstream err;
+    //   err << __FILE__ << " " << __LINE__ 
+    //       << " :: " << get_type() << " paired with invalid input layer type" << std::endl;
+    //   throw lbann_exception(err.str());
+    // }
   }
   target_layer_distributed_minibatch(
     const target_layer_distributed_minibatch&) = default;
@@ -78,14 +85,6 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
     target_layer::setup_data();
 
     int max_mb_size = this->m_neural_network_model->get_max_mini_batch_size();
-    if(!this->m_shared_data_reader) { /// If the target layer shares a data reader with an input layer, do not setup the data reader a second time
-      if(io_layer::m_data_sets_span_models) {
-        distributed_minibatch::calculate_num_iterations_per_epoch_training_spans_models(max_mb_size);
-      } else {
-        distributed_minibatch::calculate_num_iterations_per_epoch_training_unique_per_models(max_mb_size);
-      }
-    }
-
     Y_local.Resize(this->m_num_neurons, max_mb_size);
     Ys.Resize(this->m_num_neurons, max_mb_size);
 
@@ -149,7 +148,7 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
   }
 
   int fetch_from_data_reader(Mat& M_local) {
-    generic_data_reader *data_reader = target_layer::select_data_reader();
+    generic_data_reader *data_reader = paired_input_layer->select_data_reader();
     if (target_layer::is_for_regression()) {
       return data_reader->fetch_responses(M_local);
     } else {
@@ -162,16 +161,8 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
   }
 
   bool update_data_reader(bool is_active_reader) {
-    generic_data_reader *data_reader = target_layer::select_data_reader();
-    if(this->m_shared_data_reader) {
-      /// If the data reader is shared with an input layer, don't update the reader just check to see if the epoch is done
-      /// or will be done on the next update of the input layer (which includes adding the stride).
-      /// Note that target layers are always update before input layers, which is why the position
-      /// is not up to date yet.
-      return (data_reader->is_data_reader_done(is_active_reader));
-    } else {
-      return data_reader->update(is_active_reader);
-    }
+    generic_data_reader *data_reader = paired_input_layer->select_data_reader();
+    return (data_reader->is_data_reader_done(is_active_reader));
   }
 
   execution_mode get_execution_mode() const {

@@ -38,60 +38,23 @@
 namespace lbann {
 class target_layer : public io_layer {
  protected:
-  bool m_shared_data_reader;
+  io_layer *paired_input_layer;
 
  public:
-  target_layer(lbann_comm *comm, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
-    : io_layer(comm, data_readers, true, for_regression) {
-    m_shared_data_reader = shared_data_reader;
+  target_layer(lbann_comm *comm, io_layer* input_layer, std::map<execution_mode, generic_data_reader *> data_readers, bool for_regression = false)
+    : io_layer(comm, data_readers, true, for_regression), paired_input_layer(input_layer) {
     // Target layers have no children
     m_max_num_child_layers = 0;
   }
 
-  virtual ~target_layer() {
-    if (!m_shared_data_reader) {
-      // Only free the data readers if they're not shared with the input layer.
-      if (m_training_dataset.m_data_reader != nullptr) {
-        delete m_training_dataset.m_data_reader;
-        m_training_dataset.m_data_reader = nullptr;
-      }
-      if (m_validation_dataset.m_data_reader != nullptr) {
-        delete m_validation_dataset.m_data_reader;
-        m_validation_dataset.m_data_reader = nullptr;
-      }
-      if (m_testing_dataset.m_data_reader != nullptr) {
-        delete m_testing_dataset.m_data_reader;
-        m_testing_dataset.m_data_reader = nullptr;
-      }
-    }
-  }
+  virtual ~target_layer() {}
 
   // Target layers copy their datareaders.
   target_layer(const target_layer& other) : io_layer(other) {
-    if (m_training_dataset.m_data_reader) {
-      m_training_dataset.m_data_reader = m_training_dataset.m_data_reader->copy();
-    }
-    if (m_validation_dataset.m_data_reader) {
-      m_validation_dataset.m_data_reader = m_validation_dataset.m_data_reader->copy();
-    }
-    if (m_testing_dataset.m_data_reader) {
-      m_testing_dataset.m_data_reader = m_testing_dataset.m_data_reader->copy();
-    }
-    m_shared_data_reader = other.m_shared_data_reader;
   }
 
   target_layer& operator=(const target_layer& other) {
     io_layer::operator=(other);
-    if (m_training_dataset.m_data_reader) {
-      m_training_dataset.m_data_reader = m_training_dataset.m_data_reader->copy();
-    }
-    if (m_validation_dataset.m_data_reader) {
-      m_validation_dataset.m_data_reader = m_validation_dataset.m_data_reader->copy();
-    }
-    if (m_testing_dataset.m_data_reader) {
-      m_testing_dataset.m_data_reader = m_testing_dataset.m_data_reader->copy();
-    }
-    m_shared_data_reader = other.m_shared_data_reader;
     return *this;
   }
 
@@ -119,22 +82,6 @@ class target_layer : public io_layer {
     io_layer::setup_data();
     std::stringstream err;
 
-    // The setup should be taken out here. Instead it should be done at the parent scope
-    if(!this->m_shared_data_reader) { /// If the target layer shares a data reader with an input layer, do not setup the data reader a second time
-      if(m_training_dataset.m_data_reader != nullptr) {
-        m_training_dataset.m_data_reader->setup();
-        m_training_dataset.m_data_reader->set_rank(Layer::m_comm->get_rank_in_model());
-      }
-      if(m_validation_dataset.m_data_reader != nullptr) {
-        m_validation_dataset.m_data_reader->setup();
-        m_validation_dataset.m_data_reader->set_rank(Layer::m_comm->get_rank_in_model());
-      }
-      if(m_testing_dataset.m_data_reader != nullptr) {
-        m_testing_dataset.m_data_reader->setup();
-        m_testing_dataset.m_data_reader->set_rank(Layer::m_comm->get_rank_in_model());
-      }
-    }
-
     if(this->m_num_prev_neurons != this->m_num_neurons) {
       err << __FILE__ << " " << __LINE__ 
           << " :: " << get_type() << " this->m_num_prev_neurons != this->m_num_neurons; this->m_num_prev_neurons= " << this->m_num_prev_neurons << " this->m_num_neurons= " << this->m_num_neurons << endl;
@@ -158,12 +105,10 @@ class target_layer : public io_layer {
   }
 
   lbann::generic_data_reader *set_training_data_reader(generic_data_reader *data_reader, bool shared_data_reader) {
-    m_shared_data_reader = shared_data_reader;
     return io_layer::set_training_data_reader(data_reader);
   }
 
   lbann::generic_data_reader *set_testing_data_reader(generic_data_reader *data_reader, bool shared_data_reader) {
-    m_shared_data_reader = shared_data_reader;
     return io_layer::set_testing_data_reader(data_reader);
   }
 
