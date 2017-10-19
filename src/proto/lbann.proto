@@ -362,6 +362,7 @@ message Layer {
    Slice slice = 301;
    Split split = 302;
    Sum sum = 303;
+   Noise noise = 307;
    Unpooling unpooling = 304;
 
    // learning Layers
@@ -517,6 +518,9 @@ message Split {
 message Sum {
 }
 
+message Noise {
+  double noise_factor=1;
+}
 /////////////////////
 // learning Layers //
 /////////////////////
