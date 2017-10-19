@@ -34,6 +34,8 @@
 #include "El.hpp"
 #include <unistd.h>
 
+#ifdef __LIB_CUDNN
+
 using namespace cudnn;
 using namespace lbann;
 

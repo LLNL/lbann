@@ -724,6 +724,7 @@ fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_weights<device::CU
 
   }
 
+#if 1
   this->m_cudnn->allreduce(m_activation_weights_gradient_d,
                            m_activation_weights_gradient_v->Height(),
                            m_activation_weights_gradient_v->Width());
