@@ -38,6 +38,12 @@
 #include <cuda.h>
 #include <cudnn.h>
 #include <cublas_v2.h>
+
+#ifdef __LIB_NCCL
+#include "nccl.h"
+#include "nccl1_compat.h"
+#endif
+
 #endif // #ifdef __LIB_CUDNN
 
 // Error utility macros
@@ -95,7 +101,7 @@ class cudnn_manager {
    *  @param max_num_gpus  Maximum Number of available GPUs. If
    *                       negative, then use all available GPUs.
    */
-  cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus = -1);
+  cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus = -1, bool nccl_used = false);
 
   /** Destructor */
   ~cudnn_manager();
@@ -206,6 +212,12 @@ class cudnn_manager {
                  El::Int height,
                  El::Int width);
 
+  /** Allreduce within local multiple GPUs when NCCL is used for collectives
+   */
+  void allreduce_nccl(const std::vector<DataType*>& gpu_data,
+                 El::Int height,
+                 El::Int width);
+
   /** Synchronize the default stream. */
   void synchronize();
 
@@ -259,6 +271,20 @@ class cudnn_manager {
   std::vector<void *> m_work_spaces;
   /** List of GPU work space sizes. */
   std::vector<size_t> m_work_space_sizes;
+
+  /** List of NCCL 2 related variables. */
+  bool m_nccl_used;
+  void nccl_setup();
+  void nccl_destroy();
+
+#ifdef __LIB_NCCL
+  // One GPU per single thread of one MPI rank is assumed
+  ncclComm_t m_nccl_comm;
+
+  uint64_t getHostHash(const char* string);
+  ncclDataType_t nccl_datatype();
+#endif
+
 
 #endif // #ifdef __LIB_CUDNN
 };

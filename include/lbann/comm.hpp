@@ -695,6 +695,11 @@ class lbann_comm {
     return intermodel_comm;
   }
 
+  /** Return the model communicator. */
+  El::mpi::Comm get_model_comm() const {
+    return model_comm;
+  }
+
   /** Return true if rank (in comm) is on the local node. */
   bool is_rank_node_local(int rank, El::mpi::Comm comm) const {
     // Translating to COMM_WORLD is typically constant time.

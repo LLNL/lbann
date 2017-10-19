@@ -255,7 +255,6 @@ class fully_connected_layer : public learning {
     this->m_num_neurons = num_neurons;
     this->m_num_neuron_dims = num_neuron_dims;
     this->m_neuron_dims = neuron_dims;
-
   }
 
   void setup_data() {
@@ -733,6 +732,12 @@ fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_weights<device::CU
         m_activation_weights_gradient_d,
         m_activation_weights_gradient_v->LockedMatrix());
   }
+#else
+  // New implementation with NCCL 2
+  this->m_cudnn->allreduce_nccl(m_activation_weights_gradient_d,
+                           m_activation_weights_gradient_v->Height(),
+                           m_activation_weights_gradient_v->Width());
+#endif
   
 }
 #endif // __LIB_CUDA
