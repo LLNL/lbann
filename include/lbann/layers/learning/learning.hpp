@@ -102,9 +102,17 @@ class learning : public Layer, public optimizable_layer {
       const int local_height = m_weights->LocalHeight();
       const int local_width = m_weights->LocalWidth();
 
+      AbsDistMat *workspace;
+
+      if (get_data_layout() == data_layout::MODEL_PARALLEL) {
+        workspace = new StarMRMat(this->m_comm->get_model_grid());
+      } else {
+        workspace = new StarVCMat(this->m_comm->get_model_grid());
+      }
+      workspace->Resize(1, width);
+      Mat& local_workspace = workspace->Matrix();
+
       // Compute sum of squares with Kahan summation
-      Mat colSumSqrs = Mat(1, width);
-      El::Zero(colSumSqrs);
       for (int col = 0; col < local_width; ++col) {
         DataType sum = 0;
         DataType correction = 0;
@@ -115,15 +123,18 @@ class learning : public Layer, public optimizable_layer {
           correction = term - (next_sum - sum);
           sum = next_sum;
         }
-        colSumSqrs(0, m_weights->GlobalCol(col)) = sum;
+        local_workspace(0, col) = sum; 
       }
-      El::AllReduce(colSumSqrs, m_weights->DistComm(), El::mpi::SUM);
+      El::AllReduce(*workspace, workspace->RedundantComm(), El::mpi::SUM);
     
       // Add regularization term to objective function
       DataType sumColL2Norms = 0;
-      for (int i = width - 1; i >= 0; --i) sumColL2Norms += std::sqrt(colSumSqrs(0, i)); 
+      for (int i = 0; i < local_width; i++) sumColL2Norms += std::sqrt(local_workspace(0, i));
+      El::mpi::AllReduce(sumColL2Norms, workspace->DistComm()); 
       const DataType regularization_term = m_group_lasso_regularization_factor * sumColL2Norms;
       this->m_neural_network_model->m_obj_fn->add_to_value(regularization_term);
+
+      delete workspace;
     }
   }
 
@@ -138,8 +149,17 @@ class learning : public Layer, public optimizable_layer {
       const int local_height = m_weights->LocalHeight();
       const int local_width = m_weights->LocalWidth();
 
+      AbsDistMat *workspace;
+
+      if (get_data_layout() == data_layout::MODEL_PARALLEL) {
+        workspace = new StarMRMat(this->m_comm->get_model_grid());
+      } else {
+        workspace = new StarVCMat(this->m_comm->get_model_grid());
+      }
+      workspace->Resize(1, width);
+      Mat& local_workspace = workspace->Matrix();
+      
       // Compute sum of squares with Kahan summation
-      Mat colSumSqrs = Mat(1, width);
       for (int col = 0; col < local_width; ++col) {
         DataType sum = 0;
         DataType correction = 0;
@@ -150,32 +170,34 @@ class learning : public Layer, public optimizable_layer {
           correction = term - (next_sum - sum);
           sum = next_sum;
         }
-        colSumSqrs(0, m_weights->GlobalCol(col)) = sum;
+        local_workspace(0, col) = sum;
       }
-      El::AllReduce(colSumSqrs, m_weights->DistComm(), El::mpi::SUM);
-      El::EntrywiseMap(colSumSqrs, std::function<DataType(const DataType&)>(
-									   [](const DataType& x) {
-									     return std::sqrt(x);
-									   }));
+      
+      El::AllReduce(*workspace, workspace->RedundantComm(), El::mpi::SUM);      
+      El::EntrywiseMap(*workspace, std::function<DataType(const DataType&)>(
+                                                                           [](const DataType& x) {
+                                                                             return std::sqrt(x);
+                                                                           }));
    
-      //update m_weights_graident using colSumSqrs.
+      //update m_weights_graident using L2 norms of columns of weight matrix (in workspace.)
       Mat& m_weights_gradient_local = m_weights_gradient->Matrix();
       Mat& m_weights_local = m_weights->Matrix();
-      AbsDistMat& boo = *m_weights_gradient;
 
       El::IndexDependentMap(m_weights_gradient_local, 
 			    (std::function<DataType(El::Int,El::Int,const DataType&)>)
-			    ([&colSumSqrs, &m_weights_local, &boo](El::Int r, El::Int c, const DataType& x)
+	                    ([&m_weights_local, &local_workspace](El::Int r, El::Int c, const DataType& x)
 			     -> DataType {
-			      const DataType colL2Norm = colSumSqrs(0, boo.GlobalCol(c));
+                              const DataType colL2Norm = local_workspace(0, c); 
                               if (colL2Norm != DataType(0)) {
                                 return x + m_weights_local(r, c)/colL2Norm;
 			      } else {
                                 return x;			
 			      };  
 			    }));
+      delete workspace;
     }
   }
+    
 
  public:
   learning(int index, 

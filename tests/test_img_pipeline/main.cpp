@@ -78,10 +78,19 @@ int main(int argc, char *argv[]) {
     rp.m_is_set = true;
   }
 
+  bool enable_colorizer = true;
+  bool enable_augmenter = true;
+
   augmenter_params ap;
+  if (enable_augmenter) {
+    ap.m_rot = 0.1;
+    ap.m_shear = 0.2;
+    ap.m_vflip = true;
+    ap.m_is_set = true;
+  }
 
   // read write test with converting to/from a serialized buffer
-  bool ok = test_image_io(filename, sz, rp, ap, false);
+  bool ok = test_image_io(filename, sz, rp, ap, enable_colorizer);
   if (!ok) {
     std::cout << "Test failed" << std::endl;
     return 0;
@@ -150,7 +159,7 @@ bool test_image_io(const std::string filename, int sz, const resizer_params& rp,
       // Setup a resizer
       std::unique_ptr<lbann::cv_resizer> resizer(new(lbann::cv_resizer));
       resizer->set(rp.m_desired_sz.first, rp.m_desired_sz.second, true, rp.m_center, rp.m_roi_sz);
-      pp0->set_custom_transform1(std::move(resizer));
+      pp0->add_transform(std::move(resizer));
       sz = rp.m_desired_sz.first * rp.m_desired_sz.second * 3;
     }
 
@@ -158,19 +167,19 @@ bool test_image_io(const std::string filename, int sz, const resizer_params& rp,
       // Set up an augmenter
       std::unique_ptr<lbann::cv_augmenter> augmenter(new(lbann::cv_augmenter));
       augmenter->set(ap.m_hflip, ap.m_vflip, ap.m_rot, ap.m_hshift, ap.m_vshift, ap.m_shear);
-      pp0->set_augmenter(std::move(augmenter));
+      pp0->add_transform(std::move(augmenter));
     }
 
     if (do_colorize) {
       // Set up a colorizer
       std::unique_ptr<lbann::cv_colorizer> colorizer(new(lbann::cv_colorizer));
-      pp0->set_custom_transform2(std::move(colorizer));
+      pp0->add_transform(std::move(colorizer));
     }
 
     // Set up a normalizer
     std::unique_ptr<lbann::cv_normalizer> normalizer(new(lbann::cv_normalizer));
     normalizer->z_score(true);
-    pp0->set_normalizer(std::move(normalizer));
+    pp0->add_normalizer(std::move(normalizer));
 
     pp1 = pp0;
   }
@@ -245,20 +254,20 @@ bool test_image_io(const std::string filename, int sz, const resizer_params& rp,
   }
   show_image_size(width, height, type);
 
-  if (pp.custom_transform1()) {
-    std::cout << std::endl << "resizing method: "<< std::endl;
-    std::cout << *(pp.custom_transform1()) << std::endl;
+  const unsigned int num_transforms = pp.get_num_transforms();
+  const std::vector<std::unique_ptr<lbann::cv_transform> >& transforms = pp.get_transforms();
+
+  for(unsigned int i=0u; i < num_transforms; ++i) {
+    std::cout << std::endl << "------------ transform " << i << "-------------" << std::endl;
+    std::cout << *transforms[i] << std::endl;
   }
 
   Image_v1 = Image_v0;
 
   std::cout << "Minibatch matrix size: " << Images.Height() << " x " << Images.Width() << std::endl;
 
-  pp.disable_transforms();
-
   // Write an image
   const std::string ext = get_file_extention(filename);
-  pp.determine_inverse_normalization();
   std::vector<unsigned char> outbuf;
   ok = lbann::image_utils::export_image(ext, outbuf, width, height, type, pp, Image_v1);
   write_file("copy." + ext, outbuf);

@@ -346,6 +346,7 @@ bool lbann::image_utils::load_image(const std::string& filename,
 bool lbann::image_utils::save_image(const std::string& filename,
                                     const int Width, const int Height, const int Type, cv_process& pp, const std::vector<uint8_t>& buf) {
 #ifdef __LIB_OPENCV
+  pp.determine_inverse_normalization();
   cv::Mat image = cv_utils::copy_buf_to_cvMat(buf, Width, Height, Type, pp);
   bool ok = !image.empty() && pp.postprocess(image);
 
@@ -437,6 +438,7 @@ bool lbann::image_utils::load_image(const std::string& filename,
 bool lbann::image_utils::save_image(const std::string& filename,
                                     const int Width, const int Height, const int Type, cv_process& pp, const ::Mat& data) {
 #ifdef __LIB_OPENCV
+  pp.determine_inverse_normalization();
   cv::Mat image = cv_utils::copy_buf_to_cvMat(data, Width, Height, Type, pp);
   bool ok = !image.empty() && pp.postprocess(image);
 
@@ -527,6 +529,7 @@ bool lbann::image_utils::import_image(cv::InputArray inbuf,
 bool lbann::image_utils::export_image(const std::string& fileExt, std::vector<uchar>& outbuf,
                                       const int Width, const int Height, const int Type, cv_process& pp, const ::Mat& data) {
 #ifdef __LIB_OPENCV
+  pp.determine_inverse_normalization();
   cv::Mat image = cv_utils::copy_buf_to_cvMat(data, Width, Height, Type, pp);
   bool ok = !image.empty() && pp.postprocess(image);
 

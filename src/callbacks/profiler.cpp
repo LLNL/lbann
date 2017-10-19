@@ -58,7 +58,10 @@ static void synchronize_all_devices() {
 
 static void prof_region_begin(const char *s, int c) {
   synchronize_all_devices();
-  nvtxEventAttributes_t ev = {0};
+  // Doesn't work with gcc 4.9
+  // nvtxEventAttributes_t ev = {0};
+  nvtxEventAttributes_t ev;  
+  memset(&ev, 0, sizeof(nvtxEventAttributes_t));
   ev.version = NVTX_VERSION;   
   ev.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
   ev.colorType = NVTX_COLOR_ARGB;

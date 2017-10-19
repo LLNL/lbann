@@ -93,7 +93,7 @@ class cv_cropper : public cv_transform {
    */
   virtual bool apply(cv::Mat& image);
 
-  /// The augmentation is nonreversible.
+  /// Cropping is irreversible.
   bool determine_inverse_transform() {
     return false;
   }

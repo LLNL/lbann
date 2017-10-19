@@ -77,11 +77,11 @@ def help(model = False, data_reader = False, optimizer = False) :
     h += 'optimizer filename:   ' + optimizer + '\n'
 
   h += '''
-  run.py constructs a script titled "slurm_script.sh" then invokes msub.
+  runme.py constructs a script titled "slurm_script.sh" then invokes msub.
 
-  The following command line options are used by run.py;
+  The following command line options are used by runme.py;
   to view command line options that are used by LBANN,
-  run: $ run.py --help
+  run: $ runme.py --help
 
   REQUIRED OPTIONS:
   =================

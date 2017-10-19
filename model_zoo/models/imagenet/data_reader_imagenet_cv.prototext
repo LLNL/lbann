@@ -12,6 +12,11 @@ data_reader {
       subtract_mean: true
       unit_variance: false
       no_colorize: false
+#      crop_width: 240
+#      crop_height: 240
+#      crop_randomly: true
+#      crop_roi_width: 256
+#      crop_roi_height: 256
     }
   }
   reader {
@@ -27,6 +32,11 @@ data_reader {
       subtract_mean: true
       unit_variance: false
       no_colorize: false
+#      crop_width: 240
+#      crop_height: 240
+#      crop_randomly: false
+#      crop_roi_width: 256
+#      crop_roi_height: 256
     }
   }
 }

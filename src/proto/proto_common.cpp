@@ -1577,20 +1577,16 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       // set up the image preprocessor
       std::shared_ptr<cv_process> pp = std::make_shared<cv_process>();
 
-      // set up the normalizer
-      std::unique_ptr<lbann::cv_normalizer> normalizer(new(lbann::cv_normalizer));
-      normalizer->unit_scale(preprocessor.scale());
-      normalizer->subtract_mean(preprocessor.subtract_mean());
-      normalizer->unit_variance(preprocessor.unit_variance());
-      normalizer->z_score(preprocessor.z_score());
-      pp->set_normalizer(std::move(normalizer));
-      //if (master) cout << "normalizer is set" << endl;
-
-      // set up a custom transform (colorizer)
-      if (!preprocessor.no_colorize()) {
-        std::unique_ptr<lbann::cv_colorizer> colorizer(new(lbann::cv_colorizer));
-        pp->set_custom_transform2(std::move(colorizer));
-        //if (master) cout << "colorizer is set" << endl;
+      // set up cropper as needed
+      if(preprocessor.crop_first()) {
+        std::unique_ptr<lbann::cv_cropper> cropper(new(lbann::cv_cropper));
+        cropper->set(preprocessor.crop_width(),
+                     preprocessor.crop_height(),
+                     preprocessor.crop_randomly(),
+                     std::make_pair<int,int>(preprocessor.crop_roi_width(),
+                                             preprocessor.crop_roi_height()));
+        pp->add_transform(std::move(cropper));
+        //if (master) cout << "cropper is set" << endl;
       }
 
       // set up augmenter if necessary
@@ -1609,9 +1605,25 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
                        preprocessor.horizontal_shift(),
                        preprocessor.vertical_shift(),
                        preprocessor.shear_range());
-        pp->set_augmenter(std::move(augmenter));
+        pp->add_transform(std::move(augmenter));
         //if (master) cout << "augmenter is set" << endl;
       }
+
+      // set up a custom transform (colorizer)
+      if (!preprocessor.no_colorize()) {
+        std::unique_ptr<lbann::cv_colorizer> colorizer(new(lbann::cv_colorizer));
+        pp->add_transform(std::move(colorizer));
+        //if (master) cout << "colorizer is set" << endl;
+      }
+
+      // set up the normalizer
+      std::unique_ptr<lbann::cv_normalizer> normalizer(new(lbann::cv_normalizer));
+      normalizer->unit_scale(preprocessor.scale());
+      normalizer->subtract_mean(preprocessor.subtract_mean());
+      normalizer->unit_variance(preprocessor.unit_variance());
+      normalizer->z_score(preprocessor.z_score());
+      pp->add_normalizer(std::move(normalizer));
+      //if (master) cout << "normalizer is set" << endl;
 
       if (name == "imagenet_cv") {
         reader = new imagenet_reader_cv(mini_batch_size, pp, shuffle);
@@ -1960,6 +1972,9 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
   if (opts->has_bool("use_cudnn")) {
     model->set_use_cudnn(opts->get_int("use_cudnn"));
   }
+  if (opts->has_int("random_seed")) {
+    model->set_random_seed(opts->get_int("random_seed"));
+  }
 
 
   if (opts->has_string("opt")) {
@@ -2041,6 +2056,7 @@ void print_parameters(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
        << "  num_gpus:             " << m.num_gpus()  << endl
        << "  num_parallel_readers: " << m.num_parallel_readers()  << endl
        << "  use_cudnn:            " << m.use_cudnn()  << endl
+       << "  random_seed:          " << m.random_seed() << endl
        << "  objective_function:   " << m.objective_function()  << endl
        << "  data_layout:          " << m.data_layout()  << endl
        << "     (only used for metrics)\n"
@@ -2115,6 +2131,7 @@ void print_help(lbann::lbann_comm *comm)
        "  --num_gpus=<int>\n"
        "  --use_cudnn=<bool>\n"
        "     has no effect unless lbann was compiled with: __LIB_CUDNN\n"
+       "  --random_seed=<int>\n"
        "  --objective_function<string>\n"
        "      <string> must be: categorical_cross_entropy or mean_squared_error\n"
        "  --data_layout<string>\n"
