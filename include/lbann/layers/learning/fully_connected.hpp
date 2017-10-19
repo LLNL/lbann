@@ -456,7 +456,6 @@ class fully_connected_layer : public learning {
 #if !(defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA))
     throw lbann_exception("fully_connected: CUDA not detected");
 #else
-    
     // Apply weight matrix
     fp_compute_weights<device::CUDA>();
 
@@ -467,32 +466,15 @@ class fully_connected_layer : public learning {
         CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
 #if 1
         const DataType one = 1;        
-        FORCE_CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
-                                         this->m_cudnn->get_stream(i)));
-        {
-          int dims[5];
-          int strides[5];
-          cudnnDataType_t dt;
-          int nbdims;
-          // Debug printing
-          cudnnGetTensorNdDescriptor(m_bias_weights_desc, 5, &dt,
-                                     &nbdims, dims, strides);
-          std::cerr << "bias: nbdims: " << nbdims << ", dims: " << dims[0]
-                    << ", " << dims[1] << ", " << dims[2] << ", " << dims[3]
-                    << ", stride: " << strides[0] << ", " << strides[1] << ", "
-                    << strides[2] << ", " << strides[3] << ", type: " << dt << "\n";
-          cudnnGetTensorNdDescriptor(m_activations_desc, 5, &dt,
-                                     &nbdims, dims, strides);
-          std::cerr << "activations: nbdims: " << nbdims << ", dims: " << dims[0]
-                    << ", " << dims[1] << ", " << dims[2] << ", " << dims[3]
-                    << ", stride: " << strides[0] << ", " << strides[1] << ", "
-                    << strides[2] << ", " << strides[3] << ", type: " << dt << "\n";
-        }
+        CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
+                                   this->m_cudnn->get_stream(i)));
         FORCE_CHECK_CUDNN(cudnnAddTensor(this->m_cudnn->get_handle(i),
                                          &m_bias_scaling_factor,
                                          m_bias_weights_desc,
-                                         m_bias_weights_d[i], &one,
-                                         m_activations_desc, m_activations_d[i]));
+                                         m_bias_weights_d[i],
+                                         &one,
+                                         m_activations_desc,
+                                         m_activations_d[i]));
 #else
         fully_connected_cuda::add_tensor(m_bias_scaling_factor, m_bias_weights_d[i],
                                          m_bias_weights_v->Height(), 1,
