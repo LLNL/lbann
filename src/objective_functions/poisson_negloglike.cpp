@@ -36,7 +36,6 @@ void poisson_negloglike::compute_value(const AbsDistMat& predictions,
   // Get local matrices and matrix parameters
   const Mat& predictions_local = predictions.LockedMatrix();
   const Mat& ground_truth_local = ground_truth.LockedMatrix();
-  const El::Int height = predictions.Height();
   const El::Int width = predictions.Width();
   const El::Int local_height = predictions_local.Height();
   const El::Int local_width = predictions_local.Width();
@@ -48,7 +47,7 @@ void poisson_negloglike::compute_value(const AbsDistMat& predictions,
     for(El::Int row = 0; row < local_height; ++row) {
       const double true_val = ground_truth_local(row, col);
       const double pred_val = predictions_local(row, col);
-      double term = pred_val - true_value*std::log(pred_value) + std::lgamma(true_value + 1)   // \f[\lambda - k\log(\lambda) + \log(k!)\f]
+      double term = pred_val - true_val*std::log(pred_val) + std::lgamma(true_val + 1);   // \f[\lambda - k\log(\lambda) + \log(k!)\f]
       term += correction;
       const double next_sum = sum + term;
       correction = term - (next_sum - sum);

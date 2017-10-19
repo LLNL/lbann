@@ -53,8 +53,6 @@ void mean_absolute_deviation::compute_value(const AbsDistMat& predictions,
         const double true_val = ground_truth_local(row, col);
         const double pred_val = predictions_local(row, col);
         block_sum += std::abs(true_val - pred_val);
-        //const double error = true_val - pred_val;
-        //block_sum += error * error;
       }
       sum += block_sum;
     }
@@ -62,7 +60,7 @@ void mean_absolute_deviation::compute_value(const AbsDistMat& predictions,
   
   // Compute mean absolute deviation
   double mad = sum / (height * width);
-  mse = El::mpi::AllReduce(mad, predictions.DistComm());
+  mad = El::mpi::AllReduce(mad, predictions.DistComm());
 
   // Update objective function value
   add_to_value(mad);
@@ -90,7 +88,6 @@ void mean_absolute_deviation::compute_gradient(const AbsDistMat& predictions,
                            if (pred_val > true_val) return DataType(1)/height;
                            else if (pred_val < true_val) return DataType(-1)/height;
                            else return DataType(0);
-                           //return 2 * (pred_val - true_val) / height;
                          }));
 
 }

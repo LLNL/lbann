@@ -47,7 +47,7 @@ void geom_negloglike::compute_value(const AbsDistMat& predictions,
     for(El::Int row = 0; row < local_height; ++row) {
       const double true_val = ground_truth_local(row, col);
       const double pred_val = predictions_local(row, col);
-      double term = -(true_val*std::log(1-pred_val) + std::log(pred_val))
+      double term = -(true_val*std::log(1-pred_val) + std::log(pred_val));
       term += correction;
       const double next_sum = sum + term;
       correction = term - (next_sum - sum);
@@ -56,7 +56,7 @@ void geom_negloglike::compute_value(const AbsDistMat& predictions,
   }
   
   // Compute Geometric negative log-likelihood error
-  double geom_nll = sum / height;
+  double geom_nll = sum / width;
   geom_nll = El::mpi::AllReduce(geom_nll, predictions.DistComm());
 
   // Update objective function value
