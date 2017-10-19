@@ -102,7 +102,7 @@ class cv_augmenter : public cv_transform {
    */
   virtual bool apply(cv::Mat& image);
 
-  /// The augmentation is nonreversible.
+  /// Augmentation is irreversible.
   bool determine_inverse_transform() {
     return false;
   }

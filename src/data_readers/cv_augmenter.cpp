@@ -214,8 +214,7 @@ bool cv_augmenter::determine_transform(const cv::Mat& image) {
   m_trans(1,2) = y_shift;
 #endif
 
-  m_enabled = true;
-  return true;
+  return (m_enabled = true);
 }
 
 
@@ -242,24 +241,19 @@ bool cv_augmenter::apply(cv::Mat& image) {
 
 
 std::ostream& cv_augmenter::print(std::ostream& os) const {
-  os << "m_do_horizontal_flip: " << (m_do_horizontal_flip? "true" : "false") << std::endl
-     << "m_do_vertical_flip: " << (m_do_vertical_flip? "true" : "false") << std::endl
-     << "m_rotation_range: " << m_rotation_range << std::endl
-     << "m_horizontal_shift_range: " << m_horizontal_shift_range << std::endl
-     << "m_vertical_shift_range: " << m_vertical_shift_range << std::endl
-     << "m_shear_range: " << m_shear_range << std::endl
-     << "m_enabled: " << (m_enabled? "true" : "false") << std::endl
-     << "m_flip: " << static_cast<int>(m_flip) << std::endl
-     << "m_trans: " << m_trans(0,0) << '\t' << m_trans(0,1) << '\t' << m_trans(0,2)  << std::endl
-     << "         " << m_trans(1,0) << '\t' << m_trans(1,1) << '\t' << m_trans(1,2)  << std::endl
-     << "         " << m_trans(2,0) << '\t' << m_trans(2,1) << '\t' << m_trans(2,2)  << std::endl;
+  os << "cv_augmenter:" << std::endl
+     << " - m_do_horizontal_flip: " << (m_do_horizontal_flip? "true" : "false") << std::endl
+     << " - m_do_vertical_flip: " << (m_do_vertical_flip? "true" : "false") << std::endl
+     << " - m_rotation_range: " << m_rotation_range << std::endl
+     << " - m_horizontal_shift_range: " << m_horizontal_shift_range << std::endl
+     << " - m_vertical_shift_range: " << m_vertical_shift_range << std::endl
+     << " - m_shear_range: " << m_shear_range << std::endl
+     << " - m_enabled: " << (m_enabled? "true" : "false") << std::endl
+     << " - m_flip: " << static_cast<int>(m_flip) << std::endl
+     << " - m_trans: " << m_trans(0,0) << '\t' << m_trans(0,1) << '\t' << m_trans(0,2)  << std::endl
+     << "            " << m_trans(1,0) << '\t' << m_trans(1,1) << '\t' << m_trans(1,2)  << std::endl
+     << "            " << m_trans(2,0) << '\t' << m_trans(2,1) << '\t' << m_trans(2,2)  << std::endl;
 
-  return os;
-}
-
-
-std::ostream& operator<<(std::ostream& os, const cv_augmenter& ap) {
-  ap.print(os);
   return os;
 }
 

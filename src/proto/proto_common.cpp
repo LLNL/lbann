@@ -396,6 +396,14 @@ void add_layers(
     }
 
     //////////////////////////////////////////////////////////////////
+    // LAYER: noise 
+    //////////////////////////////////////////////////////////////////
+    else if (layer.has_noise()) {
+      const lbann_data::Noise& ell = layer.noise();
+      d = new noise_layer<>(layer_id, comm,ell.noise_factor(), cudnn);
+    }
+
+    //////////////////////////////////////////////////////////////////
     // LAYER: split
     //////////////////////////////////////////////////////////////////
     else if (layer.has_split()) {
@@ -1399,11 +1407,31 @@ void init_callbacks(
     if (callback.has_step_minibatch()) {
       const lbann_data::CallbackStepMinibatch& c = callback.step_minibatch();
       if (master) {
-        std::cout << "adding step_minibatch callback" << std::endl;
+        std::cout << "adding step_minibatch callback, start=" <<
+          c.starting_mbsize() << ", step=" << c.step() << " ramp=" <<
+          c.ramp_time() << std::endl;
       }
       lbann_callback_step_minibatch *step_mb_cb = new
-      lbann_callback_step_minibatch(c.starting_mbsize(), c.step());
+        lbann_callback_step_minibatch(c.starting_mbsize(), c.step(),
+                                      c.ramp_time());
       model->add_callback(step_mb_cb);
+    }
+
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: minibatch_schedule
+    //////////////////////////////////////////////////////////////////
+    if (callback.has_minibatch_schedule()) {
+      const lbann_data::CallbackMinibatchSchedule& c =
+        callback.minibatch_schedule();
+      if (master) {
+        std::cout << "adding minibatch_schedule callback" << std::endl;
+      }
+      std::vector<lbann_callback_minibatch_schedule::minibatch_step> steps;
+      for (int i = 0; i < c.step_size(); ++i) {
+        const lbann_data::MinibatchScheduleStep& step = c.step(i);
+        steps.emplace_back(step.epoch(), step.mbsize(), step.lr(),
+                           step.ramp_time());
+      }
     }
 
     //////////////////////////////////////////////////////////////////
@@ -1569,20 +1597,16 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       // set up the image preprocessor
       std::shared_ptr<cv_process> pp = std::make_shared<cv_process>();
 
-      // set up the normalizer
-      std::unique_ptr<lbann::cv_normalizer> normalizer(new(lbann::cv_normalizer));
-      normalizer->unit_scale(preprocessor.scale());
-      normalizer->subtract_mean(preprocessor.subtract_mean());
-      normalizer->unit_variance(preprocessor.unit_variance());
-      normalizer->z_score(preprocessor.z_score());
-      pp->set_normalizer(std::move(normalizer));
-      //if (master) cout << "normalizer is set" << endl;
-
-      // set up a custom transform (colorizer)
-      if (!preprocessor.no_colorize()) {
-        std::unique_ptr<lbann::cv_colorizer> colorizer(new(lbann::cv_colorizer));
-        pp->set_custom_transform2(std::move(colorizer));
-        //if (master) cout << "colorizer is set" << endl;
+      // set up cropper as needed
+      if(preprocessor.crop_first()) {
+        std::unique_ptr<lbann::cv_cropper> cropper(new(lbann::cv_cropper));
+        cropper->set(preprocessor.crop_width(),
+                     preprocessor.crop_height(),
+                     preprocessor.crop_randomly(),
+                     std::make_pair<int,int>(preprocessor.crop_roi_width(),
+                                             preprocessor.crop_roi_height()));
+        pp->add_transform(std::move(cropper));
+        //if (master) cout << "cropper is set" << endl;
       }
 
       // set up augmenter if necessary
@@ -1601,9 +1625,25 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
                        preprocessor.horizontal_shift(),
                        preprocessor.vertical_shift(),
                        preprocessor.shear_range());
-        pp->set_augmenter(std::move(augmenter));
+        pp->add_transform(std::move(augmenter));
         //if (master) cout << "augmenter is set" << endl;
       }
+
+      // set up a custom transform (colorizer)
+      if (!preprocessor.no_colorize()) {
+        std::unique_ptr<lbann::cv_colorizer> colorizer(new(lbann::cv_colorizer));
+        pp->add_transform(std::move(colorizer));
+        //if (master) cout << "colorizer is set" << endl;
+      }
+
+      // set up the normalizer
+      std::unique_ptr<lbann::cv_normalizer> normalizer(new(lbann::cv_normalizer));
+      normalizer->unit_scale(preprocessor.scale());
+      normalizer->subtract_mean(preprocessor.subtract_mean());
+      normalizer->unit_variance(preprocessor.unit_variance());
+      normalizer->z_score(preprocessor.z_score());
+      pp->add_normalizer(std::move(normalizer));
+      //if (master) cout << "normalizer is set" << endl;
 
       if (name == "imagenet_cv") {
         reader = new imagenet_reader_cv(mini_batch_size, pp, shuffle);

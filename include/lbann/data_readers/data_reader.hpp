@@ -454,6 +454,11 @@ class generic_data_reader : public lbann_image_preprocessor {
     return m_num_iterations_per_epoch;  /// @todo BVE FIXME merge this with alternate approach
   }
 
+  /// Return the index of the current iteration step in the epoch (also the mini-batch index)
+  int get_current_step_in_epoch() const {
+    return  m_current_mini_batch_idx;
+  }
+
   /// only the master may write to cerr or cout; primarily for use in debugging during development
   virtual void set_master(bool m) {
     m_master = m;

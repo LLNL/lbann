@@ -6,22 +6,22 @@
 #include <sstream>
 #include <algorithm>
 #include "lbann/data_readers/image_utils.hpp"
-#include "lbann/data_readers/cv_resizer.hpp"
+#include "lbann/data_readers/cv_cropper.hpp"
 #include "lbann/data_readers/cv_colorizer.hpp"
 
 
 using namespace lbann::patchworks;
 
-struct resizer_params {
+struct cropper_params {
   bool m_is_set;
+  bool m_rand_center;
   std::pair<int, int> m_desired_sz;
-  std::pair<float, float> m_center;
   std::pair<int, int> m_roi_sz;
 
-  resizer_params(void)
+  cropper_params(void)
     : m_is_set(false),
+      m_rand_center(false),
       m_desired_sz(std::make_pair(400, 400)),
-      m_center(std::make_pair(0.5, 0.5)),
       m_roi_sz(std::make_pair(0,0)) {}
 };
 
@@ -45,18 +45,17 @@ struct augmenter_params {
 };
 
 
-bool test_image_io(const std::string filename, int sz, const resizer_params& rp, const augmenter_params& ap, const bool do_colorize);
+bool test_image_io(const std::string filename, int sz, const cropper_params& rp, const augmenter_params& ap, const bool do_colorize);
 
 
 int main(int argc, char *argv[]) {
 
   if (argc < 2) {
-    std::cout << "Usage: > " << argv[0] << " image_filename [n]|[w h xc yc rw rh]" << std::endl;
+    std::cout << "Usage: > " << argv[0] << " image_filename [n]|[w h c rw rh]" << std::endl;
     std::cout << "    n: the number of channel values in the images (i.e., width*height*num_channels)" << std::endl;
     std::cout << "    w: the desired width of image" << std::endl;
     std::cout << "    h: the desired height of image" << std::endl;
-    std::cout << "   xc: the fractional horizontal position of the desired center in the image" << std::endl;
-    std::cout << "   yc: the fractional vertical position of the desired center in the image" << std::endl;
+    std::cout << "    c: whether to randomize the center within ROI (0|1)" << std::endl;
     std::cout << "   rw: the width of the region of interest" << std::endl;
     std::cout << "   rh: the height of the region of interest" << std::endl;
     return 0;
@@ -64,24 +63,32 @@ int main(int argc, char *argv[]) {
 
   std::string filename = argv[1];
   int sz = 0;
-  resizer_params rp;
+  cropper_params rp;
 
   if (argc == 3) {
     sz = atoi(argv[2]);
-  } else if (argc == 8) {
+  } else if (argc == 7) {
     rp.m_desired_sz.first = atoi(argv[2]);
     rp.m_desired_sz.second = atoi(argv[3]);
-    rp.m_center.first = atof(argv[4]);
-    rp.m_center.second = atof(argv[5]);
-    rp.m_roi_sz.first = atoi(argv[6]);
-    rp.m_roi_sz.second = atoi(argv[7]);
+    rp.m_rand_center = static_cast<bool>(atoi(argv[4]));
+    rp.m_roi_sz.first = atoi(argv[5]);
+    rp.m_roi_sz.second = atoi(argv[6]);
     rp.m_is_set = true;
   }
 
+  bool enable_colorizer = true;
+  bool enable_augmenter = true;
+
   augmenter_params ap;
+  if (enable_augmenter) {
+    ap.m_rot = 0.1;
+    ap.m_shear = 0.2;
+    ap.m_vflip = true;
+    ap.m_is_set = true;
+  }
 
   // read write test with converting to/from a serialized buffer
-  bool ok = test_image_io(filename, sz, rp, ap, false);
+  bool ok = test_image_io(filename, sz, rp, ap, enable_colorizer);
   if (!ok) {
     std::cout << "Test failed" << std::endl;
     return 0;
@@ -137,7 +144,7 @@ void write_file(const std::string filename, const std::vector<unsigned char>& bu
   file.close();
 }
 
-bool test_image_io(const std::string filename, int sz, const resizer_params& rp, const augmenter_params& ap, const bool do_colorize) {
+bool test_image_io(const std::string filename, int sz, const cropper_params& rp, const augmenter_params& ap, const bool do_colorize) {
 #if 1
   std::shared_ptr<lbann::cv_process> pp1;
 
@@ -146,11 +153,11 @@ bool test_image_io(const std::string filename, int sz, const resizer_params& rp,
   {
     std::shared_ptr<lbann::cv_process> pp0 = std::make_shared<lbann::cv_process>();
 
-    if (rp.m_is_set) { // If resizer parameters are given
-      // Setup a resizer
-      std::unique_ptr<lbann::cv_resizer> resizer(new(lbann::cv_resizer));
-      resizer->set(rp.m_desired_sz.first, rp.m_desired_sz.second, true, rp.m_center, rp.m_roi_sz);
-      pp0->set_custom_transform1(std::move(resizer));
+    if (rp.m_is_set) { // If cropper parameters are given
+      // Setup a cropper
+      std::unique_ptr<lbann::cv_cropper> cropper(new(lbann::cv_cropper));
+      cropper->set(rp.m_desired_sz.first, rp.m_desired_sz.second, rp.m_rand_center, rp.m_roi_sz);
+      pp0->add_transform(std::move(cropper));
       sz = rp.m_desired_sz.first * rp.m_desired_sz.second * 3;
     }
 
@@ -158,19 +165,19 @@ bool test_image_io(const std::string filename, int sz, const resizer_params& rp,
       // Set up an augmenter
       std::unique_ptr<lbann::cv_augmenter> augmenter(new(lbann::cv_augmenter));
       augmenter->set(ap.m_hflip, ap.m_vflip, ap.m_rot, ap.m_hshift, ap.m_vshift, ap.m_shear);
-      pp0->set_augmenter(std::move(augmenter));
+      pp0->add_transform(std::move(augmenter));
     }
 
     if (do_colorize) {
       // Set up a colorizer
       std::unique_ptr<lbann::cv_colorizer> colorizer(new(lbann::cv_colorizer));
-      pp0->set_custom_transform2(std::move(colorizer));
+      pp0->add_transform(std::move(colorizer));
     }
 
     // Set up a normalizer
     std::unique_ptr<lbann::cv_normalizer> normalizer(new(lbann::cv_normalizer));
     normalizer->z_score(true);
-    pp0->set_normalizer(std::move(normalizer));
+    pp0->add_normalizer(std::move(normalizer));
 
     pp1 = pp0;
   }
@@ -245,20 +252,20 @@ bool test_image_io(const std::string filename, int sz, const resizer_params& rp,
   }
   show_image_size(width, height, type);
 
-  if (pp.custom_transform1()) {
-    std::cout << std::endl << "resizing method: "<< std::endl;
-    std::cout << *(pp.custom_transform1()) << std::endl;
+  const unsigned int num_transforms = pp.get_num_transforms();
+  const std::vector<std::unique_ptr<lbann::cv_transform> >& transforms = pp.get_transforms();
+
+  for(unsigned int i=0u; i < num_transforms; ++i) {
+    std::cout << std::endl << "------------ transform " << i << "-------------" << std::endl;
+    std::cout << *transforms[i] << std::endl;
   }
 
   Image_v1 = Image_v0;
 
   std::cout << "Minibatch matrix size: " << Images.Height() << " x " << Images.Width() << std::endl;
 
-  pp.disable_transforms();
-
   // Write an image
   const std::string ext = get_file_extention(filename);
-  pp.determine_inverse_normalization();
   std::vector<unsigned char> outbuf;
   ok = lbann::image_utils::export_image(ext, outbuf, width, height, type, pp, Image_v1);
   write_file("copy." + ext, outbuf);

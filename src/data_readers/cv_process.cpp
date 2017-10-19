@@ -29,6 +29,7 @@
 
 
 #include "lbann/data_readers/cv_process.hpp"
+#include "lbann/utils/exception.hpp"
 
 #ifdef __LIB_OPENCV
 namespace lbann {
@@ -42,12 +43,19 @@ namespace lbann {
  */
 cv_process::cv_process(const cv_process& rhs)
   : m_flip(rhs.m_flip), m_split(rhs.m_split),
-    m_normalizer((!!rhs.m_normalizer) ? (rhs.m_normalizer->clone()) : NULL),
-    m_augmenter((!!rhs.m_augmenter)   ? (rhs.m_augmenter->clone()) : NULL),
-    m_transform1((!!rhs.m_transform1) ? (rhs.m_transform1->clone()) : NULL),
-    m_transform2((!!rhs.m_transform2) ? (rhs.m_transform2->clone()) : NULL),
-    m_transform3((!!rhs.m_transform3) ? (rhs.m_transform3->clone()) : NULL)
-{}
+    m_is_normalizer_set(rhs.m_is_normalizer_set),
+    m_normalizer_idx(rhs.m_normalizer_idx)
+{
+  for (size_t i = 0u; i < rhs.m_transforms.size(); ++i) {
+    std::unique_ptr<cv_transform> p(rhs.m_transforms[i]->clone());
+    if (!p) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: cv_process: undefined transform " << i;
+      throw lbann_exception(err.str());
+    }
+    m_transforms.push_back(std::move(p)); // avoid using emplace
+  }
+}
 
 /**
  * Assignment operator.
@@ -63,51 +71,88 @@ cv_process& cv_process::operator=(const cv_process& rhs) {
 
   m_flip = rhs.m_flip;
   m_split = rhs.m_split;
-  m_normalizer.reset((!!rhs.m_normalizer)? (rhs.m_normalizer->clone()) : NULL);
-  m_augmenter.reset((!!rhs.m_augmenter)? (rhs.m_augmenter->clone()) : NULL);
-  m_transform1.reset((!!rhs.m_transform1)? (rhs.m_transform1->clone()) : NULL);
-  m_transform2.reset((!!rhs.m_transform2) ? (rhs.m_transform2->clone()) : NULL);
-  m_transform3.reset((!!rhs.m_transform3) ? (rhs.m_transform3->clone()) : NULL);
+  m_is_normalizer_set = rhs.m_is_normalizer_set;
+  m_normalizer_idx = rhs.m_normalizer_idx;
+
+  m_transforms.clear();
+
+  for (size_t i = 0u; i < rhs.m_transforms.size(); ++i) {
+    std::unique_ptr<cv_transform> p(rhs.m_transforms[i]->clone());
+    if (!p)  {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: cv_process: undefined transform " << i;
+      throw lbann_exception(err.str());
+    }
+    m_transforms.push_back(std::move(p));
+  }
 
   return (*this);
 }
 
 
 void cv_process::reset() {
-  if (m_normalizer) {
-    m_normalizer->reset();
-  }
-  if (m_augmenter) {
-    m_augmenter->reset();
-  }
-  if (m_transform1) {
-    m_transform1->reset();
-  }
-  if (m_transform2) {
-    m_transform2->reset();
-  }
-  if (m_transform3) {
-    m_transform3->reset();
+  for (size_t i = 0u; i < m_transforms.size(); ++i)
+    m_transforms[i]->reset();
+}
+
+void cv_process::disable_normalizer() {
+  if (m_is_normalizer_set) {
+    m_transforms[m_normalizer_idx]->disable();
   }
 }
 
-
 void cv_process::disable_transforms() {
-  if (m_normalizer) {
-    m_normalizer->disable();
+  for (size_t i = 0u; i < m_transforms.size(); ++i) {
+    m_transforms[i]->disable();
   }
-  if (m_augmenter) {
-    m_augmenter->disable();
+}
+
+bool cv_process::add_transform(std::unique_ptr<cv_transform> tr) {
+  if (!tr) return false;
+  m_transforms.push_back(std::move(tr));
+  return true;
+}
+
+bool cv_process::add_normalizer(std::unique_ptr<cv_normalizer> tr) {
+  if (!tr || m_is_normalizer_set) return false;
+  m_is_normalizer_set = true;
+  m_normalizer_idx = m_transforms.size();
+  m_transforms.push_back(std::move(tr));
+  return true;
+}
+
+/// Allow read-only access to a particular transform indexed by idx
+const cv_transform* cv_process::get_transform(const unsigned int idx) const {
+  if (idx >= m_transforms.size()) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: cv_process: invalid index " << idx << " >= " << m_transforms.size();
+    throw lbann_exception(err.str());
   }
-  if (m_transform1) {
-    m_transform1->disable();
+  return m_transforms[idx].get();
+}
+
+/// Allow read-write access to a particular transform indexed by idx
+cv_transform* cv_process::get_transform(const unsigned int idx) {
+  if (idx >= m_transforms.size()) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: cv_process: invalid index " << idx << " >= " << m_transforms.size();
+    throw lbann_exception(err.str());
   }
-  if (m_transform2) {
-    m_transform2->disable();
+  return m_transforms[idx].get();
+}
+
+/**
+ * Call this before image saving/exporting in postprocessing if inverse normalization
+ * is needed to save image.  Unless normalization is followed by a transform, inverse
+ * normalization is done while copying data from El::Matrix<DataType> to cv::Mat format.
+ * Otherwise, it will be done during postprocessing as the rest of transforms in order.
+ */
+void cv_process::determine_inverse_normalization() {
+  if (!m_is_normalizer_set || !is_normalizer_last()) {
+    return;
   }
-  if (m_transform3) {
-    m_transform3->disable();
-  }
+
+  m_transforms[m_normalizer_idx]->determine_inverse_transform();
 }
 
 /**
@@ -119,54 +164,35 @@ bool cv_process::preprocess(cv::Mat& image) {
 
   bool ok = true;
 
-  if (m_transform1 && m_transform1->determine_transform(image)) {
-    ok = m_transform1->apply(image);
-    _LBANN_MILD_EXCEPTION(!ok, "transform1 has failed!", false);
-  }
-
   if (to_flip()) {
     cv::flip(image, image, how_to_flip());
   }
 
-  if (m_augmenter && m_augmenter->determine_transform(image)) {
-    ok = m_augmenter->apply(image);
-    _LBANN_MILD_EXCEPTION(!ok, "augmentation has failed!", false);
-  }
+  // While many transforms can update pixel values in place, some require new
+  // memory locations to write new values. In addition, at the end of a pre-
+  // processing pipeline, the values in an OpenCV matrix is copied into an
+  // Elemental matrix. Normalization typically is the last transform in a
+  // preprocessing pipeline. It is also simple enough (e.g., applying a linear
+  // function to existing values) that we can merge it with copying from one memory
+  // to another. Therefore, unless there is another preprocessing operation to be
+  // done after normalization, in which case we prefer in-place updating,
+  // we implicitly apply it during copying between memory locations to avoid
+  // redundant memory access overheads. For this reason, we treat normalization
+  // differently from other transforms.
 
-  if (m_transform2 && m_transform2->determine_transform(image)) {
-    ok = m_transform2->apply(image);
-    _LBANN_MILD_EXCEPTION(!ok, "transform2 has failed!", false);
-  }
+  const bool is_normalizer_the_last = is_normalizer_last();
+  const unsigned int n_immediate_transforms 
+      = (is_normalizer_the_last? m_normalizer_idx : m_transforms.size());
 
-  // The place for early-normalization in case that there is something to be done
-  // after normalization. Otherwise, normalization will implicitly be applied
-  // during data copying. in which case it needs to be disabled manually after the
-  // copying. If it is explicilty applied here, the normalizer will automatically be
-  // disabled to avoid redundant transform during copying.
-
-  if (m_normalizer) {
-    m_normalizer->determine_transform(image);
-  }
-
-#if 0
-  const std::vector<cv_normalizer::channel_trans_t> ntrans = get_transform_normalize();
-  for (size_t i=0u; i < ntrans.size(); ++i) {
-    std::cout << "preprocess scaling: " << ntrans[i].first << ' ' << ntrans[i].second << std::endl;
-  }
-#endif
-
-  if (m_transform3) {
-    if (m_normalizer) {
-      ok = m_normalizer->apply(image);
-      _LBANN_MILD_EXCEPTION(!ok, "normalization has failed!", false);
-      //m_normalizer->disable();
+  for (size_t i = 0u; i < n_immediate_transforms; ++i) {
+    if (m_transforms[i]->determine_transform(image)) {
+      ok = m_transforms[i]->apply(image);
+      _LBANN_MILD_EXCEPTION(!ok, "transform " << i << " has failed!", false);
     }
+  }
 
-    std::cout << "custom_transform3 " << std::endl;
-    if (m_transform3->determine_transform(image)) {
-      ok = m_transform3->apply(image);
-      _LBANN_MILD_EXCEPTION(!ok, "transform3 has failed!", false);
-    }
+  if (is_normalizer_the_last) {
+    m_transforms[m_normalizer_idx]->determine_transform(image);
   }
 
   return ok;
@@ -181,45 +207,43 @@ bool cv_process::postprocess(cv::Mat& image) {
 
   bool ok = true;
 
-  if (m_transform3 && m_transform3->is_enabled()) {
-    // must have been enabled by calling determine_inverse_transform()
-    ok = m_transform3->apply(image);
-    _LBANN_MILD_EXCEPTION(!ok, "inverse transform3 has failed!", false);
-  }
+  const bool is_normalizer_the_last = is_normalizer_last();
+  const unsigned int n_immediate_transforms 
+      = (is_normalizer_the_last? m_normalizer_idx : m_transforms.size());
 
-  // Inverse the early-normalization in case that there was something
-  // (transform3) had to be done after normalization during preprocessing.
-  // Otherwise, the transform will be done during copying via scaling.
+  // If normalizer is the last transform in the preprocessing pipeline, it will
+  // be the first in the postprocessing. In addition, it has implicitly been
+  // inversed during copying from El::Mat to cv::Mat before calling postprocess(image)
 
-  if (m_transform3) {
-    if (m_normalizer && m_normalizer->determine_inverse_transform()) {
-      ok = m_normalizer->apply(image);
-      _LBANN_MILD_EXCEPTION(!ok, "inverse normalization has failed!", false);
+  for (size_t i = n_immediate_transforms; i > 0; --i) {
+    if (m_transforms[i-1]->determine_inverse_transform()) {
+      ok = m_transforms[i-1]->apply(image);
+      _LBANN_MILD_EXCEPTION(!ok, "inverse transform " << i-1 << " has failed!", false);
     }
-  }
-
-#if 0
-  const std::vector<cv_normalizer::channel_trans_t> ntrans = get_transform_normalize();
-  for (size_t i=0u; i < ntrans.size(); ++i) {
-    std::cout << "postprocess scaling: " << ntrans[i].first << ' ' << ntrans[i].second << std::endl;
-  }
-#endif
-
-  if (m_transform2 && m_transform2->is_enabled()) {
-    ok = m_transform2->apply(image);
-    _LBANN_MILD_EXCEPTION(!ok, "inverse transform2 has failed!", false);
   }
 
   if (to_flip()) {
     cv::flip(image, image, how_to_flip());
   }
 
-  if (m_transform1 && m_transform1->is_enabled()) {
-    ok = m_transform1->apply(image);
-    _LBANN_MILD_EXCEPTION(!ok, "inverse transform1 has failed!", false);
+  return ok;
+}
+
+std::vector<cv_normalizer::channel_trans_t> cv_process::get_transform_normalize() const {
+  return (m_is_normalizer_set?
+          dynamic_cast<const cv_normalizer*>(m_transforms[m_normalizer_idx].get())->transform() :
+          std::vector<cv_normalizer::channel_trans_t>());
+}
+
+std::vector<cv_normalizer::channel_trans_t> cv_process::get_transform_normalize(const unsigned int ch) const {
+  std::vector<cv_normalizer::channel_trans_t> trans;
+  if (m_is_normalizer_set) {
+    trans = dynamic_cast<const cv_normalizer*>(m_transforms[m_normalizer_idx].get())->transform();
   }
 
-  return ok;
+  return ((trans.size() > ch) ?
+          std::vector<cv_normalizer::channel_trans_t>(1, trans[ch]) :
+          std::vector<cv_normalizer::channel_trans_t>(1, cv_normalizer::channel_trans_t(1.0, 0.0)));
 }
 
 } // end of namespace lbann

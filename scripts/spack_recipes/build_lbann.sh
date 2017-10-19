@@ -38,7 +38,7 @@ function HELP {
   exit 1
 }
 
-while getopts "b:c:de:ghm:t:" opt; do
+while getopts "b:c:de:ghm:st:" opt; do
   case $opt in
     b)
       BLAS=$OPTARG
@@ -160,7 +160,7 @@ if [ ! -z "${Fortran_FLAGS}" ]; then
     SPACK_FFLAGS="fflags=\"${Fortran_FLAGS}\""
 fi
 
-SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ${SPACK_CFLAGS} ${SPACK_CXXFLAGS} ${SPACK_FFLAGS} ^elemental@${EL_VER} blas=${BLAS} ^${MPI}"
+SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ${SPACK_CFLAGS} ${SPACK_CXXFLAGS} ${SPACK_FFLAGS} ^elemental@${EL_VER} blas=${BLAS} ^${MPI} ^protobuf@3.1.0"
 
 SPEC="spack spec ${SPACK_OPTIONS}"
 CMD="spack setup ${SPACK_OPTIONS}"
