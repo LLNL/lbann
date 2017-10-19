@@ -390,16 +390,22 @@ class fully_connected_layer : public learning {
 
 
     // CUDNN setup
+    // NOTE: Setting tensor dimensions as (1, 1, X, Y), where X is the
+    // mini batch size, and bias dimensions as (1, 1, 1, Y) does not
+    // work. Calls to cudnnAddTensor return
+    // CUDNN_STATUS_NOT_SUPPORTED. Setting X as the dimension of C
+    // works, though they should be mathematically the same. 
     FORCE_CHECK_CUDNN(cudnnCreateTensorDescriptor(&m_bias_weights_desc));
     FORCE_CHECK_CUDNN(cudnnSetTensor4dDescriptor(m_bias_weights_desc,
                                                  CUDNN_TENSOR_NCHW,
-                                                 this->m_cudnn->get_cudnn_data_type(),
-                                                 1, 1, 1, m_bias_weights_v->Height()));
-    FORCE_CHECK_CUDNN(cudnnCreateTensorDescriptor(&m_activations_desc));    
+                                                 cudnn::get_cudnn_data_type(),
+                                                 1, 1, 1,
+                                                 m_bias_weights_v->Height()));
+    FORCE_CHECK_CUDNN(cudnnCreateTensorDescriptor(&m_activations_desc));
     FORCE_CHECK_CUDNN(cudnnSetTensor4dDescriptor(m_activations_desc,
                                                  CUDNN_TENSOR_NCHW,
-                                                 this->m_cudnn->get_cudnn_data_type(),
-                                                 1, 1, m_mini_batch_size_per_gpu,
+                                                 cudnn::get_cudnn_data_type(),
+                                                 1, m_mini_batch_size_per_gpu, 1,
                                                  m_bias_weights_v->Height()));
 
     if (this->m_optimizer != nullptr) {
@@ -458,11 +464,8 @@ class fully_connected_layer : public learning {
     if(m_bias_scaling_factor != DataType(0)) {
       const int num_gpus = this->m_cudnn->get_num_gpus();
       for (int i = 0; i < num_gpus; ++i) {
-        FORCE_CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-        // CUDNN returns CUDNN_STATUS_NOT_SUPPORTED error.
-        // TODO: Investigate why CUDNN returns error.
-        // Use a custom CUDA code instead.
-#if 0
+        CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
+#if 1
         const DataType one = 1;        
         FORCE_CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
                                          this->m_cudnn->get_stream(i)));
