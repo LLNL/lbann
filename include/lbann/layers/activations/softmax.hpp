@@ -89,6 +89,14 @@ class softmax_layer : public activation_layer {
     m_workspace = other.m_workspace->Copy();
     m_workspace_v = other.m_workspace_v->Copy();
     m_min_output = other.m_min_output;
+    this->m_cudnn = other.m_cudnn;
+    this->m_using_gpus = other.m_using_gpus;
+#if defined(__LIB_CUDA) && defined(LBANN_SOFTMAX_CUDA)
+    if (this->m_using_gpus) {
+      cudnn::copy_tensor_cudnn_desc(other.m_cudnn_desc,
+                                    m_cudnn_desc);
+    }
+#endif
   }
 
   softmax_layer& operator=(const softmax_layer& other) {
@@ -100,6 +108,14 @@ class softmax_layer : public activation_layer {
     m_workspace = other.m_workspace->Copy();
     m_workspace_v = other.m_workspace_v->Copy();
     m_min_output = other.m_min_output;
+    this->m_cudnn = other.m_cudnn;
+    this->m_using_gpus = other.m_using_gpus;
+#if defined(__LIB_CUDA) && defined(LBANN_SOFTMAX_CUDA)    
+    if (this->m_using_gpus) {
+      cudnn::copy_tensor_cudnn_desc(other.m_cudnn_desc,
+                                    m_cudnn_desc);
+#endif      
+    }
   }
 
   ~softmax_layer() {
