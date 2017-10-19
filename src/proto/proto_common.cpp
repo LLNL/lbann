@@ -1288,7 +1288,7 @@ void init_callbacks(
       lbann_callback_debug_io *debug_cb = nullptr;
       if(c.phase() == "train" || c.phase() == "training") {
         debug_cb = new lbann_callback_debug_io(execution_mode::training, c.lvl());
-      } else if (c.phase() == "validation") {
+      } else if (c.phase() == "validate" || c.phase() == "validation") {
         debug_cb = new lbann_callback_debug_io(execution_mode::validation, c.lvl());
       } else if (c.phase() == "test" || c.phase() == "testing") {
         debug_cb = new lbann_callback_debug_io(execution_mode::testing, c.lvl());
