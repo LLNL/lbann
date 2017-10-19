@@ -1399,11 +1399,31 @@ void init_callbacks(
     if (callback.has_step_minibatch()) {
       const lbann_data::CallbackStepMinibatch& c = callback.step_minibatch();
       if (master) {
-        std::cout << "adding step_minibatch callback" << std::endl;
+        std::cout << "adding step_minibatch callback, start=" <<
+          c.starting_mbsize() << ", step=" << c.step() << " ramp=" <<
+          c.ramp_time() << std::endl;
       }
       lbann_callback_step_minibatch *step_mb_cb = new
-      lbann_callback_step_minibatch(c.starting_mbsize(), c.step());
+        lbann_callback_step_minibatch(c.starting_mbsize(), c.step(),
+                                      c.ramp_time());
       model->add_callback(step_mb_cb);
+    }
+
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: minibatch_schedule
+    //////////////////////////////////////////////////////////////////
+    if (callback.has_minibatch_schedule()) {
+      const lbann_data::CallbackMinibatchSchedule& c =
+        callback.minibatch_schedule();
+      if (master) {
+        std::cout << "adding minibatch_schedule callback" << std::endl;
+      }
+      std::vector<lbann_callback_minibatch_schedule::minibatch_step> steps;
+      for (int i = 0; i < c.step_size(); ++i) {
+        const lbann_data::MinibatchScheduleStep& step = c.step(i);
+        steps.emplace_back(step.epoch(), step.mbsize(), step.lr(),
+                           step.ramp_time());
+      }
     }
 
     //////////////////////////////////////////////////////////////////
