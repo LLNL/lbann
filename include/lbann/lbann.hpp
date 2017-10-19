@@ -71,6 +71,7 @@
 #include "lbann/layers/regularizers/dropout.hpp"
 #include "lbann/layers/regularizers/selu_dropout.hpp"
 #include "lbann/layers/regularizers/batch_normalization.hpp"
+#include "lbann/layers/regularizers/darc1.hpp"
 
 /// I/O Layers
 #include "lbann/layers/io/input/input_layer_distributed_minibatch.hpp"

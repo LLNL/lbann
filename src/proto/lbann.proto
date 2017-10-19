@@ -357,6 +357,7 @@ message Layer {
    LocalResponseNormalization local_response_normalization = 20;
    Dropout dropout = 21;
    SeluDropout selu_dropout = 229;
+   Darc1 darc1 = 230;
 
    // activation Layers
    Softmax softmax = 200;
@@ -434,6 +435,10 @@ message LocalResponseNormalization {
 
 message Dropout {
   double keep_prob = 2;  //default: 0.5
+}
+
+message Darc1 {
+  double scaling_factor = 1;  //default: 0.064
 }
 
 //////////////////
