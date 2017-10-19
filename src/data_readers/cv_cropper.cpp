@@ -61,7 +61,7 @@ void cv_cropper::set(const unsigned int width, const unsigned int height,
   m_rand_crop = random_crop;
 
   if ((roi_sz.first > 0) && (roi_sz.second > 0)) {
-    if ((roi_sz.first < width) || (roi_sz.second < height)) {
+    if (((unsigned) roi_sz.first < width) || ((unsigned) roi_sz.second < height)) {
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: cv_cropper: ROI size is smaller than that of a patch";
       throw lbann_exception(err.str());
