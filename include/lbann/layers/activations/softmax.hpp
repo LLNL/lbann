@@ -114,8 +114,8 @@ class softmax_layer : public activation_layer {
     if (this->m_using_gpus) {
       cudnn::copy_tensor_cudnn_desc(other.m_cudnn_desc,
                                     m_cudnn_desc);
-#endif      
     }
+#endif
   }
 
   ~softmax_layer() {
