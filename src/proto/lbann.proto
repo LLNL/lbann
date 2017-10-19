@@ -58,6 +58,12 @@ message ImagePreprocessor {
   bool disable_augmentation = 22;
   float noise_factor = 23;
   bool no_colorize = 24; // not to use colorizer in cv_process
+  bool crop_first = 25;
+  uint32 crop_width = 26;
+  uint32 crop_height = 27;
+  bool crop_randomly = 28;
+  int32 crop_roi_width = 29;
+  int32 crop_roi_height =30;
 }
 
 //========================================================================

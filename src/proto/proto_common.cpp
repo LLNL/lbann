@@ -1569,6 +1569,18 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       // set up the image preprocessor
       std::shared_ptr<cv_process> pp = std::make_shared<cv_process>();
 
+      // set up cropper as needed
+      if(preprocessor.crop_first()) {
+        std::unique_ptr<lbann::cv_cropper> cropper(new(lbann::cv_cropper));
+        cropper->set(preprocessor.crop_width(),
+                     preprocessor.crop_height(),
+                     preprocessor.crop_randomly(),
+                     std::make_pair<int,int>(preprocessor.crop_roi_width(),
+                                             preprocessor.crop_roi_height()));
+        pp->add_transform(std::move(cropper));
+        //if (master) cout << "cropper is set" << endl;
+      }
+
       // set up augmenter if necessary
       if (!preprocessor.disable_augmentation() &&
           (preprocessor.horizontal_flip() ||
