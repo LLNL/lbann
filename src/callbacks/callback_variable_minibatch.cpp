@@ -161,7 +161,7 @@ bool lbann_callback_step_minibatch::schedule(
 lbann_callback_minibatch_schedule::lbann_callback_minibatch_schedule(
   int starting_mbsize, std::vector<minibatch_step> steps) :
   lbann_callback_variable_minibatch(starting_mbsize), m_steps(steps) {
-  std::sort(steps.rbegin(), steps.rend(),
+  std::sort(m_steps.rbegin(), m_steps.rend(),
             [] (const minibatch_step& a, const minibatch_step& b) {
               return a.epoch < b.epoch;
             });
