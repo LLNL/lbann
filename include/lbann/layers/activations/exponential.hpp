@@ -47,7 +47,7 @@ class exponential_layer : public entrywise_activation_layer {
 
   exponential_layer* copy() const { return new exponential_layer(*this); }
 
-  std::string get_name() const { return "exponential"; }
+  std::string get_type() const { return "exponential"; }
 
   virtual inline void initialize_distributed_matrices() {
     entrywise_activation_layer::initialize_distributed_matrices<T_layout>();

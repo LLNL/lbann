@@ -84,9 +84,9 @@ void lbann_callback_imcomm::setup(model *m) {
     }
     if (params.ct != NONE) {
       if (!learning_layer) {
-        throw lbann_exception("imcomm: trying to do inter-model gradient "
-                              "communication on layer " + std::to_string(layer)
-                              + " without gradients");
+        throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: "
+          + "imcomm: trying to do inter-model gradient communication on layer " 
+          + std::to_string(layer) + " without gradients");
       }
       if (ct_needs_reshape(params.ct)) {
         // Currently, no layers need reshaping.
@@ -175,7 +175,8 @@ void lbann_callback_imcomm::on_backward_prop_end(model *m) {
         comm, *local_gradients, params.error, params.proportion);
       break;
     default:
-      throw lbann_exception("imcomm: unknown comm type");
+      throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: "
+         + "imcomm: unknown comm type");
     }
     double im_time = get_time() - start_time;
     do_summary(m, learning_layer, im_time);
@@ -248,7 +249,7 @@ static std::vector<std::string> comm_type_names  =
 
 /** returns a string representation of the weight_initialization */
 std::string get_comm_type_name(lbann_callback_imcomm::comm_type m) {
-  if ((int)m < 0 or (int)m >= comm_type_names.size()) {
+  if ((int)m < 0 or (int)m >= (int)comm_type_names.size()) {
     throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: "
            + " Invalid comm_type");
   }

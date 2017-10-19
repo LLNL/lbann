@@ -58,7 +58,10 @@ static void synchronize_all_devices() {
 
 static void prof_region_begin(const char *s, int c) {
   synchronize_all_devices();
-  nvtxEventAttributes_t ev = {0};
+  // Doesn't work with gcc 4.9
+  // nvtxEventAttributes_t ev = {0};
+  nvtxEventAttributes_t ev;  
+  memset(&ev, 0, sizeof(nvtxEventAttributes_t));
   ev.version = NVTX_VERSION;   
   ev.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
   ev.colorType = NVTX_COLOR_ARGB;
@@ -116,7 +119,7 @@ void lbann_callback_profiler::on_backward_prop_end(model *m) {
 }
 
 int lbann_callback_profiler::get_color(Layer *l) {
-  const std::string &lname = l->get_name();
+  const std::string &lname = l->get_type();
   int idx = 4;
   if (lname == "fully_connected") {
     idx = 5;
@@ -131,19 +134,19 @@ int lbann_callback_profiler::get_color(Layer *l) {
 }
 
 void lbann_callback_profiler::on_forward_prop_begin(model *m, Layer *l) {
-  prof_region_begin(("fw " + l->get_name()).c_str(), get_color(l));  
+  prof_region_begin(("fw " + l->get_type()).c_str(), get_color(l));  
 }
 
 void lbann_callback_profiler::on_forward_prop_end(model *m, Layer *l) {
-  prof_region_end(("fw " + l->get_name()).c_str());    
+  prof_region_end(("fw " + l->get_type()).c_str());    
 }
 
 void lbann_callback_profiler::on_backward_prop_begin(model *m, Layer *l) {
-  prof_region_begin(("bw " + l->get_name()).c_str(), get_color(l));    
+  prof_region_begin(("bw " + l->get_type()).c_str(), get_color(l));    
 }
 
 void lbann_callback_profiler::on_backward_prop_end(model *m, Layer *l) {
-  prof_region_end(("bw " + l->get_name()).c_str());
+  prof_region_end(("bw " + l->get_type()).c_str());
 }
 
 }  // namespace lbann

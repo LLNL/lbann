@@ -1,0 +1,27 @@
+--- cmake/external_projects/ElMath/OpenBLAS.cmake	2017-05-26 00:19:56.507930982 -0700
++++ cmake/external_projects/ElMath/OpenBLAS.cmake.new	2017-05-26 00:18:19.636233570 -0700
+@@ -142,10 +142,14 @@
+     set(OPENBLAS_INTERFACE_COMMAND INTERFACE64=0)
+   endif()
+ 
++  # patch file
++  set(OpenBLAS_PATCH_DIR ${PATCH_DIR}/OpenBLAS)
++  set(OpenBLAS_PATCH_SCRIPT ${OpenBLAS_PATCH_DIR}/patchOpenBLAS.sh)
++
+   ExternalProject_Add(project_openblas
+     PREFIX ${CMAKE_INSTALL_PREFIX}
+     GIT_REPOSITORY ${OPENBLAS_URL}
+-    GIT_TAG "v0.2.15"
++    GIT_TAG "v0.2.20"
+     STAMP_DIR ${OPENBLAS_BINARY_DIR}/stamp
+     BUILD_IN_SOURCE 1
+     SOURCE_DIR ${OPENBLAS_SOURCE_DIR}
+@@ -153,7 +157,7 @@
+     INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
+     CONFIGURE_COMMAND ""
+     UPDATE_COMMAND "" 
+-    BUILD_COMMAND ${CMAKE_MAKE_PROGRAM}
++    BUILD_COMMAND pushd ${OPENBLAS_SOURCE_DIR} && ${OpenBLAS_PATCH_SCRIPT} && popd && ${CMAKE_MAKE_PROGRAM}
+       CC=${CMAKE_C_COMPILER}
+       FC=${CMAKE_Fortran_COMPILER}
+       ${OPENBLAS_THREAD_COMMAND}

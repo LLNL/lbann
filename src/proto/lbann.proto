@@ -92,6 +92,8 @@ message Model {
   int64 checkpoint_epochs = 31;
   int64 checkpoint_steps = 32;
   double checkpoint_secs = 33;
+
+  int64 random_seed = 34;
 }
 
 //========================================================================
@@ -320,8 +322,9 @@ message CallbackGradientCheck {
 //
 
 message Layer {
-   int64 index = 50; 
-   int64 parent = 51;
+   string name = 50; 
+   string parents = 151;
+   string children = 152;
    string data_layout = 52;
    bool num_neurons_from_data_reader = 53;
 
@@ -474,7 +477,7 @@ message Pooling {
 
 message Unpooling {
   int64 num_dims = 1;
-  int64 pooling_layer = 13; //should be index of pooling layer
+  string pooling_layer = 13; //should be name of the pooling layer
 }
 
 
@@ -484,17 +487,14 @@ message Concatenation {
 }
 
 message Slice {
-  string children = 1; //should be space-separated list of indices, e.g, "2 6 7"
   int64 slice_axis = 2;
   string slice_points = 3; //should be space-separated list of ints, e.g, "2 6 7"
 }
 
 message Split {
-  string children = 1; //should be space-separated list of indices, e.g, "2 6 7"
 }
 
 message Sum {
-  string parents = 1; //should be space-separated list of indices, e.g, "2 6 7"
 }
 
 /////////////////////

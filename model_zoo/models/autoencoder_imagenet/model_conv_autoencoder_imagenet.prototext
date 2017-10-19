@@ -37,8 +37,9 @@ model {
   # INPUT
   #######
   layer {
-    index: 1
-    parent: 1
+    name: "1"
+    parents: "1"
+    children: ""
     data_layout: "data_parallel"
     input_distributed_minibatch {
     }
@@ -48,8 +49,9 @@ model {
   # CONVOLUTION 1
   #############
   layer {
-    index: 2
-    parent: 1
+    name: "2"
+    parents: "1"
+    children: ""
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -68,8 +70,9 @@ model {
   # RELU 1
   ######
   layer {
-    index: 3
-    parent: 2
+    name: "3"
+    parents: "2"
+    children: ""
     data_layout: "data_parallel"
     relu {
     }
@@ -79,8 +82,9 @@ model {
   # POOLING 1
   #########
   layer {
-    index: 4
-    parent: 3
+    name: "4"
+    parents: "3"
+    children: ""
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
@@ -98,12 +102,13 @@ model {
   # UNPOOLING 1
   #########
   layer {
-    index: 5 
-    parent: 4
+    name: "5"
+    parents: "4"
+    children: ""
     data_layout: "data_parallel"
     unpooling {
       num_dims: 2
-      pooling_layer: 4
+      pooling_layer: "4"
     }
   }
 
@@ -111,8 +116,9 @@ model {
   # DECONVOLUTION 1
   #############
   layer {
-    index: 6
-    parent: 4
+    name: "6"
+    parents: "5"
+    children: ""
     data_layout: "data_parallel"
     deconvolution {
       num_dims: 2
@@ -131,8 +137,9 @@ model {
   # SIGMOID sigmoid
   #######
   layer {
-    index: 7
-    parent: 6
+    name: "7"
+    parents: "6"
+    children: ""
     data_layout: "data_parallel"
     sigmoid {
     }
@@ -143,8 +150,9 @@ model {
   # RECONSTRUCTION
   #################
   layer {
-    index: 10 
-    parent: 9
+    name: "8"
+    parents: "7"
+    children: ""
     data_layout: "data_parallel"
     reconstruction {
       original_layer: 1

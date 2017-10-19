@@ -16,10 +16,12 @@ add_sources(data_reader.cpp
             cv_process.cpp
             cv_process_patches.cpp
             cv_resizer.cpp
+            cv_cropper.cpp
             cv_utils.cpp
             data_reader_numpy.cpp
             data_reader_synthetic.cpp
             data_reader_csv.cpp
             data_reader_merge_features.cpp
             data_reader_merge_samples.cpp
+            data_reader_pilot2_molecular.cpp
 )

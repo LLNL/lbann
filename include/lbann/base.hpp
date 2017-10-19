@@ -93,7 +93,6 @@ static const char *__attribute__((used)) _to_string(execution_mode m) {
   default:
     throw("Invalid execution mode specified"); /// @todo this should be an lbann_exception but then the class has to move to resolve dependencies
   }
-  return NULL;
 }
 
 /** Weight matrix initialization scheme */

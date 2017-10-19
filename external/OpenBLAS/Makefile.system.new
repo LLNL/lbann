@@ -568,6 +568,11 @@ CCOMMON_OPT += -mips64r6 -mnan=2008 -mtune=p6600 $(MSA_FLAGS)
 FCOMMON_OPT += -mips64r6 -mnan=2008 -mtune=p6600 $(MSA_FLAGS)
 endif
 
+ifeq ($(CORE), I6500)
+CCOMMON_OPT += -mips64r6 -mnan=2008 -mtune=i6400 $(MSA_FLAGS)
+FCOMMON_OPT += -mips64r6 -mnan=2008 -mtune=i6400 $(MSA_FLAGS)
+endif
+
 ifeq ($(OSNAME), AIX)
 BINARY_DEFINED = 1
 endif
@@ -575,10 +580,12 @@ endif
 endif
 
 ifndef BINARY_DEFINED
+ifneq ($(OSNAME), AIX)
 ifdef BINARY64
 CCOMMON_OPT += -m64
 else
 CCOMMON_OPT += -m32
+endif
 endif
 endif
 
@@ -625,10 +632,12 @@ ifeq ($(F_COMPILER), G77)
 CCOMMON_OPT += -DF_INTERFACE_G77
 FCOMMON_OPT += -Wall
 ifndef NO_BINARY_MODE
+ifneq ($(OSNAME), AIX)
 ifdef BINARY64
 FCOMMON_OPT += -m64
 else
 FCOMMON_OPT += -m32
+endif
 endif
 endif
 endif
@@ -636,11 +645,13 @@ endif
 ifeq ($(F_COMPILER), G95)
 CCOMMON_OPT += -DF_INTERFACE_G95
 FCOMMON_OPT += -Wall
+ifneq ($(OSNAME), AIX)
 ifndef NO_BINARY_MODE
 ifdef BINARY64
 FCOMMON_OPT += -m64
 else
 FCOMMON_OPT += -m32
+endif
 endif
 endif
 endif
@@ -664,14 +675,18 @@ FCOMMON_OPT += -mabi=32
 endif
 else
 ifdef BINARY64
+ifneq ($(OSNAME), AIX)
 FCOMMON_OPT += -m64
+endif
 ifdef INTERFACE64
 ifneq ($(INTERFACE64), 0)
 FCOMMON_OPT +=  -fdefault-integer-8
 endif
 endif
 else
+ifneq ($(OSNAME), AIX)
 FCOMMON_OPT += -m32
+endif
 endif
 endif
 ifeq ($(USE_OPENMP), 1)
@@ -948,9 +963,15 @@ SYMBOLSUFFIX =
 endif
 
 ifndef LIBNAMESUFFIX
-LIBPREFIX = lib$(SYMBOLPREFIX)openblas$(SYMBOLSUFFIX)
+LIBNAMEBASE = $(SYMBOLPREFIX)openblas$(SYMBOLSUFFIX)
 else
-LIBPREFIX = lib$(SYMBOLPREFIX)openblas$(SYMBOLSUFFIX)_$(LIBNAMESUFFIX)
+LIBNAMEBASE = $(SYMBOLPREFIX)openblas$(SYMBOLSUFFIX)_$(LIBNAMESUFFIX)
+endif
+
+ifeq ($(OSNAME), CYGWIN_NT)
+LIBPREFIX = cyg$(LIBNAMEBASE)
+else
+LIBPREFIX = lib$(LIBNAMEBASE)
 endif
 
 KERNELDIR	= $(TOPDIR)/kernel/$(ARCH)
@@ -1109,6 +1130,7 @@ endif
 
 
 LIBDLLNAME   = $(LIBPREFIX).dll
+IMPLIBNAME   = lib$(LIBNAMEBASE).dll.a
 LIBSONAME    = $(LIBNAME:.$(LIBSUFFIX)=.so)
 LIBDYNNAME   = $(LIBNAME:.$(LIBSUFFIX)=.dylib)
 LIBDEFNAME   = $(LIBNAME:.$(LIBSUFFIX)=.def)

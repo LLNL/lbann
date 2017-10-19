@@ -42,15 +42,15 @@ using namespace El;
 #define DATA_LAYOUT data_layout::MODEL_PARALLEL
 
 // train/test data info
-const int g_SaveImageIndex[1] = {0}; // for auto encoder
+//const int g_SaveImageIndex[1] = {0}; // for auto encoder
 //const int g_SaveImageIndex[5] = {293, 2138, 3014, 6697, 9111}; // for auto encoder
 //const int g_SaveImageIndex[5] = {1000, 2000, 3000, 4000, 5000}; // for auto encoder
 const string g_ImageNet_TrainDir = "resized_256x256/train/";
 const string g_ImageNet_ValDir = "resized_256x256/val/";
 const string g_ImageNet_TestDir = "resized_256x256/val/";
 const string g_ImageNet_LabelDir = "labels/";
-const int g_ImageNet_Width = 256;
-const int g_ImageNet_Height = 256;
+//const int g_ImageNet_Width = 256;
+//const int g_ImageNet_Height = 256;
 
 const string g_ImageNet_TrainLabelFile = "train_c0-9_01.txt";
 //const string g_ImageNet_TrainLabelFile = "train_c0-9.txt";

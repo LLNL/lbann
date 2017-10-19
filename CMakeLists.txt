@@ -4,6 +4,11 @@ cmake_minimum_required(VERSION 3.1)
 #set(LBANN_MAJOR_VERSION 0)
 #set(LBANN_MINOR_VERSION 91)
 
+set(LBANN_PUBLIC_LINK_FLAG "PUBLIC")
+if (CMAKE_VERSION VERSION_LESS 3.9)
+  set(LBANN_PUBLIC_LINK_FLAG)
+endif()
+  
 # Check to see if we are in a git repo
 execute_process(COMMAND git rev-parse --is-inside-work-tree OUTPUT_VARIABLE GIT_REPO OUTPUT_STRIP_TRAILING_WHITESPACE)
 
@@ -56,6 +61,12 @@ endif()
 ################################################################
 # Initialize build
 ################################################################
+
+# Temporary workaround to force CMake to recognize the XL compiler. The latest beta XL compiler is recognized as Clang. 
+if (CMAKE_CXX_COMPILER MATCHES "xlc" AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  set(CMAKE_CXX_COMPILER_ID "XL")
+endif()
+
 
 # Add CMake modules
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
@@ -159,6 +170,7 @@ if(CUDA_FOUND)
   if(WITH_CUDNN)
     include(cuDNN)
   endif()
+  set(CUDA_LINK_LIBRARIES_KEYWORD ${LBANN_PUBLIC_LINK_FLAG})
 endif()
 
 include(Elemental)
@@ -280,40 +292,49 @@ else()
 endif()
 
 # Link libraries
-target_link_libraries(lbann ${MPI_CXX_LIBRARIES})
-target_link_libraries(lbann ${Elemental_LIBRARIES})
-target_link_libraries(lbann ${OpenCV_LIBRARIES})
-target_link_libraries(lbann ${PROTOBUF_LIBRARIES})
-target_link_libraries(lbann ${CNPY_LIBRARIES})
+target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} ${MPI_CXX_LIBRARIES})
+target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} ${Elemental_LIBRARIES})
+target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} ${OpenCV_LIBRARIES})
+target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} ${PROTOBUF_LIBRARIES})
+target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} ${CNPY_LIBRARIES})
 
 message("main CMakeFiles XXX LbannProto_LIBRARIES: ${LbannProto_LIBRARIES}")
-# target_link_libraries(lbann ${LbannProto_LIBRARIES})
+# target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} ${LbannProto_LIBRARIES})
 
 if(LBANN_HAS_CUDA)
-  target_link_libraries(lbann ${CUDA_LIBRARIES})
+  target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} ${CUDA_LIBRARIES})
   if(WITH_NVPROF)
     add_definitions(-DLBANN_NVPROF)
-    target_link_libraries(lbann ${NVTX_LIBRARIES})
+    target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} ${NVTX_LIBRARIES})
   endif()
-  target_link_libraries(lbann ${cuBLAS_LIBRARIES})
+  target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} ${cuBLAS_LIBRARIES})
 endif()
 if(LBANN_HAS_CUDNN)
-  target_link_libraries(lbann ${cuDNN_LIBRARIES})
+  target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} ${cuDNN_LIBRARIES})
 endif()
 if(LBANN_HAS_VTUNE)
-  target_link_libraries(lbann ${VTUNE_STATIC_LIB})
-  target_link_libraries(lbann dl)
+  target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} ${VTUNE_STATIC_LIB})
+  target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} dl)
 endif()
 if(LBANN_HAS_TBINF)
-  target_link_libraries(lbann TBinf)
+  target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} TBinf)
 endif()
 if(LBANN_HAS_LBANN_PROTO)
-  target_link_libraries(lbann LbannProto)
+  target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} LbannProto)
 endif()
 
 if(WITH_TOPO_AWARE)
   # LBANN also requires HWLOC. This seems sufficient for now.
-  target_link_libraries(lbann hwloc)
+  find_package(HWLOC)
+
+  if (HWLOC_FOUND)
+    target_include_directories(src SYSTEM PUBLIC ${HWLOC_INCLUDE_PATH})
+    target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} ${HWLOC_LIBRARIES})
+  else()
+    message(FATAL_ERROR "Requested WITH_TOPO_AWARE but HWLOC not found. "
+      "Try specifying HWLOC_DIR as the root of an HWLOC install. "
+      "Alternatively, build with WITH_TOPO_AWARE=OFF.")
+  endif()
 endif()
 
 target_compile_options(src PUBLIC "-Werror")

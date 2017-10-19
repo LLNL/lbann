@@ -77,11 +77,11 @@ def help(model = False, data_reader = False, optimizer = False) :
     h += 'optimizer filename:   ' + optimizer + '\n'
 
   h += '''
-  run.py constructs a script titled "slurm_script.sh" then invokes msub.
+  runme.py constructs a script titled "slurm_script.sh" then invokes msub.
 
-  The following command line options are used by run.py;
+  The following command line options are used by runme.py;
   to view command line options that are used by LBANN,
-  run: $ run.py --help
+  run: $ runme.py --help
 
   REQUIRED OPTIONS:
   =================
@@ -119,7 +119,7 @@ def help(model = False, data_reader = False, optimizer = False) :
   '''
   return h
 
-def run_cmd(model, data_reader, optimizer) :
+def run_cmd(model, data_reader, optimizer, test_setup = False) :
   '''Returns a command line that will run the lbann executable using prototext
      files. The returned string is something like: 
        srun --node=<int> --ntasks_per_node=<int> <path to>/lbann --todoTODO
@@ -143,6 +143,11 @@ def run_cmd(model, data_reader, optimizer) :
     if n.find('--tasks=') != -1 :
       t = n.split('=')
       ntasks_per_node = t[1]
+
+  if test_setup :
+    nnodes = 1
+    ntasks_per_node = 12
+
   if nnodes == 0 or ntasks_per_node == 0 :
     print '\n\nERROR: you must specify both --nodes=<int> and --tasks=<int>'
     print '-------------------------------------------------------------------------------'
@@ -163,7 +168,14 @@ def build_and_submit_slurm_script(model, data_reader, optimizer) :
      appears on the command line. Various informational messages may be
      written to stdout; these include all 'srun ...' commands'
   '''
-  print run_cmd(model, data_reader, optimizer) 
+
+  test_setup = False
+  for x in sys.argv :
+    if x == '--exit_after_setup' :
+      test_setup = True
+
+
+  print run_cmd(model, data_reader, optimizer, test_setup) 
   #where = '{:%Y-%m-%d_%H:%M:%S}'.format(datetime.datetime.now())  
   '''
   for n in sys.argv :

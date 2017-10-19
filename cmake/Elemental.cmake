@@ -36,7 +36,7 @@ if (NOT Elemental_FOUND)
   endif()
   if(NOT ELEMENTAL_TAG)
      # Latest development version.
-     set(ELEMENTAL_TAG "ba7780b6a3e580aba470a7674f3882a3d827b64c")
+     set(ELEMENTAL_TAG "ca171b964a02d7a7c52d019fdf18cf01986e3de6")
   endif()
   message(STATUS "Will pull Elemental (tag ${ELEMENTAL_TAG}) from ${ELEMENTAL_URL}")
 
@@ -56,6 +56,9 @@ if (NOT Elemental_FOUND)
   option(ELEMENTAL_DISABLE_QUAD "Elemental: disable quad precision" ON) # GPL license
   option(ELEMENTAL_USE_64BIT_INTS "Elemental: use 64bit integers" ON)
   option(ELEMENTAL_USE_64BIT_BLAS_INTS "Elemental: use 64bit integers for BLAS" OFF)
+  if(NOT OPENBLAS_TAG)
+     set(OPENBLAS_TAG "db72ad8f6a430393d5137527e296e17b1b1fe5bf")
+  endif()
 
   # Determine library type
   if(ELEMENTAL_LIBRARY_TYPE STREQUAL STATIC)
@@ -137,6 +140,7 @@ if (NOT Elemental_FOUND)
       -D CMAKE_Fortran_FLAGS=${CMAKE_Fortran_FLAGS}
       -D CMAKE_EXE_LINKER_FLAGS=${EL_EXE_LINKER_FLAGS}
       -D CMAKE_SHARED_LINKER_FLAGS=${EL_SHARED_LINKER_FLAGS}
+      -D OPENBLAS_TAG=${OPENBLAS_TAG}
       -D PATCH_DIR=${PATCH_DIR}
   )
 

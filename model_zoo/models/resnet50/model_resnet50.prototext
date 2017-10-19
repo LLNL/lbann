@@ -1,5 +1,5 @@
 model {
-  name: "dnn"
+  name: "dag_model"
   objective_function: "cross_entropy"
   metric {
     categorical_accuracy {
@@ -38,27 +38,30 @@ model {
       mat_interval: 25
     }
   }
-  callback {
-    imcomm {
-      intermodel_comm_method: "normal"
-      layers: "1 5 9 12 17 20 23 28 31 34 38 42 45 50 53 56 61 64 67 72 75 78 82 86 89 94 97 100 105 108 111 116 119 122 127 130 133 138 141 144 148 152 155 160 163 166 171 174 177 182"
-    }
-  }
+#  callback {
+#    imcomm {
+#      intermodel_comm_method: "normal"
+#      layers: ""
+#    }
+#  }
 
   ###################################################
   # Layers
   ###################################################
 
+  # conv1
   layer {
-    index: 0
-    parent: -1
+    parents: ""
+    name: "data"
+    children: "conv1"
     data_layout: "data_parallel"
     input_partitioned_minibatch {
     }
   }
   layer {
-    index: 1
-    parent: 0
+    parents: "data"
+    name: "conv1"
+    children: "bn_conv1"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -72,8 +75,9 @@ model {
     }
   }
   layer {
-    index: 2
-    parent: 1
+    parents: "conv1"
+    name: "bn_conv1"
+    children: "conv1_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -83,15 +87,17 @@ model {
     }
   }
   layer {
-    index: 3
-    parent: 2
+    parents: "bn_conv1"
+    name: "conv1_relu"
+    children: "pool1"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    index: 4
-    parent: 3
+    parents: "conv1_relu"
+    name: "pool1"
+    children: "res2a_split"
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
@@ -101,200 +107,20 @@ model {
       pool_mode: "max"
     }
   }
+
+  # res2a
   layer {
-    index: 5
-    parent: 4
-    data_layout: "data_parallel"
-    convolution {
-      num_dims: 2
-      num_output_channels: 320
-      conv_dims_i: 1
-      conv_pads_i: 0
-      conv_strides_i: 1
-      weight_initialization: "he_normal"
-      has_bias: false
-      l2_regularization_factor: 1e-4
-    }
-  }
-  layer {
-    index: 6
-    parent: 5
-    data_layout: "data_parallel"
-    batch_normalization {
-      decay: 0.9
-      scale_init: 1.0
-      bias_init: 0.0
-      epsilon: 1e-5
-    }
-  }
-  layer {
-    index: 7
-    parent: 6
-    data_layout: "data_parallel"
-    slice {
-      slice_axis: 0
-      children: "14 8"
-      slice_points: "0 256"
-    }
-  }
-  layer {
-    index: 8
-    parent: 7
-    data_layout: "data_parallel"
-    relu {
-    }
-  }
-  layer {
-    index: 9
-    parent: 8
-    data_layout: "data_parallel"
-    convolution {
-      num_dims: 2
-      num_output_channels: 64
-      conv_dims_i: 3
-      conv_pads_i: 1
-      conv_strides_i: 1
-      weight_initialization: "he_normal"
-      has_bias: false
-      l2_regularization_factor: 1e-4
-    }
-  }
-  layer {
-    index: 10
-    parent: 9
-    data_layout: "data_parallel"
-    batch_normalization {
-      decay: 0.9
-      scale_init: 1.0
-      bias_init: 0.0
-      epsilon: 1e-5
-    }
-  }
-  layer {
-    index: 11
-    parent: 10
-    data_layout: "data_parallel"
-    relu {
-    }
-  }
-  layer {
-    index: 12
-    parent: 11
-    data_layout: "data_parallel"
-    convolution {
-      num_dims: 2
-      num_output_channels: 256
-      conv_dims_i: 1
-      conv_pads_i: 0
-      conv_strides_i: 1
-      weight_initialization: "he_normal"
-      has_bias: false
-      l2_regularization_factor: 1e-4
-    }
-  }
-  layer {
-    index: 13
-    parent: 12
-    data_layout: "data_parallel"
-    batch_normalization {
-      decay: 0.9
-      scale_init: 1.0
-      bias_init: 0.0
-      epsilon: 1e-5
-    }
-  }
-  layer {
-    index: 14
-    parent: 13
-    data_layout: "data_parallel"
-    sum {
-      parents: "7"
-    }
-  }
-  layer {
-    index: 15
-    parent: 14
-    data_layout: "data_parallel"
-    relu {
-    }
-  }
-  layer {
-    index: 16
-    parent: 15
+    parents: "pool1"
+    name: "res2a_split"
+    children: "res2a_branch1 res2a_branch2a"
     data_layout: "data_parallel"
     split {
-      children: "25"
     }
   }
   layer {
-    index: 17
-    parent: 16
-    data_layout: "data_parallel"
-    convolution {
-      num_dims: 2
-      num_output_channels: 64
-      conv_dims_i: 1
-      conv_pads_i: 0
-      conv_strides_i: 1
-      weight_initialization: "he_normal"
-      has_bias: false
-      l2_regularization_factor: 1e-4
-    }
-  }
-  layer {
-    index: 18
-    parent: 17
-    data_layout: "data_parallel"
-    batch_normalization {
-      decay: 0.9
-      scale_init: 1.0
-      bias_init: 0.0
-      epsilon: 1e-5
-    }
-  }
-  layer {
-    index: 19
-    parent: 18
-    data_layout: "data_parallel"
-    relu {
-    }
-  }
-  layer {
-    index: 20
-    parent: 19
-    data_layout: "data_parallel"
-    convolution {
-      num_dims: 2
-      num_output_channels: 64
-      conv_dims_i: 3
-      conv_pads_i: 1
-      conv_strides_i: 1
-      weight_initialization: "he_normal"
-      has_bias: false
-      l2_regularization_factor: 1e-4
-    }
-  }
-  layer {
-    index: 21
-    parent: 20
-    data_layout: "data_parallel"
-    batch_normalization {
-      decay: 0.9
-      scale_init: 1.0
-      bias_init: 0.0
-      epsilon: 1e-5
-    }
-  }
-  layer {
-    index: 22
-    parent: 21
-    data_layout: "data_parallel"
-    relu {
-    }
-  }
-  layer {
-    index: 23
-    parent: 22
+    parents: "res2a_split"
+    name: "res2a_branch1"
+    children: "bn2a_branch1"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -308,8 +134,9 @@ model {
     }
   }
   layer {
-    index: 24
-    parent: 23
+    parents: "res2a_branch1"
+    name: "bn2a_branch1"
+    children: "res2a"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -319,31 +146,135 @@ model {
     }
   }
   layer {
-    index: 25
-    parent: 24
+    parents: "res2a_split"
+    name: "res2a_branch2a"
+    children: "bn2a_branch2a"
     data_layout: "data_parallel"
-    sum {
-      parents: "16"
+    convolution {
+      num_dims: 2
+      num_output_channels: 64
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      weight_initialization: "he_normal"
+      has_bias: false
+      l2_regularization_factor: 1e-4
     }
   }
   layer {
-    index: 26
-    parent: 25
+    parents: "res2a_branch2a"
+    name: "bn2a_branch2a"
+    children: "res2a_branch2a_relu"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    parents: "bn2a_branch2a"
+    name: "res2a_branch2a_relu"
+    children: "res2a_branch2b"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    index: 27
-    parent: 26
+    parents: "res2a_branch2a_relu"
+    name: "res2a_branch2b"
+    children: "bn2a_branch2b"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 64
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      weight_initialization: "he_normal"
+      has_bias: false
+      l2_regularization_factor: 1e-4
+    }
+  }
+  layer {
+    parents: "res2a_branch2b"
+    name: "bn2a_branch2b"
+    children: "res2a_branch2b_relu"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    parents: "bn2a_branch2b"
+    name: "res2a_branch2b_relu"
+    children: "res2a_branch2c"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "res2a_branch2b_relu"
+    name: "res2a_branch2c"
+    children: "bn2a_branch2c"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      weight_initialization: "he_normal"
+      has_bias: false
+      l2_regularization_factor: 1e-4
+    }
+  }
+  layer {
+    parents: "res2a_branch2c"
+    name: "bn2a_branch2c"
+    children: "res2a"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    parents: "bn2a_branch1 bn2a_branch2c"
+    name: "res2a"
+    children: "res2a_relu"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    parents: "res2a"
+    name: "res2a_relu"
+    children: "res2b_split"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+
+  # res2b
+  layer {
+    parents: "res2a_relu"
+    name: "res2b_split"
+    children: "res2b res2b_branch2a"
     data_layout: "data_parallel"
     split {
-      children: "36"
     }
   }
   layer {
-    index: 28
-    parent: 27
+    parents: "res2b_split"
+    name: "res2b_branch2a"
+    children: "bn2b_branch2a"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -357,8 +288,9 @@ model {
     }
   }
   layer {
-    index: 29
-    parent: 28
+    parents: "res2b_branch2a"
+    name: "bn2b_branch2a"
+    children: "res2b_branch2a_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -368,15 +300,17 @@ model {
     }
   }
   layer {
-    index: 30
-    parent: 29
+    parents: "bn2b_branch2a"
+    name: "res2b_branch2a_relu"
+    children: "res2b_branch2b"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    index: 31
-    parent: 30
+    parents: "res2b_branch2a_relu"
+    name: "res2b_branch2b"
+    children: "bn2b_branch2b"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -390,8 +324,9 @@ model {
     }
   }
   layer {
-    index: 32
-    parent: 31
+    parents: "res2b_branch2b"
+    name: "bn2b_branch2b"
+    children: "res2b_branch2b_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -401,15 +336,17 @@ model {
     }
   }
   layer {
-    index: 33
-    parent: 32
+    parents: "bn2b_branch2b"
+    name: "res2b_branch2b_relu"
+    children: "res2b_branch2c"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    index: 34
-    parent: 33
+    parents: "res2b_branch2b_relu"
+    name: "res2b_branch2c"
+    children: "bn2b_branch2c"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -423,8 +360,9 @@ model {
     }
   }
   layer {
-    index: 35
-    parent: 34
+    parents: "res2b_branch2c"
+    name: "bn2b_branch2c"
+    children: "res2b"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -434,27 +372,165 @@ model {
     }
   }
   layer {
-    index: 36
-    parent: 35
+    parents: "res2b_split bn2b_branch2c"
+    name: "res2b"
+    children: "res2b_relu"
     data_layout: "data_parallel"
     sum {
-      parents: "27"
     }
   }
   layer {
-    index: 37
-    parent: 36
+    parents: "res2b"
+    name: "res2b_relu"
+    children: "res2c_split"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+
+  # res2c
+  layer {
+    parents: "res2b_relu"
+    name: "res2c_split"
+    children: "res2c res2c_branch2a"
+    data_layout: "data_parallel"
+    split {
+    }
+  }
+  layer {
+    parents: "res2c_split"
+    name: "res2c_branch2a"
+    children: "bn2c_branch2a"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 64
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      weight_initialization: "he_normal"
+      has_bias: false
+      l2_regularization_factor: 1e-4
+    }
+  }
+  layer {
+    parents: "res2c_branch2a"
+    name: "bn2c_branch2a"
+    children: "res2c_branch2a_relu"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    parents: "bn2c_branch2a"
+    name: "res2c_branch2a_relu"
+    children: "res2c_branch2b"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    index: 38
-    parent: 37
+    parents: "res2c_branch2a_relu"
+    name: "res2c_branch2b"
+    children: "bn2c_branch2b"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
-      num_output_channels: 640
+      num_output_channels: 64
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      weight_initialization: "he_normal"
+      has_bias: false
+      l2_regularization_factor: 1e-4
+    }
+  }
+  layer {
+    parents: "res2c_branch2b"
+    name: "bn2c_branch2b"
+    children: "res2c_branch2b_relu"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    parents: "bn2c_branch2b"
+    name: "res2c_branch2b_relu"
+    children: "res2c_branch2c"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "res2c_branch2b_relu"
+    name: "res2c_branch2c"
+    children: "bn2c_branch2c"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      weight_initialization: "he_normal"
+      has_bias: false
+      l2_regularization_factor: 1e-4
+    }
+  }
+  layer {
+    parents: "res2c_branch2c"
+    name: "bn2c_branch2c"
+    children: "res2c"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    parents: "res2c_split bn2c_branch2c"
+    name: "res2c"
+    children: "res2c_relu"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    parents: "res2c"
+    name: "res2c_relu"
+    children: "res3a_split"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+
+  # res3a
+  layer {
+    parents: "res2c_relu"
+    name: "res3a_split"
+    children: "res3a_branch1 res3a_branch2a"
+    data_layout: "data_parallel"
+    split {
+    }
+  }
+  layer {
+    parents: "res3a_split"
+    name: "res3a_branch1"
+    children: "bn3a_branch1"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 512
       conv_dims_i: 1
       conv_pads_i: 0
       conv_strides_i: 2
@@ -464,8 +540,9 @@ model {
     }
   }
   layer {
-    index: 39
-    parent: 38
+    parents: "res3a_branch1"
+    name: "bn3a_branch1"
+    children: "res3a"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -475,448 +552,13 @@ model {
     }
   }
   layer {
-    index: 40
-    parent: 39
-    data_layout: "data_parallel"
-    slice {
-      slice_axis: 0
-      children: "47 41"
-      slice_points: "0 512"
-    }
-  }
-  layer {
-    index: 41
-    parent: 40
-    data_layout: "data_parallel"
-    relu {
-    }
-  }
-  layer {
-    index: 42
-    parent: 41
+    parents: "res3a_split"
+    name: "res3a_branch2a"
+    children: "bn3a_branch2a"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
-      conv_dims_i: 3
-      conv_pads_i: 1
-      conv_strides_i: 1
-      weight_initialization: "he_normal"
-      has_bias: false
-      l2_regularization_factor: 1e-4
-    }
-  }
-  layer {
-    index: 43
-    parent: 42
-    data_layout: "data_parallel"
-    batch_normalization {
-      decay: 0.9
-      scale_init: 1.0
-      bias_init: 0.0
-      epsilon: 1e-5
-    }
-  }
-  layer {
-    index: 44
-    parent: 43
-    data_layout: "data_parallel"
-    relu {
-    }
-  }
-  layer {
-    index: 45
-    parent: 44
-    data_layout: "data_parallel"
-    convolution {
-      num_dims: 2
-      num_output_channels: 512
-      conv_dims_i: 1
-      conv_pads_i: 0
-      conv_strides_i: 1
-      weight_initialization: "he_normal"
-      has_bias: false
-      l2_regularization_factor: 1e-4
-    }
-  }
-  layer {
-    index: 46
-    parent: 45
-    data_layout: "data_parallel"
-    batch_normalization {
-      decay: 0.9
-      scale_init: 1.0
-      bias_init: 0.0
-      epsilon: 1e-5
-    }
-  }
-  layer {
-    index: 47
-    parent: 46
-    data_layout: "data_parallel"
-    sum {
-      parents: "40"
-    }
-  }
-  layer {
-    index: 48
-    parent: 47
-    data_layout: "data_parallel"
-    relu {
-    }
-  }
-  layer {
-    index: 49
-    parent: 48
-    data_layout: "data_parallel"
-    split {
-      children: "58"
-    }
-  }
-  layer {
-    index: 50
-    parent: 49
-    data_layout: "data_parallel"
-    convolution {
-      num_dims: 2
-      num_output_channels: 128
-      conv_dims_i: 1
-      conv_pads_i: 0
-      conv_strides_i: 1
-      weight_initialization: "he_normal"
-      has_bias: false
-      l2_regularization_factor: 1e-4
-    }
-  }
-  layer {
-    index: 51
-    parent: 50
-    data_layout: "data_parallel"
-    batch_normalization {
-      decay: 0.9
-      scale_init: 1.0
-      bias_init: 0.0
-      epsilon: 1e-5
-    }
-  }
-  layer {
-    index: 52
-    parent: 51
-    data_layout: "data_parallel"
-    relu {
-    }
-  }
-  layer {
-    index: 53
-    parent: 52
-    data_layout: "data_parallel"
-    convolution {
-      num_dims: 2
-      num_output_channels: 128
-      conv_dims_i: 3
-      conv_pads_i: 1
-      conv_strides_i: 1
-      weight_initialization: "he_normal"
-      has_bias: false
-      l2_regularization_factor: 1e-4
-    }
-  }
-  layer {
-    index: 54
-    parent: 53
-    data_layout: "data_parallel"
-    batch_normalization {
-      decay: 0.9
-      scale_init: 1.0
-      bias_init: 0.0
-      epsilon: 1e-5
-    }
-  }
-  layer {
-    index: 55
-    parent: 54
-    data_layout: "data_parallel"
-    relu {
-    }
-  }
-  layer {
-    index: 56
-    parent: 55
-    data_layout: "data_parallel"
-    convolution {
-      num_dims: 2
-      num_output_channels: 512
-      conv_dims_i: 1
-      conv_pads_i: 0
-      conv_strides_i: 1
-      weight_initialization: "he_normal"
-      has_bias: false
-      l2_regularization_factor: 1e-4
-    }
-  }
-  layer {
-    index: 57
-    parent: 56
-    data_layout: "data_parallel"
-    batch_normalization {
-      decay: 0.9
-      scale_init: 1.0
-      bias_init: 0.0
-      epsilon: 1e-5
-    }
-  }
-  layer {
-    index: 58
-    parent: 57
-    data_layout: "data_parallel"
-    sum {
-      parents: "49"
-    }
-  }
-  layer {
-    index: 59
-    parent: 58
-    data_layout: "data_parallel"
-    relu {
-    }
-  }
-  layer {
-    index: 60
-    parent: 59
-    data_layout: "data_parallel"
-    split {
-      children: "69"
-    }
-  }
-  layer {
-    index: 61
-    parent: 60
-    data_layout: "data_parallel"
-    convolution {
-      num_dims: 2
-      num_output_channels: 128
-      conv_dims_i: 1
-      conv_pads_i: 0
-      conv_strides_i: 1
-      weight_initialization: "he_normal"
-      has_bias: false
-      l2_regularization_factor: 1e-4
-    }
-  }
-  layer {
-    index: 62
-    parent: 61
-    data_layout: "data_parallel"
-    batch_normalization {
-      decay: 0.9
-      scale_init: 1.0
-      bias_init: 0.0
-      epsilon: 1e-5
-    }
-  }
-  layer {
-    index: 63
-    parent: 62
-    data_layout: "data_parallel"
-    relu {
-    }
-  }
-  layer {
-    index: 64
-    parent: 63
-    data_layout: "data_parallel"
-    convolution {
-      num_dims: 2
-      num_output_channels: 128
-      conv_dims_i: 3
-      conv_pads_i: 1
-      conv_strides_i: 1
-      weight_initialization: "he_normal"
-      has_bias: false
-      l2_regularization_factor: 1e-4
-    }
-  }
-  layer {
-    index: 65
-    parent: 64
-    data_layout: "data_parallel"
-    batch_normalization {
-      decay: 0.9
-      scale_init: 1.0
-      bias_init: 0.0
-      epsilon: 1e-5
-    }
-  }
-  layer {
-    index: 66
-    parent: 65
-    data_layout: "data_parallel"
-    relu {
-    }
-  }
-  layer {
-    index: 67
-    parent: 66
-    data_layout: "data_parallel"
-    convolution {
-      num_dims: 2
-      num_output_channels: 512
-      conv_dims_i: 1
-      conv_pads_i: 0
-      conv_strides_i: 1
-      weight_initialization: "he_normal"
-      has_bias: false
-      l2_regularization_factor: 1e-4
-    }
-  }
-  layer {
-    index: 68
-    parent: 67
-    data_layout: "data_parallel"
-    batch_normalization {
-      decay: 0.9
-      scale_init: 1.0
-      bias_init: 0.0
-      epsilon: 1e-5
-    }
-  }
-  layer {
-    index: 69
-    parent: 68
-    data_layout: "data_parallel"
-    sum {
-      parents: "60"
-    }
-  }
-  layer {
-    index: 70
-    parent: 69
-    data_layout: "data_parallel"
-    relu {
-    }
-  }
-  layer {
-    index: 71
-    parent: 70
-    data_layout: "data_parallel"
-    split {
-      children: "80"
-    }
-  }
-  layer {
-    index: 72
-    parent: 71
-    data_layout: "data_parallel"
-    convolution {
-      num_dims: 2
-      num_output_channels: 128
-      conv_dims_i: 1
-      conv_pads_i: 0
-      conv_strides_i: 1
-      weight_initialization: "he_normal"
-      has_bias: false
-      l2_regularization_factor: 1e-4
-    }
-  }
-  layer {
-    index: 73
-    parent: 72
-    data_layout: "data_parallel"
-    batch_normalization {
-      decay: 0.9
-      scale_init: 1.0
-      bias_init: 0.0
-      epsilon: 1e-5
-    }
-  }
-  layer {
-    index: 74
-    parent: 73
-    data_layout: "data_parallel"
-    relu {
-    }
-  }
-  layer {
-    index: 75
-    parent: 74
-    data_layout: "data_parallel"
-    convolution {
-      num_dims: 2
-      num_output_channels: 128
-      conv_dims_i: 3
-      conv_pads_i: 1
-      conv_strides_i: 1
-      weight_initialization: "he_normal"
-      has_bias: false
-      l2_regularization_factor: 1e-4
-    }
-  }
-  layer {
-    index: 76
-    parent: 75
-    data_layout: "data_parallel"
-    batch_normalization {
-      decay: 0.9
-      scale_init: 1.0
-      bias_init: 0.0
-      epsilon: 1e-5
-    }
-  }
-  layer {
-    index: 77
-    parent: 76
-    data_layout: "data_parallel"
-    relu {
-    }
-  }
-  layer {
-    index: 78
-    parent: 77
-    data_layout: "data_parallel"
-    convolution {
-      num_dims: 2
-      num_output_channels: 512
-      conv_dims_i: 1
-      conv_pads_i: 0
-      conv_strides_i: 1
-      weight_initialization: "he_normal"
-      has_bias: false
-      l2_regularization_factor: 1e-4
-    }
-  }
-  layer {
-    index: 79
-    parent: 78
-    data_layout: "data_parallel"
-    batch_normalization {
-      decay: 0.9
-      scale_init: 1.0
-      bias_init: 0.0
-      epsilon: 1e-5
-    }
-  }
-  layer {
-    index: 80
-    parent: 79
-    data_layout: "data_parallel"
-    sum {
-      parents: "71"
-    }
-  }
-  layer {
-    index: 81
-    parent: 80
-    data_layout: "data_parallel"
-    relu {
-    }
-  }
-  layer {
-    index: 82
-    parent: 81
-    data_layout: "data_parallel"
-    convolution {
-      num_dims: 2
-      num_output_channels: 1280
       conv_dims_i: 1
       conv_pads_i: 0
       conv_strides_i: 2
@@ -926,8 +568,9 @@ model {
     }
   }
   layer {
-    index: 83
-    parent: 82
+    parents: "res3a_branch2a"
+    name: "bn3a_branch2a"
+    children: "res3a_branch2a_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -937,29 +580,21 @@ model {
     }
   }
   layer {
-    index: 84
-    parent: 83
-    data_layout: "data_parallel"
-    slice {
-      slice_axis: 0
-      children: "91 85"
-      slice_points: "0 1024"
-    }
-  }
-  layer {
-    index: 85
-    parent: 84
+    parents: "bn3a_branch2a"
+    name: "res3a_branch2a_relu"
+    children: "res3a_branch2b"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    index: 86
-    parent: 85
+    parents: "res3a_branch2a_relu"
+    name: "res3a_branch2b"
+    children: "bn3a_branch2b"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
-      num_output_channels: 256
+      num_output_channels: 128
       conv_dims_i: 3
       conv_pads_i: 1
       conv_strides_i: 1
@@ -969,8 +604,9 @@ model {
     }
   }
   layer {
-    index: 87
-    parent: 86
+    parents: "res3a_branch2b"
+    name: "bn3a_branch2b"
+    children: "res3a_branch2b_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -980,19 +616,21 @@ model {
     }
   }
   layer {
-    index: 88
-    parent: 87
+    parents: "bn3a_branch2b"
+    name: "res3a_branch2b_relu"
+    children: "res3a_branch2c"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    index: 89
-    parent: 88
+    parents: "res3a_branch2b_relu"
+    name: "res3a_branch2c"
+    children: "bn3a_branch2c"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
-      num_output_channels: 1024
+      num_output_channels: 512
       conv_dims_i: 1
       conv_pads_i: 0
       conv_strides_i: 1
@@ -1002,8 +640,9 @@ model {
     }
   }
   layer {
-    index: 90
-    parent: 89
+    parents: "res3a_branch2c"
+    name: "bn3a_branch2c"
+    children: "res3a"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1013,35 +652,39 @@ model {
     }
   }
   layer {
-    index: 91
-    parent: 90
+    parents: "bn3a_branch1 bn3a_branch2c"
+    name: "res3a"
+    children: "res3a_relu"
     data_layout: "data_parallel"
     sum {
-      parents: "84"
     }
   }
   layer {
-    index: 92
-    parent: 91
+    parents: "res3a"
+    name: "res3a_relu"
+    children: "res3b_split"
     data_layout: "data_parallel"
     relu {
     }
   }
+
+  # res3b
   layer {
-    index: 93
-    parent: 92
+    parents: "res3a_relu"
+    name: "res3b_split"
+    children: "res3b res3b_branch2a"
     data_layout: "data_parallel"
     split {
-      children: "102"
     }
   }
   layer {
-    index: 94
-    parent: 93
+    parents: "res3b_split"
+    name: "res3b_branch2a"
+    children: "bn3b_branch2a"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
-      num_output_channels: 256
+      num_output_channels: 128
       conv_dims_i: 1
       conv_pads_i: 0
       conv_strides_i: 1
@@ -1051,8 +694,9 @@ model {
     }
   }
   layer {
-    index: 95
-    parent: 94
+    parents: "res3b_branch2a"
+    name: "bn3b_branch2a"
+    children: "res3b_branch2a_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1062,19 +706,21 @@ model {
     }
   }
   layer {
-    index: 96
-    parent: 95
+    parents: "bn3b_branch2a"
+    name: "res3b_branch2a_relu"
+    children: "res3b_branch2b"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    index: 97
-    parent: 96
+    parents: "res3b_branch2a_relu"
+    name: "res3b_branch2b"
+    children: "bn3b_branch2b"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
-      num_output_channels: 256
+      num_output_channels: 128
       conv_dims_i: 3
       conv_pads_i: 1
       conv_strides_i: 1
@@ -1084,8 +730,9 @@ model {
     }
   }
   layer {
-    index: 98
-    parent: 97
+    parents: "res3b_branch2b"
+    name: "bn3b_branch2b"
+    children: "res3b_branch2b_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1095,19 +742,21 @@ model {
     }
   }
   layer {
-    index: 99
-    parent: 98
+    parents: "bn3b_branch2b"
+    name: "res3b_branch2b_relu"
+    children: "res3b_branch2c"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    index: 100
-    parent: 99
+    parents: "res3b_branch2b_relu"
+    name: "res3b_branch2c"
+    children: "bn3b_branch2c"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
-      num_output_channels: 1024
+      num_output_channels: 512
       conv_dims_i: 1
       conv_pads_i: 0
       conv_strides_i: 1
@@ -1117,8 +766,9 @@ model {
     }
   }
   layer {
-    index: 101
-    parent: 100
+    parents: "res3b_branch2c"
+    name: "bn3b_branch2c"
+    children: "res3b"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1128,35 +778,39 @@ model {
     }
   }
   layer {
-    index: 102
-    parent: 101
+    parents: "res3b_split bn3b_branch2c"
+    name: "res3b"
+    children: "res3b_relu"
     data_layout: "data_parallel"
     sum {
-      parents: "93"
     }
   }
   layer {
-    index: 103
-    parent: 102
+    parents: "res3b"
+    name: "res3b_relu"
+    children: "res3c_split"
     data_layout: "data_parallel"
     relu {
     }
   }
+
+  # res3c
   layer {
-    index: 104
-    parent: 103
+    parents: "res3b_relu"
+    name: "res3c_split"
+    children: "res3c res3c_branch2a"
     data_layout: "data_parallel"
     split {
-      children: "113"
     }
   }
   layer {
-    index: 105
-    parent: 104
+    parents: "res3c_split"
+    name: "res3c_branch2a"
+    children: "bn3c_branch2a"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
-      num_output_channels: 256
+      num_output_channels: 128
       conv_dims_i: 1
       conv_pads_i: 0
       conv_strides_i: 1
@@ -1166,8 +820,9 @@ model {
     }
   }
   layer {
-    index: 106
-    parent: 105
+    parents: "res3c_branch2a"
+    name: "bn3c_branch2a"
+    children: "res3c_branch2a_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1177,19 +832,21 @@ model {
     }
   }
   layer {
-    index: 107
-    parent: 106
+    parents: "bn3c_branch2a"
+    name: "res3c_branch2a_relu"
+    children: "res3c_branch2b"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    index: 108
-    parent: 107
+    parents: "res3c_branch2a_relu"
+    name: "res3c_branch2b"
+    children: "bn3c_branch2b"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
-      num_output_channels: 256
+      num_output_channels: 128
       conv_dims_i: 3
       conv_pads_i: 1
       conv_strides_i: 1
@@ -1199,8 +856,9 @@ model {
     }
   }
   layer {
-    index: 109
-    parent: 108
+    parents: "res3c_branch2b"
+    name: "bn3c_branch2b"
+    children: "res3c_branch2b_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1210,19 +868,21 @@ model {
     }
   }
   layer {
-    index: 110
-    parent: 109
+    parents: "bn3c_branch2b"
+    name: "res3c_branch2b_relu"
+    children: "res3c_branch2c"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    index: 111
-    parent: 110
+    parents: "res3c_branch2b_relu"
+    name: "res3c_branch2c"
+    children: "bn3c_branch2c"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
-      num_output_channels: 1024
+      num_output_channels: 512
       conv_dims_i: 1
       conv_pads_i: 0
       conv_strides_i: 1
@@ -1232,8 +892,9 @@ model {
     }
   }
   layer {
-    index: 112
-    parent: 111
+    parents: "res3c_branch2c"
+    name: "bn3c_branch2c"
+    children: "res3c"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1243,35 +904,39 @@ model {
     }
   }
   layer {
-    index: 113
-    parent: 112
+    parents: "res3c_split bn3c_branch2c"
+    name: "res3c"
+    children: "res3c_relu"
     data_layout: "data_parallel"
     sum {
-      parents: "104"
     }
   }
   layer {
-    index: 114
-    parent: 113
+    parents: "res3c"
+    name: "res3c_relu"
+    children: "res3d_split"
     data_layout: "data_parallel"
     relu {
     }
   }
+  
+  # res3d
   layer {
-    index: 115
-    parent: 114
+    parents: "res3c_relu"
+    name: "res3d_split"
+    children: "res3d res3d_branch2a"
     data_layout: "data_parallel"
     split {
-      children: "124"
     }
   }
   layer {
-    index: 116
-    parent: 115
+    parents: "res3d_split"
+    name: "res3d_branch2a"
+    children: "bn3d_branch2a"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
-      num_output_channels: 256
+      num_output_channels: 128
       conv_dims_i: 1
       conv_pads_i: 0
       conv_strides_i: 1
@@ -1281,8 +946,9 @@ model {
     }
   }
   layer {
-    index: 117
-    parent: 116
+    parents: "res3d_branch2a"
+    name: "bn3d_branch2a"
+    children: "res3d_branch2a_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1292,19 +958,21 @@ model {
     }
   }
   layer {
-    index: 118
-    parent: 117
+    parents: "bn3d_branch2a"
+    name: "res3d_branch2a_relu"
+    children: "res3d_branch2b"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    index: 119
-    parent: 118
+    parents: "res3d_branch2a_relu"
+    name: "res3d_branch2b"
+    children: "bn3d_branch2b"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
-      num_output_channels: 256
+      num_output_channels: 128
       conv_dims_i: 3
       conv_pads_i: 1
       conv_strides_i: 1
@@ -1314,8 +982,9 @@ model {
     }
   }
   layer {
-    index: 120
-    parent: 119
+    parents: "res3d_branch2b"
+    name: "bn3d_branch2b"
+    children: "res3d_branch2b_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1325,19 +994,21 @@ model {
     }
   }
   layer {
-    index: 121
-    parent: 120
+    parents: "bn3d_branch2b"
+    name: "res3d_branch2b_relu"
+    children: "res3d_branch2c"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    index: 122
-    parent: 121
+    parents: "res3d_branch2b_relu"
+    name: "res3d_branch2c"
+    children: "bn3d_branch2c"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
-      num_output_channels: 1024
+      num_output_channels: 512
       conv_dims_i: 1
       conv_pads_i: 0
       conv_strides_i: 1
@@ -1347,8 +1018,9 @@ model {
     }
   }
   layer {
-    index: 123
-    parent: 122
+    parents: "res3d_branch2c"
+    name: "bn3d_branch2c"
+    children: "res3d"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1358,257 +1030,39 @@ model {
     }
   }
   layer {
-    index: 124
-    parent: 123
+    parents: "res3d_split bn3d_branch2c"
+    name: "res3d"
+    children: "res3d_relu"
     data_layout: "data_parallel"
     sum {
-      parents: "115"
     }
   }
   layer {
-    index: 125
-    parent: 124
+    parents: "res3d"
+    name: "res3d_relu"
+    children: "res4a_split"
     data_layout: "data_parallel"
     relu {
     }
   }
+
+  # res4a
   layer {
-    index: 126
-    parent: 125
+    parents: "res3d_relu"
+    name: "res4a_split"
+    children: "res4a_branch1 res4a_branch2a"
     data_layout: "data_parallel"
     split {
-      children: "135"
     }
   }
   layer {
-    index: 127
-    parent: 126
-    data_layout: "data_parallel"
-    convolution {
-      num_dims: 2
-      num_output_channels: 256
-      conv_dims_i: 1
-      conv_pads_i: 0
-      conv_strides_i: 1
-      weight_initialization: "he_normal"
-      has_bias: false
-      l2_regularization_factor: 1e-4
-    }
-  }
-  layer {
-    index: 128
-    parent: 127
-    data_layout: "data_parallel"
-    batch_normalization {
-      decay: 0.9
-      scale_init: 1.0
-      bias_init: 0.0
-      epsilon: 1e-5
-    }
-  }
-  layer {
-    index: 129
-    parent: 128
-    data_layout: "data_parallel"
-    relu {
-    }
-  }
-  layer {
-    index: 130
-    parent: 129
-    data_layout: "data_parallel"
-    convolution {
-      num_dims: 2
-      num_output_channels: 256
-      conv_dims_i: 3
-      conv_pads_i: 1
-      conv_strides_i: 1
-      weight_initialization: "he_normal"
-      has_bias: false
-      l2_regularization_factor: 1e-4
-    }
-  }
-  layer {
-    index: 131
-    parent: 130
-    data_layout: "data_parallel"
-    batch_normalization {
-      decay: 0.9
-      scale_init: 1.0
-      bias_init: 0.0
-      epsilon: 1e-5
-    }
-  }
-  layer {
-    index: 132
-    parent: 131
-    data_layout: "data_parallel"
-    relu {
-    }
-  }
-  layer {
-    index: 133
-    parent: 132
+    parents: "res4a_split"
+    name: "res4a_branch1"
+    children: "bn4a_branch1"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 1024
-      conv_dims_i: 1
-      conv_pads_i: 0
-      conv_strides_i: 1
-      weight_initialization: "he_normal"
-      has_bias: false
-      l2_regularization_factor: 1e-4
-    }
-  }
-  layer {
-    index: 134
-    parent: 133
-    data_layout: "data_parallel"
-    batch_normalization {
-      decay: 0.9
-      scale_init: 1.0
-      bias_init: 0.0
-      epsilon: 1e-5
-    }
-  }
-  layer {
-    index: 135
-    parent: 134
-    data_layout: "data_parallel"
-    sum {
-      parents: "126"
-    }
-  }
-  layer {
-    index: 136
-    parent: 135
-    data_layout: "data_parallel"
-    relu {
-    }
-  }
-  layer {
-    index: 137
-    parent: 136
-    data_layout: "data_parallel"
-    split {
-      children: "146"
-    }
-  }
-  layer {
-    index: 138
-    parent: 137
-    data_layout: "data_parallel"
-    convolution {
-      num_dims: 2
-      num_output_channels: 256
-      conv_dims_i: 1
-      conv_pads_i: 0
-      conv_strides_i: 1
-      weight_initialization: "he_normal"
-      has_bias: false
-      l2_regularization_factor: 1e-4
-    }
-  }
-  layer {
-    index: 139
-    parent: 138
-    data_layout: "data_parallel"
-    batch_normalization {
-      decay: 0.9
-      scale_init: 1.0
-      bias_init: 0.0
-      epsilon: 1e-5
-    }
-  }
-  layer {
-    index: 140
-    parent: 139
-    data_layout: "data_parallel"
-    relu {
-    }
-  }
-  layer {
-    index: 141
-    parent: 140
-    data_layout: "data_parallel"
-    convolution {
-      num_dims: 2
-      num_output_channels: 256
-      conv_dims_i: 3
-      conv_pads_i: 1
-      conv_strides_i: 1
-      weight_initialization: "he_normal"
-      has_bias: false
-      l2_regularization_factor: 1e-4
-    }
-  }
-  layer {
-    index: 142
-    parent: 141
-    data_layout: "data_parallel"
-    batch_normalization {
-      decay: 0.9
-      scale_init: 1.0
-      bias_init: 0.0
-      epsilon: 1e-5
-    }
-  }
-  layer {
-    index: 143
-    parent: 142
-    data_layout: "data_parallel"
-    relu {
-    }
-  }
-  layer {
-    index: 144
-    parent: 143
-    data_layout: "data_parallel"
-    convolution {
-      num_dims: 2
-      num_output_channels: 1024
-      conv_dims_i: 1
-      conv_pads_i: 0
-      conv_strides_i: 1
-      weight_initialization: "he_normal"
-      has_bias: false
-      l2_regularization_factor: 1e-4
-    }
-  }
-  layer {
-    index: 145
-    parent: 144
-    data_layout: "data_parallel"
-    batch_normalization {
-      decay: 0.9
-      scale_init: 1.0
-      bias_init: 0.0
-      epsilon: 1e-5
-    }
-  }
-  layer {
-    index: 146
-    parent: 145
-    data_layout: "data_parallel"
-    sum {
-      parents: "137"
-    }
-  }
-  layer {
-    index: 147
-    parent: 146
-    data_layout: "data_parallel"
-    relu {
-    }
-  }
-  layer {
-    index: 148
-    parent: 147
-    data_layout: "data_parallel"
-    convolution {
-      num_dims: 2
-      num_output_channels: 2560
       conv_dims_i: 1
       conv_pads_i: 0
       conv_strides_i: 2
@@ -1618,8 +1072,9 @@ model {
     }
   }
   layer {
-    index: 149
-    parent: 148
+    parents: "res4a_branch1"
+    name: "bn4a_branch1"
+    children: "res4a"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1629,25 +1084,829 @@ model {
     }
   }
   layer {
-    index: 150
-    parent: 149
+    parents: "res4a_split"
+    name: "res4a_branch2a"
+    children: "bn4a_branch2a"
     data_layout: "data_parallel"
-    slice {
-      slice_axis: 0
-      children: "157 151"
-      slice_points: "0 2048"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 2
+      weight_initialization: "he_normal"
+      has_bias: false
+      l2_regularization_factor: 1e-4
     }
   }
   layer {
-    index: 151
-    parent: 150
+    parents: "res4a_branch2a"
+    name: "bn4a_branch2a"
+    children: "res4a_branch2a_relu"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    parents: "bn4a_branch2a"
+    name: "res4a_branch2a_relu"
+    children: "res4a_branch2b"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    index: 152
-    parent: 151
+    parents: "res4a_branch2a_relu"
+    name: "res4a_branch2b"
+    children: "bn4a_branch2b"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      weight_initialization: "he_normal"
+      has_bias: false
+      l2_regularization_factor: 1e-4
+    }
+  }
+  layer {
+    parents: "res4a_branch2b"
+    name: "bn4a_branch2b"
+    children: "res4a_branch2b_relu"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    parents: "bn4a_branch2b"
+    name: "res4a_branch2b_relu"
+    children: "res4a_branch2c"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "res4a_branch2b_relu"
+    name: "res4a_branch2c"
+    children: "bn4a_branch2c"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 1024
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      weight_initialization: "he_normal"
+      has_bias: false
+      l2_regularization_factor: 1e-4
+    }
+  }
+  layer {
+    parents: "res4a_branch2c"
+    name: "bn4a_branch2c"
+    children: "res4a"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    parents: "bn4a_branch1 bn4a_branch2c"
+    name: "res4a"
+    children: "res4a_relu"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    parents: "res4a"
+    name: "res4a_relu"
+    children: "res4b_split"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+
+  # res4b
+  layer {
+    parents: "res4a_relu"
+    name: "res4b_split"
+    children: "res4b res4b_branch2a"
+    data_layout: "data_parallel"
+    split {
+    }
+  }
+  layer {
+    parents: "res4b_split"
+    name: "res4b_branch2a"
+    children: "bn4b_branch2a"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      weight_initialization: "he_normal"
+      has_bias: false
+      l2_regularization_factor: 1e-4
+    }
+  }
+  layer {
+    parents: "res4b_branch2a"
+    name: "bn4b_branch2a"
+    children: "res4b_branch2a_relu"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    parents: "bn4b_branch2a"
+    name: "res4b_branch2a_relu"
+    children: "res4b_branch2b"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "res4b_branch2a_relu"
+    name: "res4b_branch2b"
+    children: "bn4b_branch2b"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      weight_initialization: "he_normal"
+      has_bias: false
+      l2_regularization_factor: 1e-4
+    }
+  }
+  layer {
+    parents: "res4b_branch2b"
+    name: "bn4b_branch2b"
+    children: "res4b_branch2b_relu"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    parents: "bn4b_branch2b"
+    name: "res4b_branch2b_relu"
+    children: "res4b_branch2c"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "res4b_branch2b_relu"
+    name: "res4b_branch2c"
+    children: "bn4b_branch2c"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 1024
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      weight_initialization: "he_normal"
+      has_bias: false
+      l2_regularization_factor: 1e-4
+    }
+  }
+  layer {
+    parents: "res4b_branch2c"
+    name: "bn4b_branch2c"
+    children: "res4b"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    parents: "res4b_split bn4b_branch2c"
+    name: "res4b"
+    children: "res4b_relu"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    parents: "res4b"
+    name: "res4b_relu"
+    children: "res4c_split"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+
+  # res4c
+  layer {
+    parents: "res4b_relu"
+    name: "res4c_split"
+    children: "res4c res4c_branch2a"
+    data_layout: "data_parallel"
+    split {
+    }
+  }
+  layer {
+    parents: "res4c_split"
+    name: "res4c_branch2a"
+    children: "bn4c_branch2a"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      weight_initialization: "he_normal"
+      has_bias: false
+      l2_regularization_factor: 1e-4
+    }
+  }
+  layer {
+    parents: "res4c_branch2a"
+    name: "bn4c_branch2a"
+    children: "res4c_branch2a_relu"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    parents: "bn4c_branch2a"
+    name: "res4c_branch2a_relu"
+    children: "res4c_branch2b"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "res4c_branch2a_relu"
+    name: "res4c_branch2b"
+    children: "bn4c_branch2b"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      weight_initialization: "he_normal"
+      has_bias: false
+      l2_regularization_factor: 1e-4
+    }
+  }
+  layer {
+    parents: "res4c_branch2b"
+    name: "bn4c_branch2b"
+    children: "res4c_branch2b_relu"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    parents: "bn4c_branch2b"
+    name: "res4c_branch2b_relu"
+    children: "res4c_branch2c"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "res4c_branch2b_relu"
+    name: "res4c_branch2c"
+    children: "bn4c_branch2c"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 1024
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      weight_initialization: "he_normal"
+      has_bias: false
+      l2_regularization_factor: 1e-4
+    }
+  }
+  layer {
+    parents: "res4c_branch2c"
+    name: "bn4c_branch2c"
+    children: "res4c"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    parents: "res4c_split bn4c_branch2c"
+    name: "res4c"
+    children: "res4c_relu"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    parents: "res4c"
+    name: "res4c_relu"
+    children: "res4d_split"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+
+  # res4d
+  layer {
+    parents: "res4c_relu"
+    name: "res4d_split"
+    children: "res4d res4d_branch2a"
+    data_layout: "data_parallel"
+    split {
+    }
+  }
+  layer {
+    parents: "res4d_split"
+    name: "res4d_branch2a"
+    children: "bn4d_branch2a"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      weight_initialization: "he_normal"
+      has_bias: false
+      l2_regularization_factor: 1e-4
+    }
+  }
+  layer {
+    parents: "res4d_branch2a"
+    name: "bn4d_branch2a"
+    children: "res4d_branch2a_relu"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    parents: "bn4d_branch2a"
+    name: "res4d_branch2a_relu"
+    children: "res4d_branch2b"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "res4d_branch2a_relu"
+    name: "res4d_branch2b"
+    children: "bn4d_branch2b"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      weight_initialization: "he_normal"
+      has_bias: false
+      l2_regularization_factor: 1e-4
+    }
+  }
+  layer {
+    parents: "res4d_branch2b"
+    name: "bn4d_branch2b"
+    children: "res4d_branch2b_relu"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    parents: "bn4d_branch2b"
+    name: "res4d_branch2b_relu"
+    children: "res4d_branch2c"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "res4d_branch2b_relu"
+    name: "res4d_branch2c"
+    children: "bn4d_branch2c"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 1024
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      weight_initialization: "he_normal"
+      has_bias: false
+      l2_regularization_factor: 1e-4
+    }
+  }
+  layer {
+    parents: "res4d_branch2c"
+    name: "bn4d_branch2c"
+    children: "res4d"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    parents: "res4d_split bn4d_branch2c"
+    name: "res4d"
+    children: "res4d_relu"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    parents: "res4d"
+    name: "res4d_relu"
+    children: "res4e_split"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+
+  # res4e
+  layer {
+    parents: "res4d_relu"
+    name: "res4e_split"
+    children: "res4e res4e_branch2a"
+    data_layout: "data_parallel"
+    split {
+    }
+  }
+  layer {
+    parents: "res4e_split"
+    name: "res4e_branch2a"
+    children: "bn4e_branch2a"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      weight_initialization: "he_normal"
+      has_bias: false
+      l2_regularization_factor: 1e-4
+    }
+  }
+  layer {
+    parents: "res4e_branch2a"
+    name: "bn4e_branch2a"
+    children: "res4e_branch2a_relu"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    parents: "bn4e_branch2a"
+    name: "res4e_branch2a_relu"
+    children: "res4e_branch2b"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "res4e_branch2a_relu"
+    name: "res4e_branch2b"
+    children: "bn4e_branch2b"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      weight_initialization: "he_normal"
+      has_bias: false
+      l2_regularization_factor: 1e-4
+    }
+  }
+  layer {
+    parents: "res4e_branch2b"
+    name: "bn4e_branch2b"
+    children: "res4e_branch2b_relu"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    parents: "bn4e_branch2b"
+    name: "res4e_branch2b_relu"
+    children: "res4e_branch2c"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "res4e_branch2b_relu"
+    name: "res4e_branch2c"
+    children: "bn4e_branch2c"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 1024
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      weight_initialization: "he_normal"
+      has_bias: false
+      l2_regularization_factor: 1e-4
+    }
+  }
+  layer {
+    parents: "res4e_branch2c"
+    name: "bn4e_branch2c"
+    children: "res4e"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    parents: "res4e_split bn4e_branch2c"
+    name: "res4e"
+    children: "res4e_relu"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    parents: "res4e"
+    name: "res4e_relu"
+    children: "res4f_split"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+
+  # res4f
+  layer {
+    parents: "res4e_relu"
+    name: "res4f_split"
+    children: "res4f res4f_branch2a"
+    data_layout: "data_parallel"
+    split {
+    }
+  }
+  layer {
+    parents: "res4f_split"
+    name: "res4f_branch2a"
+    children: "bn4f_branch2a"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      weight_initialization: "he_normal"
+      has_bias: false
+      l2_regularization_factor: 1e-4
+    }
+  }
+  layer {
+    parents: "res4f_branch2a"
+    name: "bn4f_branch2a"
+    children: "res4f_branch2a_relu"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    parents: "bn4f_branch2a"
+    name: "res4f_branch2a_relu"
+    children: "res4f_branch2b"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "res4f_branch2a_relu"
+    name: "res4f_branch2b"
+    children: "bn4f_branch2b"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      weight_initialization: "he_normal"
+      has_bias: false
+      l2_regularization_factor: 1e-4
+    }
+  }
+  layer {
+    parents: "res4f_branch2b"
+    name: "bn4f_branch2b"
+    children: "res4f_branch2b_relu"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    parents: "bn4f_branch2b"
+    name: "res4f_branch2b_relu"
+    children: "res4f_branch2c"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "res4f_branch2b_relu"
+    name: "res4f_branch2c"
+    children: "bn4f_branch2c"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 1024
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      weight_initialization: "he_normal"
+      has_bias: false
+      l2_regularization_factor: 1e-4
+    }
+  }
+  layer {
+    parents: "res4f_branch2c"
+    name: "bn4f_branch2c"
+    children: "res4f"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    parents: "res4f_split bn4f_branch2c"
+    name: "res4f"
+    children: "res4f_relu"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    parents: "res4f"
+    name: "res4f_relu"
+    children: "res5a_split"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+
+  # res5a
+  layer {
+    parents: "res4f_relu"
+    name: "res5a_split"
+    children: "res5a_branch1 res5a_branch2a"
+    data_layout: "data_parallel"
+    split {
+    }
+  }
+  layer {
+    parents: "res5a_split"
+    name: "res5a_branch1"
+    children: "bn5a_branch1"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 2048
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 2
+      weight_initialization: "he_normal"
+      has_bias: false
+      l2_regularization_factor: 1e-4
+    }
+  }
+  layer {
+    parents: "res5a_branch1"
+    name: "bn5a_branch1"
+    children: "res5a"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    parents: "res5a_split"
+    name: "res5a_branch2a"
+    children: "bn5a_branch2a"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 512
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 2
+      weight_initialization: "he_normal"
+      has_bias: false
+      l2_regularization_factor: 1e-4
+    }
+  }
+  layer {
+    parents: "res5a_branch2a"
+    name: "bn5a_branch2a"
+    children: "res5a_branch2a_relu"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    parents: "bn5a_branch2a"
+    name: "res5a_branch2a_relu"
+    children: "res5a_branch2b"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "res5a_branch2a_relu"
+    name: "res5a_branch2b"
+    children: "bn5a_branch2b"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1661,8 +1920,9 @@ model {
     }
   }
   layer {
-    index: 153
-    parent: 152
+    parents: "res5a_branch2b"
+    name: "bn5a_branch2b"
+    children: "res5a_branch2b_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1672,15 +1932,17 @@ model {
     }
   }
   layer {
-    index: 154
-    parent: 153
+    parents: "bn5a_branch2b"
+    name: "res5a_branch2b_relu"
+    children: "res5a_branch2c"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    index: 155
-    parent: 154
+    parents: "res5a_branch2b_relu"
+    name: "res5a_branch2c"
+    children: "bn5a_branch2c"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1694,8 +1956,9 @@ model {
     }
   }
   layer {
-    index: 156
-    parent: 155
+    parents: "res5a_branch2c"
+    name: "bn5a_branch2c"
+    children: "res5a"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1705,31 +1968,35 @@ model {
     }
   }
   layer {
-    index: 157
-    parent: 156
+    parents: "bn5a_branch1 bn5a_branch2c"
+    name: "res5a"
+    children: "res5a_relu"
     data_layout: "data_parallel"
     sum {
-      parents: "150"
     }
   }
   layer {
-    index: 158
-    parent: 157
+    parents: "res5a"
+    name: "res5a_relu"
+    children: "res5b_split"
     data_layout: "data_parallel"
     relu {
     }
   }
+  
+  # res5b
   layer {
-    index: 159
-    parent: 158
+    parents: "res5a_relu"
+    name: "res5b_split"
+    children: "res5b res5b_branch2a"
     data_layout: "data_parallel"
     split {
-      children: "168"
     }
   }
   layer {
-    index: 160
-    parent: 159
+    parents: "res5b_split"
+    name: "res5b_branch2a"
+    children: "bn5b_branch2a"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1743,8 +2010,9 @@ model {
     }
   }
   layer {
-    index: 161
-    parent: 160
+    parents: "res5b_branch2a"
+    name: "bn5b_branch2a"
+    children: "res5b_branch2a_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1754,15 +2022,17 @@ model {
     }
   }
   layer {
-    index: 162
-    parent: 161
+    parents: "bn5b_branch2a"
+    name: "res5b_branch2a_relu"
+    children: "res5b_branch2b"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    index: 163
-    parent: 162
+    parents: "res5b_branch2a_relu"
+    name: "res5b_branch2b"
+    children: "bn5b_branch2b"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1776,8 +2046,9 @@ model {
     }
   }
   layer {
-    index: 164
-    parent: 163
+    parents: "res5b_branch2b"
+    name: "bn5b_branch2b"
+    children: "res5b_branch2b_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1787,15 +2058,17 @@ model {
     }
   }
   layer {
-    index: 165
-    parent: 164
+    parents: "bn5b_branch2b"
+    name: "res5b_branch2b_relu"
+    children: "res5b_branch2c"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    index: 166
-    parent: 165
+    parents: "res5b_branch2b_relu"
+    name: "res5b_branch2c"
+    children: "bn5b_branch2c"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1809,8 +2082,9 @@ model {
     }
   }
   layer {
-    index: 167
-    parent: 166
+    parents: "res5b_branch2c"
+    name: "bn5b_branch2c"
+    children: "res5b"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1820,31 +2094,35 @@ model {
     }
   }
   layer {
-    index: 168
-    parent: 167
+    parents: "res5b_split bn5b_branch2c"
+    name: "res5b"
+    children: "res5b_relu"
     data_layout: "data_parallel"
     sum {
-      parents: "159"
     }
   }
   layer {
-    index: 169
-    parent: 168
+    parents: "res5b"
+    name: "res5b_relu"
+    children: "res5c_split"
     data_layout: "data_parallel"
     relu {
     }
   }
+
+  # res5c
   layer {
-    index: 170
-    parent: 169
+    parents: "res5b_relu"
+    name: "res5c_split"
+    children: "res5c res5c_branch2a"
     data_layout: "data_parallel"
     split {
-      children: "179"
     }
   }
   layer {
-    index: 171
-    parent: 170
+    parents: "res5c_split"
+    name: "res5c_branch2a"
+    children: "bn5c_branch2a"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1858,8 +2136,9 @@ model {
     }
   }
   layer {
-    index: 172
-    parent: 171
+    parents: "res5c_branch2a"
+    name: "bn5c_branch2a"
+    children: "res5c_branch2a_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1869,15 +2148,17 @@ model {
     }
   }
   layer {
-    index: 173
-    parent: 172
+    parents: "bn5c_branch2a"
+    name: "res5c_branch2a_relu"
+    children: "res5c_branch2b"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    index: 174
-    parent: 173
+    parents: "res5c_branch2a_relu"
+    name: "res5c_branch2b"
+    children: "bn5c_branch2b"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1891,8 +2172,9 @@ model {
     }
   }
   layer {
-    index: 175
-    parent: 174
+    parents: "res5c_branch2b"
+    name: "bn5c_branch2b"
+    children: "res5c_branch2b_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1902,15 +2184,17 @@ model {
     }
   }
   layer {
-    index: 176
-    parent: 175
+    parents: "bn5c_branch2b"
+    name: "res5c_branch2b_relu"
+    children: "res5c_branch2c"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    index: 177
-    parent: 176
+    parents: "res5c_branch2b_relu"
+    name: "res5c_branch2c"
+    children: "bn5c_branch2c"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1924,8 +2208,9 @@ model {
     }
   }
   layer {
-    index: 178
-    parent: 177
+    parents: "res5c_branch2c"
+    name: "bn5c_branch2c"
+    children: "res5c"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1935,23 +2220,27 @@ model {
     }
   }
   layer {
-    index: 179
-    parent: 178
+    parents: "res5c_split bn5c_branch2c"
+    name: "res5c"
+    children: "res5c_relu"
     data_layout: "data_parallel"
     sum {
-      parents: "170"
     }
   }
   layer {
-    index: 180
-    parent: 179
+    parents: "res5c"
+    name: "res5c_relu"
+    children: "pool5"
     data_layout: "data_parallel"
     relu {
     }
   }
+
+  # Inference
   layer {
-    index: 181
-    parent: 180
+    parents: "res5c_relu"
+    name: "pool5"
+    children: "fc1000"
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
@@ -1962,8 +2251,9 @@ model {
     }
   }
   layer {
-    index: 182
-    parent: 181
+    parents: "pool5"
+    name: "fc1000"
+    children: "prob"
     data_layout: "model_parallel"
     fully_connected {
     num_neurons: 1000
@@ -1973,18 +2263,21 @@ model {
     }
   }
   layer {
-    index: 183
-    parent: 182
+    parents: "fc1000"
+    name: "prob"
+    children: "target"
     data_layout: "model_parallel"
     softmax {
     }
   }
   layer {
-    index: 184
-    parent: 183
+    parents: "prob"
+    name: "target"
+    children: ""
     data_layout: "data_parallel"
     target_partitioned_minibatch {
       shared_data_reader: true
     }
   }
+
 }

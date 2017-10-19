@@ -167,6 +167,22 @@ class model {
     return m_optimizer_fac->create_optimizer();
   }
 
+  /// Train model
+  virtual void train(int num_epochs) = 0;
+  
+  /// Train model on one mini-batch
+  virtual bool train_mini_batch() = 0;
+
+  /// Evaluate model
+  virtual void evaluate(execution_mode mode) = 0;
+
+  /// Evaluation step on one mini-batch
+  virtual bool evaluate_mini_batch() = 0;
+
+  /// Add layer to sequential model
+  virtual int add(Layer *new_layer) = 0;
+
+
   /** Set checkpoint values */
   inline void set_checkpoint_dir(std::string dir)   {
     m_checkpoint_dir    = dir;

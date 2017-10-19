@@ -46,26 +46,26 @@ class deep_neural_network : public sequential_model {
   deep_neural_network(const deep_neural_network&) = default;
   deep_neural_network& operator=(const deep_neural_network&) = default;
 
-  deep_neural_network* copy() const { return new deep_neural_network(*this); }
+  virtual deep_neural_network* copy() const override { return new deep_neural_network(*this); }
 
   /// Destructor
   ~deep_neural_network();
 
-  std::string name() const { return "deep neural network"; }
+  virtual std::string name() const override { return "deep neural network"; }
 
   /// Compute layer summaries
-  void summarize_stats(lbann_summary& summarizer);
-  void summarize_matrices(lbann_summary& summarizer);
+  virtual void summarize_stats(lbann_summary& summarizer) override;
+  virtual void summarize_matrices(lbann_summary& summarizer) override;
 
   /// Train neural network
-  void train(int num_epochs);
+  virtual void train(int num_epochs) override;
   /// Training step on one mini-batch
-  bool train_mini_batch();
+  virtual bool train_mini_batch() override;
 
   /// Evaluate neural network
-  void evaluate(execution_mode mode=execution_mode::testing);
+  virtual void evaluate(execution_mode mode=execution_mode::testing) override;
   /// Evaluation step on one mini-batch
-  bool evaluate_mini_batch();
+  virtual bool evaluate_mini_batch() override;
 
 };
 

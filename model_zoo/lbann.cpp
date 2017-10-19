@@ -31,10 +31,11 @@
 
 using namespace lbann;
 
-const int lbann_random_seed = 42;
+const int lbann_default_random_seed = 42;
 
 int main(int argc, char *argv[]) {
-  lbann_comm *comm = initialize(argc, argv, lbann_random_seed);
+  int random_seed = lbann_default_random_seed;
+  lbann_comm *comm = initialize(argc, argv, random_seed);
   bool master = comm->am_world_master();
 
 #ifdef EL_USE_CUBLAS
@@ -53,9 +54,6 @@ int main(int argc, char *argv[]) {
 
     std::stringstream err;
 
-    // Run LTFB?
-    //bool ltfb = opts->has_int("ltfb") and opts->get_int("ltfb");
-
     // Get input prototext filename(s)
     if (not (opts->has_string("loadme") or opts->has_string("model"))) {
       if (master) {  
@@ -64,8 +62,8 @@ int main(int argc, char *argv[]) {
             " :: you must either pass the option: --loadme=<string> (if the file\n"
             "contains a specification for the model, readers, and optimizer\n"
              "or --model=<string> --reader=<string> --optimizer=<string>\n";
-      throw lbann_exception(err.str());
-    }
+        throw lbann_exception(err.str());
+      }
     }
    
     lbann_data::LbannPB pb;
@@ -99,14 +97,20 @@ int main(int argc, char *argv[]) {
     // after calling split_models()
     set_num_parallel_readers(comm, pb);
 
-    // Save info to file; this includes the complete prototext (with any over-rides
-
     // Set algorithmic blocksize
     if (pb_model->block_size() == 0 and master) {
       err << __FILE__ << " " << __LINE__ << " :: model does not provide a valid block size: " << pb_model->block_size();
       throw lbann_exception(err.str());
     }
     SetBlocksize(pb_model->block_size());
+
+    // Change random seed if needed.
+    if (pb_model->random_seed() > 0) {
+      random_seed = pb_model->random_seed();
+      // Reseed here so that setup is done with this new seed.
+      init_random(random_seed);
+      init_data_seq_random(random_seed);
+    }
 
     // Set up the communicator and get the grid.
     int procs_per_model = pb_model->procs_per_model();
@@ -126,6 +130,7 @@ int main(int argc, char *argv[]) {
       cout << endl;
     }
 
+    // Save info to file; this includes the complete prototext (with any over-rides
     // from the cmd line) and various other info
     save_session(comm, argc, argv, pb);
 
@@ -161,30 +166,10 @@ int main(int argc, char *argv[]) {
 
     // Initalize model
     // @todo: not all callbacks code is in place
-    sequential_model *model = init_model(comm, optimizer_fac, pb);
-    std::unordered_map<uint,uint> layer_mapping;
-    add_layers(model, data_readers, cudnn, pb, layer_mapping);
-    init_callbacks(comm, model, data_readers, pb, layer_mapping);
+    model *model = init_model(comm, optimizer_fac, pb);
+    add_layers(model, data_readers, cudnn, pb);
+    init_callbacks(comm, model, data_readers, pb);
     model->setup();
-
-    // Optionally run ltfb
-    #if 0
-    sequential_model *model_2;
-    std::map<execution_mode, generic_data_reader *> data_readers_2;
-    //under development ...
-    if (ltfb) {
-      if (master) {
-        cerr << endl << "running ltfb\n\n";
-        throw lbann_exception("ltfb is not ready yet; coming soon!");
-      }
-      init_data_readers(master, pb, data_readers_2, pb_model->mini_batch_size());
-      optimizer_factory *optimizer_fac_2 = init_optimizer_factory(comm, pb);
-      model_2 = init_model(comm, optimizer_fac_2, pb);
-      model_2->setup();
-      //lbann_callback_ltfb ltfb(45, model_2);
-      //model->add_callback(&ltfb);
-    }
-    #endif
 
     // restart model from checkpoint if we have one
     //@todo
@@ -200,6 +185,8 @@ int main(int argc, char *argv[]) {
       }
     }
 
+    if (not opts->has_string("exit_after_setup")) {
+
     ///////////////////////////////////////////////////////////////////
     // main loop for training/testing
     ///////////////////////////////////////////////////////////////////
@@ -208,15 +195,13 @@ int main(int argc, char *argv[]) {
     // Under normal conditions, reinitialize the random number generator so
     // that regularization techniques (e.g. dropout) generate unique patterns
     // on different ranks.
-    init_random(lbann_random_seed + comm->get_rank_in_world());
+    init_random(random_seed + comm->get_rank_in_world());
 #else
     if(comm->am_world_master()) {
-      std::cout << "--------------------------------------------------------------------------------"
-                << std::endl;
-      std::cout << "ALERT: executing in sequentially consistent mode -- performance will suffer"
-                << std::endl;
-      std::cout << "--------------------------------------------------------------------------------"
-                << std::endl;
+      std::cout << 
+        "--------------------------------------------------------------------------------\n"
+        "ALERT: executing in sequentially consistent mode -- performance will suffer\n"
+        "--------------------------------------------------------------------------------\n";
     }
 #endif
 
@@ -225,6 +210,18 @@ int main(int argc, char *argv[]) {
 
     // Evaluate model on test set
     model->evaluate(execution_mode::testing);
+
+    } 
+
+    else {
+      if (comm->am_world_master()) {
+        std::cout << 
+          "--------------------------------------------------------------------------------\n"
+          "ALERT: model has been setup; we are now exiting due to command\n"
+          "       line option: --exit_after_setup\n"
+          "--------------------------------------------------------------------------------\n";
+      }
+    }
 
     // @todo: figure out and implement coherent strategy
     // for freeing dynamically allocated memory

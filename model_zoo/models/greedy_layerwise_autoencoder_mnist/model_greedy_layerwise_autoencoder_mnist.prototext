@@ -41,8 +41,9 @@ model {
   # INPUT
   #######
   layer {
-    index: 1
-    parent: 1
+    name: "1"
+    parents: "1"
+    children: ""
     data_layout: "model_parallel"
     input_distributed_minibatch {
     }
@@ -51,8 +52,9 @@ model {
   # FULLY_CONNECTED
   #################
   layer {
-    index: 2
-    parent: 1
+    name: "2"
+    parents: "1"
+    children: ""
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 100
@@ -64,8 +66,9 @@ model {
   # SIGMOID
   #########
   layer {
-    index: 3
-    parent: 2
+    name: "3"
+    parents: "2"
+    children: ""
     data_layout: "model_parallel"
     sigmoid {
     }
@@ -74,8 +77,9 @@ model {
   # FULLY_CONNECTED
   #################
   layer {
-    index: 5
-    parent: 3
+    name: "5"
+    parents: "3"
+    children: ""
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 784
@@ -87,8 +91,9 @@ model {
   # SIGMOID
   #########
   layer {
-    index: 6
-    parent: 5
+    name: "6"
+    parents: "5"
+    children: ""
     data_layout: "model_parallel"
     sigmoid {
     }
@@ -97,8 +102,9 @@ model {
   # RECONSTRUCTION
   #################
   layer {
-    index: 19
-    parent: 18
+    name: "19"
+    parents: "18"
+    children: ""
     data_layout: "model_parallel"
     reconstruction {
       original_layer: 1
@@ -108,8 +114,9 @@ model {
   # FULLY_CONNECTED encode3
   #################
   layer {
-    index: 8
-    parent: 6
+    name: "8"
+    parents: "6"
+    children: ""
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 50
@@ -121,8 +128,9 @@ model {
   # RELU 
   ######
   layer {
-    index: 9
-    parent: 8
+    name: "9"
+    parents: "8"
+    children: ""
     data_layout: "model_parallel"
     relu {
     }
@@ -131,8 +139,9 @@ model {
   # FULLY_CONNECTED
   #################
   layer {
-    index: 10
-    parent: 9
+    name: "10"
+    parents: "9"
+    children: ""
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 100
@@ -144,8 +153,9 @@ model {
   # SIGMOID
   #########
   layer {
-    index: 6
-    parent: 5
+    name: "6"
+    parents: "5"
+    children: ""
     data_layout: "model_parallel"
     sigmoid {
     }
@@ -154,8 +164,9 @@ model {
   # RECONSTRUCTION
   #################
   layer {
-    index: 19
-    parent: 18
+    name: "19"
+    parents: "18"
+    children: ""
     data_layout: "model_parallel"
     reconstruction {
       original_layer: 6

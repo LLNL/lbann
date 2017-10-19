@@ -395,7 +395,7 @@ void planar_model::setup(int start_index, int end_index) {
       current_layer->check_setup();
       current_layer->set_index(l);
       if (m_comm->am_world_master()) {
-        cout << std::setw(3) << l << ":[" << std::setw(18) << current_layer->get_name() <<  "] Set up a layer with input " << std::setw(7) << current_layer->get_num_prev_neurons() << " and " << std::setw(7) << current_layer->get_num_neurons() << " neurons."  << endl;
+        cout << std::setw(3) << l << ":[" << std::setw(18) << current_layer->get_type() <<  "] Set up a layer with input " << std::setw(7) << current_layer->get_num_prev_neurons() << " and " << std::setw(7) << current_layer->get_num_neurons() << " neurons."  << endl;
       }
     }
   }

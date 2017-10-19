@@ -34,6 +34,7 @@
 #include "cv_normalizer.hpp"
 #include "cv_augmenter.hpp"
 #include "cv_colorizer.hpp"
+#include "cv_cropper.hpp"
 #include <memory>
 
 #ifdef __LIB_OPENCV
@@ -50,33 +51,32 @@ class cv_process {
   cv_transform::cv_flipping m_flip;
   /// Whether to split channels
   bool m_split;
+  /// whether a normalizing transform is set or not
+  bool m_is_normalizer_set;
+  /// The index of the normalizing transform in the array of transforms
+  unsigned int m_normalizer_idx;
 
-  // preprocessors: normalizer and augmenter
-  std::unique_ptr<cv_normalizer> m_normalizer;
-  std::unique_ptr<cv_augmenter> m_augmenter;
+  /// Array of transforms
+  std::vector<std::unique_ptr<cv_transform> > m_transforms;
 
-  /// custom transformation place holder (before augmentation)
-  std::unique_ptr<cv_transform> m_transform1;
-
-  /// custom transformation place holder (after augmentation and before normalization)
-  std::unique_ptr<cv_transform> m_transform2;
-
-  /// custom transformation place holder (after normalization)
-  std::unique_ptr<cv_transform> m_transform3;
-
+  /// Check if the last transform registered in the list is a normalizer
+  inline bool is_normalizer_last() const {
+    return (m_is_normalizer_set && ((m_normalizer_idx+1) == m_transforms.size()));
+  }
 
  public:
   cv_process()
-    : m_flip(cv_transform::_no_flip_), m_split(true) {}
+    : m_flip(cv_transform::_no_flip_), m_split(true), m_is_normalizer_set(false), m_normalizer_idx(0u) {}
 
   cv_process(const cv_process& rhs);
   cv_process& operator=(const cv_process& rhs);
 
   cv_process(const cv_transform::cv_flipping flip_code, const bool tosplit)
-    : m_flip(flip_code), m_split(tosplit) {}
+    : m_flip(flip_code), m_split(tosplit), m_is_normalizer_set(false), m_normalizer_idx(0u) {}
 
   virtual ~cv_process() {}
 
+  /// Reset all the transforms
   void reset();
 
   /// Check whether to flip
@@ -88,10 +88,12 @@ class cv_process {
     return static_cast<int>(m_flip);
   }
   /**
-   *  Set the flipping behavior. This is to deal with custom image format, and not
-   *  to substitute for random flipping in augmentation
+   *  Set the flipping behavior. This is to deal with custom image format, which
+   *  is not supported by OpenCV's builtin decoders and may impose different pixel
+   *  coordinate system in its custom decoder.
+   *  It is not to substitute for random flipping in augmentation.
    */
-  void set_to_flip(cv_transform::cv_flipping f) {
+  void set_to_flip(const cv_transform::cv_flipping f) {
     m_flip = f;
   }
   /// Set to split channels
@@ -99,145 +101,43 @@ class cv_process {
     return m_split;
   }
 
-
+  /// Export transform operator of normalizer to allow lazy application
   std::vector<cv_normalizer::channel_trans_t> get_transform_normalize() const;
+  /// Export transform operator of normalizer for a specific channel
   std::vector<cv_normalizer::channel_trans_t> get_transform_normalize(const unsigned int ch) const;
 
-  void disable_normalizer() {
-    if (m_normalizer) {
-      m_normalizer->disable();
-    }
-  }
-  void determine_inverse_normalization();
-  /**
-   * Call this after preprocessing and image loading to deactivate all the transforms.
-   * Then, selectively enable those which require inverse transforms by calling
-   * determine_inverse_transform()
-   */
+  /// Turn off normalizer. This is useful to make sure it off after potential lazy application
+  void disable_normalizer();
+
+  /// Turn off all transforms
   void disable_transforms();
 
-  /// Set the normalization processor
-  void set_normalizer(std::unique_ptr<cv_normalizer> np) {
-    m_normalizer = std::move(np);
-  }
-  /// Set the augmentation processor
-  void set_augmenter(std::unique_ptr<cv_augmenter> ap) {
-    m_augmenter = std::move(ap);
-  }
-  /// Set the custom transform 1 (comes before the augmentation)
-  void set_custom_transform1(std::unique_ptr<cv_transform> tr1) {
-    m_transform1 = std::move(tr1);
-  }
-  /// Set the custom transform 2 (comes after the augmentation and before the normalization)
-  void set_custom_transform2(std::unique_ptr<cv_transform> tr2) {
-    m_transform2 = std::move(tr2);
-  }
-  /// Set the custom transform 3 (comes after the normalization)
-  void set_custom_transform3(std::unique_ptr<cv_transform> tr3) {
-    m_transform3 = std::move(tr3);
+  /// Add a tranform
+  bool add_transform(std::unique_ptr<cv_transform> tr);
+
+  /// Add a normalizing tranform
+  bool add_normalizer(std::unique_ptr<cv_normalizer> tr);
+
+  /// Allow access to the list of transforms registered
+  const std::vector<std::unique_ptr<cv_transform> >& get_transforms() const {
+    return m_transforms;
   }
 
-  /// Check if the normalizer has been set
-  bool is_set_normalizer() const {
-    return !!m_normalizer;
-  }
-  /// Check if the augmenter has been set
-  bool is_set_augmenter() const {
-    return !!m_augmenter;
-  }
-  /// Check if the custom transform 1 has been set
-  bool is_set_custom_transform1() const {
-    return !!m_transform1;
-  }
-  /// Check if the custom transform 2 has been set
-  bool is_set_custom_transform2() const {
-    return !!m_transform2;
-  }
-  /// Check if the custom transform 3 has been set
-  bool is_set_custom_transform3() const {
-    return !!m_transform3;
-  }
+  /// Allow read-only access to a particular transform indexed by idx
+  const cv_transform* get_transform(const unsigned int idx) const;
 
-  /// Allow read-only access to the normalization processor
-  const cv_normalizer *normalizer() const {
-    return m_normalizer.get();
-  }
-  /// Allow read-only access to the augmentation processor
-  const cv_augmenter *augmenter() const {
-    return m_augmenter.get();
-  }
-  /// Allow read-only access to the first custom transform
-  const cv_transform *custom_transform1() const {
-    return m_transform1.get();
-  }
-  /// Allow read-only access to the second custom transform
-  const cv_transform *custom_transform2() const {
-    return m_transform2.get();
-  }
-  /// Allow read-only access to the third custom transform
-  const cv_transform *custom_transform3() const {
-    return m_transform3.get();
-  }
+  /// Allow read-write access to a particular transform indexed by idx
+  cv_transform* get_transform(const unsigned int idx);
 
-  /// Allow read-write access to the normalization processor
-  cv_normalizer *normalizer() {
-    return m_normalizer.get();
-  }
-  /// Allow read-write access to the augmentation processor
-  cv_augmenter *augmenter() {
-    return m_augmenter.get();
-  }
-  /// Allow read-write access to the first custom transform
-  cv_transform *custom_transform1() {
-    return m_transform1.get();
-  }
-  /// Allow read-write access to the second custom transform
-  cv_transform *custom_transform2() {
-    return m_transform2.get();
-  }
-  /// Allow read-write access to the third custom transform
-  cv_transform *custom_transform3() {
-    return m_transform3.get();
-  }
+  /// Retrun the number of transforms registered
+  unsigned int get_num_transforms() const { return m_transforms.size(); }
+
+
+  void determine_inverse_normalization();
 
   bool preprocess(cv::Mat& image);
   bool postprocess(cv::Mat& image);
 };
-
-/**
- * Call this after preprocessing and image loading but before image saving and
- * postprocessing if inverse normalization is needed (e.g. to save image).
- * Unless transform3 exists, normalization is done while copying data from
- * El::Matrix<DataType> to cv::Mat format. Otherwise, it will be done during
- * postprocessing after potentially inversing transform3.
- */
-inline void cv_process::determine_inverse_normalization() {
-  if (!m_normalizer) {
-    return;
-  }
-
-  if (m_transform3) {
-    m_normalizer->disable();
-  } else {
-    m_normalizer->determine_inverse_transform();
-  }
-}
-
-inline std::vector<cv_normalizer::channel_trans_t> cv_process::get_transform_normalize() const {
-  return (m_normalizer? m_normalizer->transform() :
-          std::vector<cv_normalizer::channel_trans_t>());
-}
-
-inline std::vector<cv_normalizer::channel_trans_t> cv_process::get_transform_normalize(const unsigned int ch) const {
-  std::vector<cv_normalizer::channel_trans_t> trans;
-  if (m_normalizer) {
-    trans = m_normalizer->transform();
-  }
-
-  return ((trans.size() > ch) ?
-          std::vector<cv_normalizer::channel_trans_t>(1, trans[ch]) :
-          std::vector<cv_normalizer::channel_trans_t>(1, cv_normalizer::channel_trans_t(1.0, 0.0)));
-}
 
 } // end of namespace lbann
 #endif // __LIB_OPENCV

@@ -70,7 +70,7 @@ class input_layer_distributed_minibatch : public input_layer, public distributed
     return new input_layer_distributed_minibatch(*this);
   }
 
-  std::string get_name() const { return "input:distributed"; }
+  std::string get_type() const { return "input:distributed"; }
 
   virtual inline void initialize_distributed_matrices() {
     input_layer::initialize_distributed_matrices<T_layout>();

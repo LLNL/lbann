@@ -237,7 +237,7 @@ class fully_connected_layer : public learning {
     return new fully_connected_layer(*this);
   }
 
-  std::string get_name() const { return "fully connected"; }
+  std::string get_type() const { return "fully connected"; }
 
   virtual inline void initialize_distributed_matrices();
   virtual data_layout get_data_layout() const { return T_layout; }
@@ -343,7 +343,7 @@ class fully_connected_layer : public learning {
       bias_strides[i] = bias_strides[i+1] * bias_dims[i+1];
     }
     FORCE_CHECK_CUDNN(cudnnSetTensorNdDescriptor(m_bias_weights_desc,
-                                                 this->m_cudnn->get_cudnn_data_type(),
+                                                 cudnn::get_cudnn_data_type(),
                                                  bias_dims.size(),
                                                  bias_dims.data(),
                                                  bias_strides.data()));
@@ -361,7 +361,7 @@ class fully_connected_layer : public learning {
       bias_strides[i] = bias_strides[i+1] * bias_dims[i+1];
     }
     FORCE_CHECK_CUDNN(cudnnSetTensorNdDescriptor(m_activations_desc,
-                                                 this->m_cudnn->get_cudnn_data_type(),
+                                                 cudnn::get_cudnn_data_type(),
                                                  bias_dims.size(),
                                                  bias_dims.data(),
                                                  bias_strides.data()));

@@ -29,6 +29,7 @@
 
 #include "lbann/data_readers/cv_normalizer.hpp"
 #include "lbann/utils/mild_exception.hpp"
+#include "lbann/data_readers/patchworks/patchworks_opencv.hpp"
 #include <cmath> //fabs
 
 #ifdef __LIB_OPENCV
@@ -159,6 +160,11 @@ bool cv_normalizer::determine_transform(const cv::Mat& image) {
     if (!compute_mean_stddev(image, mean, stddev) || (NCh != mean.size())) {
       return false;
     }
+  #if 0
+    for (int ch = 0; ch < image.channels(); ++ch) {
+      std::cout << "channel " << ch << "\tmean " << mean[ch] << "\tstddev " << stddev[ch] << std::endl;
+    }
+  #endif
   }
 
   m_trans.resize(NCh);
@@ -236,14 +242,15 @@ void cv_normalizer::set_transform(const std::vector<channel_trans_t>& _trans) {
 
 
 /**
- * In case that undoing normalization is required, this call lets it occur
- * during copying from El::Matrix<DataType> data to a cv::Mat image while
- * avoiding reading the image twice.
+ * In case that undoing normalization is required, this call arranges it to
+ * occur during copying from El::Matrix<DataType> data to a cv::Mat image
+ * while avoiding reading the image twice.
  */
 bool cv_normalizer::determine_inverse_transform() {
   m_enabled = false; // unless this method is successful, stays disabled
   const size_t NCh = m_trans.size();
   if (NCh == 0u) {
+    m_trans.clear();
     return false;
   }
 
@@ -251,6 +258,7 @@ bool cv_normalizer::determine_inverse_transform() {
 
   for (size_t ch=0u; ch < NCh; ++ch) {
     if (m_trans[ch].first == 0.0) {
+      m_trans.clear();
       return false;
     }
     trans_reverse[ch] =
@@ -259,8 +267,7 @@ bool cv_normalizer::determine_inverse_transform() {
   }
   trans_reverse.swap(m_trans);
 
-  m_enabled = true;
-  return true;
+  return (m_enabled = true);
 }
 
 
@@ -289,29 +296,42 @@ bool cv_normalizer::scale(cv::Mat& image, const std::vector<channel_trans_t>& tr
 
 
 bool cv_normalizer::compute_mean_stddev(const cv::Mat& image,
-                                        std::vector<ComputeType>& mean, std::vector<ComputeType>& stddev, cv::Mat mask) {
+                                        std::vector<ComputeType>& mean, std::vector<ComputeType>& stddev,
+                                        cv::InputArray mask) {
   if (image.empty()) {
     return false;
   }
-#if 0
-  cv::meanStdDev(image, mean, stddev, mask);
-  mean.resize(image.channels());
-  stddev.resize(image.channels());
-#else
-  _SWITCH_CV_FUNC_4PARAMS(image.depth(), \
-                          compute_mean_stddev_with_known_type, image, mean, stddev, mask)
-#endif
+  if (image.channels() > 4) {
+    _SWITCH_CV_FUNC_4PARAMS(image.depth(), \
+                            compute_mean_stddev_with_known_type, image, mean, stddev, mask)
+  } else {
+    // cv::meanStdDev() currently only works with double type for mean and stddev and images of 1-4 channels
+    typedef double Ch_T;
+    //typedef ComputeType Ch_T;
+    typedef patchworks::cv_channel_type<Ch_T> Output_T;
+    cv::Mat _mean(1, 4, Output_T::T());
+    cv::Mat _stddev(1, 4, Output_T::T());
+    cv::meanStdDev(image, _mean, _stddev, mask);
+    mean.resize(image.channels());
+    stddev.resize(image.channels());
+    for (int c=0; c < image.channels(); ++c) {
+      mean[c] = static_cast<ComputeType>(_mean.at<Ch_T>(0,c));
+      stddev[c] = static_cast<ComputeType>(_stddev.at<Ch_T>(0,c));
+    }
+    return true;
+  }
   return false;
 }
 
 std::ostream& cv_normalizer::print(std::ostream& os) const {
-  os << "m_mean_subtraction: " << (m_mean_subtraction? "true" : "false") << std::endl
-     << "m_unit_variance: " << (m_unit_variance? "true" : "false") << std::endl
-     << "m_unit_scale: " << (m_unit_scale? "true" : "false") << std::endl
-     << "m_z_score: " << (m_z_score? "true" : "false") << std::endl;
-  os << "transform:";
+  os << "cv_normalizer:" << std::endl
+     << " - m_mean_subtraction: " << (m_mean_subtraction? "true" : "false") << std::endl
+     << " - m_unit_variance: " << (m_unit_variance? "true" : "false") << std::endl
+     << " - m_unit_scale: " << (m_unit_scale? "true" : "false") << std::endl
+     << " - m_z_score: " << (m_z_score? "true" : "false") << std::endl;
+  os << " - transform:";
   for (const channel_trans_t& tr: m_trans) {
-    os << ' ' << tr.first << ' ' << tr.second;
+    os << " [" << tr.first << ' ' << tr.second << "]";
   }
   os << std::endl;
 

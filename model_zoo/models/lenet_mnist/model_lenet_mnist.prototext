@@ -1,0 +1,203 @@
+model {
+  name: "dnn"
+  objective_function: "cross_entropy"
+  metric {
+    categorical_accuracy {
+    }
+  }
+  data_layout: "data_parallel"
+  mini_batch_size: 64
+  block_size: 256
+  num_epochs: 20
+  num_parallel_readers: 0
+  procs_per_model: 0
+  use_cudnn: false
+  num_gpus: -1
+
+
+  ###################################################
+  # Callbacks
+  ###################################################
+  callback {
+    print {
+      interval: 1
+    }
+  }
+  callback {
+    timer {
+    }
+  }
+  callback {
+    summary {
+      dir: "."
+      batch_interval: 1
+      mat_interval: 25
+    }
+  }
+  # callback {
+  #   debug {
+  #     phase: "test"
+  #   }
+  # }
+  # callback {
+  #   debug_io {
+  #     phase: "test"
+  #     lvl: 1
+  #   }
+  # }
+  callback {
+    adaptive_learning_rate {
+      patience: 4
+      amt: 0.1
+      layers: ""
+    }
+  }
+#  callback {
+#    imcomm {
+#      intermodel_comm_method: "normal"
+#      layers: "2 5 8 11"
+#    }
+#  }
+  # callback {
+  #   dump_mb_indices {
+  #     basename: "debug_alexnet/"
+  #     interval: 1
+  #   }
+  # }
+  # callback {
+  #   disp_io_stats {
+  #     layers: "1"
+  #   }
+  # }
+
+
+  # INPUT 1
+  ######################
+  layer {
+    name: "1"
+    parents: "1"
+    children: ""
+    data_layout: "model_parallel"
+    input_distributed_minibatch {
+    }
+}
+
+
+
+layer {
+  name: "2"
+  parents: "1"
+  children: ""
+  data_layout: "data_parallel"
+  convolution {
+    num_dims: 2
+    num_output_channels: 20
+    conv_dims_i: 5
+    conv_pads_i: 0
+    conv_strides_i: 1
+    weight_initialization: "glorot_uniform"
+    has_bias: true
+    l2_regularization_factor: 1e-4
+  }
+}
+
+layer {
+  name: "3"
+  parents: "2"
+  children: ""
+  data_layout: "data_parallel"
+  pooling {
+    num_dims: 2
+    pool_dims_i: 2
+    pool_pads_i: 0
+    pool_strides_i: 2
+    pool_mode: "max"
+  }
+}
+
+layer {
+  name: "4"
+  parents: "3"
+  children: ""
+  data_layout: "data_parallel"
+  convolution {
+    num_dims: 2
+    num_output_channels: 50
+    conv_dims_i: 5
+    conv_pads_i: 0
+    conv_strides_i: 1
+    weight_initialization: "glorot_uniform"
+    has_bias: true
+    l2_regularization_factor: 1e-4
+  }
+}
+
+layer {
+  name: "5"
+  parents: "4"
+  children: ""
+  data_layout: "data_parallel"
+  pooling {
+    num_dims: 2
+    pool_dims_i: 2
+    pool_pads_i: 0
+    pool_strides_i: 2
+    pool_mode: "max"
+  } 
+} 
+
+layer {
+  name: "6"
+  parents: "5"
+  children: ""
+  data_layout: "data_parallel"
+  fully_connected {
+    num_neurons: 500
+    weight_initialization: "glorot_uniform"
+    has_bias: true
+    l2_regularization_factor: 1e-4    
+  }
+}
+
+layer {
+  name: "7"
+  parents: "6"
+  children: ""
+  data_layout: "data_parallel"
+  relu {
+  }
+}
+
+layer {
+  name: "8"
+  parents: "7"
+  children: ""
+  data_layout: "data_parallel"
+  fully_connected {
+    num_neurons: 10
+    weight_initialization: "glorot_uniform"
+    has_bias: true
+    l2_regularization_factor: 1e-4
+  }
+}
+
+layer {
+  name: "9"
+  parents: "8"
+  children: ""
+  data_layout: "model_parallel"
+  softmax {
+  }
+}
+
+layer {
+  name: "10"
+  parents: "9"
+  children: ""
+  data_layout: "data_parallel"
+  target_distributed_minibatch {
+    shared_data_reader: true
+  }
+}
+}
+

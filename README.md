@@ -53,7 +53,26 @@ By default, MVAPICH2 builds for PSM.  For an ibverbs build of MVAPICH2, use the 
 
     ../scripts/spack_receipes/build_lbann.sh -c gcc@7.1.0 -b openblas -m 'mvapich2 fabrics=mrail'
 
-### Cmake (Non LC or OSX Systems/Script alternative)
+## Running LBANN with Singularity
+
+[Singularity](http://singularity.lbl.gov/)
+
+Users can run LBANN inside a singularity container by grabbing the lbann.def found in the singularity directory, and running the following commands. 
+```
+singularity create -s 8000 lbann.img
+sudo singularity bootstrap lbann.img lbann.def
+```
+*Note: Bootstrapping the image requires root access.*
+
+This will create a container called lbann.img which can be used to invoke lbann on any system with singularity and openmpi installed.
+To run LBANN use mpirun and singularity's execute command:
+```
+salloc -N2
+mpirun -np 4 singularity exec -B /p:/p lbann.img /lbann/spack_builds/singularity_optimizied_test/model_zoo/lbann  mpirun -np 4 singularity exec -B /p:/p lbann.img /lbann/spack_builds/singularity_optimizied_test/model_zoo/lbann  --model=/lbann/model_zoo/tests/model_mnist_distributed_io.prototext --reader=/lbann/model_zoo/data_readers/data_reader_mnist.prototext --optimizer=/lbann/model_zoo/optimizers/opt_adagrad.prototext 
+```
+Note: User must include the -B singularity command, to bind any necessary files to the container. This includes user generated prototext files, and any datasets needed. Alternatively, system admins are capable of allowing a singularity container to utilize the host's filesystem. This is done by changing the MOUNT HOSTFS in the singularity config file.
+
+## Cmake (Non LC or OSX Systems/Script alternative)
    1. Ensure the following dependencies are installed
     [CMake](https://software.llnl.gov/lbann/cmake.html)
     [MPI](https://software.llnl.gov/lbann/mpi.html)
@@ -77,7 +96,7 @@ By default, MVAPICH2 builds for PSM.  For an ibverbs build of MVAPICH2, use the 
    2. Run a test experiment from the main lbann directory using the following command:
    To Verify functionality of LBANN with a test MNIST experiment. Using the following command:
  ```
-  srun -n2 build/catalyst.llnl.gov/model_zoo/lbann \
+  srun -n2 build/catalyst.llnl.gov/model_zoo/lbann \model_conv_autoencoder_cifar10.prototext
 --model=model_zoo/tests/model_mnist_distributed_io.prototext \
 --reader=model_zoo/data_readers/data_reader_mnist.prototext \
 --optimizer=model_zoo/optimizers/opt_adagrad.prototext
@@ -101,11 +120,7 @@ By default, MVAPICH2 builds for PSM.  For an ibverbs build of MVAPICH2, use the 
   LBANN performance will vary on a machine to machine basis. Results will also vary, but should not do so significantly. 
 
 ## Running other models
-Launch an MPI job using the proper command for your system (srun, mpirun, mpiexec etc), calling the lbann executable found in lbann/build/$YourBuildSys/model_zoo. This executable requires three command line arguments. These arguments are prototext files specifying the model, optimizer and data reader for the execution. The files can be found in lbann/model_zoo/prototext. Models can be adjusted by altering these files. Example execution:
-```
-srun -n2 catalyst.llnl.gov/model_zoo/lbann
---model=../model_zoo/tests/model_mnist_distributed_io.prototext
---reader=../model_zoo/data_readers/data_reader_mnist.prototext
---optimizer=../model_zoo/optimizers/opt_adagrad.prototext
-```
+There are various prototext models under the lbann/model_zoo/models/ directory: alexnet, autoencoder_mnist, lenet_mnist, etc. Each of these directories should have a script called *runme.py*. Run this script with no command line parameters for complete usage. Basically, these scripts generate command lines similar to the one above (in the *Verifying LBANN on LC* section). The scripts take two required arguments: --nodes=`<int>` and --tasks=`<int>`. The "tasks" option is used to specify the number of tasks per node, hence, the total number of tasks (cores) is: nodes\*tasks. The generated command lines are designed to be executed using *srun* on LC systems, so you may need to modify, e.g, substitute mpirun, depending on your specific system.
+
+Note: some directories contain multiple models, e.g, as of this writing, the autoencoder_cifar10 directory contains both *model_autoencoder_cifar10.prototext* and *model_conv_autoencoder_cifar10.prototext*. In these cases there may be multiple python scripts, e.g, *runme_conv.py*.
 

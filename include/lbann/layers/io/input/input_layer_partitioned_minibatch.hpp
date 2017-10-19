@@ -56,7 +56,7 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
     return nullptr;
   }
 
-  std::string get_name() const { return "input:partitioned"; }
+  std::string get_type() const { return "input:partitioned"; }
 
   /** Returns description of ctor params */
   std::string get_description() const {

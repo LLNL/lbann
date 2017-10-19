@@ -79,7 +79,7 @@ class dropout : public regularizer_layer {
 
   dropout* copy() const { return new dropout(*this); }
 
-  std::string get_name() const { return "dropout"; }
+  std::string get_type() const { return "dropout"; }
 
   std::string get_description() const {
     return " dropout keep_prob: " + std::to_string(m_keep_prob) 

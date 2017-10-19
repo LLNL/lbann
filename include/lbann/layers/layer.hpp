@@ -77,26 +77,31 @@ class Layer {
     return 0.0;
   };
 
-  /**
-   * This is called on every layer to set up its prev/next layer pointers,
-   * dimensions, and allocate data. By default, it calls the setup_dims,
-   * setup_data, setup_views, and setup_gpu (if needed) methods.
+  /** Setup layer dimensions and data.
+   *  By default, this calls the setup_pointers, setup_dims,
+   *  setup_data, setup_views, and setup_gpu (if needed)
+   *  methods. Unless the setup_pointers function has been replaced in
+   *  an inherited class, it is assumed that pointers to parent/child
+   *  layers have already been initialized.
    */
-  virtual void setup(const Layer *prev_layer, const Layer *next_layer);
-  /**
-   * This is called by setup to actually set up prev/next layer pointers.
-   * This is public because models also use this to adjust pointers as needed.
-   */
-  virtual void setup_pointers(const Layer *prev_layer, const Layer *next_layer);
+  virtual void setup();
   /** Validate that the setup is reasonable. */
   virtual void check_setup();
 
-  /** Return this layer's name */
-  virtual std::string get_name() const = 0;
+  /** Return this layer's type, e.g: "fully connected," "batch normalization," etc. */
+  virtual std::string get_type() const = 0;
+
+  /** Returns this layer's name; this is an arbitrary string, e.g, assigned in a prototext file. */
+  std::string get_name() const { return m_name; }
+
+  /** Sets this layer's name; this is an arbitrary string, e.g, assigned in a prototext file. */
+  void set_name(std::string name) { m_name = name; }
   
   /** Returns a description of the parameters passed to the ctor */
   virtual std::string get_description() const { 
-    return std::string {} + get_name() + " - DESCRIPTION NOT IMPLEMENTED FOR THIS LAYER";
+    return std::string {} + get_type() + " - DESCRIPTION NOT IMPLEMENTED FOR THIS LAYER\n"
+     + " to get a description, you need to edit the class file by adding this method:\n"
+     + " virtual std::string get_descrciption() const override";
   }
   /** Returns a description of the topology */
   virtual std::string get_topo_description() const { return ""; };
@@ -199,6 +204,20 @@ class Layer {
   /** Get forward propagation output dimensions, as seen by next layer. */
   virtual const std::vector<int> fp_output_dims(const Layer* next_layer = NULL) const;
 
+  /** Get list of parent layers. */
+  std::vector<const Layer*>& get_parent_layers();
+  /** Get list of parent layers (const). */
+  const std::vector<const Layer*>& get_parent_layers() const;
+  /** Get list of child layers. */
+  std::vector<const Layer*>& get_child_layers();
+  /** Get list of child layers (const). */
+  const std::vector<const Layer*>& get_child_layers() const;
+
+  /** Add a parent layer. */
+  void add_parent_layer(const Layer* parent);
+  /** Add a child layer. */
+  void add_child_layer(const Layer* child);
+
  protected:
 
   int m_index;                 ///< Layer index (start with 0)
@@ -224,6 +243,15 @@ class Layer {
   /** List of child layers. */
   std::vector<const Layer*> m_child_layers;
 
+  /** Maximum number of parent layers.
+   *  A negative value indicates no limit.
+   */
+  int m_max_num_parent_layers;
+  /** Maximum number of child layers.
+   *  A negative value indicates no limit.
+   */
+  int m_max_num_child_layers;
+
   execution_mode  m_execution_mode;
   model *m_neural_network_model;
 
@@ -236,39 +264,41 @@ class Layer {
   virtual void pin_data();
 #endif // __LIB_CUDNN
 
-  /**
-   * Called by setup(), each layer should override this to call its parent and
-   * set up the layer's m_num_neurons and m_neuron_dims. This base method sets
-   * up m_num_prev_neurons and related methods.
+  /** Setup pointers to parent and child layers.
+   *  Called by the setup function. This base method just checks that
+   *  the number of parents and children are valid. Pointers to the
+   *  parent/child layers are assumed to be initialized already.
+   */
+  virtual void setup_pointers();
+  /** Setup neuron tensor dimensions
+   *  Called by the setup function. This base method initializes the
+   *  input neuron tensor dimensions and sets the output neuron tensor
+   *  dimensions equal to the input.
    */
   virtual void setup_dims();
-  /**
-   * Called by setup(), each layer should override to call its parent and
-   * set up the layer's data (e.g. weights). This base method sets up the
-   * activations and error signal matrices. This is always called after
-   * setup_dims.
+  /** Setup layer data.
+   *  Called by the setup function. This base method initializes the
+   *  activations and error signal matrices.
    */
   virtual void setup_data();
-  /**
-   * Called by setup(), each layer using GPU should override this to
-   * call its parent and set up the layer's GPU data
-   * (e.g. weights). This base method sets up the activations and
-   * error signal matrices. This is always called after setup_data.
+  /** Setup GPU objects.
+   *  Called by the setup function if GPUs are enabled. This base
+   *  method initializes the activations and error signal matrices on
+   *  GPUs.
    */
   virtual void setup_gpu();
-  /**
-   * Called by setup(), each layer should override to call its parent and set
-   * up any views of the layer's data. This is always called after setup_data.
+  /** Setup matrix views.
+   *  Called by the setup function.
    */
   virtual void setup_views() {}
-  /** Perform the layers work / main function for forward propagation */
+  /** Perform the main computation for a forward propagation step. */
   virtual void fp_compute() {}
-  /** Perform the layers work / main function for backward propagation */
+  /** Perform the main computation for a backward propagation step. */
   virtual void bp_compute() {}
-  /** Perform the layers work / main function for the update step */
+  /** Perform the main computation for an update step. */
   virtual bool update_compute() { return true; }
 
-  /** Current layer is using GPUs. */
+  /** Whether current layer is using GPUs. */
   bool m_using_gpus;
 
   /// cuDNN manager
@@ -278,6 +308,8 @@ class Layer {
 
   /** Number of mini-batch samples per GPU. */
   int m_mini_batch_size_per_gpu;
+  /** Maximum number of mini-batch samples per GPU. */
+  int m_max_mini_batch_size_per_gpu;
 
   /** GPU memory for activations from "previous" layer. */
   std::vector<DataType*> m_prev_activations_d;
@@ -314,6 +346,8 @@ class Layer {
   double bp_compute_time;
   /** Time spent in updates. */
   double update_time;
+
+  std::string m_name;
 };
 }
 

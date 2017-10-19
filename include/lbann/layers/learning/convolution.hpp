@@ -54,7 +54,7 @@ class convolution_layer : public base_convolution_layer {
 
   /// kernel tensor is output channels, input channels, conv dimension (w x h)
   /** Returns description of ctor params */
-  std::string get_description() const {
+  virtual std::string get_description() const override {
     std::stringstream s;
     s << " convolution; conv_dims: ";
     // for (size_t h=0; h<this->m_kernel_dims.size(); h++) {
@@ -174,7 +174,7 @@ class convolution_layer : public base_convolution_layer {
 
   convolution_layer* copy() const { return new convolution_layer(*this); }
 
-  std::string get_name() const { return "convolution"; }
+  virtual std::string get_type() const override { return "convolution"; }
 
   void initialize_distributed_matrices() {
     base_convolution_layer::initialize_distributed_matrices<T_layout>();
@@ -252,79 +252,6 @@ class convolution_layer : public base_convolution_layer {
       El::View(*m_bias_weights_gradient_v, *this->m_weights_gradient,
                El::IR(kernel_size_per_channel), El::ALL);
     }
-  }
-
-  void setup_gpu() {
-    base_convolution_layer::setup_gpu();
-  #ifndef __LIB_CUDNN
-    throw lbann_exception("convolution_layer: cuDNN not detected");
-  #else
-
-    // Maximum workspace size
-    cudaDeviceProp device_props;
-    CHECK_CUDA(cudaGetDeviceProperties(&device_props, 0));
-    const size_t work_space_limit = device_props.totalGlobalMem / 2;
-
-    // Choose algorithms
-    CHECK_CUDNN(cudnnGetConvolutionForwardAlgorithm(this->m_cudnn->get_handle(),
-                                                    this->m_prev_neurons_cudnn_desc,
-                                                    m_kernel_cudnn_desc,
-                                                    m_convolution_cudnn_desc,
-                                                    this->m_neurons_cudnn_desc,
-                                                    CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT,
-                                                    work_space_limit,
-                                                    &this->m_convolution_cudnn_algorithm));
-    CHECK_CUDNN(cudnnGetConvolutionBackwardDataAlgorithm(this->m_cudnn->get_handle(),
-                                                         m_kernel_cudnn_desc,
-                                                         this->m_neurons_cudnn_desc,
-                                                         m_convolution_cudnn_desc,
-                                                         this->m_prev_neurons_cudnn_desc,
-                                                         CUDNN_CONVOLUTION_BWD_DATA_SPECIFY_WORKSPACE_LIMIT,
-                                                         work_space_limit,
-                                                         &this->m_transposed_convolution_cudnn_algorithm));
-    CHECK_CUDNN(cudnnGetConvolutionBackwardFilterAlgorithm(this->m_cudnn->get_handle(),
-                                                           this->m_prev_neurons_cudnn_desc,
-                                                           this->m_neurons_cudnn_desc,
-                                                           m_convolution_cudnn_desc,
-                                                           m_kernel_cudnn_desc,
-                                                           CUDNN_CONVOLUTION_BWD_FILTER_SPECIFY_WORKSPACE_LIMIT,
-                                                           work_space_limit,
-                                                           &this->m_kernel_gradient_cudnn_algorithm));
-
-    // Initialize work space
-    size_t max_work_space = 0;
-    size_t required_work_space;
-    CHECK_CUDNN(cudnnGetConvolutionForwardWorkspaceSize(this->m_cudnn->get_handle(),
-                                                        this->m_prev_neurons_cudnn_desc,
-                                                        this->m_kernel_cudnn_desc,
-                                                        this->m_convolution_cudnn_desc,
-                                                        this->m_neurons_cudnn_desc,
-                                                        this->m_convolution_cudnn_algorithm,
-                                                        &required_work_space));
-    max_work_space = std::max(max_work_space, required_work_space);
-    CHECK_CUDNN(cudnnGetConvolutionBackwardDataWorkspaceSize(this->m_cudnn->get_handle(),
-                                                             this->m_kernel_cudnn_desc,
-                                                             this->m_neurons_cudnn_desc,
-                                                             this->m_convolution_cudnn_desc,
-                                                             this->m_prev_neurons_cudnn_desc,
-                                                             this->m_transposed_convolution_cudnn_algorithm,
-                                                             &required_work_space));
-    max_work_space = std::max(max_work_space, required_work_space);
-    CHECK_CUDNN(cudnnGetConvolutionBackwardFilterWorkspaceSize(this->m_cudnn->get_handle(),
-                                                               this->m_prev_neurons_cudnn_desc,
-                                                               this->m_neurons_cudnn_desc,
-                                                               this->m_convolution_cudnn_desc,
-                                                               this->m_kernel_cudnn_desc,
-                                                               this->m_kernel_gradient_cudnn_algorithm,
-                                                               &required_work_space));
-    max_work_space = std::max(max_work_space, required_work_space);
-    for(int i=0; i<this->m_cudnn->get_num_gpus(); ++i) {
-      if(max_work_space > this->m_cudnn->get_work_space_size(i)) {
-        this->m_cudnn->set_work_space_size(i, max_work_space);
-      }
-    }
-
-  #endif // __LIB_CUDNN
   }
 
  protected:

@@ -50,37 +50,37 @@ class greedy_layerwise_autoencoder : public sequential_model {
   /// Destructor
   ~greedy_layerwise_autoencoder();
 
-  greedy_layerwise_autoencoder* copy() const {
+  virtual greedy_layerwise_autoencoder* copy() const override {
     throw lbann_exception("greedy_layerwise_autoencoder doesn't support copying");
   }
 
-  std::string name() const { return "greedy layerwise autoencoder"; }
+  virtual std::string name() const override { return "greedy layerwise autoencoder"; }
 
   /// Save model to shared checkpoint
-  bool save_to_checkpoint_shared(persist& p);
+  bool save_to_checkpoint_shared(persist& p) override;
 
   /// Restore model from shared checkpoint
-  bool load_from_checkpoint_shared(persist& p);
+  bool load_from_checkpoint_shared(persist& p) override;
 
   /// Compute layer summaries
-  void summarize_stats(lbann_summary& summarizer);
-  void summarize_matrices(lbann_summary& summarizer);
+  virtual void summarize_stats(lbann_summary& summarizer) override;
+  virtual void summarize_matrices(lbann_summary& summarizer) override;
 
   /// Train neural network
-  void train(int num_epochs);
+  virtual void train(int num_epochs) override;
 
   // Train each phase ( a set of (original) input, hidden and mirror layers (output))
   void train_phase(int num_epochs);
 
   /// Training step on one mini-batch
-  bool train_mini_batch();
+  virtual bool train_mini_batch() override;
 
   ///Global evaluation (testing), provide overall cost relative to original input
-  void evaluate(execution_mode mode=execution_mode::testing);
+  virtual void evaluate(execution_mode mode=execution_mode::testing) override;
   /// Evaluate (validation) per phase
   void evaluate_phase(execution_mode mode=execution_mode::validation);
   /// Evaluation step on one mini-batch
-  bool evaluate_mini_batch();
+  virtual bool evaluate_mini_batch() override;
 
   void reset_phase();
   /// Set end index of layer wise training (typically at reconstruction layer)

@@ -43,7 +43,7 @@ class id_layer : public entrywise_activation_layer {
   }
   id_layer* copy() const { return new id_layer(*this); }
 
-  std::string get_name() const { return "id"; }
+  std::string get_type() const { return "id"; }
 
   virtual DataType activation_function(DataType x)  {
      throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " this method should never be called; it's in place only to permit id_layer to have the same inheritance hierarchy as the other activation classes");

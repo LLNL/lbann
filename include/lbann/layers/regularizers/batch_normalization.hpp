@@ -161,7 +161,7 @@ class batch_normalization : public learning_regularizer {
   /** Channel tensor descriptor.
    *  This tensor has the same dimensions as the means, variances,
    *  scaling term and bias term. */
-  cudnnTensorDescriptor_t m_channel_tensor_desc;
+  cudnnTensorDescriptor_t m_channel_tensor_cudnn_desc;
 
   /** GPU memory for current minibatch means. */
   std::vector<DataType *> m_mean_d;
@@ -228,7 +228,7 @@ class batch_normalization : public learning_regularizer {
   #ifdef __LIB_CUDNN
 
     // Initialize cuDNN objects
-    m_channel_tensor_desc = NULL;    
+    m_channel_tensor_cudnn_desc = NULL;    
 
     // Initialize GPU memory if using GPU
     if(cudnn) {
@@ -262,6 +262,47 @@ class batch_normalization : public learning_regularizer {
     m_scale_gradient_v = other.m_scale_gradient_v->Copy();
     m_bias_gradient_v = other.m_bias_gradient_v->Copy();
     m_scale_bias_gradient_v = other.m_scale_bias_gradient_v->Copy();
+
+  #ifdef __LIB_CUDNN
+
+    // Copy cuDNN tensor descriptor
+    m_channel_tensor_cudnn_desc = nullptr;
+    cudnn::copy_tensor_cudnn_desc(other.m_channel_tensor_cudnn_desc,
+                                  m_channel_tensor_cudnn_desc);
+    
+    // Copy GPU data
+    m_mean_d = m_cudnn->copy(other.m_mean_d,
+                             m_mean_v->Height(),
+                             m_mean_v->Width());
+    m_var_d = m_cudnn->copy(other.m_var_d,
+                            m_var_v->Height(),
+                            m_var_v->Width());
+    m_scale_d = m_cudnn->copy(other.m_scale_d,
+                              m_scale_v->Height(),
+                              m_scale_v->Width());
+    m_bias_d = m_cudnn->copy(other.m_bias_d,
+                             m_bias_v->Height(),
+                             m_bias_v->Width());
+    m_scale_gradient_d = m_cudnn->copy(other.m_scale_gradient_d,
+                                       m_scale_gradient_v->Height(),
+                                       m_scale_gradient_v->Width());
+    m_bias_gradient_d = m_cudnn->copy(other.m_bias_gradient_d,
+                                      m_bias_gradient_v->Height(),
+                                      m_bias_gradient_v->Width());
+    m_mean_gradient_d = m_cudnn->copy(other.m_mean_gradient_d,
+                                      m_mean_gradient_v->Height(),
+                                      m_mean_gradient_v->Width());
+    m_var_gradient_d = m_cudnn->copy(other.m_var_gradient_d,
+                                     m_var_gradient_v->Height(),
+                                     m_var_gradient_v->Width());
+
+    // Copy pinned workspace
+    m_pinned_workspace = other.m_pinned_workspace->Copy();
+    if(m_pinned_workspace != nullptr) {
+      m_cudnn->pin_matrix(*m_pinned_workspace);
+    }
+
+  #endif // __LIB_CUDNN
 
     // Setup matrix views
     setup_views();
@@ -312,6 +353,57 @@ class batch_normalization : public learning_regularizer {
     m_bias_gradient_v = other.m_bias_gradient_v->Copy();
     m_scale_bias_gradient_v = other.m_scale_bias_gradient_v->Copy();
 
+  #ifdef __LIB_CUDNN
+
+    // Copy cuDNN tensor descriptor
+    cudnn::copy_tensor_cudnn_desc(other.m_channel_tensor_cudnn_desc,
+                                  m_channel_tensor_cudnn_desc);
+    
+    // Copy GPU data
+    m_cudnn->deallocate_on_gpus(m_mean_d);
+    m_cudnn->deallocate_on_gpus(m_var_d);
+    m_cudnn->deallocate_on_gpus(m_scale_d);
+    m_cudnn->deallocate_on_gpus(m_bias_d);
+    m_cudnn->deallocate_on_gpus(m_scale_gradient_d);
+    m_cudnn->deallocate_on_gpus(m_bias_gradient_d);
+    m_cudnn->deallocate_on_gpus(m_mean_gradient_d);
+    m_cudnn->deallocate_on_gpus(m_var_gradient_d);
+    m_mean_d = m_cudnn->copy(other.m_mean_d,
+                             m_mean_v->Height(),
+                             m_mean_v->Width());
+    m_var_d = m_cudnn->copy(other.m_var_d,
+                            m_var_v->Height(),
+                            m_var_v->Width());
+    m_scale_d = m_cudnn->copy(other.m_scale_d,
+                              m_scale_v->Height(),
+                              m_scale_v->Width());
+    m_bias_d = m_cudnn->copy(other.m_bias_d,
+                             m_bias_v->Height(),
+                             m_bias_v->Width());
+    m_scale_gradient_d = m_cudnn->copy(other.m_scale_gradient_d,
+                                       m_scale_gradient_v->Height(),
+                                       m_scale_gradient_v->Width());
+    m_bias_gradient_d = m_cudnn->copy(other.m_bias_gradient_d,
+                                      m_bias_gradient_v->Height(),
+                                      m_bias_gradient_v->Width());
+    m_mean_gradient_d = m_cudnn->copy(other.m_mean_gradient_d,
+                                      m_mean_gradient_v->Height(),
+                                      m_mean_gradient_v->Width());
+    m_var_gradient_d = m_cudnn->copy(other.m_var_gradient_d,
+                                     m_var_gradient_v->Height(),
+                                     m_var_gradient_v->Width());
+
+    // Copy pinned workspace
+    if(m_pinned_workspace != nullptr) {
+      m_cudnn->unpin_matrix(*m_pinned_workspace);
+    }
+    m_pinned_workspace = other.m_pinned_workspace->Copy();
+    if(m_pinned_workspace != nullptr) {
+      m_cudnn->pin_matrix(*m_pinned_workspace);
+    }
+
+  #endif // __LIB_CUDNN
+
     // Setup matrix view
     setup_views();
 
@@ -338,8 +430,8 @@ class batch_normalization : public learning_regularizer {
   #ifdef __LIB_CUDNN
 
     // Destroy cuDNN objects
-    if(m_channel_tensor_desc) {
-      CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_channel_tensor_desc));
+    if(m_channel_tensor_cudnn_desc) {
+      CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_channel_tensor_cudnn_desc));
     }
 
     // Deallocate GPU memory
@@ -377,7 +469,7 @@ class batch_normalization : public learning_regularizer {
 
   batch_normalization* copy() const { return new batch_normalization(*this); }
 
-  std::string get_name() const { return "batch normalization"; }
+  std::string get_type() const { return "batch normalization"; }
 
   void initialize_distributed_matrices() {
     regularizer_layer::initialize_distributed_matrices<T_layout>();
@@ -457,13 +549,13 @@ class batch_normalization : public learning_regularizer {
   #else
 
     // Set tensor descriptor
-    CHECK_CUDNN(cudnnCreateTensorDescriptor(&m_channel_tensor_desc));
+    CHECK_CUDNN(cudnnCreateTensorDescriptor(&m_channel_tensor_cudnn_desc));
     std::vector<int> tensor_dims(this->m_num_neuron_dims+1, 1);
     std::vector<int> tensor_strides(this->m_num_neuron_dims+1, 1);
     tensor_dims[1] = this->m_neuron_dims[0];
     tensor_strides[0] = tensor_dims[1];
-    CHECK_CUDNN(cudnnSetTensorNdDescriptor(m_channel_tensor_desc,
-                                           this->m_cudnn->get_cudnn_data_type(),
+    CHECK_CUDNN(cudnnSetTensorNdDescriptor(m_channel_tensor_cudnn_desc,
+                                           cudnn::get_cudnn_data_type(),
                                            tensor_dims.size(),
                                            tensor_dims.data(),
                                            tensor_strides.data()));

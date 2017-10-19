@@ -345,7 +345,7 @@ elif [ "${COMPILER}" == "clang" ]; then
         #GCC_VERSION=`ls -l $gccdep | awk '{print $NF}' | cut -d '-' -f 2 | cut -d '/' -f 1`
         # Forcing to gcc 4.9.3 because of the current way of ray's gcc and various clang installation
         GCC_VERSION=4.9.3
-        GNU_DIR=/usr/tcetmp/packages/gcc/gcc-${GCC_VERSION}
+        GNU_DIR=/usr/tce/packages/gcc/gcc-${GCC_VERSION}
     elif [ ${USE_MODULES} -ne 0 ]; then
         GCC_VERSION=$(ldd ${COMPILER_BASE}/lib/libclang.so | grep gcc- | awk 'BEGIN{FS="/"} {for (i=1;i<=NF; i++) if ($i~/^gcc-/) print $i}' | tail -n 1)
         GNU_DIR=/usr/tce/packages/gcc/${GCC_VERSION}

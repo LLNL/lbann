@@ -67,7 +67,7 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
            + " dataLayout: " + this->get_data_layout_string(get_data_layout());
   }
 
-  std::string get_name() const { return "target:distributed"; }
+  std::string get_type() const { return "target:distributed"; }
 
   virtual inline void initialize_distributed_matrices() {
     target_layer::initialize_distributed_matrices<T_layout>();

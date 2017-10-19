@@ -181,11 +181,12 @@ class cv_normalizer : public cv_transform {
 
   template<typename T>
   static bool compute_mean_stddev_with_known_type(const cv::Mat& image,
-      std::vector<ComputeType>& mean, std::vector<ComputeType>& stddev, cv::Mat mask);
+      std::vector<ComputeType>& mean, std::vector<ComputeType>& stddev, cv::InputArray mask);
 
   /// Compute the per-channel and per-sample mean and standard deviation
   static bool compute_mean_stddev(const cv::Mat& image,
-                                  std::vector<ComputeType>& mean, std::vector<ComputeType>& stddev, cv::Mat mask=cv::Mat());
+                                  std::vector<ComputeType>& mean, std::vector<ComputeType>& stddev,
+                                  cv::InputArray mask=cv::noArray());
 
   virtual std::ostream& print(std::ostream& os) const;
 };
@@ -319,7 +320,7 @@ inline bool cv_normalizer::scale_with_known_type(cv::Mat& image,
  */
 template<typename T>
 inline bool cv_normalizer::compute_mean_stddev_with_known_type(const cv::Mat& image,
-    std::vector<ComputeType>& mean, std::vector<ComputeType>& stddev, cv::Mat mask) {
+    std::vector<ComputeType>& mean, std::vector<ComputeType>& stddev, cv::InputArray mask) {
   mean.clear();
   stddev.clear();
   if (image.empty()) {
@@ -384,11 +385,6 @@ inline bool cv_normalizer::compute_mean_stddev_with_known_type(const cv::Mat& im
       stddev[ch] = sqrt(std::max(sqsum[ch]/num_pixels - shifted_mean*shifted_mean, ComputeType(0)));
     }
   }
-#if 0
-  for (size_t ch = 0u; ch < NCh; ++ch) {
-    std::cout << "channel " << ch << "\tmean " << mean[ch] << "\tstddev " << stddev[ch] << std::endl;
-  }
-#endif
   return true;
 }
 

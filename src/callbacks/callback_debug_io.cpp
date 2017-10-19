@@ -74,7 +74,7 @@ void lbann::lbann_callback_debug_io::print_fp_start(model *m, input_layer *input
             << "] @" << m->get_cur_epoch() << "." << step 
             << " Phase: " << _to_string(m->get_execution_mode()) 
             << " starting forward propagation for layer " << input->get_index() 
-            << " name: " << input->get_name() 
+            << " type: " << input->get_type() 
             << " iteration: " << input->get_data_reader()->get_current_mini_batch_index()
             << " of " << input->get_num_iterations_per_epoch()
             << " loading idx " << input->get_data_reader()->get_loaded_mini_batch_index()

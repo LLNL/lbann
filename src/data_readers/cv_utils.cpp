@@ -91,5 +91,11 @@ cv::Mat cv_utils::copy_buf_to_cvMat(const ::Mat& buf,
   _LBANN_DEBUG_MSG("Unknown image depth: " << CV_MAT_DEPTH(Type));
   return cv::Mat();
 }
+
+std::ostream& operator<<(std::ostream& os, const cv_transform& tr) {
+  tr.print(os);
+  return os;
+}
+
 } // end of namespace lbann
 #endif // __LIB_OPENCV

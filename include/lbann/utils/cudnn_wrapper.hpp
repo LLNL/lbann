@@ -100,11 +100,6 @@ class cudnn_manager {
   /** Destructor */
   ~cudnn_manager();
 
-  /** Print cuDNN version information to standard output. */
-  void print_version() const;
-  /** Get cuDNN data type associated with C++ data type. */
-  cudnnDataType_t get_cudnn_data_type() const;
-
   /** Get number of GPUs assigned to current process. */
   int get_num_gpus() const;
   /** Get number of GPUs on current node. */
@@ -114,43 +109,47 @@ class cudnn_manager {
   /** Get GPUs (const). */
   const std::vector<int>& get_gpus() const;
   /** Get ith GPU. */
-  int get_gpu(int i=0) const;
+  int get_gpu(int i) const;
   /** Get CUDA streams. */
   std::vector<cudaStream_t>& get_streams();
   /** Get CUDA streams (const). */
   const std::vector<cudaStream_t>& get_streams() const;
   /** Get ith CUDA stream. */
-  cudaStream_t& get_stream(int i=0);
+  cudaStream_t& get_stream(int i);
   /** Get ith CUDA stream (const). */
-  const cudaStream_t& get_stream(int i=0) const;
+  const cudaStream_t& get_stream(int i) const;
   /** Get cuDNN handles. */
   std::vector<cudnnHandle_t>& get_handles();
   /** Get cuDNN handles (const). */
   const std::vector<cudnnHandle_t>& get_handles() const;
   /** Get ith cuDNN handle. */
-  cudnnHandle_t& get_handle(int i=0);
+  cudnnHandle_t& get_handle(int i);
   /** Get ith cuDNN handle (const). */
-  const cudnnHandle_t& get_handle(int i=0) const;
+  const cudnnHandle_t& get_handle(int i) const;
   /** Get CUBLAS handles. */
   std::vector<cublasHandle_t>& get_cublas_handles();
   /** Get CUBLAS handles (const). */
   const std::vector<cublasHandle_t>& get_cublas_handles() const;
   /** Get ith CUBLAS handle. */
-  cublasHandle_t& get_cublas_handle(int i=0);
+  cublasHandle_t& get_cublas_handle(int i);
   /** Get ith CUBLAS handle (const). */
-  const cublasHandle_t& get_cublas_handle(int i=0) const;
+  const cublasHandle_t& get_cublas_handle(int i) const;
   /** Get GPU work spaces. */
   std::vector<void*> get_work_spaces();
   /** Get ith GPU work space. */
-  void *get_work_space(int i=0);
+  void *get_work_space(int i);
   /** Get GPU work space sizes (in bytes). */
   std::vector<size_t> get_work_space_sizes();
   /** Get GPU work space sizes (in bytes) (const). */
   const std::vector<size_t> get_work_space_sizes() const;
   /** Get ith GPU work space size (in bytes). */
-  size_t get_work_space_size(int i=0) const;
+  size_t get_work_space_size(int i) const;
   /** Set ith GPU work space size (in bytes). */
   void set_work_space_size(int i, size_t size);
+  /** Set ith GPU work space to occupy all available GPU memory. */
+  void set_maximum_work_space_size(int i);
+  /** Free all GPU work spaces. */
+  void free_work_spaces();
 
   /** Allocate memory on GPUs. */
   void allocate_on_gpus(std::vector<DataType*>& gpu_data,
@@ -210,10 +209,18 @@ class cudnn_manager {
   /** Synchronize the default stream. */
   void synchronize();
 
-    /** Synchronize all streams. */
+  /** Synchronize all streams. */
   void synchronize_all();
-  
 
+  /** Create copy of GPU data.
+   *  The GPU memory allocated in this function must be deallocated
+   *  elsewhere.
+   */
+  std::vector<DataType*> copy(const std::vector<DataType*>& gpu_data,
+                              int height,
+                              int width_per_gpu,
+                              int leading_dim = 0);
+  
   /** Pin matrix memory.
    *  Pinned memory accelerates memory transfers with GPU, but may
    *  degrade system performance. This function assumes that the
@@ -255,6 +262,61 @@ class cudnn_manager {
 
 #endif // #ifdef __LIB_CUDNN
 };
+
+#ifdef __LIB_CUDNN
+
+/** Print cuDNN version information to standard output. */
+void print_version();
+
+/** Get cuDNN data type associated with C++ data type. */
+cudnnDataType_t get_cudnn_data_type();
+
+/** Set cuDNN tensor descriptor.
+ *  num_samples is interpreted as the first tensor dimension, followed
+ *  by the entries in sample_dims. desc is created or destroyed if
+ *  needed.
+ */
+void set_tensor_cudnn_desc(cudnnTensorDescriptor_t& desc,
+                           int num_samples,
+                           const std::vector<int>& sample_dims);
+
+/** Copy cuDNN tensor descriptor.
+ *  dst is created or destroyed if needed.
+ */
+void copy_tensor_cudnn_desc(const cudnnTensorDescriptor_t& src,
+                            cudnnTensorDescriptor_t& dst);
+
+/** Copy cuDNN convolution kernel descriptor.
+ *  dst is created or destroyed if needed.
+ */
+void copy_kernel_cudnn_desc(const cudnnFilterDescriptor_t& src,
+                            cudnnFilterDescriptor_t& dst);
+
+/** Copy cuDNN convolution descriptor.
+ *  dst is created or destroyed if needed.
+ */
+void copy_convolution_cudnn_desc(const cudnnConvolutionDescriptor_t& src,
+                                 cudnnConvolutionDescriptor_t& dst);
+
+/** Copy cuDNN pooling descriptor.
+ *  dst is created or destroyed if needed.
+ */
+void copy_pooling_cudnn_desc(const cudnnPoolingDescriptor_t& src,
+                             cudnnPoolingDescriptor_t& dst);
+
+/** Copy cuDNN activation descriptor.
+ *  dst is created or destroyed if needed.
+ */
+void copy_activation_cudnn_desc(const cudnnActivationDescriptor_t& src,
+                                cudnnActivationDescriptor_t& dst);
+
+/** Copy cuDNN local response normalization descriptor.
+ *  dst is created or destroyed if needed.
+ */
+void copy_lrn_cudnn_desc(const cudnnLRNDescriptor_t& src,
+                         cudnnLRNDescriptor_t& dst);
+
+#endif // #ifdef __LIB_CUDNN
 
 }
 

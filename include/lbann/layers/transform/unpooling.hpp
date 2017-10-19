@@ -76,7 +76,7 @@ class unpooling_layer : public transform {
 
   unpooling_layer* copy() const { return new unpooling_layer(*this); }
 
-  std::string get_name() const { return "unpooling"; }
+  std::string get_type() const { return "unpooling"; }
 
   virtual inline void initialize_distributed_matrices() {
     transform::initialize_distributed_matrices<T_layout>();
