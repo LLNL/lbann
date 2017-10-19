@@ -58,6 +58,8 @@ class cv_cropper : public cv_transform {
   double m_zoom; ///< zoom factor to prepare the initial region for a given image
   int m_interpolation; ///< channel value interpolation method
 
+  void unset_roi(void);
+
  public:
   cv_cropper();
   cv_cropper(const cv_cropper& rhs) = default;

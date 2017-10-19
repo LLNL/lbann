@@ -29,6 +29,7 @@
 #include "lbann/data_readers/cv_cropper.hpp"
 #include "lbann/utils/mild_exception.hpp"
 #include "lbann/utils/random.hpp"
+#include "lbann/utils/exception.hpp"
 #include <algorithm>
 #include <ostream>
 
@@ -47,6 +48,10 @@ cv_cropper *cv_cropper::clone() const {
   return new cv_cropper(*this);
 }
 
+void cv_cropper::unset_roi(void) {
+  m_is_roi_set = false;
+  m_roi_size = std::pair<int, int>(0, 0);
+}
 
 void cv_cropper::set(const unsigned int width, const unsigned int height,
                      const bool random_crop,
@@ -56,15 +61,20 @@ void cv_cropper::set(const unsigned int width, const unsigned int height,
   m_rand_crop = random_crop;
 
   if ((roi_sz.first > 0) && (roi_sz.second > 0)) {
-    m_is_roi_set = true;
-    m_roi_size = roi_sz;
+    if ((roi_sz.first < width) || (roi_sz.second < height)) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: cv_cropper: ROI size is smaller than that of a patch";
+      throw lbann_exception(err.str());
+    } else {
+      m_is_roi_set = true;
+      m_roi_size = roi_sz;
+    }
   } else if (!((roi_sz.first == 0) && (roi_sz.second == 0))) {
-    // Fall back to the default. Alternatively, we can generate exception here.
-    m_is_roi_set = false;
-    m_roi_size = std::pair<int, int>(0, 0);
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: cv_cropper: invalid ROI size";
+    throw lbann_exception(err.str());
   } else {
-    m_is_roi_set = false;
-    m_roi_size = std::pair<int, int>(0, 0);
+    unset_roi();
   }
 
   m_zoom = 1.0; // default
@@ -77,8 +87,7 @@ void cv_cropper::reset() {
   m_width = 0u;
   m_height = 0u;
   m_rand_crop = false;
-  m_is_roi_set = false;
-  m_roi_size = std::pair<int, int>(0, 0);
+  unset_roi();
   m_zoom = 1.0;
   m_interpolation = cv::INTER_AREA;
   m_enabled = false;
