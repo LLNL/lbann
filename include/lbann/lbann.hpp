@@ -65,6 +65,7 @@
 #include "lbann/layers/transform/sum.hpp"
 #include "lbann/layers/transform/slice.hpp"
 #include "lbann/layers/transform/concatenation.hpp"
+#include "lbann/layers/transform/noise.hpp"
 
 /// Regularization layers.
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
