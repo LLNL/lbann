@@ -25,7 +25,7 @@ model {
   callback {
     imcomm {
       intermodel_comm_method: "normal"
-      layers: "2 6 10 12 14 17 20 23"
+      layers: "conv1 conv2 conv3 conv4 conv5 fc6 fc7 fc8"
     }  
   }
   callback {
@@ -83,21 +83,15 @@ model {
   # start of layers
   ###################################################
 
-  #######
-  # INPUT
-  #######
   layer {
-    name: "1"
+    name: "data"
     data_layout: "data_parallel"
     input_partitioned_minibatch {
     }
   }
 
-  #############
-  # CONVOLUTION 1
-  #############
   layer {
-    name: "2"
+    name: "conv1"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -111,22 +105,14 @@ model {
       l2_regularization_factor: 0.0005
     }
   }
-
-  ######
-  # RELU
-  ######
   layer {
-    name: "3"
+    name: "relu1"
     data_layout: "data_parallel"
     relu {
     }
   }
-
-  #############
-  # LRN 2
-  #############
   layer {
-    name: "4"
+    name: "norm1"
     data_layout: "data_parallel"
     local_response_normalization {
       window_width: 5
@@ -135,12 +121,8 @@ model {
       lrn_k: 2
     }
   }
-
-  #########
-  # POOLING 3
-  #########
   layer {
-    name: "5"
+    name: "pool1"
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
@@ -152,11 +134,8 @@ model {
     }
   }
 
-  #############
-  # CONVOLUTION 4
-  #############
   layer {
-    name: "6"
+    name: "conv2"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -171,22 +150,14 @@ model {
       l2_regularization_factor: 0.0005
     }
   }
-
-  ######
-  # RELU
-  ######
   layer {
-    name: "7"
+    name: "relu2"
     data_layout: "data_parallel"
     relu {
     }
   }
-
-  #############
-  # LRN 5
-  #############
   layer {
-    name: "8"
+    name: "norm2"
     data_layout: "data_parallel"
     local_response_normalization {
       window_width: 5
@@ -195,13 +166,8 @@ model {
       lrn_k: 2
     }
   }
-
-
-  #########
-  # POOLING 6
-  #########
   layer {
-    name: "9"
+    name: "pool2"
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
@@ -213,11 +179,8 @@ model {
     }
   }
 
-  #############
-  # CONVOLUTION 7
-  #############
   layer {
-    name: "10"
+    name: "conv3"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -231,22 +194,15 @@ model {
       l2_regularization_factor: 0.0005
     }
   }
-
-  ######
-  # RELU
-  ######
   layer {
-    name: "11"
+    name: "relu3"
     data_layout: "data_parallel"
     relu {
     }
   }
 
-  #############
-  # CONVOLUTION 8
-  #############
   layer {
-    name: "12"
+    name: "conv4"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -261,22 +217,15 @@ model {
       l2_regularization_factor: 0.0005
     }
   }
-
-  ######
-  # RELU
-  ######
   layer {
-    name: "13"
+    name: "relu4"
     data_layout: "data_parallel"
     relu {
     }
   }
 
-  #############
-  # CONVOLUTION 9
-  #############
   layer {
-    name: "14"
+    name: "conv5"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -291,22 +240,14 @@ model {
       l2_regularization_factor: 0.0005
     }
   }
-
-  ######
-  # RELU
-  ######
   layer {
-    name: "15"
+    name: "relu5"
     data_layout: "data_parallel"
     relu {
     }
   }
-
-  #########
-  # POOLING
-  #########
   layer {
-    name: "16"
+    name: "pool5"
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
@@ -318,12 +259,8 @@ model {
     }
   }
 
-
-  #################
-  # FULLY_CONNECTED 11
-  #################
   layer {
-    name: "17"
+    name: "fc6"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 4096
@@ -333,33 +270,22 @@ model {
       l2_regularization_factor: 0.0005
     }
   }
-
-  ######
-  # RELU
-  ######
   layer {
-    name: "18"
+    name: "relu6"
     data_layout: "model_parallel"
     relu {
     }
   }
-
-  #########
-  # DROPOUT
-  #########
   layer {
-    name: "19"
+    name: "drop6"
     data_layout: "model_parallel"
     dropout {
       keep_prob: 0.5
     }
   }
 
-  #################
-  # FULLY_CONNECTED 12
-  #################
   layer {
-    name: "20"
+    name: "fc7"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 4096
@@ -369,33 +295,22 @@ model {
       l2_regularization_factor: 0.0005
     }
   }
-
-  ######
-  # RELU
-  ######
   layer {
-    name: "21"
+    name: "relu7"
     data_layout: "model_parallel"
     relu {
     }
   }
-
-  #########
-  # DROPOUT
-  #########
   layer {
-    name: "22"
+    name: "drop7"
     data_layout: "model_parallel"
     dropout {
       keep_prob: 0.5
     }
   }
 
-  #################
-  # FULLY_CONNECTED
-  #################
   layer {
-    name: "23"
+    name: "fc8"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 1000
@@ -405,24 +320,19 @@ model {
     }
   }
 
-  #########
-  # SOFTMAX
-  #########
   layer {
-    name: "24"
+    name: "prob"
     data_layout: "model_parallel"
     softmax {
     }
   }
 
-  ########
-  # TARGET
-  ########
   layer {
-    name: "25"
+    name: "target"
     data_layout: "data_parallel"
     target_partitioned_minibatch {
       shared_data_reader: true
     }
   }
+
 }

@@ -52,12 +52,12 @@ model {
       layers: ""
     }
   }
-#  callback {
-#    imcomm {
-#      intermodel_comm_method: "normal"
-#      layers: "2 5 8 11"
-#    }
-#  }
+  # callback {
+  #   imcomm {
+  #     intermodel_comm_method: "normal"
+  #     layers: "conv1 conv2 ip1 ip2"
+  #   }
+  # }
   # callback {
   #   dump_mb_indices {
   #     basename: "debug_alexnet/"
@@ -66,28 +66,24 @@ model {
   # }
   # callback {
   #   disp_io_stats {
-  #     layers: "1"
+  #     layers: "data"
   #   }
   # }
 
 
-  # INPUT 1
-  ######################
-  layer {
-    name: "1"
-    parents: "1"
-    children: ""
-    data_layout: "model_parallel"
-    input_distributed_minibatch {
-    }
-}
-
-
+  ###################################################
+  # Layers
+  ###################################################
 
 layer {
-  name: "2"
-  parents: "1"
-  children: ""
+  name: "data"
+  data_layout: "model_parallel"
+  input_distributed_minibatch {
+  }
+}
+
+layer {
+  name: "conv1"
   data_layout: "data_parallel"
   convolution {
     num_dims: 2
@@ -102,9 +98,7 @@ layer {
 }
 
 layer {
-  name: "3"
-  parents: "2"
-  children: ""
+  name: "pool1"
   data_layout: "data_parallel"
   pooling {
     num_dims: 2
@@ -116,9 +110,7 @@ layer {
 }
 
 layer {
-  name: "4"
-  parents: "3"
-  children: ""
+  name: "conv2"
   data_layout: "data_parallel"
   convolution {
     num_dims: 2
@@ -133,9 +125,7 @@ layer {
 }
 
 layer {
-  name: "5"
-  parents: "4"
-  children: ""
+  name: "pool2"
   data_layout: "data_parallel"
   pooling {
     num_dims: 2
@@ -147,9 +137,7 @@ layer {
 } 
 
 layer {
-  name: "6"
-  parents: "5"
-  children: ""
+  name: "ip1"
   data_layout: "data_parallel"
   fully_connected {
     num_neurons: 500
@@ -160,18 +148,14 @@ layer {
 }
 
 layer {
-  name: "7"
-  parents: "6"
-  children: ""
+  name: "relu1"
   data_layout: "data_parallel"
   relu {
   }
 }
 
 layer {
-  name: "8"
-  parents: "7"
-  children: ""
+  name: "ip2"
   data_layout: "data_parallel"
   fully_connected {
     num_neurons: 10
@@ -182,18 +166,14 @@ layer {
 }
 
 layer {
-  name: "9"
-  parents: "8"
-  children: ""
+  name: "prob"
   data_layout: "model_parallel"
   softmax {
   }
 }
 
 layer {
-  name: "10"
-  parents: "9"
-  children: ""
+  name: "target"
   data_layout: "data_parallel"
   target_distributed_minibatch {
     shared_data_reader: true
