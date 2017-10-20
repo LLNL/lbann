@@ -93,31 +93,36 @@ Note: User must include the -B singularity command, to bind any necessary files 
 
 ## Verifying LBANN on LC
    1. Allocate compute resources using SLURM: `salloc -N1 -t 60`
-   2. Run a test experiment from the main lbann directory using the following command:
-   To Verify functionality of LBANN with a test MNIST experiment. Using the following command:
+   2. Run a test experiment for the MNIST data set; from the main lbann directory run the following command:
  ```
-  srun -n2 build/catalyst.llnl.gov/model_zoo/lbann \model_conv_autoencoder_cifar10.prototext
+  srun -n12 build/catalyst.llnl.gov/model_zoo/lbann \
 --model=model_zoo/tests/model_mnist_distributed_io.prototext \
 --reader=model_zoo/data_readers/data_reader_mnist.prototext \
---optimizer=model_zoo/optimizers/opt_adagrad.prototext
+--optimizer=model_zoo/optimizers/opt_adagrad.prototext \
+--num_epochs=5
 ```
+Note: `srun -n12 build/catalyst.llnl.gov/model_zoo/lbann` assumes you are running on the LLNL catalyst platform;
+  if running on some other platform, and/or have installed lbann in a different directory, you
+  will need to adjust this command.
+
   This should produce the following final results on Catalyst:
-  ```
-  --------------------------------------------------------------------------------
-  [20] Epoch : stats formated [tr/v/te] iter/epoch = [2700/600/1000]
-  global MB = [  20/  10/  10] global last MB = [  20/  10/  10]
-  local MB = [  10/  10/  10]  local last MB = [  10/  10/  10]
-  --------------------------------------------------------------------------------
-  Model 0 @54000 steps Training categorical accuracy: 99.9741% @12000 validation steps Validation categorical accuracy: 97.95%
-  Model 1 @54000 steps Training categorical accuracy: 99.9926% @12000 validation steps Validation categorical accuracy: 97.9833%
-  Model 0 average categorical cross entropy: 0.00176223
-  Model 1 average categorical cross entropy: 0.00126326
-  Model 0 Epoch time: 62.8982s; Mean minibatch time: 0.0218984s; Min: 0.0214709s; Max: 0.0306295s; Stdev: 0.000214515s
-  Model 1 Epoch time: 62.9628s; Mean minibatch time: 0.0219376s; Min: 0.0216846s; Max: 0.127405s; Stdev: 0.00204183s
-  Model 0 @20000 testing steps external validation categorical accuracy: 98.32%
-  Model 1 @20000 testing steps external validation categorical accuracy: 98.27%
+```
+--------------------------------------------------------------------------------
+[5] Epoch : stats formated [tr/v/te] iter/epoch = [2700/600/1000]
+            global MB = [  20/  10/  10] global last MB = [  20/  10/  10]
+             local MB = [  10/  10/  10]  local last MB = [  10/  10/  10]
+--------------------------------------------------------------------------------
+Model 0 @13500 steps Training categorical accuracy: 99.3519% @3000 validation steps Validation categorical accuracy: 97.9167%
+Model 1 @13500 steps Training categorical accuracy: 99.3222% @3000 validation steps Validation categorical accuracy: 97.6%
+Model 0 average cross entropy: 0.079888
+Model 1 average cross entropy: 0.0871397
+Model 0 Epoch time: 30.1591s; Mean minibatch time: 0.010775s; Min: 0.0104503s; Max: 0.0126789s; Stdev: 0.000117069s
+Model 1 Epoch time: 30.1591s; Mean minibatch time: 0.0107751s; Min: 0.010483s; Max: 0.0129022s; Stdev: 0.000118997s
+Model 0 @1000 testing steps external validation categorical accuracy: 98.01%
+Model 1 @1000 testing steps external validation categorical accuracy: 97.92%
+
 ``` 
-  LBANN performance will vary on a machine to machine basis. Results will also vary, but should not do so significantly. 
+  Note: LBANN performance will vary on a machine to machine basis. Results will also vary, but should not do so significantly. 
 
 ## Running other models
 There are various prototext models under the lbann/model_zoo/models/ directory: alexnet, autoencoder_mnist, lenet_mnist, etc. Each of these directories should have a script called *runme.py*. Run this script with no command line parameters for complete usage. Basically, these scripts generate command lines similar to the one above (in the *Verifying LBANN on LC* section). The scripts take two required arguments: --nodes=`<int>` and --tasks=`<int>`. The "tasks" option is used to specify the number of tasks per node, hence, the total number of tasks (cores) is: nodes\*tasks. The generated command lines are designed to be executed using *srun* on LC systems, so you may need to modify, e.g, substitute mpirun, depending on your specific system.
