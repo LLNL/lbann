@@ -32,8 +32,8 @@ using namespace std;
 lbann::partitioned_minibatch::partitioned_minibatch(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
   : generic_data_distribution(comm, num_parallel_readers, data_readers) {}
 
-int lbann::partitioned_minibatch::fetch_to_local_matrix(Mat& M_local) {
-  int num_parallel_readers = get_num_parallel_readers();
+int lbann::partitioned_minibatch::fetch_to_local_matrix(Mat& M_local, generic_data_reader *data_reader) {
+  int num_parallel_readers = data_reader->get_num_parallel_readers();
 
   int num_samples_fetched = 0;
 
@@ -55,15 +55,15 @@ int lbann::partitioned_minibatch::fetch_to_local_matrix(Mat& M_local) {
   return num_samples_fetched;
 }
 
-void lbann::partitioned_minibatch::distribute_from_local_matrix(Mat& M_local, CircMat& Ms) {
+void lbann::partitioned_minibatch::distribute_from_local_matrix(Mat& M_local, CircMat& Ms, generic_data_reader *data_reader) {
 
   /// Nothing to do here, it is already done
   return;
 }
 
-bool lbann::partitioned_minibatch::is_data_set_processed() {
-  int num_iterations_per_epoch = get_num_iterations_per_epoch();
-  int current_step_in_epoch = get_current_step_in_epoch(); // Get the current step before the update function increments it
+bool lbann::partitioned_minibatch::is_data_set_processed(generic_data_reader *data_reader) {
+  int num_iterations_per_epoch = data_reader->get_num_iterations_per_epoch();
+  int current_step_in_epoch = data_reader->get_current_step_in_epoch(); // Get the current step before the update function increments it
 
   m_local_reader_done = !update_data_reader(true);
 

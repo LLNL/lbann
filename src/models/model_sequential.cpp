@@ -66,7 +66,7 @@ sequential_model::sequential_model(const sequential_model& other) :
   io_layer *input = dynamic_cast<io_layer*>(m_layers[0]);
   io_layer *target = dynamic_cast<io_layer*>(m_layers.back());
   if (input && target) {
-    target->set_data_readers_from_layer(input);
+    target->set_paired_input_layer(input);
   }
 }
 
@@ -91,7 +91,7 @@ sequential_model& sequential_model::operator=(const sequential_model& other) {
   io_layer *input = dynamic_cast<io_layer*>(m_layers[0]);
   io_layer *target = dynamic_cast<io_layer*>(m_layers.back());
   if (input && target) {
-    target->set_data_readers_from_layer(input);
+    target->set_paired_input_layer(input);
   }
   return *this;
 }

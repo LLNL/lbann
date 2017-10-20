@@ -46,7 +46,7 @@ class reconstruction_layer : public target_layer {
   reconstruction_layer(int index,
                        lbann_comm *comm,
                        Layer *original_layer)
-    :  target_layer(comm, dynamic_cast<io_layer*>(original_layer), {}, false),
+    :  target_layer(comm, dynamic_cast<input_layer*>(original_layer), {}, false),
        m_original_layer(original_layer) {
     // Setup the data distribution
     initialize_distributed_matrices();

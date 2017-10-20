@@ -45,7 +45,7 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
   CircMat Ys; /** Distributed matrix used to stage local data to layer output */
 
  public:
-  target_layer_distributed_minibatch(lbann_comm *comm, io_layer *input_layer, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
+  target_layer_distributed_minibatch(lbann_comm *comm, input_layer *input_layer, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
     : generic_data_distribution(comm, num_parallel_readers, data_readers),
       target_layer(comm, input_layer, data_readers, for_regression),
       distributed_minibatch(comm, num_parallel_readers, data_readers),
@@ -100,7 +100,7 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
   }
 
   void fp_compute() {
-    int num_samples_in_batch = fetch_to_local_matrix(Y_local_v);
+    int num_samples_in_batch = fetch_to_local_matrix(Y_local_v, paired_input_layer->get_data_reader());
     if(is_current_root()) {
       /// Only update the number of samples processed by this parallel reader, when it is the current root
       target_layer::update_num_samples_processed(num_samples_in_batch);
@@ -114,7 +114,7 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
                             );
     }
     /// @todo should this distribute the entire matrix even if there is only a partial mini-batch
-    distribute_from_local_matrix(Y_local, Ys);
+    distribute_from_local_matrix(Y_local, Ys, paired_input_layer->get_data_reader());
     Copy(Ys, *this->m_activations);
 
     /// Compute and record the objective function score
@@ -144,11 +144,11 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary
    */
   bool update_compute() {
-    return is_data_set_processed();
+    return is_data_set_processed(paired_input_layer->get_data_reader());
   }
 
   int fetch_from_data_reader(Mat& M_local) {
-    generic_data_reader *data_reader = paired_input_layer->select_data_reader();
+    generic_data_reader *data_reader = paired_input_layer->get_data_reader();
     if (target_layer::is_for_regression()) {
       return data_reader->fetch_responses(M_local);
     } else {
@@ -161,7 +161,7 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
   }
 
   bool update_data_reader(bool is_active_reader) {
-    generic_data_reader *data_reader = paired_input_layer->select_data_reader();
+    generic_data_reader *data_reader = paired_input_layer->get_data_reader();
     return (data_reader->is_data_reader_done(is_active_reader));
   }
 

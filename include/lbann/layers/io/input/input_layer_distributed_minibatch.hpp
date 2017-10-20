@@ -81,9 +81,9 @@ class input_layer_distributed_minibatch : public input_layer, public distributed
     input_layer::setup_data();
     int max_mb_size = this->m_neural_network_model->get_max_mini_batch_size();
     if(io_layer::m_data_sets_span_models) {
-      distributed_minibatch::calculate_num_iterations_per_epoch_training_spans_models(max_mb_size);
+      calculate_num_iterations_per_epoch_training_spans_models(max_mb_size);
     } else {
-      distributed_minibatch::calculate_num_iterations_per_epoch_training_unique_per_models(max_mb_size);
+      calculate_num_iterations_per_epoch_training_unique_per_models(max_mb_size);
     }
 
     X_local.Resize(this->m_num_neurons, max_mb_size);
@@ -103,7 +103,7 @@ class input_layer_distributed_minibatch : public input_layer, public distributed
   /** Handle forward propagation (arguments are unused). */
   void fp_compute() {
 
-    int num_samples_in_batch = distributed_minibatch::fetch_to_local_matrix(X_local_v);
+    int num_samples_in_batch = distributed_minibatch::fetch_to_local_matrix(X_local_v, get_data_reader());
     if(distributed_minibatch::is_current_root()) {
       /// Only update the number of samples processed by this parallel reader, when it is the current root
       input_layer::update_num_samples_processed(num_samples_in_batch);
@@ -113,7 +113,7 @@ class input_layer_distributed_minibatch : public input_layer, public distributed
     /// Note that this field has to be updated before distributing the data
     this->m_neural_network_model->set_current_mini_batch_size(Layer::m_comm->model_broadcast(distributed_minibatch::m_root, num_samples_in_batch));
 
-    distributed_minibatch::distribute_from_local_matrix(X_local, Xs);
+    distributed_minibatch::distribute_from_local_matrix(X_local, Xs, get_data_reader());
 
     Copy(Xs, *this->m_activations);
   }
@@ -123,7 +123,7 @@ class input_layer_distributed_minibatch : public input_layer, public distributed
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary
    */
   bool update_compute() {
-    return distributed_minibatch::is_data_set_processed();
+    return distributed_minibatch::is_data_set_processed(get_data_reader());
   }
 
 

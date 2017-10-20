@@ -41,7 +41,7 @@ namespace lbann {
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
 class target_layer_partitioned_minibatch : public target_layer, public partitioned_minibatch {
  public:
-  target_layer_partitioned_minibatch(lbann_comm *comm, io_layer *input_layer, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression=false)
+  target_layer_partitioned_minibatch(lbann_comm *comm, input_layer *input_layer, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression=false)
     : generic_data_distribution(comm, num_parallel_readers, data_readers),
       target_layer(comm, input_layer,  data_readers, for_regression),
       partitioned_minibatch(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), data_readers) {
@@ -78,7 +78,7 @@ class target_layer_partitioned_minibatch : public target_layer, public partition
   }
 
   void fp_compute() {
-    int num_samples_in_batch = fetch_to_local_matrix(this->m_activations_v->Matrix());
+    int num_samples_in_batch = fetch_to_local_matrix(this->m_activations_v->Matrix(), paired_input_layer->get_data_reader());
 
     target_layer::update_num_samples_processed(num_samples_in_batch);
 
@@ -110,11 +110,11 @@ class target_layer_partitioned_minibatch : public target_layer, public partition
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary
    */
   bool update_compute() {
-    return is_data_set_processed();
+    return is_data_set_processed(paired_input_layer->get_data_reader());
   }
 
   int fetch_from_data_reader(Mat& M_local) {
-    generic_data_reader *data_reader = paired_input_layer->select_data_reader();
+    generic_data_reader *data_reader = paired_input_layer->get_data_reader();
     if (target_layer::is_for_regression()) {
       return data_reader->fetch_responses(M_local);
     } else {
@@ -127,7 +127,7 @@ class target_layer_partitioned_minibatch : public target_layer, public partition
   }
 
   bool update_data_reader(bool is_active_reader) {
-    generic_data_reader *data_reader = paired_input_layer->select_data_reader();
+    generic_data_reader *data_reader = paired_input_layer->get_data_reader();
     return (data_reader->is_data_reader_done(is_active_reader));
   }
 

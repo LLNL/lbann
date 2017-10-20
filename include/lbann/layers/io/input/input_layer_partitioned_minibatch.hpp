@@ -75,9 +75,9 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
     input_layer::setup_data();
     int max_mb_size = this->m_neural_network_model->get_max_mini_batch_size();
     if(io_layer::m_data_sets_span_models) {
-      partitioned_minibatch::calculate_num_iterations_per_epoch_training_spans_models(max_mb_size);
+      calculate_num_iterations_per_epoch_training_spans_models(max_mb_size);
     } else {
-      partitioned_minibatch::calculate_num_iterations_per_epoch_training_unique_per_models(max_mb_size);
+      calculate_num_iterations_per_epoch_training_unique_per_models(max_mb_size);
     }
 
     partitioned_minibatch::m_local_data_valid = false;
@@ -90,11 +90,11 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
     //int num_parallel_readers = get_num_parallel_readers();
 
     //  DISPLAY_MATRIX(m_activations);
-    partitioned_minibatch::fetch_to_local_matrix(this->m_activations_v->Matrix());
+    partitioned_minibatch::fetch_to_local_matrix(this->m_activations_v->Matrix(), get_data_reader());
 
     // Use the predetermined size of the mini-batch to set the current
     // batch size for the neural network
-    int num_samples_in_batch = partitioned_minibatch::get_current_mini_batch_size();
+    int num_samples_in_batch = get_current_mini_batch_size();
 
     input_layer::update_num_samples_processed(num_samples_in_batch);
   }
@@ -103,7 +103,7 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary
    */
   bool update_compute() {
-    return partitioned_minibatch::is_data_set_processed();
+    return partitioned_minibatch::is_data_set_processed(get_data_reader());
   }
 
 

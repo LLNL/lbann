@@ -28,6 +28,7 @@
 #define LBANN_LAYERS_TARGET_LAYER_HPP_INCLUDED
 
 #include "lbann/layers/io/io_layer.hpp"
+#include "lbann/layers/io/input/input_layer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/models/model.hpp"
 #include <string>
@@ -38,10 +39,10 @@
 namespace lbann {
 class target_layer : public io_layer {
  protected:
-  io_layer *paired_input_layer;
+  input_layer *paired_input_layer;
 
  public:
-  target_layer(lbann_comm *comm, io_layer* input_layer, std::map<execution_mode, generic_data_reader *> data_readers, bool for_regression = false)
+  target_layer(lbann_comm *comm, input_layer* input_layer, std::map<execution_mode, generic_data_reader *> data_readers, bool for_regression = false)
     : io_layer(comm, true, for_regression), paired_input_layer(input_layer) {
     // Target layers have no children
     m_max_num_child_layers = 0;
@@ -62,7 +63,7 @@ class target_layer : public io_layer {
     io_layer::initialize_distributed_matrices<T_layout>();
   }
 
-  void set_paired_input_layer(io_layer *input_layer) {
+  void set_paired_input_layer(input_layer *input_layer) {
     paired_input_layer = input_layer;
   }
 

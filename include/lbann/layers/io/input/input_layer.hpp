@@ -43,38 +43,39 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
       io_layer(comm, true),
       m_training_dataset(data_readers[execution_mode::training]),
       m_testing_dataset(data_readers[execution_mode::testing]),
-      m_validation_dataset(data_readers[execution_mode::validation]) {
+      m_validation_dataset(data_readers[execution_mode::validation]),
+      m_data_readers(data_readers) {
       //m_data_sets_span_models(data_sets_span_models) {
     // Input layers have no parents
     m_max_num_parent_layers = 0;
 
-    if(m_training_dataset.m_data_reader != nullptr) {
-      m_training_dataset.m_total_samples = m_training_dataset.m_data_reader->get_num_data();
+    if(m_data_readers[execution_mode::training] != nullptr) {
+      m_training_dataset.m_total_samples = m_data_readers[execution_mode::training]->get_num_data();
     }
 
-    if(m_validation_dataset.m_data_reader != nullptr) {
-      m_validation_dataset.m_total_samples = m_validation_dataset.m_data_reader->get_num_data();
+    if(m_data_readers[execution_mode::validation] != nullptr) {
+      m_validation_dataset.m_total_samples = m_data_readers[execution_mode::validation]->get_num_data();
     }
 
-    if(m_testing_dataset.m_data_reader != nullptr) {
-      m_testing_dataset.m_total_samples = m_testing_dataset.m_data_reader->get_num_data();
+    if(m_data_readers[execution_mode::testing] != nullptr) {
+      m_testing_dataset.m_total_samples = m_data_readers[execution_mode::testing]->get_num_data();
     }
   }
 
   virtual ~input_layer() {
     // Input layer always frees data readers.
-    if (m_training_dataset.m_data_reader != nullptr) {
-      delete m_training_dataset.m_data_reader;
-      m_training_dataset.m_data_reader = nullptr;
-    }
-    if (m_validation_dataset.m_data_reader != nullptr) {
-      delete m_validation_dataset.m_data_reader;
-      m_validation_dataset.m_data_reader = nullptr;
-    }
-    if (m_testing_dataset.m_data_reader != nullptr) {
-      delete m_testing_dataset.m_data_reader;
-      m_testing_dataset.m_data_reader = nullptr;
-    }
+    // if (m_training_dataset.m_data_reader != nullptr) {
+    //   delete m_training_dataset.m_data_reader;
+    //   m_training_dataset.m_data_reader = nullptr;
+    // }
+    // if (m_validation_dataset.m_data_reader != nullptr) {
+    //   delete m_validation_dataset.m_data_reader;
+    //   m_validation_dataset.m_data_reader = nullptr;
+    // }
+    // if (m_testing_dataset.m_data_reader != nullptr) {
+    //   delete m_testing_dataset.m_data_reader;
+    //   m_testing_dataset.m_data_reader = nullptr;
+    // }
   }
 
 #if 1
@@ -139,18 +140,19 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   void setup_data() {
     io_layer::setup_data();
 
+    /// BVE FIXME foreach data reader
     // in case that target_layer gets initialized beforehand
-    if(m_training_dataset.m_data_reader != nullptr) {
-      m_training_dataset.m_data_reader->setup();
-      m_training_dataset.m_data_reader->set_rank(Layer::m_comm->get_rank_in_model());
+    if(m_data_readers[execution_mode::training] != nullptr) {
+      m_data_readers[execution_mode::training]->setup();
+      m_data_readers[execution_mode::training]->set_rank(Layer::m_comm->get_rank_in_model());
     }
-    if(m_validation_dataset.m_data_reader != nullptr) {
-      m_validation_dataset.m_data_reader->setup();
-      m_validation_dataset.m_data_reader->set_rank(Layer::m_comm->get_rank_in_model());
+    if(m_data_readers[execution_mode::validation] != nullptr) {
+      m_data_readers[execution_mode::validation]->setup();
+      m_data_readers[execution_mode::validation]->set_rank(Layer::m_comm->get_rank_in_model());
     }
-    if(m_testing_dataset.m_data_reader != nullptr) {
-      m_testing_dataset.m_data_reader->setup();
-      m_testing_dataset.m_data_reader->set_rank(Layer::m_comm->get_rank_in_model());
+    if(m_data_readers[execution_mode::testing] != nullptr) {
+      m_data_readers[execution_mode::testing]->setup();
+      m_data_readers[execution_mode::testing]->set_rank(Layer::m_comm->get_rank_in_model());
     }
   }
 
@@ -164,12 +166,12 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   virtual void fp_set_std_matrix_view() {
     // Use the predetermined size of the mini-batch to set the current
     // batch size for the neural network
-    El::Int cur_mini_batch_size = generic_data_distribution::get_current_mini_batch_size();
+    El::Int cur_mini_batch_size = get_current_mini_batch_size();
     this->m_neural_network_model->set_current_mini_batch_size(cur_mini_batch_size);
 
     // Use the precomputed size of the global mini-batch to set the
     // current effective batch size across all models
-    int total_mini_batch_size = generic_data_distribution::get_current_global_mini_batch_size();
+    int total_mini_batch_size = get_current_global_mini_batch_size();
     this->m_neural_network_model->set_effective_mini_batch_size(total_mini_batch_size);
 
     // Once the current mini-batch size is defined, set the standard view for activations only
@@ -181,6 +183,138 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
 
   //************************************************************************
   // Helper functions to access the data readers
+  //************************************************************************
+  execution_mode get_execution_mode() const {
+    return this->m_execution_mode;
+  }
+
+  generic_data_reader *get_data_reader(execution_mode mode) {
+    generic_data_reader *data_reader;
+    switch(mode) {
+    case execution_mode::training:
+      data_reader = m_data_readers[execution_mode::training];
+      break;
+    case execution_mode::validation:
+      data_reader = m_data_readers[execution_mode::validation];
+      break;
+    case execution_mode::testing:
+      data_reader = m_data_readers[execution_mode::testing];
+      break;
+    default:
+      throw lbann_exception(
+                            std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+                            " :: generic data distribution: invalid execution phase");
+    }
+    return data_reader;
+  }
+
+  generic_data_reader *get_data_reader() {
+    return get_data_reader(get_execution_mode());
+  }
+
+  virtual int get_num_parallel_readers(execution_mode mode) {
+    generic_data_reader *data_reader = get_data_reader(mode);
+    return data_reader->get_num_parallel_readers();
+  }
+
+  virtual int get_num_parallel_readers() {
+    return get_num_parallel_readers(get_execution_mode());
+  }
+
+  virtual int get_num_iterations_per_epoch(execution_mode mode) {
+    generic_data_reader *data_reader = get_data_reader(mode);
+    return data_reader->get_num_iterations_per_epoch();
+  }
+
+  virtual int get_num_iterations_per_epoch() {
+    return get_num_iterations_per_epoch(get_execution_mode());
+  }
+
+  virtual int get_current_step_in_epoch(execution_mode mode) {
+    generic_data_reader *data_reader = get_data_reader(mode);
+    return data_reader->get_current_step_in_epoch();
+  }
+
+  virtual int get_current_step_in_epoch() {
+    return get_current_step_in_epoch(get_execution_mode());
+  }
+
+  virtual int get_mini_batch_size(execution_mode mode) {
+    generic_data_reader *data_reader = get_data_reader(mode);
+    return data_reader->get_mini_batch_size();
+  }
+
+  virtual int get_last_mini_batch_size(execution_mode mode) {
+    generic_data_reader *data_reader = get_data_reader(mode);
+    return data_reader->get_last_mini_batch_size();
+  }
+
+  virtual int get_last_mini_batch_size() {
+    return get_last_mini_batch_size(get_execution_mode());
+  }
+
+  virtual int get_current_mini_batch_size(execution_mode mode) {
+    generic_data_reader *data_reader = get_data_reader(mode);
+    return data_reader->get_current_mini_batch_size();
+  }
+
+  virtual int get_current_mini_batch_size() {
+    return get_current_mini_batch_size(get_execution_mode());
+  }
+
+  virtual int get_global_mini_batch_size(execution_mode mode) {
+    generic_data_reader *data_reader = get_data_reader(mode);
+    return data_reader->get_global_mini_batch_size();
+  }
+
+  virtual int get_global_last_mini_batch_size(execution_mode mode) {
+    generic_data_reader *data_reader = get_data_reader(mode);
+    return data_reader->get_global_last_mini_batch_size();
+  }
+
+  virtual int get_current_global_mini_batch_size(execution_mode mode) {
+    generic_data_reader *data_reader = get_data_reader(mode);
+    return data_reader->get_current_global_mini_batch_size();
+  }
+
+  virtual int get_current_global_mini_batch_size() {
+    return get_current_global_mini_batch_size(get_execution_mode());
+  }
+
+  /** Calculate how many iterations are required for training, testing,
+   *  and validation given a specified mini-batch size and that the
+   *  training data set is spanning all of the models.
+   */
+  void calculate_num_iterations_per_epoch_training_spans_models(int mini_batch_size) {
+
+    /// Setup the training data set so that it spans all models
+    calculate_num_iterations_per_epoch_spanning_models(mini_batch_size,
+                                                       get_data_reader(execution_mode::training));
+
+    /// Each model uses the entire validation and testing data sets
+    calculate_num_iterations_per_epoch_single_model(mini_batch_size,
+                                                    get_data_reader(execution_mode::validation));
+    calculate_num_iterations_per_epoch_single_model(mini_batch_size, 
+                                                    get_data_reader(execution_mode::testing));
+
+  }
+
+  void calculate_num_iterations_per_epoch_training_unique_per_models(int mini_batch_size) {
+
+    /// Setup the training data set so that it spans all models
+    calculate_num_iterations_per_epoch_single_model(mini_batch_size,
+                                                    get_data_reader(execution_mode::training));
+
+    /// Each model uses the entire validation and testing data sets
+    calculate_num_iterations_per_epoch_single_model(mini_batch_size,
+                                                    get_data_reader(execution_mode::validation));
+    calculate_num_iterations_per_epoch_single_model(mini_batch_size, 
+                                                    get_data_reader(execution_mode::testing));
+
+  }
+
+  //************************************************************************
+  // Helper functions to access the dataset statistics
   //************************************************************************
   dataset& get_dataset(execution_mode m) {
     switch(m) {
@@ -208,11 +342,11 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
    * Returns null if none are valid.
    */
   dataset* select_first_valid_dataset() {
-    if (m_training_dataset.m_data_reader) {
+    if (m_data_readers[execution_mode::training]) {
       return &m_training_dataset;
-    } else if (m_validation_dataset.m_data_reader) {
+    } else if (m_data_readers[execution_mode::validation]) {
       return &m_validation_dataset;
-    } else if (m_testing_dataset.m_data_reader) {
+    } else if (m_data_readers[execution_mode::testing]) {
       return &m_testing_dataset;
     } else {
       return nullptr;
@@ -223,8 +357,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
    * Return the data reader associated with the current execution mode.
    */
   generic_data_reader *select_data_reader() {
-    dataset& ds = select_dataset();
-    return ds.m_data_reader;
+    return get_data_reader();
   }
 
   /**
@@ -240,7 +373,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
    * Return the sample indices fetched in the current mini-batch.
    */
   El::Matrix<El::Int>* get_sample_indices_per_mb() {
-    generic_data_reader *dr = select_data_reader();
+    generic_data_reader *dr = get_data_reader();
     return dr->get_indices_fetched_per_mb();
   }
 
@@ -248,9 +381,10 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
    * Get the dimensions of the underlying data.
    */
   const std::vector<int> get_data_dims() {
-    dataset* ds = select_first_valid_dataset();
-    if (ds) {
-      return ds->m_data_reader->get_data_dims();
+    generic_data_reader *dr = get_data_reader();
+    //    dataset* ds = select_first_valid_dataset();
+    if (dr) {
+      return dr->get_data_dims();
     }
     return std::vector<int>(1, 0);
   }
@@ -271,21 +405,18 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
    */
   long get_linearized_data_size() {
     long linearized_data_size = -1;
-    dataset& train_ds = get_dataset(execution_mode::training);
-    if (train_ds.m_data_reader) {
-      linearized_data_size = train_ds.m_data_reader->get_linearized_data_size();
+    if (m_data_readers[execution_mode::training]) {
+      linearized_data_size = m_data_readers[execution_mode::training]->get_linearized_data_size();
     }
-    dataset& val_ds = get_dataset(execution_mode::validation);
-    if (val_ds.m_data_reader) {
-      long tmp_data_size = val_ds.m_data_reader->get_linearized_data_size();
+    if (m_data_readers[execution_mode::validation]) {
+      long tmp_data_size = m_data_readers[execution_mode::validation]->get_linearized_data_size();
       if (linearized_data_size != -1 && linearized_data_size != tmp_data_size) {
         throw lbann_exception("lbann_io_layer: validation data set size does not "
                               "match the currently established data set size");
       }
     }
-    dataset& test_ds = get_dataset(execution_mode::testing);
-    if (test_ds.m_data_reader) {
-      long tmp_data_size = test_ds.m_data_reader->get_linearized_data_size();
+    if (m_data_readers[execution_mode::testing]) {
+      long tmp_data_size = m_data_readers[execution_mode::testing]->get_linearized_data_size();
       if (linearized_data_size != -1 && linearized_data_size != tmp_data_size) {
         throw lbann_exception("lbann_io_layer: testing data set size does not "
                               "match the currently established data set size");
@@ -302,21 +433,18 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
       return static_cast<long>(1);
     }
     long linearized_label_size = -1;
-    dataset& train_ds = get_dataset(execution_mode::training);
-    if (train_ds.m_data_reader) {
-      linearized_label_size = train_ds.m_data_reader->get_linearized_label_size();
+    if (m_data_readers[execution_mode::training]) {
+      linearized_label_size = m_data_readers[execution_mode::training]->get_linearized_label_size();
     }
-    dataset& val_ds = get_dataset(execution_mode::validation);
-    if (val_ds.m_data_reader) {
-      long tmp_label_size = val_ds.m_data_reader->get_linearized_label_size();
+    if (m_data_readers[execution_mode::validation]) {
+      long tmp_label_size = m_data_readers[execution_mode::validation]->get_linearized_label_size();
       if (linearized_label_size != -1 && linearized_label_size != tmp_label_size) {
         throw lbann_exception("lbann_io_layer: validation label set size does not "
                               "match the currently established data set size");
       }
     }
-    dataset& test_ds = get_dataset(execution_mode::testing);
-    if (test_ds.m_data_reader) {
-      long tmp_label_size = test_ds.m_data_reader->get_linearized_label_size();
+    if (m_data_readers[execution_mode::testing]) {
+      long tmp_label_size = m_data_readers[execution_mode::testing]->get_linearized_label_size();
       if (linearized_label_size != -1 && linearized_label_size != tmp_label_size) {
         throw lbann_exception("lbann_io_layer: testing label set size does not "
                               "match the currently established data set size");
@@ -343,7 +471,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   }
 
   bool at_new_epoch() {
-    return m_training_dataset.m_data_reader->at_new_epoch();
+    return m_data_readers[execution_mode::training]->at_new_epoch();
   }
 
   bool is_execution_mode_valid(execution_mode mode) {
@@ -357,9 +485,9 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   // save state of IO to a checkpoint
   bool saveToCheckpointShared(persist& p) {
     // save state of data readers from input layer
-    this->m_training_dataset.m_data_reader->saveToCheckpointShared(p, "data_reader_training");
-    this->m_validation_dataset.m_data_reader->saveToCheckpointShared(p, "data_reader_validation");
-    this->m_testing_dataset.m_data_reader->saveToCheckpointShared(p, "data_reader_testing");
+    this->m_data_readers[execution_mode::training]->saveToCheckpointShared(p, "data_reader_training");
+    this->m_data_readers[execution_mode::validation]->saveToCheckpointShared(p, "data_reader_validation");
+    this->m_data_readers[execution_mode::testing]->saveToCheckpointShared(p, "data_reader_testing");
 
     // save our own state
     // rank 0 writes the file
@@ -396,9 +524,9 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   // reload state of IO from a checkpoint
   bool loadFromCheckpointShared(persist& p) {
     // save state of data readers from input layer
-    this->m_training_dataset.m_data_reader->loadFromCheckpointShared(p, "data_reader_training");
-    this->m_validation_dataset.m_data_reader->loadFromCheckpointShared(p, "data_reader_validation");
-    this->m_testing_dataset.m_data_reader->loadFromCheckpointShared(p, "data_reader_testing");
+    this->m_data_readers[execution_mode::training]->loadFromCheckpointShared(p, "data_reader_training");
+    this->m_data_readers[execution_mode::validation]->loadFromCheckpointShared(p, "data_reader_validation");
+    this->m_data_readers[execution_mode::testing]->loadFromCheckpointShared(p, "data_reader_testing");
 
     // save our own state
     // rank 0 reads the file
@@ -435,7 +563,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   dataset m_validation_dataset;
   //  bool m_data_sets_span_models;
 
- //  std::map<execution_mode, generic_data_reader *> m_data_readers;
+  std::map<execution_mode, generic_data_reader *> m_data_readers;
  //  std::map<execution_mode, dataset_stats> m_dataset_stats;
 };
 
