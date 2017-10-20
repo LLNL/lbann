@@ -342,7 +342,7 @@ elif [ "${COMPILER}" == "intel" ]; then
     Fortran_COMPILER=${COMPILER_BASE}/bin/ifort
     COMPILER_VERSION=$(${C_COMPILER} --version | head -n 1 | awk '{print $3}')
     FORTRAN_LIB=${COMPILER_BASE}/lib/intel64/libifcoremt.so.5
-    CXX_FLAGS="${CXX_FLAGS} -std=c++11"#" -diag-disable=warn,error,remark,vec"
+    CXX_FLAGS="${CXX_FLAGS} -std=c++11"
 elif [ "${COMPILER}" == "clang" ]; then
     # clang
     # clang depends on gnu fortran library. so, find the dependency
