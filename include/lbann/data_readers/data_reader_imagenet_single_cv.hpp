@@ -48,6 +48,7 @@ class imagenet_reader_single_cv : public imagenet_reader_cv {
 
  protected:
   virtual bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
+  virtual bool fetch_datum(std::vector<Mat>& X, int data_id, int mb_idx, int tid);
   virtual bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid);
 
  private:
