@@ -1432,6 +1432,9 @@ void init_callbacks(
         steps.emplace_back(step.epoch(), step.mbsize(), step.lr(),
                            step.ramp_time());
       }
+      lbann_callback_minibatch_schedule *mb_sched = new
+        lbann_callback_minibatch_schedule(c.starting_mbsize(), steps);
+      model->add_callback(mb_sched);
     }
 
     //////////////////////////////////////////////////////////////////

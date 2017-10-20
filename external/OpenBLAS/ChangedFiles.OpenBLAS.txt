@@ -1,3 +1,4 @@
 Makefile.power
 Makefile.system
 c_check
+f_check
