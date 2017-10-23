@@ -1609,7 +1609,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
                      std::make_pair<int,int>(preprocessor.crop_roi_width(),
                                              preprocessor.crop_roi_height()));
         pp->add_transform(std::move(cropper));
-        //if (master) cout << "cropper is set" << endl;
+        if (master) cout << "imagenet: cropper is set" << endl;
       }
 
       // set up augmenter if necessary
@@ -1629,14 +1629,15 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
                        preprocessor.vertical_shift(),
                        preprocessor.shear_range());
         pp->add_transform(std::move(augmenter));
-        //if (master) cout << "augmenter is set" << endl;
+        if (master) cout << "imagenet: augmenter is set" << endl;
       }
 
       // set up a custom transform (colorizer)
       if (!preprocessor.no_colorize()) {
+        // If every image in the dataset is a color image, this is not needed
         std::unique_ptr<lbann::cv_colorizer> colorizer(new(lbann::cv_colorizer));
         pp->add_transform(std::move(colorizer));
-        //if (master) cout << "colorizer is set" << endl;
+        if (master) cout << "imagenet: colorizer is set" << endl;
       }
 
       // set up the normalizer
@@ -1646,14 +1647,27 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       normalizer->unit_variance(preprocessor.unit_variance());
       normalizer->z_score(preprocessor.z_score());
       pp->add_normalizer(std::move(normalizer));
-      //if (master) cout << "normalizer is set" << endl;
+      if (master) cout << "imagenet: normalizer is set" << endl;
 
       if (name == "imagenet_cv") {
         reader = new imagenet_reader_cv(mini_batch_size, pp, shuffle);
-        //if (master) cout << "imagenet_reader_cv is set" << endl;
+        if (master) cout << "imagenet_reader_cv is set" << endl;
       } else {
         reader = new imagenet_reader_single_cv(mini_batch_size, pp, shuffle);
-        //if (master) cout << "imagenet_reader_single_cv is set" << endl;
+        if (master) cout << "imagenet_reader_single_cv is set" << endl;
+      }
+      int width=0, height=0;
+      if (preprocessor.crop_first()) {
+        width = preprocessor.crop_width();
+        height = preprocessor.crop_height();
+        dynamic_cast<imagenet_reader_cv*>(reader)->set_input_params(width, height, 3);
+      } else {
+        width = preprocessor.fixed_image_width();
+        height = preprocessor.fixed_image_height();
+        if ((width > 0) && (height > 0))
+          dynamic_cast<imagenet_reader_cv*>(reader)->set_input_params(width, height, 3);
+        else if (master)
+          std::cout << "imagenet: assuming the default image size" << std::endl;
       }
     } else if (name == "nci") {
       reader = new data_reader_nci(mini_batch_size, shuffle);

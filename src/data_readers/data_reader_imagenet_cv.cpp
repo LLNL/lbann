@@ -49,6 +49,19 @@ imagenet_reader_cv::imagenet_reader_cv(int batchSize, const std::shared_ptr<cv_p
   }
 }
 
+void imagenet_reader_cv::set_input_params(const int width, const int height, const int num_ch, const int num_labels) {
+  if ((width == 0) || (height == 0) || (num_ch == 0)) {
+    std::stringstream err;
+    err << __FILE__<<" "<<__LINE__<< " :: Imagenet data reader setup error: invalid input parameters";
+    throw lbann_exception(err.str());
+  }
+  //TODO: if (num_labels == 0) dynamically setup
+  m_image_width = width;
+  m_image_height = height;
+  m_image_num_channels = num_ch;
+  m_num_labels = num_labels;
+}
+
 /// Replicate preprocessor for each OpenMP thread
 bool imagenet_reader_cv::replicate_preprocessor(const std::shared_ptr<cv_process>& pp) {
   if (!pp) return false;

@@ -44,6 +44,8 @@ class imagenet_reader_cv : public generic_data_reader {
 
   imagenet_reader_cv* copy() const { return new imagenet_reader_cv(*this); }
 
+  void set_input_params(const int width=256, const int height=256, const int num_ch=3, const int num_labels=1000);
+
   // ImageNet specific functions
   virtual void load();
 

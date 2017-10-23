@@ -63,7 +63,9 @@ message ImagePreprocessor {
   uint32 crop_height = 27;
   bool crop_randomly = 28;
   int32 crop_roi_width = 29;
-  int32 crop_roi_height =30;
+  int32 crop_roi_height = 30;
+  int32 fixed_image_width = 31;
+  int32 fixed_image_height = 32;
 }
 
 //========================================================================
