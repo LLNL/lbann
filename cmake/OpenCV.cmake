@@ -69,13 +69,17 @@ else()
   option(OPENCV_BUILD_opencv_nonfree    "OpenCV: nonfree module"                                    OFF)
   option(OPENCV_BUILD_opencv_contrib    "OpenCV: contrib module"                                    OFF)
   option(OPENCV_BUILD_opencv_java       "OpenCV: java module"                                       OFF)
-  option(OPENCV_BUILD_opencv_python     "OpenCV: python module"                                     OFF)
+  option(OPENCV_BUILD_opencv_python     "OpenCV: python module"                                     OFF) # 2.4.13
+  option(OPENCV_BUILD_opencv_python2    "OpenCV: python2 module"                                    OFF) # 3.3.0
+  option(OPENCV_BUILD_opencv_python3    "OpenCV: python3 module"                                    OFF) # 3.3.0
   option(OPENCV_BUILD_opencv_stitching  "OpenCV: stitching module"                                  OFF)
   option(OPENCV_BUILD_opencv_superres   "OpenCV: superres module"                                   OFF)
   option(OPENCV_BUILD_opencv_ts         "OpenCV: ts module"                                         OFF)
   option(OPENCV_BUILD_opencv_videostab  "OpenCV: videostab module"                                  OFF)
   option(OPENCV_BUILD_opencv_world      "OpenCV: world module"                                      OFF)
   option(OPENCV_ENABLE_NONFREE          "OpenCV: Enable non-free algorithms"                        OFF) # 3.3.0
+  option(OPENCV_BUILD_opencv_videoio    "OpenCV: videoio module"                                    OFF) # 3.3.0
+  option(OPENCV_BUILD_opencv_dnn        "OpenCV: Build dnn module and protobuf"                     OFF) # 3.3.0
 
   # Optional 3rd party components
   option(OPENCV_WITH_1394               "OpenCV: Include IEEE1394 support"                          OFF) # 2.4.13, 3.3.0
@@ -176,7 +180,6 @@ else()
   option(OPENCV_BUILD_TBB               "OpenCV: Download and build TBB from source"                OFF) # 2.4.13, 3.3.0
   option(OPENCV_BUILD_IPP_IW            "OpenCV: Build IPP IW from source"                          OFF) # 3.3.0
   option(OPENCV_BUILD_ITT               "OpenCV: Build Intel ITT from source"                       ON) # 3.3.0
-  option(OPENCV_BUILD_opencv_dnn        "OpenCV: Build dnn module and protobuf"                     OFF) # 3.3.0
 
   # OpenCV installation options
   option(OPENCV_INSTALL_CREATE_DISTRIB  "OpenCV: Change install rules to build the distribution package" OFF) # 2.4.13, 3.3.0
@@ -266,12 +269,16 @@ else()
       -D BUILD_opencv_contrib=${OPENCV_BUILD_opencv_contrib}
       -D BUILD_opencv_java=${OPENCV_BUILD_opencv_java}
       -D BUILD_opencv_python=${OPENCV_BUILD_opencv_python}
+      -D BUILD_opencv_python2=${OPENCV_BUILD_opencv_python2}
+      -D BUILD_opencv_python3=${OPENCV_BUILD_opencv_python3}
       -D BUILD_opencv_stitching=${OPENCV_BUILD_opencv_stitching}
       -D BUILD_opencv_superres=${OPENCV_BUILD_opencv_superres}
       -D BUILD_opencv_ts=${OPENCV_BUILD_opencv_ts}
       -D BUILD_opencv_videostab=${OPENCV_BUILD_opencv_videostab}
       -D BUILD_opencv_world=${OPENCV_BUILD_opencv_world}
       -D OPENCV_ENABLE_NONFREE=${OPENCV_ENABLE_NONFREE}
+      -D BUILD_opencv_dnn=${OPENCV_BUILD_opencv_dnn}
+      -D BUILD_opencv_videoio=${OPENCV_BUILD_opencv_videoio}
       -D WITH_1394=${OPENCV_WITH_1394}
       -D WITH_AVFOUNDATION=${OPENCV_WITH_AVFOUNDATION}
       -D WITH_CARBON=${OPENCV_WITH_CARBON}
@@ -398,7 +405,6 @@ else()
       -D CV_TRACE=${OPENCV_CV_TRACE}
       -D JPEG_INCLUDE_DIR=${OPENCV_JPEG_INCLUDE_DIR}
       -D JPEG_LIBRARY=${OPENCV_JPEG_LIBRARY}
-      -D BUILD_opencv_dnn=${OPENCV_BUILD_opencv_dnn}
   )
 
   if(BUILD_JPEG_TURBO)
