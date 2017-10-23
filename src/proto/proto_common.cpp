@@ -1594,6 +1594,10 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       reader = new mnist_reader(mini_batch_size, shuffle);
     } else if (name == "imagenet") {
       reader = new imagenet_reader(mini_batch_size, shuffle);
+      const int n_labels = readme.num_labels();
+      const int width = preprocessor.fixed_image_width();
+      const int height = preprocessor.fixed_image_height();
+      dynamic_cast<imagenet_reader*>(reader)->set_input_params(width, height, 3, n_labels);
     } else if (name == "imagenet_single") {
       reader = new imagenet_readerSingle(mini_batch_size, shuffle);
     } else if ((name == "imagenet_cv") || (name == "imagenet_single_cv")) {
@@ -1657,18 +1661,15 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
         if (master) cout << "imagenet_reader_single_cv is set" << endl;
       }
       int width=0, height=0;
+      const int n_labels = readme.num_labels();
       if (preprocessor.crop_first()) {
         width = preprocessor.crop_width();
         height = preprocessor.crop_height();
-        dynamic_cast<imagenet_reader_cv*>(reader)->set_input_params(width, height, 3);
       } else {
         width = preprocessor.fixed_image_width();
         height = preprocessor.fixed_image_height();
-        if ((width > 0) && (height > 0))
-          dynamic_cast<imagenet_reader_cv*>(reader)->set_input_params(width, height, 3);
-        else if (master)
-          std::cout << "imagenet: assuming the default image size" << std::endl;
       }
+      dynamic_cast<imagenet_reader_cv*>(reader)->set_input_params(width, height, 3, n_labels);
     } else if (name == "nci") {
       reader = new data_reader_nci(mini_batch_size, shuffle);
     } else if (name == "csv") {

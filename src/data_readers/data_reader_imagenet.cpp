@@ -49,6 +49,31 @@ imagenet_reader::imagenet_reader(int batchSize, bool shuffle)
   }
 }
 
+void imagenet_reader::set_input_params(const int width, const int height, const int num_ch, const int num_labels) {
+  if ((width > 0) && (height > 0)) { // set and valid
+    m_image_width = width;
+    m_image_height = height;
+  } else if (!((width == 0) && (height == 0))) { // set but not valid
+    std::stringstream err;
+    err << __FILE__<<" "<<__LINE__<< " :: Imagenet data reader setup error: invalid input image sizes";
+    throw lbann_exception(err.str());
+  }
+  if (num_ch > 0) {
+    m_image_num_channels = num_ch;
+  } else if (num_ch < 0) {
+    std::stringstream err;
+    err << __FILE__<<" "<<__LINE__<< " :: Imagenet data reader setup error: invalid number of channels of input images";
+    throw lbann_exception(err.str());
+  }
+  if (num_labels > 0) {
+    m_num_labels = num_labels;
+  } else if (num_labels < 0) {
+    std::stringstream err;
+    err << __FILE__<<" "<<__LINE__<< " :: Imagenet data reader setup error: invalid number of labels";
+    throw lbann_exception(err.str());
+  }
+}
+
 bool imagenet_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
   const int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
   const std::string imagepath = get_file_dir() + m_image_list[data_id].first;

@@ -23,6 +23,7 @@ data_reader {
 #      fixed_image_width: 256
 #      fixed_image_height: 256
     }
+    num_labels: 1000
   }
   reader {
     name: "imagenet_cv"
@@ -48,5 +49,6 @@ data_reader {
 #      fixed_image_width: 256
 #      fixed_image_height: 256
     }
+    num_labels: 1000
   }
 }
