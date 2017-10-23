@@ -176,6 +176,7 @@ else()
   option(OPENCV_BUILD_TBB               "OpenCV: Download and build TBB from source"                OFF) # 2.4.13, 3.3.0
   option(OPENCV_BUILD_IPP_IW            "OpenCV: Build IPP IW from source"                          OFF) # 3.3.0
   option(OPENCV_BUILD_ITT               "OpenCV: Build Intel ITT from source"                       ON) # 3.3.0
+  option(OPENCV_BUILD_opencv_dnn        "OpenCV: Build dnn module and protobuf"                     OFF) # 3.3.0
 
   # OpenCV installation options
   option(OPENCV_INSTALL_CREATE_DISTRIB  "OpenCV: Change install rules to build the distribution package" OFF) # 2.4.13, 3.3.0
@@ -397,6 +398,7 @@ else()
       -D CV_TRACE=${OPENCV_CV_TRACE}
       -D JPEG_INCLUDE_DIR=${OPENCV_JPEG_INCLUDE_DIR}
       -D JPEG_LIBRARY=${OPENCV_JPEG_LIBRARY}
+      -D BUILD_opencv_dnn=${OPENCV_BUILD_opencv_dnn}
   )
 
   if(BUILD_JPEG_TURBO)
