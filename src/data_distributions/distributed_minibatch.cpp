@@ -43,7 +43,7 @@ int lbann::distributed_minibatch::fetch_to_local_matrix(Mat& M_local, generic_da
 
       /// Each data reader needs to either have independent / split
       /// data, or take an offset / stride
-      m_num_samples_in_batch = fetch_from_data_reader(M_local);
+      m_num_samples_in_batch = (*fetch_data_fn)(M_local, data_reader);
       bool data_valid = (m_num_samples_in_batch > 0);
       if(data_valid) {
         m_num_data_per_epoch+=m_num_samples_in_batch;
@@ -99,7 +99,7 @@ bool lbann::distributed_minibatch::is_data_set_processed(generic_data_reader *da
         throw lbann_exception(err.str());
       }
   }
-  m_local_reader_done = !update_data_reader(is_active_reader);
+  m_local_reader_done = !(*update_data_reader_fn)(is_active_reader, data_reader);
 
   /// Once all of the readers have finished their part of the mini-batch indicate that the epoch is finished
   if(current_step_in_epoch == (num_iterations_per_epoch - 1)) {

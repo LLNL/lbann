@@ -126,19 +126,8 @@ class input_layer_distributed_minibatch : public input_layer, public distributed
     return distributed_minibatch::is_data_set_processed(get_data_reader());
   }
 
-
-  int fetch_from_data_reader(Mat& M_local) {
-    generic_data_reader *data_reader = input_layer::select_data_reader();
-    return data_reader->fetch_data(M_local);
-  }
-
   void preprocess_data_samples(Mat& M_local, int num_samples_in_batch) {
     return;
-  }
-
-  bool update_data_reader(bool is_active_reader) {
-    generic_data_reader *data_reader = input_layer::select_data_reader();
-    return data_reader->update(is_active_reader);
   }
 
   execution_mode get_execution_mode() const {

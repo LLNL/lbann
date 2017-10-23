@@ -59,6 +59,8 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
     //       << " :: " << get_type() << " paired with invalid input layer type" << std::endl;
     //   throw lbann_exception(err.str());
     // }
+    generic_data_distribution::fetch_data_fn = new fetch_data_functor(false, target_layer::is_for_regression());
+    generic_data_distribution::update_data_reader_fn = new update_data_reader_functor(false);
   }
   target_layer_distributed_minibatch(
     const target_layer_distributed_minibatch&) = default;
@@ -147,22 +149,8 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
     return is_data_set_processed(paired_input_layer->get_data_reader());
   }
 
-  int fetch_from_data_reader(Mat& M_local) {
-    generic_data_reader *data_reader = paired_input_layer->get_data_reader();
-    if (target_layer::is_for_regression()) {
-      return data_reader->fetch_responses(M_local);
-    } else {
-      return data_reader->fetch_labels(M_local);
-    }
-  }
-
   void preprocess_data_samples(Mat& M_local, int num_samples_in_batch) {
     return;
-  }
-
-  bool update_data_reader(bool is_active_reader) {
-    generic_data_reader *data_reader = paired_input_layer->get_data_reader();
-    return (data_reader->is_data_reader_done(is_active_reader));
   }
 
   execution_mode get_execution_mode() const {

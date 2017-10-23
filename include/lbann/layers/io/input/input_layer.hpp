@@ -49,6 +49,9 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
     // Input layers have no parents
     m_max_num_parent_layers = 0;
 
+    generic_data_distribution::fetch_data_fn = new fetch_data_functor(true, false);
+    generic_data_distribution::update_data_reader_fn = new update_data_reader_functor(true);
+
     if(m_data_readers[execution_mode::training] != nullptr) {
       m_training_dataset.m_total_samples = m_data_readers[execution_mode::training]->get_num_data();
     }

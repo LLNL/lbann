@@ -44,7 +44,7 @@ int lbann::partitioned_minibatch::fetch_to_local_matrix(Mat& M_local, generic_da
 
     /// Each data reader needs to either have independent / split
     /// data, or take an offset / stride
-    num_samples_fetched = fetch_from_data_reader(M_local);
+    num_samples_fetched = (*fetch_data_fn)(M_local, data_reader);
     bool data_valid = (num_samples_fetched > 0);
     if(data_valid) {
       m_num_data_per_epoch+=num_samples_fetched; /// BVE FIXME need to change how this is shared
@@ -65,7 +65,7 @@ bool lbann::partitioned_minibatch::is_data_set_processed(generic_data_reader *da
   int num_iterations_per_epoch = data_reader->get_num_iterations_per_epoch();
   int current_step_in_epoch = data_reader->get_current_step_in_epoch(); // Get the current step before the update function increments it
 
-  m_local_reader_done = !update_data_reader(true);
+  m_local_reader_done = !(*update_data_reader_fn)(true, data_reader);
 
   if(current_step_in_epoch == (num_iterations_per_epoch - 1)) {
     m_local_reader_done = false;
