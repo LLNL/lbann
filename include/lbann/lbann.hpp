@@ -153,5 +153,6 @@
 #include "lbann/params.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
+#include "lbann/utils/compiler_control.hpp"
 
 #endif // LBANN_HPP_INCLUDED

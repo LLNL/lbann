@@ -99,20 +99,26 @@ bool cv_cropper::determine_transform(const cv::Mat& image) {
 
   _LBANN_SILENT_EXCEPTION(image.empty(), "", false)
 
-  if (m_is_roi_set) {
-    double zoom_h = static_cast<double>(m_roi_size.first) / image.cols;
-    double zoom_v = static_cast<double>(m_roi_size.second) / image.rows;
-    m_zoom = std::max(zoom_h, zoom_v);
-  
-    if (m_zoom > 1.0) {
-     #if 0
-      m_interpolation = cv::INTER_CUBIC; // (slow but better)
-     #else
-      m_interpolation = cv::INTER_LINEAR; // (faster but ok)
-     #endif
-    } else {
-      m_interpolation = cv::INTER_AREA; // (better for shrinking)
-    }
+  int roi_width = m_roi_size.first;
+  int roi_height = m_roi_size.second;
+
+  if (!m_is_roi_set) {
+    roi_width = image.cols;
+    roi_height = image.rows;
+  }
+
+  double zoom_h = static_cast<double>(roi_width) / image.cols;
+  double zoom_v = static_cast<double>(roi_height) / image.rows;
+  m_zoom = std::max(zoom_h, zoom_v);
+
+  if (m_zoom > 1.0) {
+   #if 0
+    m_interpolation = cv::INTER_CUBIC; // (slow but better)
+   #else
+    m_interpolation = cv::INTER_LINEAR; // (faster but ok)
+   #endif
+  } else {
+    m_interpolation = cv::INTER_AREA; // (better for shrinking)
   }
 
   return (m_enabled = true);
@@ -128,21 +134,15 @@ bool cv_cropper::apply(cv::Mat& image) {
   int roi_height = 0;
   cv::Mat roi;
 
-  if (m_is_roi_set) {
-    roi_width = m_roi_size.first;
-    roi_height = m_roi_size.second;
-    cv::Mat scaled_image;
-    cv::resize(image, scaled_image, cv::Size(), m_zoom, m_zoom, m_interpolation);
-    cv::Rect crop((scaled_image.cols - roi_width + 1) / 2,
-                  (scaled_image.rows - roi_height + 1) / 2,
-                  roi_width,
-                  roi_height);
-    roi = scaled_image(crop);
-  } else {
-    roi_width = image.cols;
-    roi_height = image.rows;
-    roi = image;
-  }
+  roi_width = m_roi_size.first;
+  roi_height = m_roi_size.second;
+  cv::Mat scaled_image;
+  cv::resize(image, scaled_image, cv::Size(), m_zoom, m_zoom, m_interpolation);
+  cv::Rect crop((scaled_image.cols - roi_width + 1) / 2,
+                (scaled_image.rows - roi_height + 1) / 2,
+                roi_width,
+                roi_height);
+  roi = scaled_image(crop);
 
   int crop_x_start=0, crop_y_start=0;
 
