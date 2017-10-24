@@ -12,12 +12,18 @@ data_reader {
       subtract_mean: true
       unit_variance: false
       no_colorize: false
+# When using a cropper
+#      crop_first: true
 #      crop_width: 240
 #      crop_height: 240
 #      crop_randomly: true
 #      crop_roi_width: 256
 #      crop_roi_height: 256
+# when assuming a fixed input image size instead of relying on cropper
+#      fixed_image_width: 256
+#      fixed_image_height: 256
     }
+    num_labels: 1000
   }
   reader {
     name: "imagenet_cv"
@@ -32,11 +38,17 @@ data_reader {
       subtract_mean: true
       unit_variance: false
       no_colorize: false
+# When using a cropper
+#      crop_first: true
 #      crop_width: 240
 #      crop_height: 240
 #      crop_randomly: false
 #      crop_roi_width: 256
 #      crop_roi_height: 256
+# when assuming a fixed input image size instead of relying on cropper
+#      fixed_image_width: 256
+#      fixed_image_height: 256
     }
+    num_labels: 1000
   }
 }

@@ -440,6 +440,10 @@ else
         elif [ "${COMPILER}" == "clang" ]; then
             MPI_DOTKIT=${MPI}-gnu
         fi
+        # The default MVAPICH version does not work on surface
+        if [ "${CLUSTER}" == "surface" -a "${MPI}" == "mvapich2" ]; then
+            MPI_DOTKIT+="-2.2"
+        fi  
         use ${MPI_DOTKIT}
         if [ -z "$(use | grep ${MPI_DOTKIT})" ]; then
             echo "Could not load dotkit (${MPI_DOTKIT})"

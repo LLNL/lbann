@@ -279,17 +279,19 @@ void add_layers(
     // LAYER: input_distributed_minibatch
     //////////////////////////////////////////////////////////////////
     else if (layer.has_input_distributed_minibatch()) {
-      //const lbann_data::InputDistributedMiniBatch& ell = layer.input_distributed_minibatch();
+      const lbann_data::InputDistributedMiniBatch& ell = layer.input_distributed_minibatch();
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new input_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(
           comm,
           m.num_parallel_readers(),
-          data_readers);
+          data_readers,
+          ell.data_set_spans_models());
       } else {
         d = new input_layer_distributed_minibatch<data_layout::DATA_PARALLEL>(
           comm,
           m.num_parallel_readers(),
-          data_readers);
+          data_readers,
+          ell.data_set_spans_models());
       }
     }
 
@@ -297,7 +299,7 @@ void add_layers(
     // LAYER: input_partitioned_minibatch
     //////////////////////////////////////////////////////////////////
     else if (layer.has_input_partitioned_minibatch()) {
-      //const lbann_data::InputPartitionedMiniBatch& ell = layer.input_partitioned_minibatch();
+      const lbann_data::InputPartitionedMiniBatch& ell = layer.input_partitioned_minibatch();
       if (dl == data_layout::MODEL_PARALLEL and master) {
         err << __FILE__ << " " << __LINE__ << " :: input_layer_partitioned_minibatch "
             << "does not support MODEL_PARALLEL layouts";
@@ -306,7 +308,8 @@ void add_layers(
         d = new input_layer_partitioned_minibatch<data_layout::DATA_PARALLEL>(
           comm,
           m.num_parallel_readers(),
-          data_readers);
+          data_readers,
+          ell.data_set_spans_models());
       }
     }
 
@@ -913,6 +916,7 @@ void add_layers(
       } else {
         d = new  target_layer_partitioned_minibatch<data_layout::DATA_PARALLEL>(
           comm,
+          dynamic_cast<input_layer*>(index_mapping[0]),
           m.num_parallel_readers(),
           data_readers,
           ell.shared_data_reader(),
@@ -928,6 +932,7 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new  target_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(
           comm,
+          dynamic_cast<input_layer*>(index_mapping[0]),
           m.num_parallel_readers(),
           data_readers,
           ell.shared_data_reader(),
@@ -935,6 +940,7 @@ void add_layers(
       } else {
         d = new  target_layer_distributed_minibatch<data_layout::DATA_PARALLEL>(
           comm,
+          dynamic_cast<input_layer*>(index_mapping[0]),
           m.num_parallel_readers(),
           data_readers,
           ell.shared_data_reader(),
@@ -1296,7 +1302,7 @@ void init_callbacks(
       lbann_callback_debug_io *debug_cb = nullptr;
       if(c.phase() == "train" || c.phase() == "training") {
         debug_cb = new lbann_callback_debug_io(execution_mode::training, c.lvl());
-      } else if (c.phase() == "validation") {
+      } else if (c.phase() == "validate" || c.phase() == "validation") {
         debug_cb = new lbann_callback_debug_io(execution_mode::validation, c.lvl());
       } else if (c.phase() == "test" || c.phase() == "testing") {
         debug_cb = new lbann_callback_debug_io(execution_mode::testing, c.lvl());
@@ -1594,6 +1600,10 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       reader = new mnist_reader(mini_batch_size, shuffle);
     } else if (name == "imagenet") {
       reader = new imagenet_reader(mini_batch_size, shuffle);
+      const int n_labels = readme.num_labels();
+      const int width = preprocessor.fixed_image_width();
+      const int height = preprocessor.fixed_image_height();
+      dynamic_cast<imagenet_reader*>(reader)->set_input_params(width, height, 3, n_labels);
     } else if (name == "imagenet_single") {
       reader = new imagenet_readerSingle(mini_batch_size, shuffle);
     } else if ((name == "imagenet_cv") || (name == "imagenet_single_cv")) {
@@ -1609,7 +1619,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
                      std::make_pair<int,int>(preprocessor.crop_roi_width(),
                                              preprocessor.crop_roi_height()));
         pp->add_transform(std::move(cropper));
-        //if (master) cout << "cropper is set" << endl;
+        if (master) cout << "imagenet: cropper is set" << endl;
       }
 
       // set up augmenter if necessary
@@ -1629,14 +1639,15 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
                        preprocessor.vertical_shift(),
                        preprocessor.shear_range());
         pp->add_transform(std::move(augmenter));
-        //if (master) cout << "augmenter is set" << endl;
+        if (master) cout << "imagenet: augmenter is set" << endl;
       }
 
       // set up a custom transform (colorizer)
       if (!preprocessor.no_colorize()) {
+        // If every image in the dataset is a color image, this is not needed
         std::unique_ptr<lbann::cv_colorizer> colorizer(new(lbann::cv_colorizer));
         pp->add_transform(std::move(colorizer));
-        //if (master) cout << "colorizer is set" << endl;
+        if (master) cout << "imagenet: colorizer is set" << endl;
       }
 
       // set up the normalizer
@@ -1646,15 +1657,25 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       normalizer->unit_variance(preprocessor.unit_variance());
       normalizer->z_score(preprocessor.z_score());
       pp->add_normalizer(std::move(normalizer));
-      //if (master) cout << "normalizer is set" << endl;
+      if (master) cout << "imagenet: normalizer is set" << endl;
 
       if (name == "imagenet_cv") {
         reader = new imagenet_reader_cv(mini_batch_size, pp, shuffle);
-        //if (master) cout << "imagenet_reader_cv is set" << endl;
+        if (master) cout << "imagenet_reader_cv is set" << endl;
       } else {
         reader = new imagenet_reader_single_cv(mini_batch_size, pp, shuffle);
-        //if (master) cout << "imagenet_reader_single_cv is set" << endl;
+        if (master) cout << "imagenet_reader_single_cv is set" << endl;
       }
+      int width=0, height=0;
+      const int n_labels = readme.num_labels();
+      if (preprocessor.crop_first()) {
+        width = preprocessor.crop_width();
+        height = preprocessor.crop_height();
+      } else {
+        width = preprocessor.fixed_image_width();
+        height = preprocessor.fixed_image_height();
+      }
+      dynamic_cast<imagenet_reader_cv*>(reader)->set_input_params(width, height, 3, n_labels);
     } else if (name == "nci") {
       reader = new data_reader_nci(mini_batch_size, shuffle);
     } else if (name == "csv") {

@@ -343,7 +343,7 @@ int main(int argc, char *argv[]) {
       dnn->add(softmax);
     }
 
-    Layer *tlayer = new target_layer_distributed_minibatch<data_layout::DATA_PARALLEL>(comm, parallel_io, data_readers, true);
+    Layer *tlayer = new target_layer_distributed_minibatch<data_layout::DATA_PARALLEL>(comm, dynamic_cast<input_layer*>(ilayer), parallel_io, data_readers, true);
     dnn->add(tlayer);
 
 

@@ -29,6 +29,7 @@ message Reader {
   int64 max_sample_count = 11;
   double percent_of_data_to_use = 12;
   ImagePreprocessor image_preprocessor = 13;
+  int32 num_labels = 99; //for imagenet
   int64 num_samples = 100; //only for synthetic
   int64 num_features = 101; //only for synthetic
   //csv attributes
@@ -63,7 +64,9 @@ message ImagePreprocessor {
   uint32 crop_height = 27;
   bool crop_randomly = 28;
   int32 crop_roi_width = 29;
-  int32 crop_roi_height =30;
+  int32 crop_roi_height = 30;
+  int32 fixed_image_width = 31;
+  int32 fixed_image_height = 32;
 }
 
 //========================================================================
@@ -463,9 +466,11 @@ message Dropout {
 // Input Layers //
 //////////////////
 message InputDistributedMiniBatch {
+  bool data_set_spans_models = 1;  //default: true
 }
 
 message InputPartitionedMiniBatch {
+  bool data_set_spans_models = 1;  //default: true
 }
 
 //////////////////////

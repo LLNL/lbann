@@ -320,7 +320,7 @@ int main(int argc, char *argv[]) {
     dnn.add(sl);
 
     // Target layer
-    Layer *tlayer = new target_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(comm, parallel_io, data_readers, true);
+    Layer *tlayer = new target_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(comm, dynamic_cast<input_layer*>(ilayer), parallel_io, data_readers, true);
     dnn.add(tlayer);
 
     lbann_callback_print* print_cb = new lbann_callback_print;
