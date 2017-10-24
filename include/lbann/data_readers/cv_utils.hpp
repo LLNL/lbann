@@ -104,6 +104,8 @@ class cv_utils {
    *  otherwise.
    */
   static cv::Mat copy_buf_to_cvMat(const ::Mat& buf, const int Width, const int Height, const int Type, const cv_process& pp);
+
+  static double get_depth_normalizing_factor(const int cv_depth);
 };
 
 
@@ -200,7 +202,6 @@ template<typename T, int NCh>
 inline cv::Mat cv_utils::copy_buf_to_cvMat_with_full_info(
   const std::vector<uint8_t>& buf, const int Width, const int Height, const cv_process& pp) {
   using namespace lbann::patchworks;
-  //typedef cv_image_type<T, NCh> Img_T;
 
   const int sz = Height*Width;
 
@@ -211,7 +212,6 @@ inline cv::Mat cv_utils::copy_buf_to_cvMat_with_full_info(
 
   const T *Pixels = reinterpret_cast<const T *>(&(buf[0]));
 
-  //cv::Mat image = cv::Mat(Height, Width, Img_T::T());
   cv::Mat image = cv::Mat(Height, Width, CV_MAKETYPE(cv::DataType<T>::depth, NCh));
 
   if (pp.to_split()) {
@@ -399,7 +399,6 @@ template<typename T, int NCh>
 inline cv::Mat cv_utils::copy_buf_to_cvMat_with_full_info(
   const ::Mat& buf, const int Width, const int Height, const cv_process& pp) {
   using namespace lbann::patchworks;
-  //typedef cv_image_type<T, NCh> Img_T;
 
   const int sz = Height*Width;
   _LBANN_MILD_EXCEPTION(sz*NCh != buf.Height(), \
@@ -409,7 +408,6 @@ inline cv::Mat cv_utils::copy_buf_to_cvMat_with_full_info(
 
   const DataType *Pixels = buf.LockedBuffer();
 
-  //cv::Mat image = cv::Mat(Height, Width, Img_T::T());
   cv::Mat image = cv::Mat(Height, Width, CV_MAKETYPE(cv::DataType<T>::depth, NCh));
 
   if (pp.to_split()) {
