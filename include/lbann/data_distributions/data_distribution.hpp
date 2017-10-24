@@ -33,6 +33,42 @@
 
 namespace lbann
 {
+
+class fetch_data_functor {
+ public:
+  fetch_data_functor (bool is_input_layer, bool is_for_regression) : 
+    _is_input_layer(is_input_layer), _is_for_regression(is_for_regression) {}
+  int operator() (Mat& M_local, generic_data_reader* data_reader) {
+    if (_is_input_layer) {
+      return data_reader->fetch_data(M_local);
+    } else {
+      if (_is_for_regression) {
+        return data_reader->fetch_responses(M_local);
+      } else {
+        return data_reader->fetch_labels(M_local);
+      }
+    }
+  }
+ private:
+  bool _is_input_layer;
+  bool _is_for_regression;
+};
+
+class update_data_reader_functor {
+ public:
+  update_data_reader_functor (bool is_input_layer) : 
+    _is_input_layer(is_input_layer) {}
+  int operator() (bool is_active_reader, generic_data_reader* data_reader) {
+    if (_is_input_layer) {
+      return data_reader->update(is_active_reader);
+    } else {
+      return (data_reader->is_data_reader_done(is_active_reader));
+    }
+  }
+ private:
+  bool _is_input_layer;
+};
+
 class generic_data_distribution {
 public:
   generic_data_distribution(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers);
@@ -40,45 +76,25 @@ public:
     const generic_data_distribution&) = default;
   generic_data_distribution& operator=(
     const generic_data_distribution&) = default;
-  virtual ~generic_data_distribution() {}
+  virtual ~generic_data_distribution() {
+    if(fetch_data_fn != nullptr) {
+      delete fetch_data_fn;
+    }
+    if(update_data_reader_fn != nullptr) {
+      delete update_data_reader_fn;
+    }
+  }
 
-  virtual int fetch_to_local_matrix(Mat& M_local) { return 0; }
-  virtual void distribute_from_local_matrix(Mat& M_local, CircMat& Ms) {}
-  virtual bool is_data_set_processed() { return false; }
-  virtual generic_data_reader *get_data_reader(execution_mode mode);
-  virtual generic_data_reader *get_data_reader();
-  virtual int get_num_parallel_readers(execution_mode mode);
-  virtual int get_num_parallel_readers();
-  virtual int get_num_iterations_per_epoch(execution_mode mode);
-  virtual int get_num_iterations_per_epoch();
-  virtual int get_current_step_in_epoch(execution_mode mode);
-  virtual int get_current_step_in_epoch();
-  virtual int get_mini_batch_size(execution_mode mode);
-  virtual int get_last_mini_batch_size(execution_mode mode);
-  virtual int get_last_mini_batch_size();
-  virtual int get_current_mini_batch_size(execution_mode mode);
-  virtual int get_current_mini_batch_size();
-  virtual int get_global_mini_batch_size(execution_mode mode);
-  virtual int get_global_last_mini_batch_size(execution_mode mode);
-  virtual int get_current_global_mini_batch_size(execution_mode mode);
-  virtual int get_current_global_mini_batch_size();
+  virtual int fetch_to_local_matrix(Mat& M_local, generic_data_reader *data_reader) { return 0; }
+  virtual void distribute_from_local_matrix(Mat& M_local, CircMat& Ms, generic_data_reader *data_reader) {}
+  virtual bool is_data_set_processed(generic_data_reader *data_reader) { return false; }
 
   virtual void calculate_num_iterations_per_epoch_spanning_models(int max_mini_batch_size, generic_data_reader *data_reader) = 0;
   virtual void calculate_num_iterations_per_epoch_single_model(int max_mini_batch_size, generic_data_reader *data_reader) = 0;
-  virtual void calculate_num_iterations_per_epoch_training_spans_models(int mini_batch_size);
-  virtual void calculate_num_iterations_per_epoch_training_unique_per_models(int mini_batch_size);
+;
   virtual int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) { return 0; }
 
-  /// @todo BVE replace this with a function pointer that is passed
-  /// into the fetch_to_local_matrix function to avoid the
-  /// "circular" function dependence
-  virtual int fetch_from_data_reader(Mat& M_local) {
-    return 0;
-  }
   virtual void preprocess_data_samples(Mat& M_local, int num_samples_in_batch) {}
-  virtual bool update_data_reader(bool is_active_reader) {
-    return false;
-  }
   virtual execution_mode get_execution_mode() const {
     return execution_mode::invalid;
   }
@@ -108,7 +124,8 @@ public:
   /** Has the layer copied valid data into the local matrix */
   bool m_local_data_valid;
 
-  std::map<execution_mode, generic_data_reader *> m_data_readers;
+  fetch_data_functor *fetch_data_fn;
+  update_data_reader_functor *update_data_reader_fn;
 
   // BVE FIXME this will be wrong for LTFB
   int m_num_data_per_epoch;
