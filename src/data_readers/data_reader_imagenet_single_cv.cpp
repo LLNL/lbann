@@ -159,6 +159,13 @@ bool imagenet_reader_single_cv::fetch_datum(Mat& X, int data_id, int mb_idx, int
   return true;
 }
 
+/// This function only serves to avoid compiler warning on partial overriding
+bool imagenet_reader_single_cv::fetch_datum(std::vector<::Mat>& X, int data_id, int mb_idx, int tid) {
+  throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
+        + "ImageNet: imagenet_reader_single_cv::fetch_datum(vector<Mat>& X, ...) not implemented");
+  return false;
+}
+
 // Assignment operator
 imagenet_reader_single_cv& imagenet_reader_single_cv::operator=(const imagenet_reader_single_cv& source) {
   // check for self-assignment

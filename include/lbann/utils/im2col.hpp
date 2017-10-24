@@ -107,6 +107,18 @@ void col2im(const Mat& col,
             const int * window_strides,
             std::function<DataType(const DataType&,const DataType&)> reduction_op);
 
+/// Rearrange 1x1 image blocks into matrix columns
+/** This is an optimized implementation of im2col when the window has
+ *  a size of one, there is no padding, and the window stride is
+ *  one. im2col will automatically call this routine if it detects a
+ *  1x1 im2col.
+ */
+void im2col_1x1(const DataType * input_buffer,
+                DataType * output_buffer,
+                int num_channels,
+                int num_input_dims,
+                const int * input_dims);
+
 /// Rearrange 2D image blocks into matrix columns
 /** This is an optimized implementation of im2col for 2D data. im2col
  *  will automatically call this routine if it detects 2D data.
@@ -122,6 +134,18 @@ void im2col_2d(const DataType *__restrict__ input_buffer,
                int window_dim_y,
                int offset_stride_x,
                int offset_stride_y);
+
+/// Rearrange matrix columns into 1x1 image blocks
+/** This is an optimized implementation of col2im when the window has
+ *  a size of one, there is no padding, and the window stride is
+ *  one. col2im will automatically call this routine if it detects a
+ *  1x1 col2im.
+ */
+void col2im_1x1(const DataType * input_buffer,
+                DataType * output_buffer,
+                const int num_channels,
+                const int num_output_dims,
+                const int * output_dims);
 
 /// Rearrange matrix columns into 2D image blocks
 /** This is an optimized implementation of col2im for 2D data. col2im

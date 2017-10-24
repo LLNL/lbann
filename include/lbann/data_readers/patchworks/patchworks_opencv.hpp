@@ -129,6 +129,18 @@ _def_cv_image_type_B_U(32, F, float)
 /// Define cv_image_type<double, x>, of which T() returns CV_64FCx
 _def_cv_image_type_B_U(64, F, double)
 
+
+template<typename T>
+struct depth_normalzing {
+  static double factor() {
+    if ((std::is_same<T, float>::value) || (std::is_same<T, double>::value)) {
+      return 1.0;
+    } else {
+      return 1.0/std::numeric_limits<T>::max();
+    }
+  }
+};
+
 } // end of namespace patchworks
 } // end of namespace lbann
 

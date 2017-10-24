@@ -29,6 +29,7 @@
 #include "lbann/data_readers/cv_cropper.hpp"
 #include "lbann/utils/mild_exception.hpp"
 #include "lbann/utils/random.hpp"
+#include "lbann/utils/exception.hpp"
 #include <algorithm>
 #include <ostream>
 
@@ -47,6 +48,10 @@ cv_cropper *cv_cropper::clone() const {
   return new cv_cropper(*this);
 }
 
+void cv_cropper::unset_roi(void) {
+  m_is_roi_set = false;
+  m_roi_size = std::pair<int, int>(0, 0);
+}
 
 void cv_cropper::set(const unsigned int width, const unsigned int height,
                      const bool random_crop,
@@ -56,15 +61,20 @@ void cv_cropper::set(const unsigned int width, const unsigned int height,
   m_rand_crop = random_crop;
 
   if ((roi_sz.first > 0) && (roi_sz.second > 0)) {
-    m_is_roi_set = true;
-    m_roi_size = roi_sz;
+    if (((unsigned) roi_sz.first < width) || ((unsigned) roi_sz.second < height)) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: cv_cropper: ROI size is smaller than that of a patch";
+      throw lbann_exception(err.str());
+    } else {
+      m_is_roi_set = true;
+      m_roi_size = roi_sz;
+    }
   } else if (!((roi_sz.first == 0) && (roi_sz.second == 0))) {
-    // Fall back to the default. Alternatively, we can generate exception here.
-    m_is_roi_set = false;
-    m_roi_size = std::pair<int, int>(0, 0);
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: cv_cropper: invalid ROI size";
+    throw lbann_exception(err.str());
   } else {
-    m_is_roi_set = false;
-    m_roi_size = std::pair<int, int>(0, 0);
+    unset_roi();
   }
 
   m_zoom = 1.0; // default
@@ -77,8 +87,7 @@ void cv_cropper::reset() {
   m_width = 0u;
   m_height = 0u;
   m_rand_crop = false;
-  m_is_roi_set = false;
-  m_roi_size = std::pair<int, int>(0, 0);
+  unset_roi();
   m_zoom = 1.0;
   m_interpolation = cv::INTER_AREA;
   m_enabled = false;
@@ -90,20 +99,26 @@ bool cv_cropper::determine_transform(const cv::Mat& image) {
 
   _LBANN_SILENT_EXCEPTION(image.empty(), "", false)
 
-  if (m_is_roi_set) {
-    double zoom_h = static_cast<double>(m_roi_size.first) / image.cols;
-    double zoom_v = static_cast<double>(m_roi_size.second) / image.rows;
-    m_zoom = std::max(zoom_h, zoom_v);
-  
-    if (m_zoom > 1.0) {
-     #if 0
-      m_interpolation = cv::INTER_CUBIC; // (slow but better)
-     #else
-      m_interpolation = cv::INTER_LINEAR; // (faster but ok)
-     #endif
-    } else {
-      m_interpolation = cv::INTER_AREA; // (better for shrinking)
-    }
+  int roi_width = m_roi_size.first;
+  int roi_height = m_roi_size.second;
+
+  if (!m_is_roi_set) {
+    roi_width = image.cols;
+    roi_height = image.rows;
+  }
+
+  double zoom_h = static_cast<double>(roi_width) / image.cols;
+  double zoom_v = static_cast<double>(roi_height) / image.rows;
+  m_zoom = std::max(zoom_h, zoom_v);
+
+  if (m_zoom > 1.0) {
+   #if 0
+    m_interpolation = cv::INTER_CUBIC; // (slow but better)
+   #else
+    m_interpolation = cv::INTER_LINEAR; // (faster but ok)
+   #endif
+  } else {
+    m_interpolation = cv::INTER_AREA; // (better for shrinking)
   }
 
   return (m_enabled = true);
@@ -119,21 +134,15 @@ bool cv_cropper::apply(cv::Mat& image) {
   int roi_height = 0;
   cv::Mat roi;
 
-  if (m_is_roi_set) {
-    roi_width = m_roi_size.first;
-    roi_height = m_roi_size.second;
-    cv::Mat scaled_image;
-    cv::resize(image, scaled_image, cv::Size(), m_zoom, m_zoom, m_interpolation);
-    cv::Rect crop((scaled_image.cols - roi_width + 1) / 2,
-                  (scaled_image.rows - roi_height + 1) / 2,
-                  roi_width,
-                  roi_height);
-    roi = scaled_image(crop);
-  } else {
-    roi_width = image.cols;
-    roi_height = image.rows;
-    roi = image;
-  }
+  roi_width = m_roi_size.first;
+  roi_height = m_roi_size.second;
+  cv::Mat scaled_image;
+  cv::resize(image, scaled_image, cv::Size(), m_zoom, m_zoom, m_interpolation);
+  cv::Rect crop((scaled_image.cols - roi_width + 1) / 2,
+                (scaled_image.rows - roi_height + 1) / 2,
+                roi_width,
+                roi_height);
+  roi = scaled_image(crop);
 
   int crop_x_start=0, crop_y_start=0;
 

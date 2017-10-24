@@ -11,7 +11,7 @@ model {
   block_size: 256
   num_epochs: 20
   num_parallel_readers: 0
-  procs_per_model: 1
+  procs_per_model: 6
   use_cudnn: false
   num_gpus: -1
 
@@ -80,7 +80,6 @@ model {
   layer {
     name: "1"
     parents: "1"
-    children: ""
     data_layout: "model_parallel"
     input_distributed_minibatch {
     }
@@ -91,7 +90,6 @@ model {
   layer {
     name: "2"
     parents: "1"
-    children: ""
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 1024
@@ -105,7 +103,6 @@ model {
   layer {
     name: "3"
     parents: "2"
-    children: ""
     data_layout: "model_parallel"
     relu {
     }
@@ -116,7 +113,6 @@ model {
   layer {
     name: "4"
     parents: "3"
-    children: ""
     data_layout: "model_parallel"
     dropout {
       keep_prob: -1
@@ -128,7 +124,6 @@ model {
   layer {
     name: "5"
     parents: "4"
-    children: ""
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 1024
@@ -142,7 +137,6 @@ model {
   layer {
     name: "6"
     parents: "5"
-    children: ""
     data_layout: "model_parallel"
     relu {
     }
@@ -153,7 +147,6 @@ model {
   layer {
     name: "7"
     parents: "6"
-    children: ""
     data_layout: "model_parallel"
     dropout {
       keep_prob: -1
@@ -165,7 +158,6 @@ model {
   layer {
     name: "8"
     parents: "7"
-    children: ""
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 1024
@@ -179,7 +171,6 @@ model {
   layer {
     name: "9"
     parents: "8"
-    children: ""
     data_layout: "model_parallel"
     relu {
     }
@@ -190,7 +181,6 @@ model {
   layer {
     name: "10"
     parents: "9"
-    children: ""
     data_layout: "model_parallel"
     dropout {
       keep_prob: -1
@@ -202,7 +192,6 @@ model {
   layer {
     name: "11"
     parents: "10"
-    children: ""
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 10
@@ -216,7 +205,6 @@ model {
   layer {
     name: "12"
     parents: "11"
-    children: ""
     data_layout: "model_parallel"
     softmax {
     }
@@ -227,7 +215,6 @@ model {
   layer {
     name: "13"
     parents: "12"
-    children: ""
     data_layout: "model_parallel"
     target_distributed_minibatch {
       shared_data_reader: true

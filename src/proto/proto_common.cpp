@@ -399,6 +399,14 @@ void add_layers(
     }
 
     //////////////////////////////////////////////////////////////////
+    // LAYER: noise 
+    //////////////////////////////////////////////////////////////////
+    else if (layer.has_noise()) {
+      const lbann_data::Noise& ell = layer.noise();
+      d = new noise_layer<>(layer_id, comm,ell.noise_factor(), cudnn);
+    }
+
+    //////////////////////////////////////////////////////////////////
     // LAYER: split
     //////////////////////////////////////////////////////////////////
     else if (layer.has_split()) {
@@ -1405,11 +1413,34 @@ void init_callbacks(
     if (callback.has_step_minibatch()) {
       const lbann_data::CallbackStepMinibatch& c = callback.step_minibatch();
       if (master) {
-        std::cout << "adding step_minibatch callback" << std::endl;
+        std::cout << "adding step_minibatch callback, start=" <<
+          c.starting_mbsize() << ", step=" << c.step() << " ramp=" <<
+          c.ramp_time() << std::endl;
       }
       lbann_callback_step_minibatch *step_mb_cb = new
-      lbann_callback_step_minibatch(c.starting_mbsize(), c.step());
+        lbann_callback_step_minibatch(c.starting_mbsize(), c.step(),
+                                      c.ramp_time());
       model->add_callback(step_mb_cb);
+    }
+
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: minibatch_schedule
+    //////////////////////////////////////////////////////////////////
+    if (callback.has_minibatch_schedule()) {
+      const lbann_data::CallbackMinibatchSchedule& c =
+        callback.minibatch_schedule();
+      if (master) {
+        std::cout << "adding minibatch_schedule callback" << std::endl;
+      }
+      std::vector<lbann_callback_minibatch_schedule::minibatch_step> steps;
+      for (int i = 0; i < c.step_size(); ++i) {
+        const lbann_data::MinibatchScheduleStep& step = c.step(i);
+        steps.emplace_back(step.epoch(), step.mbsize(), step.lr(),
+                           step.ramp_time());
+      }
+      lbann_callback_minibatch_schedule *mb_sched = new
+        lbann_callback_minibatch_schedule(c.starting_mbsize(), steps);
+      model->add_callback(mb_sched);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -1569,11 +1600,27 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       reader = new mnist_reader(mini_batch_size, shuffle);
     } else if (name == "imagenet") {
       reader = new imagenet_reader(mini_batch_size, shuffle);
+      const int n_labels = readme.num_labels();
+      const int width = preprocessor.fixed_image_width();
+      const int height = preprocessor.fixed_image_height();
+      dynamic_cast<imagenet_reader*>(reader)->set_input_params(width, height, 3, n_labels);
     } else if (name == "imagenet_single") {
       reader = new imagenet_readerSingle(mini_batch_size, shuffle);
     } else if ((name == "imagenet_cv") || (name == "imagenet_single_cv")) {
       // set up the image preprocessor
       std::shared_ptr<cv_process> pp = std::make_shared<cv_process>();
+
+      // set up cropper as needed
+      if(preprocessor.crop_first()) {
+        std::unique_ptr<lbann::cv_cropper> cropper(new(lbann::cv_cropper));
+        cropper->set(preprocessor.crop_width(),
+                     preprocessor.crop_height(),
+                     preprocessor.crop_randomly(),
+                     std::make_pair<int,int>(preprocessor.crop_roi_width(),
+                                             preprocessor.crop_roi_height()));
+        pp->add_transform(std::move(cropper));
+        if (master) cout << "imagenet: cropper is set" << endl;
+      }
 
       // set up augmenter if necessary
       if (!preprocessor.disable_augmentation() &&
@@ -1592,14 +1639,15 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
                        preprocessor.vertical_shift(),
                        preprocessor.shear_range());
         pp->add_transform(std::move(augmenter));
-        //if (master) cout << "augmenter is set" << endl;
+        if (master) cout << "imagenet: augmenter is set" << endl;
       }
 
       // set up a custom transform (colorizer)
       if (!preprocessor.no_colorize()) {
+        // If every image in the dataset is a color image, this is not needed
         std::unique_ptr<lbann::cv_colorizer> colorizer(new(lbann::cv_colorizer));
         pp->add_transform(std::move(colorizer));
-        //if (master) cout << "colorizer is set" << endl;
+        if (master) cout << "imagenet: colorizer is set" << endl;
       }
 
       // set up the normalizer
@@ -1609,15 +1657,25 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       normalizer->unit_variance(preprocessor.unit_variance());
       normalizer->z_score(preprocessor.z_score());
       pp->add_normalizer(std::move(normalizer));
-      //if (master) cout << "normalizer is set" << endl;
+      if (master) cout << "imagenet: normalizer is set" << endl;
 
       if (name == "imagenet_cv") {
         reader = new imagenet_reader_cv(mini_batch_size, pp, shuffle);
-        //if (master) cout << "imagenet_reader_cv is set" << endl;
+        if (master) cout << "imagenet_reader_cv is set" << endl;
       } else {
         reader = new imagenet_reader_single_cv(mini_batch_size, pp, shuffle);
-        //if (master) cout << "imagenet_reader_single_cv is set" << endl;
+        if (master) cout << "imagenet_reader_single_cv is set" << endl;
       }
+      int width=0, height=0;
+      const int n_labels = readme.num_labels();
+      if (preprocessor.crop_first()) {
+        width = preprocessor.crop_width();
+        height = preprocessor.crop_height();
+      } else {
+        width = preprocessor.fixed_image_width();
+        height = preprocessor.fixed_image_height();
+      }
+      dynamic_cast<imagenet_reader_cv*>(reader)->set_input_params(width, height, 3, n_labels);
     } else if (name == "nci") {
       reader = new data_reader_nci(mini_batch_size, shuffle);
     } else if (name == "csv") {

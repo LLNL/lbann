@@ -345,7 +345,7 @@ inline bool cv_normalizer::compute_mean_stddev_with_known_type(const cv::Mat& im
 
   if (image.isContinuous()) {
     const T *ptr = reinterpret_cast<const T *>(image.datastart);
-    const T *const ptrend = reinterpret_cast<const T *const>(image.dataend);
+    const T *const ptrend = reinterpret_cast<const T *>(image.dataend);
 
     int ch = 0;
     do {

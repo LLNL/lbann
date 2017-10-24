@@ -426,7 +426,7 @@ void lbann_quantizer::adaptive_bound(
                   (MAX_QUANTIZED_EXCESS * width * height / proportion);
     std::vector<colT> remove_counts(width, 0);
     for (colT header_loc = (width - 1) * HEADER_FACTOR;
-         header_loc >= 0 && excess > 0;
+         excess > 0;
          header_loc -= HEADER_FACTOR) {
       colT num_in_col = q_col[header_loc + HEADER_FACTOR] - q_col[header_loc];
       if (num_in_col == 0) {

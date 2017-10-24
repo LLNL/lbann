@@ -1,5 +1,5 @@
---- Makefile.power	2017-10-10 12:03:24.000000000 -0700
-+++ ./Makefile.power.new	2017-09-11 15:20:44.000000000 -0700
+--- Makefile.power	2017-10-19 22:23:40.000000000 -0700
++++ ./Makefile.power.new	2017-10-10 13:08:16.000000000 -0700
 @@ -13,11 +13,11 @@
  
  ifeq ($(CORE), POWER8)
@@ -16,8 +16,8 @@
  endif
  endif
  
---- Makefile.system	2017-10-10 12:03:24.000000000 -0700
-+++ ./Makefile.system.new	2017-10-10 12:27:34.000000000 -0700
+--- Makefile.system	2017-10-19 22:40:38.000000000 -0700
++++ ./Makefile.system.new	2017-10-10 13:08:16.000000000 -0700
 @@ -422,7 +422,7 @@
  endif
  
@@ -36,8 +36,8 @@
  endif
  endif
  
---- c_check	2017-10-10 12:03:26.000000000 -0700
-+++ ./c_check.new	2017-09-11 15:20:44.000000000 -0700
+--- c_check	2017-10-19 22:23:40.000000000 -0700
++++ ./c_check.new	2017-10-10 13:08:16.000000000 -0700
 @@ -133,7 +133,7 @@
  }
  
@@ -47,3 +47,32 @@
  }
  
  if ($compiler eq "PATHSCALE") {
+--- f_check	2017-10-19 22:47:45.000000000 -0700
++++ ./f_check.new	2017-10-19 22:17:16.000000000 -0700
+@@ -97,7 +97,7 @@
+ 
+ 	if ($data =~ /Intel/) {
+ 	    $vendor = INTEL;
+-	    $openmp = "-openmp";
++	    $openmp = "-qopenmp";
+ 	}
+ 
+         if ($data =~ /Sun Fortran/) {
+@@ -155,7 +155,7 @@
+ 	if ($compiler =~ /ifort/) {
+ 	    $vendor = INTEL;
+ 	    $bu       = "_";
+-	    $openmp = "-openmp";
++	    $openmp = "-qopenmp";
+ 	}
+ 
+ 	if ($compiler =~ /pathf/) {
+@@ -348,7 +348,7 @@
+ }
+ 
+ if ($vendor eq "INTEL"){
+-    $linker_a .= "-lgfortran"
++    $linker_a .= "-lifcoremt"
+ }
+ 
+ if ($vendor eq "FLANG"){

@@ -29,6 +29,7 @@ message Reader {
   int64 max_sample_count = 11;
   double percent_of_data_to_use = 12;
   ImagePreprocessor image_preprocessor = 13;
+  int32 num_labels = 99; //for imagenet
   int64 num_samples = 100; //only for synthetic
   int64 num_features = 101; //only for synthetic
   //csv attributes
@@ -58,6 +59,14 @@ message ImagePreprocessor {
   bool disable_augmentation = 22;
   float noise_factor = 23;
   bool no_colorize = 24; // not to use colorizer in cv_process
+  bool crop_first = 25;
+  uint32 crop_width = 26;
+  uint32 crop_height = 27;
+  bool crop_randomly = 28;
+  int32 crop_roi_width = 29;
+  int32 crop_roi_height = 30;
+  int32 fixed_image_width = 31;
+  int32 fixed_image_height = 32;
 }
 
 //========================================================================
@@ -194,6 +203,7 @@ message Callback {
    CallbackGradientCheck gradient_check = 23;
    CallbackLTFB ltfb = 24;
    CallbackDebugIO debug_io = 25;
+   CallbackMinibatchSchedule minibatch_schedule = 26;
 }
 
 message CallbackLTFB {
@@ -304,6 +314,19 @@ message CallbackLinearGrowthLearningRate {
 message CallbackStepMinibatch {
   int64 starting_mbsize = 1;
   int64 step = 2;
+  int64 ramp_time = 3;
+}
+
+message MinibatchScheduleStep {
+  int64 epoch = 1;
+  int64 mbsize = 2;
+  double lr = 3;
+  int64 ramp_time = 4;
+}
+
+message CallbackMinibatchSchedule {
+  int64 starting_mbsize = 1;
+  repeated MinibatchScheduleStep step = 2;
 }
 
 message CallbackGradientCheck {
@@ -342,6 +365,7 @@ message Layer {
    Slice slice = 301;
    Split split = 302;
    Sum sum = 303;
+   Noise noise = 307;
    Unpooling unpooling = 304;
 
    // learning Layers
@@ -499,6 +523,9 @@ message Split {
 message Sum {
 }
 
+message Noise {
+  double noise_factor=1;
+}
 /////////////////////
 // learning Layers //
 /////////////////////

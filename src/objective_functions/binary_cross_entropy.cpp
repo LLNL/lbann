@@ -47,7 +47,12 @@ void binary_cross_entropy::compute_value(const AbsDistMat& predictions,
     for(El::Int row = 0; row < local_height; ++row) {
       const double true_val = ground_truth_local(row, col);
       const double pred_val = predictions_local(row, col);
-      double term = if (true_val != DataType(0)) -std::log(pred_val) else -std::log(1 - pred_val);
+      double term;
+      if (true_val == DataType(1)) {
+        term = -std::log(pred_val);
+      } else if (true_val == DataType(0)) {
+	term = -std::log(1 - pred_val);
+      } else continue;
       term += correction;
       const double next_sum = sum + term;
       correction = term - (next_sum - sum);
@@ -81,7 +86,13 @@ void binary_cross_entropy::compute_gradient(const AbsDistMat& predictions,
                           (El::Int r, El::Int c) -> DataType {
                            const DataType pred_val = predictions_local(r,c);
                            const DataType true_val = ground_truth_local(r,c);
-                           return if (true_val != DataType(0)) -1/pred_val else 1/(1 - pred_val);
+                           if (true_val == DataType(1)) {
+                             return -1/pred_val;
+                           } else if (true_val == DataType(0)) {
+                             return 1/(1 - pred_val);
+			   } else {
+                             return 0;
+			   }
                          }));
 
 }

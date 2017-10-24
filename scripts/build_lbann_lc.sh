@@ -261,8 +261,13 @@ if [ ${USE_MODULES} -ne 0 ]; then
     module load git
     module load cmake
 else
-    use git
-    use cmake
+    if [ "${CLUSTER}" == "surface" ]; then
+        use git-2.8.0
+        use cmake-3.4.1
+    else
+        use git
+        use cmake
+    fi
 fi
 
 ################################################################
@@ -336,7 +341,8 @@ elif [ "${COMPILER}" == "intel" ]; then
     CXX_COMPILER=${COMPILER_BASE}/bin/icpc
     Fortran_COMPILER=${COMPILER_BASE}/bin/ifort
     COMPILER_VERSION=$(${C_COMPILER} --version | head -n 1 | awk '{print $3}')
-    FORTRAN_LIB=${COMPILER_BASE}/lib/intel64/libifcore.so
+    FORTRAN_LIB=${COMPILER_BASE}/lib/intel64/libifcoremt.so.5
+    CXX_FLAGS="${CXX_FLAGS} -std=c++11"
 elif [ "${COMPILER}" == "clang" ]; then
     # clang
     # clang depends on gnu fortran library. so, find the dependency

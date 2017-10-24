@@ -32,14 +32,18 @@
 #include <iostream>
 
 #include "El.hpp"
+#include <unistd.h>
 
 #ifdef __LIB_CUDNN
 
 using namespace cudnn;
 using namespace lbann;
 
-cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus)
+cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus, bool nccl_used)
   : comm(_comm) {
+
+  // Indicate whether NCCL is used 
+  m_nccl_used = nccl_used;
 
   // Determine number of available GPUs
   CHECK_CUDA(cudaGetDeviceCount(&m_num_total_gpus));
@@ -79,10 +83,19 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus)
       FORCE_CHECK_CUDNN(cudnnSetStream(m_handles.back(), m_streams.back()));
       FORCE_CHECK_CUBLAS(cublasCreate(&m_cublas_handles.back()));
     }
+
+    // NCCL setup
+    if(m_nccl_used){
+      nccl_setup();
+    }
   }
 
-  // Case where compute node has fewers GPUs than MPI ranks
+  // Case where compute node has fewer GPUs than MPI ranks
   else {
+    if(m_nccl_used){
+      throw lbann_exception("cudnn_wrapper: the number of MPI ranks on compute node cannot exceed that of GPUs when NCCL is used");
+    }
+
     const int min_procs_per_gpu = procs_per_node / m_num_total_gpus;
     const int procs_remainder = procs_per_node % m_num_total_gpus;
     int gpu = -1;
@@ -673,6 +686,61 @@ void cudnn_manager::check_error() {
       throw lbann::lbann_exception("CUDA error");
     }
   }
+}
+
+#ifdef __LIB_NCCL
+uint64_t cudnn_manager::getHostHash(const char* string) {
+  // Based on DJB2, result = result * 33 + char
+  uint64_t result = 5381;
+  for (int c = 0; string[c] != '\0'; c++){
+    result = ((result << 5) + result) + string[c];
+  }
+  return result;
+}
+#endif
+
+
+void cudnn_manager::nccl_setup() {
+#ifdef __LIB_NCCL
+
+  int nProcs = comm->get_procs_per_model();
+  int myid = comm->get_model_rank();
+  int localRank = comm->get_rank_in_node();
+
+  ncclUniqueId ncclId;
+  if (myid == 0) {
+    NCCLCHECK(ncclGetUniqueId(&ncclId));
+  }
+  El::mpi::Comm model_comm = comm->get_model_comm();
+  MPI_Comm mpicomm = model_comm.comm;
+
+  /**
+  Not sure if we can use Elemental's broadcast for new date type 'ncclUniqeId'. 
+  For that reason, raw MPI_Bcast is used instead.
+  
+  El::mpi::Broadcast(&ncclId, 1, 0, model_comm); */
+
+  MPI_Bcast(&ncclId, sizeof(ncclId), MPI_BYTE, 0, mpicomm);
+
+  if (nProcs == 1) {
+    int gpuArray = 0;
+    NCCLCHECK(ncclCommInitAll(&m_nccl_comm, 1, &gpuArray));
+  } 
+  else {
+    NCCLCHECK(ncclGroupStart());
+    FORCE_CHECK_CUDA(cudaSetDevice(localRank));
+    NCCLCHECK(ncclCommInitRank(&m_nccl_comm, nProcs, ncclId, myid)); 
+    NCCLCHECK(ncclGroupEnd());
+  }
+}
+
+#endif
+}
+
+void cudnn_manager::nccl_destroy() {
+#ifdef __LIB_NCCL
+  ncclCommDestroy(m_nccl_comm);
+#endif
 }
 
 void cudnn::print_version() {

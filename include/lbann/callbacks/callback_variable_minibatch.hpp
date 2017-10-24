@@ -50,13 +50,27 @@ class lbann_callback_variable_minibatch : public lbann_callback {
   /// Potentially change the mini-batch size.
   void on_epoch_end(model *m);
  protected:
-  /** Return the new mini-batch size to use. */
-  virtual int change_minibatch_size(model *m) = 0;
-  /** Return a new learning rate to use. */
-  virtual float change_learning_rate(model *m, float cur_lr, int old_mbsize,
-                                     int new_mbsize) = 0;
+  /**
+   * Implemented by child classes to provide the mini-batch/learning schedule.
+   * This is called at the end of every training epoch. If it returns false,
+   * no changes are made from the currently established schedule.
+   * If this returns true, the mini-batch size will be changed accordingly.
+   * If the mini-batch size is larger than the model's maximum mini-batch size,
+   * a warning is printed and the maximum mini-batch size is used.
+   * If new_lr also non-zero, the learning rate will be changed to new_lr,
+   * with a linear ramp time. (If ramp_time is 0, it is changed immediately.)
+   * Note changing the learning rate while in a ramp may lead to unexpected
+   * behavior; also be aware of interactions with other learning rate
+   * schedules.
+   */
+  virtual bool schedule(model *m, int& new_mbsize, float& new_lr,
+                        int& ramp_time) = 0;
+  /// Change the learning rate of every layer in m to new_lr.
+  void change_learning_rate(model *m, float new_lr) const;
+  /// Get the current learning rate (assumes every layer has the same one).
+  float get_current_learning_rate(model *m) const;
   /// Initial mini-batch size.
-  int m_starting_mbsize;
+  const int m_starting_mbsize;
   /**
    * The current mini-batch size for this epoch.
    * This is kept separately from the model's get_current_mini_batch_size()
@@ -64,6 +78,10 @@ class lbann_callback_variable_minibatch : public lbann_callback {
    * batch, not the "base" mini-batch.
    */
   int m_current_mini_batch_size;
+  /// Current number of epochs left to ramp the learning rate.
+  int m_ramp_count = 0;
+  /// Amount to increment the learning rate by when ramping.
+  float m_lr_incr = 0.0f;
 };
 
 /**
@@ -72,7 +90,8 @@ class lbann_callback_variable_minibatch : public lbann_callback {
  */
 class lbann_callback_step_minibatch : public lbann_callback_variable_minibatch {
  public:
-  lbann_callback_step_minibatch(int starting_mbsize, int step);
+  lbann_callback_step_minibatch(int starting_mbsize, int step,
+                                int ramp_time = 0);
   lbann_callback_step_minibatch(const lbann_callback_step_minibatch&) = default;
   lbann_callback_step_minibatch& operator=(
     const lbann_callback_step_minibatch&) = default;
@@ -81,11 +100,44 @@ class lbann_callback_step_minibatch : public lbann_callback_variable_minibatch {
   }
   std::string name() const { return "step minibatch"; }
  protected:
-  int change_minibatch_size(model *m);
-  float change_learning_rate(model *m, float cur_lr, int old_mbsize,
-                             int new_mbsize);
-  /// Number of epochs between step changes.
+  bool schedule(model *m, int& new_mbsize, float& new_lr, int& ramp_time);
+  /// Number of epochs between mini-batch size increases.
   int m_step;
+  /// Number of steps to ramp the learning rate over.
+  int m_ramp_time;
+};
+
+class lbann_callback_minibatch_schedule : public lbann_callback_variable_minibatch {
+ public:
+  /// Represents a step in a schedule of mini-batch sizes.
+  struct minibatch_step {
+    /// Epoch for this schedule to start.
+    int epoch;
+    /// Mini-batch size to use.
+    int mbsize;
+    /// Learning rate to use.
+    float lr;
+    /// Number of epochs to ramp the learning rate over.
+    int ramp_time;
+    minibatch_step(int _epoch, int _mbsize, float _lr, int _ramp_time) :
+      epoch(_epoch), mbsize(_mbsize), lr(_lr), ramp_time(_ramp_time) {}
+  };
+
+  lbann_callback_minibatch_schedule(
+    int starting_mbsize, std::vector<minibatch_step> steps);
+  lbann_callback_minibatch_schedule(
+    const lbann_callback_minibatch_schedule&) = default;
+  lbann_callback_minibatch_schedule& operator=(
+    const lbann_callback_minibatch_schedule&) = default;
+  lbann_callback_minibatch_schedule* copy() const {
+    return new lbann_callback_minibatch_schedule(*this);
+  }
+  std::string name() const { return "minibatch schedule"; }
+ protected:
+  bool schedule(model *m, int& new_mbsize, float& new_lr, int& ramp_time);
+
+  /// Steps in the mini-batch schedule, stored in reverse sorted order.
+  std::vector<minibatch_step> m_steps;
 };
 
 }  // namespace lbann
