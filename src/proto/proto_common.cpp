@@ -285,13 +285,13 @@ void add_layers(
           comm,
           m.num_parallel_readers(),
           data_readers,
-          ell.data_set_spans_models());
+          !ell.data_set_per_model());
       } else {
         d = new input_layer_distributed_minibatch<data_layout::DATA_PARALLEL>(
           comm,
           m.num_parallel_readers(),
           data_readers,
-          ell.data_set_spans_models());
+          !ell.data_set_per_model());
       }
     }
 
@@ -309,7 +309,7 @@ void add_layers(
           comm,
           m.num_parallel_readers(),
           data_readers,
-          ell.data_set_spans_models());
+          !ell.data_set_per_model());
       }
     }
 
