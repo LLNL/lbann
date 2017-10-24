@@ -222,6 +222,7 @@ model {
     name: "13"
     parents: "12"
     children: ""
+>>>>>>> 4d50a4f401e62457ddc5383974b0ef1ed4625452
     data_layout: "data_parallel"
     target_partitioned_minibatch {
       shared_data_reader: true
