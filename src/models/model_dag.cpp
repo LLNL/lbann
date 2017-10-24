@@ -28,6 +28,7 @@
 
 #include "lbann/models/model_dag.hpp"
 #include "lbann/layers/io/input/input_layer.hpp"
+#include "lbann/layers/io/target/target_layer.hpp"
 
 #include <iomanip>
 #include <vector>
@@ -102,6 +103,12 @@ dag_model& dag_model::operator=(const dag_model& other) {
         child = new_child;
       }
     }
+  }
+  // Update target layer data readers.
+  input_layer *input = dynamic_cast<input_layer*>(m_layers[0]);
+  target_layer *target = dynamic_cast<target_layer*>(m_layers.back());
+  if (input && target) {
+    target->set_paired_input_layer(input);
   }
 
   return *this;
