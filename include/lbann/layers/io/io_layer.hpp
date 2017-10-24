@@ -43,36 +43,18 @@
 namespace lbann {
 class io_layer : public Layer {
  protected:
-  // dataset m_training_dataset;
-  // dataset m_testing_dataset;
-  // dataset m_validation_dataset;
-  bool m_data_sets_span_models;
+  bool m_data_set_spans_models;
 
  private:
   bool m_for_regression;
 
  public:
   io_layer(lbann_comm *comm,
-           //           std::map<execution_mode, generic_data_reader *> data_readers,
-           bool data_sets_span_models = true,
+           bool data_set_spans_models = true,
            bool for_regression = false)
     : Layer(0, comm),
-      // m_training_dataset(data_readers[execution_mode::training]),
-      // m_testing_dataset(data_readers[execution_mode::testing]),
-      // m_validation_dataset(data_readers[execution_mode::validation]),
-      m_data_sets_span_models(data_sets_span_models),
+      m_data_set_spans_models(data_set_spans_models),
       m_for_regression(for_regression) {
-    // if(m_training_dataset.m_data_reader != nullptr) {
-    //   m_training_dataset.m_total_samples = m_training_dataset.m_data_reader->get_num_data();
-    // }
-
-    // if(m_validation_dataset.m_data_reader != nullptr) {
-    //   m_validation_dataset.m_total_samples = m_validation_dataset.m_data_reader->get_num_data();
-    // }
-
-    // if(m_testing_dataset.m_data_reader != nullptr) {
-    //   m_testing_dataset.m_total_samples = m_testing_dataset.m_data_reader->get_num_data();
-    // }
   }
 
   template<data_layout T_layout> inline void initialize_distributed_matrices() {
@@ -80,45 +62,6 @@ class io_layer : public Layer {
   }
 
   virtual void set_paired_input_layer(io_layer *input_layer) {};
-
-  // /**
-  //  * Use the data readers in layer l.
-  //  */
-  // void set_data_readers_from_layer(io_layer *l) {
-  //   m_training_dataset = l->m_training_dataset;
-  //   m_validation_dataset = l->m_validation_dataset;
-  //   m_testing_dataset = l->m_testing_dataset;
-  // }
-
-  // generic_data_reader *set_training_data_reader(generic_data_reader *data_reader) {
-  //   /// @todo put in a check to make sure that this is a data reader
-  //   /// that matches what was already there
-  //   generic_data_reader *old_data_reader = m_training_dataset.m_data_reader;
-  //   m_training_dataset.m_data_reader = data_reader;
-  //   m_training_dataset.m_num_samples_processed = 0;
-  //   m_training_dataset.m_total_samples = data_reader->get_num_data();
-  //   return old_data_reader;
-  // }
-
-  // generic_data_reader *set_validation_data_reader(generic_data_reader *data_reader) {
-  //   /// @todo put in a check to make sure that this is a data reader
-  //   /// that matches what was already there
-  //   generic_data_reader *old_data_reader = m_validation_dataset.m_data_reader;
-  //   m_validation_dataset.m_data_reader = data_reader;
-  //   m_validation_dataset.m_num_samples_processed = 0;
-  //   m_validation_dataset.m_total_samples = data_reader->get_num_data();
-  //   return old_data_reader;
-  // }
-
-  // generic_data_reader *set_testing_data_reader(generic_data_reader *data_reader) {
-  //   /// @todo put in a check to make sure that this is a data reader
-  //   /// that matches what was already there
-  //   generic_data_reader *old_data_reader = m_testing_dataset.m_data_reader;
-  //   m_testing_dataset.m_data_reader = data_reader;
-  //   m_testing_dataset.m_num_samples_processed = 0;
-  //   m_testing_dataset.m_total_samples = data_reader->get_num_data();
-  //   return old_data_reader;
-  // }
 
   /**
    * Return the dataset for the given execution mode.

@@ -46,9 +46,9 @@ class input_layer_distributed_minibatch : public input_layer, public distributed
   CircMat Xs; /** Distributed matrix used to stage local data to layer output */
 
  public:
-  input_layer_distributed_minibatch(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
+  input_layer_distributed_minibatch(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, bool data_set_spans_models = true)
     : generic_data_distribution(comm, num_parallel_readers, data_readers),
-      input_layer(comm, num_parallel_readers, data_readers),
+      input_layer(comm, num_parallel_readers, data_readers, data_set_spans_models),
       distributed_minibatch(comm, num_parallel_readers, data_readers),
       Xs(comm->get_model_grid()) {
 
@@ -80,7 +80,8 @@ class input_layer_distributed_minibatch : public input_layer, public distributed
   void setup_data() {
     input_layer::setup_data();
     int max_mb_size = this->m_neural_network_model->get_max_mini_batch_size();
-    if(io_layer::m_data_sets_span_models) {
+    std::cout << "Setting up data for the input layer " << io_layer::m_data_set_spans_models << std::endl;
+    if(io_layer::m_data_set_spans_models) {
       calculate_num_iterations_per_epoch_training_spans_models(max_mb_size);
     } else {
       calculate_num_iterations_per_epoch_training_unique_per_models(max_mb_size);

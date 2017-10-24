@@ -442,9 +442,11 @@ message Dropout {
 // Input Layers //
 //////////////////
 message InputDistributedMiniBatch {
+  bool data_set_spans_models = 1;  //default: true
 }
 
 message InputPartitionedMiniBatch {
+  bool data_set_spans_models = 1;  //default: true
 }
 
 //////////////////////

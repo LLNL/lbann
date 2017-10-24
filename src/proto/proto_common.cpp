@@ -279,17 +279,19 @@ void add_layers(
     // LAYER: input_distributed_minibatch
     //////////////////////////////////////////////////////////////////
     else if (layer.has_input_distributed_minibatch()) {
-      //const lbann_data::InputDistributedMiniBatch& ell = layer.input_distributed_minibatch();
+      const lbann_data::InputDistributedMiniBatch& ell = layer.input_distributed_minibatch();
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new input_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(
           comm,
           m.num_parallel_readers(),
-          data_readers);
+          data_readers,
+          ell.data_set_spans_models());
       } else {
         d = new input_layer_distributed_minibatch<data_layout::DATA_PARALLEL>(
           comm,
           m.num_parallel_readers(),
-          data_readers);
+          data_readers,
+          ell.data_set_spans_models());
       }
     }
 
@@ -297,7 +299,7 @@ void add_layers(
     // LAYER: input_partitioned_minibatch
     //////////////////////////////////////////////////////////////////
     else if (layer.has_input_partitioned_minibatch()) {
-      //const lbann_data::InputPartitionedMiniBatch& ell = layer.input_partitioned_minibatch();
+      const lbann_data::InputPartitionedMiniBatch& ell = layer.input_partitioned_minibatch();
       if (dl == data_layout::MODEL_PARALLEL and master) {
         err << __FILE__ << " " << __LINE__ << " :: input_layer_partitioned_minibatch "
             << "does not support MODEL_PARALLEL layouts";
@@ -306,7 +308,8 @@ void add_layers(
         d = new input_layer_partitioned_minibatch<data_layout::DATA_PARALLEL>(
           comm,
           m.num_parallel_readers(),
-          data_readers);
+          data_readers,
+          ell.data_set_spans_models());
       }
     }
 

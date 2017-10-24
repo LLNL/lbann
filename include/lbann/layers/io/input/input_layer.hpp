@@ -38,9 +38,9 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   input_layer(lbann_comm *comm, 
               int num_parallel_readers,  
               std::map<execution_mode, generic_data_reader *> data_readers, 
-              bool data_sets_span_models = true)
+              bool data_set_spans_models = true)
     : generic_data_distribution(comm, num_parallel_readers, data_readers),
-      io_layer(comm, true),
+      io_layer(comm, data_set_spans_models),
       m_training_dataset(),
       m_testing_dataset(),
       m_validation_dataset(),

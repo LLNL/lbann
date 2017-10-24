@@ -42,9 +42,9 @@ template <data_layout T_layout = data_layout::DATA_PARALLEL>
 class input_layer_partitioned_minibatch : public input_layer, public partitioned_minibatch {
  public:
   /// @todo make the map and vector references
-  input_layer_partitioned_minibatch(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
+  input_layer_partitioned_minibatch(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, bool data_set_spans_models = true)
     : generic_data_distribution(comm, num_parallel_readers, data_readers),
-      input_layer(comm, num_parallel_readers, data_readers),
+      input_layer(comm, num_parallel_readers, data_readers, data_set_spans_models),
       partitioned_minibatch(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), data_readers) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "partitioned_minibatch only supports DATA_PARALLEL");
@@ -74,7 +74,7 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
   void setup_data() {
     input_layer::setup_data();
     int max_mb_size = this->m_neural_network_model->get_max_mini_batch_size();
-    if(io_layer::m_data_sets_span_models) {
+    if(io_layer::m_data_set_spans_models) {
       calculate_num_iterations_per_epoch_training_spans_models(max_mb_size);
     } else {
       calculate_num_iterations_per_epoch_training_unique_per_models(max_mb_size);
