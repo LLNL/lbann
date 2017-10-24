@@ -41,9 +41,9 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
               bool data_sets_span_models = true)
     : generic_data_distribution(comm, num_parallel_readers, data_readers),
       io_layer(comm, true),
-      m_training_dataset(data_readers[execution_mode::training]),
-      m_testing_dataset(data_readers[execution_mode::testing]),
-      m_validation_dataset(data_readers[execution_mode::validation]),
+      m_training_dataset(),
+      m_testing_dataset(),
+      m_validation_dataset(),
       m_data_readers(data_readers) {
       //m_data_sets_span_models(data_sets_span_models) {
     // Input layers have no parents
@@ -67,58 +67,31 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
 
   virtual ~input_layer() {
     // Input layer always frees data readers.
-    // if (m_training_dataset.m_data_reader != nullptr) {
-    //   delete m_training_dataset.m_data_reader;
-    //   m_training_dataset.m_data_reader = nullptr;
-    // }
-    // if (m_validation_dataset.m_data_reader != nullptr) {
-    //   delete m_validation_dataset.m_data_reader;
-    //   m_validation_dataset.m_data_reader = nullptr;
-    // }
-    // if (m_testing_dataset.m_data_reader != nullptr) {
-    //   delete m_testing_dataset.m_data_reader;
-    //   m_testing_dataset.m_data_reader = nullptr;
-    // }
+    for (auto& dr : m_data_readers) {
+      delete dr.second;
+    }
   }
 
-#if 1
-  input_layer(const input_layer& other) = default;
-  input_layer& operator=(const input_layer& other) = default;
-#else
   // Input layers copy their datareaders.
-  input_layer(const input_layer& other) : generic_data_distribution(other), io_layer(other) {
-    if (m_training_dataset.m_data_reader) {
-      m_training_dataset.m_data_reader = m_training_dataset.m_data_reader->copy();
-      generic_data_distribution::m_data_readers[execution_mode::training] = m_training_dataset.m_data_reader;
-    }
-    if (m_validation_dataset.m_data_reader) {
-      m_validation_dataset.m_data_reader = m_validation_dataset.m_data_reader->copy();
-      generic_data_distribution::m_data_readers[execution_mode::validation] = m_validation_dataset.m_data_reader;
-    }
-    if (m_testing_dataset.m_data_reader) {
-      m_testing_dataset.m_data_reader = m_testing_dataset.m_data_reader->copy();
-      generic_data_distribution::m_data_readers[execution_mode::testing] = m_testing_dataset.m_data_reader;
+  input_layer(const input_layer& other) 
+    : generic_data_distribution(other), io_layer(other),
+      m_training_dataset(other.m_training_dataset),
+      m_testing_dataset(other.m_testing_dataset),
+      m_validation_dataset(other.m_validation_dataset),
+      m_data_readers(other.m_data_readers) {
+    for (auto& dr : m_data_readers) {
+      dr.second = dr.second->copy();
     }
   }
 
   input_layer& operator=(const input_layer& other) {
     generic_data_distribution::operator=(other);
     io_layer::operator=(other);
-    if (m_training_dataset.m_data_reader) {
-      m_training_dataset.m_data_reader = m_training_dataset.m_data_reader->copy();
-      generic_data_distribution::m_data_readers[execution_mode::training] = m_training_dataset.m_data_reader;
-    }
-    if (m_validation_dataset.m_data_reader) {
-      m_validation_dataset.m_data_reader = m_validation_dataset.m_data_reader->copy();
-      generic_data_distribution::m_data_readers[execution_mode::validation] = m_validation_dataset.m_data_reader;
-    }
-    if (m_testing_dataset.m_data_reader) {
-      m_testing_dataset.m_data_reader = m_testing_dataset.m_data_reader->copy();
-      generic_data_distribution::m_data_readers[execution_mode::testing] = m_testing_dataset.m_data_reader;
+    for (auto& dr : m_data_readers) {
+      dr.second = dr.second->copy();
     }
     return *this;
   }
-#endif
   // std::string get_description() const {
   //   std::stringstream s;
   //   for (size_t i = 0; i < this->m_neuron_dims.size(); i++) {
