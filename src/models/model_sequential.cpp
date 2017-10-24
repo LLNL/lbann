@@ -28,6 +28,8 @@
 
 #include "lbann/models/model_sequential.hpp"
 #include "lbann/layers/io/io_layer.hpp"
+#include "lbann/layers/io/input/input_layer.hpp"
+#include "lbann/layers/io/target/target_layer.hpp"
 #include "lbann/io/persist.hpp"
 
 #include <sys/types.h>
@@ -63,8 +65,8 @@ sequential_model::sequential_model(const sequential_model& other) :
     }
   }
   // Update target layer data readers.
-  io_layer *input = dynamic_cast<io_layer*>(m_layers[0]);
-  io_layer *target = dynamic_cast<io_layer*>(m_layers.back());
+  input_layer *input = dynamic_cast<input_layer*>(m_layers[0]);
+  target_layer *target = dynamic_cast<target_layer*>(m_layers.back());
   if (input && target) {
     target->set_paired_input_layer(input);
   }
@@ -88,8 +90,8 @@ sequential_model& sequential_model::operator=(const sequential_model& other) {
     }
   }
   // Update target layer data readers.
-  io_layer *input = dynamic_cast<io_layer*>(m_layers[0]);
-  io_layer *target = dynamic_cast<io_layer*>(m_layers.back());
+  input_layer *input = dynamic_cast<input_layer*>(m_layers[0]);
+  target_layer *target = dynamic_cast<target_layer*>(m_layers.back());
   if (input && target) {
     target->set_paired_input_layer(input);
   }
