@@ -33,10 +33,17 @@ namespace lbann {
 
 /// Compute mean and standard deviation over matrix entries
 /** @param data    Input matrix.
- *  @param means   Mean value.
- *  @param stdevs  Standard deviation.
+ *  @param means   Mean value (output).
+ *  @param stdevs  Standard deviation (output).
  */
 void entrywise_mean_and_stdev(const Mat& data, DataType& mean, DataType& stdev);
+
+/// Compute mean and standard deviation over matrix entries
+/** @param data    Input matrix.
+ *  @param means   Mean value (output).
+ *  @param stdevs  Standard deviation (output).
+ */
+void entrywise_mean_and_stdev(const AbsDistMat& data, DataType& mean, DataType& stdev);
 
 /// Compute column-wise means and standard deviations
 /** @param data    Input matrix.
