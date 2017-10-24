@@ -63,6 +63,10 @@ class target_layer : public io_layer {
     io_layer::initialize_distributed_matrices<T_layout>();
   }
 
+  input_layer* get_paired_input_layer() {
+    return paired_input_layer;
+  }
+
   void set_paired_input_layer(input_layer *input_layer) {
     paired_input_layer = input_layer;
   }
