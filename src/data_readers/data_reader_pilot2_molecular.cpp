@@ -31,8 +31,8 @@
 namespace lbann {
 
 pilot2_molecular_reader::pilot2_molecular_reader(
-  int num_neighbors, int batch_size, bool shuffle) :
-  generic_data_reader(batch_size, shuffle), m_num_neighbors(num_neighbors) {}
+  int num_neighbors, bool shuffle) :
+  generic_data_reader(shuffle), m_num_neighbors(num_neighbors) {}
 
 pilot2_molecular_reader::pilot2_molecular_reader(
   const pilot2_molecular_reader& other) :

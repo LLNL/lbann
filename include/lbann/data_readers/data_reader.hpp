@@ -59,10 +59,9 @@ namespace lbann {
 class generic_data_reader : public lbann_image_preprocessor {
  public:
   /**
-   * @param batch_size The initial mini-batch size to use.
-   * @param shuffle Whether to shuffle data (default true).
+   * ctor
    */
-  generic_data_reader(int batch_size, bool shuffle = true) :
+  generic_data_reader(bool shuffle = true) :
     m_mini_batch_size(0), m_current_pos(0),
     m_stride_to_next_mini_batch(0), m_base_offset(0), m_model_offset(0),
     m_sample_stride(1), m_iteration_stride(1),
@@ -75,7 +74,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_global_last_mini_batch_size(0),
     m_num_parallel_readers(0), m_model_rank(0),
     m_file_dir(""), m_data_fn(""), m_label_fn(""),
-    m_first_n(not shuffle), m_max_sample_count(0), m_validation_percent(-1),
+    m_shuffle(shuffle), m_max_sample_count(0), m_validation_percent(-1),
     m_max_sample_count_was_set(false), m_use_percent(1.0),
     m_master(false)
   {}
@@ -131,15 +130,15 @@ class generic_data_reader : public lbann_image_preprocessor {
   std::string get_label_filename() const;
 
   /**
-   * If set to true, indices (data samples) are not shuffled;
-   * default is false.
+   * If set to false, indices (data samples) are not shuffled
+   * default (in ctor) is true.
    */
-  void set_firstN(bool b);
+  void set_shuffle(bool b) { m_shuffle = b; }
 
   /**
-   * Returns true if data samples are not shuffled.
+   * Returns true if data samples are shuffled.
    */
-  bool get_firstN() const;
+  bool is_shuffled() const { return m_shuffle; }
 
   /**
    * Set shuffled indices; primary use is for testing
@@ -594,7 +593,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   std::string m_file_dir;
   std::string m_data_fn;
   std::string m_label_fn;
-  bool m_first_n;
+  bool m_shuffle;
   size_t m_max_sample_count;
   double m_validation_percent;
   size_t m_max_sample_count_was_set;

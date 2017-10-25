@@ -35,15 +35,15 @@ inline void __swapEndianInt(unsigned int& ui) {
 
 namespace lbann {
 
-mnist_reader::mnist_reader(int batchSize, bool shuffle)
-  : generic_data_reader(batchSize, shuffle) {
+mnist_reader::mnist_reader(bool shuffle)
+  : generic_data_reader(shuffle) {
   m_image_width = 28;
   m_image_height = 28;
   m_num_labels = 10;
 }
 
-mnist_reader::mnist_reader(int batchSize)
-  : mnist_reader(batchSize, true) {}
+mnist_reader::mnist_reader()
+  : mnist_reader(true) {}
 
 
 bool mnist_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {

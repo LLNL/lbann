@@ -35,7 +35,7 @@
 namespace lbann {
 class imagenet_readerSingle : public imagenet_reader {
  public:
-  imagenet_readerSingle(int batchSize, bool shuffle = true);
+  imagenet_readerSingle(bool shuffle = true);
   imagenet_readerSingle(const imagenet_readerSingle& source);
   ~imagenet_readerSingle();
 

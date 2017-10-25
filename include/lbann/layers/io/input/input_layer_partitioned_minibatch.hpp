@@ -86,10 +86,6 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
   }
 
   void fp_compute() {
-    //  generic_data_reader *data_reader = input_layer::select_data_reader();
-    //int num_parallel_readers = get_num_parallel_readers();
-
-    //  DISPLAY_MATRIX(m_activations);
     partitioned_minibatch::fetch_to_local_matrix(this->m_activations_v->Matrix(), get_data_reader());
 
     // Use the predetermined size of the mini-batch to set the current

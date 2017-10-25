@@ -42,8 +42,7 @@ namespace lbann {
  */
 class data_reader_merge_features : public generic_compound_data_reader {
  public:
-  data_reader_merge_features(int batch_size,
-                             std::vector<generic_data_reader*> data_readers,
+  data_reader_merge_features(std::vector<generic_data_reader*> data_readers,
                              generic_data_reader *label_reader,
                              bool shuffle = true);
   data_reader_merge_features(const data_reader_merge_features&);

@@ -25,7 +25,6 @@ message Reader {
   string label_filename = 7;
   double train_or_test_percent = 8;
   double validation_percent = 9;
-  bool firstN = 10;
   int64 max_sample_count = 11;
   double percent_of_data_to_use = 12;
   ImagePreprocessor image_preprocessor = 13;

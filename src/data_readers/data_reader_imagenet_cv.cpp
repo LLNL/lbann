@@ -34,8 +34,8 @@
 
 namespace lbann {
 
-imagenet_reader_cv::imagenet_reader_cv(int batchSize, const std::shared_ptr<cv_process>& pp, bool shuffle)
-  : generic_data_reader(batchSize, shuffle) {
+imagenet_reader_cv::imagenet_reader_cv(const std::shared_ptr<cv_process>& pp, bool shuffle)
+  : generic_data_reader(shuffle) {
   m_image_width = 256;
   m_image_height = 256;
   m_image_num_channels = 3;

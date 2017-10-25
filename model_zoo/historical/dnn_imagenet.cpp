@@ -140,8 +140,7 @@ int main(int argc, char *argv[]) {
       if (comm->am_world_master()) {
         cout << endl << "USING imagenet_reader\n\n";
       }
-      imagenet_reader *imagenet_trainset = new imagenet_reader(trainParams.MBSize, true);
-      imagenet_trainset->set_firstN(false);
+      imagenet_reader *imagenet_trainset = new imagenet_reader(true);
       imagenet_trainset->set_role("train");
       imagenet_trainset->set_master(comm->am_world_master());
       imagenet_trainset->set_rank(comm->get_rank_in_world());
@@ -174,8 +173,7 @@ int main(int argc, char *argv[]) {
       ///////////////////////////////////////////////////////////////////
       // load testing data (ImageNet)
       ///////////////////////////////////////////////////////////////////
-      imagenet_reader *imagenet_testset = new imagenet_reader(trainParams.MBSize, true);
-      imagenet_testset->set_firstN(false);
+      imagenet_reader *imagenet_testset = new imagenet_reader(true);
       imagenet_testset->set_role("test");
       imagenet_testset->set_master(comm->am_world_master());
       imagenet_testset->set_rank(comm->get_rank_in_world());
@@ -203,8 +201,7 @@ int main(int argc, char *argv[]) {
       if (comm->am_world_master()) {
         cout << endl << "USING imagenet_readerSingle\n\n";
       }
-      imagenet_readerSingle *imagenet_trainset = new imagenet_readerSingle(trainParams.MBSize, true);
-      imagenet_trainset->set_firstN(false);
+      imagenet_readerSingle *imagenet_trainset = new imagenet_readerSingle(true);
       imagenet_trainset->set_role("train");
       imagenet_trainset->set_master(comm->am_world_master());
       imagenet_trainset->set_rank(comm->get_rank_in_world());
@@ -244,8 +241,7 @@ int main(int argc, char *argv[]) {
       ss.clear();
       ss.str("");
       ss << "Single_" << g_ImageNet_TestLabelFile.substr(0, g_ImageNet_TestLabelFile.size()-4);
-      imagenet_readerSingle *imagenet_testset = new imagenet_readerSingle(trainParams.MBSize, true);
-      imagenet_testset->set_firstN(false);
+      imagenet_readerSingle *imagenet_testset = new imagenet_readerSingle(true);
       imagenet_testset->set_role("test");
       imagenet_testset->set_master(comm->am_world_master());
       imagenet_testset->set_rank(comm->get_rank_in_world());

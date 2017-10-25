@@ -37,7 +37,7 @@
 namespace lbann {
 class imagenet_reader_cv : public generic_data_reader {
  public:
-  imagenet_reader_cv(int batchSize, const std::shared_ptr<cv_process>& pp, bool shuffle = true);
+  imagenet_reader_cv(const std::shared_ptr<cv_process>& pp, bool shuffle = true);
   imagenet_reader_cv(const imagenet_reader_cv&);
   imagenet_reader_cv& operator=(const imagenet_reader_cv&);
   ~imagenet_reader_cv();

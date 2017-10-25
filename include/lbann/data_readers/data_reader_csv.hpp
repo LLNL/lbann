@@ -46,7 +46,7 @@ class csv_reader : public generic_data_reader {
   /**
    * This defaults to using the last column for the label/response.
    */
-  csv_reader(int batch_size, bool shuffle = true);
+  csv_reader(bool shuffle = true);
   csv_reader(const csv_reader&);
   csv_reader& operator=(const csv_reader&);
   ~csv_reader();
