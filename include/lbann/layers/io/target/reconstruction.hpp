@@ -61,7 +61,7 @@ class reconstruction_layer : public target_layer {
     m_original_layer = other.m_original_layer;
   }
 
-  reconstruction_layer* copy() const {
+  reconstruction_layer* copy() const override {
     throw lbann_exception("reconstruction_layer can't be copied");
     return nullptr;
   }
@@ -72,9 +72,9 @@ class reconstruction_layer : public target_layer {
   virtual inline void initialize_distributed_matrices() {
     target_layer::initialize_distributed_matrices<T_layout>();
   }
-  virtual data_layout get_data_layout() const { return T_layout; }
+  virtual data_layout get_data_layout() const override { return T_layout; }
 
-  void setup_dims() {
+  void setup_dims() override {
     target_layer::setup_dims();
     this->m_neuron_dims = m_original_layer->get_neuron_dims();
     this->m_num_neuron_dims = m_original_layer->get_num_neuron_dims();
@@ -86,7 +86,7 @@ class reconstruction_layer : public target_layer {
 
  protected:
 
-  void fp_compute() {
+  void fp_compute() override {
 
     // Get activations from original layer
     m_original_layer->get_fp_output(*this->m_activations_v, this);
@@ -105,14 +105,14 @@ class reconstruction_layer : public target_layer {
 
   }
 
-  void bp_compute() {
+  void bp_compute() override {
     this->m_neural_network_model->m_obj_fn->compute_gradient(*this->m_prev_activations,
                                                              *this->m_activations_v,
                                                              *this->m_error_signal_v);
   }
 
  public:
-  bool update_compute() {
+  bool update_compute() override {
     if(this->m_execution_mode == execution_mode::training) {
       double start = get_time();
       this->update_time += get_time() - start;
@@ -120,7 +120,7 @@ class reconstruction_layer : public target_layer {
     return true;
   }
 
-  void summarize_stats(lbann_summary& summarizer, int step) {
+  void summarize_stats(lbann_summary& summarizer, int step) override {
     std::string tag = "layer" + std::to_string(this->m_index)
       + "/ReconstructionCost";
     summarizer.reduce_scalar(tag, this->m_neural_network_model->m_obj_fn->get_mean_value(), step);

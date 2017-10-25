@@ -61,8 +61,6 @@ class io_layer : public Layer {
     Layer::initialize_distributed_matrices<T_layout>();
   }
 
-  virtual void set_paired_input_layer(io_layer *input_layer) {};
-
   /**
    * Return the dataset for the given execution mode.
    */

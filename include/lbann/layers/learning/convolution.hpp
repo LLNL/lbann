@@ -79,7 +79,7 @@ class convolution_layer : public base_convolution_layer {
     return s.str();
   }
 
-  virtual std::string get_topo_description() const {
+  virtual std::string get_topo_description() const override {
     std::stringstream s;
     for (size_t h=0; h<this->m_kernel_dims.size(); h++) {
       if (h == 0) { s << "C="; }
@@ -172,7 +172,7 @@ class convolution_layer : public base_convolution_layer {
 
   ~convolution_layer() {}
 
-  convolution_layer* copy() const { return new convolution_layer(*this); }
+  convolution_layer* copy() const override { return new convolution_layer(*this); }
 
   virtual std::string get_type() const override { return "convolution"; }
 
@@ -180,9 +180,9 @@ class convolution_layer : public base_convolution_layer {
     base_convolution_layer::initialize_distributed_matrices<T_layout>();
   }
 
-  virtual data_layout get_data_layout() const { return T_layout; }
+  virtual data_layout get_data_layout() const override { return T_layout; }
 
-  void setup_dims() {
+  void setup_dims() override {
 
     // Initialize previous neuron tensor dimensions
     base_convolution_layer::setup_dims();
@@ -220,7 +220,7 @@ class convolution_layer : public base_convolution_layer {
 
   }
 
-  void setup_data() {
+  void setup_data() override {
     if(m_bias_scaling_factor == DataType(0)) {
       El::Zeros(*this->m_weights,
                 m_kernel_size / this->m_neuron_dims[0],
@@ -237,7 +237,7 @@ class convolution_layer : public base_convolution_layer {
     base_convolution_layer::setup_data();
   }
 
-  void setup_views() {
+  void setup_views() override {
     base_convolution_layer::setup_views();
     const El::Int kernel_size_per_channel
       = m_kernel_size / this->m_neuron_dims[0];
@@ -256,7 +256,7 @@ class convolution_layer : public base_convolution_layer {
 
  protected:
 
-  void fp_compute() {
+  void fp_compute() override {
     if(this->m_using_gpus) {
       apply_convolution_cudnn(true);
       apply_bias_cudnn();
@@ -267,7 +267,7 @@ class convolution_layer : public base_convolution_layer {
     l2_regularize_objective_function();
   }
 
-  void bp_compute() {
+  void bp_compute() override {
     if(this->m_using_gpus) {
       apply_transposed_convolution_cudnn(false);
       compute_gradients_cudnn(false);
