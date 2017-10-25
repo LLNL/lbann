@@ -153,26 +153,28 @@ Layer::Layer(const Layer& other) :
   m_error_signal = other.m_error_signal->Copy();
   m_error_signal_v = other.m_error_signal_v->Copy();
 #ifdef __LIB_CUDNN
-  m_prev_activations_d = m_cudnn->copy(other.m_prev_activations_d,
-                                       m_num_prev_neurons,
-                                       m_mini_batch_size_per_gpu);
-  m_activations_d = m_cudnn->copy(other.m_activations_d,
-                                  m_num_neurons,
-                                  m_mini_batch_size_per_gpu);
-  m_prev_error_signal_d = m_cudnn->copy(other.m_prev_error_signal_d,
-                                        m_num_neurons,
-                                        m_mini_batch_size_per_gpu);
-  m_error_signal_d = m_cudnn->copy(other.m_error_signal_d,
-                                   m_num_prev_neurons,
-                                   m_mini_batch_size_per_gpu);
+  if(m_cudnn != nullptr) {
+    m_prev_activations_d = m_cudnn->copy(other.m_prev_activations_d,
+                                         m_num_prev_neurons,
+                                         m_mini_batch_size_per_gpu);
+    m_activations_d = m_cudnn->copy(other.m_activations_d,
+                                    m_num_neurons,
+                                    m_mini_batch_size_per_gpu);
+    m_prev_error_signal_d = m_cudnn->copy(other.m_prev_error_signal_d,
+                                          m_num_neurons,
+                                          m_mini_batch_size_per_gpu);
+    m_error_signal_d = m_cudnn->copy(other.m_error_signal_d,
+                                     m_num_prev_neurons,
+                                     m_mini_batch_size_per_gpu);
+  }
   m_prev_neurons_cudnn_desc = nullptr;
   m_neurons_cudnn_desc = nullptr;
   cudnn::copy_tensor_cudnn_desc(other.m_prev_neurons_cudnn_desc,
                                 m_prev_neurons_cudnn_desc);
   cudnn::copy_tensor_cudnn_desc(other.m_neurons_cudnn_desc,
                                 m_neurons_cudnn_desc);
-  m_name = other.m_name;
 #endif // __LIB_CUDNN
+  m_name = other.m_name;
 }
 
 Layer& Layer::operator=(const Layer& other) {
@@ -229,22 +231,24 @@ Layer& Layer::operator=(const Layer& other) {
 #undef COPY_MATRIX
 
 #ifdef __LIB_CUDNN
-  m_cudnn->deallocate_on_gpus(m_prev_activations_d);
-  m_cudnn->deallocate_on_gpus(m_activations_d);
-  m_cudnn->deallocate_on_gpus(m_prev_error_signal_d);
-  m_cudnn->deallocate_on_gpus(m_error_signal_d);
-  m_prev_activations_d = m_cudnn->copy(other.m_prev_activations_d,
-                                       m_num_prev_neurons,
-                                       m_mini_batch_size_per_gpu);
-  m_activations_d = m_cudnn->copy(other.m_activations_d,
-                                  m_num_neurons,
-                                  m_mini_batch_size_per_gpu);
-  m_prev_error_signal_d = m_cudnn->copy(other.m_prev_error_signal_d,
-                                        m_num_neurons,
-                                        m_mini_batch_size_per_gpu);
-  m_error_signal_d = m_cudnn->copy(other.m_error_signal_d,
-                                   m_num_prev_neurons,
-                                   m_mini_batch_size_per_gpu);
+  if(m_cudnn != nullptr) {
+    m_cudnn->deallocate_on_gpus(m_prev_activations_d);
+    m_cudnn->deallocate_on_gpus(m_activations_d);
+    m_cudnn->deallocate_on_gpus(m_prev_error_signal_d);
+    m_cudnn->deallocate_on_gpus(m_error_signal_d);
+    m_prev_activations_d = m_cudnn->copy(other.m_prev_activations_d,
+                                         m_num_prev_neurons,
+                                         m_mini_batch_size_per_gpu);
+    m_activations_d = m_cudnn->copy(other.m_activations_d,
+                                    m_num_neurons,
+                                    m_mini_batch_size_per_gpu);
+    m_prev_error_signal_d = m_cudnn->copy(other.m_prev_error_signal_d,
+                                          m_num_neurons,
+                                          m_mini_batch_size_per_gpu);
+    m_error_signal_d = m_cudnn->copy(other.m_error_signal_d,
+                                     m_num_prev_neurons,
+                                     m_mini_batch_size_per_gpu);
+  }
   cudnn::copy_tensor_cudnn_desc(other.m_prev_neurons_cudnn_desc,
                                 m_prev_neurons_cudnn_desc);
   cudnn::copy_tensor_cudnn_desc(other.m_neurons_cudnn_desc,

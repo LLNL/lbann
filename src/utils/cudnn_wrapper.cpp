@@ -490,14 +490,18 @@ const cublasHandle_t& cudnn_manager::get_cublas_handle(int i) const {
 }
 
 std::vector<void *> cudnn_manager::get_work_spaces() {
-  std::vector<void *> work_spaces;
+  // Make sure that work spaces are initialized
   for(int i=0; i<m_num_gpus; ++i) {
-    work_spaces.push_back(get_work_space(i));
+    get_work_space(i);
   }
-  return work_spaces;
+  return m_work_spaces;
 }
 
 void *cudnn_manager::get_work_space(int i) {
+  if(i >= m_num_gpus) {
+    throw lbann_exception("cudnn_wrapper: tried to access invalid work space");
+  }
+  m_work_spaces.resize(m_num_gpus, nullptr);
   if(m_work_spaces[i] == nullptr && m_work_space_sizes[i] > 0) {
     CHECK_CUDA(cudaSetDevice(m_gpus[i]));
     FORCE_CHECK_CUDA(cudaMalloc((void **) &m_work_spaces[i],
@@ -506,15 +510,20 @@ void *cudnn_manager::get_work_space(int i) {
   return m_work_spaces[i];
 }
 
-std::vector<size_t> cudnn_manager::get_work_space_sizes() {
+const std::vector<size_t> cudnn_manager::get_work_space_sizes() const {
   return m_work_space_sizes;
 };
 
 size_t cudnn_manager::get_work_space_size(int i) const {
-  return m_work_space_sizes[i];
+  return m_work_space_sizes.empty() ? 0 : m_work_space_sizes[i];
 }
 
 void cudnn_manager::set_work_space_size(int i, size_t size) {
+  if(i >= m_num_gpus) {
+    throw lbann_exception("cudnn_wrapper: tried to access size of invalid work space");
+  }
+  m_work_spaces.resize(m_num_gpus, nullptr);
+  m_work_space_sizes.resize(m_num_gpus, 0);
   if(m_work_space_sizes[i] != size) {
     m_work_space_sizes[i] = size;
     if(m_work_spaces[i] != nullptr) {

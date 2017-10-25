@@ -144,8 +144,6 @@ class cudnn_manager {
   std::vector<void*> get_work_spaces();
   /** Get ith GPU work space. */
   void *get_work_space(int i);
-  /** Get GPU work space sizes (in bytes). */
-  std::vector<size_t> get_work_space_sizes();
   /** Get GPU work space sizes (in bytes) (const). */
   const std::vector<size_t> get_work_space_sizes() const;
   /** Get ith GPU work space size (in bytes). */
