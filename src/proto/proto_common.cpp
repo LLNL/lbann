@@ -1601,8 +1601,8 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
     } else if (name == "imagenet") {
       reader = new imagenet_reader(mini_batch_size, shuffle);
       const int n_labels = readme.num_labels();
-      const int width = preprocessor.fixed_image_width();
-      const int height = preprocessor.fixed_image_height();
+      const int width = preprocessor.raw_width();
+      const int height = preprocessor.raw_height();
       dynamic_cast<imagenet_reader*>(reader)->set_input_params(width, height, 3, n_labels);
     } else if (name == "imagenet_single") {
       reader = new imagenet_readerSingle(mini_batch_size, shuffle);
@@ -1616,8 +1616,8 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
         cropper->set(preprocessor.crop_width(),
                      preprocessor.crop_height(),
                      preprocessor.crop_randomly(),
-                     std::make_pair<int,int>(preprocessor.crop_roi_width(),
-                                             preprocessor.crop_roi_height()));
+                     std::make_pair<int,int>(preprocessor.resized_width(),
+                                             preprocessor.resized_height()));
         pp->add_transform(std::move(cropper));
         if (master) cout << "imagenet: cropper is set" << endl;
       }
@@ -1672,8 +1672,8 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
         width = preprocessor.crop_width();
         height = preprocessor.crop_height();
       } else {
-        width = preprocessor.fixed_image_width();
-        height = preprocessor.fixed_image_height();
+        width = preprocessor.raw_width();
+        height = preprocessor.raw_height();
       }
       dynamic_cast<imagenet_reader_cv*>(reader)->set_input_params(width, height, 3, n_labels);
     } else if (name == "nci") {

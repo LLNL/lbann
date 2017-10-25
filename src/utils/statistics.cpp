@@ -66,6 +66,39 @@ void entrywise_mean_and_stdev(const Mat& data,
 
 }
 
+void entrywise_mean_and_stdev(const AbsDistMat& data,
+                              DataType& mean,
+                              DataType& stdev) {
+
+  // Matrix dimensions
+  const El::Int size = data.Height() * data.Width();
+  const El::Int local_height = data.LocalHeight();
+  const El::Int local_width = data.LocalWidth();
+
+  // Local matrices
+  const Mat& local_data = data.LockedMatrix();
+
+  // Compute sums over matrix entries
+  DataType sum = 0;
+  DataType sqsum = 0;
+  #pragma omp parallel for reduction(+:sum,sqsum) collapse(2)
+  for(El::Int col = 0; col < local_width; ++col) {
+    for(El::Int row = 0; row < local_height; ++row) {
+      const DataType val = local_data(row, col);
+      sum += val;
+      sqsum += val * val;
+    }
+  }
+  sum = El::mpi::AllReduce(sum, data.DistComm());
+  sqsum = El::mpi::AllReduce(sqsum, data.DistComm());
+
+  // Compute mean and standard deviation
+  mean = sum / size;
+  const DataType var = std::max(sqsum / size - mean * mean, DataType(0));
+  stdev = std::sqrt(var);
+  
+}
+
 void columnwise_mean_and_stdev(const Mat& data,
                                Mat& means,
                                Mat& stdevs) {

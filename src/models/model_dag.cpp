@@ -68,6 +68,12 @@ dag_model::dag_model(const dag_model& other) :
         child = new_child;
       }
     }
+    target_layer *target = dynamic_cast<target_layer*>(layer);
+    if (target != nullptr) {
+      const Layer *old_input = target->get_paired_input_layer();
+      const input_layer *input = dynamic_cast<const input_layer*>(old_to_new_layer[old_input]);
+      target->set_paired_input_layer(const_cast<input_layer*>(input));
+    }
   }
 
 }
@@ -103,12 +109,12 @@ dag_model& dag_model::operator=(const dag_model& other) {
         child = new_child;
       }
     }
-  }
-  // Update target layer data readers.
-  input_layer *input = dynamic_cast<input_layer*>(m_layers[0]);
-  target_layer *target = dynamic_cast<target_layer*>(m_layers.back());
-  if (input && target) {
-    target->set_paired_input_layer(input);
+    target_layer *target = dynamic_cast<target_layer*>(layer);
+    if (target != nullptr) {
+      const Layer *old_input = target->get_paired_input_layer();
+      const input_layer *input = dynamic_cast<const input_layer*>(old_to_new_layer[old_input]);
+      target->set_paired_input_layer(const_cast<input_layer*>(input));
+    }
   }
 
   return *this;

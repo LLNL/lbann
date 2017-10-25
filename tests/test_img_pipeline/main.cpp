@@ -211,11 +211,11 @@ bool test_image_io(const std::string filename, int sz, const cropper_params& rp,
   {
     // inbuf scope
     // using a portion of the buf
-    typedef cv_image_type<uint8_t, 1> InputBuf_T;
+    typedef cv_image_type<uint8_t> InputBuf_T;
     size_t img_begin = 0u;
     size_t img_end = fsz;
     // construct a view of a portion of the existing data
-    const cv::Mat inbuf(1, (img_end-img_begin), InputBuf_T::T(), &(buf[img_begin]));
+    const cv::Mat inbuf(1, (img_end-img_begin), InputBuf_T::T(1), &(buf[img_begin]));
     std::cout << "address of the zero copying view: "
               << reinterpret_cast<unsigned long long>(reinterpret_cast<const void *>(inbuf.datastart)) << " "
               << reinterpret_cast<unsigned long long>(reinterpret_cast<const void *>(&(buf[img_begin]))) << std::endl;
