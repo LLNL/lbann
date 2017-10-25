@@ -23,8 +23,8 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_cv_colorizer .cpp .hpp - transform a non-color (grayscale) image into a
-//                               3-channel color image
+// cv_colorizer .cpp .hpp - transform a non-color (grayscale) image into a
+//                          3-channel color image
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_CV_COLORIZE_HPP
@@ -37,7 +37,8 @@ namespace lbann {
 
 class cv_colorizer : public cv_transform {
  protected:
-  bool m_gray;
+  // --- state variables ---
+  bool m_gray; ///< whether an image is monochrome or not
 
  public:
   cv_colorizer() : cv_transform(), m_gray(false) {}
@@ -63,15 +64,16 @@ class cv_colorizer : public cv_transform {
    */
   virtual bool apply(cv::Mat& image);
 
+  virtual void set() { reset(); }
+  virtual void reset() {
+    m_enabled = false;
+    m_gray = false;
+  }
   virtual void enable() {
     m_enabled = true;
   }
   virtual void disable() {
     m_enabled = false;
-  }
-  virtual void reset() {
-    m_enabled = false;
-    m_gray = false;
   }
   virtual bool is_enabled() const {
     return m_enabled;

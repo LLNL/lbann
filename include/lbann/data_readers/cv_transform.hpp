@@ -37,14 +37,18 @@ namespace lbann {
 
 class cv_transform {
  protected:
-  /// per-image indicator of whether to apply or not
-  bool m_enabled;
+  // --- configuration variables ---
+  // place for the variables to keep the configuration set during initialization
 
-  // Allow to manually shut transform off without destroying it
-  //bool m_manual_switch;
+  // --- state variables ---
+  /// per-image indicator of whether to apply transform or not
+  bool m_enabled;
 
   // transform prepared given the configuration (and the image)
   // m_trans;
+
+  // Allow to manually shut transform off without destroying it
+  //bool m_manual_switch;
 
   /** Check if transform is configured to apply.
    * (e.g., if any of the augmentaion methods is enabled)
@@ -71,7 +75,12 @@ class cv_transform {
   virtual bool apply(cv::Mat& image) = 0;
 
   // define a method to configure the transform
-  //virtual void set(args) {}
+  //virtual void set(args) { reset(); ... }
+  /// Reset the transform state but do not alter the configuration variables
+  virtual void reset() {
+    m_enabled = false;
+    // e.g., m_trans.clear();
+  }
 
   /// Turn transform on
   virtual void enable() {
@@ -80,11 +89,6 @@ class cv_transform {
   /// Turn transform off
   virtual void disable() {
     m_enabled = false;
-  }
-  /// Reset the transform state
-  virtual void reset() {
-    m_enabled = false;
-    // e.g., m_trans.clear();
   }
   /// Check if transform is on
   virtual bool is_enabled() const {

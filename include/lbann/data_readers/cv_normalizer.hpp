@@ -66,7 +66,7 @@ class cv_normalizer : public cv_transform {
   typedef std::pair<ComputeType, ComputeType> channel_trans_t;
 
  protected:
-  // --- Parameters for normalization ---
+  // --- configuration variables ---
   /// Whether to normalize to 0 mean.
   bool m_mean_subtraction;
   /// Whether to normalize to unit variance.
@@ -77,7 +77,7 @@ class cv_normalizer : public cv_transform {
   bool m_z_score;
 
 
-  // --- normalizing transform determined ---
+  // --- state variables ---
   /**
    *  The parameter to use for linearly transforming channel values of each pixel as:
    *  new_value[ch] = cv::saturate_cast<T>(m_trans[ch].first*value[ch] + m_trans[ch].second)
@@ -130,7 +130,7 @@ class cv_normalizer : public cv_transform {
     m_z_score = b;
   }
 
-  /// Reset all the paramters to the default values
+  /// Clear the states of the previous transform applied
   virtual void reset();
 
   /// Returns the channel-wise scaling parameter for normalization transform

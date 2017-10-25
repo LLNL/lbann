@@ -79,28 +79,22 @@ bool cv_normalizer::check_to_enable() const {
 
 
 void cv_normalizer::set(const bool meansub, const bool unitvar, const bool unitscale, const bool zscore) {
-  m_enabled = false; // will turns on when the transform is determined
+  reset();
   m_mean_subtraction = meansub;
   m_unit_variance = unitvar;
   m_unit_scale = unitscale;
   m_z_score = zscore;
-  m_trans.clear();
 }
 
 
 void cv_normalizer::reset() {
   m_enabled = false;
-  m_mean_subtraction = false;
-  m_unit_variance = false;
-  m_unit_scale = true;
-  m_z_score = false;
   m_trans.clear();
 }
 
 
 bool cv_normalizer::determine_transform(const cv::Mat& image) {
-  m_trans.clear();
-  m_enabled = false; // unless this method is successful, stays disabled
+  reset();
 
   _LBANN_SILENT_EXCEPTION(image.empty(), "", false)
 

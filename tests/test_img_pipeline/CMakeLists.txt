@@ -38,7 +38,6 @@ file(GLOB IMGPIPE_SRCS ${LBANN_DIR}/src/utils/random.cpp
                           ${LBANN_DIR}/src/data_readers/cv_normalizer.cpp
                           ${LBANN_DIR}/src/data_readers/cv_process.cpp
                           ${LBANN_DIR}/src/data_readers/cv_process_patches.cpp
-                          ${LBANN_DIR}/src/data_readers/cv_resizer.cpp
                           ${LBANN_DIR}/src/data_readers/cv_cropper.cpp
                           ${LBANN_DIR}/src/data_readers/cv_utils.cpp
                           ${LBANN_DIR}/src/data_readers/patchworks/patchworks.cpp

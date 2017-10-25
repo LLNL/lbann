@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_cv_utils .cpp .hpp - operations related to opencv images
+// cv_utils .cpp .hpp - operations related to opencv images
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/cv_utils.hpp"

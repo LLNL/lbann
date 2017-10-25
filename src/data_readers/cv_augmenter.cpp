@@ -23,8 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_cv_augmenter .cpp .hpp - Augmenting functions for images
-//                                in opencv format
+// cv_augmenter .cpp .hpp - Augmenting functions for images in opencv format
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/cv_augmenter.hpp"
@@ -96,35 +95,25 @@ bool cv_augmenter::check_to_enable() const {
 
 void cv_augmenter::set(const bool hflip, const bool vflip, const float rot,
                        const float hshift, const float vshift, const float shear) {
-  m_enabled = false; // will turns on when the transform is determined
+  reset();
   m_do_horizontal_flip = hflip;
   m_do_vertical_flip = vflip;
   m_rotation_range = rot;
   m_horizontal_shift_range = hshift;
   m_vertical_shift_range = vshift;
   m_shear_range = shear;
-  m_flip = _no_flip_;
-  m_trans = cv::Mat_<float>::eye(3,3);
 }
 
 
 void cv_augmenter::reset() {
-  m_enabled = false;
-  m_do_horizontal_flip = false;
-  m_do_vertical_flip = false;
-  m_rotation_range = 0.0f;
-  m_horizontal_shift_range = 0.0f;
-  m_vertical_shift_range = 0.0f;
-  m_shear_range = 0.0f;
+  m_enabled = false; // will turns on when the transform is determined
   m_flip = _no_flip_;
   m_trans = cv::Mat_<float>::eye(3,3);
 }
 
 
 bool cv_augmenter::determine_transform(const cv::Mat& image) {
-  m_enabled = false; // unless this method is successful, stays disabled
-  m_flip = _no_flip_;
-  m_trans = cv::Mat_<float>::eye(3,3);
+  reset();
 
   _LBANN_SILENT_EXCEPTION(image.empty(), "", false)
 

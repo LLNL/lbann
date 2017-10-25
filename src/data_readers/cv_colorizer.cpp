@@ -23,8 +23,8 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_cv_colorizer .cpp .hpp - transform a non-color (grayscale) image into a
-//                               3-channel color image
+// cv_colorizer .cpp .hpp - transform a non-color (grayscale) image into a
+//                          3-channel color image
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/cv_colorizer.hpp"
@@ -47,8 +47,10 @@ cv_colorizer *cv_colorizer::clone() const {
 }
 
 bool cv_colorizer::determine_transform(const cv::Mat& image) {
+  //reset(); // redundant here
   // enable colorizing transform if the given image is in grayscale
   m_enabled = m_gray = (!image.empty() && (image.channels() == 1));
+  //_LBANN_SILENT_EXCEPTION(image.empty(), "", false); // redundant
   return m_enabled;
 }
 
@@ -61,10 +63,7 @@ bool cv_colorizer::determine_inverse_transform() {
 }
 
 bool cv_colorizer::apply(cv::Mat& image) {
-  // Currently, condition checking is based on the return of determine_transform()
-  //if (!m_enabled) return true;
   m_enabled = false; // turn off as the transform is applied once
-  _LBANN_SILENT_EXCEPTION(image.empty(), "", false);
 
   if (!m_gray) { // color
     cv::Mat image_dst;

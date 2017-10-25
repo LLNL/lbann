@@ -23,8 +23,8 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_cv_process .cpp .hpp - structure that defines the operations
-//                              on image data in opencv format
+// cv_process .cpp .hpp - structure that defines the operations
+//                        on image data in opencv format
 ////////////////////////////////////////////////////////////////////////////////
 
 
