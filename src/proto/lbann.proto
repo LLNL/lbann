@@ -114,6 +114,7 @@ message Metric {
   CategoricalAccuracy categorical_accuracy = 1;
   MeanSquaredError mean_squared_error = 2;
   TopKCategoricalAccuracy top_k_categorical_accuracy = 3;
+  PearsonCorrelation pearson_correlation = 4;
 }
 
 message CategoricalAccuracy {
@@ -125,7 +126,9 @@ message MeanSquaredError {
 message TopKCategoricalAccuracy {
   int64 top_k = 2; //only applicable for top_k_categorical_accuracy
 }
-  
+
+message PearsonCorrelation {
+} 
 //========================================================================
 // Optimizers
 //========================================================================

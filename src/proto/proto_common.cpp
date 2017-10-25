@@ -1520,6 +1520,12 @@ model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac, const lban
       } else {
         model->add_metric(new metrics::mean_squared_error<data_layout::DATA_PARALLEL>(comm));
       }
+    } else if (metric.has_pearson_correlation()) {
+      if (dl == data_layout::MODEL_PARALLEL) {
+        model->add_metric(new metrics::pearson_correlation<data_layout::MODEL_PARALLEL>(comm));
+      } else {
+        model->add_metric(new metrics::pearson_correlation<data_layout::DATA_PARALLEL>(comm));
+      }
     } else if (metric.has_top_k_categorical_accuracy()) {
       const lbann_data::TopKCategoricalAccuracy &a = metric.top_k_categorical_accuracy();
       if (dl == data_layout::MODEL_PARALLEL) {
