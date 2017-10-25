@@ -42,22 +42,20 @@ class reconstruction_layer : public target_layer {
   Layer *m_original_layer;
 
  public:
-  /// @todo note that the reconstruction layer used to use weight_initialization::glorot_uniform
-  reconstruction_layer(int index,
-                       lbann_comm *comm,
+  reconstruction_layer(lbann_comm *comm,
                        Layer *original_layer)
     :  target_layer(comm, {}, false),
        m_original_layer(original_layer) {
     // Setup the data distribution
     initialize_distributed_matrices();
-    this->m_index = index;
   }
-
+  
   reconstruction_layer(const reconstruction_layer& other) :
     target_layer(other),
     m_original_layer(other.m_original_layer) {}
 
   reconstruction_layer& operator=(const reconstruction_layer& other) {
+    target_layer::operator=(other);
     m_original_layer = other.m_original_layer;
   }
 
@@ -121,8 +119,7 @@ class reconstruction_layer : public target_layer {
   }
 
   void summarize_stats(lbann_summary& summarizer, int step) {
-    std::string tag = "layer" + std::to_string(this->m_index)
-      + "/ReconstructionCost";
+    std::string tag = this->m_name + "/ReconstructionCost";
     summarizer.reduce_scalar(tag, this->m_neural_network_model->m_obj_fn->get_mean_value(), step);
     // Skip target layer (for now).
     io_layer::summarize_stats(summarizer, step);

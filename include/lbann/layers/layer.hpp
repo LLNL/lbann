@@ -51,7 +51,7 @@ class model;
 
 class Layer {
  public:
-  Layer(const int index, lbann_comm *comm);
+  Layer(lbann_comm *comm);
   Layer(const Layer& other);
   Layer& operator=(const Layer& other);
 
@@ -109,14 +109,6 @@ class Layer {
   /** Returns a string description of the data_layout */
   std::string get_data_layout_string(data_layout d) const; 
 
-  /** Return the layer index. */
-  inline int get_index() const {
-    return m_index;
-  }
-  /** Set the layer index. */
-  inline void set_index(int i) {
-    m_index = i;
-  }
   /** Return the number of neurons from previous layer. */
   inline int get_num_prev_neurons() const {
     return m_num_prev_neurons;
@@ -219,8 +211,6 @@ class Layer {
   void add_child_layer(const Layer* child);
 
  protected:
-
-  int m_index;                 ///< Layer index (start with 0)
 
   lbann_comm *m_comm;
 

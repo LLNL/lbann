@@ -60,12 +60,11 @@ class slice_layer : public transform {
 
  public:
   /// Constructor
-  slice_layer(int index,
-              lbann_comm *comm,
+  slice_layer(lbann_comm *comm,
               int slice_axis,
               std::vector<int> slice_points,
               cudnn::cudnn_manager *cudnn = NULL)
-    : transform(index, comm),
+    : transform(comm),
       m_slice_axis(slice_axis),
       m_slice_points(slice_points) {
 
@@ -120,7 +119,7 @@ class slice_layer : public transform {
     s << " slice; slice_axis: "
       << m_slice_axis << " children: ";
     for (size_t h=0; h<this->m_child_layers.size(); h++) {
-      s << this->m_child_layers[h]->get_index() << " " << this->m_child_layers[h]->get_type() << " ";
+      s << this->m_child_layers[h]->get_name() << " " << this->m_child_layers[h]->get_type() << " ";
     }
     s << " slice_points: ";
     for (size_t h=0; h<this->m_slice_points.size(); h++) {

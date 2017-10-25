@@ -35,11 +35,10 @@ namespace lbann {
 template <data_layout T_layout>
 class reshape_layer : public transform {
  public:
-  reshape_layer(int index,
-                lbann_comm *comm,
+  reshape_layer(lbann_comm *comm,
                 int num_dims,
                 const int *dims) :
-    transform(index, comm) {
+    transform(comm) {
     initialize_distributed_matrices();
     this->m_num_neuron_dims = num_dims;
     this->m_neuron_dims.assign(dims, dims+num_dims);

@@ -34,22 +34,24 @@
 namespace lbann {
 
 void lbann_callback_dump_minibatch_sample_indices::dump_to_file(model *m, Layer *l, int64_t step) {
-  const std::string prefix = m_basename + _to_string(m->get_execution_mode()) + "-model" +
-                             std::to_string(m->get_comm()->get_model_rank()) +
-                             "-rank" + std::to_string(m->get_comm()->get_rank_in_model()) +
-                             "-epoch" + std::to_string(m->get_cur_epoch()) + "-step" +
-                             std::to_string(step) + "-layer";
-  if (!dynamic_cast<io_layer*>(l) || l->get_index() != 0) {
-    return;
-  }
-
-  El::Matrix<El::Int>* indices = l->get_sample_indices_per_mb();
-
-  if(indices->Height() != 0 && indices->Width() != 0) {
-    El::Write(*indices,
-              prefix + std::to_string(l->get_index()) +
-              "-MB_Sample_Indices",
-              El::ASCII);
+  // Print minibatch sample indices of input layers
+  input_layer *input = dynamic_cast<input_layer*>(l);
+  if (input != nullptr) {
+    El::Matrix<El::Int>* indices = l->get_sample_indices_per_mb();
+    if (indices == nullptr
+        || indices->Height() == 0
+        || indices->Width() == 0) {
+      return;
+    }
+    const std::string file
+      = (m_basename
+         + _to_string(m->get_execution_mode())
+         + "-model" + std::to_string(m->get_comm()->get_model_rank())
+         + "-epoch" + std::to_string(m->get_cur_epoch())
+         + "-step" + std::to_string(m->get_cur_step())
+         + "-" + l->get_name()
+         + "-MB_Sample_Indices");
+    El::Write(*indices, file, El::ASCII);
   }
 }
 

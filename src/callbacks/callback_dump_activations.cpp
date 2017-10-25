@@ -32,18 +32,22 @@
 namespace lbann {
 
 void lbann_callback_dump_activations::on_forward_prop_end(model *m, Layer *l) {
-  const std::string prefix = m_basename + "model" +
-                             std::to_string(m->get_comm()->get_model_rank()) +
-                             "-epoch" + std::to_string(m->get_cur_epoch()) + "-step" +
-                             std::to_string(m->get_cur_step()) + "-layer";
-  // Skip the output layer.
-  if (l->get_index() == (int) m->get_layers().size() - 1) {
+
+  // Skip target layers
+  if (dynamic_cast<target_layer*>(l) != nullptr) {
     return;
   }
-  El::Write(l->get_activations(),
-            prefix + std::to_string(l->get_index()) +
-            "-Activations",
-            El::ASCII);
+
+  // Print activations
+  const std::string file
+    = (m_basename
+       + "model" + std::to_string(m->get_comm()->get_model_rank())
+       + "-epoch" + std::to_string(m->get_cur_epoch())
+       + "-step" + std::to_string(m->get_cur_step())
+       + "-" + l->get_name()
+       + "-Activations");
+  El::Write(l->get_activations(), file, El::ASCII);
+  
 }
 
 }  // namespace lbann

@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
 
     Layer *input_layer = new input_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(comm, parallel_io, data_readers);
     gla.add(input_layer);
-    Layer *fc1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(1,
+    Layer *fc1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
                                                         nci_trainset.get_linearized_data_size(), 500,trainParams.MBSize,
                                                         weight_initialization::glorot_uniform, comm, optimizer_fac->create_optimizer());
     gla.add(fc1);

@@ -34,56 +34,49 @@ namespace lbann {
 lbann_callback_learning_rate::lbann_callback_learning_rate() {}
 
 lbann_callback_learning_rate::lbann_callback_learning_rate(
-  std::unordered_set<uint> layers) : m_layer_indices(layers) {}
+  std::unordered_set<Layer *> layers) : m_layers(layers) {}
 
 void lbann_callback_learning_rate::setup(model *m) {
-  std::vector<Layer *>& layers = m->get_layers();
-  std::unordered_set<uint> to_update = m_layer_indices;
-  for (size_t l = 0; l < layers.size(); ++l) {
-    Layer *layer = layers[l];
-    uint idx = layer->get_index();
-    // Skip layers without optimizers.
-    optimizable_layer *opt_layer = dynamic_cast<optimizable_layer*>(layer);
-    if (!opt_layer) {
-      continue;
-    }
-    bool has_optimizer = opt_layer->get_optimizer() != nullptr;
-    if (m_layer_indices.empty() && has_optimizer) {
-      to_update.insert(idx);
-      m_last_idx = idx;
-    } else if (m_layer_indices.find(idx) != m_layer_indices.end()) {
-      if (!has_optimizer) {
-        throw lbann_exception(
-          "callback_learning_rate: requested layer " + std::to_string(idx) +
-          " which has NULL optimizer");
-      }
-      m_last_idx = idx;
+
+  // Add all layers if list of layers is not initialized
+  std::vector<Layer *> all_layers;
+  if (m_layers.empty()) {
+    all_layers = m->get_layers();
+  } else {
+    for (Layer *layer : m_layers) {
+      all_layers.push_back(layer);
     }
   }
-  m_layer_indices = to_update;
+
+  // Remove layers that are not optimizable
+  m_layers.clear();
+  for (Layer *layer : all_layers) {
+    optimizable_layer *opt_layer = dynamic_cast<optimizable_layer*>(layer);
+    if (opt_layer == nullptr) {
+      continue;
+    } else if (opt_layer->get_optimizer() == nullptr) {
+      throw lbann_exception(
+                            "callback_learning_rate: requested layer " + layer->get_name() +
+                            " which has NULL optimizer");
+    }
+    m_layers.insert(layer);
+  }
+
 }
 
 void lbann_callback_learning_rate::on_epoch_end(model *m) {
-  std::vector<Layer *>& layers = m->get_layers();
-  for (size_t l = 0; l < layers.size(); ++l) {
-    Layer *layer = layers[l];
-    uint idx = layer->get_index();
-    // Skip layers without optimizers.
+  for (Layer *layer : m_layers) {
     optimizable_layer *opt_layer = dynamic_cast<optimizable_layer*>(layer);
-    if (opt_layer == NULL) {
-      continue;
-    }
-    if (m_layer_indices.find(idx) != m_layer_indices.end()) {
-      float old_lr = opt_layer->get_optimizer()->get_learning_rate();
-      float new_lr = schedule(m, layer);
-      if (old_lr != new_lr) {
-        opt_layer->get_optimizer()->set_learning_rate(new_lr);
-        lbann_comm *comm = m->get_comm();
-        if (comm->am_model_master()) {
-          std::cout << "Model " << comm->get_model_rank() <<
-                    ": changing layer " << idx << " learning rate to " << new_lr <<
-                    " at epoch " << m->get_cur_epoch() << std::endl;
-        }
+    const float old_lr = opt_layer->get_optimizer()->get_learning_rate();
+    const float new_lr = schedule(m, layer);
+    if (old_lr != new_lr) {
+      opt_layer->get_optimizer()->set_learning_rate(new_lr);
+      lbann_comm *comm = m->get_comm();
+      if (comm->am_model_master()) {
+        std::cout << "Model " << comm->get_model_rank() << ": "
+                  << "changing layer " << layer->get_name() << " "
+                  << "learning rate to " << new_lr << " "
+                  << "at epoch " << m->get_cur_epoch() << std::endl;
       }
     }
   }
@@ -94,7 +87,7 @@ lbann_callback_step_learning_rate::lbann_callback_step_learning_rate(
   lbann_callback_learning_rate(), m_step(step), m_amt(amt) {}
 
 lbann_callback_step_learning_rate::lbann_callback_step_learning_rate(
-  int step, float amt, std::unordered_set<uint> layers) :
+  int step, float amt, std::unordered_set<Layer *> layers) :
   lbann_callback_learning_rate(layers), m_step(step), m_amt(amt) {}
 
 float lbann_callback_step_learning_rate::schedule(model *m, Layer *l) {
@@ -110,84 +103,99 @@ float lbann_callback_step_learning_rate::schedule(model *m, Layer *l) {
 lbann_callback_adaptive_learning_rate::lbann_callback_adaptive_learning_rate(
   int64_t patience, float amt) :
   lbann_callback_adaptive_learning_rate(patience, amt,
-                                        std::unordered_set<uint>()) {}
+                                        std::unordered_set<Layer *>()) {}
 
 lbann_callback_adaptive_learning_rate::lbann_callback_adaptive_learning_rate(
-  int64_t patience, float amt, std::unordered_set<uint> layers) :
+  int64_t patience, float amt, std::unordered_set<Layer *> layers) :
   lbann_callback_learning_rate(layers), m_patience(patience), m_amt(amt) {}
 
 float lbann_callback_adaptive_learning_rate::schedule(model *m, Layer *l) {
   optimizable_layer *opt_layer = dynamic_cast<optimizable_layer*>(l);
-  float cur_lr = opt_layer->get_optimizer()->get_learning_rate();
-  double score = m->m_obj_fn->get_mean_value();
-  if (score < m_last_score) {
-    m_last_score = score;
-    m_wait = 0;
-  } else {
-    if (m_wait >= m_patience) {
-      if (is_last_layer(l)) {
-        m_wait = 0;
-        m_last_score = score;
-      }
-      return cur_lr * m_amt;
+
+  // Determine behavior the first time this is called in an epoch
+  if (m_cur_epoch != m->get_cur_epoch()) {
+    m_cur_epoch = m->get_cur_epoch();
+    const double score = m->m_obj_fn->get_mean_value();
+    if (score < m_last_score) {
+      // Reset wait counter if score has decreased
+      m_last_score = score;
+      m_wait = 0;
+      m_adjust_learning_rate = false;
+    } else if (m_wait >= m_patience) {
+      // Adjust learning rate if patience has been exceeded
+      m_last_score = score;
+      m_wait = 0;
+      m_adjust_learning_rate = true;
     } else {
-      if (is_last_layer(l)) {
-        ++m_wait;
-      }
+      // Otherwise increment wait counter
+      m_wait++;
+      m_adjust_learning_rate = false;
     }
   }
-  return cur_lr;
+
+  // Adjust learning rate if needed
+  const float cur_lr = opt_layer->get_optimizer()->get_learning_rate();
+  if (m_adjust_learning_rate) {
+    return cur_lr * m_amt;
+  } else {
+    return cur_lr;
+  }
+
 }
 
 lbann_callback_drop_fixed_learning_rate::lbann_callback_drop_fixed_learning_rate(
   std::vector<int64_t> drop_epochs, float amt) :
   lbann_callback_drop_fixed_learning_rate(drop_epochs, amt,
-                                          std::unordered_set<uint>()) {}
+                                          std::unordered_set<Layer *>()) {}
 
 lbann_callback_drop_fixed_learning_rate::lbann_callback_drop_fixed_learning_rate(
-  std::vector<int64_t> drop_epochs, float amt, std::unordered_set<uint> layers) :
+  std::vector<int64_t> drop_epochs, float amt, std::unordered_set<Layer *> layers) :
   lbann_callback_learning_rate(layers), m_amt(amt), m_drop_epochs(drop_epochs) {
   // Sort in reverse order.
   std::sort(m_drop_epochs.rbegin(), m_drop_epochs.rend());
 }
 
 float lbann_callback_drop_fixed_learning_rate::schedule(model* m, Layer *l) {
+
+  // Delete last drop epoch if we have already passed it
+  while (!m_drop_epochs.empty()
+         && m->get_cur_epoch() > m_drop_epochs.back()) {
+    m_drop_epochs.pop_back();
+  }
+
+  // Adjust learning rate if at a drop epoch
   optimizable_layer *opt_layer = dynamic_cast<optimizable_layer*>(l);
   float cur_lr = opt_layer->get_optimizer()->get_learning_rate();
   if (!m_drop_epochs.empty() && m->get_cur_epoch() == m_drop_epochs.back()) {
-    if (l->get_index() == m_last_idx) {
-      m_drop_epochs.pop_back();
-    }
     return cur_lr * m_amt;
   } else {
     return cur_lr;
   }
+
 }
 
 lbann_callback_linear_growth_learning_rate::lbann_callback_linear_growth_learning_rate(
   float target, int64_t num_epochs) :
   lbann_callback_linear_growth_learning_rate(target, num_epochs, 0,
-                                             std::unordered_set<uint>()) {}
+                                             std::unordered_set<Layer *>()) {}
 
 lbann_callback_linear_growth_learning_rate::lbann_callback_linear_growth_learning_rate(
   float target, int64_t num_epochs, int64_t delay) :
   lbann_callback_linear_growth_learning_rate(target, num_epochs, delay,
-                                             std::unordered_set<uint>()) {}
+                                             std::unordered_set<Layer *>()) {}
 
 lbann_callback_linear_growth_learning_rate::lbann_callback_linear_growth_learning_rate(
   float target, int64_t num_epochs, int64_t delay,
-  std::unordered_set<uint> layers) :
+  std::unordered_set<Layer *> layers) :
   lbann_callback_learning_rate(layers), m_target(target), m_inc(0),
   m_num_epochs(num_epochs), m_delay(delay) {}
 
 void lbann_callback_linear_growth_learning_rate::setup(model *m) {
   lbann_callback_learning_rate::setup(m);
   // Compute the learning rate increase.
-  if (!m_layer_indices.empty()) {
-    std::vector<Layer *>& layers = m->get_layers();
+  if (!m_layers.empty()) {
     // Assumes every layer has the same learning rate.
-    uint idx = *m_layer_indices.begin();
-    optimizable_layer *l = dynamic_cast<optimizable_layer *>(layers[idx]);
+    optimizable_layer *l = dynamic_cast<optimizable_layer *>(*m_layers.begin());
     float base_lr = l->get_optimizer()->get_learning_rate();
     m_inc = (m_target - base_lr) / m_num_epochs;
   }
@@ -212,7 +220,7 @@ lbann_callback_custom_learning_rate::lbann_callback_custom_learning_rate(
 
 lbann_callback_custom_learning_rate::lbann_callback_custom_learning_rate(
   std::function<float(model *, Layer *)> custom_schedule,
-  std::unordered_set<uint> layers) :
+  std::unordered_set<Layer *> layers) :
   lbann_callback_learning_rate(layers), m_custom_schedule(custom_schedule) {}
 
 float lbann_callback_custom_learning_rate::schedule(model *m, Layer *l) {

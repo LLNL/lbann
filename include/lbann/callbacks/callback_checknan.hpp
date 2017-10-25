@@ -58,7 +58,7 @@ class lbann_callback_checknan : public lbann_callback {
   std::string name() const { return "checknan"; }
  private:
   /** Return true if there are no problems with m. */
-  bool is_good(const DistMat& m);
+  bool is_good(const AbsDistMat& m);
   /** Dump the (local) network matrices for debugging. */
   void dump_network(model *m);
 };

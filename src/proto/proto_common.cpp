@@ -227,9 +227,9 @@ void add_layers(
     if (layer.has_relu()) {
       //const lbann_data::Relu &ell = layer.relu();
       if (dl == data_layout::MODEL_PARALLEL) {
-        d = new relu_layer<data_layout::MODEL_PARALLEL>(layer_id, comm, NULL);
+        d = new relu_layer<data_layout::MODEL_PARALLEL>(comm, NULL);
       } else {
-        d = new relu_layer<data_layout::DATA_PARALLEL>(layer_id, comm, cudnn);
+        d = new relu_layer<data_layout::DATA_PARALLEL>(comm, cudnn);
       }
     }
 
@@ -239,9 +239,9 @@ void add_layers(
     else if (layer.has_sigmoid()) {
       //const lbann_data::Sigmoid &ell = layer.sigmoid();
       if (dl == data_layout::MODEL_PARALLEL) {
-        d = new sigmoid_layer<data_layout::MODEL_PARALLEL>(layer_id, comm);
+        d = new sigmoid_layer<data_layout::MODEL_PARALLEL>(comm);
       } else {
-        d = new sigmoid_layer<data_layout::DATA_PARALLEL>(layer_id, comm);
+        d = new sigmoid_layer<data_layout::DATA_PARALLEL>(comm);
       }
     }
 
@@ -262,13 +262,11 @@ void add_layers(
       */
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new reconstruction_layer<data_layout::MODEL_PARALLEL>(
-          layer_id,
           comm,
           index_mapping[0]
         );
       } else {
         d = new reconstruction_layer<data_layout::DATA_PARALLEL>(
-          layer_id,
           comm,
           index_mapping[0]
         );
@@ -323,7 +321,6 @@ void add_layers(
       }
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
-          layer_id,
           comm,
           num_neurons,
           get_weight_initialization(ell.weight_initialization(), master),
@@ -333,7 +330,6 @@ void add_layers(
           cudnn);
       } else {
         d = new fully_connected_layer<data_layout::DATA_PARALLEL>(
-          layer_id,
           comm,
           num_neurons,
           get_weight_initialization(ell.weight_initialization(), master),
@@ -360,9 +356,9 @@ void add_layers(
         dims.push_back(i);
       }
       if (dl == data_layout::MODEL_PARALLEL) {
-        d = new reshape_layer<data_layout::MODEL_PARALLEL>(layer_id, comm, ell.num_dims(), dims.data());
+        d = new reshape_layer<data_layout::MODEL_PARALLEL>(comm, ell.num_dims(), dims.data());
       } else {
-        d = new reshape_layer<data_layout::DATA_PARALLEL>(layer_id, comm, ell.num_dims(), dims.data());
+        d = new reshape_layer<data_layout::DATA_PARALLEL>(comm, ell.num_dims(), dims.data());
       }
     }
 
@@ -371,7 +367,7 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     else if (layer.has_concatenation()) {
       const lbann_data::Concatenation &ell = layer.concatenation();
-      d = new concatenation_layer<>(layer_id, comm, ell.concatenation_axis(), cudnn);
+      d = new concatenation_layer<>(comm, ell.concatenation_axis(), cudnn);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -385,14 +381,14 @@ void add_layers(
       while (s >> i) {
         slice_points.push_back(i);
       }
-      d = new slice_layer<>(layer_id, comm, ell.slice_axis(), slice_points, cudnn);
+      d = new slice_layer<>(comm, ell.slice_axis(), slice_points, cudnn);
     }
 
     //////////////////////////////////////////////////////////////////
     // LAYER: sum
     //////////////////////////////////////////////////////////////////
     else if (layer.has_sum()) {
-      d = new sum_layer<>(layer_id, comm, cudnn);
+      d = new sum_layer<>(comm, cudnn);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -400,14 +396,14 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     else if (layer.has_noise()) {
       const lbann_data::Noise& ell = layer.noise();
-      d = new noise_layer<>(layer_id, comm,ell.noise_factor(), cudnn);
+      d = new noise_layer<>(comm,ell.noise_factor(), cudnn);
     }
 
     //////////////////////////////////////////////////////////////////
     // LAYER: split
     //////////////////////////////////////////////////////////////////
     else if (layer.has_split()) {
-      d = new split_layer<>(layer_id, comm, cudnn);
+      d = new split_layer<>(comm, cudnn);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -445,7 +441,6 @@ void add_layers(
           throw lbann_exception(err.str());
         } else {
           d = new pooling_layer<data_layout::DATA_PARALLEL>(
-            layer_id,
             comm,
             ell.num_dims(),
             &pool_dims[0],
@@ -462,7 +457,6 @@ void add_layers(
           throw lbann_exception(err.str());
         } else {
           d = new pooling_layer<data_layout::DATA_PARALLEL>(
-            layer_id,
             comm,
             ell.num_dims(),
             ell.pool_dims_i(),
@@ -487,7 +481,6 @@ void add_layers(
         throw lbann_exception(err.str());
       } else {
         d = new unpooling_layer<data_layout::DATA_PARALLEL>(
-          layer_id,
           comm,
           pl
         );
@@ -530,7 +523,6 @@ void add_layers(
           throw lbann_exception(err.str());
         } else {
           d = new convolution_layer<data_layout::DATA_PARALLEL>(
-            layer_id,
             comm,
             ell.num_dims(),
             ell.num_output_channels(),
@@ -553,7 +545,6 @@ void add_layers(
           throw lbann_exception(err.str());
         } else {
           d = new convolution_layer<data_layout::DATA_PARALLEL>(
-            layer_id,
             comm,
             ell.num_dims(),
             ell.num_output_channels(),
@@ -611,7 +602,6 @@ void add_layers(
           throw lbann_exception(err.str());
         } else {
           d = new deconvolution_layer<data_layout::DATA_PARALLEL>(
-            layer_id,
             comm,
             ell.num_dims(),
             ell.num_output_channels(),
@@ -634,7 +624,6 @@ void add_layers(
           throw lbann_exception(err.str());
         } else {
           d = new deconvolution_layer<data_layout::DATA_PARALLEL>(
-            layer_id,
             comm,
             ell.num_dims(),
             ell.num_output_channels(),
@@ -672,7 +661,6 @@ void add_layers(
         throw lbann_exception(err.str());
       } else {
         d = new local_response_normalization_layer<data_layout::DATA_PARALLEL>(
-          layer_id,
           comm,
           window_width,
           lrn_alpha,
@@ -689,7 +677,6 @@ void add_layers(
       const lbann_data::SeluDropout& ell = layer.selu_dropout();
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new selu_dropout<data_layout::MODEL_PARALLEL>(
-          layer_id,
           comm,
           ell.keep_prob(),
           ell.alpha(),
@@ -697,7 +684,6 @@ void add_layers(
         );
       } else {
         d = new selu_dropout<data_layout::DATA_PARALLEL>(
-          layer_id,
           comm,
           ell.keep_prob(),
           ell.alpha(),
@@ -717,7 +703,6 @@ void add_layers(
         throw lbann_exception(err.str());
       } else {
         d = new batch_normalization<data_layout::DATA_PARALLEL>(
-          layer_id,
           comm,
           model->create_optimizer(),
           ell.decay(),
@@ -736,14 +721,12 @@ void add_layers(
       const lbann_data::Selu& ell = layer.selu();
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new selu_layer<data_layout::MODEL_PARALLEL>(
-          layer_id,
           comm,
           ell.alpha(),
           ell.scale()
         );
       } else {
         d = new selu_layer<data_layout::DATA_PARALLEL>(
-          layer_id,
           comm,
           ell.alpha(),
           ell.scale()
@@ -757,15 +740,9 @@ void add_layers(
     else if (layer.has_tanh()) {
       //const lbann_data::Tanh& ell = layer.tanh();
       if (dl == data_layout::MODEL_PARALLEL) {
-        d = new tanh_layer<data_layout::MODEL_PARALLEL>(
-          layer_id,
-          comm
-        );
+        d = new tanh_layer<data_layout::MODEL_PARALLEL>(comm);
       } else {
-        d = new tanh_layer<data_layout::DATA_PARALLEL>(
-          layer_id,
-          comm
-        );
+        d = new tanh_layer<data_layout::DATA_PARALLEL>(comm);
       }
     }
 
@@ -775,15 +752,9 @@ void add_layers(
     else if (layer.has_softplus()) {
       //const lbann_data::Softplus& ell = layer.softplus();
       if (dl == data_layout::MODEL_PARALLEL) {
-        d = new softplus_layer<data_layout::MODEL_PARALLEL>(
-          layer_id,
-          comm
-        );
+        d = new softplus_layer<data_layout::MODEL_PARALLEL>(comm);
       } else {
-        d = new softplus_layer<data_layout::DATA_PARALLEL>(
-          layer_id,
-          comm
-        );
+        d = new softplus_layer<data_layout::DATA_PARALLEL>(comm);
       }
     }
 
@@ -793,15 +764,9 @@ void add_layers(
     else if (layer.has_smooth_relu()) {
       //const lbann_data::SmoothRelu& ell = layer.smooth_relu();
       if (dl == data_layout::MODEL_PARALLEL) {
-        d = new smooth_relu_layer<data_layout::MODEL_PARALLEL>(
-          layer_id,
-          comm
-        );
+        d = new smooth_relu_layer<data_layout::MODEL_PARALLEL>(comm);
       } else {
-        d = new smooth_relu_layer<data_layout::DATA_PARALLEL>(
-          layer_id,
-          comm
-        );
+        d = new smooth_relu_layer<data_layout::DATA_PARALLEL>(comm);
       }
     }
 
@@ -812,13 +777,11 @@ void add_layers(
       const lbann_data::LeakyRelu& ell = layer.leaky_relu();
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new leaky_relu_layer<data_layout::MODEL_PARALLEL>(
-          layer_id,
           comm,
           ell.leak()
         );
       } else {
         d = new leaky_relu_layer<data_layout::DATA_PARALLEL>(
-          layer_id,
           comm,
           ell.leak()
         );
@@ -831,15 +794,9 @@ void add_layers(
     else if (layer.has_id()) {
       //const lbann_data::ID& ell = layer.id();
       if (dl == data_layout::MODEL_PARALLEL) {
-        d = new id_layer<data_layout::MODEL_PARALLEL>(
-          layer_id,
-          comm
-        );
+        d = new id_layer<data_layout::MODEL_PARALLEL>(comm);
       } else {
-        d = new id_layer<data_layout::DATA_PARALLEL>(
-          layer_id,
-          comm
-        );
+        d = new id_layer<data_layout::DATA_PARALLEL>(comm);
       }
     }
 
@@ -850,13 +807,11 @@ void add_layers(
       const lbann_data::ELU& ell = layer.elu();
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new elu_layer<data_layout::MODEL_PARALLEL>(
-          layer_id,
           comm,
           ell.alpha()
         );
       } else {
         d = new elu_layer<data_layout::DATA_PARALLEL>(
-          layer_id,
           comm,
           ell.alpha()
         );
@@ -870,12 +825,10 @@ void add_layers(
       const lbann_data::Dropout& ell = layer.dropout();
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new dropout<data_layout::MODEL_PARALLEL>(
-          layer_id,
           comm,
           ell.keep_prob());
       } else {
         d = new dropout<data_layout::DATA_PARALLEL>(
-          layer_id,
           comm,
           ell.keep_prob());
       }
@@ -887,17 +840,9 @@ void add_layers(
     else if (layer.has_softmax()) {
       //const lbann_data::Softmax& ell = layer.softmax();
       if (dl == data_layout::MODEL_PARALLEL) {
-        d = new softmax_layer<data_layout::MODEL_PARALLEL>(
-          layer_id,
-          comm,
-          cudnn
-        );
+        d = new softmax_layer<data_layout::MODEL_PARALLEL>(comm, cudnn);
       } else {
-        d = new softmax_layer<data_layout::DATA_PARALLEL>(
-          layer_id,
-          comm,
-          cudnn
-        );
+        d = new softmax_layer<data_layout::DATA_PARALLEL>(comm,cudnn);
       }
     }
 
@@ -1135,7 +1080,7 @@ void init_callbacks(
     if (callback.has_disp_io_stats()) {
       const lbann_data::CallbackDispIOStats& c = callback.disp_io_stats();
       std::stringstream s(c.layers());
-      std::unordered_set<uint> which;
+      std::unordered_set<Layer*> which;
       std::string a;
       //bool all_layers = false;
       while (s >> a) {
@@ -1149,7 +1094,7 @@ void init_callbacks(
                 << " index; please check your prototext file";
             throw lbann_exception(err.str());
           }
-          which.insert(name_to_index.find(a)->second);
+          which.insert(name_mapping[a]);
           if (master) {
             cout << "adding display I/O stats callback: index " << a << " from prototext file maps to model layer " << name_mapping.find(a)->second << endl;
           }
@@ -1168,7 +1113,7 @@ void init_callbacks(
         cout << "adding imcomm callback\n";
       }
       std::stringstream s(c.layers());
-      std::unordered_set<uint> which;
+      std::unordered_set<Layer*> which;
       std::string a;
       bool all_layers = false;
       while (s >> a) {
@@ -1182,7 +1127,7 @@ void init_callbacks(
                 << " index; please check your prototext file";
             throw lbann_exception(err.str());
           }
-          which.insert(name_to_index.find(a)->second);
+          which.insert(name_mapping[a]);
           /*
           if (master) {
             cout << "CALLBACK: imcomm: prototext layer name " << a << " maps to model layer " << name_mapping.find(a)->second << "; layer name: " << the_layers[a]->get_type() << std::endl;
@@ -1206,7 +1151,7 @@ void init_callbacks(
     if (callback.has_step_learning_rate()) {
       const lbann_data::CallbackStepLearningRate &c = callback.step_learning_rate();
       std::stringstream s(c.layers());
-      std::unordered_set<uint> which;
+      std::unordered_set<Layer*> which;
       std::string a;
       bool all_layers = false;
       while (s >> a) {
@@ -1220,7 +1165,7 @@ void init_callbacks(
                 << " index; please check your prototext file";
             throw lbann_exception(err.str());
           }
-          which.insert(name_to_index.find(a)->second);
+          which.insert(name_mapping[a]);
         }
       }
       lbann_callback_adaptive_learning_rate *learn;
@@ -1238,7 +1183,7 @@ void init_callbacks(
     if (callback.has_adaptive_learning_rate()) {
       const lbann_data::CallbackAdaptiveLearningRate &c = callback.adaptive_learning_rate();
       std::stringstream s(c.layers());
-      std::unordered_set<uint> which;
+      std::unordered_set<Layer*> which;
       string a;
       bool all_layers = false;
       while (s >> a) {
@@ -1252,7 +1197,7 @@ void init_callbacks(
                 << " index; please check your prototext file";
             throw lbann_exception(err.str());
           }
-          which.insert(name_to_index.find(a)->second);
+          which.insert(name_mapping[a]);
         }
       }
       lbann_callback_adaptive_learning_rate *learn;
@@ -1356,9 +1301,9 @@ void init_callbacks(
       if (master) {
         std::cout << "adding drop_fixed_learning_rate callback" << std::endl;
       }
-      std::unordered_set<uint> layers;
+      std::unordered_set<Layer*> layers;
       for (int i = 0; i < c.layer_size(); ++i) {
-        layers.insert(c.layer(i));
+        layers.insert(name_mapping[c.layer(i)]);
       }
       std::vector<int64_t> drop_epochs;
       for (int i = 0; i < c.drop_epoch_size(); ++i) {
@@ -1379,9 +1324,9 @@ void init_callbacks(
       if (master) {
         std::cout << "adding linear_growth_learning_rate callback" << std::endl;
       }
-      std::unordered_set<uint> layers;
+      std::unordered_set<Layer*> layers;
       for (int i = 0; i < c.layer_size(); ++i) {
-        layers.insert(c.layer(i));
+        layers.insert(name_mapping[c.layer(i)]);
       }
       lbann_callback_linear_growth_learning_rate *lglr = new
       lbann_callback_linear_growth_learning_rate(

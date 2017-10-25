@@ -200,8 +200,7 @@ class batch_normalization : public learning_regularizer {
    * @param use_global_stats Whether to use running statistics when
    * training.
    */
-  batch_normalization(int index,
-                      lbann_comm *comm,
+  batch_normalization(lbann_comm *comm,
                       optimizer *opt,
                       DataType decay=0.9,
                       DataType scale_init=1.0,
@@ -210,7 +209,7 @@ class batch_normalization : public learning_regularizer {
                       cudnn::cudnn_manager *cudnn = NULL,
                       bool use_global_stats = true
                       )
-    : learning_regularizer(index, comm, opt),
+    : learning_regularizer(comm, opt),
       m_decay(decay),
       m_scale_init(scale_init),
       m_bias_init(bias_init),
@@ -418,7 +417,7 @@ class batch_normalization : public learning_regularizer {
   /** Returns description of ctor params */
   std::string get_description() const {
     return std::string {} +
-     std::to_string(this->m_index) + " batch_normalization; decay: " 
+     " batch_normalization; decay: " 
      + std::to_string(this->m_decay) + " scale_init: " 
      + std::to_string(this->m_scale_init)
      + " bias: " + std::to_string(this->m_bias_init) + " epsilon: " 

@@ -56,7 +56,7 @@ class io_layer : public Layer {
            std::map<execution_mode, generic_data_reader *> data_readers,
            bool data_sets_span_models = true,
            bool for_regression = false)
-    : Layer(0, comm),
+    : Layer(comm),
       m_training_dataset(data_readers[execution_mode::training]),
       m_testing_dataset(data_readers[execution_mode::testing]),
       m_validation_dataset(data_readers[execution_mode::validation]),

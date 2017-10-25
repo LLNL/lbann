@@ -35,9 +35,8 @@ namespace lbann {
 class activation_layer : public Layer {
 
  public:
-  activation_layer(int index,
-                   lbann_comm *comm) :
-    Layer(index, comm) {
+  activation_layer(lbann_comm *comm) :
+    Layer(comm) {
   }
   activation_layer(const activation_layer&) = default;
   activation_layer& operator=(const activation_layer&) = default;
@@ -53,9 +52,8 @@ class activation_layer : public Layer {
 class entrywise_activation_layer : public activation_layer {
 
  public:
-  entrywise_activation_layer(int index,
-                             lbann_comm *comm) :
-    activation_layer(index, comm) {
+  entrywise_activation_layer(lbann_comm *comm) :
+    activation_layer(comm) {
   }
   entrywise_activation_layer(const entrywise_activation_layer&) = default;
   entrywise_activation_layer& operator=(

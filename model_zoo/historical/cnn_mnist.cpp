@@ -214,8 +214,7 @@ int main(int argc, char *argv[]) {
       int convStrides[] = {1, 1};
 
       convolution_layer<> *layer
-        = new convolution_layer<>(1,
-                                  comm,
+        = new convolution_layer<>(comm,
                                   numDims,
                                   outputChannels,
                                   filterDims,
@@ -228,8 +227,7 @@ int main(int argc, char *argv[]) {
                                   cudnn);
       dnn.add(layer);
 
-      Layer *relu = new relu_layer<data_layout::DATA_PARALLEL>(2,
-                                                               comm,
+      Layer *relu = new relu_layer<data_layout::DATA_PARALLEL>(comm,
                                                                cudnn);
       dnn.add(relu);
     }
@@ -244,8 +242,7 @@ int main(int argc, char *argv[]) {
       int convStrides[] = {1, 1};
 
       convolution_layer<> *layer
-        = new convolution_layer<>(3,
-                                  comm,
+        = new convolution_layer<>(comm,
                                   numDims,
                                   outputChannels,
                                   filterDims,
@@ -258,8 +255,7 @@ int main(int argc, char *argv[]) {
                                   cudnn);
       dnn.add(layer);
 
-      Layer *relu = new relu_layer<data_layout::DATA_PARALLEL>(2,
-                                                               comm,
+      Layer *relu = new relu_layer<data_layout::DATA_PARALLEL>(comm,
                                                                cudnn);
       dnn.add(relu);
     }
@@ -272,8 +268,7 @@ int main(int argc, char *argv[]) {
       int poolStrides[] = {2, 2};
       pool_mode poolMode = pool_mode::max;
       pooling_layer<> *layer
-        = new pooling_layer<>(4,
-                              comm,
+        = new pooling_layer<>(comm,
                               numDims,
                               poolWindowDims,
                               poolPads,
@@ -285,26 +280,22 @@ int main(int argc, char *argv[]) {
 
     // First fully connected layer
     {
-      Layer *fc = new fully_connected_layer<data_layout::MODEL_PARALLEL>(5,
-                                                                         comm,
+      Layer *fc = new fully_connected_layer<data_layout::MODEL_PARALLEL>(comm,
                                                                          128,
                                                                          weight_initialization::glorot_uniform,
                                                                          optimizer_fac->create_optimizer());
       dnn.add(fc);
-      Layer *relu = new relu_layer<data_layout::MODEL_PARALLEL>(6,
-                                                                comm,
+      Layer *relu = new relu_layer<data_layout::MODEL_PARALLEL>(comm,
                                                                 NULL);
       dnn.add(relu);
-      Layer *dropout1 = new dropout<data_layout::MODEL_PARALLEL>(7,
-                                                                 comm,
+      Layer *dropout1 = new dropout<data_layout::MODEL_PARALLEL>(comm,
                                                                  0.5);
       dnn.add(dropout1);
     }
 
     // Second fully connected layer
     {
-      Layer *fc = new fully_connected_layer<data_layout::MODEL_PARALLEL>(8,
-                                                                         comm,
+      Layer *fc = new fully_connected_layer<data_layout::MODEL_PARALLEL>(comm,
                                                                          10,
                                                                          weight_initialization::glorot_uniform,
                                                                          optimizer_fac->create_optimizer(),
@@ -313,10 +304,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Softmax layer
-    Layer *sl = new softmax_layer<data_layout::MODEL_PARALLEL>(
-      9,
-      comm
-    );
+    Layer *sl = new softmax_layer<data_layout::MODEL_PARALLEL>(comm);
     dnn.add(sl);
 
     // Target layer

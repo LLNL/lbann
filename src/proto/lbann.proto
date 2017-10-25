@@ -296,13 +296,13 @@ message CallbackHang {
 }
 
 message CallbackDropFixedLearningRate {
-  repeated int64 layer = 1;
+  repeated string layer = 1;
   repeated int64 drop_epoch = 2;
   double amt = 3;
 }
 
 message CallbackLinearGrowthLearningRate {
-  repeated int64 layer = 1;
+  repeated string layer = 1;
   double target = 2;
   int64 num_epochs = 3;
   int64 delay = 4;
