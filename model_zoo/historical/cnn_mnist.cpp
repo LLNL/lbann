@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
     ///////////////////////////////////////////////////////////////////
     // load training data (MNIST)
     ///////////////////////////////////////////////////////////////////
-    mnist_reader* mnist_trainset = new mnist_reader(trainParams.MBSize, true);
+    mnist_reader* mnist_trainset = new mnist_reader(true);
     mnist_trainset->set_file_dir(trainParams.DatasetRootDir);
     mnist_trainset->set_data_filename(g_MNIST_TrainImageFile);
     mnist_trainset->set_label_filename(g_MNIST_TrainLabelFile);
@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) {
     ///////////////////////////////////////////////////////////////////
     // load testing data (MNIST)
     ///////////////////////////////////////////////////////////////////
-    mnist_reader* mnist_testset = new mnist_reader(trainParams.MBSize, true);
+    mnist_reader* mnist_testset = new mnist_reader(true);
     mnist_testset->set_file_dir(trainParams.DatasetRootDir);
     mnist_testset->set_data_filename(g_MNIST_TestImageFile);
     mnist_testset->set_label_filename(g_MNIST_TestLabelFile);
@@ -308,7 +308,7 @@ int main(int argc, char *argv[]) {
     dnn.add(sl);
 
     // Target layer
-    Layer *tlayer = new target_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(comm, parallel_io, data_readers, true);
+    Layer *tlayer = new target_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(comm, dynamic_cast<input_layer*>(ilayer), parallel_io, data_readers, true);
     dnn.add(tlayer);
 
     lbann_callback_print* print_cb = new lbann_callback_print;

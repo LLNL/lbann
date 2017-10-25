@@ -22,38 +22,47 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_data_reader_synthetic .hpp .cpp - generic_data_reader class for synthetic (unit testing) data
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_readers/data_reader_synthetic.hpp"
-#include <stdio.h>
-#include <string>
+#ifndef BENT_IDENTITY_HPP_INCLUDED
+#define BENT_IDENTITY_HPP_INCLUDED
+
+#include "lbann/layers/activations/activation.hpp"
 
 namespace lbann {
 
-data_reader_synthetic::data_reader_synthetic(int num_samples, int num_features, bool shuffle)
-  : generic_data_reader(shuffle) {
-  m_num_samples = num_samples;
-  m_num_features = num_features;
-}
+/**
+ * Bent Identity activation function.
+ * See: https://en.wikipedia.org/wiki/Bent_Identity_function
+ */
+template <data_layout T_layout>
+class bent_identity_layer : public entrywise_activation_layer {
+ public:
 
-/// Generate one datum of the mini-batch
-bool data_reader_synthetic::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
-  Mat X_v;
-  El::View(X_v, X, El::ALL, El::IR(mb_idx, mb_idx + 1));
-  //@todo: generalize to take different data distribution/generator
-  El::Gaussian(X_v, m_num_features, 1, DataType(0), DataType(1));
+  bent_identity_layer(int index,
+                lbann_comm *comm) :
+    entrywise_activation_layer(index, comm) { 
+    initialize_distributed_matrices(); 
+  }
 
-  return true;
-}
+  bent_identity_layer* copy() const { return new bent_identity_layer(*this); }
 
-void data_reader_synthetic::load() {
-  //set indices/ number of features
-  m_shuffled_indices.clear();
-  m_shuffled_indices.resize(m_num_samples);
+  std::string get_type() const { return "bent identity"; }
 
-  select_subset_of_data();
-}
+  virtual inline void initialize_distributed_matrices() {
+    entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
+  }
+  virtual data_layout get_data_layout() const { return T_layout; }
+
+ protected:
+  DataType activation_function(DataType z) {
+    return (std::sqrt(z*z + DataType(1)) - DataType(1))/DataType(2) + z;
+  }
+  DataType activation_function_gradient(DataType z) {
+    return z/(DataType(2)*std::sqrt(z*z + DataType(1))) + DataType(1);
+  }
+};
 
 }  // namespace lbann
+
+#endif  // BENT_IDENTITY_HPP_INCLUDED

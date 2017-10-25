@@ -35,8 +35,8 @@ using namespace El;
 
 namespace lbann {
 
-imagenet_readerSingle::imagenet_readerSingle(int batchSize, bool shuffle)
-  : imagenet_reader(batchSize, shuffle) {
+imagenet_readerSingle::imagenet_readerSingle(bool shuffle)
+  : imagenet_reader(shuffle) {
 }
 
 imagenet_readerSingle::imagenet_readerSingle(const imagenet_readerSingle& source)

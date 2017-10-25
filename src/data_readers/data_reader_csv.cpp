@@ -32,8 +32,8 @@
 
 namespace lbann {
 
-csv_reader::csv_reader(int batch_size, bool shuffle)
-  : generic_data_reader(batch_size, shuffle) {}
+csv_reader::csv_reader(bool shuffle)
+  : generic_data_reader(shuffle) {}
 
 csv_reader::csv_reader(const csv_reader& other) :
   generic_data_reader(other),

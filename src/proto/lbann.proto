@@ -25,10 +25,10 @@ message Reader {
   string label_filename = 7;
   double train_or_test_percent = 8;
   double validation_percent = 9;
-  bool firstN = 10;
   int64 max_sample_count = 11;
   double percent_of_data_to_use = 12;
   ImagePreprocessor image_preprocessor = 13;
+  int32 num_labels = 99; //for imagenet
   int64 num_samples = 100; //only for synthetic
   int64 num_features = 101; //only for synthetic
   //csv attributes
@@ -62,8 +62,10 @@ message ImagePreprocessor {
   uint32 crop_width = 26;
   uint32 crop_height = 27;
   bool crop_randomly = 28;
-  int32 crop_roi_width = 29;
-  int32 crop_roi_height =30;
+  int32 resized_width = 29;
+  int32 resized_height = 30;
+  int32 raw_width = 31;
+  int32 raw_height = 32;
 }
 
 //========================================================================
@@ -111,6 +113,7 @@ message Metric {
   CategoricalAccuracy categorical_accuracy = 1;
   MeanSquaredError mean_squared_error = 2;
   TopKCategoricalAccuracy top_k_categorical_accuracy = 3;
+  PearsonCorrelation pearson_correlation = 4;
 }
 
 message CategoricalAccuracy {
@@ -122,7 +125,9 @@ message MeanSquaredError {
 message TopKCategoricalAccuracy {
   int64 top_k = 2; //only applicable for top_k_categorical_accuracy
 }
-  
+
+message PearsonCorrelation {
+} 
 //========================================================================
 // Optimizers
 //========================================================================
@@ -463,9 +468,11 @@ message Dropout {
 // Input Layers //
 //////////////////
 message InputDistributedMiniBatch {
+  bool data_set_per_model = 1;  //default: false
 }
 
 message InputPartitionedMiniBatch {
+  bool data_set_per_model = 1;  //default: false
 }
 
 //////////////////////

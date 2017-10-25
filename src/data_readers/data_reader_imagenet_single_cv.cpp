@@ -34,8 +34,8 @@
 
 namespace lbann {
 
-imagenet_reader_single_cv::imagenet_reader_single_cv(int batchSize, const std::shared_ptr<cv_process>& pp, bool shuffle)
-  : imagenet_reader_cv(batchSize, pp, shuffle) {
+imagenet_reader_single_cv::imagenet_reader_single_cv(const std::shared_ptr<cv_process>& pp, bool shuffle)
+  : imagenet_reader_cv(pp, shuffle) {
 }
 
 imagenet_reader_single_cv::imagenet_reader_single_cv(const imagenet_reader_single_cv& source)

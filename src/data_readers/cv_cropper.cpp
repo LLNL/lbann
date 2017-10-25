@@ -82,7 +82,6 @@ void cv_cropper::set(const unsigned int width, const unsigned int height,
   m_enabled = false; // will turns on when the transform is determined
 }
 
-
 void cv_cropper::reset() {
   m_width = 0u;
   m_height = 0u;
@@ -93,73 +92,88 @@ void cv_cropper::reset() {
   m_enabled = false;
 }
 
-
 bool cv_cropper::determine_transform(const cv::Mat& image) {
   m_enabled = false; // unless this method is successful, stays disabled
 
   _LBANN_SILENT_EXCEPTION(image.empty(), "", false)
 
-  int roi_width = m_roi_size.first;
-  int roi_height = m_roi_size.second;
-
-  if (!m_is_roi_set) {
-    roi_width = image.cols;
-    roi_height = image.rows;
+  double zoom_h = 1.0;
+  double zoom_v = 1.0;
+  if (m_is_roi_set) {
+    zoom_h = image.cols / static_cast<double>(m_roi_size.first);
+    zoom_v = image.rows / static_cast<double>(m_roi_size.second);
   }
 
-  double zoom_h = static_cast<double>(roi_width) / image.cols;
-  double zoom_v = static_cast<double>(roi_height) / image.rows;
-  m_zoom = std::max(zoom_h, zoom_v);
+  m_zoom = std::min(zoom_h, zoom_v);
 
-  if (m_zoom > 1.0) {
+  if (m_zoom > 1.0) { // rescales the image by the factor of 1/m_zoom (shrink)
+    m_interpolation = cv::INTER_AREA; // (better for shrinking)
+  } else {
    #if 0
     m_interpolation = cv::INTER_CUBIC; // (slow but better)
    #else
     m_interpolation = cv::INTER_LINEAR; // (faster but ok)
    #endif
-  } else {
-    m_interpolation = cv::INTER_AREA; // (better for shrinking)
   }
 
   return (m_enabled = true);
 }
 
-
+/**
+ * Method 1:
+ *  a. Rescale the raw image, I, such that one dimension matches the corresponding
+ *     dimension of the specified rectangular area, R, while trying to maintain the
+ *     size as closely as possible to that of the raw image without altering the
+ *     aspect ratio.
+ *  b. Crop off the excess area of the resized image, which goes beyond the
+ *     specified R aligned at the center of the image.
+ *  c. Crop out an area of the specified size, C, at the center of R or at a random
+ *     position within R.
+ *
+ * Method 2:
+ *  Instead of rescaling-crop-crop as in method 1,
+ *  a. Compute the projection of the final crop area, C', on the raw image I without
+ *     actually rescaling the image. This still requires to compute the scaling factor
+ *     for image resizing.
+ *     However, instead of applying it to the raw image, apply the inverse to project
+ *     the crop C onto the raw image I. This does not change any actual pixel.
+ *  b. Crop the projected area C'
+ *  c. Rescale C' to C. This deals with a smaller number of pixels than method 1 for
+ *     resizing, only those that remain.
+ *
+ *  We rely on Method 2 here.
+ */
 bool cv_cropper::apply(cv::Mat& image) {
   m_enabled = false; // turn off as it is applied
 
   _LBANN_SILENT_EXCEPTION(image.empty(), "", false)
 
-  int roi_width = 0;
-  int roi_height = 0;
-  cv::Mat roi;
+  const double zoomed_roi_width = m_roi_size.first * m_zoom;
+  const double zoomed_roi_height = m_roi_size.second * m_zoom;
+  const double zoomed_width = m_width * m_zoom;
+  const double zoomed_height = m_height * m_zoom;
 
-  roi_width = m_roi_size.first;
-  roi_height = m_roi_size.second;
-  cv::Mat scaled_image;
-  cv::resize(image, scaled_image, cv::Size(), m_zoom, m_zoom, m_interpolation);
-  cv::Rect crop((scaled_image.cols - roi_width + 1) / 2,
-                (scaled_image.rows - roi_height + 1) / 2,
-                roi_width,
-                roi_height);
-  roi = scaled_image(crop);
-
-  int crop_x_start=0, crop_y_start=0;
+  int crop_x_start = 0;
+  int crop_y_start = 0;
 
   // Get random crop of image
   if(m_rand_crop) {
-    crop_x_start = fast_rand_int(get_fast_generator(), roi_width - m_width + 1);
-    crop_y_start = fast_rand_int(get_fast_generator(), roi_height- m_height + 1);
+    const int rnd_dw = fast_rand_int(get_fast_generator(), static_cast<int>(2*(zoomed_roi_width - zoomed_width)) + 1);
+    const int rnd_dh = fast_rand_int(get_fast_generator(), static_cast<int>(2*(zoomed_roi_height - zoomed_height)) + 1);
+    crop_x_start = static_cast<int>(image.cols - zoomed_roi_width + rnd_dw + 1) / 2;
+    crop_y_start = static_cast<int>(image.rows - zoomed_roi_height + rnd_dh + 1) / 2;
   } else {
-    crop_x_start = (roi_width - m_width + 1) / 2;
-    crop_y_start = (roi_height - m_height + 1) / 2;
+    crop_x_start = static_cast<int>(image.cols - zoomed_width + 1) / 2;
+    crop_y_start = static_cast<int>(image.rows - zoomed_height + 1) / 2;
   }
 
-  image = roi(cv::Rect(crop_x_start, crop_y_start, m_width, m_height));
+  cv::Mat zoomed_crop = image(cv::Rect(crop_x_start, crop_y_start, zoomed_width, zoomed_height));
+  cv::Mat crop;
+  cv::resize(zoomed_crop, crop, cv::Size(m_width,m_height), 0, 0, m_interpolation);
+  image = crop;
 
   return true;
 }
-
 
 std::ostream& cv_cropper::print(std::ostream& os) const {
   os << "cv_cropper:" << std::endl

@@ -40,11 +40,13 @@ class reconstruction_layer : public target_layer {
 
   /** Original layer to reconstruct. */
   Layer *m_original_layer;
+  /** View of original layer activation */
+  AbsDistMat *original_layer_act_v;
 
  public:
   reconstruction_layer(lbann_comm *comm,
                        Layer *original_layer)
-    :  target_layer(comm, {}, false),
+    :  target_layer(comm, dynamic_cast<input_layer*>(original_layer), {}, false),
        m_original_layer(original_layer) {
     // Setup the data distribution
     initialize_distributed_matrices();
@@ -59,7 +61,7 @@ class reconstruction_layer : public target_layer {
     m_original_layer = other.m_original_layer;
   }
 
-  reconstruction_layer* copy() const {
+  reconstruction_layer* copy() const override {
     throw lbann_exception("reconstruction_layer can't be copied");
     return nullptr;
   }
@@ -70,9 +72,9 @@ class reconstruction_layer : public target_layer {
   virtual inline void initialize_distributed_matrices() {
     target_layer::initialize_distributed_matrices<T_layout>();
   }
-  virtual data_layout get_data_layout() const { return T_layout; }
+  virtual data_layout get_data_layout() const override { return T_layout; }
 
-  void setup_dims() {
+  void setup_dims() override {
     target_layer::setup_dims();
     this->m_neuron_dims = m_original_layer->get_neuron_dims();
     this->m_num_neuron_dims = m_original_layer->get_num_neuron_dims();
@@ -83,34 +85,44 @@ class reconstruction_layer : public target_layer {
   }
 
  protected:
+  void fp_set_std_matrix_view() {
+    int64_t cur_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
 
-  void fp_compute() {
+    target_layer::fp_set_std_matrix_view();
 
-    // Get activations from original layer
-    m_original_layer->get_fp_output(*this->m_activations_v, this);
+    //view of original layer
+    AbsDistMat& orig_acts = m_original_layer->get_activations();
+    original_layer_act_v = orig_acts.Construct(orig_acts.Grid(),orig_acts.Root());
+    El::View(*original_layer_act_v, orig_acts, El::ALL, El::IR(0, cur_mini_batch_size));
+  }
+
+  void fp_compute() override {
+
+    //Copy prev (decoder) activations for greedy layer wise training
+    El::Copy(*this->m_prev_activations,*this->m_activations_v);
 
     // Compute and record the objective function score
     objective_functions::objective_function *obj_fn = this->m_neural_network_model->m_obj_fn;
     obj_fn->compute_value(*this->m_prev_activations,
-                          *this->m_activations_v);
+                          *original_layer_act_v);
 
     // Compute metrics
     const int curr_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
     for (auto&& m : this->m_neural_network_model->get_metrics()) {
-      double num_errors = m->compute_metric(*this->m_prev_activations, *this->m_activations_v);
+      double num_errors = m->compute_metric(*this->m_prev_activations, *original_layer_act_v);
       m->record_error(num_errors, curr_mini_batch_size);
     }
 
   }
 
-  void bp_compute() {
+  void bp_compute() override {
     this->m_neural_network_model->m_obj_fn->compute_gradient(*this->m_prev_activations,
-                                                             *this->m_activations_v,
+                                                             *original_layer_act_v,
                                                              *this->m_error_signal_v);
   }
 
  public:
-  bool update_compute() {
+  bool update_compute() override {
     if(this->m_execution_mode == execution_mode::training) {
       double start = get_time();
       this->update_time += get_time() - start;
@@ -118,7 +130,7 @@ class reconstruction_layer : public target_layer {
     return true;
   }
 
-  void summarize_stats(lbann_summary& summarizer, int step) {
+  void summarize_stats(lbann_summary& summarizer, int step) override {
     std::string tag = this->m_name + "/ReconstructionCost";
     summarizer.reduce_scalar(tag, this->m_neural_network_model->m_obj_fn->get_mean_value(), step);
     // Skip target layer (for now).

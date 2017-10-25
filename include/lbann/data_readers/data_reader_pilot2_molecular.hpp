@@ -39,7 +39,7 @@ namespace lbann {
  */
 class pilot2_molecular_reader : public generic_data_reader {
  public:
-  pilot2_molecular_reader(int num_neighbors, int batch_size,
+  pilot2_molecular_reader(int num_neighbors, 
                           bool shuffle = true);
   pilot2_molecular_reader(const pilot2_molecular_reader&);
   pilot2_molecular_reader& operator=(const pilot2_molecular_reader&);

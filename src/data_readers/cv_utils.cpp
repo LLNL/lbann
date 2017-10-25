@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/cv_utils.hpp"
+#include "lbann/utils/exception.hpp"
 //#include <iostream>
 
 #ifdef __LIB_OPENCV
@@ -97,5 +98,23 @@ std::ostream& operator<<(std::ostream& os, const cv_transform& tr) {
   return os;
 }
 
+double cv_utils::get_depth_normalizing_factor(const int cv_depth) {
+  using namespace patchworks;
+
+  switch (cv_depth) {
+    case CV_8U : return depth_normalzing<uint8_t>::factor();
+    case CV_8S : return depth_normalzing<int8_t>::factor();
+    case CV_16U: return depth_normalzing<uint16_t>::factor();
+    case CV_16S: return depth_normalzing<int16_t>::factor();
+    case CV_32S: return depth_normalzing<int32_t>::factor();
+    case CV_32F: return depth_normalzing<float>::factor();
+    case CV_64F: return depth_normalzing<double>::factor();
+  }
+
+  std::stringstream err;
+  err << __FILE__ << " " << __LINE__ << " :: cv_utils::get_depth_type: invalid depth code";
+  throw lbann_exception(err.str());
+  return 1.0;
+}
 } // end of namespace lbann
 #endif // __LIB_OPENCV

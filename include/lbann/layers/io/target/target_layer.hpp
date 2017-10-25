@@ -28,6 +28,7 @@
 #define LBANN_LAYERS_TARGET_LAYER_HPP_INCLUDED
 
 #include "lbann/layers/io/io_layer.hpp"
+#include "lbann/layers/io/input/input_layer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/models/model.hpp"
 #include <string>
@@ -38,60 +39,23 @@
 namespace lbann {
 class target_layer : public io_layer {
  protected:
-  bool m_shared_data_reader;
+  input_layer *paired_input_layer;
 
  public:
-  target_layer(lbann_comm *comm, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
-    : io_layer(comm, data_readers, true, for_regression) {
-    m_shared_data_reader = shared_data_reader;
+  target_layer(lbann_comm *comm, input_layer* input_layer, std::map<execution_mode, generic_data_reader *> data_readers, bool for_regression = false)
+    : io_layer(comm, true, for_regression), paired_input_layer(input_layer) {
     // Target layers have no children
     m_max_num_child_layers = 0;
   }
 
-  virtual ~target_layer() {
-    if (!m_shared_data_reader) {
-      // Only free the data readers if they're not shared with the input layer.
-      if (m_training_dataset.m_data_reader != nullptr) {
-        delete m_training_dataset.m_data_reader;
-        m_training_dataset.m_data_reader = nullptr;
-      }
-      if (m_validation_dataset.m_data_reader != nullptr) {
-        delete m_validation_dataset.m_data_reader;
-        m_validation_dataset.m_data_reader = nullptr;
-      }
-      if (m_testing_dataset.m_data_reader != nullptr) {
-        delete m_testing_dataset.m_data_reader;
-        m_testing_dataset.m_data_reader = nullptr;
-      }
-    }
-  }
+  virtual ~target_layer() {}
 
   // Target layers copy their datareaders.
   target_layer(const target_layer& other) : io_layer(other) {
-    if (m_training_dataset.m_data_reader) {
-      m_training_dataset.m_data_reader = m_training_dataset.m_data_reader->copy();
-    }
-    if (m_validation_dataset.m_data_reader) {
-      m_validation_dataset.m_data_reader = m_validation_dataset.m_data_reader->copy();
-    }
-    if (m_testing_dataset.m_data_reader) {
-      m_testing_dataset.m_data_reader = m_testing_dataset.m_data_reader->copy();
-    }
-    m_shared_data_reader = other.m_shared_data_reader;
   }
 
   target_layer& operator=(const target_layer& other) {
     io_layer::operator=(other);
-    if (m_training_dataset.m_data_reader) {
-      m_training_dataset.m_data_reader = m_training_dataset.m_data_reader->copy();
-    }
-    if (m_validation_dataset.m_data_reader) {
-      m_validation_dataset.m_data_reader = m_validation_dataset.m_data_reader->copy();
-    }
-    if (m_testing_dataset.m_data_reader) {
-      m_testing_dataset.m_data_reader = m_testing_dataset.m_data_reader->copy();
-    }
-    m_shared_data_reader = other.m_shared_data_reader;
     return *this;
   }
 
@@ -99,17 +63,25 @@ class target_layer : public io_layer {
     io_layer::initialize_distributed_matrices<T_layout>();
   }
 
+  input_layer* get_paired_input_layer() {
+    return paired_input_layer;
+  }
+
+  void set_paired_input_layer(input_layer *input_layer) {
+    paired_input_layer = input_layer;
+  }
+
   virtual void setup_dims() {
     io_layer::setup_dims();
     if (this->is_for_regression()) {
-      this->m_neuron_dims = io_layer::get_data_dims();
+      this->m_neuron_dims = get_data_dims();
       this->m_num_neuron_dims = this->m_neuron_dims.size();
       this->m_num_neurons = std::accumulate(this->m_neuron_dims.begin(),
                                             this->m_neuron_dims.end(),
                                             1,
                                             std::multiplies<int>());
     } else {
-      this->m_num_neurons = io_layer::get_linearized_label_size();
+      this->m_num_neurons = get_linearized_label_size();
       this->m_num_neuron_dims = 1;
       this->m_neuron_dims.assign(1, this->m_num_neurons);
     }
@@ -118,22 +90,6 @@ class target_layer : public io_layer {
   virtual void setup_data() {
     io_layer::setup_data();
     std::stringstream err;
-
-    // The setup should be taken out here. Instead it should be done at the parent scope
-    if(!this->m_shared_data_reader) { /// If the target layer shares a data reader with an input layer, do not setup the data reader a second time
-      if(m_training_dataset.m_data_reader != nullptr) {
-        m_training_dataset.m_data_reader->setup();
-        m_training_dataset.m_data_reader->set_rank(Layer::m_comm->get_rank_in_model());
-      }
-      if(m_validation_dataset.m_data_reader != nullptr) {
-        m_validation_dataset.m_data_reader->setup();
-        m_validation_dataset.m_data_reader->set_rank(Layer::m_comm->get_rank_in_model());
-      }
-      if(m_testing_dataset.m_data_reader != nullptr) {
-        m_testing_dataset.m_data_reader->setup();
-        m_testing_dataset.m_data_reader->set_rank(Layer::m_comm->get_rank_in_model());
-      }
-    }
 
     if(this->m_num_prev_neurons != this->m_num_neurons) {
       err << __FILE__ << " " << __LINE__ 
@@ -157,15 +113,13 @@ class target_layer : public io_layer {
 
   }
 
-  lbann::generic_data_reader *set_training_data_reader(generic_data_reader *data_reader, bool shared_data_reader) {
-    m_shared_data_reader = shared_data_reader;
-    return io_layer::set_training_data_reader(data_reader);
-  }
+  // lbann::generic_data_reader *set_training_data_reader(generic_data_reader *data_reader, bool shared_data_reader) {
+  //   return io_layer::set_training_data_reader(data_reader);
+  // }
 
-  lbann::generic_data_reader *set_testing_data_reader(generic_data_reader *data_reader, bool shared_data_reader) {
-    m_shared_data_reader = shared_data_reader;
-    return io_layer::set_testing_data_reader(data_reader);
-  }
+  // lbann::generic_data_reader *set_testing_data_reader(generic_data_reader *data_reader, bool shared_data_reader) {
+  //   return io_layer::set_testing_data_reader(data_reader);
+  // }
 
   void fp_set_std_matrix_view() {
     int cur_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
@@ -174,6 +128,99 @@ class target_layer : public io_layer {
       m->fp_set_std_matrix_view(cur_mini_batch_size);
     }
   }
+  //************************************************************************
+  // Helper functions to access the data readers
+  //************************************************************************
+  dataset& get_dataset(execution_mode m) {
+    return paired_input_layer->get_dataset(m);
+  }
+
+  /**
+   * Return the dataset associated with the current execution mode.
+   */
+  dataset& select_dataset() { return paired_input_layer->select_dataset(); }
+
+  /**
+   * Return the first dataset with a valid (non-null) datareader.
+   * Returns null if none are valid.
+   */
+  dataset* select_first_valid_dataset() {
+    return paired_input_layer->select_first_valid_dataset();
+  }
+
+  /**
+   * Return the data reader associated with the current execution mode.
+   */
+  generic_data_reader *select_data_reader() {
+    return paired_input_layer->select_data_reader();
+  }
+
+  /**
+   * Update the number of samples processed for the current execution mode.
+   */
+  long update_num_samples_processed(long num_samples) {
+    return paired_input_layer->update_num_samples_processed(num_samples);
+  }
+
+  /**
+   * Return the sample indices fetched in the current mini-batch.
+   */
+  El::Matrix<El::Int>* get_sample_indices_per_mb() {
+    return paired_input_layer->get_sample_indices_per_mb();
+  }
+
+  /**
+   * Get the dimensions of the underlying data.
+   */
+  const std::vector<int> get_data_dims() {
+    return paired_input_layer->get_data_dims();
+  }
+
+  std::string get_topo_description() const {
+    return paired_input_layer->get_topo_description();
+  }
+
+  /**
+   * Get the linearized size of the underlying data.
+   */
+  long get_linearized_data_size() {
+    return paired_input_layer->get_linearized_data_size();
+  }
+
+  /**
+   * Get the linearized size of the labels for the underlying data.
+   */
+  long get_linearized_label_size() {
+    return paired_input_layer->get_linearized_label_size();
+  }
+
+  long get_linearized_response_size() const {
+    return paired_input_layer->get_linearized_response_size();
+  }
+
+  long get_num_samples_trained() {
+    return paired_input_layer->get_num_samples_trained();
+  }
+  long get_num_samples_tested() {
+    return paired_input_layer->get_num_samples_tested();
+  }
+  long get_total_num_training_samples() {
+    return paired_input_layer->get_total_num_training_samples();
+  }
+  long get_total_num_testing_samples() {
+    return paired_input_layer->get_total_num_testing_samples();
+  }
+
+  bool at_new_epoch() {
+    return paired_input_layer->at_new_epoch();
+  }
+
+  bool is_execution_mode_valid(execution_mode mode) {
+    return paired_input_layer->is_execution_mode_valid(mode);
+  }
+  //************************************************************************
+  //
+  //************************************************************************
 
   void summarize_stats(lbann_summary& summarizer, int step) {
     std::string obj_name = this->m_neural_network_model->m_obj_fn->name();

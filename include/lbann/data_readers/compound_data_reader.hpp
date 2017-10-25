@@ -37,10 +37,9 @@ namespace lbann {
  */
 class generic_compound_data_reader : public generic_data_reader {
  public:
-  generic_compound_data_reader(int batch_size,
-                            std::vector<generic_data_reader*> data_readers,
+  generic_compound_data_reader(std::vector<generic_data_reader*> data_readers,
                                bool shuffle = true):
-    generic_data_reader(batch_size, shuffle),
+    generic_data_reader(shuffle),
     m_data_readers(data_readers) {
     if (m_data_readers.empty()) {
       throw lbann_exception(

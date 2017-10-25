@@ -43,7 +43,7 @@ namespace lbann {
  */
 class numpy_reader : public generic_data_reader {
  public:
-  numpy_reader(int batch_size, bool shuffle = true);
+  numpy_reader(bool shuffle = true);
   // These need to be explicit because of some issue with the cnpy copy
   // constructor/assignment operator not linking correctly otherwise.
   numpy_reader(const numpy_reader&);

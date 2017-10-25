@@ -112,7 +112,7 @@ class deconvolution_layer : public base_convolution_layer {
   }
 
   /** Returns description of ctor params */
-  std::string get_description() const {
+  std::string get_description() const override {
     std::stringstream s;
     s << " deconvolution; conv_dims: ";
     for (size_t h=0; h<this->m_kernel_dims.size(); h++) {
@@ -144,7 +144,7 @@ class deconvolution_layer : public base_convolution_layer {
 
   ~deconvolution_layer() {}
 
-  deconvolution_layer* copy() const { return new deconvolution_layer(*this); }
+  deconvolution_layer* copy() const override { return new deconvolution_layer(*this); }
 
   virtual std::string get_type() const override { return "deconvolution"; }
 
@@ -154,7 +154,7 @@ class deconvolution_layer : public base_convolution_layer {
 
   virtual data_layout get_data_layout() const override { return T_layout; }
 
-  void setup_dims() {
+  void setup_dims() override {
 
     // Initialize previous neuron tensor dimensions
     base_convolution_layer::setup_dims();
@@ -190,7 +190,7 @@ class deconvolution_layer : public base_convolution_layer {
 
   }
 
-  void setup_data() {
+  void setup_data() override {
     if(m_bias_scaling_factor == DataType(0)) {
       El::Zeros(*this->m_weights,
                 m_kernel_size / this->m_prev_neuron_dims[0],
@@ -207,7 +207,7 @@ class deconvolution_layer : public base_convolution_layer {
     base_convolution_layer::setup_data();
   }
 
-  void setup_views() {
+  void setup_views() override {
     base_convolution_layer::setup_views();
     El::View(*m_kernel_weights_v, *this->m_weights,
              El::ALL, El::IR(0,this->m_prev_neuron_dims[0]));
@@ -244,7 +244,7 @@ class deconvolution_layer : public base_convolution_layer {
 
  protected:
 
-  void fp_compute() {
+  void fp_compute() override {
     if(this->m_using_gpus) {
       apply_transposed_convolution_cudnn(true);
       apply_bias_cudnn();
@@ -255,7 +255,7 @@ class deconvolution_layer : public base_convolution_layer {
     l2_regularize_objective_function();
   }
 
-  void bp_compute() {
+  void bp_compute() override {
     if(this->m_using_gpus) {
       apply_convolution_cudnn(false);
       compute_gradients_cudnn(true);

@@ -277,17 +277,19 @@ void add_layers(
     // LAYER: input_distributed_minibatch
     //////////////////////////////////////////////////////////////////
     else if (layer.has_input_distributed_minibatch()) {
-      //const lbann_data::InputDistributedMiniBatch& ell = layer.input_distributed_minibatch();
+      const lbann_data::InputDistributedMiniBatch& ell = layer.input_distributed_minibatch();
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new input_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(
           comm,
           m.num_parallel_readers(),
-          data_readers);
+          data_readers,
+          !ell.data_set_per_model());
       } else {
         d = new input_layer_distributed_minibatch<data_layout::DATA_PARALLEL>(
           comm,
           m.num_parallel_readers(),
-          data_readers);
+          data_readers,
+          !ell.data_set_per_model());
       }
     }
 
@@ -295,7 +297,7 @@ void add_layers(
     // LAYER: input_partitioned_minibatch
     //////////////////////////////////////////////////////////////////
     else if (layer.has_input_partitioned_minibatch()) {
-      //const lbann_data::InputPartitionedMiniBatch& ell = layer.input_partitioned_minibatch();
+      const lbann_data::InputPartitionedMiniBatch& ell = layer.input_partitioned_minibatch();
       if (dl == data_layout::MODEL_PARALLEL and master) {
         err << __FILE__ << " " << __LINE__ << " :: input_layer_partitioned_minibatch "
             << "does not support MODEL_PARALLEL layouts";
@@ -304,7 +306,8 @@ void add_layers(
         d = new input_layer_partitioned_minibatch<data_layout::DATA_PARALLEL>(
           comm,
           m.num_parallel_readers(),
-          data_readers);
+          data_readers,
+          !ell.data_set_per_model());
       }
     }
 
@@ -858,6 +861,7 @@ void add_layers(
       } else {
         d = new  target_layer_partitioned_minibatch<data_layout::DATA_PARALLEL>(
           comm,
+          dynamic_cast<input_layer*>(index_mapping[0]),
           m.num_parallel_readers(),
           data_readers,
           ell.shared_data_reader(),
@@ -873,6 +877,7 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new  target_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(
           comm,
+          dynamic_cast<input_layer*>(index_mapping[0]),
           m.num_parallel_readers(),
           data_readers,
           ell.shared_data_reader(),
@@ -880,6 +885,7 @@ void add_layers(
       } else {
         d = new  target_layer_distributed_minibatch<data_layout::DATA_PARALLEL>(
           comm,
+          dynamic_cast<input_layer*>(index_mapping[0]),
           m.num_parallel_readers(),
           data_readers,
           ell.shared_data_reader(),
@@ -1241,7 +1247,7 @@ void init_callbacks(
       lbann_callback_debug_io *debug_cb = nullptr;
       if(c.phase() == "train" || c.phase() == "training") {
         debug_cb = new lbann_callback_debug_io(execution_mode::training, c.lvl());
-      } else if (c.phase() == "validation") {
+      } else if (c.phase() == "validate" || c.phase() == "validation") {
         debug_cb = new lbann_callback_debug_io(execution_mode::validation, c.lvl());
       } else if (c.phase() == "test" || c.phase() == "testing") {
         debug_cb = new lbann_callback_debug_io(execution_mode::testing, c.lvl());
@@ -1419,6 +1425,14 @@ model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac, const lban
     obj = new objective_functions::cross_entropy();
   } else if (obj_fn_name == "mean_squared_error") {
     obj = new objective_functions::mean_squared_error();
+  } else if (obj_fn_name == "binary_cross_entropy") {
+    obj = new objective_functions::binary_cross_entropy();
+  } else if (obj_fn_name == "geom_negloglike") {
+    obj = new objective_functions::geom_negloglike();
+  } else if (obj_fn_name == "mean_absolute_deviation") {
+    obj = new objective_functions::mean_absolute_deviation();
+  } else if (obj_fn_name == "poisson_negloglike") {
+    obj = new objective_functions::poisson_negloglike();
   } else {
     if (master) {
       err << __FILE__ << " " << __LINE__
@@ -1464,6 +1478,12 @@ model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac, const lban
         model->add_metric(new metrics::mean_squared_error<data_layout::MODEL_PARALLEL>(comm));
       } else {
         model->add_metric(new metrics::mean_squared_error<data_layout::DATA_PARALLEL>(comm));
+      }
+    } else if (metric.has_pearson_correlation()) {
+      if (dl == data_layout::MODEL_PARALLEL) {
+        model->add_metric(new metrics::pearson_correlation<data_layout::MODEL_PARALLEL>(comm));
+      } else {
+        model->add_metric(new metrics::pearson_correlation<data_layout::DATA_PARALLEL>(comm));
       }
     } else if (metric.has_top_k_categorical_accuracy()) {
       const lbann_data::TopKCategoricalAccuracy &a = metric.top_k_categorical_accuracy();
@@ -1517,7 +1537,7 @@ optimizer_factory *init_optimizer_factory(lbann_comm *comm, cudnn::cudnn_manager
   return factory;
 }
 
-void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execution_mode, generic_data_reader *>& data_readers, int mini_batch_size)
+void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execution_mode, generic_data_reader *>& data_readers)
 {
   std::stringstream err;
 
@@ -1536,11 +1556,15 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
     generic_data_reader *reader_validation = 0;
 
     if (name == "mnist") {
-      reader = new mnist_reader(mini_batch_size, shuffle);
+      reader = new mnist_reader(shuffle);
     } else if (name == "imagenet") {
-      reader = new imagenet_reader(mini_batch_size, shuffle);
+      reader = new imagenet_reader(shuffle);
+      const int n_labels = readme.num_labels();
+      const int width = preprocessor.raw_width();
+      const int height = preprocessor.raw_height();
+      dynamic_cast<imagenet_reader*>(reader)->set_input_params(width, height, 3, n_labels);
     } else if (name == "imagenet_single") {
-      reader = new imagenet_readerSingle(mini_batch_size, shuffle);
+      reader = new imagenet_readerSingle(shuffle);
     } else if ((name == "imagenet_cv") || (name == "imagenet_single_cv")) {
       // set up the image preprocessor
       std::shared_ptr<cv_process> pp = std::make_shared<cv_process>();
@@ -1551,10 +1575,10 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
         cropper->set(preprocessor.crop_width(),
                      preprocessor.crop_height(),
                      preprocessor.crop_randomly(),
-                     std::make_pair<int,int>(preprocessor.crop_roi_width(),
-                                             preprocessor.crop_roi_height()));
+                     std::make_pair<int,int>(preprocessor.resized_width(),
+                                             preprocessor.resized_height()));
         pp->add_transform(std::move(cropper));
-        //if (master) cout << "cropper is set" << endl;
+        if (master) cout << "imagenet: cropper is set" << endl;
       }
 
       // set up augmenter if necessary
@@ -1574,14 +1598,15 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
                        preprocessor.vertical_shift(),
                        preprocessor.shear_range());
         pp->add_transform(std::move(augmenter));
-        //if (master) cout << "augmenter is set" << endl;
+        if (master) cout << "imagenet: augmenter is set" << endl;
       }
 
       // set up a custom transform (colorizer)
       if (!preprocessor.no_colorize()) {
+        // If every image in the dataset is a color image, this is not needed
         std::unique_ptr<lbann::cv_colorizer> colorizer(new(lbann::cv_colorizer));
         pp->add_transform(std::move(colorizer));
-        //if (master) cout << "colorizer is set" << endl;
+        if (master) cout << "imagenet: colorizer is set" << endl;
       }
 
       // set up the normalizer
@@ -1591,19 +1616,29 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       normalizer->unit_variance(preprocessor.unit_variance());
       normalizer->z_score(preprocessor.z_score());
       pp->add_normalizer(std::move(normalizer));
-      //if (master) cout << "normalizer is set" << endl;
+      if (master) cout << "imagenet: normalizer is set" << endl;
 
       if (name == "imagenet_cv") {
-        reader = new imagenet_reader_cv(mini_batch_size, pp, shuffle);
-        //if (master) cout << "imagenet_reader_cv is set" << endl;
+        reader = new imagenet_reader_cv(pp, shuffle);
+        if (master) cout << "imagenet_reader_cv is set" << endl;
       } else {
-        reader = new imagenet_reader_single_cv(mini_batch_size, pp, shuffle);
-        //if (master) cout << "imagenet_reader_single_cv is set" << endl;
+        reader = new imagenet_reader_single_cv(pp, shuffle);
+        if (master) cout << "imagenet_reader_single_cv is set" << endl;
       }
+      int width=0, height=0;
+      const int n_labels = readme.num_labels();
+      if (preprocessor.crop_first()) {
+        width = preprocessor.crop_width();
+        height = preprocessor.crop_height();
+      } else {
+        width = preprocessor.raw_width();
+        height = preprocessor.raw_height();
+      }
+      dynamic_cast<imagenet_reader_cv*>(reader)->set_input_params(width, height, 3, n_labels);
     } else if (name == "nci") {
-      reader = new data_reader_nci(mini_batch_size, shuffle);
+      reader = new data_reader_nci(shuffle);
     } else if (name == "csv") {
-      csv_reader* reader_csv = new csv_reader(mini_batch_size, shuffle);
+      csv_reader* reader_csv = new csv_reader(shuffle);
       reader_csv->set_label_col(readme.label_col());
       reader_csv->set_response_col(readme.response_col());
       reader_csv->disable_labels(readme.disable_labels()); 
@@ -1614,7 +1649,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       reader_csv->set_has_header(readme.has_header());
       reader = reader_csv;
     } else if (name == "numpy") {
-      numpy_reader* reader_numpy = new numpy_reader(mini_batch_size, shuffle);
+      numpy_reader* reader_numpy = new numpy_reader(shuffle);
       reader_numpy->set_has_labels(!readme.disable_labels());
       reader_numpy->set_has_responses(!readme.disable_responses());
       reader = reader_numpy;
@@ -1623,13 +1658,13 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       std::vector<generic_data_reader*> npy_readers;
       for (const auto path : paths) {
         if (readme.format() == "numpy") {
-          numpy_reader *reader_numpy = new numpy_reader(mini_batch_size, false);
+          numpy_reader *reader_numpy = new numpy_reader(false);
           reader_numpy->set_data_filename(path);
           reader_numpy->set_has_labels(!readme.disable_labels());
           reader_numpy->set_has_responses(!readme.disable_responses());
           npy_readers.push_back(reader_numpy);
         }else if (readme.format() == "csv") {
-          csv_reader* reader_csv = new csv_reader(mini_batch_size, shuffle);
+          csv_reader* reader_csv = new csv_reader(shuffle);
           reader_csv->set_data_filename(path);
           reader_csv->set_label_col(readme.label_col());
           reader_csv->set_response_col(readme.response_col());
@@ -1646,12 +1681,12 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
           throw lbann_exception(err.str());
         }
       }
-      data_reader_merge_samples* merged_reader = new data_reader_merge_samples(mini_batch_size, npy_readers, shuffle);
+      data_reader_merge_samples* merged_reader = new data_reader_merge_samples(npy_readers, shuffle);
       reader = merged_reader;
     } else if (name == "cifar10") {
-      reader = new cifar10_reader(mini_batch_size, shuffle);
+      reader = new cifar10_reader(shuffle);
     } else if (name == "synthetic") {
-      reader = new data_reader_synthetic(mini_batch_size, readme.num_samples(), readme.num_features(), shuffle);
+      reader = new data_reader_synthetic(readme.num_samples(), readme.num_features(), shuffle);
     } else {
       if (master) {
         err << __FILE__ << " " << __LINE__ << " :: unknown name for data reader: "
@@ -1670,7 +1705,6 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       reader->set_file_dir( readme.data_filedir() );
     }
     reader->set_use_percent( readme.train_or_test_percent() );
-    reader->set_firstN( readme.firstn() );
     if (readme.max_sample_count()) {
       reader->set_max_sample_count( readme.max_sample_count() );
     }
@@ -1718,49 +1752,37 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
 
     if (readme.role() == "train") {
       if (name == "mnist") {
-        reader_validation = new mnist_reader(mini_batch_size, shuffle);
+        reader_validation = new mnist_reader(shuffle);
         (*(mnist_reader *)reader_validation) = (*(mnist_reader *)reader);
       } else if (name == "imagenet") {
-        reader_validation = new imagenet_reader(mini_batch_size, shuffle);
+        reader_validation = new imagenet_reader(shuffle);
         (*(imagenet_reader *)reader_validation) = (*(imagenet_reader *)reader);
       } else if (name == "imagenet_single") {
-        reader_validation = new imagenet_readerSingle(mini_batch_size, shuffle);
+        reader_validation = new imagenet_readerSingle(shuffle);
         (*(imagenet_readerSingle *)reader_validation) = (*(imagenet_readerSingle *)reader);
       } else if (name == "imagenet_cv") {
         reader_validation = new imagenet_reader_cv(*dynamic_cast<const imagenet_reader_cv *>(reader));
       } else if (name == "imagenet_single_cv") {
         reader_validation = new imagenet_reader_single_cv(*dynamic_cast<const imagenet_reader_single_cv *>(reader));
       } else if (name == "nci") {
-        reader_validation = new data_reader_nci(mini_batch_size, shuffle);
+        reader_validation = new data_reader_nci(shuffle);
         (*(data_reader_nci *)reader_validation) = (*(data_reader_nci *)reader);
       } else if (name == "csv") {
-        reader_validation = new csv_reader(mini_batch_size, shuffle);
+        reader_validation = new csv_reader(shuffle);
         (*(csv_reader *)reader_validation) = (*(csv_reader *)reader);
       } else if (name == "numpy") {
-        reader_validation = new numpy_reader(mini_batch_size, shuffle);
+        reader_validation = new numpy_reader(shuffle);
         (*(numpy_reader *)reader_validation) = (*(numpy_reader *)reader);
       } else if (name == "merge_samples") {
         reader_validation = new data_reader_merge_samples(*(data_reader_merge_samples *)reader);
       } else if (name == "cifar10") {
-        reader_validation = new cifar10_reader(mini_batch_size, shuffle);
+        reader_validation = new cifar10_reader(shuffle);
         (*(cifar10_reader *)reader_validation) = (*(cifar10_reader *)reader);
         /*
         } else if (name == "synthetic") {
-        reader_validation = new data_reader_synthetic(mini_batch_size, shuffle);
+        reader_validation = new data_reader_synthetic(shuffle);
         */
       }
-      /*
-      } else if (name == "imagenet_cv") {
-      std::shared_ptr<cv_process> pp = std::make_shared<cv_process>();
-      pp->set_normalizer(std::move(normalizer));
-      pp->set_custom_transform2(std::move(colorizer));
-      reader = new imagenet_reader_cv(mini_batch_size, pp, shuffle);
-      reader_validation = new imagenet_reader_cv(mini_batch_size, pp, shuffle);
-      } else if (name == "imagenet_single") {
-      reader_validation = new imagenet_reader_single(mini_batch_size, shuffle);
-      } else if (name == "imagenet_single_cv") {
-      reader_validation = new imagenet_reader_single_cv(mini_batch_size, shuffle);
-      */
 
       reader_validation->swap_role("validate");
       reader_validation->use_unused_index_set();
