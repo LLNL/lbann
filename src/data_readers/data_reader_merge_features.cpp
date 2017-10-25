@@ -31,9 +31,9 @@
 namespace lbann {
 
 data_reader_merge_features::data_reader_merge_features(
-  int batch_size, std::vector<generic_data_reader*> data_readers,
+  std::vector<generic_data_reader*> data_readers,
   generic_data_reader *label_reader, bool shuffle) :
-  generic_compound_data_reader(batch_size, data_readers, shuffle),
+  generic_compound_data_reader(data_readers, shuffle),
   m_label_reader(label_reader) {}
 
 data_reader_merge_features::data_reader_merge_features(

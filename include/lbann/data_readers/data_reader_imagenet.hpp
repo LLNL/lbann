@@ -35,7 +35,7 @@
 namespace lbann {
 class imagenet_reader : public generic_data_reader {
  public:
-  imagenet_reader(int batchSize, bool shuffle = true);
+  imagenet_reader(bool shuffle = true);
   imagenet_reader(const imagenet_reader&) = default;
   imagenet_reader& operator=(const imagenet_reader&) = default;
   ~imagenet_reader() {}

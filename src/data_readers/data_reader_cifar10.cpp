@@ -30,8 +30,8 @@
 
 namespace lbann {
 
-cifar10_reader::cifar10_reader(int batchSize, bool shuffle)
-  : generic_data_reader(batchSize, shuffle),
+cifar10_reader::cifar10_reader(bool shuffle)
+  : generic_data_reader(shuffle),
     m_image_width(32), m_image_height(32), m_image_num_channels(3) {
 }
 

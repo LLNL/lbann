@@ -48,7 +48,7 @@ void generic_data_reader::setup() {
   set_initial_position();
 
   // Shuffle the data
-  if (not m_first_n) {
+  if (m_shuffle) {
     std::shuffle(m_shuffled_indices.begin(), m_shuffled_indices.end(),
                  get_data_seq_generator());
   }
@@ -218,7 +218,7 @@ bool generic_data_reader::update(bool is_active_reader) {
         + " but not all of the data has been used -- current pos = " + std::to_string(m_current_pos)
         + " and there are " + std::to_string(m_shuffled_indices.size()) + " indices");
     }
-    if (not m_first_n) {
+    if (m_shuffle) {
       std::shuffle(m_shuffled_indices.begin(), m_shuffled_indices.end(),
                    get_data_seq_generator());
     }
@@ -263,7 +263,7 @@ int generic_data_reader::get_next_position() const {
 }
 
 void generic_data_reader::select_subset_of_data() {
-  if(!get_firstN()) {
+  if(m_shuffle) {
     std::shuffle(m_shuffled_indices.begin(), m_shuffled_indices.end(), get_data_seq_generator());
   }
 
@@ -294,7 +294,7 @@ void generic_data_reader::select_subset_of_data() {
     }
   }
 
-  if(get_firstN()) {
+  if(not m_shuffle) {
     std::sort(m_shuffled_indices.begin(), m_shuffled_indices.end());
     std::sort(m_unused_indices.begin(), m_unused_indices.end());
   }
@@ -435,13 +435,6 @@ bool generic_data_reader::has_max_sample_count() const {
   return m_max_sample_count_was_set;
 }
 
-void generic_data_reader::set_firstN(bool b) {
-  m_first_n = b;
-}
-
-bool generic_data_reader::get_firstN() const {
-  return m_first_n;
-}
 
 void generic_data_reader::set_validation_percent(double s) {
   if (s < 0 or s > 1.0) {

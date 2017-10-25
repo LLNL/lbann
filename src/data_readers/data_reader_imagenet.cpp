@@ -34,8 +34,8 @@
 
 namespace lbann {
 
-imagenet_reader::imagenet_reader(int batchSize, bool shuffle)
-  : generic_data_reader(batchSize, shuffle) {
+imagenet_reader::imagenet_reader(bool shuffle)
+  : generic_data_reader(shuffle) {
   m_image_width = 256;
   m_image_height = 256;
   m_image_num_channels = 3;

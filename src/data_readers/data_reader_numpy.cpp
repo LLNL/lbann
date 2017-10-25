@@ -34,8 +34,8 @@
 
 namespace lbann {
 
-numpy_reader::numpy_reader(int batch_size, bool shuffle)
-  : generic_data_reader(batch_size, shuffle), m_num_samples(0),
+numpy_reader::numpy_reader(bool shuffle)
+  : generic_data_reader(shuffle), m_num_samples(0),
     m_num_features(0) {}
 
 numpy_reader::numpy_reader(const numpy_reader& other) :

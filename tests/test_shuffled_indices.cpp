@@ -33,7 +33,7 @@ using namespace lbann;
 
 const int lbann_default_random_seed = 42;
 
-int mini_batch_size = 5;
+int mini_batch_size = 128;
 
 void test_is_shuffled(generic_data_reader *reader, bool is_shuffled, const char *msg = 0);
 
@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
         generic_data_reader *reader;
 
         bool shuffle = true;
-        reader = new mnist_reader(mini_batch_size, shuffle);
+        reader = new mnist_reader(shuffle);
         if (readme.data_filename() != "") { reader->set_data_filename( readme.data_filename() ); }
         if (readme.label_filename() != "") { reader->set_label_filename( readme.label_filename() ); }
         if (readme.data_filedir() != "") { reader->set_file_dir( readme.data_filedir() ); }
@@ -81,20 +81,20 @@ int main(int argc, char *argv[]) {
         delete reader;
 
         //test: indices should not be shuffled; same as previous, except we call
-        //      set_firstN(true);
-        bool firstN = true;
-        reader = new mnist_reader(mini_batch_size, shuffle);
+        //      shuffle(true);
+        shuffle = false;
+        reader = new mnist_reader(shuffle);
         if (readme.data_filename() != "") { reader->set_data_filename( readme.data_filename() ); }
         if (readme.label_filename() != "") { reader->set_label_filename( readme.label_filename() ); }
         if (readme.data_filedir() != "") { reader->set_file_dir( readme.data_filedir() ); }
-        reader->set_firstN(firstN);
+        reader->set_shuffle(shuffle);
         reader->load();
         test_is_shuffled(reader, false, "TEST #2");
         delete reader;
 
         //test: indices should not be shuffled, due to ctor argument
         shuffle = false;
-        reader = new mnist_reader(mini_batch_size, shuffle);
+        reader = new mnist_reader(shuffle);
         if (readme.data_filename() != "") { reader->set_data_filename( readme.data_filename() ); }
         if (readme.label_filename() != "") { reader->set_label_filename( readme.label_filename() ); }
         if (readme.data_filedir() != "") { reader->set_file_dir( readme.data_filedir() ); }
@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
 
         //test: set_shuffled_indices; indices should not be shuffled
         shuffle = true;
-        reader = new mnist_reader(mini_batch_size, shuffle);
+        reader = new mnist_reader(shuffle);
         if (readme.data_filename() != "") { reader->set_data_filename( readme.data_filename() ); }
         if (readme.label_filename() != "") { reader->set_label_filename( readme.label_filename() ); }
         if (readme.data_filedir() != "") { reader->set_file_dir( readme.data_filedir() ); }

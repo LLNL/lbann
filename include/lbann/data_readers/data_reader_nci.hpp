@@ -37,8 +37,8 @@ namespace lbann {
 
 class data_reader_nci : public csv_reader {
  public:
-  data_reader_nci(int batchSize, bool shuffle);
-  data_reader_nci(int batchSize);
+  data_reader_nci(bool shuffle = true);
+  data_reader_nci();
   data_reader_nci(const data_reader_nci& source) = default;
   data_reader_nci& operator=(const data_reader_nci& source) = default;
   ~data_reader_nci() {}

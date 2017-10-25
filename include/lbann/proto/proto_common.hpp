@@ -10,8 +10,7 @@
 void init_data_readers(
   bool master,
   const lbann_data::LbannPB& p,
-  std::map<execution_mode, lbann::generic_data_reader *>& data_readers,
-  int mini_batch_size);
+  std::map<execution_mode, lbann::generic_data_reader *>& data_readers);
 
 /// adjusts the number of parallel data readers 
 void set_num_parallel_readers(lbann::lbann_comm *comm, lbann_data::LbannPB& p);
