@@ -1480,6 +1480,14 @@ model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac, const lban
     obj = new objective_functions::cross_entropy();
   } else if (obj_fn_name == "mean_squared_error") {
     obj = new objective_functions::mean_squared_error();
+  } else if (obj_fn_name == "binary_cross_entropy") {
+    obj = new objective_functions::binary_cross_entropy();
+  } else if (obj_fn_name == "geom_negloglike") {
+    obj = new objective_functions::geom_negloglike();
+  } else if (obj_fn_name == "mean_absolute_deviation") {
+    obj = new objective_functions::mean_absolute_deviation();
+  } else if (obj_fn_name == "poisson_negloglike") {
+    obj = new objective_functions::poisson_negloglike();
   } else {
     if (master) {
       err << __FILE__ << " " << __LINE__
