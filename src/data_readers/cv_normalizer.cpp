@@ -308,7 +308,7 @@ bool cv_normalizer::compute_mean_stddev(const cv::Mat& image,
     // cv::meanStdDev() currently only works with double type for mean and stddev and images of 1-4 channels
     typedef double Ch_T;
     //typedef ComputeType Ch_T;
-    typedef patchworks::cv_channel_type<Ch_T> Output_T;
+    typedef patchworks::cv_image_type<Ch_T> Output_T;
     cv::Mat _mean(1, 4, Output_T::T());
     cv::Mat _stddev(1, 4, Output_T::T());
     cv::meanStdDev(image, _mean, _stddev, mask);

@@ -32,8 +32,8 @@ using namespace std;
 lbann::distributed_minibatch::distributed_minibatch(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
   : generic_data_distribution(comm, num_parallel_readers, data_readers) {}
 
-int lbann::distributed_minibatch::fetch_to_local_matrix(Mat& M_local) {
-  int num_parallel_readers = get_num_parallel_readers();
+int lbann::distributed_minibatch::fetch_to_local_matrix(Mat& M_local, generic_data_reader *data_reader) {
+  int num_parallel_readers = data_reader->get_num_parallel_readers();
 
   /// Check to see if this rank has valid data -- if not read in the next batch
   /// Coordinate all available readers so that the perform I/O in the same step
@@ -43,7 +43,7 @@ int lbann::distributed_minibatch::fetch_to_local_matrix(Mat& M_local) {
 
       /// Each data reader needs to either have independent / split
       /// data, or take an offset / stride
-      m_num_samples_in_batch = fetch_from_data_reader(M_local);
+      m_num_samples_in_batch = (*fetch_data_fn)(M_local, data_reader);
       bool data_valid = (m_num_samples_in_batch > 0);
       if(data_valid) {
         m_num_data_per_epoch+=m_num_samples_in_batch;
@@ -55,8 +55,8 @@ int lbann::distributed_minibatch::fetch_to_local_matrix(Mat& M_local) {
   return m_num_samples_in_batch;
 }
 
-void lbann::distributed_minibatch::distribute_from_local_matrix(Mat& M_local, CircMat& Ms) {
-  int num_parallel_readers = get_num_parallel_readers();
+void lbann::distributed_minibatch::distribute_from_local_matrix(Mat& M_local, CircMat& Ms, generic_data_reader *data_reader) {
+  int num_parallel_readers = data_reader->get_num_parallel_readers();
   Ms.SetRoot(m_root);
 
   m_comm->model_barrier();
@@ -81,12 +81,12 @@ void lbann::distributed_minibatch::distribute_from_local_matrix(Mat& M_local, Ci
   return;
 }
 
-bool lbann::distributed_minibatch::is_data_set_processed() {
+bool lbann::distributed_minibatch::is_data_set_processed(generic_data_reader *data_reader) {
   // not just the ones in the last round.  This will ensure that all readers, that had data
   // will have distributed it.
-  int num_parallel_readers = get_num_parallel_readers();
-  int num_iterations_per_epoch = get_num_iterations_per_epoch();
-  int current_step_in_epoch = get_current_step_in_epoch(); // Get the current step before the update function increments it
+  int num_parallel_readers = data_reader->get_num_parallel_readers();
+  int num_iterations_per_epoch = data_reader->get_num_iterations_per_epoch();
+  int current_step_in_epoch = data_reader->get_current_step_in_epoch(); // Get the current step before the update function increments it
 
   bool is_active_reader = (m_comm->get_rank_in_model() < num_parallel_readers) 
     && ((m_comm->get_rank_in_model()+1)%num_parallel_readers == m_root);
@@ -99,7 +99,7 @@ bool lbann::distributed_minibatch::is_data_set_processed() {
         throw lbann_exception(err.str());
       }
   }
-  m_local_reader_done = !update_data_reader(is_active_reader);
+  m_local_reader_done = !(*update_data_reader_fn)(is_active_reader, data_reader);
 
   /// Once all of the readers have finished their part of the mini-batch indicate that the epoch is finished
   if(current_step_in_epoch == (num_iterations_per_epoch - 1)) {

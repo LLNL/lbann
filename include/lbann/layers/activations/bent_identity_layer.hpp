@@ -24,26 +24,45 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_DATASET_HPP_INCLUDED
-#define LBANN_DATASET_HPP_INCLUDED
+#ifndef BENT_IDENTITY_HPP_INCLUDED
+#define BENT_IDENTITY_HPP_INCLUDED
 
-#include "lbann/data_readers/data_reader.hpp"
+#include "lbann/layers/activations/activation.hpp"
 
 namespace lbann {
 
-class dataset {
+/**
+ * Bent Identity activation function.
+ * See: https://en.wikipedia.org/wiki/Bent_Identity_function
+ */
+template <data_layout T_layout>
+class bent_identity_layer : public entrywise_activation_layer {
  public:
-  dataset() : m_num_samples_processed(0), m_total_samples(0) {};
-  // The associated model/IO layer using this dataset is responsible for copying
-  // the data reader.
-  dataset(const dataset& other) = default;
-  dataset& operator=(const dataset& other) = default;
 
- public:
-  long m_num_samples_processed;
-  long m_total_samples;
+  bent_identity_layer(int index,
+                lbann_comm *comm) :
+    entrywise_activation_layer(index, comm) { 
+    initialize_distributed_matrices(); 
+  }
+
+  bent_identity_layer* copy() const { return new bent_identity_layer(*this); }
+
+  std::string get_type() const { return "bent identity"; }
+
+  virtual inline void initialize_distributed_matrices() {
+    entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
+  }
+  virtual data_layout get_data_layout() const { return T_layout; }
+
+ protected:
+  DataType activation_function(DataType z) {
+    return (std::sqrt(z*z + DataType(1)) - DataType(1))/DataType(2) + z;
+  }
+  DataType activation_function_gradient(DataType z) {
+    return z/(DataType(2)*std::sqrt(z*z + DataType(1))) + DataType(1);
+  }
 };
 
 }  // namespace lbann
 
-#endif  // LBANN_DATASET_HPP_INCLUDED
+#endif  // BENT_IDENTITY_HPP_INCLUDED

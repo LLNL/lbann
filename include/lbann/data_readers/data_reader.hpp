@@ -75,7 +75,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_global_last_mini_batch_size(0),
     m_num_parallel_readers(0), m_model_rank(0),
     m_file_dir(""), m_data_fn(""), m_label_fn(""),
-    m_first_n(false), m_max_sample_count(0), m_validation_percent(-1),
+    m_first_n(not shuffle), m_max_sample_count(0), m_validation_percent(-1),
     m_max_sample_count_was_set(false), m_use_percent(1.0),
     m_master(false)
   {}
@@ -140,6 +140,21 @@ class generic_data_reader : public lbann_image_preprocessor {
    * Returns true if data samples are not shuffled.
    */
   bool get_firstN() const;
+
+  /**
+   * Set shuffled indices; primary use is for testing
+   * and reproducibility
+   */
+  void set_shuffled_indices(const std::vector<int> &indices) {
+    m_shuffled_indices = indices;
+  }
+
+  /**
+   * Returns the shuffled indices; primary use is for testing.
+   */
+  const std::vector<int> & get_shuffled_indices() const {
+    return m_shuffled_indices;
+  }
 
   /**
    * Sets the absolute number of data samples that will be used for training or

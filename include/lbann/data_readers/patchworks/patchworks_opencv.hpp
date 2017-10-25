@@ -40,100 +40,61 @@ namespace lbann {
 namespace patchworks {
 
 /// A template structure to convert an OpenCV identifier of channel depth to a standard C++ type
-template<int T> struct cv_depth_type {};
+template<int T> class cv_depth_type {};
 
-/// Convert CV_8U to uint8_t
-template<> struct cv_depth_type<CV_8U>  {
-  typedef  uint8_t standard_type;
-};
-/// Convert CV_8S to int8_t
-template<> struct cv_depth_type<CV_8S>  {
-  typedef   int8_t standard_type;
-};
-/// Convert CV_16U to uint16_t
-template<> struct cv_depth_type<CV_16U> {
-  typedef uint16_t standard_type;
-};
-/// Convert CV_16S to int16_t
-template<> struct cv_depth_type<CV_16S> {
-  typedef  int16_t standard_type;
-};
-/// Convert CV_32S to int32_t
-template<> struct cv_depth_type<CV_32S> {
-  typedef  int32_t standard_type;
-};
-/// Convert CV_32F to float
-template<> struct cv_depth_type<CV_32F> {
-  typedef    float standard_type;
-};
-/// Convert CV_64F to double
-template<> struct cv_depth_type<CV_64F> {
-  typedef   double standard_type;
-};
+/// define a specialized mapper from a CV channel type to its c++ native type
+#define _def_cv_depth_translation(_CV_TYPE_, _NATIVE_TYPE_) \
+template<> struct cv_depth_type<_CV_TYPE_>  { \
+ public: \
+  typedef _NATIVE_TYPE_ standard_type; \
+}
+
+/// cv_depth_type<CV_8U> maps to uint8_t
+_def_cv_depth_translation(CV_8U, uint8_t);
+/// cv_depth_type<CV_8S> maps to int8_t
+_def_cv_depth_translation(CV_8S, int8_t);
+/// cv_depth_type<CV_16U> maps to uint16_t
+_def_cv_depth_translation(CV_16U, uint16_t);
+/// cv_depth_type<CV_16S> maps to int16_t
+_def_cv_depth_translation(CV_16S, int16_t);
+/// cv_depth_type<CV_32S> maps to int32_t
+_def_cv_depth_translation(CV_32S, int32_t);
+/// cv_depth_type<CV_32F> maps to float
+_def_cv_depth_translation(CV_32F, float);
+/// cv_depth_type<CV_64F> maps to double
+_def_cv_depth_translation(CV_64F, double);
+
 
 /// Convert an OpenCV identifier of image depth to a standard C++ type
 #define _depth_type(_cv_depth_) lbann::patchworks::cv_depth_type<_cv_depth_>::standard_type
 
 
-/** A template structure to map the type of channel and the number of
- * channels into the corresponding OpenCV type identifier of such an image.
+/** A template structure to map the type of channel into the
+ * corresponding OpenCV type identifier of image.
+   * - _T_: The channel value type as a native C++ type
  */
-template<typename T, int NCh> struct cv_image_type {};
-
-/** A template structure to map a standard c++ type of channel
- *  into the corresponding OpenCV type identifier.
- */
-template<typename T> struct cv_channel_type {};
-
-/** Define a template struct cv_image_type<_T_,_C_> that contains a static member
- * function T() which returns an OpenCV image type based on the macro arguments:
- * - _B_: The number of bits of a color depth (i.e., the number of bits for _T_)
- * - _S_: S/U/F for signed/unsigned/floating point respectively
- * - _T_: The intensity value type
- * - _C_: The number of channels
- */
-#define _def_cv_image_type(_B_, _S_, _T_, _C_) \
-template<> struct cv_image_type< _T_ , _C_ > \
-{ static int T() { return CV_ ## _B_ ## _S_ ## C ## _C_; } }
-
-/** Define a template struct cv_channel_type<_T_> that contains a static member
- * function T() which returns an OpenCV channel type based on the macro arguments:
- * - _B_: The number of bits of a color depth (i.e., the number of bits for _T_)
- * - _S_: S/U/F for signed/unsigned/floating point respectively
- * - _T_: The intensity value type
- */
-#define _def_cv_channel_type(_B_, _S_, _T_) \
-template<> struct cv_channel_type< _T_ > \
-{ static int T() { return CV_ ## _B_ ## _S_; } }
-
-/// Define cv_image_type<_T_,*> for various number of channels and cv_channel_type<_T_>
-#define _def_cv_image_type_B_U(_B_,_S_,_T_) \
-        _def_cv_channel_type(_B_, _S_, _T_); \
-        _def_cv_image_type(_B_, _S_, _T_, 3); \
-        _def_cv_image_type(_B_, _S_, _T_, 1); \
-        _def_cv_image_type(_B_, _S_, _T_, 2); \
-        _def_cv_image_type(_B_, _S_, _T_, 4);
-
-/// Define cv_image_type<uint8_t, x>, of which T() returns CV_8UCx
-_def_cv_image_type_B_U(8,  U, uint8_t)
-/// Define cv_image_type<int8_t, x>, of which T() returns CV_8SCx
-_def_cv_image_type_B_U(8,  S, int8_t)
-/// Define cv_image_type<uint16_t, x>, of which T() returns CV_16UCx
-_def_cv_image_type_B_U(16, U, uint16_t)
-/// Define cv_image_type<int16_t, x>, of which T() returns CV_16SCx
-_def_cv_image_type_B_U(16, S, int16_t)
-/// Define cv_image_type<int32_t, x>, of which T() returns CV_32SCx
-_def_cv_image_type_B_U(32, S, int32_t)
-/// Define cv_image_type<float, x>, of which T() returns CV_32FCx
-_def_cv_image_type_B_U(32, F, float)
-/// Define cv_image_type<double, x>, of which T() returns CV_64FCx
-_def_cv_image_type_B_U(64, F, double)
-
+template<typename _T_>
+struct cv_image_type {
+  /** A static member function which returns the OpenCV image type based on
+   *  the channel type and number of channels:
+   *  - _C_: The number of channels It ranges from 1 to CV_CN_MAX which is 512
+   */
+  static int T(const int _C_) {
+    return CV_MAKETYPE(cv::DataType<_T_>::depth, _C_);
+  }
+  /** A static member function which maps a native c++ type to the corresponding
+   *  OpenCV channel type.
+   *  The depth value returned ranges from 0 to (CV_DEPTH_MAX-1) which is 7
+   */
+  static int T(void) {
+    return cv::DataType<_T_>::depth;
+  }
+};
 
 template<typename T>
 struct depth_normalzing {
   static double factor() {
-    if ((std::is_same<T, float>::value) || (std::is_same<T, double>::value)) {
+    if (!std::is_integral<T>::value) {
       return 1.0;
     } else {
       return 1.0/std::numeric_limits<T>::max();

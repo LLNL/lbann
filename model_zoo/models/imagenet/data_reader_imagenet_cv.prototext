@@ -17,11 +17,11 @@ data_reader {
 #      crop_width: 240
 #      crop_height: 240
 #      crop_randomly: true
-#      crop_roi_width: 256
-#      crop_roi_height: 256
+#      resized_width: 256
+#      resized_height: 256
 # when assuming a fixed input image size instead of relying on cropper
-#      fixed_image_width: 256
-#      fixed_image_height: 256
+#      raw_width: 256
+#      raw_height: 256
     }
     num_labels: 1000
   }
@@ -43,11 +43,11 @@ data_reader {
 #      crop_width: 240
 #      crop_height: 240
 #      crop_randomly: false
-#      crop_roi_width: 256
-#      crop_roi_height: 256
+#      resized_width: 256
+#      resized_height: 256
 # when assuming a fixed input image size instead of relying on cropper
-#      fixed_image_width: 256
-#      fixed_image_height: 256
+#      raw_width: 256
+#      raw_height: 256
     }
     num_labels: 1000
   }
