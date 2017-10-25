@@ -52,11 +52,9 @@ class pearson_correlation : public metric {
     metric::setup(num_neurons, mini_batch_size);
   }
   void fp_set_std_matrix_view(int cur_mini_batch_size) {}
+
+  /// corr(X1,X2) = covariance(X1,X2)/(stdev(X1)*stdev(X2))
   double compute_metric(AbsDistMat& predictions_v, AbsDistMat& groundtruth_v) {
-    
-    //Get local matrices
-    const Mat& predictions_local = predictions_v.LockedMatrix();
-    const Mat& groundtruth_local = groundtruth_v.LockedMatrix();
     
     double corr = 0.0;
 
@@ -92,6 +90,7 @@ class pearson_correlation : public metric {
     El::Hadamard(*fsp,*fst, *covariance_mat);
 
     entrywise_mean_and_stdev(*covariance_mat, corr_mean, corr_std);
+    //Compute correlation
     corr = corr_mean/(pred_std*true_std);
 
     return corr;
@@ -104,7 +103,6 @@ class pearson_correlation : public metric {
     long samples_per_epoch = stats->m_samples_per_epoch;
 
     double corr = error_per_epoch / samples_per_epoch;
-    //string score = std::to_string(corr);
 
     return corr;
   }
@@ -114,7 +112,6 @@ class pearson_correlation : public metric {
     long total_num_samples = stats->m_total_num_samples;
 
     double corr = total_error / total_num_samples;
-    //string score = std::to_string(corr);
 
     return corr;
   }
