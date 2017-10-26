@@ -74,6 +74,11 @@ class reconstruction_layer : public target_layer {
   }
   virtual data_layout get_data_layout() const override { return T_layout; }
 
+  /** Set original layer. */
+  void set_original_layer(Layer *original_layer) {
+    m_original_layer = original_layer;
+  }
+
   void setup_dims() override {
     target_layer::setup_dims();
     this->m_neuron_dims = m_original_layer->get_neuron_dims();

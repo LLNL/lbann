@@ -16,49 +16,109 @@ using namespace lbann;
 //maps: layer name (from prototext) to the lbann::layer
 std::unordered_map<std::string, Layer*> name_mapping;
 
-//maps: layer index (wrt lbann::sequential_model) to the lbann::layer
-std::unordered_map<uint, Layer*> index_mapping;
-
-//maps: layer name (from prototext)  to layer index (wrt lbann::sequential_model)
-std::unordered_map<std::string, uint> name_to_index;
-
-void add_parent_and_child_pointers(std::vector<lbann_data::Layer> &proto_layers) {
+void setup_pointers(std::vector<lbann_data::Layer> &proto_layers) {
   std::string name;
   std::stringstream ss;
 
-  // Set each layer's parents and children
-  // Note: This must be done first to preserve order of
-  // parents/children
+  // Iterate through pointers
   for (size_t i=0; i<proto_layers.size(); i++) {
     Layer *layer = name_mapping[proto_layers[i].name()];
+
+    // Set layer parents
     ss.clear();
     ss.str(proto_layers[i].parents());
     while (ss >> name) {
       Layer *parent_layer = name_mapping[name];
       layer->add_parent_layer(parent_layer);
     }
+
+    // Set layer children
     ss.clear();
     ss.str(proto_layers[i].children());
     while (ss >> name) {
       Layer *child_layer = name_mapping[name];
       layer->add_child_layer(child_layer);
     }
+
+    // Set a target layer's paired input layer
+    if (dynamic_cast<target_layer*>(layer) != nullptr) {
+      target_layer *target = dynamic_cast<target_layer*>(layer);
+
+      // Get input layer name
+      std::string input_name;
+      if (proto_layers[i].has_target_distributed_minibatch()) {
+        input_name = proto_layers[i].target_distributed_minibatch().paired_input_layer();
+      }
+      if (proto_layers[i].has_target_partitioned_minibatch()) {
+        input_name = proto_layers[i].target_partitioned_minibatch().paired_input_layer();
+      }
+      if (input_name.empty()) {
+        for (auto& other_layer : name_mapping) {
+          if (dynamic_cast<input_layer*>(other_layer.second) != nullptr) {
+            input_name = other_layer.first;
+            break;
+          }
+        }
+      }
+
+      // Set input layer
+      input_layer *input = dynamic_cast<input_layer*>(name_mapping[input_name]);
+      if (input == nullptr) {
+        std::stringstream err;
+        err << __FILE__ << " " << __LINE__ << " :: "
+            << "could not find paired input layer for target layer";
+        throw lbann_exception(err.str());
+      }
+      target->set_paired_input_layer(input);
+
+    }
+
+    // Set a reconstruction layer's original layer
+    if (proto_layers[i].has_reconstruction()) {
+
+      // Get original layer name
+      std::string original_layer_name
+        = proto_layers[i].reconstruction().original_layer();
+      if (original_layer_name.empty()) {
+        for (auto& other_layer : name_mapping) {
+          if (dynamic_cast<input_layer*>(other_layer.second) != nullptr) {
+            original_layer_name = other_layer.first;
+            break;
+          }
+        }
+      }
+
+      // Set original layer
+      Layer *original_layer = name_mapping[original_layer_name];
+      if (original_layer == nullptr) {
+        std::stringstream err;
+        err << __FILE__ << " " << __LINE__ << " :: "
+            << "could not find original layer for reconstruction layer";
+        throw lbann_exception(err.str());
+      }
+      if (dynamic_cast<reconstruction_layer<data_layout::MODEL_PARALLEL>*>(layer)) {
+        reconstruction_layer<data_layout::MODEL_PARALLEL> *reconstruction
+          = dynamic_cast<reconstruction_layer<data_layout::MODEL_PARALLEL>*>(layer);
+        reconstruction->set_original_layer(original_layer);
+      }
+      if (dynamic_cast<reconstruction_layer<data_layout::DATA_PARALLEL>*>(layer)) {
+        reconstruction_layer<data_layout::DATA_PARALLEL> *reconstruction
+          = dynamic_cast<reconstruction_layer<data_layout::DATA_PARALLEL>*>(layer);
+        reconstruction->set_original_layer(original_layer);
+      }
+
+    }
+
   }
 
   // Make sure parent and child relationships are reciprocated
   for (size_t i=0; i<proto_layers.size(); i++) {
     Layer *layer = name_mapping[proto_layers[i].name()];
-    ss.clear();
-    ss.str(proto_layers[i].parents());
-    while (ss >> name) {
-      Layer *parent_layer = name_mapping[name];
-      parent_layer->add_child_layer(layer);
+    for (const Layer *parent_layer : layer->get_parent_layers()) {
+      const_cast<Layer*>(parent_layer)->add_child_layer(layer);
     }
-    ss.clear();
-    ss.str(proto_layers[i].children());
-    while (ss >> name) {
-      Layer *child_layer = name_mapping[name];
-      child_layer->add_parent_layer(layer);
+    for (const Layer *child_layer : layer->get_child_layers()) {
+      const_cast<Layer*>(child_layer)->add_parent_layer(layer);
     }
   }
 
@@ -206,8 +266,6 @@ void add_layers(
 
   std::stringstream err;
   name_mapping.clear(); //shouldn't need this, but just in case ...
-  index_mapping.clear(); //shouldn't need this, but just in case ...
-  name_to_index.clear(); //shouldn't need this, but just in case ...
 
   const lbann_data::Model& m = p.model();
   std::vector<lbann_data::Layer> proto_layers;
@@ -263,12 +321,12 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new reconstruction_layer<data_layout::MODEL_PARALLEL>(
           comm,
-          index_mapping[0]
+          nullptr
         );
       } else {
         d = new reconstruction_layer<data_layout::DATA_PARALLEL>(
           comm,
-          index_mapping[0]
+          nullptr
         );
       }
     }
@@ -861,7 +919,7 @@ void add_layers(
       } else {
         d = new  target_layer_partitioned_minibatch<data_layout::DATA_PARALLEL>(
           comm,
-          dynamic_cast<input_layer*>(index_mapping[0]),
+          nullptr,
           m.num_parallel_readers(),
           data_readers,
           ell.shared_data_reader(),
@@ -877,7 +935,7 @@ void add_layers(
       if (dl == data_layout::MODEL_PARALLEL) {
         d = new  target_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(
           comm,
-          dynamic_cast<input_layer*>(index_mapping[0]),
+          nullptr,
           m.num_parallel_readers(),
           data_readers,
           ell.shared_data_reader(),
@@ -885,7 +943,7 @@ void add_layers(
       } else {
         d = new  target_layer_distributed_minibatch<data_layout::DATA_PARALLEL>(
           comm,
-          dynamic_cast<input_layer*>(index_mapping[0]),
+          nullptr,
           m.num_parallel_readers(),
           data_readers,
           ell.shared_data_reader(),
@@ -907,11 +965,9 @@ void add_layers(
     d->set_name(layer.name());
     model->add(d);
     name_mapping[layer.name()] = d;
-    index_mapping[layer_id] = d;
-    name_to_index[layer.name()] = layer_id;
   }
 
-  add_parent_and_child_pointers(proto_layers);
+  setup_pointers(proto_layers);
 }
 
 lbann_summary * construct_summarizer(const lbann_data::Model &m, lbann_comm *comm) {
