@@ -73,8 +73,6 @@ void cv_mean_extractor::set(const unsigned int width, const unsigned int height,
   }
 
   m_batch_size = batch_sz;
-  m_batch_cnt = 0u;
-  m_partial_cnt = 0u;
 
   create_matrices(width, height, n_ch);
   reset();
@@ -92,8 +90,6 @@ void cv_mean_extractor::set(const unsigned int batch_sz) {
     throw lbann_exception(err.str());
   }
   m_batch_size = batch_sz;
-  m_batch_cnt = 0u;
-  m_partial_cnt = 0u;
 }
 
 void cv_mean_extractor::create_matrices(const unsigned int width, const unsigned int height, const unsigned int n_ch) {
@@ -110,6 +106,9 @@ void cv_mean_extractor::reset() {
   m_sum_1ch.setTo(static_cast<Float_T>(0));
   cv::Mat m_avg_1ch = m_avg.reshape(1);
   m_avg_1ch.setTo(static_cast<Float_T>(0));
+
+  m_batch_cnt = 0u;
+  m_partial_cnt = 0u;
   m_enabled = false;
 }
 

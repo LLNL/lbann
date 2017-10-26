@@ -325,7 +325,7 @@ std::ostream& cv_normalizer::print(std::ostream& os) const {
      << " - m_z_score: " << (m_z_score? "true" : "false") << std::endl;
   os << " - transform:";
   for (const channel_trans_t& tr: m_trans) {
-    os << " [" << tr.first << ' ' << tr.second << "]";
+    os << " [" << tr.first << ' ' << tr.second << "]\n             ";
   }
   os << std::endl;
 
