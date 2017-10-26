@@ -198,7 +198,7 @@ void lbann_summary::flush_means() {
     local_sums.push_back(op.local);
   }
   if (m_comm->am_model_master()) {
-    std::vector<DataType> global_sums(m_pending_means.size());
+    std::vector<DataType> global_sums(local_sums.size());
     m_comm->model_reduce(local_sums.data(), local_sums.size(),
                          global_sums.data());
     // Compute the means in-place.
@@ -222,7 +222,7 @@ void lbann_summary::flush_mins() {
     local_mins.push_back(op.local);
   }
   if (m_comm->am_model_master()) {
-    std::vector<DataType> global_mins(m_pending_mins.size());
+    std::vector<DataType> global_mins(local_mins.size());
     m_comm->model_reduce(local_mins.data(), local_mins.size(),
                          global_mins.data(), El::mpi::MIN);
     gather_scalar_summary(m_pending_mins, global_mins);
@@ -242,7 +242,7 @@ void lbann_summary::flush_maxes() {
     local_maxes.push_back(op.local);
   }
   if (m_comm->am_model_master()) {
-    std::vector<DataType> global_maxes(m_pending_maxes.size());
+    std::vector<DataType> global_maxes(local_maxes.size());
     m_comm->model_reduce(local_maxes.data(), local_maxes.size(),
                          global_maxes.data(), El::mpi::MAX);
     gather_scalar_summary(m_pending_maxes, global_maxes);
@@ -269,8 +269,8 @@ void lbann_summary::flush_stdevs() {
     // The n-1 is to use an unbiased variance estimate.
     // This unrolls the usual formulation of standard deviation some, to avoid
     // global operations when pushing the operation.
-    std::vector<DataType> global_sums(m_pending_stdevs.size());
-    std::vector<DataType> global_sqsums(m_pending_stdevs.size());
+    std::vector<DataType> global_sums(local_sums.size());
+    std::vector<DataType> global_sqsums(local_sqsums.size());
     m_comm->model_reduce(local_sums.data(), local_sums.size(),
                          global_sums.data());
     m_comm->model_reduce(local_sqsums.data(), local_sqsums.size(),
@@ -315,7 +315,7 @@ void lbann_summary::flush_sum_scalars() {
     local_sums.push_back(op.local);
   }
   if (m_comm->am_model_master()) {
-    std::vector<DataType> global_sums(m_pending_sum_scalars.size());
+    std::vector<DataType> global_sums(local_sums.size());
     m_comm->model_reduce(local_sums.data(), local_sums.size(),
                          global_sums.data());
     gather_scalar_summary(m_pending_sum_scalars, global_sums);
@@ -343,10 +343,10 @@ void lbann_summary::flush_histograms() {
     buckets.insert(buckets.end(), op.buckets.begin(), op.buckets.end());
   }
   if (m_comm->am_model_master()) {
-    std::vector<DataType> model_mins(m_pending_histograms.size());
-    std::vector<DataType> model_maxes(m_pending_histograms.size());
-    std::vector<DataType> model_sums(m_pending_histograms.size());
-    std::vector<DataType> model_sqsums(m_pending_histograms.size());
+    std::vector<DataType> model_mins(local_mins.size());
+    std::vector<DataType> model_maxes(local_maxes.size());
+    std::vector<DataType> model_sums(local_sums.size());
+    std::vector<DataType> model_sqsums(local_sqsums.size());
     std::vector<float> model_buckets(buckets.size());
     m_comm->model_reduce(local_mins.data(), local_mins.size(),
                          model_mins.data(), El::mpi::MIN);
