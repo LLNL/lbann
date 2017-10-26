@@ -13,22 +13,34 @@
 
 using namespace lbann;
 
-//maps: layer name (from prototext) to the lbann::layer
-std::unordered_map<std::string, Layer*> name_mapping;
+/** Map from layer names to layers. */
+std::map<std::string, Layer*> model_layers;
 
-void setup_pointers(std::vector<lbann_data::Layer> &proto_layers) {
+/** Whether a string is already the name of a layer. */
+inline bool layer_name_is_unique(std::string name) {
+  return model_layers.find(name) == model_layers.end();
+}
+
+void setup_pointers(
+  std::vector<lbann_data::Layer> &proto_layers,
+  bool master)
+{
   std::string name;
   std::stringstream ss;
-
-  // Iterate through pointers
+  std::stringstream err;
   for (size_t i=0; i<proto_layers.size(); i++) {
-    Layer *layer = name_mapping[proto_layers[i].name()];
+    Layer *layer = model_layers[proto_layers[i].name()];
 
     // Set layer parents
     ss.clear();
     ss.str(proto_layers[i].parents());
     while (ss >> name) {
-      Layer *parent_layer = name_mapping[name];
+      if (master and layer_name_is_unique(name)) {
+        err << __FILE__ << " " << __LINE__ << " :: "
+            << "could not find parent layer " << name;
+        throw lbann_exception(err.str());
+      }
+      Layer *parent_layer = model_layers[name];
       layer->add_parent_layer(parent_layer);
     }
 
@@ -36,7 +48,12 @@ void setup_pointers(std::vector<lbann_data::Layer> &proto_layers) {
     ss.clear();
     ss.str(proto_layers[i].children());
     while (ss >> name) {
-      Layer *child_layer = name_mapping[name];
+      if (master and layer_name_is_unique(name)) {
+        err << __FILE__ << " " << __LINE__ << " :: "
+            << "could not find child layer " << name;
+        throw lbann_exception(err.str());
+      }
+      Layer *child_layer = model_layers[name];
       layer->add_child_layer(child_layer);
     }
 
@@ -45,30 +62,29 @@ void setup_pointers(std::vector<lbann_data::Layer> &proto_layers) {
       target_layer *target = dynamic_cast<target_layer*>(layer);
 
       // Get input layer name
-      std::string input_name;
+      name.clear();
       if (proto_layers[i].has_target_distributed_minibatch()) {
-        input_name = proto_layers[i].target_distributed_minibatch().paired_input_layer();
+        name = proto_layers[i].target_distributed_minibatch().paired_input_layer();
       }
       if (proto_layers[i].has_target_partitioned_minibatch()) {
-        input_name = proto_layers[i].target_partitioned_minibatch().paired_input_layer();
+        name = proto_layers[i].target_partitioned_minibatch().paired_input_layer();
       }
-      if (input_name.empty()) {
-        for (auto& other_layer : name_mapping) {
+      if (name.empty()) {
+        for (auto& other_layer : model_layers) {
           if (dynamic_cast<input_layer*>(other_layer.second) != nullptr) {
-            input_name = other_layer.first;
+            name = other_layer.first;
             break;
           }
         }
       }
-
-      // Set input layer
-      input_layer *input = dynamic_cast<input_layer*>(name_mapping[input_name]);
-      if (input == nullptr) {
-        std::stringstream err;
+      if (master and (name.empty() or layer_name_is_unique(name))) {
         err << __FILE__ << " " << __LINE__ << " :: "
             << "could not find paired input layer for target layer";
         throw lbann_exception(err.str());
       }
+
+      // Set input layer
+      input_layer *input = dynamic_cast<input_layer*>(model_layers[name]);
       target->set_paired_input_layer(input);
 
     }
@@ -77,25 +93,23 @@ void setup_pointers(std::vector<lbann_data::Layer> &proto_layers) {
     if (proto_layers[i].has_reconstruction()) {
 
       // Get original layer name
-      std::string original_layer_name
-        = proto_layers[i].reconstruction().original_layer();
-      if (original_layer_name.empty()) {
-        for (auto& other_layer : name_mapping) {
+      name = proto_layers[i].reconstruction().original_layer();
+      if (name.empty()) {
+        for (auto& other_layer : model_layers) {
           if (dynamic_cast<input_layer*>(other_layer.second) != nullptr) {
-            original_layer_name = other_layer.first;
+            name = other_layer.first;
             break;
           }
         }
       }
-
-      // Set original layer
-      Layer *original_layer = name_mapping[original_layer_name];
-      if (original_layer == nullptr) {
-        std::stringstream err;
+      if (master and (name.empty() or layer_name_is_unique(name))) {
         err << __FILE__ << " " << __LINE__ << " :: "
             << "could not find original layer for reconstruction layer";
         throw lbann_exception(err.str());
       }
+
+      // Set original layer
+      Layer *original_layer = model_layers[name];
       if (dynamic_cast<reconstruction_layer<data_layout::MODEL_PARALLEL>*>(layer)) {
         reconstruction_layer<data_layout::MODEL_PARALLEL> *reconstruction
           = dynamic_cast<reconstruction_layer<data_layout::MODEL_PARALLEL>*>(layer);
@@ -110,18 +124,6 @@ void setup_pointers(std::vector<lbann_data::Layer> &proto_layers) {
     }
 
   }
-
-  // Make sure parent and child relationships are reciprocated
-  for (size_t i=0; i<proto_layers.size(); i++) {
-    Layer *layer = name_mapping[proto_layers[i].name()];
-    for (const Layer *parent_layer : layer->get_parent_layers()) {
-      const_cast<Layer*>(parent_layer)->add_child_layer(layer);
-    }
-    for (const Layer *child_layer : layer->get_child_layers()) {
-      const_cast<Layer*>(child_layer)->add_parent_layer(layer);
-    }
-  }
-
 }
 
 lbann_callback_imcomm::comm_type get_comm_type(const string &s, bool master)
@@ -200,53 +202,45 @@ weight_initialization get_weight_initialization(const string& s, bool master)
   }
 }
 
-data_layout get_data_layout(const string& s, const char *file, int line, bool master)
+inline data_layout get_data_layout(const string& s)
 {
   if (s == "model_parallel") {
     return data_layout::MODEL_PARALLEL;
   } else if (s == "data_parallel") {
     return data_layout::DATA_PARALLEL;
-  } else {  
-    if (master) {
-      std::stringstream err;
-      err << file << " " << line
-          << " :: unknown value for data_layout; should be model_parallel"
-          << " or data_parallel; we got: " << s;
-      throw lbann_exception(err.str());
-    } else {
-      return data_layout::MODEL_PARALLEL; //keep compiler happy, and have only one proc throw exception
-    }
+  } else {
+    return data_layout::invalid;
   }
 }
 
-void get_proto_layers(std::vector<lbann_data::Layer> &proto_layers, const lbann_data::Model& m, lbann_comm *comm, bool is_sequential) {
-  bool master = comm->am_world_master();
+void get_proto_layers(
+  std::vector<lbann_data::Layer> &proto_layers,
+  const lbann_data::Model& m,
+  lbann_comm *comm)
+{
+  const bool master = comm->am_world_master();
+  const int num_layers = m.layer_size();
   std::stringstream err;
   proto_layers.clear();
-  int size = m.layer_size();
 
-  for (int j=0; j<size; j++) {
+  for (int j=0; j<num_layers; j++) {
     const lbann_data::Layer& layer = m.layer(j);
-    std::string name = layer.name();
 
     //ensure no whitespace in name
-    std::stringstream s;
-    s << name;
+    std::stringstream s(layer.name());
     std::string token;
     int num_tokens = 0;
     while (s >> token) {
       ++num_tokens;
     }
-    if (num_tokens != 1) {
-      if (master) {
-        err << __FILE__ << " " << __LINE__ << " :: "
-            << " error in layer name: " << name
-            << ". Must be a single token (no whitespace);"
-            << " token count: " << num_tokens << " name: " << name;
-        throw lbann_exception(err.str());
-      }
+    if (master and num_tokens > 1) {
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << " layer name \"" << layer.name() << "\" is invalid. "
+          << "Cannot contain whitespace.";
+      throw lbann_exception(err.str());
     }
 
+    //add layer to list of layers
     proto_layers.push_back(layer);
   }
 }
@@ -259,32 +253,37 @@ void add_layers(
   const lbann_data::LbannPB& p)
 {
   lbann_comm *comm = model->get_comm();
-  bool master = comm->am_world_master();
+  const bool master = comm->am_world_master();
   if (master) {
     std::cout << "starting add_layers\n";
   }
 
   std::stringstream err;
-  name_mapping.clear(); //shouldn't need this, but just in case ...
+  model_layers.clear(); //shouldn't need this, but just in case ...
 
   const lbann_data::Model& m = p.model();
   std::vector<lbann_data::Layer> proto_layers;
-  get_proto_layers(proto_layers, m, comm, true);
+  get_proto_layers(proto_layers, m, comm);
 
-  Layer *d = 0;
+  Layer *d = nullptr;
 
-  for (size_t layer_id = 0; layer_id < proto_layers.size(); layer_id++) {
-    const lbann_data::Layer& layer = proto_layers[layer_id];
+  for (lbann_data::Layer& layer : proto_layers) {
 
-    data_layout dl = get_data_layout(layer.data_layout(), __FILE__, __LINE__, master);
-    bool num_neurons_from_data_reader = layer.num_neurons_from_data_reader();
+    // Get layer layout
+    const data_layout layout = get_data_layout(layer.data_layout());
+    if (master and layout == data_layout::invalid) {
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "layer " << layer.name() << " "
+          << "has invalid data layout " << layer.data_layout();
+      throw lbann_exception(err.str());
+    }
 
     //////////////////////////////////////////////////////////////////
     // LAYER: Relu
     //////////////////////////////////////////////////////////////////
     if (layer.has_relu()) {
       //const lbann_data::Relu &ell = layer.relu();
-      if (dl == data_layout::MODEL_PARALLEL) {
+      if (layout == data_layout::MODEL_PARALLEL) {
         d = new relu_layer<data_layout::MODEL_PARALLEL>(comm, NULL);
       } else {
         d = new relu_layer<data_layout::DATA_PARALLEL>(comm, cudnn);
@@ -296,7 +295,7 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     else if (layer.has_sigmoid()) {
       //const lbann_data::Sigmoid &ell = layer.sigmoid();
-      if (dl == data_layout::MODEL_PARALLEL) {
+      if (layout == data_layout::MODEL_PARALLEL) {
         d = new sigmoid_layer<data_layout::MODEL_PARALLEL>(comm);
       } else {
         d = new sigmoid_layer<data_layout::DATA_PARALLEL>(comm);
@@ -318,7 +317,7 @@ void add_layers(
         throw lbann_exception(err.str());
       }
       */
-      if (dl == data_layout::MODEL_PARALLEL) {
+      if (layout == data_layout::MODEL_PARALLEL) {
         d = new reconstruction_layer<data_layout::MODEL_PARALLEL>(
           comm,
           nullptr
@@ -336,7 +335,7 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     else if (layer.has_input_distributed_minibatch()) {
       const lbann_data::InputDistributedMiniBatch& ell = layer.input_distributed_minibatch();
-      if (dl == data_layout::MODEL_PARALLEL) {
+      if (layout == data_layout::MODEL_PARALLEL) {
         d = new input_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(
           comm,
           m.num_parallel_readers(),
@@ -356,7 +355,7 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     else if (layer.has_input_partitioned_minibatch()) {
       const lbann_data::InputPartitionedMiniBatch& ell = layer.input_partitioned_minibatch();
-      if (dl == data_layout::MODEL_PARALLEL and master) {
+      if (layout == data_layout::MODEL_PARALLEL and master) {
         err << __FILE__ << " " << __LINE__ << " :: input_layer_partitioned_minibatch "
             << "does not support MODEL_PARALLEL layouts";
         throw lbann_exception(err.str());
@@ -375,12 +374,12 @@ void add_layers(
     else if (layer.has_fully_connected()) {
       const lbann_data::FullyConnected& ell = layer.fully_connected();
       int num_neurons;
-      if (num_neurons_from_data_reader) {
+      if (layer.num_neurons_from_data_reader()) {
         num_neurons = data_readers[execution_mode::training]->get_linearized_data_size();
       } else {
         num_neurons = ell.num_neurons();
       }
-      if (dl == data_layout::MODEL_PARALLEL) {
+      if (layout == data_layout::MODEL_PARALLEL) {
         d = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
           comm,
           num_neurons,
@@ -416,7 +415,7 @@ void add_layers(
       while (s >> i) {
         dims.push_back(i);
       }
-      if (dl == data_layout::MODEL_PARALLEL) {
+      if (layout == data_layout::MODEL_PARALLEL) {
         d = new reshape_layer<data_layout::MODEL_PARALLEL>(comm, ell.num_dims(), dims.data());
       } else {
         d = new reshape_layer<data_layout::DATA_PARALLEL>(comm, ell.num_dims(), dims.data());
@@ -496,7 +495,7 @@ void add_layers(
         while (ss >> i) {
           pool_strides.push_back(i);
         }
-        if (dl == data_layout::MODEL_PARALLEL and master) {
+        if (layout == data_layout::MODEL_PARALLEL and master) {
           err << __FILE__ << " " << __LINE__ << " :: local_response_normalization "
               << "does not support MODEL_PARALLEL layouts";
           throw lbann_exception(err.str());
@@ -512,7 +511,7 @@ void add_layers(
           );
         }
       } else {
-        if (dl == data_layout::MODEL_PARALLEL and master) {
+        if (layout == data_layout::MODEL_PARALLEL and master) {
           err << __FILE__ << " " << __LINE__ << " :: local_response_normalization "
               << "does not support MODEL_PARALLEL layouts";
           throw lbann_exception(err.str());
@@ -535,8 +534,8 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     else if (layer.has_unpooling()) {
       const lbann_data::Unpooling& ell = layer.unpooling();
-      pooling_layer<data_layout::DATA_PARALLEL> *pl = (pooling_layer<data_layout::DATA_PARALLEL>*)name_mapping[ell.pooling_layer()];
-      if (dl == data_layout::MODEL_PARALLEL and master) {
+      pooling_layer<data_layout::DATA_PARALLEL> *pl = (pooling_layer<data_layout::DATA_PARALLEL>*)model_layers[ell.pooling_layer()];
+      if (layout == data_layout::MODEL_PARALLEL and master) {
         err << __FILE__ << " " << __LINE__ << " :: local_response_normalization "
             << "does not support MODEL_PARALLEL layouts";
         throw lbann_exception(err.str());
@@ -578,7 +577,7 @@ void add_layers(
           conv_strides.push_back(i);
         }
 
-        if (dl == data_layout::MODEL_PARALLEL and master) {
+        if (layout == data_layout::MODEL_PARALLEL and master) {
           err << __FILE__ << " " << __LINE__ << " :: convolution "
               << "does not support MODEL_PARALLEL layouts";
           throw lbann_exception(err.str());
@@ -600,7 +599,7 @@ void add_layers(
       }
 
       else {
-        if (dl == data_layout::MODEL_PARALLEL and master) {
+        if (layout == data_layout::MODEL_PARALLEL and master) {
           err << __FILE__ << " " << __LINE__ << " :: convolution "
               << "does not support MODEL_PARALLEL layouts";
           throw lbann_exception(err.str());
@@ -657,7 +656,7 @@ void add_layers(
           conv_strides.push_back(i);
         }
 
-        if (dl == data_layout::MODEL_PARALLEL and master) {
+        if (layout == data_layout::MODEL_PARALLEL and master) {
           err << __FILE__ << " " << __LINE__ << " :: deconvolution "
               << "does not support MODEL_PARALLEL layouts";
           throw lbann_exception(err.str());
@@ -679,7 +678,7 @@ void add_layers(
       }
 
       else {
-        if (dl == data_layout::MODEL_PARALLEL and master) {
+        if (layout == data_layout::MODEL_PARALLEL and master) {
           err << __FILE__ << " " << __LINE__ << " :: deconvolution "
               << "does not support MODEL_PARALLEL layouts";
           throw lbann_exception(err.str());
@@ -716,7 +715,7 @@ void add_layers(
       DataType lrn_beta = ell.lrn_beta();
       DataType lrn_k = ell.lrn_k();
       int window_width = ell.window_width();
-      if (dl == data_layout::MODEL_PARALLEL and master) {
+      if (layout == data_layout::MODEL_PARALLEL and master) {
         err << __FILE__ << " " << __LINE__ << " :: local_response_normalization "
             << "does not support MODEL_PARALLEL layouts";
         throw lbann_exception(err.str());
@@ -736,7 +735,7 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     else if (layer.has_selu_dropout()) {
       const lbann_data::SeluDropout& ell = layer.selu_dropout();
-      if (dl == data_layout::MODEL_PARALLEL) {
+      if (layout == data_layout::MODEL_PARALLEL) {
         d = new selu_dropout<data_layout::MODEL_PARALLEL>(
           comm,
           ell.keep_prob(),
@@ -758,7 +757,7 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     else if (layer.has_batch_normalization()) {
       const lbann_data::BatchNormalization& ell = layer.batch_normalization();
-      if (dl == data_layout::MODEL_PARALLEL and master) {
+      if (layout == data_layout::MODEL_PARALLEL and master) {
         err << __FILE__ << " " << __LINE__ << " :: batch_normalization "
             << "does not support MODEL_PARALLEL layouts";
         throw lbann_exception(err.str());
@@ -780,7 +779,7 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     else if (layer.has_selu()) {
       const lbann_data::Selu& ell = layer.selu();
-      if (dl == data_layout::MODEL_PARALLEL) {
+      if (layout == data_layout::MODEL_PARALLEL) {
         d = new selu_layer<data_layout::MODEL_PARALLEL>(
           comm,
           ell.alpha(),
@@ -800,7 +799,7 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     else if (layer.has_tanh()) {
       //const lbann_data::Tanh& ell = layer.tanh();
-      if (dl == data_layout::MODEL_PARALLEL) {
+      if (layout == data_layout::MODEL_PARALLEL) {
         d = new tanh_layer<data_layout::MODEL_PARALLEL>(comm);
       } else {
         d = new tanh_layer<data_layout::DATA_PARALLEL>(comm);
@@ -812,7 +811,7 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     else if (layer.has_softplus()) {
       //const lbann_data::Softplus& ell = layer.softplus();
-      if (dl == data_layout::MODEL_PARALLEL) {
+      if (layout == data_layout::MODEL_PARALLEL) {
         d = new softplus_layer<data_layout::MODEL_PARALLEL>(comm);
       } else {
         d = new softplus_layer<data_layout::DATA_PARALLEL>(comm);
@@ -824,7 +823,7 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     else if (layer.has_smooth_relu()) {
       //const lbann_data::SmoothRelu& ell = layer.smooth_relu();
-      if (dl == data_layout::MODEL_PARALLEL) {
+      if (layout == data_layout::MODEL_PARALLEL) {
         d = new smooth_relu_layer<data_layout::MODEL_PARALLEL>(comm);
       } else {
         d = new smooth_relu_layer<data_layout::DATA_PARALLEL>(comm);
@@ -836,7 +835,7 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     else if (layer.has_leaky_relu()) {
       const lbann_data::LeakyRelu& ell = layer.leaky_relu();
-      if (dl == data_layout::MODEL_PARALLEL) {
+      if (layout == data_layout::MODEL_PARALLEL) {
         d = new leaky_relu_layer<data_layout::MODEL_PARALLEL>(
           comm,
           ell.leak()
@@ -854,7 +853,7 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     else if (layer.has_id()) {
       //const lbann_data::ID& ell = layer.id();
-      if (dl == data_layout::MODEL_PARALLEL) {
+      if (layout == data_layout::MODEL_PARALLEL) {
         d = new id_layer<data_layout::MODEL_PARALLEL>(comm);
       } else {
         d = new id_layer<data_layout::DATA_PARALLEL>(comm);
@@ -866,7 +865,7 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     else if (layer.has_elu()) {
       const lbann_data::ELU& ell = layer.elu();
-      if (dl == data_layout::MODEL_PARALLEL) {
+      if (layout == data_layout::MODEL_PARALLEL) {
         d = new elu_layer<data_layout::MODEL_PARALLEL>(
           comm,
           ell.alpha()
@@ -884,7 +883,7 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     else if (layer.has_dropout()) {
       const lbann_data::Dropout& ell = layer.dropout();
-      if (dl == data_layout::MODEL_PARALLEL) {
+      if (layout == data_layout::MODEL_PARALLEL) {
         d = new dropout<data_layout::MODEL_PARALLEL>(
           comm,
           ell.keep_prob());
@@ -900,7 +899,7 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     else if (layer.has_softmax()) {
       //const lbann_data::Softmax& ell = layer.softmax();
-      if (dl == data_layout::MODEL_PARALLEL) {
+      if (layout == data_layout::MODEL_PARALLEL) {
         d = new softmax_layer<data_layout::MODEL_PARALLEL>(comm, cudnn);
       } else {
         d = new softmax_layer<data_layout::DATA_PARALLEL>(comm,cudnn);
@@ -912,7 +911,7 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     else if (layer.has_target_partitioned_minibatch()) {
       const lbann_data::TargetPartitionedMinibatch& ell = layer.target_partitioned_minibatch();
-      if (dl == data_layout::MODEL_PARALLEL and master) {
+      if (layout == data_layout::MODEL_PARALLEL and master) {
         err << __FILE__ << " " << __LINE__ << " :: target_layer_partitioned_minibatch "
             << "does not support MODEL_PARALLEL layouts";
         throw lbann_exception(err.str());
@@ -932,7 +931,7 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     else if (layer.has_target_distributed_minibatch()) {
       const lbann_data::TargetDistributedMinibatch& ell = layer.target_distributed_minibatch();
-      if (dl == data_layout::MODEL_PARALLEL) {
+      if (layout == data_layout::MODEL_PARALLEL) {
         d = new  target_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(
           comm,
           nullptr,
@@ -962,12 +961,26 @@ void add_layers(
       }
     }
 
-    d->set_name(layer.name());
+    // Set layer name
+    std::string layer_name = layer.name();
+    if (!layer_name.empty()) {
+      d->set_name(layer_name);
+    }
+    if (master and not layer_name_is_unique(d->get_name())) {
+      err << __FILE__ << " " << __LINE__
+          << " :: layer name " << layer_name << " is not unique" ;
+      throw lbann_exception(err.str());
+    }
+
+    // Add layer to model
+    model_layers[d->get_name()] = d;
     model->add(d);
-    name_mapping[layer.name()] = d;
+    d = nullptr;
+
   }
 
-  setup_pointers(proto_layers);
+  setup_pointers(proto_layers, master);
+
 }
 
 lbann_summary * construct_summarizer(const lbann_data::Model &m, lbann_comm *comm) {
@@ -1144,22 +1157,15 @@ void init_callbacks(
       std::stringstream s(c.layers());
       std::unordered_set<Layer*> which;
       std::string a;
-      //bool all_layers = false;
       while (s >> a) {
-        if (a == "10000") {
-          //all_layers = true;
-        } else {
-          if (name_mapping.find(a) == name_mapping.end() and master) {
-            err << __FILE__ << " " << __LINE__
-                << " :: callback disp_io_stats: you specified the layer index " << a
-                << " wrt the prototext file, but we don't have a layer with that"
-                << " index; please check your prototext file";
-            throw lbann_exception(err.str());
-          }
-          which.insert(name_mapping[a]);
-          if (master) {
-            cout << "adding display I/O stats callback: index " << a << " from prototext file maps to model layer " << name_mapping.find(a)->second << endl;
-          }
+        if (master and layer_name_is_unique(a)) {
+          err << __FILE__ << " " << __LINE__
+              << " :: callback disp_io_stats: could not find layer " << a;
+          throw lbann_exception(err.str());
+        }
+        which.insert(model_layers[a]);
+        if (master) {
+          cout << "adding display I/O stats callback for layer " << a;
         }
       }
       lbann_callback_io *io_cb = new lbann_callback_io(which);
@@ -1182,19 +1188,12 @@ void init_callbacks(
         if (a == "10000") {
           all_layers = true;
         } else {
-          if (name_mapping.find(a) == name_mapping.end() and master) {
+          if (master and layer_name_is_unique(a)) {
             err << __FILE__ << " " << __LINE__
-                << " :: callback imcomm: you specified the layer name " << a
-                << " wrt the prototext file, but we don't have a layer with that"
-                << " index; please check your prototext file";
+                << " :: callback imcomm: could not find layer " << a;
             throw lbann_exception(err.str());
           }
-          which.insert(name_mapping[a]);
-          /*
-          if (master) {
-            cout << "CALLBACK: imcomm: prototext layer name " << a << " maps to model layer " << name_mapping.find(a)->second << "; layer name: " << the_layers[a]->get_type() << std::endl;
-          }
-          */
+          which.insert(model_layers[a]);
         }
       }
       lbann_callback_imcomm::comm_type c_type  = get_comm_type(c.intermodel_comm_method(), master);
@@ -1220,14 +1219,12 @@ void init_callbacks(
         if (a == "10000") {
           all_layers = true;
         } else {
-          if (name_mapping.find(a) == name_mapping.end() and master) {
+          if (master and layer_name_is_unique(a)) {
             err << __FILE__ << " " << __LINE__
-                << " :: callback step_learning_rate: you specified the layer index "
-                << a << " wrt the prototext file, but we don't have a layer with that"
-                << " index; please check your prototext file";
+                << " :: callback step_learning_rate: could not find layer " << a;
             throw lbann_exception(err.str());
           }
-          which.insert(name_mapping[a]);
+          which.insert(model_layers[a]);
         }
       }
       lbann_callback_adaptive_learning_rate *learn;
@@ -1252,14 +1249,12 @@ void init_callbacks(
         if (a == "10000") {
           all_layers = true;
         } else {
-          if (name_mapping.find(a) == name_mapping.end() and master) {
+          if (master and layer_name_is_unique(a)) {
             err << __FILE__ << " " << __LINE__
-                << " :: callback adaptive_learning_rate: you specified the layer index "
-                << a << " wrt the prototext file, but we don't have a layer with that"
-                << " index; please check your prototext file";
+                << " :: callback adaptive_learning_rate: could not find layer " << a;
             throw lbann_exception(err.str());
           }
-          which.insert(name_mapping[a]);
+          which.insert(model_layers[a]);
         }
       }
       lbann_callback_adaptive_learning_rate *learn;
@@ -1365,7 +1360,7 @@ void init_callbacks(
       }
       std::unordered_set<Layer*> layers;
       for (int i = 0; i < c.layer_size(); ++i) {
-        layers.insert(name_mapping[c.layer(i)]);
+        layers.insert(model_layers[c.layer(i)]);
       }
       std::vector<int64_t> drop_epochs;
       for (int i = 0; i < c.drop_epoch_size(); ++i) {
@@ -1388,7 +1383,7 @@ void init_callbacks(
       }
       std::unordered_set<Layer*> layers;
       for (int i = 0; i < c.layer_size(); ++i) {
-        layers.insert(name_mapping[c.layer(i)]);
+        layers.insert(model_layers[c.layer(i)]);
       }
       lbann_callback_linear_growth_learning_rate *lglr = new
       lbann_callback_linear_growth_learning_rate(
@@ -1517,33 +1512,38 @@ model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac, const lban
     }
   }
 
-  //add the metrics
-  data_layout dl = get_data_layout(m.data_layout(), __FILE__, __LINE__, master);
-  int size = m.metric_size();
+  //get data layout
+  const data_layout layout = get_data_layout(m.data_layout());
+  if (master and layout == data_layout::invalid) {
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "model has invalid data layout " << m.data_layout();
+    throw lbann_exception(err.str());
+  }
 
-  for (int j=0; j<size; j++) {
+  //add the metrics
+  for (int j=0; j<m.metric_size(); j++) {
     const lbann_data::Metric &metric = m.metric(j);
     if (metric.has_categorical_accuracy()) {
-      if (dl == data_layout::MODEL_PARALLEL) {
+      if (layout == data_layout::MODEL_PARALLEL) {
         model->add_metric(new metrics::categorical_accuracy<data_layout::MODEL_PARALLEL>(comm));
       } else {
         model->add_metric(new metrics::categorical_accuracy<data_layout::DATA_PARALLEL>(comm));
       }
     } else if (metric.has_mean_squared_error()) {
-      if (dl == data_layout::MODEL_PARALLEL) {
+      if (layout == data_layout::MODEL_PARALLEL) {
         model->add_metric(new metrics::mean_squared_error<data_layout::MODEL_PARALLEL>(comm));
       } else {
         model->add_metric(new metrics::mean_squared_error<data_layout::DATA_PARALLEL>(comm));
       }
     } else if (metric.has_pearson_correlation()) {
-      if (dl == data_layout::MODEL_PARALLEL) {
+      if (layout == data_layout::MODEL_PARALLEL) {
         model->add_metric(new metrics::pearson_correlation<data_layout::MODEL_PARALLEL>(comm));
       } else {
         model->add_metric(new metrics::pearson_correlation<data_layout::DATA_PARALLEL>(comm));
       }
     } else if (metric.has_top_k_categorical_accuracy()) {
       const lbann_data::TopKCategoricalAccuracy &a = metric.top_k_categorical_accuracy();
-      if (dl == data_layout::MODEL_PARALLEL) {
+      if (layout == data_layout::MODEL_PARALLEL) {
         model->add_metric(new metrics::top_k_categorical_accuracy<data_layout::MODEL_PARALLEL>(a.top_k(), comm));
       } else {
         model->add_metric(new metrics::top_k_categorical_accuracy<data_layout::DATA_PARALLEL>(a.top_k(), comm));
