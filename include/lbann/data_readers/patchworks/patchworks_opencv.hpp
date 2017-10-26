@@ -92,13 +92,29 @@ struct cv_image_type {
 };
 
 template<typename T>
-struct depth_normalzing {
+struct depth_normalization {
   static double factor() {
     if (!std::is_integral<T>::value) {
       return 1.0;
     } else {
       return 1.0/std::numeric_limits<T>::max();
     }
+  }
+  static double inverse_factor() {
+    if (!std::is_integral<T>::value) {
+      return 1.0;
+    } else {
+      return std::numeric_limits<T>::max();
+    }
+  }
+};
+template<>
+struct depth_normalization<void> {
+  static double factor() {
+    return 1.0;
+  }
+  static double inverse_factor() {
+    return 1.0;
   }
 };
 

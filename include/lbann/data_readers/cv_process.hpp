@@ -35,6 +35,7 @@
 #include "cv_augmenter.hpp"
 #include "cv_colorizer.hpp"
 #include "cv_cropper.hpp"
+#include "cv_mean_extractor.hpp"
 #include <memory>
 
 #ifdef __LIB_OPENCV

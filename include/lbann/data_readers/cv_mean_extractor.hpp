@@ -139,6 +139,9 @@ inline cv::Mat cv_mean_extractor::extract() const {
   double minVal = 0.0;
   double maxVal = 0.0;
   cv::minMaxLoc(avg_so_far, &minVal, &maxVal, 0, 0);
+  //const double max_channel_type = std::numeric_limits<Channel_T>::max();
+  const double max_channel_type = patchworks::depth_normalization<Channel_T>::inverse_factor();
+
   cv::Mat recovered;
   if ((minVal < 0.0) || (maxVal > 1.0)) {
     // This condition may rise either because of unnormalized images with raw
@@ -146,14 +149,15 @@ inline cv::Mat cv_mean_extractor::extract() const {
     // the minimum value maps to 0 and the maximum value maps to the greatest
     // value of Channel_T
     const double range = maxVal-minVal;
-    const double alpha = std::numeric_limits<Channel_T>::max()/range;
+    if (range == 0.0) return cv::Mat();
+    const double alpha = max_channel_type/range;
     const double beta  = - alpha*minVal;
     avg_so_far.convertTo(recovered, patchworks::cv_image_type<Channel_T>::T(),
                          alpha, beta);
   } else {
     // In this case, 0 maps to 0, and 1 maps to the greatest value of Channel_T
     avg_so_far.convertTo(recovered, patchworks::cv_image_type<Channel_T>::T(),
-                         std::numeric_limits<Channel_T>::max(), 0.0);
+                         max_channel_type, 0.0);
   }
 
   return recovered;
