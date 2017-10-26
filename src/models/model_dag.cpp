@@ -133,6 +133,16 @@ int dag_model::add(Layer *new_layer) {
 
 void dag_model::setup() {
 
+  // Make sure parent and child relationships are reciprocated
+  for (Layer* layer : m_layers) {
+    for (const Layer *parent_layer : layer->get_parent_layers()) {
+      const_cast<Layer*>(parent_layer)->add_child_layer(layer);
+    }
+    for (const Layer *child_layer : layer->get_child_layers()) {
+      const_cast<Layer*>(child_layer)->add_parent_layer(layer);
+    }
+  }
+
   // Sort layers topologically
   topologically_sort_layers();
 
