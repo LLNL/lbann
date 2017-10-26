@@ -260,7 +260,6 @@ int main(int argc, char *argv[]) {
 
       convolution_layer<> *conv1
         = new convolution_layer<>(
-          index,
           comm,
           2,
           64,
@@ -278,7 +277,6 @@ int main(int argc, char *argv[]) {
 
       batch_normalization<data_layout::DATA_PARALLEL> *bn_conv1
         = new batch_normalization<data_layout::DATA_PARALLEL>(
-          index,
           comm,
           0.9,
           1.0,
@@ -289,12 +287,12 @@ int main(int argc, char *argv[]) {
       index++;
 
       relu_layer<data_layout::DATA_PARALLEL> *conv1_relu
-        = new relu_layer<data_layout::DATA_PARALLEL>(index, comm, cudnn);
+        = new relu_layer<data_layout::DATA_PARALLEL>(comm, cudnn);
       dnn->add(conv1_relu);
       index++;
 
       pooling_layer<> *pool1
-        = new pooling_layer<>(index, comm, 2, 3, 0, 2, pool_mode::max, cudnn);
+        = new pooling_layer<>(comm, 2, 3, 0, 2, pool_mode::max, cudnn);
       dnn->add(pool1);
       index++;
 
@@ -314,7 +312,6 @@ int main(int argc, char *argv[]) {
         
         convolution_layer<> *conv1
           = new convolution_layer<>(
-            index,
             comm,
             2,
             output_channels[module] + intra_module_channels[module],
@@ -332,7 +329,6 @@ int main(int argc, char *argv[]) {
 
         batch_normalization<data_layout::DATA_PARALLEL> *bn1
           = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index,
             comm,
             0.9,
             1.0,
@@ -342,18 +338,17 @@ int main(int argc, char *argv[]) {
         dnn->add(bn1);
         index++;
 
-        slice_layer<> *slice = new slice_layer<>(index, comm, {}, 0, {}, cudnn);
+        slice_layer<> *slice = new slice_layer<>(comm, {}, 0, {}, cudnn);
         dnn->add(slice);
         index++;
 
         relu_layer<data_layout::DATA_PARALLEL> *relu1
-          = new relu_layer<data_layout::DATA_PARALLEL>(index, comm, cudnn);
+          = new relu_layer<data_layout::DATA_PARALLEL>(comm, cudnn);
         dnn->add(relu1);
         index++;
 
         convolution_layer<> *conv2
           = new convolution_layer<>(
-            index,
             comm,
             2,
             intra_module_channels[module],
@@ -371,7 +366,6 @@ int main(int argc, char *argv[]) {
 
         batch_normalization<data_layout::DATA_PARALLEL> *bn2
           = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index,
             comm,
             0.9,
             1.0,
@@ -382,13 +376,12 @@ int main(int argc, char *argv[]) {
         index++;
 
         relu_layer<data_layout::DATA_PARALLEL> *relu2
-          = new relu_layer<data_layout::DATA_PARALLEL>(index, comm, cudnn);
+          = new relu_layer<data_layout::DATA_PARALLEL>(comm, cudnn);
         dnn->add(relu2);
         index++;
 
         convolution_layer<> *conv3
           = new convolution_layer<>(
-            index,
             comm,
             2,
             output_channels[module],
@@ -406,7 +399,6 @@ int main(int argc, char *argv[]) {
 
         batch_normalization<data_layout::DATA_PARALLEL> *bn3
           = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index,
             comm,
             0.9,
             1.0,
@@ -416,12 +408,12 @@ int main(int argc, char *argv[]) {
         dnn->add(bn3);
         index++;
 
-        sum_layer<> *sum = new sum_layer<>(index, comm, {}, cudnn);
+        sum_layer<> *sum = new sum_layer<>(comm, {}, cudnn);
         dnn->add(sum);
         index++;
 
         relu_layer<data_layout::DATA_PARALLEL> *relu3
-          = new relu_layer<data_layout::DATA_PARALLEL>(index, comm, cudnn);
+          = new relu_layer<data_layout::DATA_PARALLEL>(comm, cudnn);
         dnn->add(relu3);
         index++;
 
@@ -435,13 +427,12 @@ int main(int argc, char *argv[]) {
       // Additional submodules
       for(int submodule = 1; submodule < num_submodules[module]; ++submodule){
         
-        split_layer<> *split = new split_layer<>(index, comm, {}, cudnn);
+        split_layer<> *split = new split_layer<>(comm, {}, cudnn);
         dnn->add(split);
         index++;
 
         convolution_layer<> *conv1
           = new convolution_layer<>(
-            index,
             comm,
             2,
             intra_module_channels[module],
@@ -459,7 +450,6 @@ int main(int argc, char *argv[]) {
 
         batch_normalization<data_layout::DATA_PARALLEL> *bn1
           = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index,
             comm,
             0.9,
             1.0,
@@ -470,13 +460,12 @@ int main(int argc, char *argv[]) {
         index++;
 
         relu_layer<data_layout::DATA_PARALLEL> *relu1
-          = new relu_layer<data_layout::DATA_PARALLEL>(index, comm, cudnn);
+          = new relu_layer<data_layout::DATA_PARALLEL>(comm, cudnn);
         dnn->add(relu1);
         index++;
 
         convolution_layer<> *conv2
           = new convolution_layer<>(
-            index,
             comm,
             2,
             intra_module_channels[module],
@@ -494,7 +483,6 @@ int main(int argc, char *argv[]) {
 
         batch_normalization<data_layout::DATA_PARALLEL> *bn2
           = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index,
             comm,
             0.9,
             1.0,
@@ -505,13 +493,12 @@ int main(int argc, char *argv[]) {
         index++;
 
         relu_layer<data_layout::DATA_PARALLEL> *relu2
-          = new relu_layer<data_layout::DATA_PARALLEL>(index, comm, cudnn);
+          = new relu_layer<data_layout::DATA_PARALLEL>(comm, cudnn);
         dnn->add(relu2);
         index++;
 
         convolution_layer<> *conv3
           = new convolution_layer<>(
-            index,
             comm,
             2,
             output_channels[module],
@@ -529,7 +516,6 @@ int main(int argc, char *argv[]) {
 
         batch_normalization<data_layout::DATA_PARALLEL> *bn3
           = new batch_normalization<data_layout::DATA_PARALLEL>(
-            index,
             comm,
             0.9,
             1.0,
@@ -539,12 +525,12 @@ int main(int argc, char *argv[]) {
         dnn->add(bn3);
         index++;
 
-        sum_layer<> *sum = new sum_layer<>(index, comm, {}, cudnn);
+        sum_layer<> *sum = new sum_layer<>(comm, {}, cudnn);
         dnn->add(sum);
         index++;
 
         relu_layer<data_layout::DATA_PARALLEL> *relu3
-          = new relu_layer<data_layout::DATA_PARALLEL>(index, comm, cudnn);
+          = new relu_layer<data_layout::DATA_PARALLEL>(comm, cudnn);
         dnn->add(relu3);
         index++;
 
@@ -558,13 +544,12 @@ int main(int argc, char *argv[]) {
     }
 
     pooling_layer<> *pool5
-      = new pooling_layer<>(index, comm, 2, 8, 0, 1, pool_mode::average, cudnn);
+      = new pooling_layer<>(comm, 2, 8, 0, 1, pool_mode::average, cudnn);
     dnn->add(pool5);
     index++;
 
     fully_connected_layer<data_layout::MODEL_PARALLEL> *fc1000
       = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
-        index,
         comm,
         1000,
         weight_initialization::he_normal,
@@ -577,7 +562,6 @@ int main(int argc, char *argv[]) {
 
     softmax_layer<data_layout::MODEL_PARALLEL> *softmax
       = new softmax_layer<data_layout::MODEL_PARALLEL>(
-        index,
         comm);
       dnn->add(softmax);
       index++;

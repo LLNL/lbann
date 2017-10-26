@@ -43,12 +43,11 @@ template <data_layout T_layout>
 class selu_dropout : public regularizer_layer {
  public:
   /** Keep units with probabiliy keep_prob. */
-  selu_dropout(int index,
-               lbann_comm *comm,
+  selu_dropout(lbann_comm *comm,
                float keep_prob=0.95f,
                DataType alpha = DataType(1.6732632423543772848170429916717),
                DataType scale = DataType(1.0507009873554804934193349852946)) :
-    regularizer_layer(index, comm),
+    regularizer_layer(comm),
     m_keep_prob(keep_prob) {
 #ifdef LBANN_PROCDET_DROPOUT
     throw lbann_exception("selu_dropout: deterministic dropout not supported");

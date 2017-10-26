@@ -44,21 +44,20 @@ class reconstruction_layer : public target_layer {
   AbsDistMat *original_layer_act_v;
 
  public:
-  reconstruction_layer(int index,
-                       lbann_comm *comm,
+  reconstruction_layer(lbann_comm *comm,
                        Layer *original_layer)
     :  target_layer(comm, dynamic_cast<input_layer*>(original_layer), {}, false),
        m_original_layer(original_layer) {
     // Setup the data distribution
     initialize_distributed_matrices();
-    this->m_index = index;
   }
-
+  
   reconstruction_layer(const reconstruction_layer& other) :
     target_layer(other),
     m_original_layer(other.m_original_layer) {}
 
   reconstruction_layer& operator=(const reconstruction_layer& other) {
+    target_layer::operator=(other);
     m_original_layer = other.m_original_layer;
   }
 
@@ -74,6 +73,11 @@ class reconstruction_layer : public target_layer {
     target_layer::initialize_distributed_matrices<T_layout>();
   }
   virtual data_layout get_data_layout() const override { return T_layout; }
+
+  /** Set original layer. */
+  void set_original_layer(Layer *original_layer) {
+    m_original_layer = original_layer;
+  }
 
   void setup_dims() override {
     target_layer::setup_dims();
@@ -132,8 +136,7 @@ class reconstruction_layer : public target_layer {
   }
 
   void summarize_stats(lbann_summary& summarizer, int step) override {
-    std::string tag = "layer" + std::to_string(this->m_index)
-      + "/ReconstructionCost";
+    std::string tag = this->m_name + "/ReconstructionCost";
     summarizer.reduce_scalar(tag, this->m_neural_network_model->m_obj_fn->get_mean_value(), step);
     // Skip target layer (for now).
     io_layer::summarize_stats(summarizer, step);

@@ -52,7 +52,7 @@ class io_layer : public Layer {
   io_layer(lbann_comm *comm,
            bool data_set_spans_models = true,
            bool for_regression = false)
-    : Layer(0, comm),
+    : Layer(comm),
       m_data_set_spans_models(data_set_spans_models),
       m_for_regression(for_regression) {
   }

@@ -58,14 +58,13 @@ class local_response_normalization_layer : public regularizer_layer {
 
  public:
   local_response_normalization_layer
-  (int index,
-   lbann_comm *comm,
+  (lbann_comm *comm,
    int window_width,
    DataType lrn_alpha,
    DataType lrn_beta,
    DataType lrn_k,
    cudnn::cudnn_manager *cudnn = nullptr)
-    : regularizer_layer(index, comm),
+    : regularizer_layer(comm),
       m_window_width(window_width), m_lrn_alpha(lrn_alpha), m_lrn_beta(lrn_beta),
       m_lrn_k(lrn_k) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,

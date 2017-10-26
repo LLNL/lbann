@@ -292,10 +292,8 @@ int sequential_model::num_previous_neurons() {
 }
 
 int sequential_model::add(Layer *new_layer) {
-  const uint layer_index = m_layers.size();
-  new_layer->set_index(layer_index);
   m_layers.push_back(new_layer);
-  return layer_index;
+  return m_layers.size() - 1;
 }
 
 void sequential_model::remove(int index) {
@@ -332,7 +330,6 @@ void sequential_model::setup_subset(int start_index, int end_index) {
     m_layers[l]->add_child_layer(next_layer);
     m_layers[l]->setup();
     m_layers[l]->check_setup();
-    m_layers[l]->set_index(l);
     if (m_comm->am_world_master()) {
       string description = m_layers[l]->get_description();
       std::cout << std::setw(12) << m_layers[l]->get_name() << ":[" << std::setw(18) << m_layers[l]->get_type() <<  "] Set up a layer with input " << std::setw(7) << m_layers[l]->get_num_prev_neurons() << " and " << std::setw(7) << m_layers[l]->get_num_neurons() << " neurons.";

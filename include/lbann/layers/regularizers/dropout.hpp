@@ -48,10 +48,9 @@ template <data_layout T_layout>
 class dropout : public regularizer_layer {
  public:
   /** Keep units with probabiliy keep_prob. */
-  dropout(int index,
-          lbann_comm *comm,
+  dropout(lbann_comm *comm,
           float keep_prob=0.5f) :
-    regularizer_layer(index, comm),
+    regularizer_layer(comm),
     m_keep_prob(keep_prob) {
     // Setup the data distribution
     initialize_distributed_matrices();

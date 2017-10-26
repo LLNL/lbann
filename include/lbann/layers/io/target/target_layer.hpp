@@ -227,8 +227,7 @@ class target_layer : public io_layer {
     // Replace spaces with _ for consistency.
     std::transform(obj_name.begin(), obj_name.end(), obj_name.begin(),
                    [] (char c) { return c == ' ' ? '_' : c; });
-    std::string tag = "layer" + std::to_string(this->m_index) + "/objective_" +
-      obj_name;
+    std::string tag = this->m_name + "/objective_" + obj_name;
     summarizer.reduce_scalar(
       tag,
       this->m_neural_network_model->m_obj_fn->get_mean_value(),

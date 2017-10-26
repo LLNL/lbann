@@ -46,9 +46,7 @@ model {
   # INPUT
   #######
   layer {
-    name: "1"
-    parents: "1"
-    children: ""
+    name: "data"
     data_layout: "model_parallel"
     input_distributed_minibatch {
     }
@@ -58,9 +56,7 @@ model {
   # FULLY_CONNECTED encode1
   #################
   layer {
-    name: "2"
-    parents: "1"
-    children: ""
+    name: "encode1"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 2000
@@ -73,9 +69,7 @@ model {
   # RELU relu1
   ######
   layer {
-    name: "3"
-    parents: "2"
-    children: ""
+    name: "relu1"
     data_layout: "model_parallel"
     relu {
     }
@@ -85,9 +79,7 @@ model {
   # FULLY_CONNECTED encode2
   #################
   layer {
-    name: "4"
-    parents: "3"
-    children: ""
+    name: "encode2"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 1000
@@ -100,9 +92,7 @@ model {
   # RELU relu2
   #######
   layer {
-    name: "5"
-    parents: "4"
-    children: ""
+    name: "relu2"
     data_layout: "model_parallel"
     relu {
     }
@@ -112,9 +102,7 @@ model {
   # FULLY_CONNECTED encode3
   #################
   layer {
-    name: "6"
-    parents: "5"
-    children: ""
+    name: "encode3"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 500 
@@ -127,9 +115,7 @@ model {
   # RELU relu3
   #######
   layer {
-    name: "7"
-    parents: "6"
-    children: ""
+    name: "relu3"
     data_layout: "model_parallel"
     relu {
     }
@@ -139,9 +125,7 @@ model {
   # FULLY_CONNECTED encode4
   #################
   layer {
-    name: "8"
-    parents: "7"
-    children: ""
+    name: "encode4"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 250
@@ -154,9 +138,7 @@ model {
   # RELU relu4
   #######
   layer {
-    name: "9"
-    parents: "8"
-    children: ""
+    name: "relu4"
     data_layout: "model_parallel"
     relu {
     }
@@ -166,9 +148,7 @@ model {
   # FULLY_CONNECTED encode5
   #################
   layer {
-    name: "10"
-    parents: "9"
-    children: ""
+    name: "encode5"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 100
@@ -181,9 +161,7 @@ model {
   # RELU relu5
   #######
   layer {
-    name: "11"
-    parents: "10"
-    children: ""
+    name: "relu5"
     data_layout: "model_parallel"
     relu {
     }
@@ -193,9 +171,7 @@ model {
   # FULLY_CONNECTED decode5
   #################
   layer {
-    name: "12"
-    parents: "11"
-    children: ""
+    name: "decode5"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 250
@@ -208,9 +184,7 @@ model {
   # RELU 6
   #######
   layer {
-    name: "13"
-    parents: "12"
-    children: ""
+    name: "relu6"
     data_layout: "model_parallel"
     relu {
     }
@@ -220,9 +194,7 @@ model {
   # FULLY_CONNECTED decode4
   #################
   layer {
-    name: "14"
-    parents: "13"
-    children: ""
+    name: "decode4"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 500
@@ -236,9 +208,7 @@ model {
   # RELU relu7
   #######
   layer {
-    name: "15"
-    parents: "14"
-    children: ""
+    name: "relu7"
     data_layout: "model_parallel"
     relu {
     }
@@ -248,9 +218,7 @@ model {
   # FULLY_CONNECTED decode3
   #################
   layer {
-    name: "16"
-    parents: "15"
-    children: ""
+    name: "decode3"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 1000
@@ -263,9 +231,7 @@ model {
   # RELU relu8
   #######
   layer {
-    name: "17"
-    parents: "16"
-    children: ""
+    name: "relu8"
     data_layout: "model_parallel"
     relu {
     }
@@ -275,9 +241,7 @@ model {
   # FULLY_CONNECTED decode2
   #################
   layer {
-    name: "18"
-    parents: "17"
-    children: ""
+    name: "decode2"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 2000
@@ -290,9 +254,7 @@ model {
   # RELU relu9
   #######
   layer {
-    name: "19"
-    parents: "18"
-    children: ""
+    name: "relu9"
     data_layout: "model_parallel"
     relu {
     }
@@ -302,9 +264,7 @@ model {
   # FULLY_CONNECTED decode1
   #################
   layer {
-    name: "20"
-    parents: "19"
-    children: ""
+    name: "decode1"
     data_layout: "model_parallel"
     num_neurons_from_data_reader: true
     fully_connected {
@@ -317,9 +277,7 @@ model {
   # RELU relu10
   #######
   layer {
-    name: "21"
-    parents: "20"
-    children: ""
+    name: "relu10"
     data_layout: "model_parallel"
     relu {
     }
@@ -330,12 +288,10 @@ model {
   # RECONSTRUCTION
   #################
   layer {
-    name: "22"
-    parents: "21"
-    children: ""
+    name: "reconstruction"
     data_layout: "model_parallel"
     reconstruction {
-      original_layer: 1
+      original_layer: "data"
     }
   }
 

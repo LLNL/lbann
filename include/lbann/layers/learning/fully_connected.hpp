@@ -116,15 +116,14 @@ class fully_connected_layer : public learning {
   // Z, Zs, Act, Acts structure:
   // [Acts     ]
 
-  fully_connected_layer(int index,
-                        lbann_comm *comm,
+  fully_connected_layer(lbann_comm *comm,
                         int num_neurons,  // TODO: accept a vector for neuron dims
                         weight_initialization init,
                         optimizer *opt,
                         bool has_bias = true,
                         DataType bias_initial_value = DataType(0),
                         cudnn::cudnn_manager *cudnn = nullptr)
-    : learning(index, comm, opt),
+    : learning(comm, opt),
       m_weight_initialization(init) {
 
     // Setup the data distribution

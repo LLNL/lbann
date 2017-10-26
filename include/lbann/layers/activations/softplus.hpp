@@ -39,9 +39,8 @@ namespace lbann {
 template <data_layout T_layout>
 class softplus_layer : public entrywise_activation_layer {
 public :
-  softplus_layer(int index,
-                 lbann_comm *comm) :
-    entrywise_activation_layer(index, comm) { 
+  softplus_layer(lbann_comm *comm) :
+    entrywise_activation_layer(comm) { 
     initialize_distributed_matrices(); 
   }
 

@@ -39,9 +39,8 @@ template <data_layout T_layout>
 class exponential_layer : public entrywise_activation_layer {
  public:
 
-  exponential_layer(int index,
-                lbann_comm *comm) :
-    entrywise_activation_layer(index, comm) { 
+  exponential_layer(lbann_comm *comm) :
+    entrywise_activation_layer(comm) { 
     initialize_distributed_matrices(); 
   }
 

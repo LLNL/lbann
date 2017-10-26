@@ -301,13 +301,13 @@ message CallbackHang {
 }
 
 message CallbackDropFixedLearningRate {
-  repeated int64 layer = 1;
+  repeated string layer = 1;
   repeated int64 drop_epoch = 2;
   double amt = 3;
 }
 
 message CallbackLinearGrowthLearningRate {
-  repeated int64 layer = 1;
+  repeated string layer = 1;
   double target = 2;
   int64 num_epochs = 3;
   int64 delay = 4;
@@ -587,16 +587,18 @@ message Deconvolution {
 // Target Layers //
 ///////////////////
 message TargetDistributedMinibatch {
+  string paired_input_layer = 1;
   bool shared_data_reader = 2;
   bool for_regression = 3; //default: false
 }
 
 message TargetPartitionedMinibatch {
+  string paired_input_layer = 1;
   bool shared_data_reader = 2;
   bool for_regression = 3; //default: false
 }
 
 message TargetReconstruction {
-  int64 original_layer = 1;
+  string original_layer = 1;
 }
 

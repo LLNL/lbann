@@ -37,9 +37,7 @@ model {
   # INPUT
   #######
   layer {
-    name: "1"
-    parents: "1"
-    children: ""
+    name: "data"
     data_layout: "model_parallel"
     input_distributed_minibatch {
     }
@@ -49,9 +47,7 @@ model {
   # FULLY_CONNECTED encode1
   #################
   layer {
-    name: "2"
-    parents: "1"
-    children: ""
+    name: "encode1"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 1000
@@ -63,9 +59,7 @@ model {
   # RELU 
   ######
   layer {
-    name: "3"
-    parents: "2"
-    children: ""
+    name: "relu1"
     data_layout: "model_parallel"
     relu {
     }
@@ -74,9 +68,7 @@ model {
   # DROPOUT 
   #########
   layer {
-    name: "4"
-    parents: "3"
-    children: ""
+    name: "dropout1"
     data_layout: "model_parallel"
     dropout {
       keep_prob: 0.8
@@ -88,9 +80,7 @@ model {
   # FULLY_CONNECTED decode1
   #################
   layer {
-    name: "5"
-    parents: "4"
-    children: ""
+    name: "decode1"
     data_layout: "model_parallel"
     num_neurons_from_data_reader: true
     fully_connected {
@@ -102,9 +92,7 @@ model {
   # SIGMOID
   #########
   layer {
-    name: "6"
-    parents: "5"
-    children: ""
+    name: "sigmoid1"
     data_layout: "model_parallel"
     sigmoid {
     }
@@ -113,9 +101,7 @@ model {
   # DROPOUT 
   #########
   layer {
-    name: "7"
-    parents: "6"
-    children: ""
+    name: "dropout2"
     data_layout: "model_parallel"
     dropout {
       keep_prob: 0.8
@@ -126,12 +112,10 @@ model {
   # RECONSTRUCTION
   #################
   layer {
-    name: "8"
-    parents: "7"
-    children: ""
+    name: "reconstruction"
     data_layout: "model_parallel"
     reconstruction {
-      original_layer: 1
+      original_layer: "data"
     }
   }
 

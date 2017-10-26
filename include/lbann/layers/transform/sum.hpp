@@ -43,10 +43,9 @@ class sum_layer : public transform {
 
  public:
   /// Constructor
-  sum_layer(int index,
-            lbann_comm *comm,
+  sum_layer(lbann_comm *comm,
             cudnn::cudnn_manager *cudnn = NULL)
-    : transform(index, comm) {
+    : transform(comm) {
 
     // Setup the data distribution
     initialize_distributed_matrices();
@@ -78,7 +77,7 @@ class sum_layer : public transform {
     std::stringstream s;
      s << " sum; parents: ";
      for (size_t i=0; i<this->m_parent_layers.size(); i++) {
-       s << this->m_parent_layers[i]->get_index() << " " << this->m_parent_layers[i]->get_type() << " ";
+       s << this->m_parent_layers[i]->get_name() << " " << this->m_parent_layers[i]->get_type() << " ";
      }
      s << " dataLayout: " << this->get_data_layout_string(get_data_layout());
      return s.str();

@@ -39,13 +39,8 @@ namespace lbann {
 class transform : public Layer {
 
  public:
-  transform(int index, 
-            // int numPrevNeurons,
-            // int numNeurons,
-           lbann_comm *comm)
-    : Layer(index, comm) {
-
-  }
+  transform(lbann_comm *comm)
+    : Layer(comm) {}
 
   transform(const transform&) = default;
   transform& operator=(const transform&) = default;

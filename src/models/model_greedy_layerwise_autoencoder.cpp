@@ -120,10 +120,10 @@ void greedy_layerwise_autoencoder::insert_mirror(uint32_t layer_index) {
   Layer *mirror_layer = NULL;
   switch(original_layer->get_data_layout()){
   case data_layout::MODEL_PARALLEL:
-    mirror_layer = new reconstruction_layer<data_layout::MODEL_PARALLEL>(mirror_index, m_comm, original_layer);
+    mirror_layer = new reconstruction_layer<data_layout::MODEL_PARALLEL>(m_comm, original_layer);
     break;
   case data_layout::DATA_PARALLEL:
-    mirror_layer = new reconstruction_layer<data_layout::DATA_PARALLEL>(mirror_index, m_comm, original_layer);
+    mirror_layer = new reconstruction_layer<data_layout::DATA_PARALLEL>(m_comm, original_layer);
     break;
   default:
     break;
@@ -153,7 +153,7 @@ void greedy_layerwise_autoencoder::remove_mirror(uint32_t layer_index) {
     if (m_comm->am_world_master()) {
       std::cout << "Phase [" << layer_index << "] Done, Reset Layers " << std::endl;
       for(auto& l:m_layers) {
-        std::cout << "Layer [ " << l->get_index() << "] #NumNeurons: " << l->get_num_neurons() << std::endl;
+        std::cout << "Layer [ " << l->get_name() << "] #NumNeurons: " << l->get_num_neurons() << std::endl;
       }
     }
     setup();
@@ -363,15 +363,8 @@ void greedy_layerwise_autoencoder::evaluate(execution_mode mode) {
   //@todo add state (in(active)) to reconstruction layer
   m_layers.insert(std::end(m_layers), std::begin(m_reconstruction_layers)+1,std::end(m_reconstruction_layers));
 
-  //Set appropriate layer indices and fp_input
-  size_t mls = m_layers.size();
-  size_t mrs_index = mls-m_reconstruction_layers.size()+1; //reconstruction layers start index
-  for(size_t l = mrs_index; l < mls; ++l) {
-    m_layers[l]->set_index(l);
-  }
-
   //@todo loop for epochs??
-  m_end_index = mls-1;
+  m_end_index = m_layers.size()-1;
   evaluate_phase(mode);
 
   if (m_comm->am_world_master()) {

@@ -59,11 +59,10 @@ class concatenation_layer : public transform {
 
  public:
   /// Constructor
-  concatenation_layer(int index,
-                      lbann_comm *comm,
+  concatenation_layer(lbann_comm *comm,
                       int concatenation_axis,
                       cudnn::cudnn_manager *cudnn = NULL)
-    : transform(index, comm),
+    : transform(comm),
       m_concatenation_axis(concatenation_axis) {
 
     // Setup the data distribution

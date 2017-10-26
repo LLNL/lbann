@@ -75,16 +75,14 @@ class pooling_layer : public transform {
 
  public:
 
-  pooling_layer(int index,
-                lbann_comm *comm,
+  pooling_layer(lbann_comm *comm,
                 int num_data_dims,
                 int pool_dim,
                 int pool_pad,
                 int pool_stride,
                 pool_mode pool_mode,
                 cudnn::cudnn_manager *cudnn = nullptr)
-    : pooling_layer(index,
-                    comm,
+    : pooling_layer(comm,
                     num_data_dims,
                     std::vector<int>(num_data_dims, pool_dim).data(),
                     std::vector<int>(num_data_dims, pool_pad).data(),
@@ -93,15 +91,14 @@ class pooling_layer : public transform {
                     cudnn) {}
 
   /// Constructor
-  pooling_layer(int index,
-                lbann_comm *comm,
+  pooling_layer(lbann_comm *comm,
                 int num_data_dims,
                 const int *pool_dims,
                 const int *pool_pads,
                 const int *pool_strides,
                 pool_mode pool_mode,
                 cudnn::cudnn_manager *cudnn = nullptr)
-    : transform(index, comm),
+    : transform(comm),
       m_pool_mode(pool_mode) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "pooling only supports DATA_PARALLEL");

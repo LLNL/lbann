@@ -76,12 +76,15 @@ void Layer::initialize_distributed_matrices<data_layout::DATA_PARALLEL>() {
 
 }
 
-Layer::Layer(const int index, lbann_comm *comm)
-  : m_index(index),
-    m_comm(comm),
+Layer::Layer(lbann_comm *comm)
+  : m_comm(comm),
     m_execution_mode(execution_mode::training),
-    m_cudnn(nullptr),
-    m_name("none") {
+    m_cudnn(nullptr) {
+
+  // Initialize layer name
+  static int num_layers = 0;
+  m_name = "layer" + std::to_string(num_layers);
+  num_layers++;
 
   // Initialize neuron tensor dimensions
   m_num_neurons = 0;
@@ -115,7 +118,6 @@ Layer::Layer(const int index, lbann_comm *comm)
 }
 
 Layer::Layer(const Layer& other) :
-  m_index(other.m_index),
   m_comm(other.m_comm),
   m_num_neurons(other.m_num_neurons),
   m_num_neuron_dims(other.m_num_neuron_dims),
@@ -178,7 +180,6 @@ Layer::Layer(const Layer& other) :
 }
 
 Layer& Layer::operator=(const Layer& other) {
-  m_index = other.m_index;
   m_comm = other.m_comm;
   m_num_neurons = other.m_num_neurons;
   m_num_neuron_dims = other.m_num_neuron_dims;
@@ -420,7 +421,7 @@ bool Layer::update() {
 }
 
 void Layer::summarize_stats(lbann_summary& summarizer, int step) {
-  std::string prefix = "layer" + std::to_string(static_cast<long long>(m_index)) + "/";
+  std::string prefix = m_name + "/";
   summarizer.reduce_scalar(prefix + "fp_time", fp_time, step);
   summarizer.reduce_scalar(prefix + "bp_time", bp_time, step);
   summarizer.reduce_scalar(prefix + "update_time", update_time, step);
@@ -428,14 +429,12 @@ void Layer::summarize_stats(lbann_summary& summarizer, int step) {
 }
 
 void Layer::summarize_matrices(lbann_summary& summarizer, int step) {
-  std::string prefix = "layer" + std::to_string(static_cast<long long>(m_index)) +
-    "/activations/";
+  std::string prefix = m_name + "/activations/";
   summarizer.reduce_mean(prefix + "mean", *m_activations_v, step);
   summarizer.reduce_min(prefix + "min", *m_activations_v, step);
   summarizer.reduce_max(prefix + "max", *m_activations_v, step);
   summarizer.reduce_stdev(prefix + "stdev", *m_activations_v, step);
-  prefix = "layer" + std::to_string(static_cast<long long>(m_index)) +
-    "/error_signal/";
+  prefix = m_name + "/error_signal/";
   summarizer.reduce_mean(prefix + "mean", *m_error_signal_v, step);
   summarizer.reduce_min(prefix + "min", *m_error_signal_v, step);
   summarizer.reduce_max(prefix + "max", *m_error_signal_v, step);

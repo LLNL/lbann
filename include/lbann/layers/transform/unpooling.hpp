@@ -49,10 +49,9 @@ class unpooling_layer : public transform {
  public:
 
   /// Constructor
-  unpooling_layer(int index,
-                  lbann_comm *comm,
+  unpooling_layer(lbann_comm *comm,
                   pooling_layer<T_layout>* p_layer)
-    : transform(index, comm),
+    : transform(comm),
       m_pooling_layer(p_layer) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "unpooling only supports DATA_PARALLEL");

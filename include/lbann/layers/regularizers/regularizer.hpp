@@ -37,9 +37,8 @@ namespace lbann {
 
 class regularizer_layer : public Layer {
  public:
-  regularizer_layer(int index, 
-                    lbann_comm *comm) :
-    Layer(index, comm) {
+  regularizer_layer(lbann_comm *comm) :
+    Layer(comm) {
     
   }
   regularizer_layer(const regularizer_layer&) = default;

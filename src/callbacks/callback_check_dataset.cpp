@@ -31,7 +31,7 @@
 namespace lbann {
 
 void lbann_callback_check_dataset::add_to_set(model *m, Layer *l, int64_t step, std::set<long>& set) {
-  if (!dynamic_cast<io_layer*>(l) || l->get_index() != 0) {
+  if (!dynamic_cast<io_layer*>(l)) {
     return;
   }
 
