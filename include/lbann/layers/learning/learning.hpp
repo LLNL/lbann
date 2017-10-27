@@ -288,12 +288,14 @@ class learning : public Layer, public optimizable_layer {
     summarizer.reduce_min(prefix + "min", wb, step);
     summarizer.reduce_max(prefix + "max", wb, step);
     summarizer.reduce_stdev(prefix + "stdev", wb, step);
+    summarizer.reduce_2norm(prefix + "2norm2", wb, step);
     prefix = m_name + "/weights_gradient/";
     const AbsDistMat& wb_d = get_weights_gradient();
     summarizer.reduce_mean(prefix + "mean", wb_d, step);
     summarizer.reduce_min(prefix + "min", wb_d, step);
     summarizer.reduce_max(prefix + "max", wb_d, step);
     summarizer.reduce_stdev(prefix + "stdev", wb_d, step);
+    summarizer.reduce_2norm(prefix + "2norm2", wb_d, step);
   }
 
   /** Validate that the setup is reasonable. */

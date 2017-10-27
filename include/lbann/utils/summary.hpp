@@ -83,6 +83,8 @@ class lbann_summary {
   void sum_reduce_scalar(const std::string tag, DataType s, int step);
   /** Report a histogram of the values in mat. */
   void reduce_histogram(const std::string tag, const AbsDistMat& mat, int step);
+  /** Report the (squared) 2-norm of mat. */
+  void reduce_2norm(const std::string tag, const AbsDistMat& mat, int step);
 
   /**
    * Write all summaries out.

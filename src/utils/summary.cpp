@@ -176,6 +176,13 @@ void lbann_summary::reduce_histogram(const std::string tag,
   // TODO: Support histograms on multiple models.
 }
 
+void lbann_summary::reduce_2norm(const std::string tag, const AbsDistMat& mat,
+                                 int step) {
+  // Using a squared 2-norm so that we can just sum this.
+  DataType local_norm = El::Nrm2(mat.LockedMatrix());
+  sum_reduce_scalar(tag, local_norm * local_norm, step);
+}
+
 void lbann_summary::flush() {
   flush_means();
   flush_mins();

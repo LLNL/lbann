@@ -434,11 +434,13 @@ void Layer::summarize_matrices(lbann_summary& summarizer, int step) {
   summarizer.reduce_min(prefix + "min", *m_activations_v, step);
   summarizer.reduce_max(prefix + "max", *m_activations_v, step);
   summarizer.reduce_stdev(prefix + "stdev", *m_activations_v, step);
+  summarizer.reduce_2norm(prefix + "2norm2", *m_activations_v, step);
   prefix = m_name + "/error_signal/";
   summarizer.reduce_mean(prefix + "mean", *m_error_signal_v, step);
   summarizer.reduce_min(prefix + "min", *m_error_signal_v, step);
   summarizer.reduce_max(prefix + "max", *m_error_signal_v, step);
   summarizer.reduce_stdev(prefix + "stdev", *m_error_signal_v, step);
+  summarizer.reduce_2norm(prefix + "2norm2", *m_error_signal_v, step);
 }
 
 void Layer::setup() {
