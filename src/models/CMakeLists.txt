@@ -4,4 +4,5 @@ add_sources(
   model_dnn.cpp
   model_greedy_layerwise_autoencoder.cpp
   model_dag.cpp
+  model_planar.cpp
 )

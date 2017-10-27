@@ -27,6 +27,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/models/model_planar.hpp"
+#include "lbann/layers/io/input/input_layer.hpp"
+#include "lbann/layers/io/target/target_layer.hpp"
+
 #include "lbann/layers/io/io_layer.hpp"
 #include "lbann/io/persist.hpp"
 
@@ -42,7 +45,7 @@ namespace lbann {
 
 planar_model::planar_model(int mini_batch_size,
                                    lbann_comm *comm,
-                                   objective_functions::objective_fn *obj_fn,
+                                   objective_functions::objective_function *obj_fn,
                                    optimizer_factory *optimizer_fac)
   : model(comm, mini_batch_size, obj_fn, optimizer_fac) {}
 
@@ -96,7 +99,7 @@ planar_model::~planar_model() {
   // Free layers
   for (size_t h = 0; h < m_layers.size(); ++h) {
     std::vector<Layer*>& arow = m_layers[h];
-    for(site_t c = 0; c < arow.size(); ++c){
+    for(size_t c = 0; c < arow.size(); ++c){
       delete arow[c];
     }
   }
@@ -224,6 +227,7 @@ struct lbann_model_planar_header {
   uint32_t layers;
 };
 
+/**
 bool planar_model::save_to_checkpoint_shared(persist& p) {
   // write parameters from base class first
   model::save_to_checkpoint_shared(p);
@@ -240,8 +244,11 @@ bool planar_model::save_to_checkpoint_shared(persist& p) {
 
   // write out details for each layer
   for (size_t l = 0; l < m_layers.size(); l++) {
-    if (! m_layers[l]->saveToCheckpointShared(p)) {
-      return false;
+    for(size_t k=0; k< m_layers[l].size(); k++){
+      Layer *current_layer = m_layers[l].at(k);
+      if (! current_layer->saveToCheckpointShared(p)) {
+        return false;
+      }
     }
   }
 
@@ -273,56 +280,58 @@ bool planar_model::load_from_checkpoint_shared(persist& p) {
 
   // read in each layer
   for (size_t l = 0; l < m_layers.size(); l++) {
-    if (! m_layers[l]->loadFromCheckpointShared(p)) {
-      return false;
+    for(size_t k=0; k<m_layers[l].size(); k++){
+      Layer *current_layer = m_layers[l].at(k);
+      if (! current_layer->loadFromCheckpointShared(p)) {
+        return false;
+      }
     }
   }
 
   return true;
 }
+*/
 
-/***
- * Given a new layer, create 'num_heads' copies of the new layer and add them to
- * the horizontal_index-th level of the model. */
-//int planar_model::stackup_duplicate(int horizontal_index, int num_heads, Layer *new_layer){ }
 
-/// Add the new layer at hindex-th of current level
-int planar_model::stackup_tail(int hindex, Layer *new_layer){
-  /// Resize layer vector to m_width if a new layer is added first time 
-  if(m_layers.size() == vertical_index){
+/// Add the new layer at the end of layers at the vindex-th level
+int planar_model::stackup_tail(int vindex, Layer *new_layer){
+  /// Add a new layer vector to m_layers when a new layer is added first time 
+  if(m_layers.size() == (size_t) vindex){
     std::vector<Layer *> new_level;
     m_layers.push_back(new_level);
   }
 
   /// Do some sanity check first
-  if(m_layers.size() != hindex+1){
+  if(m_layers.size() != (size_t) vindex+1){
     std::cerr << "Adding new layer to invalid level of plane" << "\n";
     throw lbann::lbann_exception("Adding new layer to invalid level of plane");
   }
-  if(m_layers[hindex].size() >= m_width){
+  if(m_layers[vindex].size() >= (size_t) m_width){
     std::cerr << "Adding new layer to planar level that is already full" << "\n";
     throw lbann::lbann_exception("Adding new layer to planar level that is already full");
   }
 
-  std::vector<Layer *>& current_level = m_layers[hindex];
-  new_layer->set_index(hindex);
+  std::vector<Layer *>& current_level = m_layers[vindex];
   current_level.push_back(new_layer);
-  return hindex;
+  return vindex;
 }
 
-/// Add multiple (m_width) copies of the new layer at the next level
+/***
+ * Given a new layer, create 'm_width' copies of the new layer and add them to
+ * the next level. */
 int planar_model::stackup_duplicate(Layer *new_layer){
   /// A new level of m_width layers will be created
-  std::vector<Layer *> new_level;
+  int index = m_layers.size();
+  std::vector<Layer *> new_level (m_width);
 
-  new_level.push_back(new_layer);
-  for(uint j=1; j<m_width; j++){
-    Layer layer_copy = *new_layer;
-    new_level.push_back(layer_copy); 
+  new_level[0] = new_layer;
+  for(int k=1; k<m_width; k++){
+    Layer *layer_copy = new_layer->copy();
+    new_level[k] = layer_copy;
   }
   m_layers.push_back(new_level);
 
-  return m_layers.size();
+  return index; 
 }
 
 /**
@@ -341,7 +350,12 @@ Layer *planar_model::swap(int index, Layer *new_layer) {
   return tmp;
 } */
 
-void planar_model::setup(int start_index, int end_index) {
+
+void planar_model::setup() {
+  setup_subset(0, 0);
+}
+
+void planar_model::setup_subset(int start_index, int end_index) {
   if(end_index <= 0) {
     end_index = m_layers.size();
   }
@@ -350,8 +364,8 @@ void planar_model::setup(int start_index, int end_index) {
   Layer* prev_layer;
   Layer* next_layer;
   for (int l=start_index; l<end_index; l++) {
-    std::vector<Layers *>& horizontal_layers = m_layers[l];
-    for(int j=0; j<m_layers[l].size(); j++) {
+    std::vector<Layer *>& horizontal_layers = m_layers[l];
+    for(size_t j=0; j<m_layers[l].size(); j++) {
       /// Determine the previous layer
       if(l <= 0){
         prev_layer = nullptr;
@@ -387,15 +401,23 @@ void planar_model::setup(int start_index, int end_index) {
           next_layer = m_layers[l+1].at(j);
         }
       }
-    
       
-      Layer* current_layer = horizontal_layer[j];
+      Layer* current_layer = horizontal_layers[j];
       current_layer->set_neural_network_model(this); /// Provide a reverse point from each layer to the model
-      current_layer->setup(prev_layer, next_layer);
+
+      current_layer->add_parent_layer(prev_layer);
+      current_layer->add_child_layer(next_layer);
+      current_layer->setup();
       current_layer->check_setup();
-      current_layer->set_index(l);
       if (m_comm->am_world_master()) {
-        cout << std::setw(3) << l << ":[" << std::setw(18) << current_layer->get_type() <<  "] Set up a layer with input " << std::setw(7) << current_layer->get_num_prev_neurons() << " and " << std::setw(7) << current_layer->get_num_neurons() << " neurons."  << endl;
+
+        string description = current_layer->get_description();
+        std::cout << std::setw(12) << current_layer->get_name() << ":[" << std::setw(18) << current_layer->get_type() <<  "] Set up a layer with input " << std::setw(7) << current_layer->get_num_prev_neurons() << " and " << std::setw(7) << current_layer->get_num_neurons() << " neurons.";
+        std::string s = current_layer->get_topo_description();
+        if(s != "") {
+          std::cout << " (" << s << ")";
+        }
+        std::cout << std::endl;
       }
     }
   }
@@ -436,7 +458,7 @@ void planar_model::train(int num_epochs) {
     /// Set the execution mode to training
     m_execution_mode = execution_mode::training;
     for (size_t l = 0; l < m_layers.size(); ++l) {
-      std::vector<Layers *>& horizontal_layer = m_layers[l];
+      std::vector<Layer *>& horizontal_layer = m_layers[l];
       for(size_t j=0; j<horizontal_layer.size(); j++) {
         horizontal_layer[j]->set_execution_mode(execution_mode::training);
       }
@@ -451,11 +473,6 @@ void planar_model::train(int num_epochs) {
     bool finished_epoch = false;
     while (!finished_epoch) {
       finished_epoch = train_mini_batch();
-
-      // save a checkpoint if needed
-      if (need_checkpoint()) {
-        checkpointShared();
-      }
     }
 
     // Evaluate model on validation set
@@ -467,10 +484,6 @@ void planar_model::train(int num_epochs) {
     /// Igroring callback
     // do_epoch_end_cbs();
 
-    // save checkpoint after epoch
-    if (need_checkpoint()) {
-      checkpointShared();
-    }
   }
 
   /// Igroring callback
@@ -485,7 +498,7 @@ bool planar_model::train_mini_batch() {
   // Forward propagation
   // do_model_forward_prop_begin_cbs();
   for (size_t l = 0u; l < m_layers.size(); ++l) {
-    std::vector<Layers *>& horizontal_layer = m_layers[l];
+    std::vector<Layer *>& horizontal_layer = m_layers[l];
     for(size_t j=0; j<horizontal_layer.size(); j++) {
       /// Igroring callback
       // do_layer_forward_prop_begin_cbs(horizontal_layer[j]);
@@ -504,11 +517,11 @@ bool planar_model::train_mini_batch() {
   // Backward propagation
   // do_model_backward_prop_begin_cbs();
   for (size_t l = m_layers.size(); l-- > 0u;) {
-    std::vector<Layers *>& horizontal_layer = m_layers[l];
+    std::vector<Layer *>& horizontal_layer = m_layers[l];
     for(size_t j=0; j<horizontal_layer.size(); j++) {
       /// Igroring callback
       // do_layer_backward_prop_begin_cbs(m_layers[l]);
-      hosrizontal_layer[j]->back_prop();
+      horizontal_layer[j]->back_prop();
       /// Igroring callback
       // do_layer_backward_prop_end_cbs(m_layers[l]);
     }
@@ -523,7 +536,7 @@ bool planar_model::train_mini_batch() {
 
   /// Update layers
   for (size_t l = m_layers.size() - 1; l > 0u; --l) {
-    std::vector<Layers *>& horizontal_layer = m_layers[l];
+    std::vector<Layer *>& horizontal_layer = m_layers[l];
     for(size_t j=0; j<horizontal_layer.size(); j++) {
       horizontal_layer[j]->update();
     }
@@ -540,7 +553,7 @@ bool planar_model::train_mini_batch() {
 
 bool planar_model::at_epoch_start() {
   // use mini batch index in data reader to signify start of epoch
-  io_layer *input = (io_layer *) m_layers[0];
+  io_layer *input = (io_layer *) m_layers[0].at(0);
   bool flag = input->at_new_epoch();
   return flag;
 }
@@ -548,6 +561,7 @@ bool planar_model::at_epoch_start() {
 void planar_model::equalize(int  start_index, int end_index)
 {
   for (int l=start_index; l<end_index; l++) {
+
     /// No need to copy weights for single-head level
     if(m_layers[l].size() <= 1)
       continue;
@@ -565,11 +579,13 @@ void planar_model::equalize(int  start_index, int end_index)
 
     /// Copy weights between heads
     /// In case when only weights are shared
-    ElMat& anchor_weights = m_layers[l].at(0)->get_weights();
+    learning *anchor_layer = dynamic_cast<learning*>(m_layers[l].at(0));
+    ElMat& anchor_weights = dynamic_cast<ElMat&> (anchor_layer->get_weights());
 
     for(size_t k=1; k<m_layers[l].size(); k++){
-      ElMat& target_weights = m_layers[l].at(k)->get_weights();
-      Copy(anchor_weights, target_weights);
+      learning *targ_layer = dynamic_cast<learning*>(m_layers[l].at(k));
+      ElMat& targ_weights = dynamic_cast<ElMat&> (targ_layer->get_weights());
+      Copy(anchor_weights, targ_weights);
     }
   }
 }
@@ -594,19 +610,20 @@ void planar_model::sum_up_gradients()
       continue;
 
     /// Sum up weights_gradient from each layer at current level
-    ElMat& weights_gradient_sum = m_layers[l].at(0)->get_weights_gradient();
+    learning *llayer = dynamic_cast<learning*> (m_layers[l].at(0));
+    ElMat& weights_gradient_sum = dynamic_cast<ElMat&> (llayer->get_weights_gradient());
     for(size_t k=1; k<m_layers[l].size(); k++){
-      ElMat& current_gradient = m_layers[l].at(k)->get_weights_gradient();
+      llayer = dynamic_cast<learning*> (m_layers[l].at(k));
+      ElMat& current_gradient = dynamic_cast<ElMat&> (llayer->get_weights_gradient());
       weights_gradient_sum += current_gradient;
     }
     for(size_t k=0; k<m_layers[l].size(); k++){
-      ElMat& current_gradient = m_layers[l].at(k)->get_weights_gradient();
+      llayer = dynamic_cast<learning*> (m_layers[l].at(k));
+      ElMat& current_gradient = dynamic_cast<ElMat&> (llayer->get_weights_gradient());
       current_gradient = weights_gradient_sum;
     }
   }
 }
-
-}  // namespace lbann
 
 
 void planar_model::evaluate(execution_mode mode) {
@@ -626,8 +643,8 @@ void planar_model::evaluate(execution_mode mode) {
 
   // Set the execution mode for each layer 
   m_execution_mode = mode;
-  for (size_t l = 0u; l < m_layers.size(); ++l) {
-    for(size-t k = 0u; k < m_layers[l].size(); k++) {
+  for (size_t l = 0; l < m_layers.size(); ++l) {
+    for(size_t k = 0; k < m_layers[l].size(); k++) {
       m_layers[l].at(k)->set_execution_mode(mode);
     }
   }
@@ -666,8 +683,8 @@ bool planar_model::evaluate_mini_batch() {
   /// Igroring callback
   // forward propagation (mini-batch)
   // do_model_evaluate_forward_prop_begin_cbs();
-  for (size_t l = 0u; l < m_layers.size(); l++) {
-    std::vector<Layers *>& horizontal_layer = m_layers[l];
+  for (size_t l = 0; l < m_layers.size(); l++) {
+    std::vector<Layer*>& horizontal_layer = m_layers[l];
     for(size_t j=0; j<horizontal_layer.size(); j++) {
       /// Igroring callback
       // do_layer_evaluate_forward_prop_begin_cbs(m_layers[l]);
@@ -684,8 +701,8 @@ bool planar_model::evaluate_mini_batch() {
 
   // Update layers
   // Note: should only affect the input and target layers
-  for (size_t l = m_layers.size() - 1; l > 0u; --l) {
-    std::vector<Layers *>& horizontal_layer = m_layers[l];
+  for (size_t l = m_layers.size()-1; l > 0; --l) {
+    std::vector<Layer*>& horizontal_layer = m_layers[l];
     for(size_t j=0; j<horizontal_layer.size(); j++) {
       horizontal_layer[j]->update();
     }
@@ -694,8 +711,8 @@ bool planar_model::evaluate_mini_batch() {
   assert(m_layers[0].size() == 1);
   const bool data_set_processed = m_layers[0].at(0)->update();
 
-  /// Igroring callback
   // do_batch_evaluate_end_cbs();
+  /// Igroring callback for now
   switch(m_execution_mode) {
   case execution_mode::validation:
     ++m_current_validation_step;
@@ -708,3 +725,20 @@ bool planar_model::evaluate_mini_batch() {
   }
   return data_set_processed;
 }
+
+bool planar_model::is_execution_mode_valid(execution_mode mode) {
+
+  for(size_t l=0; l<m_layers.size(); l++){
+    std::vector<Layer*>& current_set = m_layers[l];
+    for(size_t k=0; k<current_set.size(); k++){
+      input_layer* input = dynamic_cast<input_layer*>(current_set[k]);
+      if (input != nullptr && !input->is_execution_mode_valid(mode)) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+}  // namespace lbann

@@ -31,6 +31,7 @@
 
 #include "lbann/models/model.hpp"
 #include "lbann/layers/layer.hpp"
+#include "lbann/layers/learning/learning.hpp"
 #include "lbann/layers/activations/activation.hpp"
 #include "lbann/data_readers/data_reader.hpp"
 #include "lbann/io/persist.hpp"
@@ -45,7 +46,7 @@ class planar_model : public model {
   /// Constructor
   planar_model(int mini_batch_size,
                    lbann_comm *comm,
-                   objective_functions::objective_fn *obj_fn,
+                   objective_functions::objective_function *obj_fn,
                    optimizer_factory *optimizer_fac);
 /**
   planar_model(const planar_model& other);
@@ -72,10 +73,11 @@ class planar_model : public model {
   /** @todo This is old and likely broken */
   //bool load_from_checkpoint(int fd, const char *filename, size_t *bytes);
 
-  bool save_to_checkpoint_shared(persist& p);
-  bool load_from_checkpoint_shared(persist& p);
+  //bool save_to_checkpoint_shared(persist& p);
+  //bool load_from_checkpoint_shared(persist& p);
 
   /// Get list of layers
+/*
   virtual std::vector<std::vector<Layer*> >& get_layers() {
     return m_layers;
   }
@@ -84,6 +86,7 @@ class planar_model : public model {
   virtual void set_layers(std::vector<std::vector<Layer*> >& layers) {
     m_layers = layers;
   }
+*/
 
  
   /** Following functions are used to add a set of layers at given horizontal level
@@ -111,7 +114,8 @@ class planar_model : public model {
   //virtual Layer *swap(int index, Layer *new_layer);
 
   /// Setup planar model
-  virtual void setup(int start_index=0, int end_index=0);
+  virtual void setup() override;
+  virtual void setup_subset(int start_index, int end_index);
 
   /// Train model
   /** @param num_epochs Number of epochs to train
@@ -125,10 +129,19 @@ class planar_model : public model {
   /** Return true if about to start a new training epoch */
   virtual bool at_epoch_start();
 
+  ///
+  virtual void equalize(int  start_index, int end_index) = 0;
+
+  virtual void sum_up_gradients() = 0;
+
+  /// Check if the model has a valid data set for the execution mode
+  virtual bool is_execution_mode_valid(execution_mode mode) = 0;
+
   /// Evaluate model
-  virtual void evaluate(execution_mode mode) = 0;
+  virtual void evaluate(execution_mode mode) override;
+
   /// Evaluation step on one mini-batch
-  virtual bool evaluate_mini_batch() = 0;
+  virtual bool evaluate_mini_batch() override;
 
  protected:
   /// the maximum number of horizontal layers in the network
