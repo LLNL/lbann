@@ -40,24 +40,24 @@ class reconstruction_layer : public target_layer {
 
   /** Original layer to reconstruct. */
   Layer *m_original_layer;
+  /** View of original layer activation */
+  AbsDistMat *original_layer_act_v;
 
  public:
-  /// @todo note that the reconstruction layer used to use weight_initialization::glorot_uniform
-  reconstruction_layer(int index,
-                       lbann_comm *comm,
+  reconstruction_layer(lbann_comm *comm,
                        Layer *original_layer)
     :  target_layer(comm, dynamic_cast<input_layer*>(original_layer), {}, false),
        m_original_layer(original_layer) {
     // Setup the data distribution
     initialize_distributed_matrices();
-    this->m_index = index;
   }
-
+  
   reconstruction_layer(const reconstruction_layer& other) :
     target_layer(other),
     m_original_layer(other.m_original_layer) {}
 
   reconstruction_layer& operator=(const reconstruction_layer& other) {
+    target_layer::operator=(other);
     m_original_layer = other.m_original_layer;
   }
 
@@ -74,6 +74,11 @@ class reconstruction_layer : public target_layer {
   }
   virtual data_layout get_data_layout() const override { return T_layout; }
 
+  /** Set original layer. */
+  void set_original_layer(Layer *original_layer) {
+    m_original_layer = original_layer;
+  }
+
   void setup_dims() override {
     target_layer::setup_dims();
     this->m_neuron_dims = m_original_layer->get_neuron_dims();
@@ -85,21 +90,31 @@ class reconstruction_layer : public target_layer {
   }
 
  protected:
+  void fp_set_std_matrix_view() override {
+    int64_t cur_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
+
+    target_layer::fp_set_std_matrix_view();
+
+    //view of original layer
+    AbsDistMat& orig_acts = m_original_layer->get_activations();
+    original_layer_act_v = orig_acts.Construct(orig_acts.Grid(),orig_acts.Root());
+    El::View(*original_layer_act_v, orig_acts, El::ALL, El::IR(0, cur_mini_batch_size));
+  }
 
   void fp_compute() override {
 
-    // Get activations from original layer
-    m_original_layer->get_fp_output(*this->m_activations_v, this);
+    //Copy prev (decoder) activations for greedy layer wise training
+    El::Copy(*this->m_prev_activations,*this->m_activations_v);
 
     // Compute and record the objective function score
     objective_functions::objective_function *obj_fn = this->m_neural_network_model->m_obj_fn;
     obj_fn->compute_value(*this->m_prev_activations,
-                          *this->m_activations_v);
+                          *original_layer_act_v);
 
     // Compute metrics
     const int curr_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
     for (auto&& m : this->m_neural_network_model->get_metrics()) {
-      double num_errors = m->compute_metric(*this->m_prev_activations, *this->m_activations_v);
+      double num_errors = m->compute_metric(*this->m_prev_activations, *original_layer_act_v);
       m->record_error(num_errors, curr_mini_batch_size);
     }
 
@@ -107,7 +122,7 @@ class reconstruction_layer : public target_layer {
 
   void bp_compute() override {
     this->m_neural_network_model->m_obj_fn->compute_gradient(*this->m_prev_activations,
-                                                             *this->m_activations_v,
+                                                             *original_layer_act_v,
                                                              *this->m_error_signal_v);
   }
 
@@ -121,8 +136,7 @@ class reconstruction_layer : public target_layer {
   }
 
   void summarize_stats(lbann_summary& summarizer, int step) override {
-    std::string tag = "layer" + std::to_string(this->m_index)
-      + "/ReconstructionCost";
+    std::string tag = this->m_name + "/ReconstructionCost";
     summarizer.reduce_scalar(tag, this->m_neural_network_model->m_obj_fn->get_mean_value(), step);
     // Skip target layer (for now).
     io_layer::summarize_stats(summarizer, step);

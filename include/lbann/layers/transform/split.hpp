@@ -43,10 +43,9 @@ class split_layer : public transform {
 
  public:
   /// Constructor
-  split_layer(int index,
-              lbann_comm *comm,
+  split_layer(lbann_comm *comm,
               cudnn::cudnn_manager *cudnn = NULL)
-    : transform(index, comm) {
+    : transform(comm) {
 
     // Setup the data distribution
     initialize_distributed_matrices();
@@ -78,7 +77,7 @@ class split_layer : public transform {
     std::stringstream s;
     s << " split; children: ";
     for (size_t h=0; h<this->m_child_layers.size(); h++) {
-      s << this->m_child_layers[h]->get_index() << " " << this->m_child_layers[h]->get_type() << " ";
+      s << this->m_child_layers[h]->get_name() << " " << this->m_child_layers[h]->get_type() << " ";
     }
     s << " dataLayout: " << this->get_data_layout_string(get_data_layout());
     return s.str();

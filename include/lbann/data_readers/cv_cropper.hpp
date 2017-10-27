@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_cv_cropper .cpp .hpp - Functions to crop images
+// cv_cropper .cpp .hpp - Functions to crop images
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_CV_CROPPER_HPP
@@ -46,6 +46,7 @@ namespace lbann {
  */
 class cv_cropper : public cv_transform {
  protected:
+  // --- configuration variables ---
   unsigned int m_width; ///< desired width of an image
   unsigned int m_height; ///< desired height of an image
   /// randomize the center position of the area of interest
@@ -55,6 +56,7 @@ class cv_cropper : public cv_transform {
   /// The size of the initial region of interest to crop from
   std::pair<int, int> m_roi_size;
 
+  // --- state variables ---
   double m_zoom; ///< zoom factor to prepare the initial region for a given image
   int m_interpolation; ///< channel value interpolation method
 
@@ -64,8 +66,8 @@ class cv_cropper : public cv_transform {
   cv_cropper();
   cv_cropper(const cv_cropper& rhs) = default;
   cv_cropper& operator=(const cv_cropper& rhs) = default;
-  virtual cv_cropper *clone() const;
-  virtual ~cv_cropper() {}
+  cv_cropper *clone() const override;
+  ~cv_cropper() override {}
 
   /**
    * Set the parameters all at once
@@ -74,33 +76,33 @@ class cv_cropper : public cv_transform {
    * @param random_crop whether to crop randomly from the initial region of interest or at the center
    * @param roi the size of the initial region of interest to crop from. Set (0,0) to use the full image.
    */
-  virtual void set(const unsigned int width, const unsigned int height,
-                   const bool random_crop = false,
-                   const std::pair<int, int>& roi = std::make_pair(0,0));
+  void set(const unsigned int width, const unsigned int height,
+           const bool random_crop = false,
+           const std::pair<int, int>& roi = std::make_pair(0,0));
 
-  /// Reset all the parameters to the default values
-  virtual void reset();
+  /// Clear the states of the previous transform applied
+  void reset() override;
 
   /**
    * Construct transformation parameters based on the options and random
    * numbers. If successful, the tranform is enabled.If not, it is disabled.
    * @return false if not enabled or unsuccessful.
    */
-  virtual bool determine_transform(const cv::Mat& image);
+  bool determine_transform(const cv::Mat& image) override;
+
+  /// Cropping is irreversible.
+  bool determine_inverse_transform() override { return false; }
 
   /**
    * Apply the transformation determined.
    * As this method is executed, the transform becomes deactivated.
    * @return false if not successful.
    */
-  virtual bool apply(cv::Mat& image);
+  bool apply(cv::Mat& image) override;
 
-  /// Cropping is irreversible.
-  bool determine_inverse_transform() {
-    return false;
-  }
-
-  virtual std::ostream& print(std::ostream& os) const;
+  std::string get_type() const override { return "cropper"; }
+  std::string get_description() const override;
+  std::ostream& print(std::ostream& os) const override;
 };
 
 } // end of namespace lbann

@@ -45,11 +45,10 @@ class noise_layer : public transform {
 
  public:
   /// Constructor
-  noise_layer(int index,
-            lbann_comm *comm,
-            float noise_factor=0.5f,
-            cudnn::cudnn_manager *cudnn = NULL)
-    : transform(index, comm), m_noise_factor(noise_factor) {
+  noise_layer(lbann_comm *comm,
+              float noise_factor=0.5f,
+              cudnn::cudnn_manager *cudnn = nullptr)
+    : transform(comm), m_noise_factor(noise_factor) {
 
     // Setup the data distribution
     initialize_distributed_matrices();

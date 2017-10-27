@@ -200,10 +200,9 @@ class learning : public Layer, public optimizable_layer {
     
 
  public:
-  learning(int index, 
-           lbann_comm *comm,
+  learning(lbann_comm *comm,
            optimizer *opt)
-    : Layer(index, comm), m_optimizer(opt) {}
+    : Layer(comm), m_optimizer(opt) {}
 
   learning(const learning& other) :
     Layer(other),
@@ -283,18 +282,20 @@ class learning : public Layer, public optimizable_layer {
 
   virtual void summarize_matrices(lbann_summary& summarizer, int step) override {
     Layer::summarize_matrices(summarizer, step);
-    std::string prefix = "layer" + std::to_string(static_cast<long long>(m_index)) + "/weights/";
+    std::string prefix = m_name + "/weights/";
     const AbsDistMat& wb = get_weights();
     summarizer.reduce_mean(prefix + "mean", wb, step);
     summarizer.reduce_min(prefix + "min", wb, step);
     summarizer.reduce_max(prefix + "max", wb, step);
     summarizer.reduce_stdev(prefix + "stdev", wb, step);
-    prefix = "layer" + std::to_string(static_cast<long long>(m_index)) + "/weights_gradient/";
+    summarizer.reduce_2norm(prefix + "2norm2", wb, step);
+    prefix = m_name + "/weights_gradient/";
     const AbsDistMat& wb_d = get_weights_gradient();
     summarizer.reduce_mean(prefix + "mean", wb_d, step);
     summarizer.reduce_min(prefix + "min", wb_d, step);
     summarizer.reduce_max(prefix + "max", wb_d, step);
     summarizer.reduce_stdev(prefix + "stdev", wb_d, step);
+    summarizer.reduce_2norm(prefix + "2norm2", wb_d, step);
   }
 
   /** Validate that the setup is reasonable. */
@@ -319,6 +320,7 @@ class learning : public Layer, public optimizable_layer {
     m_l2_regularization_factor = f;
   }
 
+#if 0
   bool saveToFile(int fd, const char *dirname) override {
     Layer::loadFromFile(fd, dirname);
     char filepath[512];
@@ -366,6 +368,7 @@ class learning : public Layer, public optimizable_layer {
 
     return true;
   }
+#endif
 
 };
 

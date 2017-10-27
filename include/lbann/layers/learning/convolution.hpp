@@ -100,8 +100,7 @@ class convolution_layer : public base_convolution_layer {
     return s.str();;
   }
 
-  convolution_layer(int index,
-                    lbann_comm *comm,
+  convolution_layer(lbann_comm *comm,
                     int num_data_dims,
                     int num_output_channels,
                     int conv_dim,
@@ -112,8 +111,7 @@ class convolution_layer : public base_convolution_layer {
                     bool has_bias = true,
                     DataType bias_initial_value = DataType(0),
                     cudnn::cudnn_manager *cudnn = NULL)
-    : convolution_layer(index,
-                        comm,
+    : convolution_layer(comm,
                         num_data_dims,
                         num_output_channels,
                         std::vector<int>(num_data_dims, conv_dim).data(),
@@ -125,8 +123,7 @@ class convolution_layer : public base_convolution_layer {
                         bias_initial_value,
                         cudnn) {}
 
-  convolution_layer(int index,
-                    lbann_comm *comm,
+  convolution_layer(lbann_comm *comm,
                     int num_data_dims,
                     int num_output_channels,
                     const int *conv_dims,
@@ -137,8 +134,7 @@ class convolution_layer : public base_convolution_layer {
                     bool has_bias = true,
                     DataType bias_initial_value = DataType(0),
                     cudnn::cudnn_manager *cudnn = NULL)
-    : base_convolution_layer(index,
-                             comm,
+    : base_convolution_layer(comm,
                              num_data_dims,
                              num_output_channels,
                              conv_dims,

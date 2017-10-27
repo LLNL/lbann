@@ -23,8 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_cv_augmenter .cpp .hpp - Augmenting functions for images
-//                                in opencv format
+// cv_augmenter .cpp .hpp - Augmenting functions for images in opencv format
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_CV_AUGMENTER_HPP
@@ -50,6 +49,7 @@ namespace lbann {
  */
 class cv_augmenter : public cv_transform {
  protected:
+  // --- configuration variables ---
   /** Whether to do horizontal flips. */
   bool m_do_horizontal_flip;
   /** Whether to do vertical flips. */
@@ -64,50 +64,50 @@ class cv_augmenter : public cv_transform {
   /** Shear angle (radians). */
   float m_shear_range;
 
-
+  // --- state variables ---
   /// Flip decision made
-  cv_flipping m_flip;
+  cv_flipping m_flip; // currently more of a configuration variable but can easily become a state variable
   /// The rest of the affine tranformations determined
   cv::Mat_<float> m_trans;
 
   /// Check if there is a reason to enable. (i.e., any option set)
-  virtual bool check_to_enable() const;
+  bool check_to_enable() const override;
 
  public:
   cv_augmenter();
   cv_augmenter(const cv_augmenter& rhs);
   cv_augmenter& operator=(const cv_augmenter& rhs);
-  virtual cv_augmenter *clone() const;
+  cv_augmenter* clone() const override;
 
-  virtual ~cv_augmenter() {}
+  ~cv_augmenter() override {}
 
   /// Set the parameters all at once
-  virtual void set(const bool hflip, const bool vflip, const float rot,
-                   const float hshift, const float vshift, const float shear);
+  void set(const bool hflip, const bool vflip, const float rot,
+           const float hshift, const float vshift, const float shear);
 
-  /// Reset all the parameters to the default values
-  virtual void reset();
+  /// Clear the states of the previous transform applied
+  void reset() override;
 
   /**
    * Construct an affine transformation matrix based on the options and random
    * numbers. If successful, the tranform is enabled. If not, it is disabled.
    * @return false if not enabled or unsuccessful.
    */
-  virtual bool determine_transform(const cv::Mat& image);
+  bool determine_transform(const cv::Mat& image) override;
+
+  /// Augmentation is irreversible.
+  bool determine_inverse_transform() override { return false; }
 
   /**
    * Apply the transformation determined.
    * As this method is executed, the transform becomes deactivated.
    * @return false if not successful.
    */
-  virtual bool apply(cv::Mat& image);
+  bool apply(cv::Mat& image) override;
 
-  /// Augmentation is irreversible.
-  bool determine_inverse_transform() {
-    return false;
-  }
-
-  virtual std::ostream& print(std::ostream& os) const;
+  std::string get_type() const override { return "augmenter"; }
+  std::string get_description() const override;
+  std::ostream& print(std::ostream& os) const override;
 };
 
 } // end of namespace lbann

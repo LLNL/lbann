@@ -79,28 +79,22 @@ bool cv_normalizer::check_to_enable() const {
 
 
 void cv_normalizer::set(const bool meansub, const bool unitvar, const bool unitscale, const bool zscore) {
-  m_enabled = false; // will turns on when the transform is determined
+  reset();
   m_mean_subtraction = meansub;
   m_unit_variance = unitvar;
   m_unit_scale = unitscale;
   m_z_score = zscore;
-  m_trans.clear();
 }
 
 
 void cv_normalizer::reset() {
   m_enabled = false;
-  m_mean_subtraction = false;
-  m_unit_variance = false;
-  m_unit_scale = true;
-  m_z_score = false;
   m_trans.clear();
 }
 
 
 bool cv_normalizer::determine_transform(const cv::Mat& image) {
-  m_trans.clear();
-  m_enabled = false; // unless this method is successful, stays disabled
+  reset();
 
   _LBANN_SILENT_EXCEPTION(image.empty(), "", false)
 
@@ -323,15 +317,21 @@ bool cv_normalizer::compute_mean_stddev(const cv::Mat& image,
   return false;
 }
 
+std::string cv_normalizer::get_description() const {
+  std::stringstream os;
+  os << get_type() + ":" << std::endl
+     << " - mean subtraction: " << (m_mean_subtraction? "true" : "false") << std::endl
+     << " - unit variance: " << (m_unit_variance? "true" : "false") << std::endl
+     << " - unit scale: " << (m_unit_scale? "true" : "false") << std::endl
+     << " - z-score: " << (m_z_score? "true" : "false") << std::endl;
+  return os.str();
+}
+
 std::ostream& cv_normalizer::print(std::ostream& os) const {
-  os << "cv_normalizer:" << std::endl
-     << " - m_mean_subtraction: " << (m_mean_subtraction? "true" : "false") << std::endl
-     << " - m_unit_variance: " << (m_unit_variance? "true" : "false") << std::endl
-     << " - m_unit_scale: " << (m_unit_scale? "true" : "false") << std::endl
-     << " - m_z_score: " << (m_z_score? "true" : "false") << std::endl;
-  os << " - transform:";
+  os << get_description()
+     << " - transform:";
   for (const channel_trans_t& tr: m_trans) {
-    os << " [" << tr.first << ' ' << tr.second << "]";
+    os << " [" << tr.first << ' ' << tr.second << "]\n             ";
   }
   os << std::endl;
 

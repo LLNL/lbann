@@ -126,7 +126,6 @@ int main(int argc, char *argv[]) {
       cout << endl << "USING cifar10_reader\n\n";
     }
     cifar10_reader cifar10_trainset(trainParams.MBSize, true);
-    cifar10_trainset.set_firstN(false);
     cifar10_trainset.set_role("train");
     cifar10_trainset.set_master(comm->am_world_master());
     cifar10_trainset.set_file_dir(g_cifar10_dir);
@@ -159,7 +158,6 @@ int main(int argc, char *argv[]) {
     // load testing data (ImageNet)
     ///////////////////////////////////////////////////////////////////
     cifar10_reader cifar10_testset(trainParams.MBSize, true);
-    cifar10_testset.set_firstN(false);
     cifar10_testset.set_role("test");
     cifar10_testset.set_master(comm->am_world_master());
     cifar10_testset.set_file_dir(g_cifar10_dir);

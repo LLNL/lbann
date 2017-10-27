@@ -38,13 +38,6 @@ greedy_layerwise_autoencoder::greedy_layerwise_autoencoder(int mini_batch_size,
   : sequential_model(mini_batch_size, comm, obj_fn, _optimizer_fac),
     m_phase_end(2), m_start_index(0), m_end_index(0), m_have_mirror(0) {}
 
-greedy_layerwise_autoencoder::~greedy_layerwise_autoencoder() {}
-
-struct lbann_model_greedy_layerwise_autoencoder_header {
-  uint32_t phase_index; //should be m_current_phase??
-  uint32_t have_mirror;
-};
-
 void greedy_layerwise_autoencoder::reset_phase() {
   m_current_phase = 0;
   m_current_epoch = 0;
@@ -53,61 +46,6 @@ void greedy_layerwise_autoencoder::reset_phase() {
   m_layers.resize(m_layers.size()-m_reconstruction_layers.size());
   //clear m_reconstruction layers
   m_reconstruction_layers.clear();
-}
-
-bool greedy_layerwise_autoencoder::save_to_checkpoint_shared(persist& p) {
-  // have rank 0 write record whether we have a mirror layer inserted
-  // we do this first, because we need to insert it again when reading back
-  if (p.get_rank() == 0) {
-    p.write_uint32(persist_type::train, "gla_phase_index", (uint32_t) m_current_phase);
-    p.write_uint32(persist_type::train, "gla_have_mirror", (uint32_t) m_have_mirror);
-  }
-
-  // write parameters from base class first
-  sequential_model::save_to_checkpoint_shared(p);
-
-  return true;
-}
-
-bool greedy_layerwise_autoencoder::load_from_checkpoint_shared(persist& p) {
-  // have rank 0 read whether we have a mirror layer inserted
-  struct lbann_model_greedy_layerwise_autoencoder_header header;
-  if (p.get_rank() == 0) {
-    p.read_uint32(persist_type::train, "gla_phase_index", &header.phase_index);
-    p.read_uint32(persist_type::train, "gla_have_mirror", &header.have_mirror);
-  }
-
-  // TODO: this assumes homogeneous processors
-  // broadcast state from rank 0
-  MPI_Bcast(&header, sizeof(header), MPI_BYTE, 0, MPI_COMM_WORLD);
-
-  // insert the mirror layer if needed
-  uint32_t phase_index = header.phase_index;
-  uint32_t have_mirror = header.have_mirror;
-  if (have_mirror) {
-    // note that this calls setup on the layers,
-    // and setup reinitializes a bunch of values like data reader positions
-    // and optimization layer cache values that we'll overwrite
-    // in load_from_checkpoint_shared below
-    insert_mirror(phase_index);
-  }
-
-  // read parameters from base class first
-  sequential_model::load_from_checkpoint_shared(p);
-
-  return true;
-}
-
-void greedy_layerwise_autoencoder::summarize_stats(lbann_summary& summarizer) {
-  for (size_t l = 1; l < m_layers.size(); ++l) {
-    m_layers[l]->summarize_stats(summarizer, get_cur_step());
-  }
-}
-
-void greedy_layerwise_autoencoder::summarize_matrices(lbann_summary& summarizer) {
-  for (size_t l = 1; l < m_layers.size(); ++l) {
-    m_layers[l]->summarize_matrices(summarizer, get_cur_step());
-  }
 }
 
 // inserts a mirror layer for specified layer index
@@ -120,10 +58,10 @@ void greedy_layerwise_autoencoder::insert_mirror(uint32_t layer_index) {
   Layer *mirror_layer = NULL;
   switch(original_layer->get_data_layout()){
   case data_layout::MODEL_PARALLEL:
-    mirror_layer = new reconstruction_layer<data_layout::MODEL_PARALLEL>(mirror_index, m_comm, original_layer);
+    mirror_layer = new reconstruction_layer<data_layout::MODEL_PARALLEL>(m_comm, original_layer);
     break;
   case data_layout::DATA_PARALLEL:
-    mirror_layer = new reconstruction_layer<data_layout::DATA_PARALLEL>(mirror_index, m_comm, original_layer);
+    mirror_layer = new reconstruction_layer<data_layout::DATA_PARALLEL>(m_comm, original_layer);
     break;
   default:
     break;
@@ -153,7 +91,7 @@ void greedy_layerwise_autoencoder::remove_mirror(uint32_t layer_index) {
     if (m_comm->am_world_master()) {
       std::cout << "Phase [" << layer_index << "] Done, Reset Layers " << std::endl;
       for(auto& l:m_layers) {
-        std::cout << "Layer [ " << l->get_index() << "] #NumNeurons: " << l->get_num_neurons() << std::endl;
+        std::cout << "Layer [ " << l->get_name() << "] #NumNeurons: " << l->get_num_neurons() << std::endl;
       }
     }
     setup();
@@ -201,12 +139,9 @@ void greedy_layerwise_autoencoder::train_phase(int num_epochs) {
       break;
     }
 
-    // due to restart, may not always be at start of epoch
-    // use mini batch index in data reader to signify start of epoch
-    if (at_epoch_start()) {
-      ++m_current_epoch;
-      do_epoch_begin_cbs(); // needed for selected callback e.g., dump matrices
-    }
+    // Start epoch
+    ++m_current_epoch;
+    do_epoch_begin_cbs(); // needed for selected callback e.g., dump matrices
 
     //Overide default print callback
     if (m_comm->am_world_master()) {
@@ -229,15 +164,7 @@ void greedy_layerwise_autoencoder::train_phase(int num_epochs) {
     for (auto&& m : m_metrics) {
       m->reset_metric();
     }
-    bool finished_epoch = false;
-    while (!finished_epoch) {
-      finished_epoch = train_mini_batch();
-
-      // save a checkpoint if needed
-      if (need_checkpoint()) {
-        checkpointShared();
-      }
-    } while(!finished_epoch);
+    while (!train_mini_batch()) {}
 
 
     //print training reconstruction cost
@@ -263,10 +190,6 @@ void greedy_layerwise_autoencoder::train_phase(int num_epochs) {
       layer->set_execution_mode(execution_mode::training);
     }
 
-    // save checkpoint after epoch
-    if (need_checkpoint()) {
-      checkpointShared();
-    }
   }
 
   do_train_end_cbs();
@@ -329,11 +252,7 @@ void greedy_layerwise_autoencoder::evaluate_phase(execution_mode mode) {
   for (auto&& m : m_metrics) {
     m->reset_metric();
   }
-  bool finished_epoch;
-  do {
-    finished_epoch = evaluate_mini_batch();
-  } while(!finished_epoch);
-
+  while(!evaluate_mini_batch()) {}
 
   /*for (Layer* layer : m_layers) {
     layer->epoch_reset();
@@ -363,15 +282,8 @@ void greedy_layerwise_autoencoder::evaluate(execution_mode mode) {
   //@todo add state (in(active)) to reconstruction layer
   m_layers.insert(std::end(m_layers), std::begin(m_reconstruction_layers)+1,std::end(m_reconstruction_layers));
 
-  //Set appropriate layer indices and fp_input
-  size_t mls = m_layers.size();
-  size_t mrs_index = mls-m_reconstruction_layers.size()+1; //reconstruction layers start index
-  for(size_t l = mrs_index; l < mls; ++l) {
-    m_layers[l]->set_index(l);
-  }
-
   //@todo loop for epochs??
-  m_end_index = mls-1;
+  m_end_index = m_layers.size()-1;
   evaluate_phase(mode);
 
   if (m_comm->am_world_master()) {
@@ -386,5 +298,55 @@ void greedy_layerwise_autoencoder::evaluate(execution_mode mode) {
 
   return;
 }
+
+#if 0
+struct lbann_model_greedy_layerwise_autoencoder_header {
+  uint32_t phase_index; //should be m_current_phase??
+  uint32_t have_mirror;
+};
+
+bool greedy_layerwise_autoencoder::save_to_checkpoint_shared(persist& p) {
+  // have rank 0 write record whether we have a mirror layer inserted
+  // we do this first, because we need to insert it again when reading back
+  if (p.get_rank() == 0) {
+    p.write_uint32(persist_type::train, "gla_phase_index", (uint32_t) m_current_phase);
+    p.write_uint32(persist_type::train, "gla_have_mirror", (uint32_t) m_have_mirror);
+  }
+
+  // write parameters from base class first
+  sequential_model::save_to_checkpoint_shared(p);
+
+  return true;
+}
+
+bool greedy_layerwise_autoencoder::load_from_checkpoint_shared(persist& p) {
+  // have rank 0 read whether we have a mirror layer inserted
+  struct lbann_model_greedy_layerwise_autoencoder_header header;
+  if (p.get_rank() == 0) {
+    p.read_uint32(persist_type::train, "gla_phase_index", &header.phase_index);
+    p.read_uint32(persist_type::train, "gla_have_mirror", &header.have_mirror);
+  }
+
+  // TODO: this assumes homogeneous processors
+  // broadcast state from rank 0
+  MPI_Bcast(&header, sizeof(header), MPI_BYTE, 0, MPI_COMM_WORLD);
+
+  // insert the mirror layer if needed
+  uint32_t phase_index = header.phase_index;
+  uint32_t have_mirror = header.have_mirror;
+  if (have_mirror) {
+    // note that this calls setup on the layers,
+    // and setup reinitializes a bunch of values like data reader positions
+    // and optimization layer cache values that we'll overwrite
+    // in load_from_checkpoint_shared below
+    insert_mirror(phase_index);
+  }
+
+  // read parameters from base class first
+  sequential_model::load_from_checkpoint_shared(p);
+
+  return true;
+}
+#endif
 
 }  // namespace lbann

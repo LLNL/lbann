@@ -70,10 +70,9 @@ class softmax_layer : public activation_layer {
 #endif
 
  public:
-  softmax_layer(int index,
-                lbann_comm *comm,
+  softmax_layer(lbann_comm *comm,
                 cudnn::cudnn_manager *cudnn=nullptr)
-      : activation_layer(index, comm) {
+      : activation_layer(comm) {
     initialize_distributed_matrices();
     m_min_output = std::sqrt(std::numeric_limits<DataType>::min());
     this->m_cudnn = cudnn;
@@ -330,10 +329,6 @@ class softmax_layer : public activation_layer {
   }
 
   void bp_compute_cuda();
-
-  bool update_compute() {
-    return true;
-  }
 
   bool saveToCheckpoint(int fd, const char *filename, size_t *bytes) {
     return Layer::saveToCheckpoint(fd, filename, bytes);

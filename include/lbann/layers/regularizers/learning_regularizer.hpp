@@ -41,8 +41,8 @@ class learning_regularizer : public regularizer_layer, public optimizable_layer 
  protected:
   optimizer *m_optimizer;
  public:
-  learning_regularizer(int index, lbann_comm *comm, optimizer *opt) :
-    regularizer_layer(index, comm), m_optimizer(opt) {}
+  learning_regularizer(lbann_comm *comm, optimizer *opt) :
+    regularizer_layer(comm), m_optimizer(opt) {}
   learning_regularizer(const learning_regularizer& other) :
     regularizer_layer(other) {
     m_optimizer = other.m_optimizer->copy();

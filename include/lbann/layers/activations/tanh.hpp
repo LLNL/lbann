@@ -35,9 +35,8 @@ namespace lbann {
 template <data_layout T_layout>
 class tanh_layer : public entrywise_activation_layer {
  public:
-  tanh_layer(int index,
-             lbann_comm *comm) :
-    entrywise_activation_layer(index, comm) { 
+  tanh_layer(lbann_comm *comm) :
+    entrywise_activation_layer(comm) { 
     initialize_distributed_matrices(); 
   }
 

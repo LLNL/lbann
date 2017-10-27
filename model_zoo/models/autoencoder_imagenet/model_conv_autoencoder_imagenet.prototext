@@ -7,7 +7,7 @@ model {
   num_epochs: 4
   num_parallel_readers: 1
   procs_per_model: 0
-  use_cudnn: false
+  use_cudnn: 0
   num_gpus: -1
 
   ###################################################
@@ -37,9 +37,7 @@ model {
   # INPUT
   #######
   layer {
-    name: "1"
-    parents: "1"
-    children: ""
+    name: "data"
     data_layout: "data_parallel"
     input_distributed_minibatch {
     }
@@ -49,9 +47,7 @@ model {
   # CONVOLUTION 1
   #############
   layer {
-    name: "2"
-    parents: "1"
-    children: ""
+    name: "conv1"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -70,9 +66,7 @@ model {
   # RELU 1
   ######
   layer {
-    name: "3"
-    parents: "2"
-    children: ""
+    name: "relu1"
     data_layout: "data_parallel"
     relu {
     }
@@ -82,9 +76,7 @@ model {
   # POOLING 1
   #########
   layer {
-    name: "4"
-    parents: "3"
-    children: ""
+    name: "pool1"
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
@@ -102,13 +94,11 @@ model {
   # UNPOOLING 1
   #########
   layer {
-    name: "5"
-    parents: "4"
-    children: ""
+    name: "unpool1"
     data_layout: "data_parallel"
     unpooling {
       num_dims: 2
-      pooling_layer: "4"
+      pooling_layer: "pool1"
     }
   }
 
@@ -116,9 +106,7 @@ model {
   # DECONVOLUTION 1
   #############
   layer {
-    name: "6"
-    parents: "5"
-    children: ""
+    name: "deconv1"
     data_layout: "data_parallel"
     deconvolution {
       num_dims: 2
@@ -137,9 +125,7 @@ model {
   # SIGMOID sigmoid
   #######
   layer {
-    name: "7"
-    parents: "6"
-    children: ""
+    name: "sigmoid"
     data_layout: "data_parallel"
     sigmoid {
     }
@@ -150,12 +136,10 @@ model {
   # RECONSTRUCTION
   #################
   layer {
-    name: "8"
-    parents: "7"
-    children: ""
+    name: "reconstruction"
     data_layout: "data_parallel"
     reconstruction {
-      original_layer: 1
+      original_layer: "data"
     }
   }
 

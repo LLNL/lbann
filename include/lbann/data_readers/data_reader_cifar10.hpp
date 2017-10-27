@@ -36,7 +36,7 @@ namespace lbann {
 class cifar10_reader : public generic_data_reader {
  public:
   /// constructor
-  cifar10_reader(int batchSize, bool shuffle = true);
+  cifar10_reader(bool shuffle = true);
   cifar10_reader(const cifar10_reader&) = default;
   cifar10_reader& operator=(const cifar10_reader&) = default;
 

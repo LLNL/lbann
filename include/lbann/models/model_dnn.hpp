@@ -49,23 +49,9 @@ class deep_neural_network : public sequential_model {
   virtual deep_neural_network* copy() const override { return new deep_neural_network(*this); }
 
   /// Destructor
-  ~deep_neural_network();
+  virtual ~deep_neural_network() = default;
 
   virtual std::string name() const override { return "deep neural network"; }
-
-  /// Compute layer summaries
-  virtual void summarize_stats(lbann_summary& summarizer) override;
-  virtual void summarize_matrices(lbann_summary& summarizer) override;
-
-  /// Train neural network
-  virtual void train(int num_epochs) override;
-  /// Training step on one mini-batch
-  virtual bool train_mini_batch() override;
-
-  /// Evaluate neural network
-  virtual void evaluate(execution_mode mode=execution_mode::testing) override;
-  /// Evaluation step on one mini-batch
-  virtual bool evaluate_mini_batch() override;
 
 };
 

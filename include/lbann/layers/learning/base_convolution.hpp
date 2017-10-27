@@ -108,8 +108,7 @@ class base_convolution_layer : public learning {
 
   public:
 
-  base_convolution_layer(int index,
-                         lbann_comm *comm,
+  base_convolution_layer(lbann_comm *comm,
                          int num_data_dims,
                          int num_output_channels,
                          const int *conv_dims,
@@ -120,7 +119,7 @@ class base_convolution_layer : public learning {
                          bool has_bias,
                          DataType bias_initial_value,
                          cudnn::cudnn_manager *cudnn)
-    : learning(index, comm, opt) {
+    : learning(comm, opt) {
 
     // Initialize convolution parameters
     m_kernel_dims.assign(conv_dims, conv_dims+num_data_dims);

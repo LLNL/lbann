@@ -52,7 +52,8 @@ adam::adam(const adam& other)
   if (other.m_moment1) {
     m_moment1 = other.m_moment1->Copy();
     m_moment2 = other.m_moment2->Copy();
-    if (other.m_moment1_d.size() > 0) {
+    if (m_cudnn != nullptr
+        && other.m_moment1_d.size() > 0) {
 #ifdef __LIB_CUDNN
       int local_height = m_parameters->LocalHeight();
       int local_width = m_parameters->LocalWidth();
@@ -76,7 +77,8 @@ adam& adam::operator=(const adam& other) {
     delete m_moment1;
     delete m_moment2;
   }
-  if (m_moment1_d.size() > 0) {
+  if (m_cudnn != nullptr
+      && m_moment1_d.size() > 0) {
 #ifdef __LIB_CUDNN
     m_cudnn->deallocate_on_gpus(m_moment1_d);
     m_cudnn->deallocate_on_gpus(m_moment2_d);
@@ -87,7 +89,8 @@ adam& adam::operator=(const adam& other) {
   if (other.m_moment1) {
     m_moment1 = other.m_moment1->Copy();
     m_moment2 = other.m_moment2->Copy();
-    if (other.m_moment1_d.size() > 0) {
+    if (m_cudnn != nullptr
+        && other.m_moment1_d.size() > 0) {
 #ifdef __LIB_CUDNN
       int local_height = m_parameters->LocalHeight();
       int local_width = m_parameters->LocalWidth();
@@ -109,8 +112,10 @@ adam::~adam() {
     delete m_moment1;
     delete m_moment2;
 #ifdef __LIB_CUDNN
-    m_cudnn->deallocate_on_gpus(m_moment1_d);
-    m_cudnn->deallocate_on_gpus(m_moment2_d);
+    if(m_cudnn != nullptr) {
+      m_cudnn->deallocate_on_gpus(m_moment1_d);
+      m_cudnn->deallocate_on_gpus(m_moment2_d);
+    }
 #endif
   }
 }

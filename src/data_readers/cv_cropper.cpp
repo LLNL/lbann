@@ -48,6 +48,7 @@ cv_cropper *cv_cropper::clone() const {
   return new cv_cropper(*this);
 }
 
+/// Make sure to clear the roi flag as well when clearing roi size
 void cv_cropper::unset_roi(void) {
   m_is_roi_set = false;
   m_roi_size = std::pair<int, int>(0, 0);
@@ -56,6 +57,7 @@ void cv_cropper::unset_roi(void) {
 void cv_cropper::set(const unsigned int width, const unsigned int height,
                      const bool random_crop,
                      const std::pair<int, int>& roi_sz) {
+  reset();
   m_width = width;
   m_height = height;
   m_rand_crop = random_crop;
@@ -76,24 +78,16 @@ void cv_cropper::set(const unsigned int width, const unsigned int height,
   } else {
     unset_roi();
   }
-
-  m_zoom = 1.0; // default
-  m_interpolation = cv::INTER_AREA; // default
-  m_enabled = false; // will turns on when the transform is determined
 }
 
 void cv_cropper::reset() {
-  m_width = 0u;
-  m_height = 0u;
-  m_rand_crop = false;
-  unset_roi();
+  m_enabled = false; 
   m_zoom = 1.0;
   m_interpolation = cv::INTER_AREA;
-  m_enabled = false;
 }
 
 bool cv_cropper::determine_transform(const cv::Mat& image) {
-  m_enabled = false; // unless this method is successful, stays disabled
+  m_enabled = false; //sufficient for now in place of reset();
 
   _LBANN_SILENT_EXCEPTION(image.empty(), "", false)
 
@@ -146,7 +140,7 @@ bool cv_cropper::determine_transform(const cv::Mat& image) {
 bool cv_cropper::apply(cv::Mat& image) {
   m_enabled = false; // turn off as it is applied
 
-  _LBANN_SILENT_EXCEPTION(image.empty(), "", false)
+  //_LBANN_SILENT_EXCEPTION(image.empty(), "", false); // redundant
 
   const double zoomed_roi_width = m_roi_size.first * m_zoom;
   const double zoomed_roi_height = m_roi_size.second * m_zoom;
@@ -175,12 +169,25 @@ bool cv_cropper::apply(cv::Mat& image) {
   return true;
 }
 
+std::string cv_cropper::get_description() const {
+  std::stringstream os;
+  os << get_type() + ":" << std::endl
+     << " - crop size: " << m_width  << "x" << m_height << std::endl
+     << " - resized size: " << m_roi_size.first << "x" << m_roi_size.second << std::endl
+     << " - random crop: " << m_rand_crop << std::endl;
+  return os.str();
+}
+
 std::ostream& cv_cropper::print(std::ostream& os) const {
-  os << "cv_cropper:" << std::endl
-     << " - m_width: " << m_width << std::endl
-     << " - m_height: " << m_height << std::endl
-     << " - m_roi_size: " << m_roi_size.first << " " << m_roi_size.second << std::endl
-     << " - m_zoom: " << m_zoom << std::endl;
+  os << get_description()
+     << " - zoom: 1/" << m_zoom << std::endl
+     << " - interpolation: ";
+  switch(m_interpolation) {
+    case cv::INTER_LINEAR: os << "INTER_LINEAR" << std::endl; break;
+    case cv::INTER_CUBIC:  os << "INTER_CUBIC" << std::endl; break;
+    case cv::INTER_AREA:   os << "INTER_AREA" << std::endl; break;
+    default: os << "unrecognized" << std::endl; break;
+  }
   return os;
 }
 

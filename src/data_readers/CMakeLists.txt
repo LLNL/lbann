@@ -15,8 +15,8 @@ add_sources(data_reader.cpp
             cv_normalizer.cpp
             cv_process.cpp
             cv_process_patches.cpp
-            cv_resizer.cpp
             cv_cropper.cpp
+            cv_mean_extractor.cpp
             cv_utils.cpp
             data_reader_numpy.cpp
             data_reader_synthetic.cpp

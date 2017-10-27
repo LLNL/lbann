@@ -53,8 +53,7 @@ class deconvolution_layer : public base_convolution_layer {
   public:
 
 
-  deconvolution_layer(int index,
-                      lbann_comm *comm,
+  deconvolution_layer(lbann_comm *comm,
                       int num_data_dims,
                       int num_output_channels,
                       int conv_dim,
@@ -65,8 +64,7 @@ class deconvolution_layer : public base_convolution_layer {
                       bool has_bias = true,
                       DataType bias_initial_value = DataType(0),
                       cudnn::cudnn_manager *cudnn = nullptr)
-    : deconvolution_layer(index,
-                          comm,
+    : deconvolution_layer(comm,
                           num_data_dims,
                           num_output_channels,
                           std::vector<int>(num_data_dims, conv_dim).data(),
@@ -78,8 +76,7 @@ class deconvolution_layer : public base_convolution_layer {
                           bias_initial_value,
                           cudnn) {}
 
-  deconvolution_layer(int index,
-                      lbann_comm *comm,
+  deconvolution_layer(lbann_comm *comm,
                       int num_data_dims,
                       int num_output_channels,
                       const int *conv_dims,
@@ -90,8 +87,7 @@ class deconvolution_layer : public base_convolution_layer {
                       bool has_bias = true,
                       DataType bias_initial_value = DataType(0),
                       cudnn::cudnn_manager *cudnn = nullptr)
-    : base_convolution_layer(index,
-                             comm,
+    : base_convolution_layer(comm,
                              num_data_dims,
                              num_output_channels,
                              conv_dims,

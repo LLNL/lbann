@@ -23,14 +23,13 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_cv_augmenter .cpp .hpp - Augmenting functions for images
-//                                in opencv format
+// cv_augmenter .cpp .hpp - Augmenting functions for images in opencv format
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/cv_augmenter.hpp"
 #include "lbann/utils/mild_exception.hpp"
 #include <ostream>
-//#include <iostream>
+#include <iostream>
 
 #ifdef __LIB_OPENCV
 namespace lbann {
@@ -96,35 +95,25 @@ bool cv_augmenter::check_to_enable() const {
 
 void cv_augmenter::set(const bool hflip, const bool vflip, const float rot,
                        const float hshift, const float vshift, const float shear) {
-  m_enabled = false; // will turns on when the transform is determined
+  reset();
   m_do_horizontal_flip = hflip;
   m_do_vertical_flip = vflip;
   m_rotation_range = rot;
   m_horizontal_shift_range = hshift;
   m_vertical_shift_range = vshift;
   m_shear_range = shear;
-  m_flip = _no_flip_;
-  m_trans = cv::Mat_<float>::eye(3,3);
 }
 
 
 void cv_augmenter::reset() {
-  m_enabled = false;
-  m_do_horizontal_flip = false;
-  m_do_vertical_flip = false;
-  m_rotation_range = 0.0f;
-  m_horizontal_shift_range = 0.0f;
-  m_vertical_shift_range = 0.0f;
-  m_shear_range = 0.0f;
+  m_enabled = false; // will turns on when the transform is determined
   m_flip = _no_flip_;
   m_trans = cv::Mat_<float>::eye(3,3);
 }
 
 
 bool cv_augmenter::determine_transform(const cv::Mat& image) {
-  m_enabled = false; // unless this method is successful, stays disabled
-  m_flip = _no_flip_;
-  m_trans = cv::Mat_<float>::eye(3,3);
+  reset();
 
   _LBANN_SILENT_EXCEPTION(image.empty(), "", false)
 
@@ -239,20 +228,24 @@ bool cv_augmenter::apply(cv::Mat& image) {
   return true;
 }
 
+std::string cv_augmenter::get_description() const {
+  std::stringstream os;
+  os << get_type() + ":" << std::endl
+     << " - horizontal flip: " << (m_do_horizontal_flip? "true" : "false") << std::endl
+     << " - vertical flip: " << (m_do_vertical_flip? "true" : "false") << std::endl
+     << " - rotation range: " << m_rotation_range << std::endl
+     << " - horizontal shift range: " << m_horizontal_shift_range << std::endl
+     << " - vertical shift range: " << m_vertical_shift_range << std::endl
+     << " - shear range: " << m_shear_range << std::endl;
+  return os.str();
+}
 
 std::ostream& cv_augmenter::print(std::ostream& os) const {
-  os << "cv_augmenter:" << std::endl
-     << " - m_do_horizontal_flip: " << (m_do_horizontal_flip? "true" : "false") << std::endl
-     << " - m_do_vertical_flip: " << (m_do_vertical_flip? "true" : "false") << std::endl
-     << " - m_rotation_range: " << m_rotation_range << std::endl
-     << " - m_horizontal_shift_range: " << m_horizontal_shift_range << std::endl
-     << " - m_vertical_shift_range: " << m_vertical_shift_range << std::endl
-     << " - m_shear_range: " << m_shear_range << std::endl
-     << " - m_enabled: " << (m_enabled? "true" : "false") << std::endl
-     << " - m_flip: " << static_cast<int>(m_flip) << std::endl
-     << " - m_trans: " << m_trans(0,0) << '\t' << m_trans(0,1) << '\t' << m_trans(0,2)  << std::endl
-     << "            " << m_trans(1,0) << '\t' << m_trans(1,1) << '\t' << m_trans(1,2)  << std::endl
-     << "            " << m_trans(2,0) << '\t' << m_trans(2,1) << '\t' << m_trans(2,2)  << std::endl;
+  os << get_description()
+     << " - flipping: " << static_cast<int>(m_flip) << std::endl << std::fixed
+     << " - transfrom: " << m_trans(0,0) << '\t' << m_trans(0,1) << '\t' << m_trans(0,2)  << std::endl
+     << "              " << m_trans(1,0) << '\t' << m_trans(1,1) << '\t' << m_trans(1,2)  << std::endl
+     << "              " << m_trans(2,0) << '\t' << m_trans(2,1) << '\t' << m_trans(2,2)  << std::endl; //<< std::defaultfloat;
 
   return os;
 }

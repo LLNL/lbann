@@ -23,8 +23,8 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_cv_process .cpp .hpp - structure that defines the operations
-//                              on image data in opencv format
+// cv_process .cpp .hpp - structure that defines the operations
+//                        on image data in opencv format
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -244,6 +244,19 @@ std::vector<cv_normalizer::channel_trans_t> cv_process::get_transform_normalize(
   return ((trans.size() > ch) ?
           std::vector<cv_normalizer::channel_trans_t>(1, trans[ch]) :
           std::vector<cv_normalizer::channel_trans_t>(1, cv_normalizer::channel_trans_t(1.0, 0.0)));
+}
+
+std::string cv_process::get_description() const {
+  std::stringstream os;
+  os << get_type() + ":" << std::endl
+     << "flip: " << how_to_flip() << std::endl
+     << "split channels: " << m_split << std::endl
+     << "number of transforms: " << m_transforms.size() << std::endl
+     << "is normalizer set: " << m_is_normalizer_set << std::endl;
+  if (m_is_normalizer_set)
+     os << "normalizer index: " << m_normalizer_idx << std::endl;
+
+  return os.str();
 }
 
 } // end of namespace lbann

@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
     // Initialize data readers
     //@todo: code not in place for correctly handling image preprocessing
     std::map<execution_mode, generic_data_reader *> data_readers;
-    init_data_readers(master, pb, data_readers, pb_model->mini_batch_size());
+    init_data_readers(master, pb, data_readers);
 
     // Check for cudnn, with user feedback
     cudnn::cudnn_manager *cudnn = NULL;

@@ -107,7 +107,7 @@ model {
     children: ""
     data_layout: "model_parallel"
     reconstruction {
-      original_layer: 1
+      original_layer: "1"
     }
   }
 
@@ -169,7 +169,7 @@ model {
     children: ""
     data_layout: "model_parallel"
     reconstruction {
-      original_layer: 6
+      original_layer: "6"
     }
   }
 

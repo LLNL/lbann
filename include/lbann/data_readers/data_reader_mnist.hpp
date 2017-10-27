@@ -36,8 +36,8 @@ namespace lbann {
 
 class mnist_reader : public generic_data_reader {
  public:
-  mnist_reader(int batchSize, bool shuffle);
-  mnist_reader(int batchSize);
+  mnist_reader(bool shuffle = true);
+  mnist_reader();
   mnist_reader(const mnist_reader&) = default;
   mnist_reader& operator=(const mnist_reader&) = default;
   ~mnist_reader() {}

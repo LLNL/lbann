@@ -23,8 +23,8 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_cv_process .cpp .hpp - structure that defines the operations
-//                              on image data in opencv format
+// cv_process .cpp .hpp - structure that defines the operations
+//                        on image data in opencv format
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_CV_PROCESS_HPP
@@ -35,6 +35,7 @@
 #include "cv_augmenter.hpp"
 #include "cv_colorizer.hpp"
 #include "cv_cropper.hpp"
+#include "cv_mean_extractor.hpp"
 #include <memory>
 
 #ifdef __LIB_OPENCV
@@ -137,6 +138,9 @@ class cv_process {
 
   bool preprocess(cv::Mat& image);
   bool postprocess(cv::Mat& image);
+
+  virtual std::string get_type() const { return "image processor"; }
+  virtual std::string get_description() const;
 };
 
 } // end of namespace lbann

@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_cv_process_patches .cpp .hpp - structure that defines the operations
+// cv_process_patches .cpp .hpp - structure that defines the operations
 //                      on patches extracted from an image in the opencv format
 ////////////////////////////////////////////////////////////////////////////////
 

@@ -23,8 +23,8 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_cv_colorizer .cpp .hpp - transform a non-color (grayscale) image into a
-//                               3-channel color image
+// cv_colorizer .cpp .hpp - transform a non-color (grayscale) image into a
+//                          3-channel color image
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_CV_COLORIZE_HPP
@@ -37,47 +37,42 @@ namespace lbann {
 
 class cv_colorizer : public cv_transform {
  protected:
-  bool m_gray;
+  // --- state variables ---
+  bool m_gray; ///< whether an image is monochrome or not
 
  public:
   cv_colorizer() : cv_transform(), m_gray(false) {}
   cv_colorizer(const cv_colorizer& rhs);
   cv_colorizer& operator=(const cv_colorizer& rhs);
-  virtual cv_colorizer *clone() const;
+  cv_colorizer *clone() const override;
 
-  virtual ~cv_colorizer() {}
+  ~cv_colorizer() override {}
+
+  void set() { reset(); }
+  void reset() override {
+    m_enabled = false;
+    m_gray = false;
+  }
 
   /**
    * If a given image is in grayscale, the tranform is enabled, and not otherwise.
    * @return false if not enabled or unsuccessful.
    */
-  virtual bool determine_transform(const cv::Mat& image);
+  bool determine_transform(const cv::Mat& image) override;
 
   /// convert back to color image if it used to be a grayscale image
-  virtual bool determine_inverse_transform();
+  bool determine_inverse_transform() override;
 
   /**
    * Apply color conversion if enabled.
    * As it is applied, the transform becomes deactivated.
    * @return false if not successful.
    */
-  virtual bool apply(cv::Mat& image);
+  bool apply(cv::Mat& image) override;
 
-  virtual void enable() {
-    m_enabled = true;
-  }
-  virtual void disable() {
-    m_enabled = false;
-  }
-  virtual void reset() {
-    m_enabled = false;
-    m_gray = false;
-  }
-  virtual bool is_enabled() const {
-    return m_enabled;
-  }
-
-  virtual std::ostream& print(std::ostream& os) const;
+  std::string get_type() const override { return "colorizer"; }
+  std::string get_description() const override;
+  std::ostream& print(std::ostream& os) const override;
 };
 
 } // end of namespace lbann

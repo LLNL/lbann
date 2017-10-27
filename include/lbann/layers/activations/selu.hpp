@@ -43,10 +43,10 @@ namespace lbann {
 template <data_layout T_layout>
 class selu_layer : public entrywise_activation_layer {
  public:
-  selu_layer(int index, lbann_comm *comm,
+  selu_layer(lbann_comm *comm,
              DataType alpha = DataType(1.6732632423543772848170429916717),
              DataType scale = DataType(1.0507009873554804934193349852946)) :
-    entrywise_activation_layer(index, comm),
+    entrywise_activation_layer(comm),
     m_alpha(alpha), m_scale(scale)
   {
     initialize_distributed_matrices();

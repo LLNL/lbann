@@ -140,8 +140,7 @@ int main(int argc, char *argv[]) {
       if (comm->am_world_master()) {
         cout << endl << "USING imagenet_reader\n\n";
       }
-      imagenet_reader *imagenet_trainset = new imagenet_reader(trainParams.MBSize, true);
-      imagenet_trainset->set_firstN(false);
+      imagenet_reader *imagenet_trainset = new imagenet_reader(true);
       imagenet_trainset->set_role("train");
       imagenet_trainset->set_master(comm->am_world_master());
       imagenet_trainset->set_rank(comm->get_rank_in_world());
@@ -174,8 +173,7 @@ int main(int argc, char *argv[]) {
       ///////////////////////////////////////////////////////////////////
       // load testing data (ImageNet)
       ///////////////////////////////////////////////////////////////////
-      imagenet_reader *imagenet_testset = new imagenet_reader(trainParams.MBSize, true);
-      imagenet_testset->set_firstN(false);
+      imagenet_reader *imagenet_testset = new imagenet_reader(true);
       imagenet_testset->set_role("test");
       imagenet_testset->set_master(comm->am_world_master());
       imagenet_testset->set_rank(comm->get_rank_in_world());
@@ -203,8 +201,7 @@ int main(int argc, char *argv[]) {
       if (comm->am_world_master()) {
         cout << endl << "USING imagenet_readerSingle\n\n";
       }
-      imagenet_readerSingle *imagenet_trainset = new imagenet_readerSingle(trainParams.MBSize, true);
-      imagenet_trainset->set_firstN(false);
+      imagenet_readerSingle *imagenet_trainset = new imagenet_readerSingle(true);
       imagenet_trainset->set_role("train");
       imagenet_trainset->set_master(comm->am_world_master());
       imagenet_trainset->set_rank(comm->get_rank_in_world());
@@ -244,8 +241,7 @@ int main(int argc, char *argv[]) {
       ss.clear();
       ss.str("");
       ss << "Single_" << g_ImageNet_TestLabelFile.substr(0, g_ImageNet_TestLabelFile.size()-4);
-      imagenet_readerSingle *imagenet_testset = new imagenet_readerSingle(trainParams.MBSize, true);
-      imagenet_testset->set_firstN(false);
+      imagenet_readerSingle *imagenet_testset = new imagenet_readerSingle(true);
       imagenet_testset->set_role("test");
       imagenet_testset->set_master(comm->am_world_master());
       imagenet_testset->set_rank(comm->get_rank_in_world());
@@ -295,12 +291,10 @@ int main(int argc, char *argv[]) {
     dnn->add(ilayer);
 
     const int NumLayers = netParams.Network.size();
-    int lcnt = 1;
     // initalize neural network (layers)
     for (int l = 0; l < NumLayers-1; l++) {
       fully_connected_layer<DATA_LAYOUT> *fc 
         = new fully_connected_layer<DATA_LAYOUT>(
-          lcnt++,
           comm,
           netParams.Network[l],
           weight_initialization::glorot_uniform, 
@@ -309,18 +303,17 @@ int main(int argc, char *argv[]) {
 
       Layer *act = NULL;
       if (trainParams.ActivationType == 1) { // sigmoid
-        act = new sigmoid_layer<DATA_LAYOUT>(lcnt++, comm);
+        act = new sigmoid_layer<DATA_LAYOUT>(comm);
       } else if (trainParams.ActivationType == 2) { // tanh
-        act = new tanh_layer<DATA_LAYOUT>(lcnt++, comm);
+        act = new tanh_layer<DATA_LAYOUT>(comm);
       } else if (trainParams.ActivationType == 3) { // reLU
-        act = new relu_layer<DATA_LAYOUT>(lcnt++, comm);
+        act = new relu_layer<DATA_LAYOUT>(comm);
       } else { // ID
-        act = new id_layer<DATA_LAYOUT>(lcnt++, comm);
+        act = new id_layer<DATA_LAYOUT>(comm);
       }
       dnn->add(act);
 
-      Layer *reg = new dropout<DATA_LAYOUT>(lcnt++,
-                                            comm,
+      Layer *reg = new dropout<DATA_LAYOUT>(comm,
                                             trainParams.DropOut);
       dnn->add(reg);
     }
@@ -330,7 +323,6 @@ int main(int argc, char *argv[]) {
       // Fully-connected without bias before softmax.
       fully_connected_layer<DATA_LAYOUT> *fc
         = new fully_connected_layer<DATA_LAYOUT>(
-          lcnt++,
           comm,
           netParams.Network[NumLayers-1],
           weight_initialization::glorot_uniform, 
@@ -339,7 +331,7 @@ int main(int argc, char *argv[]) {
       dnn->add(fc);
       //      get_prev_neurons_and_index( dnn, prev_num_neurons, layer_id);
       Layer *softmax 
-        = new softmax_layer<DATA_LAYOUT>(lcnt++, comm);
+        = new softmax_layer<DATA_LAYOUT>(comm);
       dnn->add(softmax);
     }
 
@@ -387,7 +379,7 @@ int main(int argc, char *argv[]) {
 
     // load parameters from file if available
     if (trainParams.LoadModel && trainParams.ParameterDir.length() > 0) {
-      dnn->load_from_file(trainParams.ParameterDir);
+      // dnn->load_from_file(trainParams.ParameterDir);
     }
 
     mpi::Barrier(grid.Comm());

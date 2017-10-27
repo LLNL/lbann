@@ -49,7 +49,7 @@ class lbann_callback_learning_rate : public lbann_callback {
   lbann_callback_learning_rate& operator=(
     const lbann_callback_learning_rate&) = default;
   /** Only apply to specific layers. */
-  lbann_callback_learning_rate(std::unordered_set<uint> layers);
+  lbann_callback_learning_rate(std::unordered_set<Layer *> layers);
   /** Do some initialization. */
   void setup(model *m);
   /** Apply the learning rate schedule. */
@@ -62,15 +62,9 @@ class lbann_callback_learning_rate : public lbann_callback {
    * @return A new learning rate.
    */
   virtual float schedule(model *m, Layer *l) = 0;
-  /** Return true if l is the last layer to update this epoch. */
-  bool is_last_layer(const Layer *l) const {
-    return l->get_index() == (int) m_last_idx;
-  }
 
-  /** Indicies of layers to update. */
-  std::unordered_set<uint> m_layer_indices;
-  /** Index of the last layer to update. */
-  int m_last_idx;
+  /** Layers to update. */
+  std::unordered_set<Layer *> m_layers;
 };
 
 /**
@@ -81,7 +75,7 @@ class lbann_callback_step_learning_rate : public lbann_callback_learning_rate {
   /** Decrease the learning rate by amt every step epochs. */
   lbann_callback_step_learning_rate(int step, float amt);
   lbann_callback_step_learning_rate(int step, float amt,
-                                    std::unordered_set<uint> layers);
+                                    std::unordered_set<Layer *> layers);
   lbann_callback_step_learning_rate(
     const lbann_callback_step_learning_rate&) = default;
   lbann_callback_step_learning_rate& operator=(
@@ -111,7 +105,7 @@ class lbann_callback_adaptive_learning_rate : public lbann_callback_learning_rat
    */
   lbann_callback_adaptive_learning_rate(int64_t patience, float amt);
   lbann_callback_adaptive_learning_rate(int64_t patience, float amt,
-                                        std::unordered_set<uint> layers);
+                                        std::unordered_set<Layer *> layers);
   lbann_callback_adaptive_learning_rate(
     const lbann_callback_adaptive_learning_rate&) = default;
   lbann_callback_adaptive_learning_rate& operator=(
@@ -127,10 +121,14 @@ class lbann_callback_adaptive_learning_rate : public lbann_callback_learning_rat
   int64_t m_patience;
   /** Amount to decrease the learning rate by. */
   float m_amt;
+  /** Current epoch. */
+  int m_cur_epoch = -1;
   /** Last recorded score. */
   double m_last_score = std::numeric_limits<double>::max();
   /** Current number of epochs without improvement. */
   int64_t m_wait = 0;
+  /** Whether to adjust learning rate for current epoch. */
+  bool m_adjust_learning_rate;
 };
 
 /**
@@ -147,7 +145,7 @@ class lbann_callback_drop_fixed_learning_rate :
     std::vector<int64_t> drop_epochs, float amt);
   lbann_callback_drop_fixed_learning_rate(
     std::vector<int64_t> drop_epochs, float amt,
-    std::unordered_set<uint> layers);
+    std::unordered_set<Layer *> layers);
   lbann_callback_drop_fixed_learning_rate(
     const lbann_callback_drop_fixed_learning_rate&) = default;
   lbann_callback_drop_fixed_learning_rate& operator=(
@@ -185,7 +183,7 @@ class lbann_callback_linear_growth_learning_rate :
     float target, int64_t num_epochs, int64_t delay);
   lbann_callback_linear_growth_learning_rate(
     float target, int64_t num_epochs, int64_t delay,
-    std::unordered_set<uint> layers);
+    std::unordered_set<Layer *> layers);
   lbann_callback_linear_growth_learning_rate(
     const lbann_callback_linear_growth_learning_rate&) = default;
   lbann_callback_linear_growth_learning_rate& operator=(
@@ -217,7 +215,7 @@ class lbann_callback_custom_learning_rate : public lbann_callback_learning_rate 
     std::function<float(model *, Layer *)> custom_schedule);
   lbann_callback_custom_learning_rate(
     std::function<float(model *, Layer *)> custom_schedule,
-    std::unordered_set<uint> layers);
+    std::unordered_set<Layer *> layers);
   /**
    * @todo Need to provide a way for model/layer to be updated after copy.
    */
