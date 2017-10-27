@@ -198,6 +198,7 @@ class lbann_summary {
   void reduce_scalar(const std::string tag, DataType s, int step) {}
   void sum_reduce_scalar(const std::string tag, DataType s, int step) {}
   void reduce_histogram(const std::string tag, const AbsDistMat& mat, int step) {}
+  void reduce_2norm(const std::string tag, const AbsDistMat& mat, int step) {}
   void flush() {}
 };
 
