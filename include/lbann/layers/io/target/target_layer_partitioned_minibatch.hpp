@@ -61,8 +61,7 @@ class target_layer_partitioned_minibatch : public target_layer, public partition
   }
 
   target_layer_partitioned_minibatch* copy() const {
-    throw lbann_exception("target_layer_partitioned_minibatch can't be copied");
-    return nullptr;
+    return new target_layer_partitioned_minibatch(*this);
   }
 
   std::string get_type() const { return "target:partitioned"; }

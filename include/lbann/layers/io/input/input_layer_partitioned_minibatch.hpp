@@ -52,8 +52,7 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
     initialize_distributed_matrices();
   }
   input_layer_partitioned_minibatch* copy() const {
-    throw lbann_exception("Cannot copy input_layer_partitioned_minibatch");
-    return nullptr;
+    return new input_layer_partitioned_minibatch(*this);
   }
 
   std::string get_type() const { return "input:partitioned"; }
