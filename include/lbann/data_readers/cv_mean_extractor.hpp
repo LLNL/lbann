@@ -67,12 +67,12 @@ class cv_mean_extractor : public cv_transform {
  protected:
   // --- configuration variables ---
   unsigned int m_batch_size; ///< number of samples per batch
-  /// OpenCv type code used to create  m_sum and m_avg based on Float_T and the number of channels
-  int m_type_code;
 
   // --- state variables ---
   unsigned int m_batch_cnt; ///< number of complete batches
   unsigned int m_partial_cnt; ///< number of samples currently contributing towards a batch
+  /// OpenCv type code used to create  m_sum and m_avg based on Float_T and the number of channels
+  int m_type_code;
   cv::Mat m_sum; ///< partial batch accumulated so far
   cv::Mat m_avg; ///< cumulative moving average
 
