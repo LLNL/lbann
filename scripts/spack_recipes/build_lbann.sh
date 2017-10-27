@@ -160,7 +160,9 @@ if [ ! -z "${Fortran_FLAGS}" ]; then
     SPACK_FFLAGS="fflags=\"${Fortran_FLAGS}\""
 fi
 
-SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ${SPACK_CFLAGS} ${SPACK_CXXFLAGS} ${SPACK_FFLAGS} ^elemental@${EL_VER} blas=${BLAS} ^${MPI} ^protobuf@3.1.0"
+SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ^elemental@${EL_VER} blas=${BLAS} ^${MPI}"
+# Disable the extra compiler flags until spack supports propagating flags properly
+#SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ${SPACK_CFLAGS} ${SPACK_CXXFLAGS} ${SPACK_FFLAGS} ^elemental@${EL_VER} blas=${BLAS} ^${MPI}"
 
 SPEC="spack spec ${SPACK_OPTIONS}"
 CMD="spack setup ${SPACK_OPTIONS}"
@@ -209,6 +211,6 @@ if [ ! -z ${PATH_TO_SRC} -a -d ${PATH_TO_SRC}/src ]; then
 fi
 
 # Deal with the fact that spack should not install a package when doing setup"
-FIX="spack uninstall -y lbann"
+FIX="spack uninstall -y lbann %${COMPILER}"
 echo $FIX
 eval $FIX
