@@ -37,6 +37,10 @@
 
 namespace lbann {
 
+////////////////////////////////////////////////////////////
+// Constructors and destructor
+////////////////////////////////////////////////////////////
+
 model::model(lbann_comm *comm, int mini_batch_size,
              objective_functions::objective_function *obj_fn,
              optimizer_factory *optimizer_fac) :
@@ -44,14 +48,18 @@ model::model(lbann_comm *comm, int mini_batch_size,
   m_execution_mode(execution_mode::invalid),
   m_terminate_training(false),
   m_current_epoch(0), m_current_step(0),
-  m_current_validation_step(0), m_current_testing_step(0),
+  m_current_validation_step(0),
+  m_current_testing_step(0),
   m_max_mini_batch_size(mini_batch_size),
   m_current_mini_batch_size(mini_batch_size),
   m_effective_mini_batch_size(mini_batch_size),
   m_current_phase(0),
   m_comm(comm),
-  m_checkpoint_dir(""), m_checkpoint_epochs(0), m_checkpoint_steps(0),
-  m_checkpoint_secs(0.0), m_checkpoint_last(MPI_Wtime()),
+  m_checkpoint_dir(""),
+  m_checkpoint_epochs(0),
+  m_checkpoint_steps(0),
+  m_checkpoint_secs(0.0),
+  m_checkpoint_last(MPI_Wtime()),
   m_optimizer_fac(optimizer_fac) {}
 
 model::model(const model& other) :
@@ -71,8 +79,9 @@ model::model(const model& other) :
   m_checkpoint_steps(other.m_checkpoint_steps),
   m_checkpoint_secs(other.m_checkpoint_secs),
   m_checkpoint_last(other.m_checkpoint_last),
-// Don't need to deep-copy the factory.
   m_optimizer_fac(other.m_optimizer_fac) {
+
+  // Deep copies
   for (const auto& metric : other.m_metrics) {
     metrics::metric* m_copy = metric->copy();
     m_copy->m_neural_network_model = this;
@@ -82,9 +91,40 @@ model::model(const model& other) :
   for (const auto& cb : other.m_callbacks) {
     m_callbacks.push_back(cb->copy());
   }
+  std::unordered_map<const Layer*,const Layer*> old_to_new_layer;
+  for (const Layer* old_layer : other.m_layers) {
+    Layer* new_layer = old_layer->copy();
+    old_to_new_layer[old_layer] = new_layer;
+    m_layers.push_back(new_layer);
+  }
+
+  // Fix layer pointers
+  for (Layer* layer : m_layers) {
+    for (const Layer*& parent : layer->get_parent_layers()) {
+      const Layer* new_parent = old_to_new_layer[parent];
+      if (new_parent != nullptr) {
+        parent = new_parent;
+      }
+    }
+    for (const Layer*& child : layer->get_child_layers()) {
+      const Layer* new_child = old_to_new_layer[child];
+      if (new_child != nullptr) {
+        child = new_child;
+      }
+    }
+    target_layer *target = dynamic_cast<target_layer*>(layer);
+    if (target != nullptr) {
+      const Layer *old_input = target->get_paired_input_layer();
+      const input_layer *input = dynamic_cast<const input_layer*>(old_to_new_layer[old_input]);
+      target->set_paired_input_layer(const_cast<input_layer*>(input));
+    }
+  }
+
 }
 
 model& model::operator=(const model& other) {
+
+  // Shallow copies
   m_execution_mode = other.m_execution_mode;
   m_terminate_training = other.m_terminate_training;
   m_current_epoch = other.m_current_epoch;
@@ -102,6 +142,8 @@ model& model::operator=(const model& other) {
   m_checkpoint_secs = other.m_checkpoint_secs;
   m_checkpoint_last = other.m_checkpoint_last;
   m_optimizer_fac = other.m_optimizer_fac;
+
+  // Deep copies
   for (const auto& metric : other.m_metrics) {
     metrics::metric* m_copy = metric->copy();
     m_copy->m_neural_network_model = this;
@@ -111,33 +153,271 @@ model& model::operator=(const model& other) {
   for (const auto& cb : other.m_callbacks) {
     m_callbacks.push_back(cb->copy());
   }
+  std::unordered_map<const Layer*,const Layer*> old_to_new_layer;
+  for (const Layer* old_layer : other.m_layers) {
+    Layer* new_layer = old_layer->copy();
+    old_to_new_layer[old_layer] = new_layer;
+    m_layers.push_back(new_layer);
+  }
+
+  // Fix layer pointers
+  for (Layer* layer : m_layers) {
+    for (const Layer*& parent : layer->get_parent_layers()) {
+      const Layer* new_parent = old_to_new_layer[parent];
+      if (new_parent != nullptr) {
+        parent = new_parent;
+      }
+    }
+    for (const Layer*& child : layer->get_child_layers()) {
+      const Layer* new_child = old_to_new_layer[child];
+      if (new_child != nullptr) {
+        child = new_child;
+      }
+    }
+    target_layer *target = dynamic_cast<target_layer*>(layer);
+    if (target != nullptr) {
+      const Layer *old_input = target->get_paired_input_layer();
+      const input_layer *input = dynamic_cast<const input_layer*>(old_to_new_layer[old_input]);
+      target->set_paired_input_layer(const_cast<input_layer*>(input));
+    }
+  }
+
   return *this;
 }
 
 model::~model() {
   if (m_obj_fn) delete m_obj_fn;
-  // Free metrics.
   for (metrics::metric *m : get_metrics()) {
     if (m) delete m;
   }
-  // Free callbacks.
   for (lbann_callback *c : m_callbacks) {
     if(c) delete c;
   }
+  for (Layer *layer : m_layers) {
+    if (layer) delete layer;
+  }
+}
+
+////////////////////////////////////////////////////////////
+// Initialization
+////////////////////////////////////////////////////////////
+
+int model::add(Layer *layer) {
+  m_layers.push_back(layer);
+  return m_layers.size() - 1;
 }
 
 void model::add_callback(lbann_callback *cb) {
   m_callbacks.push_back(cb);
 }
 
+void model::add_metric(metrics::metric *m) {
+  m_metrics.push_back(m);
+}
+
+void model::set_layers(std::vector<Layer*>& layers) {
+  for (Layer *layer : m_layers) {
+    if (layer) delete layer;
+  }
+  m_layers = layers;
+}
+
+////////////////////////////////////////////////////////////
+// Evaluation and training
+////////////////////////////////////////////////////////////
+
+void model::evaluate(execution_mode mode) {
+
+  // Return early if execution mode is invalid
+  for (Layer* layer : m_layers) {
+    input_layer* input = dynamic_cast<input_layer*>(layer);
+    if (input != nullptr && !input->is_execution_mode_valid(mode)) {
+      return;
+    }
+  }
+
+  // Initialize model for beginning of evaluation
+  m_execution_mode = mode;
+  for (Layer *layer : m_layers) {
+    layer->set_execution_mode(mode);
+  }
+  m_obj_fn->reset_statistics();
+  for (auto&& m : m_metrics) {
+    m->reset_metric();
+  }
+
+  // Start evaluation
+  switch(mode) {
+  case execution_mode::training:
+    do_train_begin_cbs();
+    break;
+  case execution_mode::validation:
+    do_validation_begin_cbs();
+    break;
+  case execution_mode::testing:
+    do_test_begin_cbs();
+    break;
+  default:
+    throw lbann_exception("Illegal execution mode in evaluate function");
+  }
+
+  // Evaluate on mini-batches until data set is finished
+  while (!evaluate_mini_batch()) {}
+
+  // Finish evaluation
+  switch(mode) {
+  case execution_mode::training:
+    do_train_end_cbs();
+    break;
+  case execution_mode::validation:
+    do_validation_end_cbs();
+    break;
+  case execution_mode::testing:
+    do_test_end_cbs();
+    break;
+  default:
+    throw lbann_exception("Illegal execution mode in evaluate function");
+  }
+
+}
+
+void model::train(int num_epochs) {
+  do_train_begin_cbs();
+  for (int epoch = 0; epoch < num_epochs; ++epoch) {
+
+    // Stop if training has been terminated
+    if (get_terminate_training()) {
+      break;
+    }
+    
+    // Initialize model for beginning of training epoch
+    m_execution_mode = execution_mode::training;
+    for (Layer *layer : m_layers) {
+      layer->set_execution_mode(execution_mode::training);
+    }
+    m_obj_fn->reset_statistics();
+    for (auto&& m : m_metrics) {
+      m->reset_metric();
+    }
+
+    // Start epoch
+    ++m_current_epoch;
+    do_epoch_begin_cbs();
+
+    // Train on mini-batches until data set is finished
+    while (!train_mini_batch()) {}
+
+    // Evaluate model on validation set
+    evaluate(execution_mode::validation);
+
+    // Finish epoch
+    do_epoch_end_cbs();
+
+  }
+  do_train_end_cbs();
+}
+
+bool model::evaluate_mini_batch() {
+  do_batch_evaluate_begin_cbs();
+
+  // Forward propagation
+  do_model_evaluate_forward_prop_begin_cbs();
+  for (Layer* layer : m_layers) {
+    do_layer_evaluate_forward_prop_begin_cbs(layer);
+    layer->forward_prop();
+    do_layer_evaluate_forward_prop_end_cbs(layer);
+  }
+  do_model_evaluate_forward_prop_end_cbs();
+
+  // Record and reset objective function value
+  m_obj_fn->record_and_reset_value();
+
+  // Update layers
+  // Note: should only affect the input and target layers
+  bool finished = true;
+  for (int l = m_layers.size() - 1; l >= 0; --l) {
+    const bool layer_finished = m_layers[l]->update();
+    if (dynamic_cast<input_layer *>(m_layers[l]) != nullptr) {
+      finished = finished && layer_finished;
+    }
+  }
+
+  // Finish up
+  do_batch_evaluate_end_cbs();
+  switch(m_execution_mode) {
+  case execution_mode::validation:
+    ++m_current_validation_step;
+    break;
+  case execution_mode::testing:
+    ++m_current_testing_step;
+    break;
+  default:
+    throw lbann_exception("Illegal execution mode in evaluate mini-batch function");
+  }
+  return finished;
+
+}
+
+bool model::train_mini_batch() {
+  do_batch_begin_cbs();
+
+  // Forward propagation
+  do_model_forward_prop_begin_cbs();
+  for (Layer* layer : m_layers) {
+    do_layer_forward_prop_begin_cbs(layer);
+    layer->forward_prop();
+    do_layer_forward_prop_end_cbs(layer);
+  }
+  do_model_forward_prop_end_cbs();
+
+  // Record and reset objective function value
+  m_obj_fn->record_and_reset_value();
+
+  // Backward propagation
+  do_model_backward_prop_begin_cbs();
+  for (int l = m_layers.size() - 1; l >= 0; --l) {
+    Layer* layer = m_layers[l];
+    do_layer_backward_prop_begin_cbs(layer);
+    layer->back_prop();
+    do_layer_backward_prop_end_cbs(layer);
+  }
+  do_model_backward_prop_end_cbs();
+
+  // Update layers
+  bool finished = true;
+  for (int l = m_layers.size() - 1; l >= 0; --l) {
+    const bool layer_finished = m_layers[l]->update();
+    if (dynamic_cast<input_layer *>(m_layers[l]) != nullptr) {
+      finished = finished && layer_finished;
+    }
+  }
+
+  // Finish up
+  do_batch_end_cbs();
+  ++m_current_step;
+  return finished;
+
+}
+
+bool model::is_execution_mode_valid(execution_mode mode) {
+  for (Layer *layer : m_layers) {
+    input_layer *input = dynamic_cast<input_layer*>(layer);
+    if (input != nullptr
+        && !input->is_execution_mode_valid(mode)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+////////////////////////////////////////////////////////////
+// Callbacks
+////////////////////////////////////////////////////////////
+
 void model::setup_callbacks() {
   for (auto&& cb : m_callbacks) {
     cb->setup(this);
   }
-}
-
-void model::add_metric(metrics::metric *m) {
-  m_metrics.push_back(m);
 }
 
 void model::do_train_begin_cbs() {
@@ -274,10 +554,6 @@ void model::do_layer_backward_prop_end_cbs(Layer *l) {
   }
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Evaluation callbacks
-////////////////////////////////////////////////////////////////////////////////
-
 void model::do_batch_evaluate_begin_cbs() {
   for (auto&& cb : m_callbacks) {
     if (get_cur_step() % cb->get_batch_interval() == 0) {
@@ -317,6 +593,28 @@ void model::do_layer_evaluate_forward_prop_end_cbs(Layer *l) {
     cb->on_evaluate_forward_prop_end(this, l);
   }
 }
+
+////////////////////////////////////////////////////////////
+// Summarizer
+////////////////////////////////////////////////////////////
+
+void model::summarize_stats(lbann_summary& summarizer) {
+  for (Layer* layer : m_layers) {
+    layer->summarize_stats(summarizer, get_cur_step());
+  }
+}
+
+void model::summarize_matrices(lbann_summary& summarizer) {
+  for (Layer* layer : m_layers) {
+    layer->summarize_matrices(summarizer, get_cur_step());
+  }
+}
+
+////////////////////////////////////////////////////////////
+// Checkpointing
+////////////////////////////////////////////////////////////
+
+#if 0
 
 /** \brief Returns true if a checkpoint should be taken, false otherwise */
 bool model::need_checkpoint() {
@@ -607,5 +905,7 @@ bool model::load_from_checkpoint_shared(persist& p) {
 
   return true;
 }
+
+#endif // 0
 
 }  // namespace lbann

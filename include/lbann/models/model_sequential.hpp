@@ -42,17 +42,41 @@ namespace lbann {
 class sequential_model : public model {
  public:
 
-  /// Constructor
-  sequential_model(int mini_batch_size,
+  /** Constructor. */
+  sequential_model(int max_mini_batch_size,
                    lbann_comm *comm,
                    objective_functions::objective_function *obj_fn,
                    optimizer_factory *optimizer_fac);
-  sequential_model(const sequential_model& other);
-  sequential_model& operator=(const sequential_model& other);
+  
+  /** Copy constructor. */
+  sequential_model(const sequential_model& other) = default;
 
-  /// Destructor
-  virtual ~sequential_model();
+  /** Copy assignment operator. */
+  sequential_model& operator=(const sequential_model& other) = default;
 
+  /** Destructor. */
+  virtual ~sequential_model() = default;
+
+  /** Remove layer from sequential model. */
+  void remove(int index);
+
+  /** Insert layer in sequential model. */
+  void insert(int index, Layer *new_layer);
+
+  /** Replace layer in sequential model. */
+  Layer *swap(int index, Layer *new_layer);
+
+  /** Setup sequential model. */
+  virtual void setup() override;
+
+  /** Setup subset of sequential model. */
+  virtual void setup_subset(int start_index, int end_index);  
+
+  /// returns the number of neurons in the most recently added layer, or -1
+  /// if there is none
+  int num_previous_neurons();
+
+#if 0
   /// Save model to file
   /** @todo This is old and likely broken */
   bool save_to_file(const std::string file_dir);
@@ -69,52 +93,7 @@ class sequential_model : public model {
 
   bool save_to_checkpoint_shared(persist& p) override;
   bool load_from_checkpoint_shared(persist& p) override;
-
-  /// Get list of layers
-  virtual std::vector<Layer *>& get_layers() override {
-    return m_layers;
-  }
-
-  /// Set layers
-  virtual void set_layers(vector<Layer *>& layers) {
-    m_layers = layers;
-  }
-
- 
-  /// Add layer to sequential model
-  virtual int add(Layer *new_layer) override;
-
-  /// Remove layer from sequential model
-  /** @todo This will mess up layer indices */
-  virtual void remove(int index);
-
-  /// Insert layer in sequential model
-  /** @todo This will mess up layer indices.
-   *  @todo Consider removing this function. The destructor
-   *  deallocates all layers, so we might run into problems if a
-   *  layer is deallocated externally. */
-  virtual void insert(int index, Layer *new_layer);
-
-  /// Replace layer in sequential model
-  virtual Layer *swap(int index, Layer *new_layer);
-
-  /// Setup sequential model
-  virtual void setup() override;
-  virtual void setup_subset(int start_index, int end_index);  
-
-  /** Return true if about to start a new training epoch */
-  virtual bool at_epoch_start() override;
-
-  /** Check if the model has a valid data set for the execution mode */
-  virtual bool is_execution_mode_valid(execution_mode mode);
-
-  /// returns the number of neurons in the most recently added layer, or -1
-  /// if there is none
-  int num_previous_neurons();
-
- protected:
-  /// List of layers
-  std::vector<Layer *> m_layers;
+#endif // 0
 
 };
 

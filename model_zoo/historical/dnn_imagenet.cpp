@@ -379,7 +379,7 @@ int main(int argc, char *argv[]) {
 
     // load parameters from file if available
     if (trainParams.LoadModel && trainParams.ParameterDir.length() > 0) {
-      dnn->load_from_file(trainParams.ParameterDir);
+      // dnn->load_from_file(trainParams.ParameterDir);
     }
 
     mpi::Barrier(grid.Comm());

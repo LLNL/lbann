@@ -66,6 +66,9 @@ class model {
   /** Initialize the model. */
   virtual void setup() {}
 
+  /** Add layer to model. */
+  virtual int add(Layer *new_layer);
+
   /** Register a new callback for the model. */
   virtual void add_callback(lbann_callback *cb);
 
@@ -77,8 +80,13 @@ class model {
     return m_metrics;
   }
 
+  /** Set the model's layers. */
+  void set_layers(std::vector<Layer *>& layers);
+
   /** Return the model's layers. */
-  virtual std::vector<Layer *>& get_layers() = 0;
+  std::vector<Layer *>& get_layers() {
+    return m_layers;
+  }
 
   /** Get the model's comm. */
   inline lbann_comm *get_comm() const {
@@ -143,12 +151,12 @@ class model {
    * Summarize statistics (e.g. timers, counters); these should be computable
    * quickly.
    */
-  virtual void summarize_stats(lbann_summary& summarizer) {}
+  void summarize_stats(lbann_summary& summarizer);
   /**
    * Summarize matrices (e.g. means); these are called less frequently and can
    * be more expensive.
    */
-  virtual void summarize_matrices(lbann_summary& summarizer) {}
+  void summarize_matrices(lbann_summary& summarizer);
 
   /** Return true if the flag to stop training is set. */
   bool get_terminate_training() const {
@@ -159,29 +167,21 @@ class model {
     m_terminate_training = f;
   }
 
-  /** Return true if about to start a new training epoch */
-  virtual bool at_epoch_start() = 0;
-
   /** Create a new optimizer. */
   inline optimizer *create_optimizer() {
     return m_optimizer_fac->create_optimizer();
   }
 
-  /// Train model
-  virtual void train(int num_epochs) = 0;
-  
-  /// Train model on one mini-batch
-  virtual bool train_mini_batch() = 0;
+  /** Train model. */
+  virtual void train(int num_epochs);
+  /** Train model on a mini-batch. */
+  virtual bool train_mini_batch();
+  /** Evaluate model. */
+  virtual void evaluate(execution_mode mode);
+  /** Evaluate model on a mini-batch */
+  virtual bool evaluate_mini_batch();
 
-  /// Evaluate model
-  virtual void evaluate(execution_mode mode) = 0;
-
-  /// Evaluation step on one mini-batch
-  virtual bool evaluate_mini_batch() = 0;
-
-  /// Add layer to sequential model
-  virtual int add(Layer *new_layer) = 0;
-
+  virtual bool is_execution_mode_valid(execution_mode mode);
 
   /** Set checkpoint values */
   inline void set_checkpoint_dir(std::string dir)   {
@@ -195,6 +195,13 @@ class model {
   }
   inline void set_checkpoint_secs(double secs)      {
     m_checkpoint_secs   = secs;
+  }
+
+#if 0
+  /** Return true if about to start a new training epoch
+   */
+  virtual bool at_epoch_start() {
+    return true;
   }
 
   /** Returns true if a checkpoint should be taken, false otherwise */
@@ -212,6 +219,8 @@ class model {
   /*! Top-level call to restart.  This creates the persist object
    *  and then calls the model's load_from_checkpoint_shared() virtual function */
   bool restartShared();
+
+#endif // 0
 
   /**
    * Objective functions are used to judge the performance of the model during
@@ -272,6 +281,11 @@ class model {
    * results from evaluating a metric are not used when training the model.
    */
   std::vector<metrics::metric *> m_metrics;
+
+  /** List of layers in model.
+   *  The list is in execution order for forward propagation.
+   */
+  std::vector<Layer *> m_layers;
 
   // Methods for calling every callback at different points.
   void setup_callbacks();

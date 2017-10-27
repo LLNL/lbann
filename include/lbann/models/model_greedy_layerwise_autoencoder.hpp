@@ -37,34 +37,31 @@ namespace lbann {
 
 class greedy_layerwise_autoencoder : public sequential_model {
  public:
-  /// Constructor
+  /** Constructor. */
   greedy_layerwise_autoencoder(int mini_batch_size,
                                lbann_comm *comm,
                                objective_functions::objective_function *obj_fn,
                                optimizer_factory *_optimizer_fac);
-  // Not yet supported.
+
+  /** Copy constructor.
+   *  @todo Not yet supported.
+   */
   greedy_layerwise_autoencoder(const greedy_layerwise_autoencoder&) = delete;
+
+  /** Copy assignment operator.
+   *  @todo Not yet supported.
+   */
   greedy_layerwise_autoencoder& operator=(
     const greedy_layerwise_autoencoder&) = delete;
 
-  /// Destructor
-  ~greedy_layerwise_autoencoder();
+  /** Destructor. */
+  ~greedy_layerwise_autoencoder() = default;
 
   virtual greedy_layerwise_autoencoder* copy() const override {
     throw lbann_exception("greedy_layerwise_autoencoder doesn't support copying");
   }
 
   virtual std::string name() const override { return "greedy layerwise autoencoder"; }
-
-  /// Save model to shared checkpoint
-  bool save_to_checkpoint_shared(persist& p) override;
-
-  /// Restore model from shared checkpoint
-  bool load_from_checkpoint_shared(persist& p) override;
-
-  /// Compute layer summaries
-  virtual void summarize_stats(lbann_summary& summarizer) override;
-  virtual void summarize_matrices(lbann_summary& summarizer) override;
 
   /// Train neural network
   virtual void train(int num_epochs) override;
@@ -85,6 +82,14 @@ class greedy_layerwise_autoencoder : public sequential_model {
   void reset_phase();
   /// Set end index of layer wise training (typically at reconstruction layer)
   void set_end_index(); 
+
+#if 0
+  /// Save model to shared checkpoint
+  bool save_to_checkpoint_shared(persist& p) override;
+
+  /// Restore model from shared checkpoint
+  bool load_from_checkpoint_shared(persist& p) override;
+#endif // 0
 
  protected:
   /// index of last layer in a phase

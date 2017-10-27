@@ -283,7 +283,7 @@ int main(int argc, char *argv[]) {
     gla.set_checkpoint_secs(trainParams.CkptSecs);
 
     // restart model from checkpoint if we have one
-    gla.restartShared();
+    // gla.restartShared();
 
     if (comm->am_world_master()) {
       cout << "(Pre) train autoencoder - unsupersived training" << endl;

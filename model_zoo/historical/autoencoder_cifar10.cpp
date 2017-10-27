@@ -288,7 +288,7 @@ int main(int argc, char *argv[]) {
     dnn.set_checkpoint_secs(trainParams.CkptSecs);
 
     // restart model from checkpoint if we have one
-    dnn.restartShared();
+    // dnn.restartShared();
 
     // train/test
     dnn.train(trainParams.EpochCount);
