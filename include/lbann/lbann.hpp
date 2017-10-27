@@ -145,6 +145,7 @@
 #include "lbann/metrics/metric_top_k_categorical_accuracy.hpp"
 #include "lbann/metrics/metric_mean_absolute_deviation.hpp"
 #include "lbann/metrics/metric_mean_squared_error.hpp"
+#include "lbann/metrics/metric_pearson_correlation.hpp"
 
 /// Utilities, exceptions, etc.
 #include "lbann/utils/exception.hpp"
@@ -154,5 +155,7 @@
 #include "lbann/params.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
+#include "lbann/utils/compiler_control.hpp"
+
 
 #endif // LBANN_HPP_INCLUDED
