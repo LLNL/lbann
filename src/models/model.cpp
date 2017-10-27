@@ -188,13 +188,13 @@ model& model::operator=(const model& other) {
 model::~model() {
   if (m_obj_fn) delete m_obj_fn;
   for (metrics::metric *m : get_metrics()) {
-    if (m) delete m;
+    delete m;
   }
   for (lbann_callback *c : m_callbacks) {
-    if(c) delete c;
+    delete c;
   }
   for (Layer *layer : m_layers) {
-    if (layer) delete layer;
+    delete layer;
   }
 }
 
@@ -203,21 +203,30 @@ model::~model() {
 ////////////////////////////////////////////////////////////
 
 int model::add(Layer *layer) {
+  if (layer == nullptr) {
+    throw lbann_exception("model: Attempted to add null pointer as a layer.");
+  }
   m_layers.push_back(layer);
   return m_layers.size() - 1;
 }
 
 void model::add_callback(lbann_callback *cb) {
+  if (cb == nullptr) {
+    throw lbann_exception("model: Attempted to add null pointer as a callback.");
+  }
   m_callbacks.push_back(cb);
 }
 
 void model::add_metric(metrics::metric *m) {
+  if (m == nullptr) {
+    throw lbann_exception("model: Attempted to add null pointer as a metric.");
+  }
   m_metrics.push_back(m);
 }
 
 void model::set_layers(std::vector<Layer*>& layers) {
   for (Layer *layer : m_layers) {
-    if (layer) delete layer;
+    delete layer;
   }
   m_layers = layers;
 }

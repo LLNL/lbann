@@ -48,16 +48,11 @@ class target_layer : public io_layer {
     m_max_num_child_layers = 0;
   }
 
-  virtual ~target_layer() {}
+  virtual ~target_layer() = default;
 
-  // Target layers copy their datareaders.
-  target_layer(const target_layer& other) : io_layer(other) {
-  }
+  target_layer(const target_layer& other) = default;
 
-  target_layer& operator=(const target_layer& other) {
-    io_layer::operator=(other);
-    return *this;
-  }
+  target_layer& operator=(const target_layer& other) = default;
 
   template<data_layout T_layout> inline void initialize_distributed_matrices() {
     io_layer::initialize_distributed_matrices<T_layout>();
