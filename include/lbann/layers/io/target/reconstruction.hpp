@@ -90,7 +90,7 @@ class reconstruction_layer : public target_layer {
   }
 
  protected:
-  void fp_set_std_matrix_view() {
+  void fp_set_std_matrix_view() override {
     int64_t cur_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
 
     target_layer::fp_set_std_matrix_view();

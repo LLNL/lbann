@@ -40,16 +40,16 @@ class imagenet_reader_single_cv : public imagenet_reader_cv {
   imagenet_reader_single_cv(const std::shared_ptr<cv_process>& pp, bool shuffle = true);
   imagenet_reader_single_cv(const imagenet_reader_single_cv& source);
   imagenet_reader_single_cv& operator=(const imagenet_reader_single_cv& source);
-  ~imagenet_reader_single_cv();
+  ~imagenet_reader_single_cv() override;
 
-  imagenet_reader_single_cv* copy() const { return new imagenet_reader_single_cv(*this); }
+  imagenet_reader_single_cv* copy() const override { return new imagenet_reader_single_cv(*this); }
 
-  virtual void load();
+  void load() override;
 
  protected:
-  virtual bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
-  virtual bool fetch_datum(std::vector<Mat>& X, int data_id, int mb_idx, int tid);
-  virtual bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid);
+  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_datum(std::vector<Mat>& X, int data_id, int mb_idx, int tid)  override;
+  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid)  override;
 
  private:
   std::vector<std::ifstream*> m_data_filestream;

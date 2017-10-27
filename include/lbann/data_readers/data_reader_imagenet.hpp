@@ -38,47 +38,47 @@ class imagenet_reader : public generic_data_reader {
   imagenet_reader(bool shuffle = true);
   imagenet_reader(const imagenet_reader&) = default;
   imagenet_reader& operator=(const imagenet_reader&) = default;
-  ~imagenet_reader() {}
+  ~imagenet_reader() override {}
 
-  imagenet_reader* copy() const { return new imagenet_reader(*this); }
+  imagenet_reader* copy() const override { return new imagenet_reader(*this); }
 
   /// Set up imagenet specific input parameters
-  void set_input_params(const int width=256, const int height=256, const int num_ch=3, const int num_labels=1000);
+  virtual void set_input_params(const int width=256, const int height=256, const int num_ch=3, const int num_labels=1000);
 
   // ImageNet specific functions
-  virtual void load();
+  void load() override;
 
-  int get_num_labels() const {
+  int get_num_labels() const override {
     return m_num_labels;
   }
 
-  int get_image_width() const {
+  virtual int get_image_width() const {
     return m_image_width;
   }
-  int get_image_height() const {
+  virtual int get_image_height() const {
     return m_image_height;
   }
-  int get_image_num_channels() const {
+  virtual int get_image_num_channels() const {
     return m_image_num_channels;
   }
-  int get_linearized_data_size() const {
+  int get_linearized_data_size() const override {
     return m_image_width * m_image_height * m_image_num_channels;
   }
-  int get_linearized_label_size() const {
+  int get_linearized_label_size() const override {
     return m_num_labels;
   }
-  const std::vector<int> get_data_dims() const {
+  const std::vector<int> get_data_dims() const override {
     return {m_image_num_channels, m_image_height, m_image_width};
   }
 
-  void save_image(Mat& pixels, const std::string filename, bool do_scale = true) {
+  virtual void save_image(Mat& pixels, const std::string filename, bool do_scale = true) override {
     internal_save_image(pixels, filename, m_image_height, m_image_width,
                         m_image_num_channels, do_scale);
   }
 
  protected:
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
-  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid);
+  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;
 
  protected:
   std::string m_image_dir; // where images are stored

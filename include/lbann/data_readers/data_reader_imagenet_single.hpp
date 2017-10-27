@@ -37,15 +37,15 @@ class imagenet_readerSingle : public imagenet_reader {
  public:
   imagenet_readerSingle(bool shuffle = true);
   imagenet_readerSingle(const imagenet_readerSingle& source);
-  ~imagenet_readerSingle();
+  ~imagenet_readerSingle() override;
 
   imagenet_readerSingle& operator=(const imagenet_readerSingle& source);
 
-  void load();
+  void load() override;
 
  protected:
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
-  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid);
+  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;
 
  private:
   std::ifstream m_data_filestream;

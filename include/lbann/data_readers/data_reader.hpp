@@ -266,6 +266,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * Save pixels to an image. The implementing data reader is responsible for
    * handling format detection, conversion, etc.
    */
+  // TODO: This function needs to go away from here
   virtual void save_image(Mat& pixels, const std::string filename,
                           bool do_scale = true) {
     NOT_IMPLEMENTED("save_image");

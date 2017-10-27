@@ -40,51 +40,51 @@ class imagenet_reader_cv : public generic_data_reader {
   imagenet_reader_cv(const std::shared_ptr<cv_process>& pp, bool shuffle = true);
   imagenet_reader_cv(const imagenet_reader_cv&);
   imagenet_reader_cv& operator=(const imagenet_reader_cv&);
-  ~imagenet_reader_cv();
+  ~imagenet_reader_cv() override;
 
-  imagenet_reader_cv* copy() const { return new imagenet_reader_cv(*this); }
+  imagenet_reader_cv* copy() const override { return new imagenet_reader_cv(*this); }
 
   /// Set up imagenet specific input parameters
-  void set_input_params(const int width=256, const int height=256, const int num_ch=3, const int num_labels=1000);
+  virtual void set_input_params(const int width=256, const int height=256, const int num_ch=3, const int num_labels=1000);
 
   // ImageNet specific functions
-  virtual void load();
+  void load() override;
 
   using generic_data_reader::fetch_data;
   virtual int fetch_data(std::vector<Mat>& X); ///< to feed multiple layer stacks per sample
 
-  int get_num_labels() const {
+  int get_num_labels() const override {
     return m_num_labels;
   }
-  int get_image_width() const {
+  virtual int get_image_width() const {
     return m_image_width;
   }
-  int get_image_height() const {
+  virtual int get_image_height() const {
     return m_image_height;
   }
-  int get_image_num_channels() const {
+  virtual int get_image_num_channels() const {
     return m_image_num_channels;
   }
-  int get_linearized_data_size() const {
+  int get_linearized_data_size() const override {
     return m_image_width * m_image_height * m_image_num_channels;
   }
-  int get_linearized_label_size() const {
+  int get_linearized_label_size() const override {
     return m_num_labels;
   }
-  const std::vector<int> get_data_dims() const {
+  const std::vector<int> get_data_dims() const override {
     return {m_image_num_channels, m_image_height, m_image_width};
   }
 
-  void save_image(Mat& pixels, const std::string filename, bool do_scale = true) {
+  virtual void save_image(Mat& pixels, const std::string filename, bool do_scale = true) override {
     internal_save_image(pixels, filename, m_image_height, m_image_width,
                         m_image_num_channels, do_scale);
   }
 
  protected:
   virtual bool replicate_preprocessor(const std::shared_ptr<cv_process>& pp);
-  virtual bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
+  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
   virtual bool fetch_datum(std::vector<Mat>& X, int data_id, int mb_idx, int tid);
-  virtual bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid);
+  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;
 
  protected:
   std::string m_image_dir; ///< where images are stored
