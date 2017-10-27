@@ -174,7 +174,9 @@ std::ostream& cv_cropper::print(std::ostream& os) const {
      << " - m_width: " << m_width << std::endl
      << " - m_height: " << m_height << std::endl
      << " - m_roi_size: " << m_roi_size.first << " " << m_roi_size.second << std::endl
-     << " - m_zoom: " << m_zoom << std::endl;
+     << " - m_zoom: " << m_zoom << std::endl
+     << " - m_rand_crop: " << m_rand_crop << std::endl
+     << " - m_interpolation: " << m_interpolation << std::endl;
   return os;
 }
 
