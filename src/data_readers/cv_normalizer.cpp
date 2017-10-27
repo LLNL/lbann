@@ -317,13 +317,19 @@ bool cv_normalizer::compute_mean_stddev(const cv::Mat& image,
   return false;
 }
 
+std::string cv_normalizer::get_description() const {
+  std::stringstream os;
+  os << get_type() + ":" << std::endl
+     << " - mean subtraction: " << (m_mean_subtraction? "true" : "false") << std::endl
+     << " - unit variance: " << (m_unit_variance? "true" : "false") << std::endl
+     << " - unit scale: " << (m_unit_scale? "true" : "false") << std::endl
+     << " - z-score: " << (m_z_score? "true" : "false") << std::endl;
+  return os.str();
+}
+
 std::ostream& cv_normalizer::print(std::ostream& os) const {
-  os << "cv_normalizer:" << std::endl
-     << " - m_mean_subtraction: " << (m_mean_subtraction? "true" : "false") << std::endl
-     << " - m_unit_variance: " << (m_unit_variance? "true" : "false") << std::endl
-     << " - m_unit_scale: " << (m_unit_scale? "true" : "false") << std::endl
-     << " - m_z_score: " << (m_z_score? "true" : "false") << std::endl;
-  os << " - transform:";
+  os << get_description()
+     << " - transform:";
   for (const channel_trans_t& tr: m_trans) {
     os << " [" << tr.first << ' ' << tr.second << "]\n             ";
   }

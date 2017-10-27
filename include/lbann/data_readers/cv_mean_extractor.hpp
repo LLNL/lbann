@@ -83,37 +83,25 @@ class cv_mean_extractor : public cv_transform {
   cv_mean_extractor();
   cv_mean_extractor(const cv_mean_extractor& rhs);
   cv_mean_extractor& operator=(const cv_mean_extractor& rhs);
-  virtual cv_mean_extractor *clone() const;
+  cv_mean_extractor *clone() const override;
 
-  virtual ~cv_mean_extractor() {}
+  ~cv_mean_extractor() override {}
 
   void set(const unsigned int width, const unsigned int height, const unsigned int n_ch,
            const unsigned int batch_sz = cv_mean_extractor::m_default_batch_size);
-
   void set(const unsigned int batch_sz);
+  void reset() override;
 
-  virtual bool determine_transform(const cv::Mat& image);
-
-  virtual bool determine_inverse_transform();
-
-  virtual bool apply(cv::Mat& image);
-
-  virtual void reset();
+  bool determine_transform(const cv::Mat& image) override;
+  bool determine_inverse_transform() override;
+  bool apply(cv::Mat& image) override;
 
   template<typename Channel_T = uint8_t>
   cv::Mat extract() const;
- 
-  virtual void enable() {
-    m_enabled = true;
-  }
-  virtual void disable() {
-    m_enabled = false;
-  }
-  virtual bool is_enabled() const {
-    return m_enabled;
-  }
 
-  virtual std::ostream& print(std::ostream& os) const;
+  std::string get_type() const override { return "mean extractor"; }
+  std::string get_description() const override;
+  std::ostream& print(std::ostream& os) const override;
 };
 
 /**

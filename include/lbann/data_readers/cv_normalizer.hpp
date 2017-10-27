@@ -86,32 +86,32 @@ class cv_normalizer : public cv_transform {
 
 
   /// Set a normalization bit flag
-  virtual normalization_type set_normalization_bits(const normalization_type ntype, const normalization_type flag) const {
+  normalization_type set_normalization_bits(const normalization_type ntype, const normalization_type flag) const {
     return static_cast<normalization_type>(static_cast<uint32_t>(ntype) | static_cast<uint32_t>(flag));
   }
 
   /// Mask normalization bits
-  virtual normalization_type mask_normalization_bits(const normalization_type ntype, const normalization_type flag) const {
+  normalization_type mask_normalization_bits(const normalization_type ntype, const normalization_type flag) const {
     return static_cast<normalization_type>(static_cast<uint32_t>(ntype) & static_cast<uint32_t>(flag));
   }
 
   /// Enable a particular normalization method
-  virtual normalization_type& set_normalization_type(normalization_type& ntype, const normalization_type flag) const;
+  normalization_type& set_normalization_type(normalization_type& ntype, const normalization_type flag) const;
 
   /// Check if there is a reason to enable. (i.e., any option set)
-  virtual bool check_to_enable() const;
+  bool check_to_enable() const override;
 
  public:
 
   cv_normalizer();
   cv_normalizer(const cv_normalizer& rhs);
   cv_normalizer& operator=(const cv_normalizer& rhs);
-  virtual cv_normalizer *clone() const;
+  cv_normalizer *clone() const override;
 
-  virtual ~cv_normalizer() {}
+  ~cv_normalizer() override {}
 
   /// Set the parameters all at once
-  virtual void set(const bool meansub, const bool unitvar, const bool unitscale, const bool zscore);
+  void set(const bool meansub, const bool unitvar, const bool unitscale, const bool zscore);
 
   /// Whether to subtract the per-channel and per-sample mean.
   void subtract_mean(bool b) {
@@ -130,8 +130,11 @@ class cv_normalizer : public cv_transform {
     m_z_score = b;
   }
 
+  /// Set a pre-determined normalization transform.
+  void set_transform(const std::vector<channel_trans_t>& t);
+
   /// Clear the states of the previous transform applied
-  virtual void reset();
+  void reset() override;
 
   /// Returns the channel-wise scaling parameter for normalization transform
   std::vector<channel_trans_t> transform() const {
@@ -144,24 +147,22 @@ class cv_normalizer : public cv_transform {
    * If not, it is disabled.
    * @return false if not enabled or unsuccessful.
    */
-  virtual bool determine_transform(const cv::Mat& image);
+  bool determine_transform(const cv::Mat& image) override;
 
-  /**
-   * Apply the normalization defined as a linear tranform per pixel.
-   * As this method is executed, the transform becomes deactivated.
-   * @return false if not successful.
-   */
-  virtual bool apply(cv::Mat& image);
-
-  /// Set a pre-determined normalization transform.
-  void set_transform(const std::vector<channel_trans_t>& t);
   /**
    * Reverse the normalization done as x' = alpha*x + beta by
    * x = (x'- beta)/alpha
    * If successful, the tranform is enabled. If not, it is disabled.
    * @return false if not enabled or unsuccessful.
    */
-  bool determine_inverse_transform();
+  bool determine_inverse_transform() override;
+
+  /**
+   * Apply the normalization defined as a linear tranform per pixel.
+   * As this method is executed, the transform becomes deactivated.
+   * @return false if not successful.
+   */
+  bool apply(cv::Mat& image) override;
 
   // utilities
   template<class InputIterator, class OutputIterator>
@@ -188,7 +189,9 @@ class cv_normalizer : public cv_transform {
                                   std::vector<ComputeType>& mean, std::vector<ComputeType>& stddev,
                                   cv::InputArray mask=cv::noArray());
 
-  virtual std::ostream& print(std::ostream& os) const;
+  std::string get_type() const override { return "normalizer"; }
+  std::string get_description() const override;
+  std::ostream& print(std::ostream& os) const override;
 };
 
 

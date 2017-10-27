@@ -78,14 +78,15 @@ bool cv_colorizer::apply(cv::Mat& image) {
   return true;
 }
 
-std::ostream& cv_colorizer::print(std::ostream& os) const {
-  os << "cv_colorizer:" << std::endl
-     << " - " << (m_gray? "grayscale" : "color") << std::endl;
-  return os;
+std::string cv_colorizer::get_description() const {
+  std::stringstream os;
+  os << get_type() + ":" << std::endl;
+  return os.str();
 }
 
-std::ostream& operator<<(std::ostream& os, const cv_colorizer& tr) {
-  tr.print(os);
+std::ostream& cv_colorizer::print(std::ostream& os) const {
+  os << get_description()
+     << " - " << (m_gray? "grayscale" : "color") << std::endl;
   return os;
 }
 

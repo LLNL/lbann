@@ -154,11 +154,17 @@ bool cv_mean_extractor::apply(cv::Mat& image) {
   return true;
 }
 
+std::string cv_mean_extractor::get_description() const {
+  std::stringstream os;
+  os << get_type() + ":" << std::endl
+     << " - batch size " << m_batch_size << std::endl;
+  return os.str();
+}
+
 std::ostream& cv_mean_extractor::print(std::ostream& os) const {
-  os << "cv_mean_extractor:" << std::endl;
-  os << " - m_partial_cnt " << m_partial_cnt << std::endl;
-  os << " - m_batch_cnt " << m_batch_cnt << std::endl;
-  os << " - m_batch_size " << m_batch_size << std::endl;
+  os << get_description()
+     << " - partial cnt " << m_partial_cnt << std::endl
+     << " - batch cnt " << m_batch_cnt << std::endl;
   return os;
 }
 

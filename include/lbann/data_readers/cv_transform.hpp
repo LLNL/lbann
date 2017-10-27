@@ -40,6 +40,8 @@ class cv_transform {
   // --- configuration variables ---
   // place for the variables to keep the configuration set during initialization
 
+  std::string m_name;
+
   // --- state variables ---
   /// per-image indicator of whether to apply transform or not
   bool m_enabled;
@@ -70,36 +72,47 @@ class cv_transform {
 
   virtual ~cv_transform() {}
 
-  virtual bool determine_transform(const cv::Mat& image);
-  virtual bool determine_inverse_transform();
-  virtual bool apply(cv::Mat& image) = 0;
-
   // define a method to configure the transform
-  //virtual void set(args) { reset(); ... }
+  // void set(args) { reset(); ... }
   /// Reset the transform state but do not alter the configuration variables
   virtual void reset() {
     m_enabled = false;
     // e.g., m_trans.clear();
   }
 
+  virtual bool determine_transform(const cv::Mat& image);
+  virtual bool determine_inverse_transform();
+  virtual bool apply(cv::Mat& image) = 0;
+
   /// Turn transform on
-  virtual void enable() {
+  void enable() {
     m_enabled = true;
   }
   /// Turn transform off
-  virtual void disable() {
+  void disable() {
     m_enabled = false;
   }
   /// Check if transform is on
-  virtual bool is_enabled() const {
+  bool is_enabled() const {
     return m_enabled;
   }
 
   //bool toggle_manual_switch() { return (m_manual_switch = !m_manual_switch); }
 
-  virtual std::ostream& print(std::ostream& os) const {
-    return os;
-  }
+  // administrative methods
+  /** Return this transform's type, e.g: "augmenter," "normalizer," etc. */
+  virtual std::string get_type() const = 0;
+
+  /// Returns this transform's name
+  std::string get_name() const { return m_name; }
+
+  /** Sets this transform's name; this is an arbitrary string, e.g, assigned in a prototext file. */
+  void set_name(std::string name) { m_name = name; }
+  
+  /** Returns a description of the parameters passed to the ctor */
+  virtual std::string get_description() const;
+
+  virtual std::ostream& print(std::ostream& os) const;
 };
 
 /// Default constructor
@@ -182,6 +195,18 @@ inline bool cv_transform::apply(cv::Mat& image) {
 /// Return the pointer of a newly copy-constructed object
 inline cv_transform *cv_transform::clone() const {
   return static_cast<cv_transform *>(NULL);
+}
+
+//inline std::string cv_transform::get_type() { return "image transform"; }
+
+inline std::string cv_transform::get_description() const { 
+  return std::string {} + get_type();
+}
+
+inline std::ostream& cv_transform::print(std::ostream& os) const {
+  os << get_description(); // Print out configuration variables
+  // Additionally, print out state variables as well
+  return os;
 }
 
 std::ostream& operator<<(std::ostream& os, const cv_transform& tr);

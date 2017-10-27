@@ -138,6 +138,9 @@ class cv_process {
 
   bool preprocess(cv::Mat& image);
   bool postprocess(cv::Mat& image);
+
+  virtual std::string get_type() const { return "image processor"; }
+  virtual std::string get_description() const;
 };
 
 } // end of namespace lbann
