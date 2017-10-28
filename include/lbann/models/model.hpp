@@ -67,7 +67,7 @@ class model {
   virtual void setup() {}
 
   /** Add layer to model. */
-  virtual int add(Layer *new_layer);
+  virtual void add(Layer *layer);
 
   /** Register a new callback for the model. */
   virtual void add_callback(lbann_callback *cb);
@@ -88,6 +88,11 @@ class model {
     return m_layers;
   }
 
+  /** Link two layers in model.
+   *  If the layers are optimizable, they will share weights.
+   */
+  virtual void link_layers(Layer *layer1, Layer *layer2);
+  
   /** Get the model's comm. */
   inline lbann_comm *get_comm() const {
     return m_comm;
@@ -286,6 +291,11 @@ class model {
    *  The list is in execution order for forward propagation.
    */
   std::vector<Layer *> m_layers;
+
+  /** Map from master layers to their layer group. */
+  std::unordered_map<Layer *,std::vector<Layer *>> m_layer_groups;
+  /** Map from layers to their layer group's master. */
+  std::unordered_map<Layer *,Layer *> m_layer_group_masters;
 
   // Methods for calling every callback at different points.
   void setup_callbacks();

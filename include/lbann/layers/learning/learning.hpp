@@ -197,7 +197,6 @@ class learning : public Layer, public optimizable_layer {
       delete workspace;
     }
   }
-    
 
  public:
   learning(lbann_comm *comm,
@@ -237,9 +236,13 @@ class learning : public Layer, public optimizable_layer {
   }
 
   /** Return the weights associated with this layer. */
-  virtual AbsDistMat& get_weights() const { return *m_weights; }
+  virtual AbsDistMat& get_weights() { return *m_weights; }
+  /** Return the weights associated with this layer (const). */
+  virtual const AbsDistMat& get_weights() const { return *m_weights; }
   /** Return the gradients associated with this layer. */
-  virtual AbsDistMat& get_weights_gradient() const { return *m_weights_gradient; }
+  virtual AbsDistMat& get_weights_gradient() { return *m_weights_gradient; }
+  /** Return the gradients associated with this layer (const). */
+  virtual const AbsDistMat& get_weights_gradient() const { return *m_weights_gradient; }
 
   /// Following function tells this layer has weights
   bool is_learning_layer() override { return true; }
@@ -310,9 +313,19 @@ class learning : public Layer, public optimizable_layer {
     }
   }
 
-  /** Return the layer's optimizer. */
-  optimizer *get_optimizer() const override {
+  /** Get optimizer for layer parameters. */
+  optimizer *get_optimizer() override {
     return m_optimizer;
+  }
+  /** Get layer parameters. */
+  AbsDistMat& get_parameters() override {
+    return get_weights();
+  }
+  /** Get objective function gradient.
+   *  With respect to layer parameters.
+   */
+  virtual AbsDistMat& get_parameters_gradient() override {
+    return get_weights_gradient();
   }
 
   /** Set the layer's L2 regularization factor (0 to disable). */

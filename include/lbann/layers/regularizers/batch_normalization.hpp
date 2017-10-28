@@ -1041,6 +1041,17 @@ class batch_normalization : public learning_regularizer {
     return true;
   }
 
+  /** Get layer parameters. */
+  AbsDistMat& get_parameters() override {
+    return *m_parameters;
+  }
+  /** Get objective function gradient.
+   *  With respect to layer parameters.
+   */
+  AbsDistMat& get_parameters_gradient() override {
+    return *m_parameters_gradient;
+  }
+
 };
 
 } // namespace lbann

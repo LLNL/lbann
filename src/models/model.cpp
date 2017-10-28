@@ -83,7 +83,7 @@ model::model(const model& other) :
 
   // Deep copies
   for (const auto& metric : other.m_metrics) {
-    metrics::metric* m_copy = metric->copy();
+    metrics::metric *m_copy = metric->copy();
     m_copy->m_neural_network_model = this;
     m_metrics.push_back(m_copy);
   }
@@ -91,38 +91,71 @@ model::model(const model& other) :
   for (const auto& cb : other.m_callbacks) {
     m_callbacks.push_back(cb->copy());
   }
-  std::unordered_map<const Layer*,const Layer*> old_to_new_layer;
-  for (const Layer* old_layer : other.m_layers) {
-    Layer* new_layer = old_layer->copy();
+  std::unordered_map<Layer *,Layer *> old_to_new_layer;
+  for (Layer *old_layer : other.m_layers) {
+    Layer *new_layer = old_layer->copy();
     old_to_new_layer[old_layer] = new_layer;
     m_layers.push_back(new_layer);
   }
 
+  // Fix layer groups
+  for (auto& old_master_and_group : other.m_layer_groups) {
+    Layer *old_master = old_master_and_group.first;
+    std::vector<Layer *> old_group = old_master_and_group.second;
+    Layer *new_master = old_to_new_layer[old_master];
+    std::vector<Layer *> new_group;
+    for (Layer *old_layer : old_group) {
+      Layer *new_layer = old_to_new_layer[old_layer];
+      new_group.push_back(new_layer);
+      m_layer_group_masters[new_layer] = new_master;
+    }
+    m_layer_groups[new_master] = new_group;
+  }
+
   // Fix layer pointers
-  for (Layer* layer : m_layers) {
-    for (const Layer*& parent : layer->get_parent_layers()) {
-      const Layer* new_parent = old_to_new_layer[parent];
+  for (Layer *layer : m_layers) {
+    for (const Layer *&parent : layer->get_parent_layers()) {
+      Layer *new_parent = old_to_new_layer[const_cast<Layer *>(parent)];
       if (new_parent != nullptr) {
-        parent = new_parent;
+        parent = (const Layer *) new_parent;
       }
     }
     for (const Layer*& child : layer->get_child_layers()) {
-      const Layer* new_child = old_to_new_layer[child];
+      Layer *new_child = old_to_new_layer[const_cast<Layer *>(child)];
       if (new_child != nullptr) {
-        child = new_child;
+        child = (const Layer *) new_child;
       }
     }
     target_layer *target = dynamic_cast<target_layer*>(layer);
     if (target != nullptr) {
-      const Layer *old_input = target->get_paired_input_layer();
-      const input_layer *input = dynamic_cast<const input_layer*>(old_to_new_layer[old_input]);
-      target->set_paired_input_layer(const_cast<input_layer*>(input));
+      Layer *old_input = target->get_paired_input_layer();
+      input_layer *input = dynamic_cast<input_layer*>(old_to_new_layer[old_input]);
+      target->set_paired_input_layer(input);
     }
   }
 
 }
 
 model& model::operator=(const model& other) {
+
+  // Delete objects
+  if (m_obj_fn) {
+    delete m_obj_fn;
+  }
+  for (metrics::metric *metric : m_metrics) {
+    delete metric;
+  }
+  for (lbann_callback *callback : m_callbacks) {
+    delete callback;
+  }
+  for (Layer *layer : m_layers) {
+    delete layer;
+  }
+  m_metrics.clear();
+  m_callbacks.clear();
+  m_layers.clear();
+  m_layer_groups.clear();
+  m_layer_group_masters.clear();
 
   // Shallow copies
   m_execution_mode = other.m_execution_mode;
@@ -144,8 +177,11 @@ model& model::operator=(const model& other) {
   m_optimizer_fac = other.m_optimizer_fac;
 
   // Deep copies
+  for (metrics::metric *m : m_metrics) {
+    delete m;
+  }
   for (const auto& metric : other.m_metrics) {
-    metrics::metric* m_copy = metric->copy();
+    metrics::metric *m_copy = metric->copy();
     m_copy->m_neural_network_model = this;
     m_metrics.push_back(m_copy);
   }
@@ -153,32 +189,46 @@ model& model::operator=(const model& other) {
   for (const auto& cb : other.m_callbacks) {
     m_callbacks.push_back(cb->copy());
   }
-  std::unordered_map<const Layer*,const Layer*> old_to_new_layer;
-  for (const Layer* old_layer : other.m_layers) {
+  std::unordered_map<Layer *,Layer *> old_to_new_layer;
+  for (Layer* old_layer : other.m_layers) {
     Layer* new_layer = old_layer->copy();
     old_to_new_layer[old_layer] = new_layer;
     m_layers.push_back(new_layer);
   }
 
+  // Fix layer groups
+  for (auto& old_master_and_group : other.m_layer_groups) {
+    Layer *old_master = old_master_and_group.first;
+    std::vector<Layer *> old_group = old_master_and_group.second;
+    Layer *new_master = old_to_new_layer[old_master];
+    std::vector<Layer *> new_group;
+    for (Layer *old_layer : old_group) {
+      Layer *new_layer = old_to_new_layer[old_layer];
+      new_group.push_back(new_layer);
+      m_layer_group_masters[new_layer] = new_master;
+    }
+    m_layer_groups[new_master] = new_group;
+  }
+
   // Fix layer pointers
-  for (Layer* layer : m_layers) {
-    for (const Layer*& parent : layer->get_parent_layers()) {
-      const Layer* new_parent = old_to_new_layer[parent];
+  for (Layer *layer : m_layers) {
+    for (const Layer *&parent : layer->get_parent_layers()) {
+      Layer *new_parent = old_to_new_layer[const_cast<Layer *>(parent)];
       if (new_parent != nullptr) {
-        parent = new_parent;
+        parent = (const Layer *) new_parent;
       }
     }
     for (const Layer*& child : layer->get_child_layers()) {
-      const Layer* new_child = old_to_new_layer[child];
+      Layer *new_child = old_to_new_layer[const_cast<Layer *>(child)];
       if (new_child != nullptr) {
-        child = new_child;
+        child = (const Layer *) new_child;
       }
     }
     target_layer *target = dynamic_cast<target_layer*>(layer);
     if (target != nullptr) {
-      const Layer *old_input = target->get_paired_input_layer();
-      const input_layer *input = dynamic_cast<const input_layer*>(old_to_new_layer[old_input]);
-      target->set_paired_input_layer(const_cast<input_layer*>(input));
+      Layer *old_input = target->get_paired_input_layer();
+      input_layer *input = dynamic_cast<input_layer*>(old_to_new_layer[old_input]);
+      target->set_paired_input_layer(input);
     }
   }
 
@@ -186,12 +236,14 @@ model& model::operator=(const model& other) {
 }
 
 model::~model() {
-  if (m_obj_fn) delete m_obj_fn;
-  for (metrics::metric *m : get_metrics()) {
-    delete m;
+  if (m_obj_fn) {
+    delete m_obj_fn;
   }
-  for (lbann_callback *c : m_callbacks) {
-    delete c;
+  for (metrics::metric *metric : m_metrics) {
+    delete metric;
+  }
+  for (lbann_callback *callback : m_callbacks) {
+    delete callback;
   }
   for (Layer *layer : m_layers) {
     delete layer;
@@ -202,12 +254,18 @@ model::~model() {
 // Initialization
 ////////////////////////////////////////////////////////////
 
-int model::add(Layer *layer) {
+void model::add(Layer *layer) {
   if (layer == nullptr) {
     throw lbann_exception("model: Attempted to add null pointer as a layer.");
   }
+
+  // Add layer
   m_layers.push_back(layer);
-  return m_layers.size() - 1;
+
+  // Add layer group
+  m_layer_groups[layer] = std::vector<Layer*>(1, layer);
+  m_layer_group_masters[layer] = layer;
+
 }
 
 void model::add_callback(lbann_callback *cb) {
@@ -225,10 +283,45 @@ void model::add_metric(metrics::metric *m) {
 }
 
 void model::set_layers(std::vector<Layer*>& layers) {
+
+  // Delete old layers
   for (Layer *layer : m_layers) {
     delete layer;
   }
-  m_layers = layers;
+  m_layers.clear();
+  m_layer_groups.clear();
+  m_layer_group_masters.clear();
+
+  // Add new layers
+  for (Layer* layer : layers) {
+    add(layer);
+  }
+
+}
+
+void model::link_layers(Layer *layer1, Layer *layer2) {
+
+  // Check that layers are valid and are in different groups
+  Layer *master1 = m_layer_group_masters[layer1];
+  Layer *master2 = m_layer_group_masters[layer2];
+  if (master1 == nullptr
+      || master2 == nullptr
+      || typeid(*layer1).hash_code() != typeid(*layer2).hash_code()) {
+    throw lbann_exception("model: Attempted to link invalid layers");
+  }
+  if (master1 == master2) {
+    return;
+  }
+
+  // Move layers from layer2's group to layer1's
+  std::vector<Layer *>& group1 = m_layer_groups[master1];
+  std::vector<Layer *>& group2 = m_layer_groups[master2];
+  for (auto& layer : group2) {
+    m_layer_group_masters[layer] = master1;
+  }
+  group1.insert(group1.end(), group2.begin(), group2.end());
+  m_layer_groups.erase(master2);
+
 }
 
 ////////////////////////////////////////////////////////////
@@ -257,9 +350,6 @@ void model::evaluate(execution_mode mode) {
 
   // Start evaluation
   switch(mode) {
-  case execution_mode::training:
-    do_train_begin_cbs();
-    break;
   case execution_mode::validation:
     do_validation_begin_cbs();
     break;
@@ -275,9 +365,6 @@ void model::evaluate(execution_mode mode) {
 
   // Finish evaluation
   switch(mode) {
-  case execution_mode::training:
-    do_train_end_cbs();
-    break;
   case execution_mode::validation:
     do_validation_end_cbs();
     break;
@@ -331,7 +418,7 @@ bool model::evaluate_mini_batch() {
 
   // Forward propagation
   do_model_evaluate_forward_prop_begin_cbs();
-  for (Layer* layer : m_layers) {
+  for (Layer *layer : m_layers) {
     do_layer_evaluate_forward_prop_begin_cbs(layer);
     layer->forward_prop();
     do_layer_evaluate_forward_prop_end_cbs(layer);
@@ -341,13 +428,18 @@ bool model::evaluate_mini_batch() {
   // Record and reset objective function value
   m_obj_fn->record_and_reset_value();
 
-  // Update layers
-  // Note: should only affect the input and target layers
+  // Update target and input layers
   bool finished = true;
-  for (int l = m_layers.size() - 1; l >= 0; --l) {
-    const bool layer_finished = m_layers[l]->update();
-    if (dynamic_cast<input_layer *>(m_layers[l]) != nullptr) {
-      finished = finished && layer_finished;
+  for (Layer* layer : m_layers) {
+    target_layer *target = dynamic_cast<target_layer *>(layer);
+    if (target != nullptr) {
+      target->update();
+    }
+  }
+  for (Layer* layer : m_layers) {
+    input_layer *input = dynamic_cast<input_layer *>(layer);
+    if (input != nullptr) {
+      finished = input->update() && finished;
     }
   }
 
@@ -372,7 +464,7 @@ bool model::train_mini_batch() {
 
   // Forward propagation
   do_model_forward_prop_begin_cbs();
-  for (Layer* layer : m_layers) {
+  for (Layer *layer : m_layers) {
     do_layer_forward_prop_begin_cbs(layer);
     layer->forward_prop();
     do_layer_forward_prop_end_cbs(layer);
@@ -385,19 +477,61 @@ bool model::train_mini_batch() {
   // Backward propagation
   do_model_backward_prop_begin_cbs();
   for (int l = m_layers.size() - 1; l >= 0; --l) {
-    Layer* layer = m_layers[l];
+    Layer *layer = m_layers[l];
     do_layer_backward_prop_begin_cbs(layer);
     layer->back_prop();
     do_layer_backward_prop_end_cbs(layer);
   }
   do_model_backward_prop_end_cbs();
 
-  // Update layers
+  // Update optimizable layers
+  // Note: We iterate through layer groups that are comprised of
+  // optimizable layers.
+  for (Layer* master_layer : m_layers) {
+    if (master_layer != m_layer_group_masters[master_layer]
+        || dynamic_cast<optimizable_layer *>(master_layer) == nullptr) {
+      continue;
+    }
+    optimizable_layer *master_opt_layer = (optimizable_layer *) master_layer;
+    std::vector<Layer *> group = m_layer_groups[master_layer];
+
+    // Accumulate gradients in master layer
+    for (Layer *layer : group) {
+      if (layer != master_layer) {
+        optimizable_layer *opt_layer = (optimizable_layer *) layer;
+        const AbsDistMat& gradient = opt_layer->get_parameters_gradient();
+        master_opt_layer->add_to_parameters_gradient(gradient);
+        opt_layer->clear_parameters_gradient();
+      }
+    }
+
+    // Update parameters in master layer
+    master_layer->update();
+    master_opt_layer->clear_parameters_gradient();
+
+    // Update non-master layers with master layer's parameters
+    const AbsDistMat& parameters = master_opt_layer->get_parameters();
+    for (Layer *layer : group) {
+      if (layer != master_layer) {
+        optimizable_layer *opt_layer = (optimizable_layer *) layer;
+        opt_layer->set_parameters(parameters);
+      }
+    }
+
+  }
+
+  // Update target and input layers
   bool finished = true;
-  for (int l = m_layers.size() - 1; l >= 0; --l) {
-    const bool layer_finished = m_layers[l]->update();
-    if (dynamic_cast<input_layer *>(m_layers[l]) != nullptr) {
-      finished = finished && layer_finished;
+  for (Layer* layer : m_layers) {
+    target_layer *target = dynamic_cast<target_layer *>(layer);
+    if (target != nullptr) {
+      target->update();
+    }
+  }
+  for (Layer* layer : m_layers) {
+    input_layer *input = dynamic_cast<input_layer *>(layer);
+    if (input != nullptr) {
+      finished = input->update() && finished;
     }
   }
 
@@ -608,13 +742,13 @@ void model::do_layer_evaluate_forward_prop_end_cbs(Layer *l) {
 ////////////////////////////////////////////////////////////
 
 void model::summarize_stats(lbann_summary& summarizer) {
-  for (Layer* layer : m_layers) {
+  for (Layer *layer : m_layers) {
     layer->summarize_stats(summarizer, get_cur_step());
   }
 }
 
 void model::summarize_matrices(lbann_summary& summarizer) {
-  for (Layer* layer : m_layers) {
+  for (Layer *layer : m_layers) {
     layer->summarize_matrices(summarizer, get_cur_step());
   }
 }
