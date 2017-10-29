@@ -32,9 +32,6 @@
 #include "lbann/models/model.hpp"
 #include "lbann/layers/layer.hpp"
 #include "lbann/layers/learning/learning.hpp"
-#include "lbann/layers/activations/activation.hpp"
-#include "lbann/data_readers/data_reader.hpp"
-#include "lbann/io/persist.hpp"
 #include <vector>
 #include <string>
 
@@ -50,98 +47,46 @@ class planar_model : public model {
                    optimizer_factory *optimizer_fac);
 /**
   planar_model(const planar_model& other);
-  planar_model& operator=(const planar_model& other); */
+  planar_model& operator=(const planar_model& other); 
+*/
 
   /// Destructor
   ~planar_model();
 
-  /**
-   * Following functions are removed from the original model_sequential.hpp
-   * They are old anyways, and I don't see any reason to include these defunct 
-   * functions. */
-  /// Save model to file
-  /** @todo This is old and likely broken */
-  //bool save_to_file(const std::string file_dir);
-  /// Load model from file
-  /** @todo This is old and likely broken */
-  //bool load_from_file(const std::string file_dir);
-
-  /// Save model to checkpoint
-  /** @todo This is old and likely broken */
-  //bool save_to_checkpoint(int fd, const char *filename, size_t *bytes);
-  /// Load model from checkpoint
-  /** @todo This is old and likely broken */
-  //bool load_from_checkpoint(int fd, const char *filename, size_t *bytes);
-
-  //bool save_to_checkpoint_shared(persist& p);
-  //bool load_from_checkpoint_shared(persist& p);
-
-  /// Get list of layers
-/*
-  virtual std::vector<std::vector<Layer*> >& get_layers() {
-    return m_layers;
-  }
-
-  /// Set layers
-  virtual void set_layers(std::vector<std::vector<Layer*> >& layers) {
-    m_layers = layers;
-  }
-*/
-
- 
   /** Following functions are used to add a set of layers at given horizontal level
    *  on a planar space. The layers are added either by duplicating a single layer
    *  or placing individual layers. */
-  //virtual int stackup_duplicate(int horizontal_index, int num_heads, Layer *new_layer);
-  //virtual int stackup(int horizontal_index, int vertical_index, Layer *new_layer);
   virtual int stackup_tail(int hindex, Layer *new_layer);
   virtual int stackup_duplicate(Layer *new_layer);
-
-  /**
-   * Following functions are removed from the original model_sequential 
-   * because they are not critical. Rather focus on core functions. */
-  /** @todo This will mess up layer indices */
-  //virtual void remove(int index);
-
-  /// Insert layer in planar model
-  /** @todo This will mess up layer indices.
-   *  @todo Consider removing this function. The destructor
-   *  deallocates all layers, so we might run into problems if a
-   *  layer is deallocated externally. */
-  //virtual void insert(int index, Layer *new_layer);
-
-  /// Replace layer in planar model
-  //virtual Layer *swap(int index, Layer *new_layer);
 
   /// Setup planar model
   virtual void setup() override;
   virtual void setup_subset(int start_index, int end_index);
 
   /// Train model
-  /** @param num_epochs Number of epochs to train
-   *  @param evaluation_frequency How often to evaluate model on
-   *  validation set. A value less than 1 will disable evaluation.
-   */
   virtual void train(int num_epochs);
+
   /// Training step on one mini-batch
   virtual bool train_mini_batch() = 0;
-
-  /** Return true if about to start a new training epoch */
-  virtual bool at_epoch_start();
-
-  ///
-  virtual void equalize(int  start_index, int end_index) = 0;
-
-  virtual void sum_up_gradients() = 0;
-
-  /// Check if the model has a valid data set for the execution mode
-  virtual bool is_execution_mode_valid(execution_mode mode) = 0;
 
   /// Evaluate model
   virtual void evaluate(execution_mode mode) override;
 
   /// Evaluation step on one mini-batch
   virtual bool evaluate_mini_batch() override;
+
+  /** Return true if about to start a new training epoch */
+  virtual bool at_epoch_start();
+
+  /// Ensure weight matriecs in heads at each level are the same
+  virtual void equalize(int  start_index, int end_index) = 0;
+  /// Add weight matrices in heads at each level
+  virtual void sum_up_gradients() = 0;
+
+  /// Check if the model has a valid data set for the execution mode
+  virtual bool is_execution_mode_valid(execution_mode mode) = 0;
+
+  virtual std::string name() const override { return "planar_model"; }
 
  protected:
   /// the maximum number of horizontal layers in the network
