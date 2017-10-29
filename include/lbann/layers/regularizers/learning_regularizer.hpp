@@ -65,9 +65,10 @@ class learning_regularizer : public regularizer_layer, public optimizable_layer 
     regularizer_layer::initialize_distributed_matrices<T_layout>();
   }
 
-  optimizer *get_optimizer() const override {
+  optimizer *get_optimizer() override {
     return m_optimizer;
   }
+
 };
 
 }  // namespace lbann

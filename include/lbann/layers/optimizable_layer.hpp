@@ -33,17 +33,47 @@
 
 namespace lbann {
 
-/**
- * ABC for layers that have optimizers and want to allow external access to
- * them.
- * This only defines an external interface; layers are free to manage their
- * optimizers internally however they wish.
- */
+/** Abstract base class for layers with optimizable parameters. */
 class optimizable_layer {
  public:
-  virtual ~optimizable_layer() {}
-  /// Return this layer's optimizer.
-  virtual optimizer* get_optimizer() const = 0;
+
+  /** Destructor. */
+  virtual ~optimizable_layer() = default;
+
+  /** Get optimizer for layer parameters. */
+  virtual optimizer* get_optimizer() = 0;
+
+  /** Get layer parameters. */
+  virtual AbsDistMat& get_parameters() = 0;
+
+  /** Get objective function gradient.
+   *  With respect to layer parameters.
+   */
+  virtual AbsDistMat& get_parameters_gradient() = 0;
+
+  /** Set layer parameters. */
+  virtual void set_parameters(const AbsDistMat& parameters) {
+    El::LockedView(get_parameters(), parameters);
+  }
+  /** Set objective function gradient.
+   *  With respect to layer parameters.
+   */
+  virtual void set_parameters_gradient(const AbsDistMat& gradient) {
+    El::Copy(gradient, get_parameters_gradient());
+  }
+  /** Add to objective function gradient.
+   *  With respect to layer parameters.
+   */
+  virtual void add_to_parameters_gradient(const AbsDistMat& term) {
+    El::Axpy(DataType(1), term, get_parameters_gradient());
+  }
+  /** Set objective function gradient to zero.
+   *  With respect to layer parameters.
+   */
+  virtual void clear_parameters_gradient() {
+    El::Zero(get_parameters_gradient());
+  }
+
 };
 
 }  // namespace lbann

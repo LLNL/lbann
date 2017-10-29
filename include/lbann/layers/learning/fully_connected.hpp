@@ -181,37 +181,40 @@ class fully_connected_layer : public learning {
     m_bias_weights_gradient_v = other.m_bias_weights_gradient_v->Copy();
     setup_views();  // Update views.
 #if defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA)    
-    m_weights_d = m_cudnn->copy(other.m_weights_d,
-                                this->m_weights->Height(),
-                                this->m_weights->Width());
-    setup_gpu_activation_bias(m_weights_d, m_activation_weights_d,
-                              m_bias_weights_d, m_weights->Height(), m_weights->Width());
-    m_weights_gradient_d = m_cudnn->copy(other.m_weights_gradient_d,
-                                         this->m_weights_gradient->Height(),
-                                         this->m_weights_gradient->Width());
-    setup_gpu_activation_bias(m_weights_gradient_d,
-                              m_activation_weights_gradient_d,
-                              m_bias_weights_gradient_d,
-                              m_weights_gradient->Width(), m_weights_gradient->Height());
+    if (m_cudnn != nullptr) {
+      m_weights_d = m_cudnn->copy(other.m_weights_d,
+                                  this->m_weights->Height(),
+                                  this->m_weights->Width());
+      setup_gpu_activation_bias(m_weights_d, m_activation_weights_d,
+                                m_bias_weights_d, m_weights->Height(), m_weights->Width());
+      m_weights_gradient_d = m_cudnn->copy(other.m_weights_gradient_d,
+                                           this->m_weights_gradient->Height(),
+                                           this->m_weights_gradient->Width());
+      setup_gpu_activation_bias(m_weights_gradient_d,
+                                m_activation_weights_gradient_d,
+                                m_bias_weights_gradient_d,
+                                m_weights_gradient->Width(), m_weights_gradient->Height());
     
-    if (!other.m_work_column_d.empty()) {
-      m_cudnn->allocate_on_gpus(m_work_column_d, this->m_num_neurons, 1);
+      if (!other.m_work_column_d.empty()) {
+        m_cudnn->allocate_on_gpus(m_work_column_d, this->m_num_neurons, 1);
+      }
+
+      m_bias_weights_desc = nullptr;
+      cudnn::copy_tensor_cudnn_desc(other.m_bias_weights_desc,
+                                    m_bias_weights_desc);
+      m_activations_desc = nullptr;
+      cudnn::copy_tensor_cudnn_desc(other.m_activations_desc,
+                                    m_activations_desc);
     }
-
-    m_bias_weights_desc = nullptr;
-    cudnn::copy_tensor_cudnn_desc(other.m_bias_weights_desc,
-                                  m_bias_weights_desc);
-    m_activations_desc = nullptr;
-    cudnn::copy_tensor_cudnn_desc(other.m_activations_desc,
-                                  m_activations_desc);
-
  #endif
     
     // Update optimizer parameters if needed.
     if (this->m_optimizer->get_parameters()) {
 #if defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA)
-      this->m_optimizer->set_parameters_gpu(this->m_weights,
-                                            m_weights_d);
+      if (m_cudnn != nullptr) {
+        this->m_optimizer->set_parameters_gpu(this->m_weights,
+                                              m_weights_d);
+      }
 #else
       this->m_optimizer->set_parameters(this->m_weights);
 #endif      
@@ -239,36 +242,40 @@ class fully_connected_layer : public learning {
     m_bias_weights_gradient_v = other.m_bias_weights_gradient_v->Copy();
     setup_views();  // Update views.
 #if defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA)
-    m_cudnn->deallocate_on_gpus(m_weights_d);
-    m_weights_d = m_cudnn->copy(other.m_weights_d,
-                                this->m_weights->Height(),
-                                this->m_weights->Width());
-    setup_gpu_activation_bias(m_weights_d, m_activation_weights_d,
-                              m_bias_weights_d, m_weights->Height(), m_weights->Width());
-    m_cudnn->deallocate_on_gpus(m_weights_gradient_d);
-    m_weights_gradient_d = m_cudnn->copy(other.m_weights_gradient_d,
-                                         this->m_weights_gradient->Height(),
-                                         this->m_weights_gradient->Width());
-    setup_gpu_activation_bias(m_weights_gradient_d,
-                              m_activation_weights_gradient_d,
-                              m_bias_weights_gradient_d,
-                              m_weights_gradient->Width(), m_weights_gradient->Height());
+    if (m_cudnn != nullptr) {
+      m_cudnn->deallocate_on_gpus(m_weights_d);
+      m_weights_d = m_cudnn->copy(other.m_weights_d,
+                                  this->m_weights->Height(),
+                                  this->m_weights->Width());
+      setup_gpu_activation_bias(m_weights_d, m_activation_weights_d,
+                                m_bias_weights_d, m_weights->Height(), m_weights->Width());
+      m_cudnn->deallocate_on_gpus(m_weights_gradient_d);
+      m_weights_gradient_d = m_cudnn->copy(other.m_weights_gradient_d,
+                                           this->m_weights_gradient->Height(),
+                                           this->m_weights_gradient->Width());
+      setup_gpu_activation_bias(m_weights_gradient_d,
+                                m_activation_weights_gradient_d,
+                                m_bias_weights_gradient_d,
+                                m_weights_gradient->Width(), m_weights_gradient->Height());
 
-    m_cudnn->deallocate_on_gpus(m_work_column_d);
-    if (!other.m_work_column_d.empty()) {
-      m_cudnn->allocate_on_gpus(m_work_column_d, this->m_num_neurons, 1);
+      m_cudnn->deallocate_on_gpus(m_work_column_d);
+      if (!other.m_work_column_d.empty()) {
+        m_cudnn->allocate_on_gpus(m_work_column_d, this->m_num_neurons, 1);
+      }
+
+      cudnn::copy_tensor_cudnn_desc(other.m_bias_weights_desc,
+                                    m_bias_weights_desc);
+      cudnn::copy_tensor_cudnn_desc(other.m_activations_desc,
+                                    m_activations_desc);
     }
-
-    cudnn::copy_tensor_cudnn_desc(other.m_bias_weights_desc,
-                                  m_bias_weights_desc);
-    cudnn::copy_tensor_cudnn_desc(other.m_activations_desc,
-                                  m_activations_desc);
 #endif
     // Update optimizer parameters if needed.
     if (this->m_optimizer->get_parameters()) {
 #if defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA)
-      this->m_optimizer->set_parameters_gpu(this->m_weights,
-                                            m_weights_d);
+      if (m_cudnn != nullptr) {
+        this->m_optimizer->set_parameters_gpu(this->m_weights,
+                                              m_weights_d);
+      }
 #else
       this->m_optimizer->set_parameters(this->m_weights);
 #endif      
@@ -285,7 +292,7 @@ class fully_connected_layer : public learning {
     delete m_bias_weights_gradient_v;
 
 #if defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA)
-    if (this->m_using_gpus) {
+    if (m_cudnn != nullptr) {
       this->m_cudnn->deallocate_on_gpus(m_weights_d);
       this->m_cudnn->deallocate_on_gpus(m_weights_gradient_d);
       CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_bias_weights_desc));
