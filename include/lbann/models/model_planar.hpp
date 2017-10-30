@@ -64,10 +64,10 @@ class planar_model : public model {
   virtual void setup_subset(int start_index, int end_index);
 
   /// Train model
-  virtual void train(int num_epochs);
+  void train(int num_epochs) override;
 
   /// Training step on one mini-batch
-  virtual bool train_mini_batch() = 0;
+  bool train_mini_batch() override;
 
   /// Evaluate model
   virtual void evaluate(execution_mode mode) override;
@@ -84,7 +84,7 @@ class planar_model : public model {
   virtual void sum_up_gradients() = 0;
 
   /// Check if the model has a valid data set for the execution mode
-  virtual bool is_execution_mode_valid(execution_mode mode) = 0;
+  bool is_execution_mode_valid(execution_mode mode) override;
 
   virtual std::string name() const override { return "planar_model"; }
 

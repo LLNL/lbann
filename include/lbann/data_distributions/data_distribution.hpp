@@ -38,7 +38,7 @@ class fetch_data_functor {
  public:
   fetch_data_functor (bool is_input_layer, bool is_for_regression) : 
     _is_input_layer(is_input_layer), _is_for_regression(is_for_regression) {}
-  int operator() (Mat& M_local, generic_data_reader* data_reader) {
+  int operator() (Mat& M_local, generic_data_reader* data_reader) const {
     if (_is_input_layer) {
       return data_reader->fetch_data(M_local);
     } else {
@@ -50,15 +50,15 @@ class fetch_data_functor {
     }
   }
  private:
-  bool _is_input_layer;
-  bool _is_for_regression;
+  const bool _is_input_layer;
+  const bool _is_for_regression;
 };
 
 class update_data_reader_functor {
  public:
   update_data_reader_functor (bool is_input_layer) : 
     _is_input_layer(is_input_layer) {}
-  int operator() (bool is_active_reader, generic_data_reader* data_reader) {
+  int operator() (bool is_active_reader, generic_data_reader* data_reader) const {
     if (_is_input_layer) {
       return data_reader->update(is_active_reader);
     } else {
@@ -66,16 +66,16 @@ class update_data_reader_functor {
     }
   }
  private:
-  bool _is_input_layer;
+  const bool _is_input_layer;
 };
 
 class generic_data_distribution {
 public:
   generic_data_distribution(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers);
   generic_data_distribution(
-    const generic_data_distribution&) = default;
+    const generic_data_distribution&);
   generic_data_distribution& operator=(
-    const generic_data_distribution&) = default;
+    const generic_data_distribution&);
   virtual ~generic_data_distribution() {
     if(fetch_data_fn != nullptr) {
       delete fetch_data_fn;
@@ -129,8 +129,8 @@ public:
   /** Has the layer copied valid data into the local matrix */
   bool m_local_data_valid;
 
-  fetch_data_functor *fetch_data_fn;
-  update_data_reader_functor *update_data_reader_fn;
+  const fetch_data_functor *fetch_data_fn;
+  const update_data_reader_functor *update_data_reader_fn;
 
   // BVE FIXME this will be wrong for LTFB
   int m_num_data_per_epoch;

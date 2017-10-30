@@ -415,7 +415,7 @@ class batch_normalization : public learning_regularizer {
   }
 
   /** Returns description of ctor params */
-  std::string get_description() const {
+  std::string get_description() const override {
     return std::string {} +
      " batch_normalization; decay: " 
      + std::to_string(this->m_decay) + " scale_init: " 
@@ -466,9 +466,9 @@ class batch_normalization : public learning_regularizer {
     if(m_scale_bias_gradient_v) delete m_scale_bias_gradient_v;
   }
 
-  batch_normalization* copy() const { return new batch_normalization(*this); }
+  batch_normalization* copy() const override { return new batch_normalization(*this); }
 
-  std::string get_type() const { return "batch normalization"; }
+  std::string get_type() const override { return "batch normalization"; }
 
   void initialize_distributed_matrices() {
     regularizer_layer::initialize_distributed_matrices<T_layout>();
@@ -492,9 +492,9 @@ class batch_normalization : public learning_regularizer {
   #endif // #ifdef __LIB_CUDNN
   }
 
-  virtual data_layout get_data_layout() const { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
-  void setup_data() {
+  void setup_data() override {
     regularizer_layer::setup_data();
 
     // Allocate memory
@@ -519,7 +519,7 @@ class batch_normalization : public learning_regularizer {
     this->m_optimizer->setup(m_scale_bias_v);
   }
 
-  void setup_views() {
+  void setup_views() override {
     regularizer_layer::setup_views();
 
     // Initialize views into parameters
@@ -541,7 +541,7 @@ class batch_normalization : public learning_regularizer {
              El::IR(2, 4));
   }
 
-  void setup_gpu() {
+  void setup_gpu() override {
     regularizer_layer::setup_gpu();
   #ifndef __LIB_CUDNN
     throw lbann_exception("convolution_layer: cuDNN not detected");
@@ -594,7 +594,7 @@ class batch_normalization : public learning_regularizer {
 
   }
 
-  void fp_compute() {
+  void fp_compute() override {
     if(this->m_using_gpus) {
       fp_compute_gpu();
     } else {
@@ -602,7 +602,7 @@ class batch_normalization : public learning_regularizer {
     }
   }
 
-  void bp_compute() {
+  void bp_compute() override {
     if(this->m_using_gpus) {
       bp_compute_gpu();
     } else {
@@ -1034,7 +1034,7 @@ class batch_normalization : public learning_regularizer {
 
   }
 
-  bool update_compute() {
+  bool update_compute() override {
     if (this->get_execution_mode() == execution_mode::training) {
       this->m_optimizer->update(m_scale_bias_gradient_v);
     }

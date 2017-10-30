@@ -205,6 +205,7 @@ message Callback {
    CallbackLTFB ltfb = 24;
    CallbackDebugIO debug_io = 25;
    CallbackMinibatchSchedule minibatch_schedule = 26;
+   CallbackLayerwiseAdaptiveLearningRate layerwise_adaptive_learning_rate = 27;
 }
 
 message CallbackLTFB {
@@ -325,6 +326,11 @@ message MinibatchScheduleStep {
   int64 ramp_time = 4;
 }
 
+message CallbackLayerwiseAdaptiveLearningRate {
+  repeated string layer = 1;
+  double scale = 2;
+}
+
 message CallbackMinibatchSchedule {
   int64 starting_mbsize = 1;
   repeated MinibatchScheduleStep step = 2;
@@ -351,6 +357,7 @@ message Layer {
    string children = 152;
    string data_layout = 52;
    bool num_neurons_from_data_reader = 53;
+   string linked_layers = 54;   
 
    // a Layer should contain exactly one of the following
    // (this may or may not be properly checked for in proto_common.cpp)
