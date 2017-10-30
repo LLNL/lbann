@@ -5,9 +5,18 @@ if(NOT ELEMENTAL_LIBRARY_TYPE)
   set(ELEMENTAL_LIBRARY_TYPE SHARED)
 endif()
 option(FORCE_ELEMENTAL_BUILD "Elemental: force build" OFF)
+message("Hydrogen_DIR = ${Hydrogen_DIR}")
+if (Hydrogen_DIR OR HYDROGEN_DIR)
+  find_package(Hydrogen NO_MODULE
+    HINTS ${Hydrogen_DIR} $ENV{Hydrogen_DIR}
+    "${HYDROGEN_DIR}" "$ENV{HYDROGEN_DIR}"
+    PATH_SUFFIXES cmake/hydrogen
+    NO_DEFAULT_PATH)
+  find_package(Hydrogen NO_MODULE)
+endif (Hydrogen_DIR OR HYDROGEN_DIR)
 
 # Check if Elemental has been provided
-if (Elemental_DIR AND NOT FORCE_ELEMENTAL_BUILD)
+if (Elemental_DIR AND NOT FORCE_ELEMENTAL_BUILD AND NOT Hydrogen_DIR)
 
   # Look for Elemental in the directory specified and not the system paths
   find_package(Elemental NO_MODULE
@@ -26,7 +35,7 @@ if (Elemental_DIR AND NOT FORCE_ELEMENTAL_BUILD)
 endif ()
 
 # Fall back on building from source
-if (NOT Elemental_FOUND)
+if (NOT Elemental_FOUND AND NOT Hydrogen_FOUND)
   
   message(STATUS "No existing Elemental install found. Building from source.")
 
@@ -161,7 +170,11 @@ if (NOT Elemental_FOUND)
   set(LBANN_BUILT_ELEMENTAL TRUE)
 
 else ()
-  message(STATUS "Found Elemental: ${Elemental_DIR}")
+  if (Elemental_FOUND)
+    message(STATUS "Found Elemental: ${Elemental_DIR}")
+  elseif (Hydrogen_FOUND)
+    message(STATUS "Found Hydrogen: ${Hydrogen_DIR}")
+  endif ()
 endif()
 
 # Include header files

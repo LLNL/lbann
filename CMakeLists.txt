@@ -283,6 +283,8 @@ endif()
 if(LBANN_BUILT_LBANN_PROTO)
   add_dependencies(src LbannProto)
 endif()
+target_include_directories(src PUBLIC
+  $<TARGET_PROPERTY:H::Hydrogen,INTERFACE_INCLUDE_DIRECTORIES>)
 
 # Build LBANN library
 # Use cuda_add_library when CUDA source files are included.
@@ -292,9 +294,10 @@ else()
   add_library(lbann ${LIBRARY_TYPE} $<TARGET_OBJECTS:src>)
 endif()
 
+message("\n\nHYDROGEN_LIBRARIES = ${HYDROGEN_LIBRARIES}\n\n")
 # Link libraries
 target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} ${MPI_CXX_LIBRARIES})
-target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} ${Elemental_LIBRARIES})
+target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} ${HYDROGEN_LIBRARIES})
 target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} ${OpenCV_LIBRARIES})
 target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} ${PROTOBUF_LIBRARIES})
 target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} ${CNPY_LIBRARIES})
