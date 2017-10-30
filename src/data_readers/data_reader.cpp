@@ -267,32 +267,45 @@ void generic_data_reader::select_subset_of_data() {
     std::shuffle(m_shuffled_indices.begin(), m_shuffled_indices.end(), get_data_seq_generator());
   }
 
-  if (not (has_max_sample_count() or has_use_percent() or has_validation_percent())) {
-    return;
+  size_t count = get_absolute_sample_count();
+  double use_percent = get_use_percent();
+  if (count == 0 and use_percent == 0.0) {
+      throw lbann_exception(
+        std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+        " :: generic_data_reader::select_subset_of_data() get_use_percent() "
+        + "and get_absolute_sample_count() are both zero; exactly one "
+        + "must be zero");
+  }
+  if (not (count == 0 and use_percent == 0.0)) {
+      throw lbann_exception(
+        std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+        " :: generic_data_reader::select_subset_of_data() get_use_percent() "
+        "and get_absolute_sample_count() are both non-zero; exactly one "
+        "must be zero");
   }
 
-  if (has_max_sample_count()) {
-    size_t count = get_max_sample_count();
+
+  if (count != 0) {
     if(count > static_cast<size_t>(get_num_data())) {
       throw lbann_exception(
         std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-        " :: generic_data_reader::select_subset_of_data() - max_sample_count=" +
+        " :: generic_data_reader::select_subset_of_data() - absolute_sample_count=" +
         std::to_string(count) + " is > get_num_data=" +
         std::to_string(get_num_data()));
     }
-    m_shuffled_indices.resize(get_max_sample_count());
-  } else if (has_use_percent()) {
+    m_shuffled_indices.resize(get_absolute_sample_count());
+  } 
+  
+  if (use_percent) {
     m_shuffled_indices.resize(get_use_percent()*get_num_data());
   }
 
-  if (has_validation_percent()) {
-    long unused = get_validation_percent()*get_num_data(); //get_num_data() = m_shuffled_indices.size()
-    long use_me = get_num_data() - unused;
-    if (unused > 0) {
+  long unused = get_validation_percent()*get_num_data(); //get_num_data() = m_shuffled_indices.size()
+  long use_me = get_num_data() - unused;
+  if (unused > 0) {
       m_unused_indices=std::vector<int>(m_shuffled_indices.begin() + use_me, m_shuffled_indices.end());
       m_shuffled_indices.resize(use_me);
     }
-  }
 
   if(not m_shuffle) {
     std::sort(m_shuffled_indices.begin(), m_shuffled_indices.end());
@@ -422,17 +435,12 @@ string generic_data_reader::get_label_filename() const {
   return m_label_fn;
 }
 
-void generic_data_reader::set_max_sample_count(size_t s) {
-  m_max_sample_count = s;
-  m_max_sample_count_was_set = true;
+void generic_data_reader::set_absolute_sample_count(size_t s) {
+  m_absolute_sample_count = s;
 }
 
-size_t generic_data_reader::get_max_sample_count() const {
-  return m_max_sample_count;
-}
-
-bool generic_data_reader::has_max_sample_count() const {
-  return m_max_sample_count_was_set;
+size_t generic_data_reader::get_absolute_sample_count() const {
+  return m_absolute_sample_count;
 }
 
 
@@ -446,12 +454,6 @@ void generic_data_reader::set_validation_percent(double s) {
   m_validation_percent = s;
 }
 
-bool generic_data_reader::has_validation_percent() const {
-  if (m_validation_percent == -1) {
-    return false;
-  }
-  return true;
-}
 
 double generic_data_reader::get_validation_percent() const {
   return m_validation_percent;
@@ -467,19 +469,8 @@ void generic_data_reader::set_use_percent(double s) {
   m_use_percent = s;
 }
 
-bool generic_data_reader::has_use_percent() const {
-  if (m_use_percent == -1) {
-    return false;
-  }
-  return true;
-}
 
 double generic_data_reader::get_use_percent() const {
-  if (!has_use_percent()) {
-    throw lbann_exception(
-      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: you must call set_use_percent(); error!");
-  }
   return m_use_percent;
 }
 

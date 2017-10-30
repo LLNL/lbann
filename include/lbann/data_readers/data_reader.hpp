@@ -74,8 +74,8 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_global_last_mini_batch_size(0),
     m_num_parallel_readers(0), m_model_rank(0),
     m_file_dir(""), m_data_fn(""), m_label_fn(""),
-    m_shuffle(shuffle), m_max_sample_count(0), m_validation_percent(-1),
-    m_max_sample_count_was_set(false), m_use_percent(1.0),
+    m_shuffle(shuffle), m_absolute_sample_count(0), m_validation_percent(0.1),
+    m_use_percent(1.0),
     m_master(false)
   {}
   generic_data_reader(const generic_data_reader&) = default;
@@ -159,18 +159,13 @@ class generic_data_reader : public lbann_image_preprocessor {
    * Sets the absolute number of data samples that will be used for training or
    * testing.
    */
-  void set_max_sample_count(size_t s);
-
-  /**
-   * True if set_max_sample_count was called.
-   */
-  bool has_max_sample_count() const;
+  void set_absolute_sample_count(size_t s);
 
   /**
    * Return the absolute number of data samples that will be used for training
    * or testing.
    */
-  size_t get_max_sample_count() const;
+  size_t get_absolute_sample_count() const;
 
   /**
    * Set the percentage of the data set to use for training and validation or
@@ -178,11 +173,6 @@ class generic_data_reader : public lbann_image_preprocessor {
    * @param s The percentage used, in the range [0, 1].
    */
   void set_use_percent(double s);
-
-  /**
-   * True if set_use_percent was called.
-   */
-  bool has_use_percent() const;
 
   /**
    * Returns the percent of the dataset to be used for training or testing.
@@ -196,11 +186,6 @@ class generic_data_reader : public lbann_image_preprocessor {
    * @param s The percentage used, in the range [0, 1].
    */
   virtual void set_validation_percent(double s);
-
-  /**
-   * True if set_validation_percent was called.
-   */
-  bool has_validation_percent() const;
 
   /**
    * Return the percent of the dataset to be used for validation.
@@ -595,9 +580,8 @@ class generic_data_reader : public lbann_image_preprocessor {
   std::string m_data_fn;
   std::string m_label_fn;
   bool m_shuffle;
-  size_t m_max_sample_count;
+  size_t m_absolute_sample_count;
   double m_validation_percent;
-  size_t m_max_sample_count_was_set;
   double m_use_percent;
   std::string m_role;
 

@@ -24,7 +24,7 @@ message Reader {
   string data_filename = 6;
   string label_filename = 7;
   double validation_percent = 9;
-  int64 max_sample_count = 11;
+  int64 absolute_sample_count = 11;
   double percent_of_data_to_use = 12;
   ImagePreprocessor image_preprocessor = 13;
   int32 num_labels = 99; //for imagenet
@@ -361,6 +361,15 @@ message Layer {
 
    // a Layer should contain exactly one of the following
    // (this may or may not be properly checked for in proto_common.cpp)
+   //
+   // @todo: this should be done better using oneof:
+   //   oneof a_layer {
+   //       Reshape reshape = 306
+   //       Pooling pooling = 12;
+   //       ...
+   //   }
+   //
+   //
 
    // input Layers
    InputDistributedMiniBatch input_distributed_minibatch = 2;
