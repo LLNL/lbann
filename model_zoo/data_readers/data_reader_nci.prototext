@@ -7,7 +7,7 @@ data_reader {
     label_filename:"/p/lscratchf/brainusr/datasets/cancer/anl_datasets/tmp_norm/cl.LE.SR.dsc.all.norm"
     validation_percent: 0.1
     max_sample_count: 0
-    percent_of_data_to_use: 0
+    percent_of_data_to_use: 1.0
   }
   reader {
     name: "nci"
@@ -17,6 +17,6 @@ data_reader {
     label_filename:"/p/lscratchf/brainusr/datasets/cancer/anl_datasets/tmp_norm/cl.LE.SR.dsc.all.norm"
     validation_percent: 1.0
     max_sample_count: 0
-    percent_of_data_to_use: 0
+    percent_of_data_to_use: 1.0
   }
 }
