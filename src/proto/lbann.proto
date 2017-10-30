@@ -206,6 +206,7 @@ message Callback {
    CallbackLTFB ltfb = 24;
    CallbackDebugIO debug_io = 25;
    CallbackMinibatchSchedule minibatch_schedule = 26;
+   CallbackLayerwiseAdaptiveLearningRate layerwise_adaptive_learning_rate = 27;
 }
 
 message CallbackLTFB {
@@ -324,6 +325,11 @@ message MinibatchScheduleStep {
   int64 mbsize = 2;
   double lr = 3;
   int64 ramp_time = 4;
+}
+
+message CallbackLayerwiseAdaptiveLearningRate {
+  repeated string layer = 1;
+  double scale = 2;
 }
 
 message CallbackMinibatchSchedule {

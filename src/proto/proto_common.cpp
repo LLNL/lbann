@@ -1452,6 +1452,25 @@ void init_callbacks(
       model->add_callback(gradient_check_cb);
     }
 
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: layerwise_adaptive_learning_rate
+    //////////////////////////////////////////////////////////////////
+    if (callback.has_layerwise_adaptive_learning_rate()) {
+      const lbann_data::CallbackLayerwiseAdaptiveLearningRate& c =
+        callback.layerwise_adaptive_learning_rate();
+      if (master) {
+        std::cout << "adding layerwise_adaptive_learning_rate callback" <<
+          " with scale=" << c.scale() << std::endl;
+      }
+      std::unordered_set<Layer*> layers;
+      for (int i = 0; i < c.layer_size(); ++i) {
+        layers.insert(model_layers[c.layer(i)]);
+      }
+      lbann_callback_layerwise_adaptive_learning_rate *lwalr_cb = new
+        lbann_callback_layerwise_adaptive_learning_rate(c.scale(), layers);
+      model->add_callback(lwalr_cb);
+    }
+
   }
 
 }
