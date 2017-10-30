@@ -40,7 +40,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "El.h"
+#include "El.hpp"
 #include "mpi.h"
 
 using namespace std;
