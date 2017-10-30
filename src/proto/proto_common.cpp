@@ -1779,14 +1779,12 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
     if (readme.data_filedir() != "") {
       reader->set_file_dir( readme.data_filedir() );
     }
-    reader->set_use_percent( readme.train_or_test_percent() );
     if (readme.max_sample_count()) {
       reader->set_max_sample_count( readme.max_sample_count() );
     }
     if (readme.percent_of_data_to_use()) {
       reader->set_use_percent( readme.percent_of_data_to_use() );
     }
-    reader->set_use_percent( readme.train_or_test_percent() );
 
     if ((name != "imagenet_cv") && (name != "imagenet_single_cv")) {
       reader->horizontal_flip( preprocessor.horizontal_flip() );
