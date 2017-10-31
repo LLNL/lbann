@@ -35,6 +35,9 @@
 namespace lbann {
 class input_layer : public io_layer, public virtual generic_data_distribution {
  public:
+  typedef std::map<execution_mode, generic_data_reader *> data_reader_map_t;
+
+ public:
   input_layer(lbann_comm *comm, 
               int num_parallel_readers,  
               std::map<execution_mode, generic_data_reader *> data_readers, 
@@ -53,15 +56,15 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
     generic_data_distribution::update_data_reader_fn = new update_data_reader_functor(true);
 
     if(m_data_readers[execution_mode::training] != nullptr) {
-      m_training_dataset.m_total_samples = m_data_readers[execution_mode::training]->get_num_data();
+      m_training_dataset.total_samples() = m_data_readers[execution_mode::training]->get_num_data();
     }
 
     if(m_data_readers[execution_mode::validation] != nullptr) {
-      m_validation_dataset.m_total_samples = m_data_readers[execution_mode::validation]->get_num_data();
+      m_validation_dataset.total_samples() = m_data_readers[execution_mode::validation]->get_num_data();
     }
 
     if(m_data_readers[execution_mode::testing] != nullptr) {
-      m_testing_dataset.m_total_samples = m_data_readers[execution_mode::testing]->get_num_data();
+      m_testing_dataset.total_samples() = m_data_readers[execution_mode::testing]->get_num_data();
     }
   }
 
@@ -164,17 +167,18 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
     return this->m_execution_mode;
   }
 
-  generic_data_reader *get_data_reader(execution_mode mode) {
-    generic_data_reader *data_reader;
+  generic_data_reader *get_data_reader(const execution_mode mode) const {
+    generic_data_reader *data_reader = nullptr;
+  
+    data_reader_map_t::const_iterator it = m_data_readers.find(mode);
+    if (it != m_data_readers.end()) data_reader = it->second;
+
     switch(mode) {
     case execution_mode::training:
-      data_reader = m_data_readers[execution_mode::training];
       break;
     case execution_mode::validation:
-      data_reader = m_data_readers[execution_mode::validation];
       break;
     case execution_mode::testing:
-      data_reader = m_data_readers[execution_mode::testing];
       break;
     default:
       throw lbann_exception(
@@ -184,76 +188,76 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
     return data_reader;
   }
 
-  generic_data_reader *get_data_reader() {
+  generic_data_reader *get_data_reader() const {
     return get_data_reader(get_execution_mode());
   }
 
-  virtual int get_num_parallel_readers(execution_mode mode) {
-    generic_data_reader *data_reader = get_data_reader(mode);
+  virtual int get_num_parallel_readers(execution_mode mode) const {
+    const generic_data_reader *data_reader = get_data_reader(mode);
     return data_reader->get_num_parallel_readers();
   }
 
-  virtual int get_num_parallel_readers() {
+  virtual int get_num_parallel_readers() const {
     return get_num_parallel_readers(get_execution_mode());
   }
 
-  virtual int get_num_iterations_per_epoch(execution_mode mode) {
-    generic_data_reader *data_reader = get_data_reader(mode);
+  virtual int get_num_iterations_per_epoch(execution_mode mode) const {
+    const generic_data_reader *data_reader = get_data_reader(mode);
     return data_reader->get_num_iterations_per_epoch();
   }
 
-  virtual int get_num_iterations_per_epoch() {
+  virtual int get_num_iterations_per_epoch() const {
     return get_num_iterations_per_epoch(get_execution_mode());
   }
 
-  virtual int get_current_step_in_epoch(execution_mode mode) {
-    generic_data_reader *data_reader = get_data_reader(mode);
+  virtual int get_current_step_in_epoch(execution_mode mode) const {
+    const generic_data_reader *data_reader = get_data_reader(mode);
     return data_reader->get_current_step_in_epoch();
   }
 
-  virtual int get_current_step_in_epoch() {
+  virtual int get_current_step_in_epoch() const {
     return get_current_step_in_epoch(get_execution_mode());
   }
 
-  virtual int get_mini_batch_size(execution_mode mode) {
-    generic_data_reader *data_reader = get_data_reader(mode);
+  virtual int get_mini_batch_size(execution_mode mode) const {
+    const generic_data_reader *data_reader = get_data_reader(mode);
     return data_reader->get_mini_batch_size();
   }
 
-  virtual int get_last_mini_batch_size(execution_mode mode) {
-    generic_data_reader *data_reader = get_data_reader(mode);
+  virtual int get_last_mini_batch_size(execution_mode mode) const {
+    const generic_data_reader *data_reader = get_data_reader(mode);
     return data_reader->get_last_mini_batch_size();
   }
 
-  virtual int get_last_mini_batch_size() {
+  virtual int get_last_mini_batch_size() const {
     return get_last_mini_batch_size(get_execution_mode());
   }
 
-  virtual int get_current_mini_batch_size(execution_mode mode) {
-    generic_data_reader *data_reader = get_data_reader(mode);
+  virtual int get_current_mini_batch_size(execution_mode mode) const {
+    const generic_data_reader *data_reader = get_data_reader(mode);
     return data_reader->get_current_mini_batch_size();
   }
 
-  virtual int get_current_mini_batch_size() {
+  virtual int get_current_mini_batch_size() const {
     return get_current_mini_batch_size(get_execution_mode());
   }
 
-  virtual int get_global_mini_batch_size(execution_mode mode) {
-    generic_data_reader *data_reader = get_data_reader(mode);
+  virtual int get_global_mini_batch_size(execution_mode mode) const {
+    const generic_data_reader *data_reader = get_data_reader(mode);
     return data_reader->get_global_mini_batch_size();
   }
 
-  virtual int get_global_last_mini_batch_size(execution_mode mode) {
-    generic_data_reader *data_reader = get_data_reader(mode);
+  virtual int get_global_last_mini_batch_size(execution_mode mode) const {
+    const generic_data_reader *data_reader = get_data_reader(mode);
     return data_reader->get_global_last_mini_batch_size();
   }
 
-  virtual int get_current_global_mini_batch_size(execution_mode mode) {
-    generic_data_reader *data_reader = get_data_reader(mode);
+  virtual int get_current_global_mini_batch_size(execution_mode mode) const {
+    const generic_data_reader *data_reader = get_data_reader(mode);
     return data_reader->get_current_global_mini_batch_size();
   }
 
-  virtual int get_current_global_mini_batch_size() {
+  virtual int get_current_global_mini_batch_size() const {
     return get_current_global_mini_batch_size(get_execution_mode());
   }
 
@@ -292,7 +296,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   //************************************************************************
   // Helper functions to access the dataset statistics
   //************************************************************************
-  dataset& get_dataset(execution_mode m) {
+  dataset& get_dataset(execution_mode m) override {
     switch(m) {
     case execution_mode::training:
       return m_training_dataset;
@@ -304,20 +308,37 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
       return m_testing_dataset;
       break;
     default:
-      throw lbann_exception("select_data_reader: invalid execution mode");
+      throw lbann_exception("get_dataset: invalid execution mode");
+    }
+  }
+
+  const dataset& get_dataset(execution_mode m) const override {
+    switch(m) {
+    case execution_mode::training:
+      return m_training_dataset;
+      break;
+    case execution_mode::validation:
+      return m_validation_dataset;
+      break;
+    case execution_mode::testing:
+      return m_testing_dataset;
+      break;
+    default:
+      throw lbann_exception("get_dataset: invalid execution mode");
     }
   }
 
   /**
    * Return the dataset associated with the current execution mode.
    */
-  dataset& select_dataset() { return get_dataset(m_execution_mode); }
+  dataset& select_dataset() override { return get_dataset(m_execution_mode); }
+  const dataset& select_dataset() const override { return get_dataset(m_execution_mode); }
 
   /**
    * Return the first dataset with a valid (non-null) datareader.
    * Returns null if none are valid.
    */
-  dataset* select_first_valid_dataset() {
+  dataset* select_first_valid_dataset() override {
     if (m_data_readers[execution_mode::training]) {
       return &m_training_dataset;
     } else if (m_data_readers[execution_mode::validation]) {
@@ -332,23 +353,23 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   /**
    * Return the data reader associated with the current execution mode.
    */
-  generic_data_reader *select_data_reader() {
+  generic_data_reader *select_data_reader() const override {
     return get_data_reader();
   }
 
   /**
    * Update the number of samples processed for the current execution mode.
    */
-  long update_num_samples_processed(long num_samples) {
+  long update_num_samples_processed(long num_samples) override {
     dataset& ds = select_dataset();
-    ds.m_num_samples_processed += num_samples;
-    return ds.m_num_samples_processed;
+    ds.num_samples_processed() += num_samples;
+    return ds.get_num_samples_processed();
   }
 
   /**
    * Return the sample indices fetched in the current mini-batch.
    */
-  El::Matrix<El::Int>* get_sample_indices_per_mb() {
+  El::Matrix<El::Int>* get_sample_indices_per_mb() override {
     generic_data_reader *dr = get_data_reader();
     return dr->get_indices_fetched_per_mb();
   }
@@ -356,8 +377,8 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   /**
    * Get the dimensions of the underlying data.
    */
-  const std::vector<int> get_data_dims() {
-    generic_data_reader *dr = get_data_reader();
+  const std::vector<int> get_data_dims() const override {
+    const generic_data_reader *dr = get_data_reader();
     //    dataset* ds = select_first_valid_dataset();
     if (dr) {
       return dr->get_data_dims();
@@ -365,7 +386,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
     return std::vector<int>(1, 0);
   }
 
-  virtual std::string get_topo_description() const {
+  virtual std::string get_topo_description() const override {
     std::stringstream s;
     for (size_t i = 0; i < this->m_neuron_dims.size(); i++) {
       s << this->m_neuron_dims[i];
@@ -379,20 +400,28 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   /**
    * Get the linearized size of the underlying data.
    */
-  long get_linearized_data_size() {
+  long get_linearized_data_size() const override {
     long linearized_data_size = -1;
-    if (m_data_readers[execution_mode::training]) {
-      linearized_data_size = m_data_readers[execution_mode::training]->get_linearized_data_size();
+
+    data_reader_map_t::const_iterator it;
+
+    it = m_data_readers.find(execution_mode::training);
+    if ((it != m_data_readers.end()) && it->second) {
+      linearized_data_size = (it->second)->get_linearized_data_size();
     }
-    if (m_data_readers[execution_mode::validation]) {
-      long tmp_data_size = m_data_readers[execution_mode::validation]->get_linearized_data_size();
+
+    it = m_data_readers.find(execution_mode::validation);
+    if ((it != m_data_readers.end()) && it->second) {
+      long tmp_data_size = (it->second)->get_linearized_data_size();
       if (linearized_data_size != -1 && linearized_data_size != tmp_data_size) {
         throw lbann_exception("lbann_io_layer: validation data set size does not "
                               "match the currently established data set size");
       }
     }
-    if (m_data_readers[execution_mode::testing]) {
-      long tmp_data_size = m_data_readers[execution_mode::testing]->get_linearized_data_size();
+
+    it = m_data_readers.find(execution_mode::testing);
+    if ((it != m_data_readers.end()) && it->second) {
+      long tmp_data_size = (it->second)->get_linearized_data_size();
       if (linearized_data_size != -1 && linearized_data_size != tmp_data_size) {
         throw lbann_exception("lbann_io_layer: testing data set size does not "
                               "match the currently established data set size");
@@ -404,23 +433,28 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   /**
    * Get the linearized size of the labels for the underlying data.
    */
-  long get_linearized_label_size() {
+  long get_linearized_label_size() const override {
     if (is_for_regression()) {
       return static_cast<long>(1);
     }
     long linearized_label_size = -1;
-    if (m_data_readers[execution_mode::training]) {
-      linearized_label_size = m_data_readers[execution_mode::training]->get_linearized_label_size();
+    data_reader_map_t::const_iterator it;
+
+    it = m_data_readers.find(execution_mode::training);
+    if ((it != m_data_readers.end()) && it->second) {
+      linearized_label_size = (it->second)->get_linearized_label_size();
     }
-    if (m_data_readers[execution_mode::validation]) {
-      long tmp_label_size = m_data_readers[execution_mode::validation]->get_linearized_label_size();
+    it = m_data_readers.find(execution_mode::validation);
+    if ((it != m_data_readers.end()) && it->second) {
+      long tmp_label_size = (it->second)->get_linearized_label_size();
       if (linearized_label_size != -1 && linearized_label_size != tmp_label_size) {
         throw lbann_exception("lbann_io_layer: validation label set size does not "
                               "match the currently established data set size");
       }
     }
-    if (m_data_readers[execution_mode::testing]) {
-      long tmp_label_size = m_data_readers[execution_mode::testing]->get_linearized_label_size();
+    it = m_data_readers.find(execution_mode::testing);
+    if ((it != m_data_readers.end()) && it->second) {
+      long tmp_label_size = (it->second)->get_linearized_label_size();
       if (linearized_label_size != -1 && linearized_label_size != tmp_label_size) {
         throw lbann_exception("lbann_io_layer: testing label set size does not "
                               "match the currently established data set size");
@@ -429,59 +463,73 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
     return linearized_label_size;
   }
 
-  long get_linearized_response_size() const {
+  long get_linearized_response_size() const override {
     return static_cast<long>(1);
   }
 
-  long get_num_samples_trained() {
-    return m_training_dataset.m_num_samples_processed;
+  long get_num_samples_trained() const override {
+    return m_training_dataset.get_num_samples_processed();
   }
-  long get_num_samples_tested() {
-    return m_testing_dataset.m_num_samples_processed;
+  long get_num_samples_tested() const override {
+    return m_testing_dataset.get_num_samples_processed();
   }
-  long get_total_num_training_samples() {
-    return m_training_dataset.m_total_samples;
+  long get_total_num_training_samples() const override {
+    return m_training_dataset.get_total_samples();
   }
-  long get_total_num_testing_samples() {
-    return m_testing_dataset.m_total_samples;
-  }
-
-  bool at_new_epoch() {
-    return m_data_readers[execution_mode::training]->at_new_epoch();
+  long get_total_num_testing_samples() const override {
+    return m_testing_dataset.get_total_samples();
   }
 
-  bool is_execution_mode_valid(execution_mode mode) {
-    dataset& ds = get_dataset(mode);
-    return (ds.m_total_samples != 0);
+  bool at_new_epoch() const override {
+    const data_reader_map_t::const_iterator it = m_data_readers.find(execution_mode::training);
+    return ((it != m_data_readers.end()) && it->second && (it->second)->at_new_epoch());
+  }
+
+  bool is_execution_mode_valid(execution_mode mode) const override {
+    const dataset& ds = get_dataset(mode);
+    return (ds.get_total_samples() != static_cast<long>(0));
   }
   //************************************************************************
   //
   //************************************************************************
 
   // save state of IO to a checkpoint
-  bool saveToCheckpointShared(persist& p) {
+  bool saveToCheckpointShared(persist& p) const {
     // save state of data readers from input layer
-    this->m_data_readers[execution_mode::training]->saveToCheckpointShared(p, "data_reader_training");
-    this->m_data_readers[execution_mode::validation]->saveToCheckpointShared(p, "data_reader_validation");
-    this->m_data_readers[execution_mode::testing]->saveToCheckpointShared(p, "data_reader_testing");
+    data_reader_map_t::const_iterator it;
+
+    it = this->m_data_readers.find(execution_mode::training);
+    if ((it != this->m_data_readers.end()) && it->second) {
+      (it->second)->saveToCheckpointShared(p, "data_reader_training");
+    }
+
+    it = this->m_data_readers.find(execution_mode::validation);
+    if ((it != this->m_data_readers.end()) && it->second) {
+      (it->second)->saveToCheckpointShared(p, "data_reader_validation");
+    }
+
+    it = this->m_data_readers.find(execution_mode::testing);
+    if ((it != this->m_data_readers.end()) && it->second) {
+      (it->second)->saveToCheckpointShared(p, "data_reader_testing");
+    }
 
     // save our own state
     // rank 0 writes the file
     if (p.get_rank() == 0) {
       p.write_uint64(persist_type::train, "reader_train_processed",
-                     (uint64_t) m_training_dataset.m_num_samples_processed);
+                     (uint64_t) m_training_dataset.get_num_samples_processed());
       p.write_uint64(persist_type::train, "reader_train_total",
-                     (uint64_t) m_training_dataset.m_total_samples);
+                     (uint64_t) m_training_dataset.get_total_samples());
 
       p.write_uint64(persist_type::train, "reader_test_processed",
-                     (uint64_t) m_testing_dataset.m_num_samples_processed);
+                     (uint64_t) m_testing_dataset.get_num_samples_processed());
       p.write_uint64(persist_type::train, "reader_test_total",
-                     (uint64_t) m_testing_dataset.m_total_samples);
+                     (uint64_t) m_testing_dataset.get_total_samples());
 
       p.write_uint64(persist_type::train, "reader_validate_processed",
-                     (uint64_t) m_validation_dataset.m_num_samples_processed);
+                     (uint64_t) m_validation_dataset.get_num_samples_processed());
       p.write_uint64(persist_type::train, "reader_validate_total",
-                     (uint64_t) m_validation_dataset.m_total_samples);
+                     (uint64_t) m_validation_dataset.get_total_samples());
     }
     io_layer::saveToCheckpointShared(p);
 
@@ -500,9 +548,22 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   // reload state of IO from a checkpoint
   bool loadFromCheckpointShared(persist& p) {
     // save state of data readers from input layer
-    this->m_data_readers[execution_mode::training]->loadFromCheckpointShared(p, "data_reader_training");
-    this->m_data_readers[execution_mode::validation]->loadFromCheckpointShared(p, "data_reader_validation");
-    this->m_data_readers[execution_mode::testing]->loadFromCheckpointShared(p, "data_reader_testing");
+    data_reader_map_t::const_iterator it;
+
+    it = this->m_data_readers.find(execution_mode::training);
+    if ((it != this->m_data_readers.end()) && it->second) {
+      (it->second)->loadFromCheckpointShared(p, "data_reader_training");
+    }
+
+    it = this->m_data_readers.find(execution_mode::validation);
+    if ((it != this->m_data_readers.end()) && it->second) {
+      (it->second)->loadFromCheckpointShared(p, "data_reader_validation");
+    }
+
+    it = this->m_data_readers.find(execution_mode::testing);
+    if ((it != this->m_data_readers.end()) && it->second) {
+      (it->second)->loadFromCheckpointShared(p, "data_reader_testing");
+    }
 
     // save our own state
     // rank 0 reads the file
@@ -521,12 +582,12 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
     MPI_Bcast(&header, sizeof(header), MPI_BYTE, 0, MPI_COMM_WORLD);
 
     // set our fields
-    m_training_dataset.m_num_samples_processed   = (long) header.train_proc;
-    m_training_dataset.m_total_samples           = (long) header.train_total;
-    m_testing_dataset.m_num_samples_processed    = (long) header.test_proc;
-    m_testing_dataset.m_total_samples            = (long) header.test_total;
-    m_validation_dataset.m_num_samples_processed = (long) header.validate_proc;
-    m_validation_dataset.m_total_samples         = (long) header.validate_total;
+    m_training_dataset.num_samples_processed()   = (long) header.train_proc;
+    m_training_dataset.total_samples()           = (long) header.train_total;
+    m_testing_dataset.num_samples_processed()    = (long) header.test_proc;
+    m_testing_dataset.total_samples()            = (long) header.test_total;
+    m_validation_dataset.num_samples_processed() = (long) header.validate_proc;
+    m_validation_dataset.total_samples()         = (long) header.validate_total;
 
     io_layer::loadFromCheckpointShared(p);
 
@@ -539,7 +600,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   dataset m_validation_dataset;
   //  bool m_data_sets_span_models;
 
-  std::map<execution_mode, generic_data_reader *> m_data_readers;
+  data_reader_map_t m_data_readers;
  //  std::map<execution_mode, dataset_stats> m_dataset_stats;
 };
 

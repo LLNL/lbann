@@ -331,7 +331,7 @@ bool lbann::persist::read_distmat(persist_type type, const char *name, DistMat *
   return true;
 }
 
-bool lbann::persist::write_bytes(persist_type type, const char *name, void *buf, size_t size) {
+bool lbann::persist::write_bytes(persist_type type, const char *name, const void *buf, size_t size) {
   int fd = get_fd(type);
   if (fd >= 0) {
     ssize_t rc = write(fd, buf, size);
@@ -373,7 +373,7 @@ bool lbann::persist::read_uint64(persist_type type, const char *name, uint64_t *
   return read_bytes(type, name, val, sizeof(uint64_t));
 }
 
-bool lbann::persist::write_int32_contig(persist_type type, const char *name, int32_t *buf, uint64_t count) {
+bool lbann::persist::write_int32_contig(persist_type type, const char *name, const int32_t *buf, uint64_t count) {
   size_t bytes = count * sizeof(int32_t);
   return write_bytes(type, name, buf, bytes);
 }
@@ -399,7 +399,7 @@ bool lbann::persist::read_double(persist_type type, const char *name, double *va
   return read_bytes(type, name, val, sizeof(double));
 }
 
-int lbann::persist::get_fd(persist_type type) {
+int lbann::persist::get_fd(persist_type type) const {
   int fd = -1;
   if (type == persist_type::train) {
     fd = m_train_fd;
@@ -440,7 +440,7 @@ bool lbann::read_distmat(int fd, const char *name, DistMat *M, uint64_t *bytes) 
   return true;
 }
 
-bool lbann::write_bytes(int fd, const char *name, void *buf, size_t size) {
+bool lbann::write_bytes(int fd, const char *name, const void *buf, size_t size) {
   if (fd >= 0) {
     ssize_t rc = write(fd, buf, size);
     if (rc != (ssize_t) size) {
@@ -478,7 +478,7 @@ bool lbann::read_uint64(int fd, const char *name, uint64_t *val) {
   return lbann::read_bytes(fd, name, val, sizeof(uint64_t));
 }
 
-bool lbann::write_int32_contig(int fd, const char *name, int32_t *buf, uint64_t count) {
+bool lbann::write_int32_contig(int fd, const char *name, const int32_t *buf, uint64_t count) {
   size_t bytes = count * sizeof(int32_t);
   return lbann::write_bytes(fd, name, buf, bytes);
 }

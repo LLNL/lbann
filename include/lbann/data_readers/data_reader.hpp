@@ -491,7 +491,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   void use_unused_index_set();
 
   /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
-  bool saveToCheckpointShared(persist& p, const char *name);
+  bool saveToCheckpointShared(persist& p, const char *name) const;
 
   /** \brief Given directory to store checkpoint files, read state from file and add to number of bytes read */
   bool loadFromCheckpointShared(persist& p, const char *name);

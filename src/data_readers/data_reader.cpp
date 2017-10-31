@@ -320,7 +320,7 @@ void generic_data_reader::use_unused_index_set() {
 }
 
 /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
-bool generic_data_reader::saveToCheckpointShared(persist& p, const char *name) {
+bool generic_data_reader::saveToCheckpointShared(persist& p, const char *name) const {
   // rank 0 writes the training state file
   if (p.get_rank() == 0) {
     char fieldname[1024];

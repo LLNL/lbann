@@ -117,7 +117,7 @@ bool lbann::distributed_minibatch::is_data_set_processed(generic_data_reader *da
 /** Make sure that there are enough ranks and data for all of the
  *  parallel readers requested.
  */
-int lbann::distributed_minibatch::compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) {
+int lbann::distributed_minibatch::compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) const {
   int num_parallel_readers = requested_num_parallel_readers;
 
   /// Are there enough ranks in the model to support the requested
