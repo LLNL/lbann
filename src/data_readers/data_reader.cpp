@@ -276,7 +276,7 @@ void generic_data_reader::select_subset_of_data() {
         + "and get_absolute_sample_count() are both zero; exactly one "
         + "must be zero");
   }
-  if (not (count == 0 and use_percent == 0.0)) {
+  if (not (count == 0 or use_percent == 0.0)) {
       throw lbann_exception(
         std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
         " :: generic_data_reader::select_subset_of_data() get_use_percent() "
