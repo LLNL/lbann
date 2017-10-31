@@ -160,10 +160,11 @@ void cudnn_manager::allreduce_nccl(const std::vector<DataType*>& gpu_data,
 
   FORCE_CHECK_CUDA(cudaFree ((void **) &target_buffer));
 #else
-  FORCE_CHECK_CUDA(cudaMalloc((void **) &target_buffer, total_len*sizeof(DataType)));
-  NCCLCHECK(ncclAllReduce(gpu_data[0], target_buffer, total_len, type, ncclSum, m_nccl_comm, get_stream(local_rank)));
-  FORCE_CHECK_CUDA(cudaMemcpy(gpu_data[0], target_buffer, total_len*sizeof(DataType),  cudaMemcpyDeviceToDevice));
-  FORCE_CHECK_CUDA(cudaFree ((void **) &target_buffer));
+  /// FORCE_CHECK_CUDA(cudaMalloc((void **) &target_buffer, total_len*sizeof(DataType)));
+  /// Perform in-place NCCL allreduce here
+  NCCLCHECK(ncclAllReduce(gpu_data[0], gpu_data[0], total_len, type, ncclSum, m_nccl_comm, get_stream(local_rank)));
+  /// FORCE_CHECK_CUDA(cudaMemcpy(gpu_data[0], target_buffer, total_len*sizeof(DataType),  cudaMemcpyDeviceToDevice));
+  /// FORCE_CHECK_CUDA(cudaFree ((void **) &target_buffer));
 #endif
 
 #endif
