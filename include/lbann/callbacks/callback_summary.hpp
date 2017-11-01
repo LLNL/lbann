@@ -48,14 +48,14 @@ class lbann_callback_summary : public lbann_callback {
   virtual ~lbann_callback_summary();
   lbann_callback_summary(const lbann_callback_summary&) = default;
   lbann_callback_summary& operator=(const lbann_callback_summary&) = default;
-  lbann_callback_summary* copy() const {
+  lbann_callback_summary* copy() const override {
     return new lbann_callback_summary(*this);
   }
-  void on_train_begin(model *m);
-  void on_batch_end(model *m);
-  void on_epoch_end(model *m);
-  void on_test_end(model *m);
-  std::string name() const { return "summary"; }
+  void on_train_begin(model *m) override;
+  void on_batch_end(model *m) override;
+  void on_epoch_end(model *m) override;
+  void on_test_end(model *m) override;
+  std::string name() const override { return "summary"; }
  protected:
   /** Write out histograms from the model's layers. */
   void save_histograms(model *m);

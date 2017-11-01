@@ -106,7 +106,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   //   return s.str();;
   // }
 
-  void setup_dims() {
+  void setup_dims() override {
     io_layer::setup_dims();
     this->m_neuron_dims = get_data_dims();
     this->m_num_neuron_dims = this->m_neuron_dims.size();
@@ -116,7 +116,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
                                           std::multiplies<int>());
   }
 
-  void setup_data() {
+  void setup_data() override {
     io_layer::setup_data();
 
     /// BVE FIXME foreach data reader
@@ -142,7 +142,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   /** Define the standard view of the matrix -- and set it for the model
    * Setup the effective (global) mini-batch size so that gradients are properly
    * averaged across models. */
-  virtual void fp_set_std_matrix_view() {
+  void fp_set_std_matrix_view() override {
     // Use the predetermined size of the mini-batch to set the current
     // batch size for the neural network
     El::Int cur_mini_batch_size = get_current_mini_batch_size();
@@ -158,7 +158,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   }
 
   /** No setting the standard view of the matrix -- it defines the standard view */
-  virtual void bp_set_std_matrix_view() {}
+  void bp_set_std_matrix_view() override {}
 
   //************************************************************************
   // Helper functions to access the data readers
@@ -494,7 +494,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   //************************************************************************
 
   // save state of IO to a checkpoint
-  bool saveToCheckpointShared(persist& p) const {
+  bool saveToCheckpointShared(persist& p) const override {
     // save state of data readers from input layer
     data_reader_map_t::const_iterator it;
 
@@ -546,7 +546,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   };
 
   // reload state of IO from a checkpoint
-  bool loadFromCheckpointShared(persist& p) {
+  bool loadFromCheckpointShared(persist& p) override {
     // save state of data readers from input layer
     data_reader_map_t::const_iterator it;
 

@@ -43,16 +43,16 @@ class reshape_layer : public transform {
     this->m_num_neuron_dims = num_dims;
     this->m_neuron_dims.assign(dims, dims+num_dims);
   }
-  reshape_layer* copy() const { return new reshape_layer(*this); }
+  reshape_layer* copy() const override { return new reshape_layer(*this); }
 
-  std::string get_type() const { return "reshape"; }
+  std::string get_type() const override { return "reshape"; }
 
   virtual inline void initialize_distributed_matrices() {
     transform::initialize_distributed_matrices<T_layout>();
   }
-  virtual data_layout get_data_layout() const { return T_layout; }
+  virtual data_layout get_data_layout() const override { return T_layout; }
 
-  void setup_dims() {
+  void setup_dims() override {
     // Store neuron tensor dimensions
     const int num_neuron_dims = this->m_num_neuron_dims;
     const std::vector<int> neuron_dims = this->m_neuron_dims;
@@ -90,11 +90,11 @@ class reshape_layer : public transform {
 
   }
 
-  void fp_compute() {
+  void fp_compute() override {
     El::LockedView(*this->m_activations_v, *this->m_prev_activations);
   }
 
-  void bp_compute() {
+  void bp_compute() override {
     El::LockedView(*this->m_error_signal_v, *this->m_prev_error_signal);
   }
 

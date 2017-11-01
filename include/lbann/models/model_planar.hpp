@@ -64,24 +64,17 @@ class planar_model : public model {
    *  or placing individual layers. */
   void stackup_duplicate(Layer *new_layer, int num_heads);
 
-  void add(Layer *layer);
+  void add(Layer *layer) override;
 
   /// Setup planar model
   virtual void setup() override;
   virtual void setup_subset(int start_index, int end_index);
 
   /// Train model
-<<<<<<< HEAD
-  virtual void train(int num_epochs) override;
-
-  /// Training step on one mini-batch
-  virtual bool train_mini_batch() override;
-=======
   void train(int num_epochs) override;
 
   /// Training step on one mini-batch
   bool train_mini_batch() override;
->>>>>>> 32c8e27bdbdd1c3f21cecb61d73bb6c82e8d6199
 
   /// Evaluate model
   virtual void evaluate(execution_mode mode) override;
@@ -98,11 +91,7 @@ class planar_model : public model {
   void sum_up_gradients();
 
   /// Check if the model has a valid data set for the execution mode
-<<<<<<< HEAD
-  bool is_execution_mode_valid(execution_mode mode);
-=======
   bool is_execution_mode_valid(execution_mode mode) override;
->>>>>>> 32c8e27bdbdd1c3f21cecb61d73bb6c82e8d6199
 
   virtual std::string name() const override { return "planar_model"; }
 

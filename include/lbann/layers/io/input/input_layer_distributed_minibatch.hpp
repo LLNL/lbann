@@ -57,7 +57,7 @@ class input_layer_distributed_minibatch : public input_layer, public distributed
   }
 
   /** Returns description of ctor params */
-  std::string get_description() const {
+  std::string get_description() const override {
     return std::string {} + " input_layer_distributed_minibatch "
            + " dataLayout: " + this->get_data_layout_string(get_data_layout());
   }
@@ -66,18 +66,18 @@ class input_layer_distributed_minibatch : public input_layer, public distributed
     const input_layer_distributed_minibatch&) = default;
   input_layer_distributed_minibatch& operator=(
     const input_layer_distributed_minibatch&) = default;
-  input_layer_distributed_minibatch* copy() const {
+  input_layer_distributed_minibatch* copy() const override {
     return new input_layer_distributed_minibatch(*this);
   }
 
-  std::string get_type() const { return "input:distributed"; }
+  std::string get_type() const override { return "input:distributed"; }
 
   virtual inline void initialize_distributed_matrices() {
     input_layer::initialize_distributed_matrices<T_layout>();
   }
-  virtual data_layout get_data_layout() const { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
-  void setup_data() {
+  void setup_data() override {
     input_layer::setup_data();
     int max_mb_size = this->m_neural_network_model->get_max_mini_batch_size();
     #ifdef LBANN_DEBUG
@@ -97,14 +97,14 @@ class input_layer_distributed_minibatch : public input_layer, public distributed
   }
 
  protected:
-  void fp_set_std_matrix_view() {
+  void fp_set_std_matrix_view() override {
     input_layer::fp_set_std_matrix_view();
     El::Int cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
     El::View(X_local_v, X_local, El::ALL, El::IR(0, cur_mini_batch_size));
   }
 
   /** Handle forward propagation (arguments are unused). */
-  void fp_compute() {
+  void fp_compute() override {
 
     int num_samples_in_batch = distributed_minibatch::fetch_to_local_matrix(X_local_v, get_data_reader());
     if(distributed_minibatch::is_current_root()) {
@@ -125,11 +125,11 @@ class input_layer_distributed_minibatch : public input_layer, public distributed
   /**
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary
    */
-  bool update_compute() {
+  bool update_compute() override {
     return distributed_minibatch::is_data_set_processed(get_data_reader());
   }
 
-  void preprocess_data_samples(Mat& M_local, int num_samples_in_batch) {
+  void preprocess_data_samples(Mat& M_local, int num_samples_in_batch) override {
     return;
   }
 

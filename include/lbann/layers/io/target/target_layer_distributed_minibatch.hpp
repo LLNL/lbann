@@ -66,24 +66,24 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
     const target_layer_distributed_minibatch&) = default;
   target_layer_distributed_minibatch& operator=(
     const target_layer_distributed_minibatch&) = default;
-  target_layer_distributed_minibatch* copy() const {
+  target_layer_distributed_minibatch* copy() const override {
     return new target_layer_distributed_minibatch(*this);
   }
 
   /** Returns description of ctor params */
-  std::string get_description() const {
+  std::string get_description() const override {
     return std::string {} + " target_layer_distributed_minibatch "
            + " dataLayout: " + this->get_data_layout_string(get_data_layout());
   }
 
-  std::string get_type() const { return "target:distributed"; }
+  std::string get_type() const override { return "target:distributed"; }
 
   virtual inline void initialize_distributed_matrices() {
     target_layer::initialize_distributed_matrices<T_layout>();
   }
-  virtual data_layout get_data_layout() const { return T_layout; }
+  virtual data_layout get_data_layout() const override { return T_layout; }
 
-  virtual void setup_data() {
+  virtual void setup_data() override {
     target_layer::setup_data();
 
     int max_mb_size = this->m_neural_network_model->get_max_mini_batch_size();
@@ -95,13 +95,13 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
     m_num_data_per_epoch = 0;
   }
 
-  void fp_set_std_matrix_view() {
+  void fp_set_std_matrix_view() override {
     target_layer::fp_set_std_matrix_view();
     El::Int cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
     El::View(Y_local_v, Y_local, El::ALL, El::IR(0, cur_mini_batch_size));
   }
 
-  void fp_compute() {
+  void fp_compute() override {
     int num_samples_in_batch = fetch_to_local_matrix(Y_local_v, paired_input_layer->get_data_reader());
     if(is_current_root()) {
       /// Only update the number of samples processed by this parallel reader, when it is the current root
@@ -133,7 +133,7 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
   }
 
 
-  void bp_compute() {
+  void bp_compute() override {
 
     // Compute initial error signal
     this->m_neural_network_model->m_obj_fn->compute_gradient(*this->m_prev_activations,
@@ -145,11 +145,11 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
   /**
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary
    */
-  bool update_compute() {
+  bool update_compute() override {
     return is_data_set_processed(paired_input_layer->get_data_reader());
   }
 
-  void preprocess_data_samples(Mat& M_local, int num_samples_in_batch) {
+  void preprocess_data_samples(Mat& M_local, int num_samples_in_batch) override {
     return;
   }
 

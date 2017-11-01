@@ -51,9 +51,9 @@ class lbann_callback_learning_rate : public lbann_callback {
   /** Only apply to specific layers. */
   lbann_callback_learning_rate(std::unordered_set<Layer *> layers);
   /** Do some initialization. */
-  void setup(model *m);
+  void setup(model *m) override;
   /** Apply global learning rate schedules. */
-  void on_epoch_end(model *m);
+  void on_epoch_end(model *m) override;
 
   using lbann_callback::on_backward_prop_end;
   /** Apply local/per-layer learning rate schedules. */
@@ -210,12 +210,12 @@ class lbann_callback_linear_growth_learning_rate :
     const lbann_callback_linear_growth_learning_rate&) = default;
   lbann_callback_linear_growth_learning_rate& operator=(
     const lbann_callback_linear_growth_learning_rate&) = default;
-  lbann_callback_linear_growth_learning_rate* copy() const {
+  lbann_callback_linear_growth_learning_rate* copy() const override {
     return new lbann_callback_linear_growth_learning_rate(*this); }
-  void setup(model *m);
-  std::string name() const { return "linear growth learning rate"; }
+  void setup(model *m) override;
+  std::string name() const override { return "linear growth learning rate"; }
  protected:
-  float global_schedule(model *m);
+  float global_schedule(model *m) override;
  private:
   /// Initial learning rate.
   float m_base_lr;
@@ -243,11 +243,11 @@ class lbann_callback_layerwise_adaptive_learning_rate : public lbann_callback_le
     const lbann_callback_layerwise_adaptive_learning_rate&) = default;
   lbann_callback_layerwise_adaptive_learning_rate& operator=(
     const lbann_callback_layerwise_adaptive_learning_rate&) = default;
-  lbann_callback_layerwise_adaptive_learning_rate* copy() const {
+  lbann_callback_layerwise_adaptive_learning_rate* copy() const override {
     return new lbann_callback_layerwise_adaptive_learning_rate(*this); }
-  std::string name() const { return "layerwise adaptive learning rate"; }
+  std::string name() const override { return "layerwise adaptive learning rate"; }
  protected:
-  float layer_schedule(model *m, Layer *l);
+  float layer_schedule(model *m, Layer *l) override;
  private:
   float m_scale;
 };

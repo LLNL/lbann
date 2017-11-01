@@ -46,18 +46,18 @@ class lbann_callback_timer : public lbann_callback {
     lbann_callback(1, summarizer) {}
   lbann_callback_timer(const lbann_callback_timer&) = default;
   lbann_callback_timer& operator=(const lbann_callback_timer&) = default;
-  lbann_callback_timer* copy() const {
+  lbann_callback_timer* copy() const override {
     return new lbann_callback_timer(*this);
   }
   /** Start recording time for the epoch. */
-  void on_epoch_begin(model *m);
+  void on_epoch_begin(model *m) override;
   /** Report epoch and mean minibatch times. */
-  void on_epoch_end(model *m);
+  void on_epoch_end(model *m) override;
   /** Start record time for a batch. */
-  void on_batch_begin(model *m);
+  void on_batch_begin(model *m) override;
   /** Stop and save time for a batch. */
-  void on_batch_end(model *m);
-  std::string name() const { return "timer"; }
+  void on_batch_end(model *m) override;
+  std::string name() const override { return "timer"; }
  private:
   /** Start time for the current epoch. */
   double m_epoch_start;

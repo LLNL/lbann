@@ -158,7 +158,7 @@ class pooling_layer : public transform {
   }
     
   /** Returns description of ctor params */
-  std::string get_description() const {
+  std::string get_description() const override {
     std::stringstream s;
     s << " pooling; num_data_dims: "
     + std::to_string(m_pool_dims.size()) + " pool_dims: ";
@@ -188,15 +188,15 @@ class pooling_layer : public transform {
   #endif // __LIB_CUDNN
   }
 
-  pooling_layer* copy() const { return new pooling_layer(*this); }
+  pooling_layer* copy() const override { return new pooling_layer(*this); }
 
-  std::string get_type() const { return "pooling"; }
+  std::string get_type() const override { return "pooling"; }
   
   virtual inline void initialize_distributed_matrices();
 
-  virtual data_layout get_data_layout() const { return T_layout; }
+  virtual data_layout get_data_layout() const override { return T_layout; }
 
-  void setup_dims() {
+  void setup_dims() override {
 
     // Initialize previous neuron tensor dimensions
     transform::setup_dims();
@@ -216,7 +216,7 @@ class pooling_layer : public transform {
   }
 
   /// Initialize GPU objects
-  void setup_gpu() {
+  void setup_gpu() override {
     transform::setup_gpu();
   #ifndef __LIB_CUDNN
     throw lbann_exception("lbann_layer_pooling: cuDNN not detected");
@@ -248,7 +248,7 @@ class pooling_layer : public transform {
 
   protected:
 
-  void fp_compute() {
+  void fp_compute() override {
     if(this->m_using_gpus) {
       fp_compute_cudnn();
     } else {
@@ -256,7 +256,7 @@ class pooling_layer : public transform {
     }
   }
 
-  void bp_compute() {
+  void bp_compute() override {
     if(this->m_using_gpus) {
       bp_compute_cudnn();
     } else {

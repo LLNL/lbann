@@ -66,7 +66,7 @@ class target_layer : public io_layer {
     paired_input_layer = input_layer;
   }
 
-  virtual void setup_dims() {
+  void setup_dims() override {
     io_layer::setup_dims();
     if (this->is_for_regression()) {
       this->m_neuron_dims = get_data_dims();
@@ -82,7 +82,7 @@ class target_layer : public io_layer {
     }
   }
 
-  virtual void setup_data() {
+  void setup_data() override {
     io_layer::setup_data();
     std::stringstream err;
 
@@ -116,7 +116,7 @@ class target_layer : public io_layer {
   //   return io_layer::set_testing_data_reader(data_reader);
   // }
 
-  void fp_set_std_matrix_view() {
+  void fp_set_std_matrix_view() override {
     int cur_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
     Layer::fp_set_std_matrix_view();
     for (auto&& m : this->m_neural_network_model->get_metrics()) {
@@ -222,7 +222,7 @@ class target_layer : public io_layer {
   //
   //************************************************************************
 
-  void summarize_stats(lbann_summary& summarizer, int step) {
+  void summarize_stats(lbann_summary& summarizer, int step) override {
     std::string obj_name = this->m_neural_network_model->m_obj_fn->name();
     // Replace spaces with _ for consistency.
     std::transform(obj_name.begin(), obj_name.end(), obj_name.begin(),
@@ -235,7 +235,7 @@ class target_layer : public io_layer {
     io_layer::summarize_stats(summarizer, step);
   }
 
-  void epoch_print() const {
+  void epoch_print() const override {
     double obj_cost = this->m_neural_network_model->m_obj_fn->get_mean_value();
     if (this->m_comm->am_world_master()) {
       std::vector<double> avg_obj_fn_costs(this->m_comm->get_num_models());
@@ -250,17 +250,17 @@ class target_layer : public io_layer {
     }
   }
 
-  bool saveToCheckpoint(int fd, const char *filename, size_t *bytes) const {
+  bool saveToCheckpoint(int fd, const char *filename, size_t *bytes) const override {
     /// @todo should probably save m_shared_data_reader
     return Layer::saveToCheckpoint(fd, filename, bytes);
   }
 
-  bool loadFromCheckpoint(int fd, const char *filename, size_t *bytes) {
+  bool loadFromCheckpoint(int fd, const char *filename, size_t *bytes) override {
     /// @todo should probably save m_shared_data_reader
     return Layer::loadFromCheckpoint(fd, filename, bytes);
   }
 
-  bool saveToCheckpointShared(persist& p) const {
+  bool saveToCheckpointShared(persist& p) const override {
     // rank 0 writes softmax cost to file
     if (p.get_rank() == 0) {
       // p.write_double(persist_type::train, "aggregate cost", (double) aggregate_cost);
@@ -270,7 +270,7 @@ class target_layer : public io_layer {
     return true;
   }
 
-  bool loadFromCheckpointShared(persist& p) {
+  bool loadFromCheckpointShared(persist& p) override {
     // rank 0 writes softmax cost to file
     // if (p.get_rank() == 0) {
     //     double dval;
