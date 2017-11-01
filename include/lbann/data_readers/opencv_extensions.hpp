@@ -23,21 +23,15 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// patchworks_opencv.hpp - LBANN PATCHWORKS header for opencv
+// opencv_extensions.hpp - LBANN's cv::Mat pixel type handling mechanisms
 ////////////////////////////////////////////////////////////////////////////////
 
-/**
- * LBANN PATCHWORKS header for opencv
- *  - cv::Mat pixel type handling mechanisms
- */
-
 #ifdef __LIB_OPENCV
-#ifndef _PATCHWORKS_OPENCV_H_INCLUDED_
-#define _PATCHWORKS_OPENCV_H_INCLUDED_
+#ifndef _LBANN_OPENCV_EXTENSIONS_H_INCLUDED_
+#define _LBANN_OPENCV_EXTENSIONS_H_INCLUDED_
 #include "lbann/data_readers/opencv.hpp"
 
 namespace lbann {
-namespace patchworks {
 
 /// A template structure to convert an OpenCV identifier of channel depth to a standard C++ type
 template<int T> class cv_depth_type {};
@@ -66,7 +60,7 @@ _def_cv_depth_translation(CV_64F, double);
 
 
 /// Convert an OpenCV identifier of image depth to a standard C++ type
-#define _depth_type(_cv_depth_) lbann::patchworks::cv_depth_type<_cv_depth_>::standard_type
+#define _depth_type(_cv_depth_) lbann::cv_depth_type<_cv_depth_>::standard_type
 
 
 /** A template structure to map the type of channel into the
@@ -118,7 +112,6 @@ struct depth_normalization<void> {
   }
 };
 
-} // end of namespace patchworks
 } // end of namespace lbann
 
 #define _SWITCH_CV_FUNC_KNOWN_TYPE_1PARAM(_SW_CH_,_T_,_FUNC_,_P1_) \
@@ -197,5 +190,5 @@ struct depth_normalization<void> {
     case CV_64F: return _FUNC_<_depth_type(CV_64F)>(_P1_,_P2_,_P3_,_P4_); \
   }
 
-#endif // _PATCHWORKS_OPENCV_H_INCLUDED_
+#endif // _LBANN_OPENCV_EXTENSIONS_H_INCLUDED_
 #endif // __LIB_OPENCV
