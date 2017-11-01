@@ -1989,6 +1989,17 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
 
   options *opts = options::get();
   lbann_data::Model *model = p.mutable_model();
+  lbann_data::DataReader *d_reader = p.mutable_data_reader();
+  int size = d_reader->reader_size();
+
+  if (opts->has_int("absolute_sample_count")) {
+    for (int j=0; j<size; j++) {
+      int n = opts->get_int("absolute_sample_count");
+      lbann_data::Reader *readme = d_reader->mutable_reader(j);
+      readme->set_percent_of_data_to_use(0.0);
+      readme->set_absolute_sample_count(n);
+    }  
+  }
 
   if (opts->has_string("dag_model")) {
     std::string sanity = model->name();
