@@ -46,8 +46,9 @@ namespace lbann {
 planar_model::planar_model(int mini_batch_size,
                                    lbann_comm *comm,
                                    objective_functions::objective_function *obj_fn,
-                                   optimizer_factory *optimizer_fac)
-  : model(comm, mini_batch_size, obj_fn, optimizer_fac) {}
+                                   optimizer_factory *optimizer_fac,
+                                   int width)
+  : model(comm, mini_batch_size, obj_fn, optimizer_fac) {m_width = width; m_multi_headed = false;}
 
 /**
 planar_model::planar_model(const planar_model& other) :
@@ -293,45 +294,51 @@ bool planar_model::load_from_checkpoint_shared(persist& p) {
 */
 
 
-/// Add the new layer at the end of layers at the vindex-th level
-int planar_model::stackup_tail(int vindex, Layer *new_layer){
-  /// Add a new layer vector to m_layers when a new layer is added first time 
-  if(m_layers.size() == (size_t) vindex){
-    std::vector<Layer *> new_level;
-    m_layers.push_back(new_level);
+void planar_model::add(Layer *layer){
+  if(!m_multi_headed){
+    /// Adding layer to single head
+  
+    if(layer->is_fanin_layer()){
+      /// Cannot fan in from single-headed layer 
+      std::cerr << "Cannot fan in from single-head state" << "\n";
+      throw lbann::lbann_exception("Cannot fan in from single-head state");
+    } else if(layer->is_fanout_layer()) {
+      /// Fanning out layers to multi-head state
+      stackup_duplicate(layer, 1);
+      m_multi_headed = true;
+    } else{
+      /// Add the new layer, continuing single-head state
+      stackup_duplicate(layer, 1);
+    }
+  } else{
+    if(layer->is_fanout_layer()){
+      /// Cannot fan out from multi-headed layer 
+      std::cerr << "Cannot fan out from multi-head state" << "\n";
+      throw lbann::lbann_exception("Cannot fan out from multi-head state");
+    } else if(layer->is_fanin_layer()){
+      /// Fanning in from multi-head state
+      stackup_duplicate(layer, 1);
+      m_multi_headed = false;
+    } else{
+      stackup_duplicate(layer, m_width);
+    }
   }
-
-  /// Do some sanity check first
-  if(m_layers.size() != (size_t) vindex+1){
-    std::cerr << "Adding new layer to invalid level of plane" << "\n";
-    throw lbann::lbann_exception("Adding new layer to invalid level of plane");
-  }
-  if(m_layers[vindex].size() >= (size_t) m_width){
-    std::cerr << "Adding new layer to planar level that is already full" << "\n";
-    throw lbann::lbann_exception("Adding new layer to planar level that is already full");
-  }
-
-  std::vector<Layer *>& current_level = m_layers[vindex];
-  current_level.push_back(new_layer);
-  return vindex;
 }
 
+
 /***
- * Given a new layer, create 'm_width' copies of the new layer and add them to
+ * Given a new layer, create 'K' copies of the new layer and add them to
  * the next level. */
-int planar_model::stackup_duplicate(Layer *new_layer){
-  /// A new level of m_width layers will be created
-  int index = m_layers.size();
-  std::vector<Layer *> new_level (m_width);
+void planar_model::stackup_duplicate(Layer *new_layer, int num_heads){
+  /// A new level of num_heads layers will be created
+  std::vector<Layer *> new_level (num_heads);
 
   new_level[0] = new_layer;
-  for(int k=1; k<m_width; k++){
+  for(int k=1; k<num_heads; k++){
     Layer *layer_copy = new_layer->copy();
     new_level[k] = layer_copy;
   }
   m_layers.push_back(new_level);
-
-  return index; 
 }
 
 /**
