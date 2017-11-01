@@ -574,7 +574,7 @@ void Layer::setup_gpu() {
 
 void Layer::check_setup() {}
 
-bool Layer::saveToCheckpoint(int fd, const char *filename, size_t *bytes) {
+bool Layer::saveToCheckpoint(int fd, const char *filename, size_t *bytes) const {
   //writeDist(fd, filename, *m_weights, bytes);
 
   // Need to catch return value from function
@@ -591,7 +591,7 @@ bool Layer::loadFromCheckpoint(int fd, const char *filename, size_t *bytes) {
   return true;
 }
 
-bool Layer::saveToCheckpointShared(persist& p) {
+bool Layer::saveToCheckpointShared(persist& p) const {
   return true;
 }
 

@@ -330,7 +330,7 @@ class softmax_layer : public activation_layer {
 
   void bp_compute_cuda();
 
-  bool saveToCheckpoint(int fd, const char *filename, size_t *bytes) {
+  bool saveToCheckpoint(int fd, const char *filename, size_t *bytes) const {
     return Layer::saveToCheckpoint(fd, filename, bytes);
   }
 
@@ -338,7 +338,7 @@ class softmax_layer : public activation_layer {
     return Layer::loadFromCheckpoint(fd, filename, bytes);
   }
 
-  bool saveToCheckpointShared(lbann::persist& p) {
+  bool saveToCheckpointShared(lbann::persist& p) const {
     return Layer::saveToCheckpointShared(p);
   }
 

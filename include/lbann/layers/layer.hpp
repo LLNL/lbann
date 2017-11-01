@@ -180,13 +180,13 @@ class Layer {
   }
   virtual El::Matrix<El::Int>* get_sample_indices_per_mb() { return nullptr; };
 
-  virtual bool saveToFile(int fd, const char *filename) { return true; };
+  virtual bool saveToFile(int fd, const char *filename) const { return true; };
   virtual bool loadFromFile(int fd, const char *filename) { return true; };
 
-  virtual bool saveToCheckpoint(int fd, const char *filename, size_t *bytes);
+  virtual bool saveToCheckpoint(int fd, const char *filename, size_t *bytes) const;
   virtual bool loadFromCheckpoint(int fd, const char *filename, size_t *bytes);
 
-  virtual bool saveToCheckpointShared(persist& p);
+  virtual bool saveToCheckpointShared(persist& p) const;
   virtual bool loadFromCheckpointShared(persist& p);
 
   /** Get forward propagation output, as seen by next layer. */

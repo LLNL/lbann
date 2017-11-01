@@ -126,91 +126,96 @@ class target_layer : public io_layer {
   //************************************************************************
   // Helper functions to access the data readers
   //************************************************************************
-  dataset& get_dataset(execution_mode m) {
+  dataset& get_dataset(execution_mode m) override {
+    return paired_input_layer->get_dataset(m);
+  }
+
+  const dataset& get_dataset(execution_mode m) const override {
     return paired_input_layer->get_dataset(m);
   }
 
   /**
    * Return the dataset associated with the current execution mode.
    */
-  dataset& select_dataset() { return paired_input_layer->select_dataset(); }
+  dataset& select_dataset() override { return paired_input_layer->select_dataset(); }
+  const dataset& select_dataset() const override { return paired_input_layer->select_dataset(); }
 
   /**
    * Return the first dataset with a valid (non-null) datareader.
    * Returns null if none are valid.
    */
-  dataset* select_first_valid_dataset() {
+  dataset* select_first_valid_dataset() override {
     return paired_input_layer->select_first_valid_dataset();
   }
 
   /**
    * Return the data reader associated with the current execution mode.
    */
-  generic_data_reader *select_data_reader() {
+  generic_data_reader *select_data_reader() const override {
     return paired_input_layer->select_data_reader();
   }
 
   /**
    * Update the number of samples processed for the current execution mode.
    */
-  long update_num_samples_processed(long num_samples) {
+  long update_num_samples_processed(long num_samples) override {
     return paired_input_layer->update_num_samples_processed(num_samples);
   }
 
   /**
    * Return the sample indices fetched in the current mini-batch.
    */
-  El::Matrix<El::Int>* get_sample_indices_per_mb() {
+  El::Matrix<El::Int>* get_sample_indices_per_mb() override {
     return paired_input_layer->get_sample_indices_per_mb();
   }
 
   /**
    * Get the dimensions of the underlying data.
    */
-  const std::vector<int> get_data_dims() {
+  const std::vector<int> get_data_dims() const override {
     return paired_input_layer->get_data_dims();
   }
 
-  std::string get_topo_description() const {
+  std::string get_topo_description() const override {
     return paired_input_layer->get_topo_description();
   }
 
   /**
    * Get the linearized size of the underlying data.
    */
-  long get_linearized_data_size() {
+  long get_linearized_data_size() const override {
     return paired_input_layer->get_linearized_data_size();
   }
 
   /**
    * Get the linearized size of the labels for the underlying data.
    */
-  long get_linearized_label_size() {
+  long get_linearized_label_size() const override {
     return paired_input_layer->get_linearized_label_size();
   }
 
-  long get_linearized_response_size() const {
+  long get_linearized_response_size() const override {
     return paired_input_layer->get_linearized_response_size();
   }
 
-  long get_num_samples_trained() {
+  long get_num_samples_trained() const override {
     return paired_input_layer->get_num_samples_trained();
   }
-  long get_num_samples_tested() {
+  long get_num_samples_tested() const override {
     return paired_input_layer->get_num_samples_tested();
   }
-  long get_total_num_training_samples() {
+  long get_total_num_training_samples() const override {
     return paired_input_layer->get_total_num_training_samples();
   }
-  long get_total_num_testing_samples() {
+  long get_total_num_testing_samples() const override {
     return paired_input_layer->get_total_num_testing_samples();
   }
 
-  bool at_new_epoch() {
+  bool at_new_epoch() const override {
     return paired_input_layer->at_new_epoch();
   }
 
-  bool is_execution_mode_valid(execution_mode mode) {
+  bool is_execution_mode_valid(execution_mode mode) const override {
     return paired_input_layer->is_execution_mode_valid(mode);
   }
   //************************************************************************
@@ -245,7 +250,7 @@ class target_layer : public io_layer {
     }
   }
 
-  bool saveToCheckpoint(int fd, const char *filename, size_t *bytes) {
+  bool saveToCheckpoint(int fd, const char *filename, size_t *bytes) const {
     /// @todo should probably save m_shared_data_reader
     return Layer::saveToCheckpoint(fd, filename, bytes);
   }
@@ -255,7 +260,7 @@ class target_layer : public io_layer {
     return Layer::loadFromCheckpoint(fd, filename, bytes);
   }
 
-  bool saveToCheckpointShared(persist& p) {
+  bool saveToCheckpointShared(persist& p) const {
     // rank 0 writes softmax cost to file
     if (p.get_rank() == 0) {
       // p.write_double(persist_type::train, "aggregate cost", (double) aggregate_cost);

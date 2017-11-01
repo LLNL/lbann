@@ -38,8 +38,11 @@ class dataset {
   // the data reader.
   dataset(const dataset& other) = default;
   dataset& operator=(const dataset& other) = default;
-
- public:
+  long get_num_samples_processed() const { return m_num_samples_processed; }
+  long& num_samples_processed() { return m_num_samples_processed; }
+  long get_total_samples() const { return m_total_samples; }
+  long& total_samples() { return m_total_samples; }
+ protected:
   long m_num_samples_processed;
   long m_total_samples;
 };

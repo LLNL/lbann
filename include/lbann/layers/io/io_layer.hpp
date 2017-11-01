@@ -65,11 +65,13 @@ class io_layer : public Layer {
    * Return the dataset for the given execution mode.
    */
   virtual dataset& get_dataset(execution_mode m) = 0;
+  virtual const dataset& get_dataset(execution_mode m) const = 0;
 
   /**
    * Return the dataset associated with the current execution mode.
    */
   virtual dataset& select_dataset() = 0;
+  virtual const dataset& select_dataset() const = 0;
 
   /**
    * Return the first dataset with a valid (non-null) datareader.
@@ -80,7 +82,7 @@ class io_layer : public Layer {
   /**
    * Return the data reader associated with the current execution mode.
    */
-  virtual generic_data_reader *select_data_reader() = 0;
+  virtual generic_data_reader *select_data_reader() const = 0;
 
   /**
    * Update the number of samples processed for the current execution mode.
@@ -95,30 +97,30 @@ class io_layer : public Layer {
   /**
    * Get the dimensions of the underlying data.
    */
-  virtual const std::vector<int> get_data_dims() = 0;
+  virtual const std::vector<int> get_data_dims() const = 0;
 
   virtual std::string get_topo_description() const = 0;
 
   /**
    * Get the linearized size of the underlying data.
    */
-  virtual long get_linearized_data_size() = 0;
+  virtual long get_linearized_data_size() const = 0;
 
   /**
    * Get the linearized size of the labels for the underlying data.
    */
-  virtual long get_linearized_label_size() = 0;
+  virtual long get_linearized_label_size() const = 0;
 
   virtual long get_linearized_response_size() const = 0;
 
-  virtual long get_num_samples_trained() = 0;
-  virtual long get_num_samples_tested() = 0;
-  virtual long get_total_num_training_samples() = 0;
-  virtual long get_total_num_testing_samples() = 0;
+  virtual long get_num_samples_trained() const = 0;
+  virtual long get_num_samples_tested() const = 0;
+  virtual long get_total_num_training_samples() const = 0;
+  virtual long get_total_num_testing_samples() const = 0;
 
-  virtual bool at_new_epoch() = 0;
+  virtual bool at_new_epoch() const = 0;
 
-  virtual bool is_execution_mode_valid(execution_mode mode) = 0;
+  virtual bool is_execution_mode_valid(execution_mode mode) const = 0;
 
 #if 0
   bool saveToCheckpointShared(persist& p) {
