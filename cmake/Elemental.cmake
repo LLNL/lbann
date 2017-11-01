@@ -7,11 +7,6 @@ endif()
 option(FORCE_ELEMENTAL_BUILD "Elemental: force build" OFF)
 message("Hydrogen_DIR = ${Hydrogen_DIR}")
 if (Hydrogen_DIR OR HYDROGEN_DIR)
-  find_package(Hydrogen NO_MODULE
-    HINTS ${Hydrogen_DIR} $ENV{Hydrogen_DIR}
-    "${HYDROGEN_DIR}" "$ENV{HYDROGEN_DIR}"
-    PATH_SUFFIXES cmake/hydrogen
-    NO_DEFAULT_PATH)
   find_package(Hydrogen NO_MODULE)
 endif (Hydrogen_DIR OR HYDROGEN_DIR)
 
