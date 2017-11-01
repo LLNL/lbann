@@ -126,7 +126,6 @@ int main(int argc, char *argv[]) {
       cout << endl << "USING cifar10_reader\n\n";
     }
     cifar10_reader cifar10_trainset(trainParams.MBSize, true);
-    cifar10_trainset.set_firstN(false);
     cifar10_trainset.set_role("train");
     cifar10_trainset.set_master(comm->am_world_master());
     cifar10_trainset.set_file_dir(g_cifar10_dir);
@@ -159,7 +158,6 @@ int main(int argc, char *argv[]) {
     // load testing data (ImageNet)
     ///////////////////////////////////////////////////////////////////
     cifar10_reader cifar10_testset(trainParams.MBSize, true);
-    cifar10_testset.set_firstN(false);
     cifar10_testset.set_role("test");
     cifar10_testset.set_master(comm->am_world_master());
     cifar10_testset.set_file_dir(g_cifar10_dir);
@@ -255,6 +253,16 @@ int main(int argc, char *argv[]) {
       cout << "\tMini-batch size: " << trainParams.MBSize << endl;
       cout << "\tLearning rate: " << trainParams.LearnRate << endl << endl;
       cout << "\tEpoch count: " << trainParams.EpochCount << endl;
+    }
+
+    if (comm->am_world_master()) {
+      optimizer *o = optimizer_fac->create_optimizer();
+      cout << "\nOptimizer:\n" << o->get_description() << endl << endl;
+      delete o;
+      std::vector<Layer *>& layers = model->get_layers();
+      for (size_t h=0; h<layers.size(); h++) {
+        std::cout << h << " " << layers[h]->get_description() << endl;
+      }
     }
 
     ///////////////////////////////////////////////////////////////////

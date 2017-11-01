@@ -62,7 +62,7 @@ class lbann_callback_imcomm : public lbann_callback {
                         lbann_summary *summarizer = nullptr);
   lbann_callback_imcomm(const lbann_callback_imcomm&) = default;
   lbann_callback_imcomm& operator=(const lbann_callback_imcomm&) = default;
-  lbann_callback_imcomm* copy() const {
+  lbann_callback_imcomm* copy() const override {
     return new lbann_callback_imcomm(*this);
   }
   /**
@@ -81,13 +81,13 @@ class lbann_callback_imcomm : public lbann_callback {
                            DataType neg_thresh);
 
   /** Do initialization for this model. */
-  void setup(model *m);
+  void setup(model *m) override;
   /** Clear out remaining error if needed. */
-  void on_epoch_end(model *m);
+  void on_epoch_end(model *m) override;
   /** Do inter-model gradient updates. */
-  void on_backward_prop_end(model *m);
+  void on_backward_prop_end(model *m) override;
 
-  std::string name() const { return "imcomm"; }
+  std::string name() const override { return "imcomm"; }
 
  private:
   /** Parameters for a given layer. */

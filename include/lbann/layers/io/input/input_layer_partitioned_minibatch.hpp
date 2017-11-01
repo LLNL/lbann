@@ -51,14 +51,14 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
     // Setup the data distribution
     initialize_distributed_matrices();
   }
-  input_layer_partitioned_minibatch* copy() const {
+  input_layer_partitioned_minibatch* copy() const override {
     return new input_layer_partitioned_minibatch(*this);
   }
 
-  std::string get_type() const { return "input:partitioned"; }
+  std::string get_type() const override { return "input:partitioned"; }
 
   /** Returns description of ctor params */
-  std::string get_description() const {
+  std::string get_description() const override {
     std::string s = get_topo_description();
     return std::string {} + " input_layer_partitioned_minibatch "
            + " dataLayout: " + this->get_data_layout_string(get_data_layout())
@@ -68,9 +68,9 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
   virtual inline void initialize_distributed_matrices() {
     input_layer::initialize_distributed_matrices<T_layout>();
   }
-  virtual data_layout get_data_layout() const { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
-  void setup_data() {
+  void setup_data() override {
     input_layer::setup_data();
     int max_mb_size = this->m_neural_network_model->get_max_mini_batch_size();
     if(io_layer::m_data_set_spans_models) {
@@ -84,7 +84,7 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
     partitioned_minibatch::m_num_data_per_epoch = 0;
   }
 
-  void fp_compute() {
+  void fp_compute() override {
     partitioned_minibatch::fetch_to_local_matrix(this->m_activations_v->Matrix(), get_data_reader());
 
     // Use the predetermined size of the mini-batch to set the current
@@ -97,11 +97,11 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
   /**
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary
    */
-  bool update_compute() {
+  bool update_compute() override {
     return partitioned_minibatch::is_data_set_processed(get_data_reader());
   }
 
-  void preprocess_data_samples(Mat& M_local, int num_samples_in_batch) {
+  void preprocess_data_samples(Mat& M_local, int num_samples_in_batch) override {
     return;
   }
 

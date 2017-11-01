@@ -55,7 +55,7 @@ class persist {
   persist();
   ~persist() {};
 
-  int get_rank() {
+  int get_rank() const {
     return m_rank;
   }
   void open_checkpoint(const char *dir);
@@ -64,14 +64,14 @@ class persist {
   void open_restart(const char *dir);
   void close_restart();
 
-  uint64_t get_bytes() {
+  uint64_t get_bytes() const {
     return m_bytes;
   }
 
   bool write_distmat(persist_type type, const char *name, DistMat *M);
   bool read_distmat (persist_type type, const char *name, DistMat *M);
 
-  bool write_bytes(persist_type type, const char *name, void *buf, size_t size);
+  bool write_bytes(persist_type type, const char *name, const void *buf, size_t size);
   bool read_bytes(persist_type type, const char *name, void *buf, size_t size);
 
   bool write_uint32(persist_type type, const char *name, uint32_t  val);
@@ -80,7 +80,7 @@ class persist {
   bool write_uint64(persist_type type, const char *name, uint64_t  val);
   bool read_uint64 (persist_type type, const char *name, uint64_t *val);
 
-  bool write_int32_contig(persist_type type, const char *name, int32_t *buf, uint64_t count);
+  bool write_int32_contig(persist_type type, const char *name, const int32_t *buf, uint64_t count);
   bool read_int32_contig (persist_type type, const char *name, int32_t *buf, uint64_t count);
 
   bool write_float(persist_type type, const char *name, float  val);
@@ -90,7 +90,7 @@ class persist {
   bool read_double (persist_type type, const char *name, double *val);
 
  private:
-  int get_fd(persist_type type);
+  int get_fd(persist_type type) const;
 };
 
 bool writeDist(int fd, const char *filename, const DistMat& M, uint64_t *bytes);
@@ -99,7 +99,7 @@ bool readDist(int fd, const char *filename, DistMat& M, uint64_t *bytes);
 bool write_distmat(int fd, const char *name, DistMat *M, uint64_t *bytes);
 bool read_distmat (int fd, const char *name, DistMat *M, uint64_t *bytes);
 
-bool write_bytes(int fd, const char *name, void *buf, size_t size);
+bool write_bytes(int fd, const char *name, const void *buf, size_t size);
 bool read_bytes(int fd, const char *name, void *buf, size_t size);
 
 bool write_uint32(int fd, const char *name, uint32_t  val);
@@ -108,7 +108,7 @@ bool read_uint32 (int fd, const char *name, uint32_t *val);
 bool write_uint64(int fd, const char *name, uint64_t  val);
 bool read_uint64 (int fd, const char *name, uint64_t *val);
 
-bool write_int32_contig(int fd, const char *name, int32_t *buf, uint64_t count);
+bool write_int32_contig(int fd, const char *name, const int32_t *buf, uint64_t count);
 bool read_int32_contig (int fd, const char *name, int32_t *buf, uint64_t count);
 
 bool write_float(int fd, const char *name, float  val);

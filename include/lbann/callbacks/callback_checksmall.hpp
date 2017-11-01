@@ -50,16 +50,16 @@ class lbann_callback_checksmall : public lbann_callback {
   lbann_callback_checksmall(const lbann_callback_checksmall&) = default;
   lbann_callback_checksmall& operator=(
     const lbann_callback_checksmall&) = default;
-  lbann_callback_checksmall* copy() const {
+  lbann_callback_checksmall* copy() const override {
     return new lbann_callback_checksmall(*this);
   }
   /** Check that activations are good. */
-  void on_forward_prop_end(model *m, Layer *l);
+  void on_forward_prop_end(model *m, Layer *l) override;
   /** Check that gradients are good. */
-  void on_backward_prop_end(model *m, Layer *l);
+  void on_backward_prop_end(model *m, Layer *l) override;
   /** Check that weights are good. */
-  void on_batch_end(model *m);
-  std::string name() const { return "checksmall"; }
+  void on_batch_end(model *m) override;
+  std::string name() const override { return "checksmall"; }
  private:
   /** Smallest allowable value. */
   const DataType m_threshold = std::sqrt(std::numeric_limits<DataType>::min());

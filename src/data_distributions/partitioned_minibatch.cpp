@@ -79,7 +79,7 @@ bool lbann::partitioned_minibatch::is_data_set_processed(generic_data_reader *da
   }
 }
 
-int lbann::partitioned_minibatch::compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) {
+int lbann::partitioned_minibatch::compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) const {
   int num_parallel_readers = requested_num_parallel_readers;
 
   if(m_comm->get_procs_per_model() != num_parallel_readers) {

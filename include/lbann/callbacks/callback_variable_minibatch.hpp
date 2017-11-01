@@ -46,9 +46,9 @@ class lbann_callback_variable_minibatch : public lbann_callback {
   lbann_callback_variable_minibatch& operator=(
     const lbann_callback_variable_minibatch&) = default;
   /// Set the initial mini-batch size.
-  void on_train_begin(model *m);
+  void on_train_begin(model *m) override;
   /// Potentially change the mini-batch size.
-  void on_epoch_end(model *m);
+  void on_epoch_end(model *m) override;
  protected:
   /**
    * Implemented by child classes to provide the mini-batch/learning schedule.
@@ -95,12 +95,12 @@ class lbann_callback_step_minibatch : public lbann_callback_variable_minibatch {
   lbann_callback_step_minibatch(const lbann_callback_step_minibatch&) = default;
   lbann_callback_step_minibatch& operator=(
     const lbann_callback_step_minibatch&) = default;
-  lbann_callback_step_minibatch* copy() const {
+  lbann_callback_step_minibatch* copy() const override {
     return new lbann_callback_step_minibatch(*this);
   }
-  std::string name() const { return "step minibatch"; }
+  std::string name() const override { return "step minibatch"; }
  protected:
-  bool schedule(model *m, int& new_mbsize, float& new_lr, int& ramp_time);
+  bool schedule(model *m, int& new_mbsize, float& new_lr, int& ramp_time) override;
   /// Number of epochs between mini-batch size increases.
   int m_step;
   /// Number of steps to ramp the learning rate over.
@@ -129,12 +129,12 @@ class lbann_callback_minibatch_schedule : public lbann_callback_variable_minibat
     const lbann_callback_minibatch_schedule&) = default;
   lbann_callback_minibatch_schedule& operator=(
     const lbann_callback_minibatch_schedule&) = default;
-  lbann_callback_minibatch_schedule* copy() const {
+  lbann_callback_minibatch_schedule* copy() const override {
     return new lbann_callback_minibatch_schedule(*this);
   }
-  std::string name() const { return "minibatch schedule"; }
+  std::string name() const override { return "minibatch schedule"; }
  protected:
-  bool schedule(model *m, int& new_mbsize, float& new_lr, int& ramp_time);
+  bool schedule(model *m, int& new_mbsize, float& new_lr, int& ramp_time) override;
 
   /// Steps in the mini-batch schedule, stored in reverse sorted order.
   std::vector<minibatch_step> m_steps;

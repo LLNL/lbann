@@ -45,12 +45,12 @@ class lbann_callback_check_reconstruction_error : public lbann_callback {
   lbann_callback_check_reconstruction_error(const lbann_callback_check_reconstruction_error&) = default;
   lbann_callback_check_reconstruction_error& operator=(
     const lbann_callback_check_reconstruction_error&) = default;
-  lbann_callback_check_reconstruction_error* copy() const {
+  lbann_callback_check_reconstruction_error* copy() const override {
     return new lbann_callback_check_reconstruction_error(*this);
   }
   /** Check if reconstruction error has reached a given value. */
-  void on_epoch_end(model *m);
-  std::string name() const { return "check reconstruction error"; }
+  void on_epoch_end(model *m) override;
+  std::string name() const override{ return "check reconstruction error"; }
  private:
   /** maximum error value, default is 1.0 */
   double m_max_error;

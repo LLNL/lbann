@@ -73,16 +73,16 @@ class unpooling_layer : public transform {
   unpooling_layer& operator=(const unpooling_layer&) = default;
   ~unpooling_layer() = default;
 
-  unpooling_layer* copy() const { return new unpooling_layer(*this); }
+  unpooling_layer* copy() const override { return new unpooling_layer(*this); }
 
-  std::string get_type() const { return "unpooling"; }
+  std::string get_type() const override { return "unpooling"; }
 
   virtual inline void initialize_distributed_matrices() {
     transform::initialize_distributed_matrices<T_layout>();
   }
-  virtual data_layout get_data_layout() const { return T_layout; }
+  virtual data_layout get_data_layout() const override { return T_layout; }
 
-  void setup_dims() {
+  void setup_dims() override {
 
     // Initialize previous neuron tensor dimensions
     transform::setup_dims();
@@ -103,7 +103,7 @@ class unpooling_layer : public transform {
 
   protected:
 
-  void fp_compute() {
+  void fp_compute() override {
     if(this->m_using_gpus) {
       throw lbann_exception("unpooling_layer: GPU version not yet implemented");
     } else {
@@ -111,7 +111,7 @@ class unpooling_layer : public transform {
     }
   }
 
-  void bp_compute() {
+  void bp_compute() override {
     if(this->m_using_gpus) {
       throw lbann_exception("unpooling_layer: GPU version not yet implemented");
     } else {

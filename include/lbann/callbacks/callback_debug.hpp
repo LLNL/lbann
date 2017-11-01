@@ -56,27 +56,27 @@ class lbann_callback_debug : public lbann_callback {
   lbann_callback_debug(const lbann_callback_debug&) = default;
   lbann_callback_debug& operator=(
     const lbann_callback_debug&) = default;
-  lbann_callback_debug* copy() const { return new lbann_callback_debug(*this); }
+  lbann_callback_debug* copy() const override { return new lbann_callback_debug(*this); }
   /** Print that a batch is being started. */
-  void on_batch_begin(model *m);
+  void on_batch_begin(model *m) override;
   /** Print that forward prop for a layer is beginning. */
-  void on_forward_prop_begin(model *m, Layer *l);
+  void on_forward_prop_begin(model *m, Layer *l) override;
   /** Print that forward prop for a layer has completed. */
-  void on_forward_prop_end(model *m, Layer *l);
+  void on_forward_prop_end(model *m, Layer *l) override;
   /** Print that backward prop for a layer is beginning. */
-  void on_backward_prop_begin(model *m, Layer *l);
+  void on_backward_prop_begin(model *m, Layer *l) override;
   /** Print that backward prop for a layer has completed. */
-  void on_backward_prop_end(model *m, Layer *l);
+  void on_backward_prop_end(model *m, Layer *l) override;
 
   /** Print that an evaluation batch is being started. */
-  void on_batch_evaluate_begin(model *m);
+  void on_batch_evaluate_begin(model *m) override;
   /** Print that an evaluation batch has completed. */
-  void on_batch_evaluate_end(model *m);
+  void on_batch_evaluate_end(model *m) override;
   /** Print that an evaluation forward prop is beginning. */
-  void on_evaluate_forward_prop_begin(model *m, Layer *l);
+  void on_evaluate_forward_prop_begin(model *m, Layer *l) override;
   /** Print that an evaluation forward prop has completed. */
-  void on_evaluate_forward_prop_end(model *m, Layer *l);
-  std::string name() const { return "debug"; }
+  void on_evaluate_forward_prop_end(model *m, Layer *l) override;
+  std::string name() const override { return "debug"; }
  private:
   /** The phase to debug. */
   execution_mode m_debug_phase;

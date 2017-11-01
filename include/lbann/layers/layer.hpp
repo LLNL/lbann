@@ -164,6 +164,12 @@ class Layer {
   /// Following function tells whether a layer has weights; default is false
   virtual bool is_learning_layer() { return false; }
 
+  /// Following functions tell whether current layer is a fan-out layer; default is false
+  virtual bool is_fanout_layer() { return false; }
+
+  /// Following functions tell whether current layer is a fan-in layer; default is false
+  virtual bool is_fanin_layer() { return false; }
+
   /** Return the neural network model of this layer. */
   inline model* get_neural_network_model() const {
     return m_neural_network_model;
@@ -174,13 +180,13 @@ class Layer {
   }
   virtual El::Matrix<El::Int>* get_sample_indices_per_mb() { return nullptr; };
 
-  virtual bool saveToFile(int fd, const char *filename) { return true; };
+  virtual bool saveToFile(int fd, const char *filename) const { return true; };
   virtual bool loadFromFile(int fd, const char *filename) { return true; };
 
-  virtual bool saveToCheckpoint(int fd, const char *filename, size_t *bytes);
+  virtual bool saveToCheckpoint(int fd, const char *filename, size_t *bytes) const;
   virtual bool loadFromCheckpoint(int fd, const char *filename, size_t *bytes);
 
-  virtual bool saveToCheckpointShared(persist& p);
+  virtual bool saveToCheckpointShared(persist& p) const;
   virtual bool loadFromCheckpointShared(persist& p);
 
   /** Get forward propagation output, as seen by next layer. */

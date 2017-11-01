@@ -110,14 +110,17 @@ class concatenation_layer : public transform {
 
   }
 
-  concatenation_layer* copy() const { return new concatenation_layer(*this); }
+  concatenation_layer* copy() const override { return new concatenation_layer(*this); }
 
-  std::string get_type() const { return "concatenation"; }
+  /// Following function tells this layer is is a fan-in layer
+  bool is_fanin_layer() override { return true; }
+
+  std::string get_type() const override { return "concatenation"; }
 
   virtual inline void initialize_distributed_matrices();
-  virtual data_layout get_data_layout() const { return T_layout; }
+  virtual data_layout get_data_layout() const override { return T_layout; }
 
-  void setup_dims() {
+  void setup_dims() override {
 
     // Initialize previous layer dimensions with first parent layer
     transform::setup_dims();
@@ -163,7 +166,7 @@ class concatenation_layer : public transform {
 
   }
 
-  void setup_gpu() {
+  void setup_gpu() override {
     transform::setup_gpu();
   #ifndef __LIB_CUDNN
     throw lbann_exception("concatenation_layer: cuDNN not detected");
@@ -207,7 +210,7 @@ class concatenation_layer : public transform {
 
   protected:
 
-  void fp_compute() {
+  void fp_compute() override {
     if(this->m_using_gpus) {
       fp_compute_gpu();
     } else {
@@ -215,7 +218,7 @@ class concatenation_layer : public transform {
     }
   }
 
-  void bp_compute() {
+  void bp_compute() override {
     if(this->m_using_gpus) {
   #ifndef __LIB_CUDNN
       throw lbann_exception("concatenation_layer: cuDNN not detected");
@@ -351,7 +354,7 @@ class concatenation_layer : public transform {
 
   }
 
-  void get_bp_output(AbsDistMat& bp_output, const Layer* prev_layer) const {
+  void get_bp_output(AbsDistMat& bp_output, const Layer* prev_layer) const override {
 
     // Check if input is in the list of parent layers
     const int parent_index = (std::find(this->m_parent_layers.begin(),
