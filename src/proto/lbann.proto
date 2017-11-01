@@ -73,7 +73,7 @@ message ImagePreprocessor {
 //========================================================================
 
 message Model {
-  string name = 1; //dnn, dag, greedy_layerwise_autoencoder
+  string name = 1; //dnn, dag, greedy_layerwise_autoencoder, planar
   string objective_function = 2; // cross_entropy, mean_squared_error
   repeated Metric metric = 5; 
   string data_layout = 6;

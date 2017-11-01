@@ -44,30 +44,37 @@ class planar_model : public model {
   planar_model(int mini_batch_size,
                    lbann_comm *comm,
                    objective_functions::objective_function *obj_fn,
-                   optimizer_factory *optimizer_fac);
-/**
-  planar_model(const planar_model& other);
-  planar_model& operator=(const planar_model& other); 
-*/
+                   optimizer_factory *optimizer_fac,
+                   int width);
+  /** Copy constructor. */
+  planar_model(const planar_model& other) = default;
+
+  /** Copy assignment operator. */
+  planar_model& operator=(const planar_model& other) = default;
+
 
   /// Destructor
   ~planar_model();
 
+  /** Create copy. */
+  virtual planar_model* copy() const override { return new planar_model(*this); }
+
   /** Following functions are used to add a set of layers at given horizontal level
    *  on a planar space. The layers are added either by duplicating a single layer
    *  or placing individual layers. */
-  virtual int stackup_tail(int hindex, Layer *new_layer);
-  virtual int stackup_duplicate(Layer *new_layer);
+  void stackup_duplicate(Layer *new_layer, int num_heads);
+
+  void add(Layer *layer);
 
   /// Setup planar model
   virtual void setup() override;
   virtual void setup_subset(int start_index, int end_index);
 
   /// Train model
-  virtual void train(int num_epochs);
+  virtual void train(int num_epochs) override;
 
   /// Training step on one mini-batch
-  virtual bool train_mini_batch() = 0;
+  virtual bool train_mini_batch() override;
 
   /// Evaluate model
   virtual void evaluate(execution_mode mode) override;
@@ -79,18 +86,19 @@ class planar_model : public model {
   virtual bool at_epoch_start();
 
   /// Ensure weight matriecs in heads at each level are the same
-  virtual void equalize(int  start_index, int end_index) = 0;
+  void equalize(int  start_index, int end_index);
   /// Add weight matrices in heads at each level
-  virtual void sum_up_gradients() = 0;
+  void sum_up_gradients();
 
   /// Check if the model has a valid data set for the execution mode
-  virtual bool is_execution_mode_valid(execution_mode mode) = 0;
+  bool is_execution_mode_valid(execution_mode mode);
 
   virtual std::string name() const override { return "planar_model"; }
 
  protected:
   /// the maximum number of horizontal layers in the network
   int m_width;
+  bool m_multi_headed;
 
   /// List of layers on the plane
   /// m_layers contains a set of horizontal layers for each level

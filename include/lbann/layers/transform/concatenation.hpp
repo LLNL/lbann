@@ -112,6 +112,9 @@ class concatenation_layer : public transform {
 
   concatenation_layer* copy() const { return new concatenation_layer(*this); }
 
+  /// Following function tells this layer is is a fan-in layer
+  bool is_fanin_layer() { return true; }
+
   std::string get_type() const { return "concatenation"; }
 
   virtual inline void initialize_distributed_matrices();
