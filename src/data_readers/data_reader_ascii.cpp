@@ -35,24 +35,15 @@ ascii_reader::ascii_reader(int sequence_length, bool shuffle)
 
 bool ascii_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
 
-  // Get file
-  const int file_id = (std::upper_bound(m_file_indices.begin(),
-                                        m_file_indices.end(),
-                                        data_id)
-                       - m_file_indices.begin() - 1);
-
   // Get text sequence from file
-  const int file_length = (m_file_indices[file_id+1]
-                           - m_file_indices[file_id]
-                           - m_sequence_length);
-  const int pos = data_id - m_file_indices[file_id] - m_sequence_length;
-  const int num_chars = (std::min(pos + m_sequence_length, file_length)
+  const int pos = data_id - m_sequence_length;
+  const int num_chars = (std::min(pos + m_sequence_length, m_file_size)
                          - std::max(pos, 0));
   std::vector<char> sequence(m_sequence_length, 0);
   if (num_chars > 0) {
-    std::ifstream fs(get_file_dir() + m_file_list[file_id],
+    std::ifstream fs(get_file_dir() + get_data_filename(),
                      std::fstream::in);
-    fs.seekg(pos);
+    fs.seekg(std::max(pos, 0));
     fs.read(&sequence[std::max(-pos, 0)], num_chars);
     fs.close();
   }
@@ -71,24 +62,15 @@ bool ascii_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
 
 bool ascii_reader::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
 
-  // Get file
-  const int file_id = (std::upper_bound(m_file_indices.begin(),
-                                        m_file_indices.end(),
-                                        data_id)
-                       - m_file_indices.begin() - 1);
-
   // Get text sequence from file
-  const int file_length = (m_file_indices[file_id+1]
-                           - m_file_indices[file_id]
-                           - m_sequence_length);
-  const int pos = data_id - m_file_indices[file_id] - m_sequence_length + 1;
-  const int num_chars = (std::min(pos + m_sequence_length, file_length)
+  const int pos = data_id - m_sequence_length + 1;
+  const int num_chars = (std::min(pos + m_sequence_length, m_file_size)
                          - std::max(pos, 0));
   std::vector<char> sequence(m_sequence_length, 0);
   if (num_chars > 0) {
-    std::ifstream fs(get_file_dir() + m_file_list[file_id],
+    std::ifstream fs(get_file_dir() + get_data_filename(),
                      std::fstream::in);
-    fs.seekg(pos);
+    fs.seekg(std::max(pos, 0));
     fs.read(&sequence[std::max(-pos, 0)], num_chars);
     fs.close();
   }
@@ -108,36 +90,20 @@ bool ascii_reader::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
 //===================================================
 
 void ascii_reader::load() {
-  std::ifstream fs;
 
   // Make sure directory path ends with a slash
   if (m_file_dir.back() != '/') {
     m_file_dir.push_back('/');
   }
 
-  // Get list of files
-  fs.open(get_file_dir() + get_data_filename(), std::fstream::in);
-  while (fs.good()) {
-    std::string file;
-    std::getline(fs, file);
-    if (file.size() > 0) {
-      m_file_list.push_back(file);
-    }
-  }
+  // Get length of data file
+  std::ifstream fs(get_file_dir() + get_data_filename(),
+                   std::fstream::in | std::fstream::ate);
+  m_file_size = fs.tellg();
   fs.close();
-  
-  // Get length of each file
-  m_file_indices.resize(1, 0);
-  for (const std::string &file : m_file_list) {
-    fs.open(get_file_dir() + file, std::fstream::in | std::fstream::ate);
-    const int file_size = fs.tellg();
-    m_file_indices.push_back(m_file_indices.back()
-                             + file_size + m_sequence_length);
-    fs.close();
-  }
 
   // Reset indices
-  m_shuffled_indices.resize(m_file_indices.back());
+  m_shuffled_indices.resize(m_file_size + m_sequence_length);
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
   if (is_master()) {
     std::cerr << "calling select_subset_of_data; m_shuffled_indices.size: " <<

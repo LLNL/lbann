@@ -56,11 +56,11 @@ class ascii_reader : public generic_data_reader {
   const std::vector<int> get_data_dims() const override {
     return {128 * m_sequence_length};
   }
-  
-  int m_sequence_length;
 
-  std::vector<std::string> m_file_list;
-  std::vector<int> m_file_indices;
+  /** Length of text sequence. */
+  int m_sequence_length;
+  /** Size of data file in bytes. */
+  int m_file_size;
 
 };
 
