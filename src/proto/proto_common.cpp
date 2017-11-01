@@ -1776,6 +1776,8 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       reader = new cifar10_reader(shuffle);
     } else if (name == "synthetic") {
       reader = new data_reader_synthetic(readme.num_samples(), readme.num_features(), shuffle);
+    } else if (name == "ascii") {
+      reader = new ascii_reader(1, shuffle);
     } else {
       if (master) {
         err << __FILE__ << " " << __LINE__ << " :: unknown name for data reader: "
@@ -1869,6 +1871,9 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
         } else if (name == "synthetic") {
         reader_validation = new data_reader_synthetic(shuffle);
         */
+      } else if (name == "ascii") {
+        reader_validation = new ascii_reader(1, shuffle);
+        (*(ascii_reader *)reader_validation) = (*(ascii_reader *)reader);
       }
 
       reader_validation->swap_role("validate");
