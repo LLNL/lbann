@@ -118,26 +118,21 @@ int main(int argc, char *argv[]) {
       procs_per_model = comm->get_procs_in_world();
     }
     comm->split_models(procs_per_model);
-    if (master) cout << "  procs_per_model: " << procs_per_model << endl;
     if (pb_model->num_parallel_readers() > procs_per_model) {
       pb_model->set_num_parallel_readers(procs_per_model);
     }
 
-    Grid& grid = comm->get_model_grid();
     if (master) {
-      cout << "  Number of models: " << comm->get_num_models() << endl;
-      cout << "  Grid is " << grid.Height() << " x " << grid.Width() << endl;
-      cout << endl;
+      std::cout << "Model settings" << std::endl
+                << "  Models              : " << comm->get_num_models() << std::endl
+                << "  Processes per model : " << procs_per_model << std::endl
+                << "  Grid dimensions     : " << comm->get_model_grid().Height() << " x " << comm->get_model_grid().Width() << std::endl;
+      std::cout << std::endl;
     }
 
     // Save info to file; this includes the complete prototext (with any over-rides
     // from the cmd line) and various other info
     save_session(comm, argc, argv, pb);
-
-    // Initialize data readers
-    //@todo: code not in place for correctly handling image preprocessing
-    std::map<execution_mode, generic_data_reader *> data_readers;
-    init_data_readers(master, pb, data_readers);
 
     // Check for cudnn, with user feedback
     cudnn::cudnn_manager *cudnn = NULL;
@@ -157,6 +152,24 @@ int main(int argc, char *argv[]) {
       cerr << "code was NOT compiled with __LIB_CUDNN\n";
     }
 #endif
+
+    if (master) {
+      std::cout << "Hardware settings (for master process)" << std::endl
+                << "  Processes on node : " << comm->get_procs_per_node() << std::endl
+                << "  OpenMP threads    : " << omp_get_num_threads() << std::endl;
+      #if __LIB_CUDNN
+      if (cudnn != nullptr) {
+        std::cout << "  Available GPUs    : " << cudnn->get_num_total_gpus() << std::endl
+                  << "  Assigned GPUs     : " << cudnn->get_num_gpus() << std::endl;
+      }
+      #endif // __LIB_CUDNN
+      std::cout << std::endl;
+    }
+
+    // Initialize data readers
+    //@todo: code not in place for correctly handling image preprocessing
+    std::map<execution_mode, generic_data_reader *> data_readers;
+    init_data_readers(master, pb, data_readers);
 
     // Construct optimizer
     optimizer_factory *optimizer_fac = init_optimizer_factory(comm, cudnn, pb);
