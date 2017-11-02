@@ -64,11 +64,11 @@ class planar_model : public model {
    *  or placing individual layers. */
   void stackup_duplicate(Layer *new_layer, int num_heads);
 
-  void add(Layer *layer);
+  void add(Layer *layer) override;
 
   /// Setup planar model
   virtual void setup() override;
-  virtual void setup_subset(int start_index, int end_index);
+  void setup_subset();
 
   /// Train model
 <<<<<<< HEAD
@@ -93,7 +93,7 @@ class planar_model : public model {
   virtual bool at_epoch_start();
 
   /// Ensure weight matriecs in heads at each level are the same
-  void equalize(int  start_index, int end_index);
+  void equalize();
   /// Add weight matrices in heads at each level
   void sum_up_gradients();
 
