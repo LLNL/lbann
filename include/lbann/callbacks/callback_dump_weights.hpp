@@ -50,12 +50,12 @@ class lbann_callback_dump_weights : public lbann_callback {
   lbann_callback_dump_weights(const lbann_callback_dump_weights&) = default;
   lbann_callback_dump_weights& operator=(
     const lbann_callback_dump_weights&) = default;
-  lbann_callback_dump_weights* copy() const {
+  lbann_callback_dump_weights* copy() const override {
     return new lbann_callback_dump_weights(*this);
   }
-  void on_train_begin(model *m);
-  void on_epoch_end(model *m);
-  std::string name() const { return "dump weights"; }
+  void on_train_begin(model *m) override;
+  void on_epoch_end(model *m) override;
+  std::string name() const override { return "dump weights"; }
  private:
   /** Basename for writing files. */
   std::string m_basename;

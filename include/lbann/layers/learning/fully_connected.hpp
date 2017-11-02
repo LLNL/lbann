@@ -147,7 +147,7 @@ class fully_connected_layer : public learning {
   }
 
   /** Returns description of ctor params */
-  std::string get_description() const {
+  std::string get_description() const override {
     return std::string {} +
      " fully_connected; num_neurons: " 
      + std::to_string(this->m_num_neurons)
@@ -302,16 +302,16 @@ class fully_connected_layer : public learning {
     
   }
 
-  fully_connected_layer* copy() const {
+  fully_connected_layer* copy() const override {
     return new fully_connected_layer(*this);
   }
 
-  std::string get_type() const { return "fully connected"; }
+  std::string get_type() const override { return "fully connected"; }
 
   virtual inline void initialize_distributed_matrices();
-  virtual data_layout get_data_layout() const { return T_layout; }
+  virtual data_layout get_data_layout() const override { return T_layout; }
 
-  void setup_dims() {
+  void setup_dims() override {
     // Store neuron tensor dimensions
     const int num_neurons = this->m_num_neurons;
     const int num_neuron_dims = this->m_num_neuron_dims;
@@ -326,7 +326,7 @@ class fully_connected_layer : public learning {
     this->m_neuron_dims = neuron_dims;
   }
 
-  void setup_data() {
+  void setup_data() override {
     learning::setup_data();
     // Initialize matrices
     // Note: the weights-bias matrix has an extra column so it includes bias term
@@ -356,7 +356,7 @@ class fully_connected_layer : public learning {
     }
   }
 
-  void setup_views() {
+  void setup_views() override {
     learning::setup_views();
     El::View(*m_activation_weights_v, *this->m_weights,
              El::ALL, El::IR(0, this->m_num_prev_neurons));
@@ -368,7 +368,7 @@ class fully_connected_layer : public learning {
              El::ALL, El::IR(this->m_num_prev_neurons));
   }
 
-  void setup_gpu() {
+  void setup_gpu() override {
     learning::setup_gpu();
 #if !(defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA))
     throw lbann_exception("fully_connected_layer: CUDA not detected");
@@ -421,7 +421,7 @@ class fully_connected_layer : public learning {
   }
 
 
-  void fp_compute() {
+  void fp_compute() override {
 #ifdef __LBANN_DEBUG
     if(this->m_using_gpus) {
       this->m_cudnn->synchronize_all();
@@ -495,7 +495,7 @@ class fully_connected_layer : public learning {
 #endif
   }
 
-  void bp_compute() {
+  void bp_compute() override {
     if(this->m_using_gpus) {
       bp_compute_cuda();
     } else {
@@ -561,7 +561,7 @@ class fully_connected_layer : public learning {
     return avg_error;
   }
 
-  bool update_compute() {
+  bool update_compute() override {
     if(this->m_execution_mode == execution_mode::training) {
 #if !(defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA))      
       this->m_optimizer->update(this->m_weights_gradient);

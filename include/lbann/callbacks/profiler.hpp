@@ -40,22 +40,22 @@ class lbann_callback_profiler : public lbann_callback {
   lbann_callback_profiler() : lbann_callback() {}
   lbann_callback_profiler(const lbann_callback_profiler&) = default;
   lbann_callback_profiler& operator=(const lbann_callback_profiler&) = default;
-  lbann_callback_profiler* copy() const {
+  lbann_callback_profiler* copy() const override {
     return new lbann_callback_profiler(*this);
   }
-  void on_epoch_begin(model *m);
-  void on_epoch_end(model *m);
-  void on_batch_begin(model *m);
-  void on_batch_end(model *m);
-  void on_forward_prop_begin(model *m);
-  void on_forward_prop_end(model *m);
-  void on_backward_prop_begin(model *m);
-  void on_backward_prop_end(model *m);
-  void on_forward_prop_begin(model *m, Layer *l);
-  void on_forward_prop_end(model *m, Layer *l);
-  void on_backward_prop_begin(model *m, Layer *l);
-  void on_backward_prop_end(model *m, Layer *l);
-  std::string name() const { return "profiler"; }
+  void on_epoch_begin(model *m) override;
+  void on_epoch_end(model *m) override;
+  void on_batch_begin(model *m) override;
+  void on_batch_end(model *m) override;
+  void on_forward_prop_begin(model *m) override;
+  void on_forward_prop_end(model *m) override;
+  void on_backward_prop_begin(model *m) override;
+  void on_backward_prop_end(model *m) override;
+  void on_forward_prop_begin(model *m, Layer *l) override;
+  void on_forward_prop_end(model *m, Layer *l) override;
+  void on_backward_prop_begin(model *m, Layer *l) override;
+  void on_backward_prop_end(model *m, Layer *l) override;
+  std::string name() const override { return "profiler"; }
  private:
   static const int num_colors = 20;
   // http://there4.io/2012/05/02/google-chart-color-list/

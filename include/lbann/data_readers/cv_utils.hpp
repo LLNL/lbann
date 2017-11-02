@@ -31,7 +31,7 @@
 
 #include <type_traits>
 #include <typeinfo>   // operator typeid
-#include "patchworks/patchworks_opencv.hpp"
+#include "opencv_extensions.hpp"
 #include "cv_process.hpp"
 #include "lbann/utils/mild_exception.hpp"
 
@@ -201,7 +201,6 @@ inline bool cv_utils::copy_cvMat_to_buf_with_known_type(
 template<typename T, int NCh>
 inline cv::Mat cv_utils::copy_buf_to_cvMat_with_full_info(
   const std::vector<uint8_t>& buf, const int Width, const int Height, const cv_process& pp) {
-  using namespace lbann::patchworks;
 
   const int sz = Height*Width;
 
@@ -398,7 +397,6 @@ inline bool cv_utils::copy_cvMat_to_buf_with_known_type(
 template<typename T, int NCh>
 inline cv::Mat cv_utils::copy_buf_to_cvMat_with_full_info(
   const ::Mat& buf, const int Width, const int Height, const cv_process& pp) {
-  using namespace lbann::patchworks;
 
   const int sz = Height*Width;
   _LBANN_MILD_EXCEPTION(sz*NCh != buf.Height(), \

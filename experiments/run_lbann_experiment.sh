@@ -4,38 +4,37 @@
 EXPERIMENT_NAME=lbann_alexnet
 LBANN_DIR=$(git rev-parse --show-toplevel)
 READER_PROTO="--reader=${LBANN_DIR}/model_zoo/data_readers/data_reader_imagenet.prototext"
-MODEL_PROTO="--model=${LBANN_DIR}/model_zoo/models/alexnet/model_alexnet.prototext --num_epochs=10"
+MODEL_PROTO="--model=${LBANN_DIR}/model_zoo/models/alexnet/model_alexnet.prototext --num_epochs=1"
 OPTIMIZER_PROTO="--optimizer=${LBANN_DIR}/model_zoo/optimizers/opt_sgd.prototext"
-DATASET_CLASSES=10 # default: 1000 (options: 10, 100, 300, 1000)
+IMAGENET_CLASSES=10 # options: 10, 100, 300, 1000 (leave blank to use other dataset)
 
 # Hardware configuration
+NUM_NODES=      # default: number of allocated nodes (1 if none)
+PROCS_PER_NODE= # default: 2 (1 if NUM_NODES=1)
 CLUSTER=
 PARTITION=
 ACCOUNT=
-NUM_NODES= # default: number of allocated nodes (1 if none)
-PROCS_PER_NODE= # default: 2 (1 if NUM_NODES=1)
-REBOOT_NODES= # default: NO
-USE_GPU=
-TIME_LIMIT= # default: 12:00:00
 
 # Additional parameters
+SUBMIT_JOB=     # default: YES
+TIME_LIMIT=     # default: 12:00:00
+USE_GPU=        # default: YES (ignored if built without GPUs)
+CACHE_DATASET=  # default: NO
+USE_VTUNE=      # default: NO
+USE_NVPROF=     # default: NO
 HOME_DIR=${LBANN_DIR}/experiments
-EXPERIMENT_SCRIPT=$(readlink -f "$0")
-SUBMIT_JOB= # default: YES
-CACHE_DATASET= # default: NO
+TRAIN_DATASET_DIR=
+TRAIN_DATASET_LABELS=
+TEST_DATASET_DIR=
+TEST_DATASET_LABELS=
+DATASET_TARBALLS=
 CACHE_DIR=
-LUSTRE_DIR=/p/lscratchf/brainusr
-DATASET_DIR=datasets/ILSVRC2012
-USE_VTUNE= # default: NO
-VTUNE_EXE=amplxe-cl-mpi
-VTUNE_ARGS="-collect hotspots"
-USE_NVPROF= # default: NO
-NVPROF_EXE=nvprof
-NVPROF_ARGS="--profile-child-processes --unified-memory-profiling off"
+EXPERIMENT_SCRIPT=$(readlink -f "$0")
+VTUNE_EXE="amplxe-cl-mpi -collect hotspots"
+NVPROF_EXE="nvprof --profile-child-processes --unified-memory-profiling off"
 
 # Set defaults
 EXPERIMENT_NAME=${EXPERIMENT_NAME:-lbann}
-DATASET_CLASSES=${DATASET_CLASSES:-1000}
 if [ -z "${NUM_NODES}" ]; then
     if [ -n "${SLURM_JOB_NUM_NODES}" ]; then
         NUM_NODES=${SLURM_JOB_NUM_NODES}
@@ -50,10 +49,9 @@ if [ -z "${PROCS_PER_NODE}" ]; then
         PROCS_PER_NODE=2
     fi
 fi
-NUM_PROCS=$((${NUM_NODES}*${PROCS_PER_NODE}))
-REBOOT_NODES=${REBOOT_NODES:-NO}
-TIME_LIMIT=${TIME_LIMIT:-12:00:00}
 SUBMIT_JOB=${SUBMIT_JOB:-YES}
+TIME_LIMIT=${TIME_LIMIT:-12:00:00}
+USE_GPU=${USE_GPU:-YES}
 CACHE_DATASET=${CACHE_DATASET:-NO}
 USE_VTUNE=${USE_VTUNE:-NO}
 USE_NVPROF=${USE_NVPROF:-NO}
@@ -62,59 +60,137 @@ USE_NVPROF=${USE_NVPROF:-NO}
 CLUSTER=${CLUSTER:-$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')}
 case ${CLUSTER} in
     "catalyst")
-        ACCOUNT=${ACCOUNT:-brain}
         PARTITION=${PARTITION:-pbatch}
-        USE_GPU=${USE_GPU:-NO}
-        CACHE_DIR=${CACHE_DIR:-/l/ssd/${USER}}
+        ACCOUNT=${ACCOUNT:-brain}
+        CACHE_DIR=${CACHE_DIR:-/l/ssd}
+        HAS_GPU=NO
         ;;
     "quartz")
-        ACCOUNT=${ACCOUNT:-brain}
         PARTITION=${PARTITION:-pbatch}
-        USE_GPU=${USE_GPU:-NO}
+        ACCOUNT=${ACCOUNT:-brain}
         CACHE_DIR=${CACHE_DIR:-/tmp/${USER}}
+        HAS_GPU=NO
         ;;
     "surface")
-        ACCOUNT=${ACCOUNT:-hpclearn}
         PARTITION=${PARTITION:-gpgpu}
-        USE_GPU=${USE_GPU:-YES}
+        ACCOUNT=${ACCOUNT:-hpclearn}
         CACHE_DIR=${CACHE_DIR:-/tmp/${USER}}
+        HAS_GPU=YES
         ;;
     *)
+        PARTITION=${PARTITION:-pbatch}
+        ACCOUNT=${ACCOUNT:-brain}
+        CACHE_DIR=${CACHE_DIR:-/tmp/${USER}}
+        HAS_GPU=NO
         echo "Error: unrecognized system (${CLUSTER})"
         exit 1
         ;;
 esac
 
 # Initialize dataset
-case ${DATASET_CLASSES} in
-    "10")
-        DATASET_SUFFIX=_c0-9
-        ;;
-    "100")
-        DATASET_SUFFIX=_c0-99
-        ;;
-    "300")
-        DATASET_SUFFIX=_c0-299
-        ;;
-    *)
-        DATASET_SUFFIX=
-        ;;
-esac
-case ${CACHE_DATASET} in
-    YES|yes|TRUE|true|ON|on|1)
-        ;;
-    *)
-        CACHE_DIR=${LUSTRE_DIR}
-        ;;
-esac
-READER_PROTO="${READER_PROTO} --data_filedir_train=${CACHE_DIR}/${DATASET_DIR}/resized_256x256/train/ --data_filename_train=${CACHE_DIR}/${DATASET_DIR}/labels/train${DATASET_SUFFIX}.txt --data_filedir_test=${CACHE_DIR}/${DATASET_DIR}/resized_256x256/val/ --data_filename_test=${CACHE_DIR}/${DATASET_DIR}/labels/val${DATASET_SUFFIX}.txt"
+if [ -n "${IMAGENET_CLASSES}" ]; then
+    READER_PROTO="--reader=${LBANN_DIR}/model_zoo/data_readers/data_reader_imagenet.prototext"
+    case ${IMAGENET_CLASSES} in
+        10)
+            IMAGENET_DIR=/p/lscratchf/brainusr/datasets/ILSVRC2012
+            DATASET_TARBALLS="${IMAGENET_DIR}/resized_256x256/train.tar ${IMAGENET_DIR}/resized_256x256/val.tar ${IMAGENET_DIR}/labels.tar"
+            IMAGENET_SUFFIX=_c0-9
+            ;;
+        100)
+            IMAGENET_DIR=/p/lscratchf/brainusr/datasets/ILSVRC2012
+            DATASET_TARBALLS="${IMAGENET_DIR}/resized_256x256/train.tar ${IMAGENET_DIR}/resized_256x256/val.tar ${IMAGENET_DIR}/labels.tar"
+            IMAGENET_SUFFIX=_c0-99
+            ;;
+        300)
+            IMAGENET_DIR=/p/lscratchf/brainusr/datasets/ILSVRC2012
+            DATASET_TARBALLS="${IMAGENET_DIR}/resized_256x256/train.tar ${IMAGENET_DIR}/resized_256x256/val.tar ${IMAGENET_DIR}/labels.tar"
+            IMAGENET_SUFFIX=_c0-299
+            ;;
+        1000|1K|1k)
+            IMAGENET_CLASSES=1000
+            IMAGENET_DIR=/p/lscratchf/brainusr/datasets/ILSVRC2012
+            DATASET_TARBALLS="${IMAGENET_DIR}/resized_256x256/train.tar ${IMAGENET_DIR}/resized_256x256/val.tar ${IMAGENET_DIR}/labels.tar"
+            IMAGENET_SUFFIX=
+            ;;
+        21000|21K|21k)
+            IMAGENET_CLASSES=21000
+            IMAGENET_DIR=/p/lscratchf/brainusr/datasets/ILSVRC2012
+            echo "TODO: support ImageNet-21K"
+            exit 1
+            ;;
+        *)
+            echo "Error: invalid number of ImageNet classes"
+            exit 1
+            ;;
+    esac
+    case ${CACHE_DATASET} in
+        YES|yes|TRUE|true|ON|on|1)
+            TRAIN_DATASET_DIR=${CACHE_DIR}/train/
+            TRAIN_DATASET_LABELS=${CACHE_DIR}/labels/train${IMAGENET_SUFFIX}.txt
+            TEST_DATASET_DIR=${CACHE_DIR}/val/
+            TEST_DATASET_LABELS=${CACHE_DIR}/labels/val${IMAGENET_SUFFIX}.txt
+            ;;
+        *)
+            TRAIN_DATASET_DIR=${IMAGENET_DIR}/resized_256x256/train/
+            TRAIN_DATASET_LABELS=${IMAGENET_DIR}/labels/train${IMAGENET_SUFFIX}.txt
+            TEST_DATASET_DIR=${IMAGENET_DIR}/resized_256x256/val/
+            TEST_DATASET_LABELS=${IMAGENET_DIR}/labels/val${IMAGENET_SUFFIX}.txt
+            ;;
+    esac
+    EXPERIMENT_NAME=${EXPERIMENT_NAME}_imagenet${IMAGENET_CLASSES}
+else
+    CACHE_DATASET=NO
+    CACHE_DIR=
+fi
+if [ -n "${TRAIN_DATASET_DIR}" ]; then
+    READER_PROTO="${READER_PROTO} --data_filedir_train=${TRAIN_DATASET_DIR}"
+fi
+if [ -n "${TRAIN_DATASET_LABELS}" ]; then
+    READER_PROTO="${READER_PROTO} --data_filename_train=${TRAIN_DATASET_LABELS}"
+fi
+if [ -n "${TEST_DATASET_DIR}" ]; then
+    READER_PROTO="${READER_PROTO} --data_filedir_test=${TEST_DATASET_DIR}"
+fi
+if [ -n "${TEST_DATASET_LABELS}" ]; then
+    READER_PROTO="${READER_PROTO} --data_filename_test=${TEST_DATASET_LABELS}"
+fi
 
 # Initialize experiment command
 LBANN_EXE="${LBANN_DIR}/build/${CLUSTER}.llnl.gov/model_zoo/lbann"
+case ${USE_GPU} in
+    YES|yes|TRUE|true|ON|on|1)
+        case ${HAS_GPU} in
+            YES|yes|TRUE|true|ON|on|1)
+                MODEL_PROTO="${MODEL_PROTO} --use_cudnn=1"
+                ;;
+        esac
+        ;;
+    *)
+        MODEL_PROTO="${MODEL_PROTO} --use_cudnn=0"
+        EXPERIMENT_NAME=${EXPERIMENT_NAME}_nogpu
+        ;;
+esac
 EXPERIMENT_COMMAND="${LBANN_EXE} ${MODEL_PROTO} ${OPTIMIZER_PROTO} ${READER_PROTO}"
 
+# Initialize profiler command
+case ${USE_VTUNE} in
+    YES|yes|TRUE|true|ON|on|1)
+        PROFILER_COMMAND="${PROFILER_COMMAND} ${VTUNE_EXE} -r ./vtune --"
+        EXPERIMENT_NAME=${EXPERIMENT_NAME}_vtune
+        ;;
+esac
+case ${USE_NVPROF} in
+    YES|yes|TRUE|true|ON|on|1)
+        PROFILER_COMMAND="${PROFILER_COMMAND} ${NVPROF_EXE} --log-file nvprof_output-%h-%p.txt --export-profile %h-%p.prof"
+        EXPERIMENT_NAME=${EXPERIMENT_NAME}_nvprof
+        ;;
+esac
+
+# Initialize experiment name
+EXPERIMENT_NAME=${EXPERIMENT_NAME}_${CLUSTER}_${PARTITION}_N${NUM_NODES}
+
 # Make directories
-EXPERIMENT_DIR=${HOME_DIR}/$(date +%Y%m%d_%H%M%S)_${EXPERIMENT_NAME}_${CLUSTER}_N${NUM_NODES}
+EXPERIMENT_DIR=${HOME_DIR}/$(date +%Y%m%d_%H%M%S)_${EXPERIMENT_NAME}
 mkdir -p ${EXPERIMENT_DIR}
 case ${USE_VTUNE} in
     YES|yes|TRUE|true|ON|on|1)
@@ -141,34 +217,29 @@ echo "# Time: $(date "+%Y-%m-%d %H:%M:%S")"             >> ${SLURM_SCRIPT}
 echo "# EXPERIMENT_NAME: ${EXPERIMENT_NAME}"            >> ${SLURM_SCRIPT}
 echo "# LBANN_DIR: ${LBANN_DIR}"                        >> ${SLURM_SCRIPT}
 echo "# EXPERIMENT_COMMAND: ${EXPERIMENT_COMMAND}"      >> ${SLURM_SCRIPT}
+echo "# NUM_NODES: ${NUM_NODES}"                        >> ${SLURM_SCRIPT}
+echo "# PROCS_PER_NODE: ${PROCS_PER_NODE}"              >> ${SLURM_SCRIPT}
 echo "# CLUSTER: ${CLUSTER}"                            >> ${SLURM_SCRIPT}
 echo "# PARTITION: ${PARTITION}"                        >> ${SLURM_SCRIPT}
 echo "# ACCOUNT: ${ACCOUNT}"                            >> ${SLURM_SCRIPT}
-echo "# NUM_NODES: ${NUM_NODES}"                        >> ${SLURM_SCRIPT}
-echo "# PROCS_PER_NODE: ${PROCS_PER_NODE}"              >> ${SLURM_SCRIPT}
-echo "# REBOOT_NODES: ${REBOOT_NODES}"                  >> ${SLURM_SCRIPT}
-echo "# USE_GPU: ${USE_GPU}"                            >> ${SLURM_SCRIPT}
-echo "# TIME_LIMIT: ${TIME_LIMIT}"                      >> ${SLURM_SCRIPT}
 echo "# SUBMIT_JOB: ${SUBMIT_JOB}"                      >> ${SLURM_SCRIPT}
+echo "# TIME_LIMIT: ${TIME_LIMIT}"                      >> ${SLURM_SCRIPT}
+echo "# USE_GPU: ${USE_GPU}"                            >> ${SLURM_SCRIPT}
 echo "# CACHE_DATASET: ${CACHE_DATASET}"                >> ${SLURM_SCRIPT}
-echo "# CACHE_DIR: ${CACHE_DIR}"                        >> ${SLURM_SCRIPT}
-echo "# LUSTRE_DIR: ${LUSTRE_DIR}"                      >> ${SLURM_SCRIPT}
-echo "# DATASET_DIR: ${DATASET_DIR}"                    >> ${SLURM_SCRIPT}
 echo "# USE_VTUNE: ${USE_VTUNE}"                        >> ${SLURM_SCRIPT}
+echo "# USE_NVPROF: ${USE_NVPROF}"                      >> ${SLURM_SCRIPT}
+echo "# HOME_DIR: ${HOME_DIR}"                          >> ${SLURM_SCRIPT}
+echo "# CACHE_DIR: ${CACHE_DIR}"                        >> ${SLURM_SCRIPT}
 echo ""                                                 >> ${SLURM_SCRIPT}
 echo "# ======== Slurm settings ========"               >> ${SLURM_SCRIPT}
-echo "#SBATCH --account=${ACCOUNT}"                     >> ${SLURM_SCRIPT}
-echo "#SBATCH --workdir=${EXPERIMENT_DIR}"              >> ${SLURM_SCRIPT}
-echo "#SBATCH --error=${LOG_FILE}"                      >> ${SLURM_SCRIPT}
 echo "#SBATCH --job-name=${EXPERIMENT_NAME}"            >> ${SLURM_SCRIPT}
 echo "#SBATCH --nodes=${NUM_NODES}"                     >> ${SLURM_SCRIPT}
-echo "#SBATCH --output=${LOG_FILE}"                     >> ${SLURM_SCRIPT}
 echo "#SBATCH --partition=${PARTITION}"                 >> ${SLURM_SCRIPT}
-case ${REBOOT_NODES} in
-    YES|yes|TRUE|true|ON|on|1)
-        echo "#SBATCH --reboot"                         >> ${SLURM_SCRIPT}
-esac
+echo "#SBATCH --account=${ACCOUNT}"                     >> ${SLURM_SCRIPT}
 echo "#SBATCH --time=${TIME_LIMIT}"                     >> ${SLURM_SCRIPT}
+echo "#SBATCH --workdir=${EXPERIMENT_DIR}"              >> ${SLURM_SCRIPT}
+echo "#SBATCH --output=${LOG_FILE}"                     >> ${SLURM_SCRIPT}
+echo "#SBATCH --error=${LOG_FILE}"                      >> ${SLURM_SCRIPT}
 echo ""                                                 >> ${SLURM_SCRIPT}
 echo "# ======== Print time and node names ========"    >> ${SLURM_SCRIPT}
 echo "date"                                             >> ${SLURM_SCRIPT}
@@ -184,29 +255,17 @@ case ${CACHE_DATASET} in
         BCAST="/collab/usr/global/tools/stat/file_bcast/${SYS_TYPE}/fbcast/file_bcast_par13 1MB"
         SRUN_COMMAND="srun --nodes=${NUM_NODES} --ntasks=${NUM_NODES}"
         COPY_COMMAND="srun --nodes=${NUM_NODES} --ntasks=$((2*${NUM_NODES})) ${BCAST}"
-        echo "${SRUN_COMMAND} mkdir -p ${CACHE_DIR}/${DATASET_DIR}/resized_256x256" >> ${SLURM_SCRIPT}
-        echo "${SRUN_COMMAND} mkdir -p ${CACHE_DIR}/${DATASET_DIR}/labels" >> ${SLURM_SCRIPT}
-        for TARBALL in resized_256x256/train.tar resized_256x256/val.tar
+        for TARBALL in ${DATASET_TARBALLS}
         do
-            LUSTRE_FILE=${LUSTRE_DIR}/${DATASET_DIR}/${TARBALL}
-            CACHE_FILE=${CACHE_DIR}/${DATASET_DIR}/$(basename ${TARBALL})
-            OUTPUT_DIR=${CACHE_DIR}/${DATASET_DIR}/resized_256x256/$(basename ${TARBALL} .tar)
-            echo "[ -e ${CACHE_FILE} ] || \\" >> ${SLURM_SCRIPT}
-            echo "  ${COPY_COMMAND} ${LUSTRE_FILE} ${CACHE_FILE} > /dev/null" >> ${SLURM_SCRIPT}
+            CACHE_TARBALL=${CACHE_DIR}/$(basename ${TARBALL})
+            OUTPUT_DIR=${CACHE_DIR}/$(basename ${TARBALL} .tar)
+            echo "[ -e ${CACHE_TARBALL} ] || \\" >> ${SLURM_SCRIPT}
+            echo "  ${COPY_COMMAND} ${TARBALL} ${CACHE_TARBALL} > /dev/null" >> ${SLURM_SCRIPT}
+            echo "echo \"Copied ${TARBALL} to ${CACHE_TARBALL}...\"" >> ${SLURM_SCRIPT}
             echo "[ -d ${OUTPUT_DIR} ] || \\" >> ${SLURM_SCRIPT}
-            echo "  ${SRUN_COMMAND} tar xf ${CACHE_FILE} -C ${CACHE_DIR}/${DATASET_DIR}/resized_256x256" >> ${SLURM_SCRIPT}
+            echo "  ${SRUN_COMMAND} tar xf ${CACHE_TARBALL} -C ${CACHE_DIR}" >> ${SLURM_SCRIPT}
+            echo "echo \"Untarred ${CACHE_TARBALL}...\"" >> ${SLURM_SCRIPT}
         done
-        for TARBALL in labels.tar
-        do
-            LUSTRE_FILE=${LUSTRE_DIR}/${DATASET_DIR}/${TARBALL}
-            CACHE_FILE=${CACHE_DIR}/${DATASET_DIR}/$(basename ${TARBALL})
-            OUTPUT_FILE=${CACHE_DIR}/${DATASET_DIR}/labels/train.txt
-            echo "[ -e ${CACHE_FILE} ] || \\" >> ${SLURM_SCRIPT}
-            echo "  ${COPY_COMMAND} ${LUSTRE_FILE} ${CACHE_FILE} > /dev/null" >> ${SLURM_SCRIPT}
-            echo "[ -e ${OUTPUT_FILE} ] || \\" >> ${SLURM_SCRIPT}
-            echo "  ${SRUN_COMMAND} tar xf ${CACHE_FILE} -C ${CACHE_DIR}/${DATASET_DIR}" >> ${SLURM_SCRIPT}
-        done
-        echo "wait" >> ${SLURM_SCRIPT}
         echo "echo \"Done caching dataset...\"" >> ${SLURM_SCRIPT}
         echo "" >> ${SLURM_SCRIPT}
         ;;
@@ -214,20 +273,10 @@ esac
 
 # Set experiment
 echo "# ======== Experiment ========" >> ${SLURM_SCRIPT}
-SRUN_COMMAND="srun --nodes=${NUM_NODES} --ntasks=${NUM_PROCS}"
-case ${USE_GPU} in
+SRUN_COMMAND="srun --nodes=${NUM_NODES} --ntasks=$((${NUM_NODES}*${PROCS_PER_NODE}))"
+case ${HAS_GPU} in
     YES|yes|TRUE|true|ON|on|1)
         SRUN_COMMAND="${SRUN_COMMAND} --nvidia_compute_mode=default"
-        ;;
-esac
-case ${USE_VTUNE} in
-    YES|yes|TRUE|true|ON|on|1)
-        PROFILER_COMMAND="${VTUNE_EXE} -r ${VTUNE_DIR} -app-working-dir ${EXPERIMENT_DIR} ${VTUNE_ARGS} --"
-        ;;
-esac
-case ${USE_NVPROF} in
-    YES|yes|TRUE|true|ON|on|1)
-        PROFILER_COMMAND="${NVPROF_EXE} ${NVPROF_ARGS} --log-file nvprof_output-%h-%p.txt --export-profile %h-%p.prof"
         ;;
 esac
 echo "${SRUN_COMMAND} ${PROFILER_COMMAND} ${EXPERIMENT_COMMAND}" >> ${SLURM_SCRIPT}

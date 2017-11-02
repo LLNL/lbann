@@ -29,7 +29,6 @@
 #ifndef LBANN_CV_AUGMENTER_HPP
 #define LBANN_CV_AUGMENTER_HPP
 
-#include "patchworks/patchworks_opencv.hpp"
 #include "cv_transform.hpp"
 #include "lbann/utils/random.hpp"
 #include <iostream>

@@ -49,18 +49,18 @@ class lbann_callback_check_dataset : public lbann_callback {
     const lbann_callback_check_dataset&) = default;
   lbann_callback_check_dataset& operator=(
     const lbann_callback_check_dataset&) = default;
-  lbann_callback_check_dataset* copy() const {
+  lbann_callback_check_dataset* copy() const override {
     return new lbann_callback_check_dataset(*this);
   }
-  void on_forward_prop_end(model *m, Layer *l);
-  void on_evaluate_forward_prop_end(model *m, Layer *l);
-  void on_epoch_end(model *m);
-  void on_validation_end(model *m);
-  void on_test_end(model *m);
+  void on_forward_prop_end(model *m, Layer *l) override;
+  void on_evaluate_forward_prop_end(model *m, Layer *l) override;
+  void on_epoch_end(model *m) override;
+  void on_validation_end(model *m) override;
+  void on_test_end(model *m) override;
 
   void add_to_set(model *m, Layer *l, int64_t step, std::set<long> &set);
 
-  std::string name() const { return "check data set indices"; }
+  std::string name() const override { return "check data set indices"; }
  private:
   /** Basename for writing files. */
   std::string m_basename;

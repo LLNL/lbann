@@ -129,25 +129,25 @@ class softmax_layer : public activation_layer {
     
   }
 
-  softmax_layer* copy() const { return new softmax_layer(*this); }
+  softmax_layer* copy() const override { return new softmax_layer(*this); }
 
-  std::string get_type() const { return "softmax"; }
+  std::string get_type() const override { return "softmax"; }
 
-  std::string get_description() const {
+  std::string get_description() const override {
     return std::string {} + " softmax" + " dataLayout: " 
            + this->get_data_layout_string(get_data_layout());
   }
 
   virtual inline void initialize_distributed_matrices();
-  virtual data_layout get_data_layout() const { return T_layout; }
+  virtual data_layout get_data_layout() const override { return T_layout; }
 
-  void setup_data() {
+  void setup_data() override {
     activation_layer::setup_data();
     m_workspace->Resize(
       1, this->m_neural_network_model->get_max_mini_batch_size());
   }
 
-  virtual void setup_gpu() {
+  virtual void setup_gpu() override {
     activation_layer::setup_gpu();
 #if !(defined(__LIB_CUDA) && defined(LBANN_SOFTMAX_CUDA))
     throw lbann_exception("softmax: CUDA not detected");
@@ -156,13 +156,13 @@ class softmax_layer : public activation_layer {
 #endif
   }  
 
-  void fp_set_std_matrix_view() {
+  void fp_set_std_matrix_view() override {
     Int cur_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
     Layer::fp_set_std_matrix_view();
     El::View(*m_workspace_v, *m_workspace, El::ALL, El::IR(0, cur_mini_batch_size));
   }
   
-  void fp_compute() {
+  void fp_compute() override {
     if(this->m_using_gpus) {
       fp_compute_cuda();
     } else {
@@ -227,7 +227,7 @@ class softmax_layer : public activation_layer {
 
   void fp_compute_cuda();
 
-  void bp_compute() {
+  void bp_compute() override {
     objective_functions::cross_entropy* obj
         = dynamic_cast<objective_functions::cross_entropy*>(this->m_neural_network_model->m_obj_fn);
     if(obj != nullptr && obj->get_shortcut_softmax_layer() == this) {
@@ -330,19 +330,19 @@ class softmax_layer : public activation_layer {
 
   void bp_compute_cuda();
 
-  bool saveToCheckpoint(int fd, const char *filename, size_t *bytes) const {
+  bool saveToCheckpoint(int fd, const char *filename, size_t *bytes) const override {
     return Layer::saveToCheckpoint(fd, filename, bytes);
   }
 
-  bool loadFromCheckpoint(int fd, const char *filename, size_t *bytes) {
+  bool loadFromCheckpoint(int fd, const char *filename, size_t *bytes) override {
     return Layer::loadFromCheckpoint(fd, filename, bytes);
   }
 
-  bool saveToCheckpointShared(lbann::persist& p) const {
+  bool saveToCheckpointShared(lbann::persist& p) const override {
     return Layer::saveToCheckpointShared(p);
   }
 
-  bool loadFromCheckpointShared(lbann::persist& p) {
+  bool loadFromCheckpointShared(lbann::persist& p) override {
     return Layer::loadFromCheckpointShared(p);
   }
 };

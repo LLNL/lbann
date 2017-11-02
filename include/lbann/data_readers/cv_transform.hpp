@@ -31,6 +31,7 @@
 #define LBANN_CV_TRANSFORM_HPP
 
 #include "opencv.hpp"
+#include "opencv_extensions.hpp"
 
 #ifdef __LIB_OPENCV
 namespace lbann {

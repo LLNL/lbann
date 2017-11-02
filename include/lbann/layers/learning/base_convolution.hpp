@@ -343,7 +343,7 @@ class base_convolution_layer : public learning {
   /** Setup layer data.
    *  Assumes the weight and weight gradient matrices are already
    *  initialized by a child class.*/
-  virtual void setup_data() {
+  void setup_data() override {
     learning::setup_data();
 
   #ifdef __LIB_CUDNN
@@ -369,7 +369,7 @@ class base_convolution_layer : public learning {
   }
 
   /// Initialize GPU objects
-  virtual void setup_gpu() {
+  void setup_gpu() override {
     learning::setup_gpu();
   #ifndef __LIB_CUDNN
     throw lbann_exception("base_convolution_layer: cuDNN not detected");
@@ -1008,7 +1008,7 @@ class base_convolution_layer : public learning {
 public:
 
   /// Update convolution kernel and bias
-  bool update_compute() {
+  bool update_compute() override {
     if(this->m_execution_mode == execution_mode::training) {
       this->m_optimizer->update(this->m_weights_gradient);
     }

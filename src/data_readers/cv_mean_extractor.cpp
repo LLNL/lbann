@@ -27,7 +27,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/cv_mean_extractor.hpp"
-#include "lbann/data_readers/patchworks/patchworks_opencv.hpp"
 #include "lbann/data_readers/cv_utils.hpp"
 #include "lbann/utils/mild_exception.hpp"
 #include "lbann/utils/exception.hpp"
@@ -94,7 +93,7 @@ void cv_mean_extractor::set(const unsigned int batch_sz) {
 
 void cv_mean_extractor::create_matrices(const unsigned int width, const unsigned int height, const unsigned int n_ch) {
   // OpenCV image type code
-  m_type_code = patchworks::cv_image_type<Float_T>::T(n_ch);
+  m_type_code = cv_image_type<Float_T>::T(n_ch);
   m_sum = cv::Mat(height, width, m_type_code);
   m_avg = cv::Mat(height, width, m_type_code);
 }
