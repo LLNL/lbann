@@ -72,8 +72,11 @@ class sum_layer : public transform {
   #endif // __LIB_CUDNN
   }
 
+  /// Following function tells this layer is is a fan-in layer
+  bool is_fanin_layer() override { return true; }
+
   /** Returns description of ctor params */
-  std::string get_description() const {
+  std::string get_description() const override {
     std::stringstream s;
      s << " sum; parents: ";
      for (size_t i=0; i<this->m_parent_layers.size(); i++) {
@@ -83,16 +86,16 @@ class sum_layer : public transform {
      return s.str();
   }
 
-  sum_layer* copy() const { return new sum_layer(*this); }
+  sum_layer* copy() const override { return new sum_layer(*this); }
 
-  std::string get_type() const { return "sum"; }
+  std::string get_type() const override { return "sum"; }
 
   virtual inline void initialize_distributed_matrices() {
     transform::initialize_distributed_matrices<T_layout>();
   }
-  virtual data_layout get_data_layout() const { return T_layout; }
+  virtual data_layout get_data_layout() const override { return T_layout; }
 
-  void setup_gpu() {
+  void setup_gpu() override {
     transform::setup_gpu();
   #ifndef __LIB_CUDNN
     throw lbann_exception("sum_layer: cuDNN not detected");
@@ -111,7 +114,7 @@ class sum_layer : public transform {
 
   protected:
 
-  void fp_compute() {
+  void fp_compute() override {
     if(this->m_using_gpus) {
       fp_compute_cudnn();
     } else {
@@ -119,7 +122,7 @@ class sum_layer : public transform {
     }
   }
 
-  void bp_compute() {
+  void bp_compute() override {
     if(this->m_using_gpus) {
   #ifndef __LIB_CUDNN
       throw lbann_exception("sum_layer: cuDNN not detected");

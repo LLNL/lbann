@@ -72,6 +72,9 @@ class split_layer : public transform {
   #endif // __LIB_CUDNN
   }
 
+  /// Following function tells this layer is is a fan-out layer
+  bool is_fanout_layer() { return true; }
+
   /** Returns description of ctor params */
   std::string get_description() const {
     std::stringstream s;

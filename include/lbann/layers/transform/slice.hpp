@@ -113,8 +113,11 @@ class slice_layer : public transform {
 
   }
 
+  /// Following function tells this layer is is a fan-out layer
+  bool is_fanout_layer() override { return true; }
+  
   /** Returns description of ctor params */
-  std::string get_description() const {
+  std::string get_description() const override {
     std::stringstream s;
     s << " slice; slice_axis: "
       << m_slice_axis << " children: ";
@@ -129,14 +132,14 @@ class slice_layer : public transform {
     return s.str();
   }
 
-  slice_layer* copy() const { return new slice_layer(*this); }
+  slice_layer* copy() const override { return new slice_layer(*this); }
 
-  std::string get_type() const { return "slice"; }
+  std::string get_type() const override { return "slice"; }
 
   virtual inline void initialize_distributed_matrices();
-  virtual data_layout get_data_layout() const { return T_layout; }
+  virtual data_layout get_data_layout() const override { return T_layout; }
 
-  void setup_dims() {
+  void setup_dims() override {
     std::stringstream err;
 
     // Initialize previous neuron tensor dimensions
@@ -156,7 +159,7 @@ class slice_layer : public transform {
 
   }
 
-  void setup_gpu() {
+  void setup_gpu() override {
     transform::setup_gpu();
   #ifndef __LIB_CUDNN
     std::stringstream err;
@@ -202,7 +205,7 @@ class slice_layer : public transform {
 
   protected:
 
-  void fp_compute() {
+  void fp_compute() override {
     if(this->m_using_gpus) {
   #ifndef __LIB_CUDNN
     std::stringstream err;
@@ -220,7 +223,7 @@ class slice_layer : public transform {
     }
   }
 
-  void bp_compute() {
+  void bp_compute() override {
     if(this->m_using_gpus) {
       bp_compute_gpu();
     } else {
@@ -354,7 +357,7 @@ class slice_layer : public transform {
 
   }
 
-  void get_fp_output(AbsDistMat& fp_output, const Layer* next_layer) const {
+  void get_fp_output(AbsDistMat& fp_output, const Layer* next_layer) const override {
 
     // Check if input is in the list of child layers
     const int child_index = (std::find(this->m_child_layers.begin(),
@@ -466,7 +469,7 @@ class slice_layer : public transform {
   }
   #endif // __LIB_CUDNN
 
-  const std::vector<int> fp_output_dims(const Layer* next_layer) const {
+  const std::vector<int> fp_output_dims(const Layer* next_layer) const override {
 
     // Return all neurons if input is null
     if(next_layer == NULL) {

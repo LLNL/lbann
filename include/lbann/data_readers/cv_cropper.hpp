@@ -29,7 +29,6 @@
 #ifndef LBANN_CV_CROPPER_HPP
 #define LBANN_CV_CROPPER_HPP
 
-#include "lbann/data_readers/patchworks/patchworks_opencv.hpp"
 #include "lbann/data_readers/cv_transform.hpp"
 #include <utility>
 #include <ostream>

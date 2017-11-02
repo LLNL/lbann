@@ -24,4 +24,5 @@ add_sources(data_reader.cpp
             data_reader_merge_features.cpp
             data_reader_merge_samples.cpp
             data_reader_pilot2_molecular.cpp
+            data_reader_ascii.cpp
 )

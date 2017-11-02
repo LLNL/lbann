@@ -5,10 +5,9 @@ data_reader {
     shuffle: true
     data_filename: "/p/lscratchf/brainusr/datasets/cifar10-bin/data_all.bin"
     label_filename: "/p/lscratchf/brainusr/datasets/cifar10-bin/data_all.bin"
-    train_or_test_percent: 1.0
     validation_percent: 0.1
-    max_sample_count: 0
-    percent_of_data_to_use: 0
+    absolute_sample_count: 0
+    percent_of_data_to_use: 1.0
     image_preprocessor {
       scale: true
       subtract_mean: false
@@ -28,10 +27,9 @@ data_reader {
     shuffle: true
     data_filename: "/p/lscratchf/brainusr/datasets/cifar10-bin/test_batch.bin"
     label_filename: "/p/lscratchf/brainusr/datasets/cifar10-bin/test_batch.bin"
-    train_or_test_percent: 1.0
     validation_percent: 1.0
-    max_sample_count: 0
-    percent_of_data_to_use: 0
+    absolute_sample_count: 0
+    percent_of_data_to_use: 1.0
     image_preprocessor {
       scale: true
       subtract_mean: false

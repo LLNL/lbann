@@ -1,34 +1,37 @@
+import csv
 import os
 import re
 import sys
 import time
 import unittest
 
-def test_model(model_name):
-  return '--model=model_zoo/tests/model_%s.prototext' % model_name
+# This cannot be 'test_model'. If it were, then pytest would try to run it.
+def model_test(model_name, dir_name):
+  return '--model=%s/model_zoo/tests/model_%s.prototext' % (dir_name, model_name)
 
-def model(model_name):
-  return '--model=model_zoo/models/%s/model_%s.prototext' % (model_name, model_name)
+def model(model_name, dir_name):
+  return '--model=%s/model_zoo/models/%s/model_%s.prototext' % (dir_name, model_name, model_name)
 
-def reader(reader_name):
-  return '--reader=model_zoo/data_readers/data_reader_%s.prototext' % reader_name
+def reader(reader_name, dir_name):
+  return '--reader=%s/model_zoo/data_readers/data_reader_%s.prototext' % (dir_name, reader_name)
 
-def optimizer(optimizer_name):
-  return '--optimizer=model_zoo/optimizers/opt_%s.prototext' % optimizer_name
+def optimizer(optimizer_name, dir_name):
+  return '--optimizer=%s/model_zoo/optimizers/opt_%s.prototext' % (dir_name, optimizer_name)
 
-def run_lbann(model_name, reader_name, optimizer_name, output_file_name, executable, num_nodes=1, timeout=60, num_processes=2):
+def run_lbann(model_name, reader_name, optimizer_name, output_file_name, executable, dir_name, num_nodes=1, timeout=60, num_processes=2, num_epochs=5, procs_per_model=1):
   if model_name == 'mnist_distributed_io':
-    m = test_model(model_name)
+    m = model_test(model_name, dir_name)
   else:
-    m = model(model_name)
-  r = reader(reader_name)
-  o = optimizer(optimizer_name)
+    m = model(model_name, dir_name)
+  r = reader(reader_name, dir_name)
+  o = optimizer(optimizer_name, dir_name)
   # N => number of nodes                                                         
   # p => partition
   # t => timeout period, in minutes
-  # n => number of processes to run. MPI Rank. How many models being made.
+  # n => number of processes to run. MPI Rank.
+  # n / procs_per_model = how many models should be made. (n >= procs_per_model)
   # num-epochs => The number of epochs
-  command = 'salloc -N %d -p pbatch -t %d srun -n %d %s %s %s %s --num_epochs=2 > %s' % (num_nodes, timeout, num_processes, executable, m, r, o, output_file_name)
+  command = 'salloc -N %d -p pbatch -t %d srun -n %d %s %s %s %s --num_epochs=%d --procs_per_model=%d > %s' % (num_nodes, timeout, num_processes, executable, m, r, o, num_epochs, procs_per_model, output_file_name)
   print('Began %s at ' % model_name + time.strftime('%H:%M:%S', time.localtime()))
   value = os.system(command)
   print('Ended %s at ' % model_name + time.strftime('%H:%M:%S', time.localtime()))
@@ -72,41 +75,23 @@ def get_performance(output_file_name):
   output_file.close()
   return performance_dict
 
-EXPECTED_TIMES = {
-  'mnist_distributed_io':
-    {
-      'max_epoch_time': 75.00, # 67.00,
-      'max_mean_minibatch_time': 0.24,
-      'max_min_time': 0.23,
-      'max_max_time': 0.67,
-      'max_stdev': 1.00, # 0.001,
-      'min_accuracy': 97.00
-    },
-  'alexnet':
-    {
-      'max_epoch_time': 2000.00,
-      'max_mean_minibatch_time': 20.00,
-      'max_min_time': 10.00,
-      'max_max_time': 20.00,
-      'max_stdev': 2.00,
-      'min_accuracy': 10.00
-    },
-  'resnet50':
-    {
-      'max_epoch_time': 2000.00,
-      'max_mean_minibatch_time': 20.00,
-      'max_min_time': 10.00,
-      'max_max_time': 30.00, # 20.00,
-      'max_stdev': 2.00,
-      'min_accuracy': 30.00
-    }
-}
 
-def run_tests(tester, performance, model_name):
+def csv_to_dict(csv_path):
+  with open(csv_path, 'r') as csv_file:
+    reader = csv.reader(csv_file, skipinitialspace=True)
+    keys = reader.next()
+    expected_times = {}
+    for row in reader:
+      model = row[0]
+      expected_times[model] = dict(zip(keys[1:], map(float, row[1:])))
+  return expected_times
+
+def run_tests(performance, model_name):
+  expected_times = csv_to_dict('integration_tests/performance_tests/expected_performance.csv')
   errors = []
   for model_num in performance.keys():
     p = performance[model_num]
-    e = EXPECTED_TIMES[model_name]
+    e = expected_times[model_name]
     for epoch_time in p['epoch_times']:
       if epoch_time > e['max_epoch_time']:
         errors.append('%.2f > %.2f %s %s max_epoch_time' % (epoch_time, e['max_epoch_time'], model_name, model_num))
@@ -125,25 +110,28 @@ def run_tests(tester, performance, model_name):
     for accuracy in p['accuracies']:
       if accuracy < e['min_accuracy']:
         errors.append('%.2f < %.2f %s %s min_accuracy' % (accuracy, e['min_accuracy'], model_name, model_num))
-  tester.assertEqual(errors, [])
+  print "Errors for: %s" % model_name
+  for error in errors:
+    print errors
+  assert errors == []
 
-def mnist_distributed_io_skeleton(tester, executable):
+def mnist_distributed_io_skeleton(executable, dir_name):
   model_name = 'mnist_distributed_io'
   output_file_name = '%s_output.txt' % model_name
-  run_lbann(model_name=model_name, reader_name='mnist', optimizer_name='adagrad', output_file_name=output_file_name, executable=executable)
+  run_lbann(model_name=model_name, reader_name='mnist', optimizer_name='adagrad', output_file_name=output_file_name, executable=executable, dir_name=dir_name)
   performance = get_performance(output_file_name)
-  run_tests(tester, performance, model_name)
+  run_tests(performance, model_name)
 
-def alexnet_skeleton(tester, executable):
+def alexnet_skeleton(executable, dir_name):
   model_name = 'alexnet'
   output_file_name = '%s_output.txt' % model_name
-  run_lbann(model_name=model_name, reader_name='imagenet', optimizer_name='adagrad', output_file_name=output_file_name, executable=executable)
+  run_lbann(model_name=model_name, reader_name='imagenet', optimizer_name='adagrad', output_file_name=output_file_name, executable=executable, dir_name=dir_name)
   performance = get_performance(output_file_name)
-  run_tests(tester, performance, model_name)
+  run_tests(performance, model_name)
 
-def resnet50_skeleton(tester, executable):
+def resnet50_skeleton(executable, dir_name):
   model_name = 'resnet50'
   output_file_name = '%s_output.txt' % model_name
-  run_lbann(model_name=model_name, reader_name='imagenet', optimizer_name='adagrad', output_file_name=output_file_name, executable=executable)
+  run_lbann(model_name=model_name, reader_name='imagenet', optimizer_name='adagrad', output_file_name=output_file_name, executable=executable, dir_name=dir_name, num_epochs=2, procs_per_model=2)
   performance = get_performance(output_file_name)
-  run_tests(tester, performance, model_name)
+  run_tests(performance, model_name)

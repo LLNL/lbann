@@ -5,10 +5,9 @@ data_reader {
     shuffle: true
     num_samples: 240000
     num_features: 1024
-    train_or_test_percent: 1.0
     validation_percent: 0.1
-    max_sample_count: 0
-    percent_of_data_to_use: 0
+    absolute_sample_count: 0
+    percent_of_data_to_use: 1.0
   }
   reader {
     name: "synthetic"
@@ -16,9 +15,8 @@ data_reader {
     shuffle: true
     num_samples: 32000
     num_features: 1024
-    train_or_test_percent: 1.0
     validation_percent: 1.0
-    max_sample_count: 0
-    percent_of_data_to_use: 0
+    absolute_sample_count: 0
+    percent_of_data_to_use: 1.0
   }
 }

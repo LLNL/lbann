@@ -57,26 +57,26 @@ class lbann_callback_debug_io : public lbann_callback {
   lbann_callback_debug_io(const lbann_callback_debug_io&) = default;
   lbann_callback_debug_io& operator=(
     const lbann_callback_debug_io&) = default;
-  lbann_callback_debug_io* copy() const { return new lbann_callback_debug_io(*this); }
+  lbann_callback_debug_io* copy() const override { return new lbann_callback_debug_io(*this); }
   /** Print that a training epoch is being started. */
-  void on_epoch_begin(model *m);
+  void on_epoch_begin(model *m) override;
   /** Print that forward prop for a layer is beginning. */
-  void on_forward_prop_begin(model *m, Layer *l);
+  void on_forward_prop_begin(model *m, Layer *l) override;
 
   /** Print I/O details at the beginning of validation. */
-  void on_validation_begin(model *m);
+  void on_validation_begin(model *m) override;
   /** Print that an evaluation forward prop is beginning. */
-  void on_evaluate_forward_prop_begin(model *m, Layer *l);
+  void on_evaluate_forward_prop_begin(model *m, Layer *l) override;
 
   /** Print I/O details at the beginning of testing. */
-  void on_test_begin(model *m);
+  void on_test_begin(model *m) override;
 
   /** Common format for printing I/O stats at the start of a mini-batch */
   void print_fp_start(model *m, input_layer *input);
   /** Common format for printing I/O stats at the start of a phase */
   void print_phase_start(model *m, execution_mode mode);
 
-  std::string name() const { return "debug"; }
+  std::string name() const override { return "debug"; }
  private:
   /** The phase to debug. */
   execution_mode m_debug_phase;

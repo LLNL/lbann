@@ -81,24 +81,24 @@ class noise_layer : public transform {
   }
 
   /** Returns description of ctor params */
-  std::string get_description() const {
+  std::string get_description() const override {
     std::stringstream s;
      s << "noise_layer  noise_factor: " << m_noise_factor
        << " dataLayout: " << this->get_data_layout_string(get_data_layout());
      return s.str();
   }
 
-  noise_layer* copy() const { return new noise_layer(*this); }
+  noise_layer* copy() const override { return new noise_layer(*this); }
 
-  std::string get_type() const { return "noise"; }
+  std::string get_type() const override { return "noise"; }
 
   virtual inline void initialize_distributed_matrices() {
     transform::initialize_distributed_matrices<T_layout>();
   }
-  virtual data_layout get_data_layout() const { return T_layout; }
+  virtual data_layout get_data_layout() const override { return T_layout; }
 
 
-  void setup_gpu() {
+  void setup_gpu() override {
     transform::setup_gpu();
   #ifndef __LIB_CUDNN
     throw lbann_exception("noise_layer: cuDNN not detected");
@@ -112,7 +112,7 @@ class noise_layer : public transform {
   /** noise factor */
   float m_noise_factor;
 
-  void fp_compute() {
+  void fp_compute() override {
     if(this->m_using_gpus) {
       fp_compute_cudnn();
     } else {
@@ -120,7 +120,7 @@ class noise_layer : public transform {
     }
   }
 
-  void bp_compute() {
+  void bp_compute() override {
     if(this->m_using_gpus) {
       throw lbann_exception("noise_layer: cuDNN not implemented");
     } else {

@@ -55,23 +55,23 @@ class target_layer_partitioned_minibatch : public target_layer, public partition
   }
 
   /** Returns description of ctor params */
-  std::string get_description() const {
+  std::string get_description() const override {
     return std::string {} + " target_layer_partitioned_minibatch "
            + " dataLayout: " + this->get_data_layout_string(get_data_layout());
   }
 
-  target_layer_partitioned_minibatch* copy() const {
+  target_layer_partitioned_minibatch* copy() const override {
     return new target_layer_partitioned_minibatch(*this);
   }
 
-  std::string get_type() const { return "target:partitioned"; }
+  std::string get_type() const override { return "target:partitioned"; }
 
   virtual inline void initialize_distributed_matrices() {
     target_layer::initialize_distributed_matrices<T_layout>();
   }
-  virtual data_layout get_data_layout() const { return T_layout; }
+  virtual data_layout get_data_layout() const override { return T_layout; }
 
-  virtual void setup_data() {
+  virtual void setup_data() override {
     target_layer::setup_data();
 
     m_local_data_valid = false;
@@ -79,7 +79,7 @@ class target_layer_partitioned_minibatch : public target_layer, public partition
     m_num_data_per_epoch = 0;
   }
 
-  void fp_compute() {
+  void fp_compute() override {
     int num_samples_in_batch = fetch_to_local_matrix(this->m_activations_v->Matrix(), paired_input_layer->get_data_reader());
 
     target_layer::update_num_samples_processed(num_samples_in_batch);
@@ -100,7 +100,7 @@ class target_layer_partitioned_minibatch : public target_layer, public partition
   }
 
 
-  void bp_compute() {
+  void bp_compute() override {
 
     // Compute initial error signal
     this->m_neural_network_model->m_obj_fn->compute_gradient(*this->m_prev_activations,
@@ -111,11 +111,11 @@ class target_layer_partitioned_minibatch : public target_layer, public partition
   /**
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary
    */
-  bool update_compute() {
+  bool update_compute() override {
     return is_data_set_processed(paired_input_layer->get_data_reader());
   }
 
-  void preprocess_data_samples(Mat& M_local, int num_samples_in_batch) {
+  void preprocess_data_samples(Mat& M_local, int num_samples_in_batch) override {
     return;
   }
 

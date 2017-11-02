@@ -16,13 +16,14 @@ using namespace lbann;
 /** Map from layer names to layers. */
 std::map<std::string, Layer*> model_layers;
 
-/** Whether a string is already the name of a layer. */
-inline bool layer_name_is_unique(std::string name) {
-  return model_layers.find(name) == model_layers.end();
+/** Whether a layer is already in the model. */
+inline bool layer_is_in_model(std::string name) {
+  return model_layers.find(name) != model_layers.end();
 }
 
 void setup_pointers(
   std::vector<lbann_data::Layer> &proto_layers,
+  lbann::model *model,
   bool master)
 {
   std::string name;
@@ -35,7 +36,7 @@ void setup_pointers(
     ss.clear();
     ss.str(proto_layers[i].parents());
     while (ss >> name) {
-      if (master and layer_name_is_unique(name)) {
+      if (master and not layer_is_in_model(name)) {
         err << __FILE__ << " " << __LINE__ << " :: "
             << "could not find parent layer " << name;
         throw lbann_exception(err.str());
@@ -48,13 +49,26 @@ void setup_pointers(
     ss.clear();
     ss.str(proto_layers[i].children());
     while (ss >> name) {
-      if (master and layer_name_is_unique(name)) {
+      if (master and not layer_is_in_model(name)) {
         err << __FILE__ << " " << __LINE__ << " :: "
             << "could not find child layer " << name;
         throw lbann_exception(err.str());
       }
       Layer *child_layer = model_layers[name];
       layer->add_child_layer(child_layer);
+    }
+
+    // Set linked layers
+    ss.clear();
+    ss.str(proto_layers[i].linked_layers());
+    while (ss >> name) {
+      if (master and not layer_is_in_model(name)) {
+        err << __FILE__ << " " << __LINE__ << " :: "
+            << "could not find layer " << name << " to link with layer " << proto_layers[i].name();
+        throw lbann_exception(err.str());
+      }
+      Layer *other_layer = model_layers[name];
+      model->link_layers(other_layer, layer);
     }
 
     // Set a target layer's paired input layer
@@ -77,7 +91,7 @@ void setup_pointers(
           }
         }
       }
-      if (master and (name.empty() or layer_name_is_unique(name))) {
+      if (master and (name.empty() or not layer_is_in_model(name))) {
         err << __FILE__ << " " << __LINE__ << " :: "
             << "could not find paired input layer for target layer";
         throw lbann_exception(err.str());
@@ -102,7 +116,7 @@ void setup_pointers(
           }
         }
       }
-      if (master and (name.empty() or layer_name_is_unique(name))) {
+      if (master and (name.empty() or not layer_is_in_model(name))) {
         err << __FILE__ << " " << __LINE__ << " :: "
             << "could not find original layer for reconstruction layer";
         throw lbann_exception(err.str());
@@ -966,7 +980,7 @@ void add_layers(
     if (!layer_name.empty()) {
       d->set_name(layer_name);
     }
-    if (master and not layer_name_is_unique(d->get_name())) {
+    if (master and layer_is_in_model(d->get_name())) {
       err << __FILE__ << " " << __LINE__
           << " :: layer name " << layer_name << " is not unique" ;
       throw lbann_exception(err.str());
@@ -979,7 +993,7 @@ void add_layers(
 
   }
 
-  setup_pointers(proto_layers, master);
+  setup_pointers(proto_layers, model, master);
 
 }
 
@@ -1158,7 +1172,7 @@ void init_callbacks(
       std::unordered_set<Layer*> which;
       std::string a;
       while (s >> a) {
-        if (master and layer_name_is_unique(a)) {
+        if (master and not layer_is_in_model(a)) {
           err << __FILE__ << " " << __LINE__
               << " :: callback disp_io_stats: could not find layer " << a;
           throw lbann_exception(err.str());
@@ -1188,7 +1202,7 @@ void init_callbacks(
         if (a == "10000") {
           all_layers = true;
         } else {
-          if (master and layer_name_is_unique(a)) {
+          if (master and not layer_is_in_model(a)) {
             err << __FILE__ << " " << __LINE__
                 << " :: callback imcomm: could not find layer " << a;
             throw lbann_exception(err.str());
@@ -1219,7 +1233,7 @@ void init_callbacks(
         if (a == "10000") {
           all_layers = true;
         } else {
-          if (master and layer_name_is_unique(a)) {
+          if (master and not layer_is_in_model(a)) {
             err << __FILE__ << " " << __LINE__
                 << " :: callback step_learning_rate: could not find layer " << a;
             throw lbann_exception(err.str());
@@ -1249,7 +1263,7 @@ void init_callbacks(
         if (a == "10000") {
           all_layers = true;
         } else {
-          if (master and layer_name_is_unique(a)) {
+          if (master and not layer_is_in_model(a)) {
             err << __FILE__ << " " << __LINE__
                 << " :: callback adaptive_learning_rate: could not find layer " << a;
             throw lbann_exception(err.str());
@@ -1452,6 +1466,25 @@ void init_callbacks(
       model->add_callback(gradient_check_cb);
     }
 
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: layerwise_adaptive_learning_rate
+    //////////////////////////////////////////////////////////////////
+    if (callback.has_layerwise_adaptive_learning_rate()) {
+      const lbann_data::CallbackLayerwiseAdaptiveLearningRate& c =
+        callback.layerwise_adaptive_learning_rate();
+      if (master) {
+        std::cout << "adding layerwise_adaptive_learning_rate callback" <<
+          " with scale=" << c.scale() << std::endl;
+      }
+      std::unordered_set<Layer*> layers;
+      for (int i = 0; i < c.layer_size(); ++i) {
+        layers.insert(model_layers[c.layer(i)]);
+      }
+      lbann_callback_layerwise_adaptive_learning_rate *lwalr_cb = new
+        lbann_callback_layerwise_adaptive_learning_rate(c.scale(), layers);
+      model->add_callback(lwalr_cb);
+    }
+
   }
 
 }
@@ -1500,6 +1533,11 @@ model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac, const lban
   } else if (name == "dag_model") {
     model = new dag_model(mini_batch_size, comm, obj, optimizer_fac);
     if (master) std::cout << "instantiating dag_model\n";
+  } else if(name == "planar_model") {
+/// XXX
+/// Settting the number of heads to 3 temporarly; will be fixed as a parameter
+    model = new planar_model(mini_batch_size, comm, obj, optimizer_fac, 3);
+    if (master) std::cout << "instantiating planar_model\n";
   } else if (name == "greedy_layerwise_autoencoder") {
     model = new greedy_layerwise_autoencoder(mini_batch_size, comm, obj, optimizer_fac);
     if (master) std::cout << "instantiating greedy_layerwise_autoencoder\n";
@@ -1743,6 +1781,8 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       reader = new cifar10_reader(shuffle);
     } else if (name == "synthetic") {
       reader = new data_reader_synthetic(readme.num_samples(), readme.num_features(), shuffle);
+    } else if (name == "ascii") {
+      reader = new ascii_reader(5, shuffle);
     } else {
       if (master) {
         err << __FILE__ << " " << __LINE__ << " :: unknown name for data reader: "
@@ -1760,14 +1800,9 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
     if (readme.data_filedir() != "") {
       reader->set_file_dir( readme.data_filedir() );
     }
-    reader->set_use_percent( readme.train_or_test_percent() );
-    if (readme.max_sample_count()) {
-      reader->set_max_sample_count( readme.max_sample_count() );
-    }
-    if (readme.percent_of_data_to_use()) {
-      reader->set_use_percent( readme.percent_of_data_to_use() );
-    }
-    reader->set_use_percent( readme.train_or_test_percent() );
+
+    reader->set_absolute_sample_count( readme.absolute_sample_count() );
+    reader->set_use_percent( readme.percent_of_data_to_use() );
 
     if ((name != "imagenet_cv") && (name != "imagenet_single_cv")) {
       reader->horizontal_flip( preprocessor.horizontal_flip() );
@@ -1838,6 +1873,9 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
         } else if (name == "synthetic") {
         reader_validation = new data_reader_synthetic(shuffle);
         */
+      } else if (name == "ascii") {
+        reader_validation = new ascii_reader(5, shuffle);
+        (*(ascii_reader *)reader_validation) = (*(ascii_reader *)reader);
       }
 
       reader_validation->swap_role("validate");
@@ -1953,6 +1991,17 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
 
   options *opts = options::get();
   lbann_data::Model *model = p.mutable_model();
+  lbann_data::DataReader *d_reader = p.mutable_data_reader();
+  int size = d_reader->reader_size();
+
+  if (opts->has_int("absolute_sample_count")) {
+    for (int j=0; j<size; j++) {
+      int n = opts->get_int("absolute_sample_count");
+      lbann_data::Reader *readme = d_reader->mutable_reader(j);
+      readme->set_percent_of_data_to_use(0.0);
+      readme->set_absolute_sample_count(n);
+    }  
+  }
 
   if (opts->has_string("dag_model")) {
     std::string sanity = model->name();

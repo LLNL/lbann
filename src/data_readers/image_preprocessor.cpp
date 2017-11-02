@@ -28,7 +28,6 @@
 
 #include "lbann/data_readers/image_preprocessor.hpp"
 #include "lbann/data_readers/image_utils.hpp"
-#include "lbann/data_readers/patchworks/patchworks.hpp"
 #include "lbann/utils/random.hpp"
 #include "lbann/utils/statistics.hpp"
 #include "lbann/utils/exception.hpp"

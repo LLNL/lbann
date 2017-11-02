@@ -46,8 +46,9 @@ namespace lbann {
 planar_model::planar_model(int mini_batch_size,
                                    lbann_comm *comm,
                                    objective_functions::objective_function *obj_fn,
-                                   optimizer_factory *optimizer_fac)
-  : model(comm, mini_batch_size, obj_fn, optimizer_fac) {}
+                                   optimizer_factory *optimizer_fac,
+                                   int width)
+  : model(comm, mini_batch_size, obj_fn, optimizer_fac) {m_width = width; m_multi_headed = false;}
 
 /**
 planar_model::planar_model(const planar_model& other) :
@@ -293,45 +294,63 @@ bool planar_model::load_from_checkpoint_shared(persist& p) {
 */
 
 
-/// Add the new layer at the end of layers at the vindex-th level
-int planar_model::stackup_tail(int vindex, Layer *new_layer){
-  /// Add a new layer vector to m_layers when a new layer is added first time 
-  if(m_layers.size() == (size_t) vindex){
-    std::vector<Layer *> new_level;
-    m_layers.push_back(new_level);
+/*
+void planar_model::add(Layer *layer){
+  if(!m_multi_headed){
+    /// Adding layer to single head
+  
+    if(layer->is_fanin_layer()){
+      /// Cannot fan in from single-headed layer 
+      std::cerr << "Cannot fan in from single-head state" << "\n";
+      throw lbann::lbann_exception("Cannot fan in from single-head state");
+    } else if(layer->is_fanout_layer()) {
+      /// Fanning out layers to multi-head state
+      stackup_duplicate(layer, 1);
+      m_multi_headed = true;
+    } else{
+      /// Add the new layer, continuing single-head state
+      stackup_duplicate(layer, 1);
+    }
+  } else{
+    if(layer->is_fanout_layer()){
+      /// Cannot fan out from multi-headed layer 
+      std::cerr << "Cannot fan out from multi-head state" << "\n";
+      throw lbann::lbann_exception("Cannot fan out from multi-head state");
+    } else if(layer->is_fanin_layer()){
+      /// Fanning in from multi-head state
+      stackup_duplicate(layer, 1);
+      m_multi_headed = false;
+    } else{
+      stackup_duplicate(layer, m_width);
+    }
+  }
+}
+*/
+
+void planar_model::add(Layer *layer){
+  if (layer == nullptr) {
+    throw lbann_exception("model: Attempted to add null pointer as a layer.");
   }
 
-  /// Do some sanity check first
-  if(m_layers.size() != (size_t) vindex+1){
-    std::cerr << "Adding new layer to invalid level of plane" << "\n";
-    throw lbann::lbann_exception("Adding new layer to invalid level of plane");
-  }
-  if(m_layers[vindex].size() >= (size_t) m_width){
-    std::cerr << "Adding new layer to planar level that is already full" << "\n";
-    throw lbann::lbann_exception("Adding new layer to planar level that is already full");
-  }
-
-  std::vector<Layer *>& current_level = m_layers[vindex];
-  current_level.push_back(new_layer);
-  return vindex;
+  // Add layer to a new layer set
+  std::vector<Layer *> new_layer_set;
+  new_layer_set.push_back(layer);
+  m_layers.push_back(new_layer_set);
 }
 
 /***
- * Given a new layer, create 'm_width' copies of the new layer and add them to
+ * Given a new layer, create 'K' copies of the new layer and add them to
  * the next level. */
-int planar_model::stackup_duplicate(Layer *new_layer){
-  /// A new level of m_width layers will be created
-  int index = m_layers.size();
-  std::vector<Layer *> new_level (m_width);
+void planar_model::stackup_duplicate(Layer *new_layer, int num_heads){
+  /// A new level of num_heads layers will be created
+  std::vector<Layer *> new_level (num_heads);
 
   new_level[0] = new_layer;
-  for(int k=1; k<m_width; k++){
+  for(int k=1; k<num_heads; k++){
     Layer *layer_copy = new_layer->copy();
     new_level[k] = layer_copy;
   }
   m_layers.push_back(new_level);
-
-  return index; 
 }
 
 /**
@@ -352,61 +371,108 @@ Layer *planar_model::swap(int index, Layer *new_layer) {
 
 
 void planar_model::setup() {
-  setup_subset(0, 0);
+  
+  /// Convert sequential layers to planar layers
+  for(size_t l=0; l<m_layers.size(); l++){
+    assert(m_layers[l].size() == 1);
+
+    Layer *layer = m_layers[l].at(0);
+  
+    if(!m_multi_headed){
+      /// Currently in single-head state
+  
+      if(layer->is_fanin_layer()){
+        /// Cannot fan in from single-head state
+        std::cerr << "Cannot fan in from single-head state" << "\n";
+        throw lbann::lbann_exception("Cannot fan in from single-head state");
+      } else if(layer->is_fanout_layer()) {
+        /// Fanning out layers to multi-head state
+        m_multi_headed = true;
+        //stackup_duplicate(layer, 1);
+      } else{
+        /// layer is already in m_layers; no action is required
+        //stackup_duplicate(layer, 1);
+      }
+    } else{
+      /// Currently in multi head state 
+      if(layer->is_fanout_layer()){
+        /// Cannot fan out from multi-head state
+        std::cerr << "Cannot fan out from multi-head state" << "\n";
+        throw lbann::lbann_exception("Cannot fan out from multi-head state");
+      } else if(layer->is_fanin_layer()){
+        /// Fanning in from multi-head state; no action is needed
+        //stackup_duplicate(layer, 1);
+        m_multi_headed = false;
+      } else{
+        /// Expand current layer to m_width heads
+        for(int k=1; k<m_width; k++){
+          Layer *layer_copy = layer->copy();
+          m_layers[l].push_back(layer_copy);
+        }
+        //stackup_duplicate(layer, m_width);
+      }
+    }
+  }
+  setup_subset();
 }
 
-void planar_model::setup_subset(int start_index, int end_index) {
-  if(end_index <= 0) {
-    end_index = m_layers.size();
-  }
+void planar_model::setup_subset() {
 
   /// Setup each layer
-  Layer* prev_layer;
-  Layer* next_layer;
-  for (int l=start_index; l<end_index; l++) {
+  std::vector<Layer*> prev_layers;
+  std::vector<Layer*> next_layers;
+
+  for (size_t l=0; l<m_layers.size(); l++) {
     std::vector<Layer *>& horizontal_layers = m_layers[l];
-    for(size_t j=0; j<m_layers[l].size(); j++) {
+
+    /// Set previous and next layer set
+    prev_layers.clear();
+    next_layers.clear();
+    for(size_t k=0; k<horizontal_layers.size(); k++) {
+
       /// Determine the previous layer
       if(l <= 0){
-        prev_layer = nullptr;
+        prev_layers.push_back(nullptr);
       }
       else{
         if(m_layers[l-1].size() < m_layers[l].size()){/// Fan-out structure
           assert(m_layers[l-1].size() == 1);
-          prev_layer = m_layers[l-1].at(0);
-        }
-        else if(m_layers[l-1].size() > m_layers[l].size()){/// Fan-in structure
+          prev_layers.push_back(m_layers[l-1].at(0));
+        } else if(m_layers[l-1].size() > m_layers[l].size()){/// Fan-in structure
           assert(m_layers[l].size() == 1);
-          prev_layer = m_layers[l-1].at(j);
+          for(size_t j=0; j<m_layers[l-1].size(); j++)
+            prev_layers.push_back(m_layers[l-1].at(j));
         }
         else{/// Current and previous layers have the same number of layers
-          prev_layer = m_layers[l-1].at(j);
+          prev_layers.push_back(m_layers[l-1].at(k));
         }
       }
 
       /// Determine the next layer
-      if(l >= end_index-1){
-        next_layer = nullptr;
+      if(l >= m_layers.size()-1){
+        next_layers.push_back(nullptr);
       }
       else{
         if(m_layers[l+1].size() < m_layers[l].size()){/// Fain-in structure
           assert(m_layers[l+1].size() == 1);
-          next_layer = m_layers[l+1].at(0);
+          next_layers.push_back(m_layers[l+1].at(0));
         }
         else if(m_layers[l+1].size() > m_layers[l].size()){/// Fan-out structure
           assert(m_layers[l].size() == 1);
-          next_layer = m_layers[l+1].at(j);
+          for(size_t j=0; j<m_layers[l+1].size(); j++)
+            next_layers.push_back(m_layers[l+1].at(j));
         }
-        else{//// Current and the next layer has the same number of layers
-          next_layer = m_layers[l+1].at(j);
+        else{// Current and the next layer has the same number of layers
+          next_layers.push_back(m_layers[l+1].at(k));
         }
       }
-      
-      Layer* current_layer = horizontal_layers[j];
-      current_layer->set_neural_network_model(this); /// Provide a reverse point from each layer to the model
 
-      current_layer->add_parent_layer(prev_layer);
-      current_layer->add_child_layer(next_layer);
+      Layer* current_layer = horizontal_layers[k];
+      current_layer->set_neural_network_model(this); /// Provide a reverse point from each layer to the model
+      for(size_t i=0; i<prev_layers.size(); i++)
+        current_layer->add_parent_layer(prev_layers[i]);
+      for(size_t i=0; i<next_layers.size(); i++)
+        current_layer->add_child_layer(next_layers[i]);
       current_layer->setup();
       current_layer->check_setup();
       if (m_comm->am_world_master()) {
@@ -423,7 +489,7 @@ void planar_model::setup_subset(int start_index, int end_index) {
   }
 
   /// Share the weights between Siamese heads
-  equalize(start_index, end_index);
+  equalize(); 
 
   // Set up callbacks
   /// XXXXXXXXXXXX
@@ -558,8 +624,10 @@ bool planar_model::at_epoch_start() {
   return flag;
 }
 
-void planar_model::equalize(int  start_index, int end_index)
+void planar_model::equalize()
 {
+  int start_index = 0;
+  int end_index = m_layers.size();
   for (int l=start_index; l<end_index; l++) {
 
     /// No need to copy weights for single-head level

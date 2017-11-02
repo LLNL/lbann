@@ -60,15 +60,15 @@ class lbann_callback_ltfb : public lbann_callback {
   lbann_callback_ltfb(const lbann_callback_ltfb& other);
   lbann_callback_ltfb& operator=(const lbann_callback_ltfb& other);
   ~lbann_callback_ltfb();
-  lbann_callback_ltfb* copy() const { return new lbann_callback_ltfb(*this); }
+  lbann_callback_ltfb* copy() const override { return new lbann_callback_ltfb(*this); }
   /** Set up LTFB. */
-  void setup(model *m);
+  void setup(model *m) override;
   /**
    * Potentially run an LTFB round.
    */
-  void on_batch_end(model *m);
+  void on_batch_end(model *m) override;
 
-  std::string name() const { return "ltfb"; }
+  std::string name() const override { return "ltfb"; }
  private:
   lbann_comm *m_comm;
   /** Number of minibatches in a round. */

@@ -27,8 +27,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/lbann.hpp"
-#include "lbann/regularization/lbann_dropout.hpp"
-#include "lbann/data_readers/image_utils.hpp"
 
 #include <time.h>
 #ifdef _WIN32
@@ -151,12 +149,14 @@ int main(int argc, char *argv[]) {
     imagenet_validation_set.use_unused_index_set();
 
     if (comm->am_world_master()) {
+    /*
       size_t num_train = imagenet_trainset.getNumData();
       size_t num_validate = imagenet_trainset.getNumData();
       double validate_percent = num_validate / (num_train+num_validate)*100.0;
       double train_percent = num_train / (num_train+num_validate)*100.0;
       cout << "Training using " << train_percent << "% of the training data set, which is " << imagenet_trainset.getNumData() << " samples." << endl
            << "Validating training using " << validate_percent << "% of the training data set, which is " << imagenet_validation_set.getNumData() << " samples." << endl;
+    */
     }
 
 
@@ -264,6 +264,16 @@ int main(int argc, char *argv[]) {
       cout << "\tLearning rate: " << trainParams.LearnRate << endl;
       cout << "\tEpoch count: " << trainParams.EpochCount << endl << endl;
       cout << "\tDataset: " << trainParams.DatasetRootDir << endl;
+    }
+
+    if (comm->am_world_master()) {
+      optimizer *o = optimizer_fac->create_optimizer();
+      cout << "\nOptimizer:\n" << o->get_description() << endl << endl;
+      delete o;
+      std::vector<Layer *>& layers = model->get_layers();
+      for (size_t h=0; h<layers.size(); h++) {
+        std::cout << h << " " << layers[h]->get_description() << endl;
+      }
     }
 
     comm->global_barrier();

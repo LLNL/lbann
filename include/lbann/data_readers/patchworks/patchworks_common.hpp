@@ -39,7 +39,7 @@
 #include <limits>
 #include <cstdint>
 #include <string>
-#include "patchworks_opencv.hpp"
+#include "lbann/data_readers/opencv_extensions.hpp"
 
 namespace lbann {
 namespace patchworks {
