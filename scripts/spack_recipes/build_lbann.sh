@@ -1,4 +1,8 @@
-#!/bin/sh
+#!/bin/bash
+
+if [ ! -z "$bamboo_SPACK_ROOT" ]; then
+    . $bamboo_SPACK_ROOT/share/spack/setup-env.sh
+fi
 
 SPACK_RECIPES=`dirname ${0}`
 #Set Script Name variable
