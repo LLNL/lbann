@@ -30,7 +30,6 @@
 #define LBANN_CV_MEAN_EXTRACTOR_HPP
 
 #include "cv_transform.hpp"
-#include "lbann/data_readers/patchworks/patchworks_opencv.hpp"
 #include <type_traits>
 
 #ifdef __LIB_OPENCV
@@ -128,7 +127,7 @@ inline cv::Mat cv_mean_extractor::extract() const {
   double maxVal = 0.0;
   cv::minMaxLoc(avg_so_far, &minVal, &maxVal, 0, 0);
   //const double max_channel_type = std::numeric_limits<Channel_T>::max();
-  const double max_channel_type = patchworks::depth_normalization<Channel_T>::inverse_factor();
+  const double max_channel_type = depth_normalization<Channel_T>::inverse_factor();
 
   cv::Mat recovered;
   if ((minVal < 0.0) || (maxVal > 1.0)) {
@@ -140,11 +139,11 @@ inline cv::Mat cv_mean_extractor::extract() const {
     if (range == 0.0) return cv::Mat();
     const double alpha = max_channel_type/range;
     const double beta  = - alpha*minVal;
-    avg_so_far.convertTo(recovered, patchworks::cv_image_type<Channel_T>::T(),
+    avg_so_far.convertTo(recovered, cv_image_type<Channel_T>::T(),
                          alpha, beta);
   } else {
     // In this case, 0 maps to 0, and 1 maps to the greatest value of Channel_T
-    avg_so_far.convertTo(recovered, patchworks::cv_image_type<Channel_T>::T(),
+    avg_so_far.convertTo(recovered, cv_image_type<Channel_T>::T(),
                          max_channel_type, 0.0);
   }
 

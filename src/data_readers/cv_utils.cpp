@@ -99,8 +99,6 @@ std::ostream& operator<<(std::ostream& os, const cv_transform& tr) {
 }
 
 double cv_utils::get_depth_normalizing_factor(const int cv_depth) {
-  using namespace patchworks;
-
   switch (cv_depth) {
     case CV_8U : return depth_normalization<uint8_t>::factor();
     case CV_8S : return depth_normalization<int8_t>::factor();
