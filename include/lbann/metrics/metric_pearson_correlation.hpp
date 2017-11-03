@@ -100,9 +100,9 @@ class pearson_correlation : public metric {
   double report_metric(execution_mode mode) {
     statistics *stats = get_statistics(mode);
     double error_per_epoch = stats->m_error_per_epoch;
-    long samples_per_epoch = stats->m_samples_per_epoch;
+    long iterations_per_epoch = stats->m_iterations_per_epoch;
 
-    double corr = error_per_epoch / samples_per_epoch;
+    double corr = error_per_epoch / iterations_per_epoch;
 
     return corr;
   }
@@ -116,7 +116,7 @@ class pearson_correlation : public metric {
     return corr;
   }
 
-  std::string name() const { return "pearson correlation"; }
+  std::string name() const { return "pearson correlation metric"; }
 
 };
 

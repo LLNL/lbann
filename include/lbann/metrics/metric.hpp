@@ -50,12 +50,14 @@ class statistics {
     m_total_num_samples += m_samples_per_epoch;
     m_error_per_epoch = 0;
     m_samples_per_epoch = 0;
+    m_iterations_per_epoch = 0;
   }
 
   /// Error is accumulated as a double -- this works for both sum of
   /// squared errors and categorical errors
   double m_error_per_epoch = 0.0;
   long m_samples_per_epoch = 0;
+  long m_iterations_per_epoch = 0;
 
   double m_total_error = 0.0;
   long m_total_num_samples = 0;
