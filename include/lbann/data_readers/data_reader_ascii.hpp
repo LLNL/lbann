@@ -23,46 +23,47 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// patchworks_common.hpp - LBANN PATCHWORKS header for common definitions
+// lbann_data_reader_ascii .hpp .cpp - generic_data_reader class for ASCII text files
 ////////////////////////////////////////////////////////////////////////////////
 
-/**
- * LBANN PATCHWORKS common header
- *  - includes commonly used macros, definitions and declarations
- */
+#ifndef LBANN_DATA_READER_ASCII_HPP
+#define LBANN_DATA_READER_ASCII_HPP
 
-#ifdef __LIB_OPENCV
-#ifndef _PATCHWORKS_COMMON_H_
-#define _PATCHWORKS_COMMON_H_
-
-#include <utility> // std::pair
-#include <limits>
-#include <cstdint>
-#include <string>
-#include "lbann/data_readers/opencv_extensions.hpp"
+#include "data_reader.hpp"
 
 namespace lbann {
-namespace patchworks {
 
-/// Patch displacement type
-typedef std::pair<int, int> displacement_type;
+class ascii_reader : public generic_data_reader {
+ public:
+  ascii_reader(int sequence_length = 1, bool shuffle = true);
+  ascii_reader(const ascii_reader&) = default;
+  ascii_reader& operator=(const ascii_reader&) = default;
+  ~ascii_reader() = default;
+  ascii_reader* copy() const { return new ascii_reader(*this); }
 
-#if 0
-// using 32-bit floating point for intermediate image data processing
-typedef float pw_fp_t;
-typedef cv::Vec3f pw_cv_vec3;
-#define _PATCHWORKS_STAT_FLOAT_ 32
-#define _PW_CV_FP_ CV_32FC3
-#else
-// using 64-bit floating point for intermediate image data processing
-typedef double pw_fp_t;
-typedef cv::Vec3d pw_cv_vec3;
-#define _PATCHWORKS_STAT_FLOAT_ 64
-#define _PW_CV_FP_ CV_64FC3
-#endif
+ protected:
 
-} // end of namespace patchworks
-} // end of namespace lbann
+  void load() override;
+  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;
 
-#endif // _PATCHWORKS_COMMON_H_
-#endif // __LIB_OPENCV
+  int get_linearized_data_size() const override {
+    return 128 * m_sequence_length;
+  }
+  int get_linearized_label_size() const override {
+    return 128 * m_sequence_length;
+  }
+  const std::vector<int> get_data_dims() const override {
+    return {128 * m_sequence_length};
+  }
+
+  /** Length of text sequence. */
+  int m_sequence_length;
+  /** Size of data file in bytes. */
+  int m_file_size;
+
+};
+
+}  // namespace lbann
+
+#endif  // LBANN_DATA_READER_ASCII_HPP

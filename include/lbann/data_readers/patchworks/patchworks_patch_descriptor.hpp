@@ -37,7 +37,6 @@
 #include <string>
 #include <ostream>
 #include "patchworks_common.hpp"
-#include "patchworks_opencv.hpp"
 #include "patchworks_ROI.hpp"
 
 namespace lbann {

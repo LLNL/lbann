@@ -943,7 +943,7 @@ void lbann_comm::setup_threads() {
 }
 
 void lbann_comm::reset_threads() {
-  if (threads_per_proc != omp_get_num_threads()) {
+  if (threads_per_proc != omp_get_max_threads()) {
     omp_set_num_threads(threads_per_proc);
   }
 }

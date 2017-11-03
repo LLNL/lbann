@@ -268,7 +268,7 @@ Layer::~Layer() {
   if(m_neurons_cudnn_desc != nullptr) {
     CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_neurons_cudnn_desc));
   }
-  if(m_cudnn) {
+  if(m_cudnn != nullptr) {
     m_cudnn->deallocate_on_gpus(m_activations_d);
     m_cudnn->deallocate_on_gpus(m_error_signal_d);
     m_cudnn->deallocate_on_gpus(m_prev_activations_d);

@@ -92,9 +92,12 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus, bool nc
 
   // Case where compute node has fewer GPUs than MPI ranks
   else {
-    if(m_nccl_used){
-      throw lbann_exception("cudnn_wrapper: the number of MPI ranks on compute node cannot exceed that of GPUs when NCCL is used");
-    }
+    // Throw exception
+    // TODO: Support case where MPI ranks have to share GPUs
+    std::stringstream err;
+    err << "cudnn_wrapper: cannot have " << procs_per_node << " processes "
+        << "on a node with " << m_num_total_gpus << " GPUs";
+    throw lbann_exception(err.str());
 
     const int min_procs_per_gpu = procs_per_node / m_num_total_gpus;
     const int procs_remainder = procs_per_node % m_num_total_gpus;

@@ -1781,6 +1781,8 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       reader = new cifar10_reader(shuffle);
     } else if (name == "synthetic") {
       reader = new data_reader_synthetic(readme.num_samples(), readme.num_features(), shuffle);
+    } else if (name == "ascii") {
+      reader = new ascii_reader(5, shuffle);
     } else {
       if (master) {
         err << __FILE__ << " " << __LINE__ << " :: unknown name for data reader: "
@@ -1798,12 +1800,9 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
     if (readme.data_filedir() != "") {
       reader->set_file_dir( readme.data_filedir() );
     }
-    if (readme.absolute_sample_count()) {
-      reader->set_absolute_sample_count( readme.absolute_sample_count() );
-    }
-    if (readme.percent_of_data_to_use()) {
-      reader->set_use_percent( readme.percent_of_data_to_use() );
-    }
+
+    reader->set_absolute_sample_count( readme.absolute_sample_count() );
+    reader->set_use_percent( readme.percent_of_data_to_use() );
 
     if ((name != "imagenet_cv") && (name != "imagenet_single_cv")) {
       reader->horizontal_flip( preprocessor.horizontal_flip() );
@@ -1874,6 +1873,9 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
         } else if (name == "synthetic") {
         reader_validation = new data_reader_synthetic(shuffle);
         */
+      } else if (name == "ascii") {
+        reader_validation = new ascii_reader(5, shuffle);
+        (*(ascii_reader *)reader_validation) = (*(ascii_reader *)reader);
       }
 
       reader_validation->swap_role("validate");
@@ -1989,6 +1991,17 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
 
   options *opts = options::get();
   lbann_data::Model *model = p.mutable_model();
+  lbann_data::DataReader *d_reader = p.mutable_data_reader();
+  int size = d_reader->reader_size();
+
+  if (opts->has_int("absolute_sample_count")) {
+    for (int j=0; j<size; j++) {
+      int n = opts->get_int("absolute_sample_count");
+      lbann_data::Reader *readme = d_reader->mutable_reader(j);
+      readme->set_percent_of_data_to_use(0.0);
+      readme->set_absolute_sample_count(n);
+    }  
+  }
 
   if (opts->has_string("dag_model")) {
     std::string sanity = model->name();
