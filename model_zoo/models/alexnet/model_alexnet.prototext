@@ -25,7 +25,7 @@ model {
   callback {
     imcomm {
       intermodel_comm_method: "normal"
-      layers: "conv1 conv2 conv3 conv4 conv5 fc6 fc7 fc8"
+      all_learning_layers: true
     }  
   }
   callback {

@@ -87,7 +87,7 @@ model {
   callback {
     imcomm {
       intermodel_comm_method: "normal"
-      layers: "2 5"
+      all_learning_layers: true
     }
   }
   callback {

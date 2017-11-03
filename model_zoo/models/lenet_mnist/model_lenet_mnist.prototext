@@ -55,7 +55,7 @@ model {
   # callback {
   #   imcomm {
   #     intermodel_comm_method: "normal"
-  #     layers: "conv1 conv2 ip1 ip2"
+  #     all_learning_layers: true
   #   }
   # }
   # callback {

@@ -227,6 +227,7 @@ inline data_layout get_data_layout(const string& s)
   }
 }
 
+
 void get_proto_layers(
   std::vector<lbann_data::Layer> &proto_layers,
   const lbann_data::Model& m,
@@ -1024,6 +1025,37 @@ lbann_summary * construct_summarizer(const lbann_data::Model &m, lbann_comm *com
   return summary;
 }
 
+
+void get_layers_to_add_to_imcomm_callback(lbann_comm *comm, const lbann_data::Model& m, std::unordered_set<std::string> &addme, std::unordered_set<std::string> &excludeme) {
+  bool master = comm->am_world_master();
+  const int num_layers = m.layer_size();
+  for (int j=0; j<num_layers; j++) {
+    const lbann_data::Layer& layer = m.layer(j);
+    switch (layer.imcomm()) {
+      case lbann_data::Imcomm::DEFAULT :
+        break;
+      case lbann_data::Imcomm::EXCLUDE :
+        excludeme.insert(layer.name());
+        if (master) {
+          std::cout << "EXPLICITLY EXCLUDING: " << layer.name() << std::endl;
+        }
+        break;
+      case lbann_data::Imcomm::INCLUDE :
+        addme.insert(layer.name());
+        if (master) {
+          std::cout << "EXPLICITLY INCLUDING: " << layer.name() << std::endl;
+        }
+        break;
+      //todo TODO need error checking here
+      case lbann_data::Imcomm::Imcomm_INT_MIN_SENTINEL_DO_NOT_USE_ :
+        break;
+      case lbann_data::Imcomm::Imcomm_INT_MAX_SENTINEL_DO_NOT_USE_ :
+        break;
+    }
+  }
+
+}
+
 void init_callbacks(
   lbann_comm *comm,
   lbann::model *model,
@@ -1194,29 +1226,35 @@ void init_callbacks(
       if (master) {
         cout << "adding imcomm callback\n";
       }
-      std::stringstream s(c.layers());
-      std::unordered_set<Layer*> which;
-      std::string a;
-      bool all_layers = false;
-      while (s >> a) {
-        if (a == "10000") {
-          all_layers = true;
-        } else {
-          if (master and not layer_is_in_model(a)) {
-            err << __FILE__ << " " << __LINE__
-                << " :: callback imcomm: could not find layer " << a;
-            throw lbann_exception(err.str());
+      std::unordered_set<std::string> addme;
+      std::unordered_set<std::string> excludeme;
+      get_layers_to_add_to_imcomm_callback(comm, m, addme, excludeme);
+
+      if (c.all_learning_layers()) {
+        for (auto it : model_layers) {
+          if (dynamic_cast<learning*>(it.second) != nullptr) {
+            if (master) {
+            }
+            if (excludeme.find(it.second->get_name()) == excludeme.end()) {
+              if (master) {
+                std::cout << "ADDING to IMCOMM: " << it.second->get_name() 
+                          << " " << it.second->get_type() << std::endl;
+              } else {
+                addme.insert(it.second->get_name());
+              }  
+            } else {
+              if (master) {
+                std::cout << "WOULD ADD TO IMCOMM, but was explicitly excluded: " 
+                          << it.second->get_name() << " "
+                          << it.second->get_type() << std::endl;
+              } 
+            }
           }
-          which.insert(model_layers[a]);
-        }
-      }
+        }  
+      }  
+      std::unordered_set<Layer*> imcomm_layers;
       lbann_callback_imcomm::comm_type c_type  = get_comm_type(c.intermodel_comm_method(), master);
-      lbann_callback_imcomm *im;
-      if (all_layers) {
-        im = new lbann_callback_imcomm(c_type, summarizer);
-      } else {
-        im = new lbann_callback_imcomm(c_type, which, summarizer);
-      }
+      lbann_callback_imcomm *im = new lbann_callback_imcomm(c_type, imcomm_layers, summarizer);
       model->add_callback(im);
     }
 
