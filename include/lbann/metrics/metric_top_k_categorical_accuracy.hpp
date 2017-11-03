@@ -81,7 +81,7 @@ class top_k_categorical_accuracy : public metric {
       std::partial_sort(
         local_indices.begin(), local_indices.begin() + m_top_k,
         local_indices.end(),
-        [mb_idx, &predictions_v, this] (El::Int a, El::Int b) -> bool {
+        [mb_idx, &predictions_v] (El::Int a, El::Int b) -> bool {
           return predictions_v.GetLocal(a, mb_idx) >
             predictions_v.GetLocal(b, mb_idx); });
       for (El::Int i = 0; i < m_top_k; ++i) {

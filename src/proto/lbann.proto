@@ -275,7 +275,7 @@ message CallbackDispIOStats {
 
 message CallbackImComm {
   string intermodel_comm_method = 1;
-  string layers = 2; //e.g: "2 4 5"; use "10000" to apply to all layers
+  bool all_learning_layers = 2;
 }
 
 message CallbackDebug {
@@ -351,6 +351,17 @@ message CallbackGradientCheck {
 // see: lbann/include/lbann/lbann_base.hpp
 //
 
+//note: I'd like to put this enum inside of Layer, but if I do the enum values
+//      become, e.g, Layer_Imcomm_EXCLUDE, which is just ugly
+enum Imcomm {
+  DEFAULT = 0; //add Layer to Imcomm callback if all_learning_layers = true in
+               //the CallbackImComm
+  EXCLUDE = 1; //*do not* add Layer to Imcomm callback if all_learning_layers = true in
+               //the CallbackImComm
+  INCLUDE = 2;  //add Layer to Imcomm callback regardless of whether all_learning_layers
+                //in the CallbackImComm is set to true or false
+}
+
 message Layer {
    string name = 50; 
    string parents = 151;
@@ -358,6 +369,8 @@ message Layer {
    string data_layout = 52;
    bool num_neurons_from_data_reader = 53;
    string linked_layers = 54;   
+
+   Imcomm imcomm = 55;
 
    // a Layer should contain exactly one of the following
    // (this may or may not be properly checked for in proto_common.cpp)
