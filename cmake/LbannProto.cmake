@@ -33,6 +33,7 @@ if(NOT LBANN_PROTO_DIR OR FORCE_LBANN_PROTO_BUILD)
 
   # Build and install library 
   add_library(LbannProto SHARED ${LBANN_PROTO_DIR}/lbann.pb.cc)
+  target_link_libraries(LbannProto PUBLIC ${PROTOBUF_LIBRARIES})
   install(
     TARGETS LbannProto
     EXPORT LbannProto
