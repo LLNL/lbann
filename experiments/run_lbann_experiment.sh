@@ -100,56 +100,74 @@ esac
 # Initialize dataset
 if [ -n "${IMAGENET_CLASSES}" ]; then
     READER_PROTO="--reader=${LBANN_DIR}/model_zoo/data_readers/data_reader_imagenet.prototext"
-    case ${CLUSTER} in
-        catalyst|quartz|surface)
-            IMAGENET_DIR=/p/lscratchf/brainusr/datasets/ILSVRC2012
-            DATASET_TARBALLS="${IMAGENET_DIR}/resized_256x256/train.tar ${IMAGENET_DIR}/resized_256x256/val.tar ${IMAGENET_DIR}/labels.tar"
-            ;;
-        ray)
-            IMAGENET_DIR=/p/gscratchr/brainusr/datasets/ILSVRC2012
-            DATASET_TARBALLS="${IMAGENET_DIR}/resized_256x256/train.tar ${IMAGENET_DIR}/resized_256x256/val.tar ${IMAGENET_DIR}/labels.tar"
-            ;;
-    esac
     case ${IMAGENET_CLASSES} in
-        10)
-            IMAGENET_SUFFIX=_c0-9
-            ;;
-        100)
-            IMAGENET_SUFFIX=_c0-99
-            ;;
-        300)
-            IMAGENET_SUFFIX=_c0-299
-            ;;
-        1000|1K|1k)
-            IMAGENET_CLASSES=1000
-            IMAGENET_SUFFIX=
-            ;;
-        21000|21K|21k)
-            IMAGENET_CLASSES=21000
-            IMAGENET_DIR=/p/lscratchf/brainusr/datasets/ILSVRC2012
-            echo "TODO: support ImageNet-21K"
-            exit 1
+        10|100|300|1000|21000)
             ;;
         *)
             echo "Error: invalid number of ImageNet classes"
             exit 1
             ;;
     esac
-    case ${CACHE_DATASET} in
-        YES|yes|TRUE|true|ON|on|1)
-            TRAIN_DATASET_DIR=${CACHE_DIR}/train/
-            TRAIN_DATASET_LABELS=${CACHE_DIR}/labels/train${IMAGENET_SUFFIX}.txt
-            TEST_DATASET_DIR=${CACHE_DIR}/val/
-            TEST_DATASET_LABELS=${CACHE_DIR}/labels/val${IMAGENET_SUFFIX}.txt
+    EXPERIMENT_NAME=${EXPERIMENT_NAME}_imagenet${IMAGENET_CLASSES}
+    case ${CLUSTER} in
+        catalyst|quartz|surface)
+            case ${IMAGENET_CLASSES} in
+                10|100|300|1000)
+                    IMAGENET_DIR=/p/lscratchf/brainusr/datasets/ILSVRC2012
+                    DATASET_TARBALLS="${IMAGENET_DIR}/resized_256x256/train.tar ${IMAGENET_DIR}/resized_256x256/val.tar ${IMAGENET_DIR}/labels.tar"
+                    IMAGENET_SUFFIX=_c0-$((${IMAGENET_CLASSES}-1))
+                    if [ "${IMAGENET_CLASSES}" -q "1000" ]; then
+                        IMAGENET_SUFFIX=
+                    fi
+                    case ${CACHE_DATASET} in
+                        YES|yes|TRUE|true|ON|on|1)
+                            TRAIN_DATASET_DIR=${CACHE_DIR}/train/
+                            TRAIN_DATASET_LABELS=${CACHE_DIR}/labels/train${IMAGENET_SUFFIX}.txt
+                            TEST_DATASET_DIR=${CACHE_DIR}/val/
+                            TEST_DATASET_LABELS=${CACHE_DIR}/labels/val${IMAGENET_SUFFIX}.txt
+                            ;;
+                        *)
+                            TRAIN_DATASET_DIR=${IMAGENET_DIR}/resized_256x256/train/
+                            TRAIN_DATASET_LABELS=${IMAGENET_DIR}/labels/train${IMAGENET_SUFFIX}.txt
+                            TEST_DATASET_DIR=${IMAGENET_DIR}/resized_256x256/val/
+                            TEST_DATASET_LABELS=${IMAGENET_DIR}/labels/val${IMAGENET_SUFFIX}.txt
+                            ;;
+                    esac
+                    ;;
+                21000)
+                    CACHE_DATASET=NO
+                    CACHE_DIR=
+                    IMAGENET_DIR=/p/lscratche/brainusr/datasets
+                    TRAIN_DATASET_DIR=${IMAGENET_DIR}/ImageNetALL_extracted
+                    TRAIN_DATASET_LABELS=${IMAGENET_DIR}/ImageNetAll_labelv6.txt
+                    TEST_DATASET_DIR=${IMAGENET_DIR}/ImageNetALL_extracted
+                    TEST_DATASET_LABELS=${IMAGENET_DIR}/ImageNetAll_labelv6.txt
+                    ;;
+            esac
             ;;
-        *)
-            TRAIN_DATASET_DIR=${IMAGENET_DIR}/resized_256x256/train/
-            TRAIN_DATASET_LABELS=${IMAGENET_DIR}/labels/train${IMAGENET_SUFFIX}.txt
-            TEST_DATASET_DIR=${IMAGENET_DIR}/resized_256x256/val/
-            TEST_DATASET_LABELS=${IMAGENET_DIR}/labels/val${IMAGENET_SUFFIX}.txt
+        ray)
+            IMAGENET_DIR=/p/gscratchr/brainusr/datasets/ILSVRC2012
+            DATASET_TARBALLS="${IMAGENET_DIR}/resized_256x256/train.tar ${IMAGENET_DIR}/resized_256x256/val.tar ${IMAGENET_DIR}/labels.tar"
+            IMAGENET_SUFFIX=_c0-$((${IMAGENET_CLASSES}-1))
+            if [ "${IMAGENET_CLASSES}" -q "1000" ]; then
+                IMAGENET_SUFFIX=
+            fi
+            case ${CACHE_DATASET} in
+                YES|yes|TRUE|true|ON|on|1)
+                    TRAIN_DATASET_DIR=${CACHE_DIR}/train/
+                    TRAIN_DATASET_LABELS=${CACHE_DIR}/labels/train${IMAGENET_SUFFIX}.txt
+                    TEST_DATASET_DIR=${CACHE_DIR}/val/
+                    TEST_DATASET_LABELS=${CACHE_DIR}/labels/val${IMAGENET_SUFFIX}.txt
+                    ;;
+                *)
+                    TRAIN_DATASET_DIR=${IMAGENET_DIR}/resized_256x256/train/
+                    TRAIN_DATASET_LABELS=${IMAGENET_DIR}/labels/train${IMAGENET_SUFFIX}.txt
+                    TEST_DATASET_DIR=${IMAGENET_DIR}/resized_256x256/val/
+                    TEST_DATASET_LABELS=${IMAGENET_DIR}/labels/val${IMAGENET_SUFFIX}.txt
+                    ;;
+            esac
             ;;
     esac
-    EXPERIMENT_NAME=${EXPERIMENT_NAME}_imagenet${IMAGENET_CLASSES}
 else
     CACHE_DATASET=NO
     CACHE_DIR=
