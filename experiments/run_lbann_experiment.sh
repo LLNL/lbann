@@ -198,6 +198,24 @@ case ${USE_NVPROF} in
         ;;
 esac
 
+case ${SCHEDULER} in
+    slurm)
+        MPIRUN="srun --nodes=${NUM_NODES} --ntasks=${NUM_PROCS}"
+        case ${HAS_GPU} in
+            YES|yes|TRUE|true|ON|on|1)
+                MPIRUN="${MPIRUN} --nvidia_compute_mode=default"
+                ;;
+        esac
+        MPIRUN1="srun --nodes=${NUM_NODES} --ntasks=${NUM_NODES}"
+        MPIRUN2="srun --nodes=${NUM_NODES} --ntasks=$((2*${NUM_NODES}))"
+        ;;
+    lsf)
+        MPIRUN="mpirun --map-by ppr:${PROCS_PER_NODE}:node"
+        MPIRUN1="mpirun --map-by ppr:1:node"
+        MPIRUN2="mpirun --map-by ppr:2:node"
+        ;;
+esac
+
 # Initialize experiment name
 EXPERIMENT_NAME=${EXPERIMENT_NAME}_${CLUSTER}_${PARTITION}_N${NUM_NODES}
 
@@ -264,32 +282,14 @@ echo "# USE_NVPROF: ${USE_NVPROF}"                      >> ${BATCH_SCRIPT}
 echo "# HOME_DIR: ${HOME_DIR}"                          >> ${BATCH_SCRIPT}
 echo "# CACHE_DIR: ${CACHE_DIR}"                        >> ${BATCH_SCRIPT}
 echo ""                                                 >> ${BATCH_SCRIPT}
-case ${SCHEDULER} in
-    slurm)
-        MPIRUN="srun --nodes=${NUM_NODES} --ntasks=${NUM_NODES}"
-        ;;
-    lsf)
-        MPIRUN="mpirun --map-by ppr:1:node"
-        ;;
-esac
 echo "# ======== Print time and node names ========"    >> ${BATCH_SCRIPT}
 echo "date"                                             >> ${BATCH_SCRIPT}
-echo "${MPIRUN} hostname"                               >> ${BATCH_SCRIPT}
+echo "${MPIRUN1} hostname"                              >> ${BATCH_SCRIPT}
 echo ""                                                 >> ${BATCH_SCRIPT}
 
 # Cache dataset in node-local memory
 case ${CACHE_DATASET} in
     YES|yes|TRUE|true|ON|on|1)
-        case ${SCHEDULER} in
-            slurm)
-                MPIRUN="srun --nodes=${NUM_NODES} --ntasks=${NUM_NODES}"
-                MPIRUN2="srun --nodes=${NUM_NODES} --ntasks=$((2*${NUM_NODES}))"
-                ;;
-            lsf)
-                MPIRUN="mpirun --map-by ppr:1:node"
-                MPIRUN2="mpirun --map-by ppr:2:node"
-                ;;
-        esac
         COPY="/collab/usr/global/tools/stat/file_bcast/${SYS_TYPE}/fbcast/file_bcast_par13 1MB"
         echo "# ======== Cache dataset ========" >> ${BATCH_SCRIPT}
         echo "echo \"Caching dataset...\"" >> ${BATCH_SCRIPT}
@@ -301,7 +301,7 @@ case ${CACHE_DATASET} in
             echo "  ${MPIRUN2} ${COPY} ${TARBALL} ${CACHE_TARBALL} > /dev/null" >> ${BATCH_SCRIPT}
             echo "echo \"Copied ${TARBALL} to ${CACHE_TARBALL}...\"" >> ${BATCH_SCRIPT}
             echo "[ -d ${OUTPUT_DIR} ] || \\" >> ${BATCH_SCRIPT}
-            echo "  ${MPIRUN} tar xf ${CACHE_TARBALL} -C ${CACHE_DIR}" >> ${BATCH_SCRIPT}
+            echo "  ${MPIRUN1} tar xf ${CACHE_TARBALL} -C ${CACHE_DIR}" >> ${BATCH_SCRIPT}
             echo "echo \"Untarred ${CACHE_TARBALL}...\"" >> ${BATCH_SCRIPT}
         done
         echo "echo \"Done caching dataset...\"" >> ${BATCH_SCRIPT}
@@ -311,19 +311,6 @@ esac
 
 # Set experiment
 echo "# ======== Experiment ========" >> ${BATCH_SCRIPT}
-case ${SCHEDULER} in
-    slurm)
-        MPIRUN="srun --nodes=${NUM_NODES} --ntasks=${NUM_PROCS}"
-        case ${HAS_GPU} in
-            YES|yes|TRUE|true|ON|on|1)
-                MPIRUN="${MPIRUN} --nvidia_compute_mode=default"
-                ;;
-        esac
-        ;;
-    lsf)
-        MPIRUN="mpirun --map-by ppr:${PROCS_PER_NODE}:node"
-        ;;
-esac
 echo "${MPIRUN} ${PROFILER_COMMAND} ${EXPERIMENT_COMMAND}" >> ${BATCH_SCRIPT}
 
 # Submit batch script

@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
     if (master) {
       std::cout << "Hardware settings (for master process)" << std::endl
                 << "  Processes on node : " << comm->get_procs_per_node() << std::endl
-                << "  OpenMP threads    : " << omp_get_num_threads() << std::endl;
+                << "  OpenMP threads    : " << omp_get_max_threads() << std::endl;
       #if __LIB_CUDNN
       if (cudnn != nullptr) {
         std::cout << "  Available GPUs    : " << cudnn->get_num_total_gpus() << std::endl

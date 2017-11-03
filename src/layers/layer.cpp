@@ -268,7 +268,7 @@ Layer::~Layer() {
   if(m_neurons_cudnn_desc != nullptr) {
     CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_neurons_cudnn_desc));
   }
-  if(m_cudnn) {
+  if(m_cudnn != nullptr) {
     m_cudnn->deallocate_on_gpus(m_activations_d);
     m_cudnn->deallocate_on_gpus(m_error_signal_d);
     m_cudnn->deallocate_on_gpus(m_prev_activations_d);
@@ -799,7 +799,8 @@ void Layer::add_parent_layer(const Layer* parent) {
   auto parent_pos = std::find(m_parent_layers.begin(),
                               m_parent_layers.end(),
                               parent);
-  if(parent != this
+  if(parent != nullptr
+     && parent != this
      && parent_pos == m_parent_layers.end()) {
     m_parent_layers.push_back(parent);
   }
@@ -809,7 +810,8 @@ void Layer::add_child_layer(const Layer* child) {
   auto child_pos = std::find(m_child_layers.begin(),
                              m_child_layers.end(),
                              child);
-  if(child != this
+  if(child != nullptr
+     && child != this
      && child_pos == m_child_layers.end()) {
     m_child_layers.push_back(child);
   }

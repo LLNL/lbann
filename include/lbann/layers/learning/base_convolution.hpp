@@ -293,20 +293,24 @@ class base_convolution_layer : public learning {
       CHECK_CUDNN(cudnnDestroyConvolutionDescriptor(m_convolution_cudnn_desc));
     }
 
-    // Deallocate GPU memory
-    this->m_cudnn->deallocate_on_gpus(m_kernel_weights_d);
-    this->m_cudnn->deallocate_on_gpus(m_kernel_weights_gradient_d);
-    this->m_cudnn->deallocate_on_gpus(m_bias_weights_d);
-    this->m_cudnn->deallocate_on_gpus(m_bias_weights_gradient_d);
+    if (this->m_cudnn != nullptr) {
+      // Deallocate GPU memory
+      this->m_cudnn->deallocate_on_gpus(m_kernel_weights_d);
+      this->m_cudnn->deallocate_on_gpus(m_kernel_weights_gradient_d);
+      this->m_cudnn->deallocate_on_gpus(m_bias_weights_d);
+      this->m_cudnn->deallocate_on_gpus(m_bias_weights_gradient_d);
 
-    // Unpin host memory
-    this->m_cudnn->unpin_matrix(*this->m_weights);
-    this->m_cudnn->unpin_matrix(*m_kernel_weights_gradient_per_gpu);
-    this->m_cudnn->unpin_matrix(*m_bias_weights_gradient_per_gpu);
+      // Unpin host memory
+      this->m_cudnn->unpin_matrix(*this->m_weights);
+      this->m_cudnn->unpin_matrix(*m_kernel_weights_gradient_per_gpu);
+      this->m_cudnn->unpin_matrix(*m_bias_weights_gradient_per_gpu);
+    }
 
     // Delete matrices
-    delete m_kernel_weights_gradient_per_gpu;
-    delete m_bias_weights_gradient_per_gpu;
+    if (m_kernel_weights_gradient_per_gpu != nullptr)
+      delete m_kernel_weights_gradient_per_gpu;
+    if (m_bias_weights_gradient_per_gpu)
+      delete m_bias_weights_gradient_per_gpu;
 
   #endif // #ifdef __LIB_CUDNN
 
