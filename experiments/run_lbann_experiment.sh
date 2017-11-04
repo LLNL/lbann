@@ -101,6 +101,7 @@ case ${CLUSTER} in
         exit 1
         ;;
 esac
+CORES_PER_PROC=$((${CORES_PER_NODE}/${PROCS_PER_NODE}))
 
 # Initialize dataset
 if [ -n "${IMAGENET_CLASSES}" ]; then
