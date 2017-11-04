@@ -222,7 +222,6 @@ case ${USE_NVPROF} in
 esac
 
 # Initialize MPI command
-CORES_PER_PROC=$((${CORES_PER_NODE}/${PROCS_PER_NODE}))
 case ${SCHEDULER} in
     slurm)
         MPIRUN="srun --nodes=${NUM_NODES} --ntasks=${NUM_PROCS}"
@@ -235,9 +234,9 @@ case ${SCHEDULER} in
         MPIRUN2="srun --nodes=${NUM_NODES} --ntasks=$((2*${NUM_NODES}))"
         ;;
     lsf)
-        MPIRUN="mpirun -np ${NUM_PROCS} -N ${PROCS_PER_NODE} mpibind"
-        MPIRUN1="mpirun -np ${NUM_NODES} -N 1 mpibind"
-        MPIRUN2="mpirun -np $((2*${NUM_NODES})) -N 2 mpibind"
+        MPIRUN="mpirun -np ${NUM_PROCS} -N ${PROCS_PER_NODE}"
+        MPIRUN1="mpirun -np ${NUM_NODES} -N 1"
+        MPIRUN2="mpirun -np $((2*${NUM_NODES})) -N 2"
         ;;
 esac
 
@@ -279,7 +278,7 @@ case ${SCHEDULER} in
         echo "#BSUB -J ${EXPERIMENT_NAME}"              >> ${BATCH_SCRIPT}
         echo "#BSUB -n ${NUM_PROCS}"                    >> ${BATCH_SCRIPT}
         echo "#BSUB -R \"span[ptile=${PROCS_PER_NODE}]\"" >> ${BATCH_SCRIPT}
-        echo "#BSUB -R \"affinity[core(${CORES_PER_PROC}):distribute=balance]\"" >> ${BATCH_SCRIPT}
+        echo "#BSUB -R \"affinity[core(${CORES_PER_PROC}):cpubind=core:distribute=balance]\"" >> ${BATCH_SCRIPT}
         echo "#BSUB -q ${PARTITION}"                    >> ${BATCH_SCRIPT}
         echo "#BSUB -G ${ACCOUNT}"                      >> ${BATCH_SCRIPT}
         echo "#BSUB -cwd ${EXPERIMENT_DIR}"             >> ${BATCH_SCRIPT}
@@ -311,8 +310,16 @@ echo "# CACHE_DIR: ${CACHE_DIR}"                        >> ${BATCH_SCRIPT}
 echo ""                                                 >> ${BATCH_SCRIPT}
 echo "# ======== Useful info and initialization ========" >> ${BATCH_SCRIPT}
 echo "date"                                             >> ${BATCH_SCRIPT}
-echo "${MPIRUN1} hostname > ${NODE_LIST}"               >> ${BATCH_SCRIPT}
-echo "pdsh -w \$(tr '\n' ',' < ${NODE_LIST}) export OMP_NUM_THREADS=\$((\$(nproc)/${PROCS_PER_NODE}))" >> ${BATCH_SCRIPT}
+case ${SCHEDULER} in
+    slurm)
+        echo "NODES=\"\${SLURM_JOB_NODELIST}\""         >> ${BATCH_SCRIPT}
+        ;;
+    lsf)
+        echo "NODES=\"\${LSB_HOSTS}\""                  >> ${BATCH_SCRIPT}
+        ;;
+esac
+echo "NODES=\$(echo \${NODES} | tr ' ' ',')"            >> ${BATCH_SCRIPT}
+echo "echo \"Nodes: \${NODES}\""                        >> ${BATCH_SCRIPT}
 echo ""                                                 >> ${BATCH_SCRIPT}
 
 # Cache dataset in node-local memory
