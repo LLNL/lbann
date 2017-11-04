@@ -94,6 +94,7 @@ model::model(const model& other) :
   std::unordered_map<Layer *,Layer *> old_to_new_layer;
   for (Layer *old_layer : other.m_layers) {
     Layer *new_layer = old_layer->copy();
+    new_layer->set_neural_network_model(this);
     old_to_new_layer[old_layer] = new_layer;
     m_layers.push_back(new_layer);
   }
