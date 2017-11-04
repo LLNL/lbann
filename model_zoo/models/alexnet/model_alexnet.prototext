@@ -145,7 +145,6 @@ model {
       conv_strides: "1 1"
       weight_initialization: "he_normal"
       has_bias: true
-      bias_initial_value: 0.1
       has_vectors: true
       l2_regularization_factor: 0.0005
     }
@@ -212,7 +211,6 @@ model {
       conv_strides: "1 1"
       weight_initialization: "he_normal"
       has_bias: true
-      bias_initial_value: 0.1
       has_vectors: true
       l2_regularization_factor: 0.0005
     }
@@ -235,7 +233,6 @@ model {
       conv_strides: "1 1"
       weight_initialization: "he_normal"
       has_bias: true
-      bias_initial_value: 0.1
       has_vectors: true
       l2_regularization_factor: 0.0005
     }
@@ -266,7 +263,6 @@ model {
       num_neurons: 4096
       weight_initialization: "he_normal"
       has_bias: true
-      bias_initial_value: 0.1
       l2_regularization_factor: 0.0005
     }
   }
@@ -291,7 +287,6 @@ model {
       num_neurons: 4096
       weight_initialization: "he_normal"
       has_bias: true
-      bias_initial_value: 0.1
       l2_regularization_factor: 0.0005
     }
   }
