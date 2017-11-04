@@ -63,6 +63,7 @@ case ${CLUSTER} in
         PARTITION=${PARTITION:-pbatch}
         ACCOUNT=${ACCOUNT:-brain}
         CACHE_DIR=${CACHE_DIR:-/l/ssd}
+        CORES_PER_NODE=24
         HAS_GPU=NO
         ;;
     "quartz")
@@ -70,6 +71,7 @@ case ${CLUSTER} in
         PARTITION=${PARTITION:-pbatch}
         ACCOUNT=${ACCOUNT:-brain}
         CACHE_DIR=${CACHE_DIR:-/tmp/${USER}}
+        CORES_PER_NODE=36
         HAS_GPU=NO
         ;;
     "surface")
@@ -77,6 +79,7 @@ case ${CLUSTER} in
         PARTITION=${PARTITION:-gpgpu}
         ACCOUNT=${ACCOUNT:-hpclearn}
         CACHE_DIR=${CACHE_DIR:-/tmp/${USER}}
+        CORES_PER_NODE=16
         HAS_GPU=YES
         ;;
     "ray")
@@ -84,6 +87,7 @@ case ${CLUSTER} in
         PARTITION=${PARTITION:-pbatch}
         ACCOUNT=${ACCOUNT:-guests}
         CACHE_DIR=${CACHE_DIR:-/tmp}
+        CORES_PER_NODE=20
         HAS_GPU=YES
         ;;
     *)
@@ -91,6 +95,7 @@ case ${CLUSTER} in
         PARTITION=${PARTITION:-pbatch}
         ACCOUNT=${ACCOUNT:-brain}
         CACHE_DIR=${CACHE_DIR:-/tmp/${USER}}
+        CORES_PER_NODE=1
         HAS_GPU=NO
         echo "Error: unrecognized system (${CLUSTER})"
         exit 1
@@ -100,56 +105,74 @@ esac
 # Initialize dataset
 if [ -n "${IMAGENET_CLASSES}" ]; then
     READER_PROTO="--reader=${LBANN_DIR}/model_zoo/data_readers/data_reader_imagenet.prototext"
-    case ${CLUSTER} in
-        catalyst|quartz|surface)
-            IMAGENET_DIR=/p/lscratchf/brainusr/datasets/ILSVRC2012
-            DATASET_TARBALLS="${IMAGENET_DIR}/resized_256x256/train.tar ${IMAGENET_DIR}/resized_256x256/val.tar ${IMAGENET_DIR}/labels.tar"
-            ;;
-        ray)
-            IMAGENET_DIR=/p/gscratchr/brainusr/datasets/ILSVRC2012
-            DATASET_TARBALLS="${IMAGENET_DIR}/resized_256x256/train.tar ${IMAGENET_DIR}/resized_256x256/val.tar ${IMAGENET_DIR}/labels.tar"
-            ;;
-    esac
     case ${IMAGENET_CLASSES} in
-        10)
-            IMAGENET_SUFFIX=_c0-9
-            ;;
-        100)
-            IMAGENET_SUFFIX=_c0-99
-            ;;
-        300)
-            IMAGENET_SUFFIX=_c0-299
-            ;;
-        1000|1K|1k)
-            IMAGENET_CLASSES=1000
-            IMAGENET_SUFFIX=
-            ;;
-        21000|21K|21k)
-            IMAGENET_CLASSES=21000
-            IMAGENET_DIR=/p/lscratchf/brainusr/datasets/ILSVRC2012
-            echo "TODO: support ImageNet-21K"
-            exit 1
+        10|100|300|1000|21000)
             ;;
         *)
             echo "Error: invalid number of ImageNet classes"
             exit 1
             ;;
     esac
-    case ${CACHE_DATASET} in
-        YES|yes|TRUE|true|ON|on|1)
-            TRAIN_DATASET_DIR=${CACHE_DIR}/train/
-            TRAIN_DATASET_LABELS=${CACHE_DIR}/labels/train${IMAGENET_SUFFIX}.txt
-            TEST_DATASET_DIR=${CACHE_DIR}/val/
-            TEST_DATASET_LABELS=${CACHE_DIR}/labels/val${IMAGENET_SUFFIX}.txt
+    EXPERIMENT_NAME=${EXPERIMENT_NAME}_imagenet${IMAGENET_CLASSES}
+    case ${CLUSTER} in
+        catalyst|quartz|surface)
+            case ${IMAGENET_CLASSES} in
+                10|100|300|1000)
+                    IMAGENET_DIR=/p/lscratchf/brainusr/datasets/ILSVRC2012
+                    DATASET_TARBALLS="${IMAGENET_DIR}/resized_256x256/train.tar ${IMAGENET_DIR}/resized_256x256/val.tar ${IMAGENET_DIR}/labels.tar"
+                    IMAGENET_SUFFIX=_c0-$((${IMAGENET_CLASSES}-1))
+                    if [ "${IMAGENET_CLASSES}" -eq "1000" ]; then
+                        IMAGENET_SUFFIX=
+                    fi
+                    case ${CACHE_DATASET} in
+                        YES|yes|TRUE|true|ON|on|1)
+                            TRAIN_DATASET_DIR=${CACHE_DIR}/train/
+                            TRAIN_DATASET_LABELS=${CACHE_DIR}/labels/train${IMAGENET_SUFFIX}.txt
+                            TEST_DATASET_DIR=${CACHE_DIR}/val/
+                            TEST_DATASET_LABELS=${CACHE_DIR}/labels/val${IMAGENET_SUFFIX}.txt
+                            ;;
+                        *)
+                            TRAIN_DATASET_DIR=${IMAGENET_DIR}/resized_256x256/train/
+                            TRAIN_DATASET_LABELS=${IMAGENET_DIR}/labels/train${IMAGENET_SUFFIX}.txt
+                            TEST_DATASET_DIR=${IMAGENET_DIR}/resized_256x256/val/
+                            TEST_DATASET_LABELS=${IMAGENET_DIR}/labels/val${IMAGENET_SUFFIX}.txt
+                            ;;
+                    esac
+                    ;;
+                21000)
+                    CACHE_DATASET=NO
+                    CACHE_DIR=
+                    IMAGENET_DIR=/p/lscratche/brainusr/datasets
+                    TRAIN_DATASET_DIR=${IMAGENET_DIR}/ImageNetALL_extracted/
+                    TRAIN_DATASET_LABELS=${IMAGENET_DIR}/ImageNetAll_labelv6.txt
+                    TEST_DATASET_DIR=${IMAGENET_DIR}/ImageNetALL_extracted/
+                    TEST_DATASET_LABELS=${IMAGENET_DIR}/ImageNetAll_labelv6.txt
+                    ;;
+            esac
             ;;
-        *)
-            TRAIN_DATASET_DIR=${IMAGENET_DIR}/resized_256x256/train/
-            TRAIN_DATASET_LABELS=${IMAGENET_DIR}/labels/train${IMAGENET_SUFFIX}.txt
-            TEST_DATASET_DIR=${IMAGENET_DIR}/resized_256x256/val/
-            TEST_DATASET_LABELS=${IMAGENET_DIR}/labels/val${IMAGENET_SUFFIX}.txt
+        ray)
+            IMAGENET_DIR=/p/gscratchr/brainusr/datasets/ILSVRC2012
+            DATASET_TARBALLS="${IMAGENET_DIR}/resized_256x256/train.tar ${IMAGENET_DIR}/resized_256x256/val.tar ${IMAGENET_DIR}/labels.tar"
+            IMAGENET_SUFFIX=_c0-$((${IMAGENET_CLASSES}-1))
+            if [ "${IMAGENET_CLASSES}" -eq "1000" ]; then
+                IMAGENET_SUFFIX=
+            fi
+            case ${CACHE_DATASET} in
+                YES|yes|TRUE|true|ON|on|1)
+                    TRAIN_DATASET_DIR=${CACHE_DIR}/train/
+                    TRAIN_DATASET_LABELS=${CACHE_DIR}/labels/train${IMAGENET_SUFFIX}.txt
+                    TEST_DATASET_DIR=${CACHE_DIR}/val/
+                    TEST_DATASET_LABELS=${CACHE_DIR}/labels/val${IMAGENET_SUFFIX}.txt
+                    ;;
+                *)
+                    TRAIN_DATASET_DIR=${IMAGENET_DIR}/resized_256x256/train/
+                    TRAIN_DATASET_LABELS=${IMAGENET_DIR}/labels/train${IMAGENET_SUFFIX}.txt
+                    TEST_DATASET_DIR=${IMAGENET_DIR}/resized_256x256/val/
+                    TEST_DATASET_LABELS=${IMAGENET_DIR}/labels/val${IMAGENET_SUFFIX}.txt
+                    ;;
+            esac
             ;;
     esac
-    EXPERIMENT_NAME=${EXPERIMENT_NAME}_imagenet${IMAGENET_CLASSES}
 else
     CACHE_DATASET=NO
     CACHE_DIR=
@@ -198,6 +221,8 @@ case ${USE_NVPROF} in
         ;;
 esac
 
+# Initialize MPI command
+CORES_PER_PROC=$((${CORES_PER_NODE}/${PROCS_PER_NODE}))
 case ${SCHEDULER} in
     slurm)
         MPIRUN="srun --nodes=${NUM_NODES} --ntasks=${NUM_PROCS}"
@@ -210,9 +235,9 @@ case ${SCHEDULER} in
         MPIRUN2="srun --nodes=${NUM_NODES} --ntasks=$((2*${NUM_NODES}))"
         ;;
     lsf)
-        MPIRUN="mpirun --map-by ppr:${PROCS_PER_NODE}:node"
-        MPIRUN1="mpirun --map-by ppr:1:node"
-        MPIRUN2="mpirun --map-by ppr:2:node"
+        MPIRUN="mpirun -np ${NUM_PROCS} -N ${PROCS_PER_NODE} mpibind"
+        MPIRUN1="mpirun -np ${NUM_NODES} -N 1 mpibind"
+        MPIRUN2="mpirun -np $((2*${NUM_NODES})) -N 2 mpibind"
         ;;
 esac
 
@@ -238,6 +263,7 @@ cp ${EXPERIMENT_SCRIPT} ${EXPERIMENT_DIR}
 # Output parameters and set batch script settings
 BATCH_SCRIPT=${EXPERIMENT_DIR}/batch.sh
 LOG_FILE=${EXPERIMENT_DIR}/output.txt
+NODE_LIST=${EXPERIMENT_DIR}/nodes.txt
 echo "#!/bin/sh"                                       > ${BATCH_SCRIPT}
 case ${SCHEDULER} in
     slurm)
@@ -253,6 +279,7 @@ case ${SCHEDULER} in
         echo "#BSUB -J ${EXPERIMENT_NAME}"              >> ${BATCH_SCRIPT}
         echo "#BSUB -n ${NUM_PROCS}"                    >> ${BATCH_SCRIPT}
         echo "#BSUB -R \"span[ptile=${PROCS_PER_NODE}]\"" >> ${BATCH_SCRIPT}
+        echo "#BSUB -R \"affinity[core(${CORES_PER_PROC}):distribute=balance]\"" >> ${BATCH_SCRIPT}
         echo "#BSUB -q ${PARTITION}"                    >> ${BATCH_SCRIPT}
         echo "#BSUB -G ${ACCOUNT}"                      >> ${BATCH_SCRIPT}
         echo "#BSUB -cwd ${EXPERIMENT_DIR}"             >> ${BATCH_SCRIPT}
@@ -282,9 +309,10 @@ echo "# USE_NVPROF: ${USE_NVPROF}"                      >> ${BATCH_SCRIPT}
 echo "# HOME_DIR: ${HOME_DIR}"                          >> ${BATCH_SCRIPT}
 echo "# CACHE_DIR: ${CACHE_DIR}"                        >> ${BATCH_SCRIPT}
 echo ""                                                 >> ${BATCH_SCRIPT}
-echo "# ======== Print time and node names ========"    >> ${BATCH_SCRIPT}
+echo "# ======== Useful info and initialization ========" >> ${BATCH_SCRIPT}
 echo "date"                                             >> ${BATCH_SCRIPT}
-echo "${MPIRUN1} hostname"                              >> ${BATCH_SCRIPT}
+echo "${MPIRUN1} hostname > ${NODE_LIST}"               >> ${BATCH_SCRIPT}
+echo "pdsh -w \$(tr '\n' ',' < ${NODE_LIST}) export OMP_NUM_THREADS=\$((\$(nproc)/${PROCS_PER_NODE}))" >> ${BATCH_SCRIPT}
 echo ""                                                 >> ${BATCH_SCRIPT}
 
 # Cache dataset in node-local memory
