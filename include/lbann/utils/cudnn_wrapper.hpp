@@ -108,8 +108,8 @@ class cudnn_manager {
 
   /** Get number of GPUs assigned to current process. */
   int get_num_gpus() const;
-  /** Get number of GPUs on current node. */
-  int get_num_total_gpus() const;
+  /** Get number of visible GPUs on current node. */
+  int get_num_visible_gpus() const;
   /** Get GPUs. */
   std::vector<int>& get_gpus();
   /** Get GPUs (const). */
@@ -253,8 +253,8 @@ class cudnn_manager {
 
   /** Number of GPUs for current process. */
   int m_num_gpus;
-  /** Number of available GPUs. */
-  int m_num_total_gpus;
+  /** Number of visible GPUs. */
+  int m_num_visible_gpus;
 
   /** List of GPUs. */
   std::vector<int> m_gpus;

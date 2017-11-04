@@ -235,9 +235,9 @@ case ${SCHEDULER} in
         MPIRUN2="srun --nodes=${NUM_NODES} --ntasks=$((2*${NUM_NODES}))"
         ;;
     lsf)
-        MPIRUN="mpirun"
-        MPIRUN1="mpirun"
-        MPIRUN2="mpirun"
+        MPIRUN="mpirun -np ${NUM_PROCS} -N ${PROCS_PER_NODE} mpibind"
+        MPIRUN1="mpirun -np ${NUM_NODES} -N 1 mpibind"
+        MPIRUN2="mpirun -np $((2*${NUM_NODES})) -N 2 mpibind"
         ;;
 esac
 

@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
       if (master) {
         cerr << "code was compiled with __LIB_CUDNN, and we are using cudnn\n";
       }
-      cudnn = new cudnn::cudnn_manager(comm, pb_model->num_gpus());
+      cudnn = new cudnn::cudnn_manager(comm);
     } else {
       if (master) {
         cerr << "code was compiled with __LIB_CUDNN, but we are NOT USING cudnn\n";
@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
                 << "  OpenMP threads per process   : " << omp_get_max_threads() << std::endl;
       #if __LIB_CUDNN
       if (cudnn != nullptr) {
-        std::cout << "  GPUs on node                 : " << cudnn->get_num_total_gpus() << std::endl
+        std::cout << "  GPUs on node                 : " << cudnn->get_num_visible_gpus() << std::endl
                   << "  GPUs per process             : " << cudnn->get_num_gpus() << std::endl;
       }
       #endif // __LIB_CUDNN

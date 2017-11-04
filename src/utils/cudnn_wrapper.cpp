@@ -45,82 +45,69 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus, bool nc
   // Indicate whether NCCL is used 
   m_nccl_used = nccl_used;
 
-  // Determine number of available GPUs
-  CHECK_CUDA(cudaGetDeviceCount(&m_num_total_gpus));
-  if(max_num_gpus >= 0 && max_num_gpus < m_num_total_gpus) {
-    m_num_total_gpus = max_num_gpus;
+  // Determine number of visible GPUs
+  CHECK_CUDA(cudaGetDeviceCount(&m_num_visible_gpus));
+  if(max_num_gpus >= 0 && max_num_gpus < m_num_visible_gpus) {
+    m_num_visible_gpus = max_num_gpus;
   }
-  if(m_num_total_gpus < 1) {
-    throw lbann::lbann_exception("cudnn_wrapper: no GPUs allocated or found for cuDNN");
+  if(m_num_visible_gpus < 1) {
+    throw lbann::lbann_exception("cudnn_wrapper: no GPUs found");
   }
 
   // Determine number of MPI ranks on current compute node
   const int rank_in_node = comm->get_rank_in_node();
   const int procs_per_node = comm->get_procs_per_node();
 
-  // Case where compute node has more GPUs than MPI ranks
-  if(m_num_total_gpus >= procs_per_node) {
-    const int min_gpus_per_proc = m_num_total_gpus / procs_per_node;
-    const int num_gpus_remainder = m_num_total_gpus % procs_per_node;
-    int gpu_start = rank_in_node * min_gpus_per_proc;
-    int gpu_end = (rank_in_node + 1) * min_gpus_per_proc;
-    if(rank_in_node < num_gpus_remainder) {
+  // Assign GPUs to process
+  int gpu_start, gpu_end;
+  const char* visible_devices = getenv("CUDA_VISIBLE_DEVICES");
+  if(visible_devices != nullptr && strlen(visible_devices) > 0) {
+    // Use all visible GPUs if specified with an environment variable
+    gpu_start = 0;
+    gpu_end = m_num_visible_gpus;
+  }
+  else if(m_num_visible_gpus >= procs_per_node) {
+    // Case where compute node has more GPUs than MPI ranks
+    const int gpus_per_proc = m_num_visible_gpus / procs_per_node;
+    const int num_leftover_gpus = m_num_visible_gpus % procs_per_node;
+    gpu_start = rank_in_node * gpus_per_proc;
+    gpu_end = (rank_in_node + 1) * gpus_per_proc;
+    if(rank_in_node < num_leftover_gpus) {
       gpu_start += rank_in_node;
       gpu_end += rank_in_node + 1;
     }
     else {
-      gpu_start += num_gpus_remainder;
-      gpu_end += num_gpus_remainder;
-    }
-    for(int gpu = gpu_start; gpu < gpu_end; ++gpu) {
-      FORCE_CHECK_CUDA(cudaSetDevice(gpu));
-      m_gpus.push_back(gpu);
-      m_streams.push_back(nullptr);
-      m_handles.push_back(nullptr);
-      m_cublas_handles.push_back(nullptr);
-      FORCE_CHECK_CUDA(cudaStreamCreate(&m_streams.back()));
-      FORCE_CHECK_CUDNN(cudnnCreate(&m_handles.back()));
-      FORCE_CHECK_CUDNN(cudnnSetStream(m_handles.back(), m_streams.back()));
-      FORCE_CHECK_CUBLAS(cublasCreate(&m_cublas_handles.back()));
-    }
-
-    // NCCL setup
-    if(m_nccl_used){
-      nccl_setup();
+      gpu_start += num_leftover_gpus;
+      gpu_end += num_leftover_gpus;
     }
   }
-
-  // Case where compute node has fewer GPUs than MPI ranks
   else {
-    // Throw exception
+    // Case where compute node has fewer GPUs than MPI ranks
     // TODO: Support case where MPI ranks have to share GPUs
     std::stringstream err;
     err << "cudnn_wrapper: cannot have " << procs_per_node << " processes "
-        << "on a node with " << m_num_total_gpus << " GPUs";
+        << "on a node with " << m_num_visible_gpus << " GPUs";
     throw lbann_exception(err.str());
+    gpu_start = rank_in_node % m_num_visible_gpus;
+    gpu_end = gpu_start + 1;
+  }
 
-    const int min_procs_per_gpu = procs_per_node / m_num_total_gpus;
-    const int procs_remainder = procs_per_node % m_num_total_gpus;
-    int gpu = -1;
-    int proc_end = 0;
-    do {
-      gpu++;
-      if(gpu < procs_remainder) {
-        proc_end += min_procs_per_gpu + 1;
-      }
-      else {
-        proc_end += min_procs_per_gpu;
-      }
-    } while(rank_in_node >= proc_end);
+  // Construct GPU objects
+  for(int gpu = gpu_start; gpu < gpu_end; ++gpu) {
     FORCE_CHECK_CUDA(cudaSetDevice(gpu));
     m_gpus.push_back(gpu);
     m_streams.push_back(nullptr);
     m_handles.push_back(nullptr);
-    m_cublas_handles.push_back(nullptr);    
+    m_cublas_handles.push_back(nullptr);
     FORCE_CHECK_CUDA(cudaStreamCreate(&m_streams.back()));
     FORCE_CHECK_CUDNN(cudnnCreate(&m_handles.back()));
     FORCE_CHECK_CUDNN(cudnnSetStream(m_handles.back(), m_streams.back()));
     FORCE_CHECK_CUBLAS(cublasCreate(&m_cublas_handles.back()));
+  }
+
+  // NCCL setup
+  if(m_nccl_used){
+    nccl_setup();
   }
 
   // Get number of GPUs for current MPI rank
@@ -428,8 +415,8 @@ int cudnn_manager::get_num_gpus() const {
   return m_num_gpus;
 }
 
-int cudnn_manager::get_num_total_gpus() const {
-  return m_num_total_gpus;
+int cudnn_manager::get_num_visible_gpus() const {
+  return m_num_visible_gpus;
 }
 
 std::vector<int>& cudnn_manager::get_gpus() {
