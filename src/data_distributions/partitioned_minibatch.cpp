@@ -39,7 +39,7 @@ int lbann::partitioned_minibatch::fetch_to_local_matrix(Mat& M_local, generic_da
 
   /// Coordinate all available readers so that the perform I/O in the same step
   /// Check to make sure that the local matrix has space for data
-  if (m_comm->get_rank_in_model() < num_parallel_readers && (M_local.Height() != 0 && M_local.Width() != 0) && !m_local_reader_done) {
+  if (m_comm->get_rank_in_model() < num_parallel_readers && (M_local.Height() != 0 && M_local.Width() != 0)) {
     Zero(M_local);
 
     /// Each data reader needs to either have independent / split
@@ -47,10 +47,9 @@ int lbann::partitioned_minibatch::fetch_to_local_matrix(Mat& M_local, generic_da
     num_samples_fetched = (*fetch_data_fn)(M_local, data_reader);
     bool data_valid = (num_samples_fetched > 0);
     if(data_valid) {
-      m_num_data_per_epoch+=num_samples_fetched; /// BVE FIXME need to change how this is shared
+      //      m_num_data_per_epoch+=num_samples_fetched; /// BVE FIXME need to change how this is shared
       preprocess_data_samples(M_local, num_samples_fetched);
     }
-    m_local_data_valid = data_valid;
   }
   return num_samples_fetched;
 }
@@ -65,14 +64,9 @@ bool lbann::partitioned_minibatch::is_data_set_processed(generic_data_reader *da
   int num_iterations_per_epoch = data_reader->get_num_iterations_per_epoch();
   int current_step_in_epoch = data_reader->get_current_step_in_epoch(); // Get the current step before the update function increments it
 
-  m_local_reader_done = !(*update_data_reader_fn)(true, data_reader);
+  (*update_data_reader_fn)(true, data_reader);
 
   if(current_step_in_epoch == (num_iterations_per_epoch - 1)) {
-    m_local_reader_done = false;
-    m_root = 0; /// When the epoch is finished, make sure that the root node for distributing data is reset because
-    /// if the number of parallel readers does not evenly divide the data set size, the epoch will finish
-    /// without all of the parallel readers participating in the last round.
-    m_num_data_per_epoch = 0;
     return true;
   } else {
     return false;
@@ -120,7 +114,7 @@ void lbann::partitioned_minibatch::calculate_num_iterations_per_epoch_spanning_m
   }
 
   /// Check to make sure that there is enough data for all of the parallel readers
-  int num_parallel_readers_per_model = compute_max_num_parallel_readers(data_reader->get_num_data(), max_mini_batch_size, m_requested_max_num_parallel_readers);
+  int num_parallel_readers_per_model = compute_max_num_parallel_readers(data_reader->get_num_data(), max_mini_batch_size, m_comm->get_procs_per_model());
   data_reader->set_num_parallel_readers(num_parallel_readers_per_model);
   if(num_parallel_readers_per_model == 0 
      || (num_parallel_readers_per_model != m_comm->get_procs_per_model() && num_parallel_readers_per_model != max_mini_batch_size)) {
@@ -213,7 +207,7 @@ void lbann::partitioned_minibatch::calculate_num_iterations_per_epoch_single_mod
   }
 
   /// Check to make sure that there is enough data for all of the parallel readers
-  int num_parallel_readers_per_model = compute_max_num_parallel_readers(data_reader->get_num_data(), max_mini_batch_size, m_requested_max_num_parallel_readers);
+  int num_parallel_readers_per_model = compute_max_num_parallel_readers(data_reader->get_num_data(), max_mini_batch_size, m_comm->get_procs_per_model());
   data_reader->set_num_parallel_readers(num_parallel_readers_per_model);
   if(num_parallel_readers_per_model == 0
      || (num_parallel_readers_per_model != m_comm->get_procs_per_model() && num_parallel_readers_per_model != max_mini_batch_size)) {

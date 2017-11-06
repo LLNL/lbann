@@ -40,17 +40,10 @@ namespace lbann {
 template <data_layout T_layout>
 class input_layer_distributed_minibatch : public input_layer, public distributed_minibatch {
  public:
- protected:
-  Mat X_local; /** Local matrix that holds data from data reader */
-  Mat X_local_v; /** View of local matrix that holds data from data reader */
-  CircMat Xs; /** Distributed matrix used to stage local data to layer output */
-
- public:
   input_layer_distributed_minibatch(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, bool data_set_spans_models = true)
     : generic_data_distribution(comm, num_parallel_readers, data_readers),
       input_layer(comm, num_parallel_readers, data_readers, data_set_spans_models),
-      distributed_minibatch(comm, num_parallel_readers, data_readers),
-      Xs(comm->get_model_grid()) {
+      distributed_minibatch(comm, num_parallel_readers, data_readers) {
 
     // Setup the data distribution
     initialize_distributed_matrices();
@@ -89,24 +82,24 @@ class input_layer_distributed_minibatch : public input_layer, public distributed
       calculate_num_iterations_per_epoch_training_unique_per_models(max_mb_size);
     }
 
-    X_local.Resize(this->m_num_neurons, max_mb_size);
-
-    distributed_minibatch::m_local_data_valid = false;
-    distributed_minibatch::m_local_reader_done = false;
-    distributed_minibatch::m_num_data_per_epoch = 0;
+    for (auto& buf : m_data_buffers) {
+      buf.second->M_local.Resize(this->m_num_neurons, max_mb_size);
+      buf.second->Ms.Resize(this->m_num_neurons, max_mb_size);
+    }
   }
 
  protected:
   void fp_set_std_matrix_view() override {
     input_layer::fp_set_std_matrix_view();
     El::Int cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
-    El::View(X_local_v, X_local, El::ALL, El::IR(0, cur_mini_batch_size));
+    data_buffer *buf = distributed_minibatch::get_data_buffer();
+    El::View(buf->M_local_v, buf->M_local, El::ALL, El::IR(0, cur_mini_batch_size));
   }
 
   /** Handle forward propagation (arguments are unused). */
   void fp_compute() override {
-
-    int num_samples_in_batch = distributed_minibatch::fetch_to_local_matrix(X_local_v, get_data_reader());
+    data_buffer *buf = distributed_minibatch::get_data_buffer();
+    int num_samples_in_batch = distributed_minibatch::fetch_to_local_matrix(buf->M_local_v, get_data_reader());
     if(distributed_minibatch::is_current_root()) {
       /// Only update the number of samples processed by this parallel reader, when it is the current root
       input_layer::update_num_samples_processed(num_samples_in_batch);
@@ -114,11 +107,11 @@ class input_layer_distributed_minibatch : public input_layer, public distributed
 
     /// Let each rank know this size of the current mini-batch
     /// Note that this field has to be updated before distributing the data
-    this->m_neural_network_model->set_current_mini_batch_size(Layer::m_comm->model_broadcast(distributed_minibatch::m_root, num_samples_in_batch));
+    this->m_neural_network_model->set_current_mini_batch_size(Layer::m_comm->model_broadcast(distributed_minibatch::current_root_rank(), num_samples_in_batch));
 
-    distributed_minibatch::distribute_from_local_matrix(X_local, Xs, get_data_reader());
+    distributed_minibatch::distribute_from_local_matrix(buf->M_local, buf->Ms, get_data_reader());
 
-    Copy(Xs, *this->m_activations);
+    Copy(buf->Ms, *this->m_activations);
   }
 
  public:
@@ -133,16 +126,18 @@ class input_layer_distributed_minibatch : public input_layer, public distributed
     return;
   }
 
-  execution_mode get_execution_mode() const {
-    return this->m_execution_mode;
+  data_buffer *get_data_buffer() const {
+    return distributed_minibatch::get_data_buffer(get_execution_mode());
   }
 
   Mat *get_local_mat() {
-    return &X_local;
+    data_buffer *buf = distributed_minibatch::get_data_buffer();
+    return &buf->M_local;
   }
 
   CircMat *get_dist_mat() {
-    return &Xs;
+    data_buffer *buf = distributed_minibatch::get_data_buffer();
+    return &buf->Ms;
   }
 };
 

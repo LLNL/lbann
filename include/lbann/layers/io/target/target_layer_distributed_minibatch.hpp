@@ -39,17 +39,11 @@
 namespace lbann {
 template <data_layout T_layout>
 class target_layer_distributed_minibatch : public target_layer, public distributed_minibatch {
- protected:
-  Mat Y_local; /** Local matrix that holds data from data reader */
-  Mat Y_local_v; /** View of local matrix that holds data from data reader */
-  CircMat Ys; /** Distributed matrix used to stage local data to layer output */
-
  public:
   target_layer_distributed_minibatch(lbann_comm *comm, input_layer *input_layer, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
     : generic_data_distribution(comm, num_parallel_readers, data_readers),
       target_layer(comm, input_layer, data_readers, for_regression),
-      distributed_minibatch(comm, num_parallel_readers, data_readers),
-      Ys(comm->get_model_grid()) {
+      distributed_minibatch(comm, num_parallel_readers, data_readers) {
     // Setup the data distribution
     initialize_distributed_matrices();
 
@@ -87,22 +81,22 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
     target_layer::setup_data();
 
     int max_mb_size = this->m_neural_network_model->get_max_mini_batch_size();
-    Y_local.Resize(this->m_num_neurons, max_mb_size);
-    Ys.Resize(this->m_num_neurons, max_mb_size);
-
-    m_local_data_valid = false;
-    m_local_reader_done = false;
-    m_num_data_per_epoch = 0;
+    for (auto& buf : m_data_buffers) {
+      buf.second->M_local.Resize(this->m_num_neurons, max_mb_size);
+      buf.second->Ms.Resize(this->m_num_neurons, max_mb_size);
+    }
   }
 
   void fp_set_std_matrix_view() override {
     target_layer::fp_set_std_matrix_view();
     El::Int cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
-    El::View(Y_local_v, Y_local, El::ALL, El::IR(0, cur_mini_batch_size));
+    data_buffer *buf = distributed_minibatch::get_data_buffer();
+    El::View(buf->M_local_v, buf->M_local, El::ALL, El::IR(0, cur_mini_batch_size));
   }
 
   void fp_compute() override {
-    int num_samples_in_batch = fetch_to_local_matrix(Y_local_v, paired_input_layer->get_data_reader());
+    data_buffer *buf = distributed_minibatch::get_data_buffer();
+    int num_samples_in_batch = fetch_to_local_matrix(buf->M_local_v, paired_input_layer->get_data_reader());
     if(is_current_root()) {
       /// Only update the number of samples processed by this parallel reader, when it is the current root
       target_layer::update_num_samples_processed(num_samples_in_batch);
@@ -116,8 +110,8 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
                             );
     }
     /// @todo should this distribute the entire matrix even if there is only a partial mini-batch
-    distribute_from_local_matrix(Y_local, Ys, paired_input_layer->get_data_reader());
-    Copy(Ys, *this->m_activations);
+    distribute_from_local_matrix(buf->M_local, buf->Ms, paired_input_layer->get_data_reader());
+    Copy(buf->Ms, *this->m_activations);
 
     /// Compute and record the objective function score
     objective_functions::objective_function *obj_fn = this->m_neural_network_model->m_obj_fn;
@@ -134,7 +128,6 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
 
 
   void bp_compute() override {
-
     // Compute initial error signal
     this->m_neural_network_model->m_obj_fn->compute_gradient(*this->m_prev_activations,
                                                              *this->m_activations_v,
@@ -153,8 +146,8 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
     return;
   }
 
-  execution_mode get_execution_mode() const {
-    return this->m_execution_mode;
+  data_buffer *get_data_buffer() const {
+    return distributed_minibatch::get_data_buffer(get_execution_mode());
   }
 };
 

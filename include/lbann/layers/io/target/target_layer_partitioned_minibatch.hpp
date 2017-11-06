@@ -73,10 +73,6 @@ class target_layer_partitioned_minibatch : public target_layer, public partition
 
   virtual void setup_data() override {
     target_layer::setup_data();
-
-    m_local_data_valid = false;
-    m_local_reader_done = false;
-    m_num_data_per_epoch = 0;
   }
 
   void fp_compute() override {

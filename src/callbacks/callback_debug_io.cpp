@@ -41,11 +41,9 @@ void lbann::lbann_callback_debug_io::on_forward_prop_begin(model *m, Layer *l) {
     return;
   }
 
-  if(input->current_root_rank() == 0) {
-    if(m->get_comm()->get_rank_in_model() < input->get_data_reader()->get_num_parallel_readers() && !input->is_local_reader_done()) {
-      if(m_debug_phase == execution_mode::invalid || m_debug_phase == m->get_execution_mode()) {
-        print_fp_start(m, input);
-      }
+  if(m->get_comm()->get_rank_in_model() < input->get_data_reader()->get_num_parallel_readers()) {
+    if(m_debug_phase == execution_mode::invalid || m_debug_phase == m->get_execution_mode()) {
+      print_fp_start(m, input);
     }
   }
   /// BVE Note - what is hte role of hte current mini-batch index
@@ -82,7 +80,6 @@ void lbann::lbann_callback_debug_io::print_fp_start(model *m, input_layer *input
             << " @" << input->get_data_reader()->get_position()
     //              << " %" << input->get_data_reader()->get_batch_stride()
             << " ^" << input->get_data_reader()->get_sample_stride()
-            << " root=" << input->current_root_rank()
             << std::endl;
 }
 
@@ -155,11 +152,9 @@ void lbann::lbann_callback_debug_io::on_evaluate_forward_prop_begin(model *m, La
     return;
   }
 
-  if(input->current_root_rank() == 0) {
-    if(m->get_comm()->get_rank_in_model() < input->get_data_reader()->get_num_parallel_readers() && !input->is_local_reader_done()) {
-      if(m_debug_phase == execution_mode::invalid || m_debug_phase == m->get_execution_mode()) {
-        print_fp_start(m, input);
-      }
+  if(m->get_comm()->get_rank_in_model() < input->get_data_reader()->get_num_parallel_readers()) {
+    if(m_debug_phase == execution_mode::invalid || m_debug_phase == m->get_execution_mode()) {
+      print_fp_start(m, input);
     }
   }
 }

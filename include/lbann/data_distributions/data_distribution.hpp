@@ -33,7 +33,6 @@
 
 namespace lbann
 {
-
 class fetch_data_functor {
  public:
   fetch_data_functor (bool is_input_layer, bool is_for_regression) : 
@@ -96,44 +95,10 @@ public:
 
   virtual void preprocess_data_samples(Mat& M_local, int num_samples_in_batch) = 0;
 
-  /*
-  virtual execution_mode get_execution_mode() const {
-    return execution_mode::invalid;
-  }
-  */
-  
-  /// Return the rank of the current root node for the Elemental Distribution
-  virtual int current_root_rank() const {
-    return m_root;
-  }
-
-  /// Is this rank the current root node for the Elemental Distribution
-  bool is_current_root() const {
-    return (m_comm->get_rank_in_model() == m_root);
-  }
-
-  /// Is the local reader done
-  virtual bool is_local_reader_done() const {
-    return m_local_reader_done;
-  }
-
  protected:
   lbann_comm *m_comm;
-  /** Which rank is the root of the CircMat */
-  int m_root;
-  /** Requested maximum number of parallel readers (I/O streams) */
-  int m_requested_max_num_parallel_readers;
-  int m_local_reader_done;
-  /** Number of samples in the current mini-batch */
-  int m_num_samples_in_batch;
-  /** Has the layer copied valid data into the local matrix */
-  bool m_local_data_valid;
-
   const fetch_data_functor *fetch_data_fn;
   const update_data_reader_functor *update_data_reader_fn;
-
-  // BVE FIXME this will be wrong for LTFB
-  int m_num_data_per_epoch;
 };
 }
 

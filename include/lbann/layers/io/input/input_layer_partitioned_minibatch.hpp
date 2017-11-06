@@ -78,10 +78,6 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
     } else {
       calculate_num_iterations_per_epoch_training_unique_per_models(max_mb_size);
     }
-
-    partitioned_minibatch::m_local_data_valid = false;
-    partitioned_minibatch::m_local_reader_done = false;
-    partitioned_minibatch::m_num_data_per_epoch = 0;
   }
 
   void fp_compute() override {
