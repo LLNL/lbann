@@ -218,6 +218,25 @@ class target_layer : public io_layer {
   bool is_execution_mode_valid(execution_mode mode) const override {
     return paired_input_layer->is_execution_mode_valid(mode);
   }
+
+  virtual std::vector<Layer*> get_layer_pointers() override {
+    std::vector<Layer*> layers = io_layer::get_layer_pointers();
+    layers.push_back((Layer*) paired_input_layer);
+    return layers;
+  }
+
+  virtual void set_layer_pointers(std::vector<Layer*> layers) override {
+    paired_input_layer = dynamic_cast<input_layer*>(layers.back());
+    if (paired_input_layer == nullptr) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ 
+          << " :: lbann_target_layer: invalid layer pointer used to set paired input layer";
+      throw lbann_exception(err.str());
+    }
+    layers.pop_back();
+    io_layer::set_layer_pointers(layers);
+  }
+
   //************************************************************************
   //
   //************************************************************************

@@ -14,6 +14,7 @@ PROCS_PER_NODE= # default: 2 (1 if NUM_NODES=1)
 CLUSTER=
 PARTITION=
 ACCOUNT=
+TIME_LIMIT= # default: 12:00:00
 
 # Additional parameters
 SUBMIT_JOB=     # default: YES
@@ -49,6 +50,7 @@ if [ -z "${PROCS_PER_NODE}" ]; then
     fi
 fi
 NUM_PROCS=$((${NUM_NODES}*${PROCS_PER_NODE}))
+TIME_LIMIT=${TIME_LIMIT:-12:00:00}
 SUBMIT_JOB=${SUBMIT_JOB:-YES}
 USE_GPU=${USE_GPU:-YES}
 CACHE_DATASET=${CACHE_DATASET:-NO}
@@ -274,6 +276,7 @@ case ${SCHEDULER} in
         echo "#SBATCH --workdir=${EXPERIMENT_DIR}"      >> ${BATCH_SCRIPT}
         echo "#SBATCH --output=${LOG_FILE}"             >> ${BATCH_SCRIPT}
         echo "#SBATCH --error=${LOG_FILE}"              >> ${BATCH_SCRIPT}
+        echo "#SBATCH --time=${TIME_LIMIT}"             >> ${BATCH_SCRIPT}
         ;;
     lsf)
         echo "#BSUB -J ${EXPERIMENT_NAME}"              >> ${BATCH_SCRIPT}

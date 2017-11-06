@@ -114,25 +114,15 @@ model::model(const model& other) :
   }
 
   // Fix layer pointers
-  for (Layer *layer : m_layers) {
-    for (const Layer *&parent : layer->get_parent_layers()) {
-      Layer *new_parent = old_to_new_layer[const_cast<Layer *>(parent)];
-      if (new_parent != nullptr) {
-        parent = (const Layer *) new_parent;
-      }
+  for (Layer *old_layer : other.m_layers) {
+    Layer *new_layer = old_to_new_layer[old_layer];
+    std::vector<Layer *> old_pointers = old_layer->get_layer_pointers();
+    std::vector<Layer *> new_pointers;
+    for (Layer *old_pointer : old_pointers) {
+      Layer *new_pointer = old_to_new_layer[old_pointer];
+      new_pointers.push_back(new_pointer);
     }
-    for (const Layer*& child : layer->get_child_layers()) {
-      Layer *new_child = old_to_new_layer[const_cast<Layer *>(child)];
-      if (new_child != nullptr) {
-        child = (const Layer *) new_child;
-      }
-    }
-    target_layer *target = dynamic_cast<target_layer*>(layer);
-    if (target != nullptr) {
-      Layer *old_input = target->get_paired_input_layer();
-      input_layer *input = dynamic_cast<input_layer*>(old_to_new_layer[old_input]);
-      target->set_paired_input_layer(input);
-    }
+    new_layer->set_layer_pointers(new_pointers);
   }
 
 }
@@ -212,25 +202,15 @@ model& model::operator=(const model& other) {
   }
 
   // Fix layer pointers
-  for (Layer *layer : m_layers) {
-    for (const Layer *&parent : layer->get_parent_layers()) {
-      Layer *new_parent = old_to_new_layer[const_cast<Layer *>(parent)];
-      if (new_parent != nullptr) {
-        parent = (const Layer *) new_parent;
-      }
+  for (Layer *old_layer : other.m_layers) {
+    Layer *new_layer = old_to_new_layer[old_layer];
+    std::vector<Layer *> old_pointers = old_layer->get_layer_pointers();
+    std::vector<Layer *> new_pointers;
+    for (Layer *old_pointer : old_pointers) {
+      Layer *new_pointer = old_to_new_layer[old_pointer];
+      new_pointers.push_back(new_pointer);
     }
-    for (const Layer*& child : layer->get_child_layers()) {
-      Layer *new_child = old_to_new_layer[const_cast<Layer *>(child)];
-      if (new_child != nullptr) {
-        child = (const Layer *) new_child;
-      }
-    }
-    target_layer *target = dynamic_cast<target_layer*>(layer);
-    if (target != nullptr) {
-      Layer *old_input = target->get_paired_input_layer();
-      input_layer *input = dynamic_cast<input_layer*>(old_to_new_layer[old_input]);
-      target->set_paired_input_layer(input);
-    }
+    new_layer->set_layer_pointers(new_pointers);
   }
 
   return *this;

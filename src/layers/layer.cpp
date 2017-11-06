@@ -817,4 +817,34 @@ void Layer::add_child_layer(const Layer* child) {
   }
 }
 
+std::vector<Layer*> Layer::get_layer_pointers() {
+  std::vector<Layer*> layers;
+  for(const Layer* parent: m_parent_layers) {
+    layers.push_back(const_cast<Layer*>(parent));
+  }
+  for(const Layer* child: m_child_layers) {
+    layers.push_back(const_cast<Layer*>(child));
+  }
+  return layers;
+}
+
+void Layer::set_layer_pointers(std::vector<Layer*> layers) {
+  if(layers.size() != m_parent_layers.size() + m_child_layers.size()) {
+    throw lbann_exception(
+      std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
+      "Layer: attempted to set layer pointers with an invalid number of pointers");
+  }
+  size_t pos = 0;
+  for(const Layer*& parent: m_parent_layers) {
+    parent = (const Layer*) layers[pos];
+    pos++;
+  }
+  for(const Layer*& child: m_child_layers) {
+    child = (const Layer*) layers[pos];
+    pos++;
+  }
+}
+
+
+
 }  // namespace lbann

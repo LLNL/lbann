@@ -216,6 +216,11 @@ class Layer {
   /** Add a child layer. */
   void add_child_layer(const Layer* child);
 
+  /** Get list of pointers to other layers. */
+  virtual std::vector<Layer*> get_layer_pointers();
+  /** Set list of pointers to other layers. */
+  virtual void set_layer_pointers(std::vector<Layer*> layers);
+
  protected:
 
   lbann_comm *m_comm;
