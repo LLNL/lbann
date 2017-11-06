@@ -4,14 +4,14 @@
 #
 # I found this tutorial useful: http://tonyballantyne.com/graphs.html
  
-# default shapes and colors
+# default shapes, colors, and arrows
 #
 shapes_and_colors 
-learning rectangle chartreuse
-activations rectangle orchid1
-io rectangle sienna
-regularizers rectangle cornflowerblue
-transform rectangle antiquewhite1
+learning rectangle chartreuse black
+activations rectangle orchid1 black
+io rectangle sienna2 black
+regularizers rectangle cornflowerblue black
+transform rectangle antiquewhite1 black
 
 #leave at least one blank line after each section!
 #white space separating fields on each line is arbitrary

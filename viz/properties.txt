@@ -4,14 +4,14 @@
 #
 # I found this tutorial useful: http://tonyballantyne.com/graphs.html
  
-# default shapes and colors
+# default shapes, colors, and arrows
 #
-shapes_and_colors 
-learning doubleoctagon chartreuse
-activations house orchid1
-io house sienna
-regularizers rect cornflowerblue
-transform rarrow antiquewhite1
+shapes_and_colors  black
+learning      doubleoctagon  chartreuse      black
+activations   house          orchid1         black
+io            house          sienna2         black
+regularizers  rect           cornflowerblue  black
+transform     rect           antiquewhite1   red
 
 #leave at least one blank line after each section!
 #white space separating fields on each line is arbitrary
@@ -43,7 +43,7 @@ transform    reshape
 transform    pooling
 transform    concatenation
 transform    slice
-transform    split
+transform    split arrow=red
 transform    sum
 transform    noise
 transform    unpooling
