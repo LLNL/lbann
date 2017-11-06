@@ -31,9 +31,9 @@ using namespace std;
 
 lbann::distributed_minibatch::distributed_minibatch(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
   : generic_data_distribution(comm, num_parallel_readers, data_readers) {
-  m_data_buffers[execution_mode::training] = new data_buffer(comm);
-  m_data_buffers[execution_mode::validation] = new data_buffer(comm);
-  m_data_buffers[execution_mode::testing] = new data_buffer(comm);
+  m_data_buffers[execution_mode::training] = new data_buffer(comm, num_parallel_readers);
+  m_data_buffers[execution_mode::validation] = new data_buffer(comm, num_parallel_readers);
+  m_data_buffers[execution_mode::testing] = new data_buffer(comm, num_parallel_readers);
 }
 
 int lbann::distributed_minibatch::fetch_to_local_matrix(Mat& M_local, generic_data_reader *data_reader) {

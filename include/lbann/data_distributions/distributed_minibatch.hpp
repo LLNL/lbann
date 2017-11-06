@@ -49,9 +49,9 @@ class data_buffer {
   Mat M_local_v; /** View of local matrix that holds data from data reader */
   CircMat Ms; /** Distributed matrix used to stage local data to layer output */
 
-  data_buffer(lbann_comm *comm) :
+  data_buffer(lbann_comm *comm, int num_parallel_readers) :
     m_root(0),
-    m_requested_max_num_parallel_readers(0),
+    m_requested_max_num_parallel_readers(num_parallel_readers),
     m_local_reader_done(false),
     m_num_samples_in_batch(0),
     m_local_data_valid(false),
