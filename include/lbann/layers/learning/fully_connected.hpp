@@ -78,6 +78,7 @@ class fully_connected_layer : public learning {
   std::vector<DataType *> m_weights_gradient_d;
   /// View to m_weights_gradient_d;
   std::vector<DataType *> m_activation_weights_gradient_d;
+  Mat m_activation_weights_gradient_host_buf;
   /// View to m_weights_gradient_d;  
   std::vector<DataType *> m_bias_weights_gradient_d;
   cudnnTensorDescriptor_t m_bias_weights_desc;
@@ -205,6 +206,9 @@ class fully_connected_layer : public learning {
       m_activations_desc = nullptr;
       cudnn::copy_tensor_cudnn_desc(other.m_activations_desc,
                                     m_activations_desc);
+
+      this->m_cudnn->pin_matrix(*m_weights_gradient);
+      setup_views();      
     }
  #endif
     
@@ -267,6 +271,9 @@ class fully_connected_layer : public learning {
                                     m_bias_weights_desc);
       cudnn::copy_tensor_cudnn_desc(other.m_activations_desc,
                                     m_activations_desc);
+
+      this->m_cudnn->pin_matrix(*m_weights_gradient);
+      setup_views();      
     }
 #endif
     // Update optimizer parameters if needed.
@@ -297,6 +304,7 @@ class fully_connected_layer : public learning {
       this->m_cudnn->deallocate_on_gpus(m_weights_gradient_d);
       CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_bias_weights_desc));
       CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_activations_desc));
+      this->m_cudnn->unpin_matrix(*m_weights_gradient);
     }
 #endif
     
@@ -413,6 +421,8 @@ class fully_connected_layer : public learning {
                                                  1, m_mini_batch_size_per_gpu, 1,
                                                  m_bias_weights_v->Height()));
 
+    this->m_cudnn->pin_matrix(*m_weights_gradient);
+    setup_views();
     if (this->m_optimizer != nullptr) {
       this->m_optimizer->setup_gpu(this->m_weights, this->m_weights_d);
     }
@@ -746,7 +756,7 @@ fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_weights<device::CU
     // TODO: Use CUDA-aware MPI to remove manual host-GPU transfers
     this->m_cudnn->gather_from_gpus(m_activation_weights_gradient_v->Matrix(),
                                     t, m_activation_weights_gradient_v->Width());
-  
+    this->m_cudnn->synchronize();
     El::AllReduce(*this->m_activation_weights_gradient_v,
                   this->m_activation_weights_gradient_v->RedundantComm());
     this->m_cudnn->broadcast_to_gpus(
