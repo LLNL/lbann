@@ -43,7 +43,7 @@ void cifar10_reader::load() {
   std::string filename = get_data_filename();
   std::string path = image_dir + "/" + filename;
   std::ifstream in(path, std::ios::binary);
-  if (not in.good()) {
+  if (!in.good()) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
       " :: failed to open " + path + " for reading");

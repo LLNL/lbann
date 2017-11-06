@@ -198,35 +198,28 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    if (not opts->has_string("exit_after_setup")) {
-
-    ///////////////////////////////////////////////////////////////////
-    // main loop for training/testing
-    ///////////////////////////////////////////////////////////////////
-
+    if (!opts->has_string("exit_after_setup")) {
 #ifndef LBANN_SEQUENTIAL_CONSISTENCY
-    // Under normal conditions, reinitialize the random number generator so
-    // that regularization techniques (e.g. dropout) generate unique patterns
-    // on different ranks.
-    init_random(random_seed + comm->get_rank_in_world());
+      // Under normal conditions, reinitialize the random number generator so
+      // that regularization techniques (e.g. dropout) generate unique patterns
+      // on different ranks.
+      init_random(random_seed + comm->get_rank_in_world());
 #else
-    if(comm->am_world_master()) {
-      std::cout << 
-        "--------------------------------------------------------------------------------\n"
-        "ALERT: executing in sequentially consistent mode -- performance will suffer\n"
-        "--------------------------------------------------------------------------------\n";
-    }
+      if(comm->am_world_master()) {
+        std::cout << 
+          "--------------------------------------------------------------------------------\n"
+          "ALERT: executing in sequentially consistent mode -- performance will suffer\n"
+          "--------------------------------------------------------------------------------\n";
+      }
 #endif
 
-    // Train model
-    model->train(pb_model->num_epochs());
+      // Train model
+      model->train(pb_model->num_epochs());
 
-    // Evaluate model on test set
-    model->evaluate(execution_mode::testing);
+      // Evaluate model on test set
+      model->evaluate(execution_mode::testing);
 
-    } 
-
-    else {
+    } else {
       if (comm->am_world_master()) {
         std::cout << 
           "--------------------------------------------------------------------------------\n"

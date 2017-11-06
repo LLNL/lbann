@@ -1945,7 +1945,7 @@ void read_prototext_file(string fn, lbann_data::LbannPB& pb, bool master)
   }
   google::protobuf::io::FileInputStream *input = new google::protobuf::io::FileInputStream(fd);
   bool success = google::protobuf::TextFormat::Parse(input, &pb);
-  if (not success) {
+  if (!success) {
     if (master) {
       err <<  __FILE__ << " " << __LINE__ << " :: failed to read or parse prototext file: " << fn << endl;
       throw lbann_exception(err.str());
@@ -1962,7 +1962,7 @@ bool write_prototext_file(const char *fn, lbann_data::LbannPB& pb)
     return false;
   }
   google::protobuf::io::FileOutputStream *output = new google::protobuf::io::FileOutputStream(fd);
-  if (not google::protobuf::TextFormat::Print(pb, output)) {
+  if (!google::protobuf::TextFormat::Print(pb, output)) {
     close(fd);
     delete output;
     return false;
@@ -2172,7 +2172,7 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
 
 void print_parameters(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
 {
-  if (not comm->am_world_master()) {
+  if (!comm->am_world_master()) {
     return;
   }
 
@@ -2235,7 +2235,7 @@ void print_parameters(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
 
 void print_help(lbann::lbann_comm *comm)
 {
-  if (not comm->am_world_master()) {
+  if (!comm->am_world_master()) {
     return;
   }
 
@@ -2309,7 +2309,7 @@ void print_help(lbann::lbann_comm *comm)
 void copy_file(std::string fn, std::ofstream &out)
 {
   std::ifstream in(fn.c_str());
-  if (not in.is_open()) {
+  if (!in.is_open()) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__
         << " :: failed to open file for reading: " << fn;
@@ -2322,7 +2322,7 @@ void copy_file(std::string fn, std::ofstream &out)
 
 void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::LbannPB& p)
 {
-  if (not comm->am_world_master()) {
+  if (!comm->am_world_master()) {
     return;
   }
 
@@ -2336,7 +2336,7 @@ void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::Lb
 
   //get output filename
   std::string base = ".";
-  if (not opts->has_string("saveme")) {
+  if (!opts->has_string("saveme")) {
     std::cerr << "\nNOT WRITING SAVE_SESSION FILE since option --saveme=<string> is absent\n\n";
     return;
   }
@@ -2360,7 +2360,7 @@ void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::Lb
 
   //open output file
   std::ofstream out(name.c_str());
-  if (not out.is_open()) {
+  if (!out.is_open()) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__
         << " :: failed to open file for writing: " << name;
