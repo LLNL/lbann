@@ -14,7 +14,7 @@ PROCS_PER_NODE= # default: 2 (1 if NUM_NODES=1)
 CLUSTER=
 PARTITION=
 ACCOUNT=
-TIME_LIMIT= # default: 12:00:00
+TIME_LIMIT=     # default: 1:00 (format is hours:minutes)
 
 # Additional parameters
 SUBMIT_JOB=     # default: YES
@@ -50,7 +50,7 @@ if [ -z "${PROCS_PER_NODE}" ]; then
     fi
 fi
 NUM_PROCS=$((${NUM_NODES}*${PROCS_PER_NODE}))
-TIME_LIMIT=${TIME_LIMIT:-12:00:00}
+TIME_LIMIT=${TIME_LIMIT:-1:00}
 SUBMIT_JOB=${SUBMIT_JOB:-YES}
 USE_GPU=${USE_GPU:-YES}
 CACHE_DATASET=${CACHE_DATASET:-NO}
@@ -266,7 +266,7 @@ cp ${EXPERIMENT_SCRIPT} ${EXPERIMENT_DIR}
 BATCH_SCRIPT=${EXPERIMENT_DIR}/batch.sh
 LOG_FILE=${EXPERIMENT_DIR}/output.txt
 NODE_LIST=${EXPERIMENT_DIR}/nodes.txt
-echo "#!/bin/sh"                                       > ${BATCH_SCRIPT}
+echo "#!/bin/sh"                                         > ${BATCH_SCRIPT}
 case ${SCHEDULER} in
     slurm)
         echo "#SBATCH --job-name=${EXPERIMENT_NAME}"    >> ${BATCH_SCRIPT}
@@ -276,7 +276,7 @@ case ${SCHEDULER} in
         echo "#SBATCH --workdir=${EXPERIMENT_DIR}"      >> ${BATCH_SCRIPT}
         echo "#SBATCH --output=${LOG_FILE}"             >> ${BATCH_SCRIPT}
         echo "#SBATCH --error=${LOG_FILE}"              >> ${BATCH_SCRIPT}
-        echo "#SBATCH --time=${TIME_LIMIT}"             >> ${BATCH_SCRIPT}
+        echo "#SBATCH --time=${TIME_LIMIT}:00"          >> ${BATCH_SCRIPT}
         ;;
     lsf)
         echo "#BSUB -J ${EXPERIMENT_NAME}"              >> ${BATCH_SCRIPT}
@@ -288,6 +288,7 @@ case ${SCHEDULER} in
         echo "#BSUB -cwd ${EXPERIMENT_DIR}"             >> ${BATCH_SCRIPT}
         echo "#BSUB -o ${LOG_FILE}"                     >> ${BATCH_SCRIPT}
         echo "#BSUB -e ${LOG_FILE}"                     >> ${BATCH_SCRIPT}
+        echo "#BSUB -W ${TIME_LIMIT}"                   >> ${BATCH_SCRIPT}
         echo "#BSUB -x"                                 >> ${BATCH_SCRIPT}
         ;;
 esac
@@ -314,16 +315,7 @@ echo "# CACHE_DIR: ${CACHE_DIR}"                        >> ${BATCH_SCRIPT}
 echo ""                                                 >> ${BATCH_SCRIPT}
 echo "# ======== Useful info and initialization ========" >> ${BATCH_SCRIPT}
 echo "date"                                             >> ${BATCH_SCRIPT}
-case ${SCHEDULER} in
-    slurm)
-        echo "NODES=\"\${SLURM_JOB_NODELIST}\""         >> ${BATCH_SCRIPT}
-        ;;
-    lsf)
-        echo "NODES=\"\${LSB_HOSTS}\""                  >> ${BATCH_SCRIPT}
-        ;;
-esac
-echo "NODES=\$(echo \${NODES} | tr ' ' ',')"            >> ${BATCH_SCRIPT}
-echo "echo \"Nodes: \${NODES}\""                        >> ${BATCH_SCRIPT}
+echo "${MPIRUN} hostname > ${NODE_LIST}"                >> ${BATCH_SCRIPT}
 echo ""                                                 >> ${BATCH_SCRIPT}
 
 # Cache dataset in node-local memory
