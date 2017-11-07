@@ -142,6 +142,18 @@ class reconstruction_layer : public target_layer {
     io_layer::summarize_stats(summarizer, step);
   }
 
+  virtual std::vector<Layer*> get_layer_pointers() override {
+    std::vector<Layer*> layers = target_layer::get_layer_pointers();
+    layers.push_back(m_original_layer);
+    return layers;
+  }
+
+  virtual void set_layer_pointers(std::vector<Layer*> layers) override {
+    m_original_layer = layers.back();
+    layers.pop_back();
+    target_layer::set_layer_pointers(layers);
+  }
+
 };
 
 }

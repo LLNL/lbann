@@ -41,6 +41,8 @@ cross_entropy::cross_entropy(bool categorical_ground_truth)
 void cross_entropy::setup(const Layer& prev_layer) {
 
   // Activate softmax-cross-entropy shortcut if possible
+  /// @todo: reimplement the softmax-cross-entropy shortcut
+  /*
   if(m_categorical_ground_truth) {
     const std::type_info& prev_layer_type = typeid(prev_layer);
     const std::type_info& data_parallel_softmax_type
@@ -54,6 +56,7 @@ void cross_entropy::setup(const Layer& prev_layer) {
       m_shortcut_softmax_layer = &prev_layer;
     }
   }
+  */
 
 }
 
