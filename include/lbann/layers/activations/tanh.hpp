@@ -54,8 +54,7 @@ class tanh_layer : public entrywise_activation_layer {
     return std::tanh(z);
   }
   DataType activation_function_gradient(DataType z) {
-    const DataType e = std::exp(DataType(2)*z);
-    return (e - DataType(1)) / (e + DataType(1));
+    return std::pow(std::cosh(z), -2);
   }
 };
 
