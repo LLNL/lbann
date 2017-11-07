@@ -187,7 +187,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Initialize network
-    deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::mean_squared_error(), optimizer_fac);
+    sequential_model dnn(trainParams.MBSize, comm, new objective_functions::mean_squared_error(), optimizer_fac);
     std::map<execution_mode, generic_data_reader *> data_readers = {std::make_pair(execution_mode::training,&cifar10_trainset),
                                                            std::make_pair(execution_mode::validation, &cifar10_validation_set),
                                                            std::make_pair(execution_mode::testing, &cifar10_testset)

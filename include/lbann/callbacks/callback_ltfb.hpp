@@ -30,7 +30,6 @@
 #define __LBANN_CALLBACKS_CALLBACK_LTFB_HPP_INCLUDED
 
 #include "lbann/callbacks/callback.hpp"
-#include "lbann/models/model_dnn.hpp"
 
 namespace lbann {
 
@@ -90,7 +89,7 @@ class lbann_callback_ltfb : public lbann_callback {
   /**
    * Evaluate a model on tournament data and return its accuracy.
    */
-  double evaluate(deep_neural_network *m);
+  double evaluate(model *m);
   /**
    * Replace the local model m with the remote model data.
    */

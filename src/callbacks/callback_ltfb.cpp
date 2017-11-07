@@ -86,11 +86,8 @@ void lbann_callback_ltfb::on_batch_end(model *m) {
   exchange(m, partner);
   // Evaluate on tournament data.
   // Have to cast, assumes deep_neural_network.
-  deep_neural_network *dnn = dynamic_cast<deep_neural_network *>(m);
-  deep_neural_network *remote_dnn =
-    dynamic_cast<deep_neural_network *>(m_remote_model);
-  double local_acc = evaluate(dnn);
-  double remote_acc = evaluate(remote_dnn);
+  double local_acc = evaluate(m);
+  double remote_acc = evaluate(m_remote_model);
   // If the remote is better, keep it.
   if (remote_acc > local_acc) {
     if (m_comm->am_model_master()) {
@@ -157,7 +154,7 @@ void lbann_callback_ltfb::exchange(model *m, int partner) {
   }
 }
 
-double lbann_callback_ltfb::evaluate(deep_neural_network *m) {
+double lbann_callback_ltfb::evaluate(model *m) {
   m->evaluate(execution_mode::validation);
   m->set_execution_mode(execution_mode::training);  // Reset execution mode.
   double acc = 0;

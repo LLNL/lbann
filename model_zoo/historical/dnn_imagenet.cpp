@@ -284,8 +284,8 @@ int main(int argc, char *argv[]) {
       optimizer_fac = new sgd_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
     }
 
-    deep_neural_network *dnn = NULL;
-    dnn = new deep_neural_network(trainParams.MBSize, comm, new objective_functions::cross_entropy(), optimizer_fac);
+    sequential_model *dnn = NULL;
+    dnn = new sequential_model(trainParams.MBSize, comm, new objective_functions::cross_entropy(), optimizer_fac);
     dnn->add_metric(new metrics::categorical_accuracy<DATA_LAYOUT>(comm));
     Layer *ilayer = new input_layer_distributed_minibatch<data_layout::DATA_PARALLEL>(comm, parallel_io, data_readers);
     dnn->add(ilayer);

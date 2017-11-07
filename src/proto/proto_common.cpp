@@ -1565,9 +1565,10 @@ model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac, const lban
   }
 
   //instantiate the network; layers will be added in a separate function call
-  if (name == "dnn") {
-    model = new deep_neural_network(mini_batch_size, comm, obj, optimizer_fac);
-    if (master) std::cout << "instantiating deep_neural_network\n";
+  if (name == "sequential_model" || name == "dnn") {
+    if (master && name == "dnn") std::cout << "WARNING: \"dnn\" model is deprecated in favor of \"sequential_model\"\n";
+    model = new sequential_model(mini_batch_size, comm, obj, optimizer_fac);
+    if (master) std::cout << "instantiating sequential_model\n";
   } else if (name == "dag_model") {
     model = new dag_model(mini_batch_size, comm, obj, optimizer_fac);
     if (master) std::cout << "instantiating dag_model\n";
@@ -1583,7 +1584,7 @@ model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac, const lban
     if (master) {
       err << __FILE__ << " " << __LINE__
           << " :: init_model() - unknown model name: " << name << endl
-          << "; should be one of: dnn, greedy_layerwise_autoencoder";
+          << "; should be one of: sequential_model, dag_model, greedy_layerwise_autoencoder";
       throw lbann_exception(err.str());
     }
   }

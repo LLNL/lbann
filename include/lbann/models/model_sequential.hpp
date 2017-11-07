@@ -57,6 +57,9 @@ class sequential_model : public model {
   /** Destructor. */
   virtual ~sequential_model() = default;
 
+  /** Create copy. */
+  virtual sequential_model* copy() const override { return new sequential_model(*this); }
+
   /** Remove layer from sequential model. */
   void remove(int index);
 
@@ -68,6 +71,9 @@ class sequential_model : public model {
 
   /** Setup sequential model. */
   virtual void setup() override;
+
+  /** Get model name. */
+  virtual std::string name() const override { return "sequential_model"; }
 
   /** Setup subset of sequential model. */
   virtual void setup_subset(int start_index, int end_index);  

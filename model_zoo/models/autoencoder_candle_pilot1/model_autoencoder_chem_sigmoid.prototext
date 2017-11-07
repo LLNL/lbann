@@ -2,7 +2,7 @@ model {
   ### Model description and network architecture taken from:
   ### https://lc.llnl.gov/bitbucket/projects/BIOM/repos/molresp/browse/tf_model.py?at=TensorFlow_chemClass
   ### This network description is anologous to AutoEncoder_Chem_Sigmoid 
-  name: "dnn"
+  name: "sequential_model"
   objective_function: "mean_squared_error"
   data_layout: "model_parallel"
   mini_batch_size: 128

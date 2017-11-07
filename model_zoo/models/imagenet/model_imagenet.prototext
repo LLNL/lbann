@@ -1,5 +1,5 @@
 model {
-  name: "dnn"
+  name: "sequential_model"
   objective_function: "cross_entropy"
   num_epochs: 20
   metric {

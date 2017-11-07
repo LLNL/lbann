@@ -34,9 +34,9 @@
 #define LBANN_HPP_INCLUDED
 
 /// Models
-#include "lbann/models/model_dnn.hpp"
-#include "lbann/models/model_greedy_layerwise_autoencoder.hpp"
+#include "lbann/models/model_sequential.hpp"
 #include "lbann/models/model_dag.hpp"
+#include "lbann/models/model_greedy_layerwise_autoencoder.hpp"
 #include "lbann/models/model_planar.hpp"
 
 /// Activation Layers
