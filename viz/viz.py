@@ -83,6 +83,24 @@ for j in range(2, len(argv)) :
     exit(9)
 
 #=====================================================================
+def fixSequentialParents(layers) :
+  '''a hack for models that don't contain parent and children fields'''
+  num_layers_with_parents = 0
+  num_layers_with_children = 0
+  for layer in layers :
+    if len(layer.parents()) != 0 : num_layers_with_parents += 1
+    if len(layer.children()) != 0 : num_layers_with_children += 1
+  if num_layers_with_parents == 0 :
+    print
+    print 'NOTE: this model does not appear to have any parent fields;'
+    print '      dealing with that ...'
+    print
+    assert(num_layers_with_children == 0)
+  for j in range(1, len(layers)) :
+    layers[j].setParents(layers[j-1])
+
+
+#=====================================================================
 #WARNING: this works for tim's rnn prototext, but may not generalize
 def getLinkedLayers(layers) :
   r = []
@@ -118,6 +136,7 @@ props = properties(prop_fn)
 
 #parse the prototext file; 'layers' is a list of Layer objects
 layers = parsePrototext(argv[1])
+fixSequentialParents(layers)
 
 #get list of linked layer sets
 linked = getLinkedLayers(layers)

@@ -1,7 +1,6 @@
 import pprint
 
 class Layer :
-
   def __init__(self, a) :
     self._layer = self.__getLayer(a)
     self._parents = []
@@ -60,6 +59,9 @@ class Layer :
 
   def name(self) :
     return self._name
+
+  def setParents(self, layer) :
+    self._parents = [layer.name()]
 
   def parents(self) :
     return self._parents
