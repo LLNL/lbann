@@ -25,6 +25,7 @@ io           input_distributed_minibatch
 io           input_partitioned_minibatch
 io           target_distributed_minibatch
 io           target_partitioned_minibatch
+io           reconstruction
 activations  softmax
 activations  elu
 activations  id
