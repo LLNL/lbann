@@ -28,49 +28,27 @@
 
 #include "lbann/data_readers/data_reader_imagenet.hpp"
 #include "lbann/data_readers/image_utils.hpp"
-
 #include <fstream>
 #include <omp.h>
 
 namespace lbann {
 
 imagenet_reader::imagenet_reader(bool shuffle)
-  : generic_data_reader(shuffle) {
-  m_image_width = 256;
-  m_image_height = 256;
-  m_image_num_channels = 3;
-  m_num_labels = 1000;
+  : image_data_reader(shuffle) {
+  allocate_pixel_bufs();
+}
 
+void imagenet_reader::set_input_params(const int width, const int height, const int num_ch, const int num_labels) {
+  image_data_reader::set_input_params(width, height, num_ch, num_labels);
+  allocate_pixel_bufs();
+}
+
+void imagenet_reader::allocate_pixel_bufs() {
   // Preallocate buffer space for each thread.
   m_pixel_bufs.resize(omp_get_max_threads());
   const int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
   for (int i = 0; i < omp_get_max_threads(); ++i) {
     m_pixel_bufs[i].resize(num_channel_values * sizeof(unsigned char));
-  }
-}
-
-void imagenet_reader::set_input_params(const int width, const int height, const int num_ch, const int num_labels) {
-  if ((width > 0) && (height > 0)) { // set and valid
-    m_image_width = width;
-    m_image_height = height;
-  } else if (!((width == 0) && (height == 0))) { // set but not valid
-    std::stringstream err;
-    err << __FILE__<<" "<<__LINE__<< " :: Imagenet data reader setup error: invalid input image sizes";
-    throw lbann_exception(err.str());
-  }
-  if (num_ch > 0) {
-    m_image_num_channels = num_ch;
-  } else if (num_ch < 0) {
-    std::stringstream err;
-    err << __FILE__<<" "<<__LINE__<< " :: Imagenet data reader setup error: invalid number of channels of input images";
-    throw lbann_exception(err.str());
-  }
-  if (num_labels > 0) {
-    m_num_labels = num_labels;
-  } else if (num_labels < 0) {
-    std::stringstream err;
-    err << __FILE__<<" "<<__LINE__<< " :: Imagenet data reader setup error: invalid number of labels";
-    throw lbann_exception(err.str());
   }
 }
 
@@ -102,44 +80,6 @@ bool imagenet_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
   pixel_noise(pixel_col); //add noise to image, disable by default
 
   return true;
-}
-
-bool imagenet_reader::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
-  int label = m_image_list[data_id].second;
-  Y.Set(label, mb_idx, 1);
-  return true;
-}
-
-void imagenet_reader::load() {
-  //const std::string imageDir = get_file_dir();
-  const std::string imageListFile = get_data_filename();
-
-  m_image_list.clear();
-
-  // load image list
-  FILE *fplist = fopen(imageListFile.c_str(), "rt");
-  if (!fplist) {
-    throw lbann_exception(
-      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: failed to open: " + imageListFile);
-  }
-
-  while (!feof(fplist)) {
-    char imagepath[512];
-    int imagelabel;
-    if (fscanf(fplist, "%s%d", imagepath, &imagelabel) <= 1) {
-      break;
-    }
-    m_image_list.push_back(std::make_pair(imagepath, imagelabel));
-  }
-  fclose(fplist);
-
-  // reset indices
-  m_shuffled_indices.clear();
-  m_shuffled_indices.resize(m_image_list.size());
-  std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
-
-  select_subset_of_data();
 }
 
 }  // namespace lbann

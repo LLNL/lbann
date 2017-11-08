@@ -23,7 +23,8 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_imagenet .hpp .cpp - generic_data_reader class for ImageNetSingle dataset
+// data_reader_imagenet_single .hpp .cpp - data reader class for ImageNet
+//                                         dataset packed into a single file
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_DATA_READER_IMAGENET_SINGLE_HPP
