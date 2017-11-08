@@ -23,20 +23,19 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_imagenet .hpp .cpp - generic_data_reader class for ImageNet dataset
+// data_reader_imagenet .hpp .cpp - data reader class for ImageNet dataset
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_DATA_READER_IMAGENET_CV_HPP
 #define LBANN_DATA_READER_IMAGENET_CV_HPP
 
-#include "data_reader.hpp"
-#include "image_preprocessor.hpp"
+#include "data_reader_image.hpp"
 #include "cv_process.hpp"
-#include "cv_process_patches.hpp"
 
 namespace lbann {
-class imagenet_reader_cv : public generic_data_reader {
+class imagenet_reader_cv : public image_data_reader {
  public:
+  imagenet_reader_cv(bool shuffle) = delete;
   imagenet_reader_cv(const std::shared_ptr<cv_process>& pp, bool shuffle = true);
   imagenet_reader_cv(const imagenet_reader_cv&);
   imagenet_reader_cv& operator=(const imagenet_reader_cv&);
@@ -44,59 +43,14 @@ class imagenet_reader_cv : public generic_data_reader {
 
   imagenet_reader_cv* copy() const override { return new imagenet_reader_cv(*this); }
 
-  /// Set up imagenet specific input parameters
-  virtual void set_input_params(const int width=256, const int height=256, const int num_ch=3, const int num_labels=1000);
-
-  // ImageNet specific functions
-  void load() override;
-
-  using generic_data_reader::fetch_data;
-  virtual int fetch_data(std::vector<Mat>& X); ///< to feed multiple layer stacks per sample
-
-  int get_num_labels() const override {
-    return m_num_labels;
-  }
-  virtual int get_image_width() const {
-    return m_image_width;
-  }
-  virtual int get_image_height() const {
-    return m_image_height;
-  }
-  virtual int get_image_num_channels() const {
-    return m_image_num_channels;
-  }
-  int get_linearized_data_size() const override {
-    return m_image_width * m_image_height * m_image_num_channels;
-  }
-  int get_linearized_label_size() const override {
-    return m_num_labels;
-  }
-  const std::vector<int> get_data_dims() const override {
-    return {m_image_num_channels, m_image_height, m_image_width};
-  }
-
-  virtual void save_image(Mat& pixels, const std::string filename, bool do_scale = true) override {
-    internal_save_image(pixels, filename, m_image_height, m_image_width,
-                        m_image_num_channels, do_scale);
-  }
-
  protected:
-  virtual bool replicate_preprocessor(const std::shared_ptr<cv_process>& pp);
+  virtual bool replicate_processor(const cv_process& pp);
+  virtual ::Mat create_datum_view(::Mat& X, const int mb_idx) const;
   bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
-  virtual bool fetch_datum(std::vector<Mat>& X, int data_id, int mb_idx, int tid);
-  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;
 
  protected:
-  std::string m_image_dir; ///< where images are stored
-  std::vector<std::pair<std::string, int> > m_image_list; ///< list of image files and labels
-  int m_image_width; ///< image width
-  int m_image_height; ///< image height
-  int m_image_num_channels; ///< number of image channels
-  int m_num_labels; ///< number of labels
   /// preprocessor duplicated for each omp thread
   std::vector<std::unique_ptr<cv_process> > m_pps;
-  /// preprocessor for patches duplicated for each omp thread
-  std::vector<std::unique_ptr<cv_process_patches> > m_ppps;
 };
 
 }  // namespace lbann

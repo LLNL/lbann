@@ -129,6 +129,8 @@ class patch_descriptor {
     return m_displacements;
   }
 
+  virtual unsigned int get_num_patches() const { return 2u; }
+
   /// Compute the position of the first patch
   virtual bool get_first_patch(ROI& patch);
   /// Compute the position of a subsequent patch

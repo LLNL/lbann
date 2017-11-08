@@ -5,6 +5,7 @@ data_reader {
     shuffle: true
     data_filedir: "/p/lscratchf/brainusr/datasets/ILSVRC2012/resized_256x256/train/"
     data_filename: "/p/lscratchf/brainusr/datasets/ILSVRC2012/labels/train_c0-9_01.txt"
+    percent_of_data_to_use: 1.0
     validation_percent: 0.2
     image_preprocessor {
       scale: true
@@ -18,6 +19,7 @@ data_reader {
     shuffle: true
     data_filedir: "/p/lscratchf/brainusr/datasets/ILSVRC2012/resized_256x256/val/"
     data_filename: "/p/lscratchf/brainusr/datasets/ILSVRC2012/labels/val_c0-9_01.txt"
+    percent_of_data_to_use: 1.0
     validation_percent: 1
     image_preprocessor {
       scale: true

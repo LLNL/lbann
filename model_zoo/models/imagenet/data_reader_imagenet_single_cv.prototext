@@ -5,6 +5,7 @@ data_reader {
     shuffle: true
     data_filedir: "/p/lscratchf/brainusr/datasets/ILSVRC2012"
     data_filename: "Single_train_c0-9_01"
+    percent_of_data_to_use: 1.0
     validation_percent: 0.2
     image_preprocessor {
       scale: true
@@ -19,6 +20,7 @@ data_reader {
     shuffle: true
     data_filedir: "/p/lscratchf/brainusr/datasets/ILSVRC2012"
     data_filename: "Single_val_c0-9_01"
+    percent_of_data_to_use: 1.0
     validation_percent: 1
     image_preprocessor {
       scale: true

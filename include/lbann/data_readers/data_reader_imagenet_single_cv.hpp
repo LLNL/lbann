@@ -23,15 +23,14 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_imagenet .hpp .cpp - generic_data_reader class for ImageNetSingle dataset
+// data_reader_imagenet_single .hpp .cpp - data reader class for ImageNet
+//                                         dataset packed into a single file
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_DATA_READER_IMAGENET_SINGLE_CV_HPP
 #define LBANN_DATA_READER_IMAGENET_SINGLE_CV_HPP
 
 #include "data_reader_imagenet_cv.hpp"
-#include "image_preprocessor.hpp"
-#include "cv_process.hpp"
 #include <vector>
 
 namespace lbann {
@@ -44,12 +43,12 @@ class imagenet_reader_single_cv : public imagenet_reader_cv {
 
   imagenet_reader_single_cv* copy() const override { return new imagenet_reader_single_cv(*this); }
 
+  // ImageNet specific functions
   void load() override;
 
  protected:
   bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
-  bool fetch_datum(std::vector<Mat>& X, int data_id, int mb_idx, int tid)  override;
-  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid)  override;
+  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;
 
  private:
   std::vector<std::ifstream*> m_data_filestream;

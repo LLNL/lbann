@@ -23,12 +23,12 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_imagenet .hpp .cpp - generic_data_reader class for ImageNet dataset
+// data_reader_imagenet_single .hpp .cpp - data reader class for ImageNet
+//                                         dataset packed into a single file
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_imagenet_single_cv.hpp"
 #include "lbann/data_readers/image_utils.hpp"
-
 #include <fstream>
 #include <omp.h>
 
@@ -44,18 +44,26 @@ imagenet_reader_single_cv::imagenet_reader_single_cv(const imagenet_reader_singl
   open_data_stream();
 }
 
+// Assignment operator
+imagenet_reader_single_cv& imagenet_reader_single_cv::operator=(const imagenet_reader_single_cv& source) {
+  // check for self-assignment
+  if (this == &source) {
+    return *this;
+  }
+
+  // Call the parent operator= function
+  imagenet_reader_cv::operator=(source);
+
+  m_offsets = source.m_offsets;
+  open_data_stream();
+
+  return (*this);
+}
 
 imagenet_reader_single_cv::~imagenet_reader_single_cv() {
   for(size_t i=0u; i < m_data_filestream.size(); ++i) {
     if (m_data_filestream[i]) delete m_data_filestream[i];
   }
-}
-
-
-bool imagenet_reader_single_cv::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
-  const int label = m_offsets[data_id+1].second;
-  Y.Set(label, mb_idx, 1);
-  return true;
 }
 
 void imagenet_reader_single_cv::load() {
@@ -142,8 +150,7 @@ bool imagenet_reader_single_cv::fetch_datum(Mat& X, int data_id, int mb_idx, int
   m_data_filestream[tid]->read((char *)&m_work_buffer[tid][0], ssz);
 
   int width=0, height=0, img_type=0;
-  ::Mat X_v;
-  El::View(X_v, X, El::IR(0, X.Height()), El::IR(mb_idx, mb_idx + 1));
+  ::Mat X_v = create_datum_view(X, mb_idx);
 
   const bool ret = image_utils::import_image(m_work_buffer[tid], width, height, img_type, *(m_pps[tid]), X_v);
 
@@ -159,27 +166,10 @@ bool imagenet_reader_single_cv::fetch_datum(Mat& X, int data_id, int mb_idx, int
   return true;
 }
 
-/// This function only serves to avoid compiler warning on partial overriding
-bool imagenet_reader_single_cv::fetch_datum(std::vector<::Mat>& X, int data_id, int mb_idx, int tid) {
-  throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
-        + "ImageNet: imagenet_reader_single_cv::fetch_datum(vector<Mat>& X, ...) not implemented");
-  return false;
-}
-
-// Assignment operator
-imagenet_reader_single_cv& imagenet_reader_single_cv::operator=(const imagenet_reader_single_cv& source) {
-  // check for self-assignment
-  if (this == &source) {
-    return *this;
-  }
-
-  // Call the parent operator= function
-  imagenet_reader_cv::operator=(source);
-
-  m_offsets = source.m_offsets;
-  open_data_stream();
-
-  return (*this);
+bool imagenet_reader_single_cv::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
+  const int label = m_offsets[data_id+1].second;
+  Y.Set(label, mb_idx, 1);
+  return true;
 }
 
 void imagenet_reader_single_cv::open_data_stream() {

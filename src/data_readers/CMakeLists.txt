@@ -2,6 +2,7 @@ add_subdirectory(patchworks)
 
 add_sources(data_reader.cpp
             data_reader_mnist.cpp
+            data_reader_image.cpp
             data_reader_imagenet.cpp
             data_reader_imagenet_single.cpp
             data_reader_imagenet_cv.cpp
