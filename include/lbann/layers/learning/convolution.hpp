@@ -54,7 +54,7 @@ class convolution_layer : public base_convolution_layer {
 
   /// kernel tensor is output channels, input channels, conv dimension (w x h)
   /** Returns description of ctor params */
-  virtual std::string get_description() const override {
+  std::string get_description() const override {
     std::stringstream s;
     s << " convolution; conv_dims: ";
     // for (size_t h=0; h<this->m_kernel_dims.size(); h++) {
@@ -79,7 +79,7 @@ class convolution_layer : public base_convolution_layer {
     return s.str();
   }
 
-  virtual std::string get_topo_description() const override {
+  std::string get_topo_description() const override {
     std::stringstream s;
     for (size_t h=0; h<this->m_kernel_dims.size(); h++) {
       if (h == 0) { s << "C="; }
@@ -166,17 +166,17 @@ class convolution_layer : public base_convolution_layer {
     return *this;
   }
 
-  ~convolution_layer() {}
+  ~convolution_layer() override {}
 
   convolution_layer* copy() const override { return new convolution_layer(*this); }
 
-  virtual std::string get_type() const override { return "convolution"; }
+  std::string get_type() const override { return "convolution"; }
 
   void initialize_distributed_matrices() {
     base_convolution_layer::initialize_distributed_matrices<T_layout>();
   }
 
-  virtual data_layout get_data_layout() const override { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
   void setup_dims() override {
 

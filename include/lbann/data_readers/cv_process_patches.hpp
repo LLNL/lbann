@@ -51,7 +51,7 @@ class cv_process_patches : public cv_process {
   cv_process_patches(const cv_transform::cv_flipping flip_code, const bool tosplit)
     : cv_process(flip_code, tosplit) {}
 
-  virtual ~cv_process_patches() {}
+  ~cv_process_patches() override {}
 
   void set_patch_descriptor(const patchworks::patch_descriptor& pd) {
     m_pd = pd;

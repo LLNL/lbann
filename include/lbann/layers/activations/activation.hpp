@@ -41,7 +41,7 @@ class activation_layer : public Layer {
   activation_layer(const activation_layer&) = default;
   activation_layer& operator=(const activation_layer&) = default;
 
-  virtual ~activation_layer() {}
+  ~activation_layer() override {}
 
   template<data_layout T_layout> inline void initialize_distributed_matrices() {
     Layer::initialize_distributed_matrices<T_layout>();
@@ -59,7 +59,7 @@ class entrywise_activation_layer : public activation_layer {
   entrywise_activation_layer& operator=(
     const entrywise_activation_layer&) = default;
 
-  virtual ~entrywise_activation_layer() {}
+  ~entrywise_activation_layer() override {}
 
   template<data_layout T_layout> inline void initialize_distributed_matrices() {
     activation_layer::initialize_distributed_matrices<T_layout>();
@@ -70,7 +70,7 @@ class entrywise_activation_layer : public activation_layer {
   virtual DataType activation_function(DataType x) = 0;
   virtual DataType activation_function_gradient(DataType x) = 0;
 
-  void fp_compute() {
+  void fp_compute() override {
     if(this->m_using_gpus) {
       fp_compute_gpu();
     } else {
@@ -78,7 +78,7 @@ class entrywise_activation_layer : public activation_layer {
     }
   }
 
-  void bp_compute() {
+  void bp_compute() override {
     if(this->m_using_gpus) {
       bp_compute_gpu();
     } else {

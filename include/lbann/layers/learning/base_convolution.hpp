@@ -280,7 +280,7 @@ class base_convolution_layer : public learning {
     return *this;
   }
 
-  virtual ~base_convolution_layer() {
+  ~base_convolution_layer() override {
   #ifdef __LIB_CUDNN
     // Destroy cuDNN objects
     if(m_bias_cudnn_desc) {

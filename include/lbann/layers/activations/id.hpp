@@ -39,16 +39,16 @@ class id_layer : public entrywise_activation_layer {
     entrywise_activation_layer(comm) {
     initialize_distributed_matrices(); 
   }
-  id_layer* copy() const { return new id_layer(*this); }
+  id_layer* copy() const override { return new id_layer(*this); }
 
-  std::string get_type() const { return "id"; }
+  std::string get_type() const override { return "id"; }
 
-  virtual DataType activation_function(DataType x)  {
+  DataType activation_function(DataType x) override {
      throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " this method should never be called; it's in place only to permit id_layer to have the same inheritance hierarchy as the other activation classes");
     return DataType(0);
   }
 
-  virtual DataType activation_function_gradient(DataType x) {
+  DataType activation_function_gradient(DataType x) override {
      throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " this method should never be called; it's in place only to permit id_layer to have the same inheritance hierarchy as the other activation classes");
     return DataType(0);
   }
@@ -56,13 +56,13 @@ class id_layer : public entrywise_activation_layer {
   virtual inline void initialize_distributed_matrices() {
     activation_layer::initialize_distributed_matrices<T_layout>();
   }
-  virtual data_layout get_data_layout() const { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
-  void fp_compute() {
+  void fp_compute() override {
     El::LockedView(*this->m_activations_v, *this->m_prev_activations);
   }
 
-  void bp_compute() {
+  void bp_compute() override {
     El::LockedView(*this->m_error_signal_v, *this->m_prev_error_signal);
   }
 

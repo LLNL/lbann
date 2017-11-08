@@ -83,7 +83,7 @@ class relu_layer : public entrywise_activation_layer {
 #endif // __LIB_CUDNN
   }
 
-  virtual ~relu_layer() {
+  ~relu_layer() override {
   #ifdef __LIB_CUDNN
     if(m_activation_cudnn_desc) {
       CHECK_CUDNN(cudnnDestroyActivationDescriptor(m_activation_cudnn_desc));
@@ -91,12 +91,12 @@ class relu_layer : public entrywise_activation_layer {
   #endif
   }
 
-  relu_layer* copy() const { return new relu_layer(*this); }
+  relu_layer* copy() const override { return new relu_layer(*this); }
 
-  std::string get_type() const { return "relu"; }
+  std::string get_type() const override { return "relu"; }
 
   /** Returns description of ctor params */
-  std::string get_description() const {
+  std::string get_description() const override {
     return std::string {} +
      " relu" + " dataLayout: " + this->get_data_layout_string(get_data_layout());
   }
@@ -104,9 +104,9 @@ class relu_layer : public entrywise_activation_layer {
   virtual inline void initialize_distributed_matrices() {
     entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
   }
-  virtual data_layout get_data_layout() const { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
-  void setup_gpu() {
+  void setup_gpu() override {
     entrywise_activation_layer::setup_gpu();
   #ifndef __LIB_CUDNN
     throw lbann_exception("relu_layer: cuDNN not detected");
@@ -123,15 +123,15 @@ class relu_layer : public entrywise_activation_layer {
 
  protected:
 
-  DataType activation_function(DataType x) {
+  DataType activation_function(DataType x) override {
     return x > DataType(0) ? x : DataType(0);
   }
 
-  DataType activation_function_gradient(DataType x) {
+  DataType activation_function_gradient(DataType x) override {
     return x > DataType(0) ? DataType(1) : DataType(0);
   }
 
-  void fp_compute_gpu() {
+  void fp_compute_gpu() override {
   #ifndef __LIB_CUDNN
     throw lbann_exception("relu_layer: cuDNN not detected");
   #else
@@ -159,7 +159,7 @@ class relu_layer : public entrywise_activation_layer {
   #endif // #ifndef __LIB_CUDNN
   }
 
-  void bp_compute_gpu() {
+  void bp_compute_gpu() override {
   #ifndef __LIB_CUDNN
     throw lbann_exception("relu_layer: cuDNN not detected");
   #else

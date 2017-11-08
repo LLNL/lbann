@@ -229,7 +229,7 @@ class learning : public Layer, public optimizable_layer {
     return *this;
   }
 
-  virtual ~learning() {
+  ~learning() override {
     delete m_optimizer;
     delete m_weights;
     delete m_weights_gradient;

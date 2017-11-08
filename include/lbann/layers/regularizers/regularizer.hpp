@@ -43,7 +43,7 @@ class regularizer_layer : public Layer {
   }
   regularizer_layer(const regularizer_layer&) = default;
   regularizer_layer& operator=(const regularizer_layer&) = default;
-  virtual ~regularizer_layer() {}
+  ~regularizer_layer() override {}
 
   template<data_layout T_layout> inline void initialize_distributed_matrices() {
     Layer::initialize_distributed_matrices<T_layout>();

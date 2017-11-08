@@ -41,6 +41,7 @@ class imagenet_readerSingle : public imagenet_reader {
   ~imagenet_readerSingle() override;
 
   imagenet_readerSingle& operator=(const imagenet_readerSingle& source);
+  imagenet_readerSingle* copy() const override { return new imagenet_readerSingle(*this); }
 
   void load() override;
 

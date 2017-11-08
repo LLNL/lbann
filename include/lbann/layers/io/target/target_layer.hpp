@@ -48,7 +48,7 @@ class target_layer : public io_layer {
     m_max_num_child_layers = 0;
   }
 
-  virtual ~target_layer() = default;
+  ~target_layer() override = default;
 
   target_layer(const target_layer& other) = default;
 

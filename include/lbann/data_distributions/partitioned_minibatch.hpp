@@ -41,7 +41,7 @@ class partitioned_minibatch : public virtual generic_data_distribution {
     const partitioned_minibatch&) = default;
   partitioned_minibatch& operator=(
     const partitioned_minibatch&) = default;
-  virtual ~partitioned_minibatch() {}
+  ~partitioned_minibatch() override {}
 
   int fetch_to_local_matrix(Mat& M_local, generic_data_reader *data_reader) override;
   void distribute_from_local_matrix(Mat& M_local, CircMat& Ms, generic_data_reader *data_reader) override;

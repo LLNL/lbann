@@ -290,7 +290,7 @@ class fully_connected_layer : public learning {
     return *this;
   }
 
-  ~fully_connected_layer() {
+  ~fully_connected_layer() override {
     delete m_bias_weights_repl;
     delete m_bias_weights_gradient_repl;
     delete m_activation_weights_v;
@@ -317,7 +317,7 @@ class fully_connected_layer : public learning {
   std::string get_type() const override { return "fully connected"; }
 
   virtual inline void initialize_distributed_matrices();
-  virtual data_layout get_data_layout() const override { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
   void setup_dims() override {
     // Store neuron tensor dimensions

@@ -49,13 +49,13 @@ class sgd : public optimizer {
   sgd(const sgd& other);
   sgd& operator=(const sgd& other);
   /// Destructor
-  ~sgd();
+  ~sgd() override;
   
   /// Returns the optimizer's name
-  std::string get_name() const  { return "sgd"; }
+  std::string get_name() const override { return "sgd"; }
 
   /** Returns description of ctor params */
-  std::string get_description() const {
+  std::string get_description() const override {
     return std::string {} +
      " sgd; learning_rate: " + std::to_string(m_learning_rate) 
      + " momentum: " + std::to_string(m_momentum)
@@ -63,12 +63,12 @@ class sgd : public optimizer {
      + " nesterov: " + std::to_string(m_nesterov);
   }
 
-  sgd* copy() const { return new sgd(*this); }
+  sgd* copy() const override { return new sgd(*this); }
   /// Set parameters to optimize and initialize optimizer
-  void setup(AbsDistMat *parameters);
+  void setup(AbsDistMat *parameters) override;
   /// Update parameters using objective function gradient
-  void update(const AbsDistMat *gradient);
-  std::string name() const { return "sgd"; }
+  void update(const AbsDistMat *gradient) override;
+  std::string name() const override { return "sgd"; }
  private:
   /// Number of iterations
   int m_iterations;
@@ -94,9 +94,9 @@ class sgd_factory : public optimizer_factory {
    DataType decay = DataType(0),
    bool nesterov = false);
   /// Destructor
-  virtual ~sgd_factory();
+  ~sgd_factory() override;
   /// Create SGD optimizer
-  optimizer *create_optimizer();
+  optimizer *create_optimizer() override;
  private:
   /// Learning rate
   DataType m_learning_rate;

@@ -44,23 +44,23 @@ public :
     initialize_distributed_matrices(); 
   }
 
-  softplus_layer* copy() const { return new softplus_layer(*this); }
+  softplus_layer* copy() const override { return new softplus_layer(*this); }
 
-  std::string get_type() const { return "softplus"; }
+  std::string get_type() const override { return "softplus"; }
 
   virtual inline void initialize_distributed_matrices() {
     entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
   }
-  virtual data_layout get_data_layout() const { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
  protected:
-  DataType activation_function(DataType z) {
+  DataType activation_function(DataType z) override {
     // Warning: Not numerically stable.
     // Better approach is to determine a threshold so that for large z,
     // softplus(z) ~= z and for small z, softplus(z) ~= exp(z).
     return std::log1p(std::exp(z));
   }
-  DataType activation_function_gradient(DataType z) {
+  DataType activation_function_gradient(DataType z) override {
     return DataType(1.0) / (DataType(1.0) + std::exp(-z));
   }
 };

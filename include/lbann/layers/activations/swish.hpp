@@ -45,20 +45,20 @@ class swish_layer : public entrywise_activation_layer {
     initialize_distributed_matrices(); 
   }
 
-  swish_layer* copy() const { return new swish_layer(*this); }
+  swish_layer* copy() const override { return new swish_layer(*this); }
 
-  std::string get_type() const { return "swish"; }
+  std::string get_type() const override { return "swish"; }
 
   virtual inline void initialize_distributed_matrices() {
     entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
   }
-  virtual data_layout get_data_layout() const { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
  protected:
-  DataType activation_function(DataType z) {
+  DataType activation_function(DataType z) override {
     return z*(DataType(1) / (DataType(1) + std::exp(-z)));
   }
-  DataType activation_function_gradient(DataType z) {
+  DataType activation_function_gradient(DataType z) override {
     const sigz = DataType(1) / (DataType(1) + std::exp(-z));
     return sigz*(DataType(1) + z*(DataType(1) - sigz));    
   }

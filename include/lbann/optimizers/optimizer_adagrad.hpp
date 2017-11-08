@@ -44,25 +44,25 @@ class adagrad : public optimizer {
   adagrad(const adagrad& other);
   adagrad& operator=(const adagrad& other);
   /// Destructor
-  ~adagrad();
+  ~adagrad() override;
 
   /// Returns the optimizer's name
-  std::string get_name() const  { return "adagrad"; }
+  std::string get_name() const override { return "adagrad"; }
 
   /** Returns description of ctor params */
-  std::string get_description() const {
+  std::string get_description() const override {
     return std::string {} +
      " adagrad; learning_rate: "
      + std::to_string(m_learning_rate) + " eps: " + std::to_string(m_eps);
   }
 
-  adagrad* copy() const { return new adagrad(*this); }
+  adagrad* copy() const override { return new adagrad(*this); }
 
   /// Set parameters to optimize and initialize optimizer
-  void setup(AbsDistMat *parameters);
+  void setup(AbsDistMat *parameters) override;
   /// Update parameters using objective function gradient
-  void update(const AbsDistMat *gradient);
-  std::string name() const { return "adagrad"; }
+  void update(const AbsDistMat *gradient) override;
+  std::string name() const override { return "adagrad"; }
  private:
   /// Small factor to avoid division by zero
   DataType m_eps;
@@ -79,9 +79,9 @@ class adagrad_factory : public optimizer_factory {
    DataType learning_rate,
    DataType eps = DataType(1e-8));
   /// Destructor
-  virtual ~adagrad_factory();
+  ~adagrad_factory() override;
   /// Create AdaGrad optimizer
-  optimizer *create_optimizer();
+  optimizer *create_optimizer() override;
  private:
   /// Small factor to avoid division by zero
   DataType m_eps;

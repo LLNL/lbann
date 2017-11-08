@@ -52,20 +52,20 @@ class selu_layer : public entrywise_activation_layer {
     initialize_distributed_matrices();
   }
 
-  selu_layer* copy() const { return new selu_layer(*this); }
+  selu_layer* copy() const override { return new selu_layer(*this); }
 
-  std::string get_type() const { return "SELU"; }
+  std::string get_type() const override { return "SELU"; }
 
   virtual inline void initialize_distributed_matrices() {
     entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
   }
-  virtual data_layout get_data_layout() const { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
  protected:
-  DataType activation_function(DataType z) {
+  DataType activation_function(DataType z) override {
     return (z >= DataType(0)) ? m_scale*z : m_scale*(m_alpha*std::expm1(z));
   }
-  DataType activation_function_gradient(DataType z) {
+  DataType activation_function_gradient(DataType z) override {
     return (z >= DataType(0)) ? m_scale : m_scale*m_alpha*std::exp(z);
   }
  private:
