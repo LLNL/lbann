@@ -316,6 +316,7 @@ echo ""                                                 >> ${BATCH_SCRIPT}
 echo "# ======== Useful info and initialization ========" >> ${BATCH_SCRIPT}
 echo "date"                                             >> ${BATCH_SCRIPT}
 echo "${MPIRUN} hostname > ${NODE_LIST}"                >> ${BATCH_SCRIPT}
+echo "sort --unique --output=${NODE_LIST} ${NODE_LIST}" >> ${BATCH_SCRIPT}
 echo ""                                                 >> ${BATCH_SCRIPT}
 
 # Cache dataset in node-local memory

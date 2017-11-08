@@ -303,6 +303,7 @@ if [ ${USE_MODULES} -ne 0 ]; then
         COMPILER_=gcc
     fi
     if [ -z "$(module list 2>&1 | grep ${COMPILER_})" ]; then
+        COMPILER_=$(module --terse spider ${COMPILER_} 2>&1 | sed '/^$/d' | tail -1)
         module load ${COMPILER_}
     fi
     if [ -z "$(module list 2>&1 | grep ${COMPILER_})" ]; then
@@ -390,6 +391,10 @@ if [ "${BUILD_TYPE}" == "Release" ]; then
             C_FLAGS="${C_FLAGS} -march=sandybridge -mtune=sandybridge"
             CXX_FLAGS="${CXX_FLAGS} -march=sandybridge -mtune=sandybridge"
             Fortran_FLAGS="${Fortran_FLAGS} -march=sandybridge -mtune=sandybridge"
+        elif [ "${CLUSTER}" == "ray" ]; then
+            C_FLAGS="${C_FLAGS} -mcpu=power8 -mtune=power8"
+            CXX_FLAGS="${CXX_FLAGS} -mcpu=power8 -mtune=power8"
+            Fortran_FLAGS="${Fortran_FLAGS} -mcpu=power8 -mtune=power8"
         fi
     fi
 else 
@@ -424,6 +429,7 @@ fi
 
 if [ ${USE_MODULES} -ne 0 ]; then
     if [ -z "$(module list 2>&1 | grep ${MPI})" ]; then
+        MPI=$(module --terse spider ${MPI} 2>&1 | sed '/^$/d' | tail -1)
         module load ${MPI}
     fi
     if [ -z "$(module list 2>&1 | grep ${MPI})" ]; then
