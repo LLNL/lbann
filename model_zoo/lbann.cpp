@@ -88,6 +88,11 @@ int main(int argc, char *argv[]) {
       pb.MergeFrom(pb_optimizer);
     }
 
+    if (has_motifs(comm, pb)) {
+      expand_motifs(comm, pb);
+      exit(9);
+    }
+
     lbann_data::Model *pb_model = pb.mutable_model();
 
     // Optionally over-ride some values in prototext

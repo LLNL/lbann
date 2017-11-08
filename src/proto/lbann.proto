@@ -6,6 +6,7 @@ message LbannPB {
   DataReader data_reader = 1; 
   Model model = 2; 
   Optimizer optimizer = 3;
+  MotifDefinitions motif_definitions = 4;
 }
 
 //========================================================================
@@ -341,6 +342,18 @@ message CallbackGradientCheck {
   bool verbose = 2;
   bool fail_on_error = 3;
 }
+//========================================================================
+// MotifDefinitions
+//========================================================================
+
+message MotifDefinitions {
+  repeated Motif motif = 1;
+}
+
+message Motif {
+  string name = 1;
+  repeated Layer layer = 2;
+}
 
 //========================================================================
 // Layers
@@ -384,6 +397,9 @@ message Layer {
    //
    //
 
+   // motif layer
+   MotifLayer motif_layer = 4;
+
    // input Layers
    InputDistributedMiniBatch input_distributed_minibatch = 2;
    InputPartitionedMiniBatch input_partitioned_minibatch = 3;
@@ -426,6 +442,14 @@ message Layer {
    Selu selu = 37;
    Tanh tanh = 38;
 }
+///////////////////////
+// MotifLayer //
+///////////////////////
+message MotifLayer {
+  string name = 1;
+  repeated string variable = 2;
+}
+
 
 ///////////////////////
 // Activation Layers //

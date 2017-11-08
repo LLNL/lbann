@@ -21,6 +21,30 @@ inline bool layer_is_in_model(std::string name) {
   return model_layers.find(name) != model_layers.end();
 }
 
+bool has_motifs(lbann_comm *comm, const lbann_data::LbannPB& p) {
+  bool master = comm->am_world_master();
+  if (master) cout << "starting has_motifs\n";
+  const lbann_data::Model& m = p.model();
+  const int num_layers = m.layer_size();
+  for (int j=0; j<num_layers; j++) {
+    const lbann_data::Layer& layer = m.layer(j);
+    if (layer.has_motif_layer()) {
+      return true;
+    }  
+  }
+  return false;
+}
+
+void expand_motifs(lbann_comm *comm, lbann_data::LbannPB& pb) {
+  bool master = comm->am_world_master();
+  if (master) cout << "starting expand_motifs\n";
+  const lbann_data::MotifDefinitions& m = pb.motif_definitions();
+  const int num_motifs = m.motif_size();
+  for (int j=0; j<num_motifs; j++) {
+  }
+}
+
+
 void setup_pointers(
   std::vector<lbann_data::Layer> &proto_layers,
   lbann::model *model,
