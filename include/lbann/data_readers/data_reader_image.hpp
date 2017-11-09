@@ -40,10 +40,14 @@ class image_data_reader : public generic_data_reader {
   image_data_reader(const image_data_reader&);
   image_data_reader& operator=(const image_data_reader&);
 
-  /// Set up imagenet specific input parameters
-  virtual void set_input_params(const int width=256, const int height=256, const int num_ch=3, const int num_labels=1000);
+  /** Set up imagenet specific input parameters
+   *  If argument is set to 0, then this method does not change the value of
+   *  the corresponding parameter. However, width and height can only be both
+   *  zero or both non-zero.
+   */
+  virtual void set_input_params(const int width=0, const int height=0, const int num_ch=0, const int num_labels=0);
 
-  // ImageNet specific functions
+  // dataset specific functions
   void load() override;
 
   int get_num_labels() const override {
@@ -74,6 +78,8 @@ class image_data_reader : public generic_data_reader {
   }
 
  protected:
+  /// Set the default values for the width, the height, the number of channels, and the number of labels of an image
+  virtual void set_defaults();
   bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;
 
  protected:

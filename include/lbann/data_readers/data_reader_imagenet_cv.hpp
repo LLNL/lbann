@@ -44,6 +44,7 @@ class imagenet_reader_cv : public image_data_reader {
   imagenet_reader_cv* copy() const override { return new imagenet_reader_cv(*this); }
 
  protected:
+  void set_defaults() override;
   virtual bool replicate_processor(const cv_process& pp);
   virtual ::Mat create_datum_view(::Mat& X, const int mb_idx) const;
   bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;

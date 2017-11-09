@@ -53,6 +53,7 @@ class imagenet_reader_patches : public image_data_reader {
   }
 
  protected:
+  void set_defaults() override;
   virtual bool replicate_processor(const cv_process_patches& pp);
   virtual std::vector<::Mat> create_datum_views(::Mat& X, const int mb_idx) const;
   virtual std::vector<::Mat> create_datum_views(std::vector<::Mat>& X, const int mb_idx) const;

@@ -34,6 +34,7 @@ namespace lbann {
 
 imagenet_reader_patches::imagenet_reader_patches(const std::shared_ptr<cv_process_patches>& pp, bool shuffle)
   : image_data_reader(shuffle) {
+  set_defaults();
 
   if (!pp) {
     std::stringstream err;
@@ -74,6 +75,14 @@ imagenet_reader_patches& imagenet_reader_patches::operator=(const imagenet_reade
 }
 
 imagenet_reader_patches::~imagenet_reader_patches() {
+}
+
+void imagenet_reader_patches::set_defaults() {
+  m_image_width = 256;
+  m_image_height = 256;
+  m_image_num_channels = 3;
+  m_num_labels = 1000;
+  m_num_patches = 1;
 }
 
 /// Replicate image processor for each OpenMP thread

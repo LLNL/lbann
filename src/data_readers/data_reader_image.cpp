@@ -32,12 +32,9 @@
 namespace lbann {
 
 image_data_reader::image_data_reader(bool shuffle)
-  : generic_data_reader(shuffle),
-    m_image_width(256),
-    m_image_height(256),
-    m_image_num_channels(3),
-    m_num_labels(1000)
-{}
+  : generic_data_reader(shuffle) {
+  set_defaults();
+}
 
 image_data_reader::image_data_reader(const image_data_reader& rhs)
   : generic_data_reader(rhs),
@@ -59,6 +56,13 @@ image_data_reader& image_data_reader::operator=(const image_data_reader& rhs) {
   m_num_labels = rhs.m_num_labels;
 
   return (*this);
+}
+
+void image_data_reader::set_defaults() {
+  m_image_width = 256;
+  m_image_height = 256;
+  m_image_num_channels = 3;
+  m_num_labels = 1000;
 }
 
 void image_data_reader::set_input_params(const int width, const int height, const int num_ch, const int num_labels) {

@@ -46,6 +46,7 @@ class imagenet_reader : public image_data_reader {
   void set_input_params(const int width=256, const int height=256, const int num_ch=3, const int num_labels=1000) override;
 
  protected:
+  void set_defaults() override;
   void allocate_pixel_bufs();
   bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
 

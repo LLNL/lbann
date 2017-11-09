@@ -35,7 +35,15 @@ namespace lbann {
 
 imagenet_reader::imagenet_reader(bool shuffle)
   : image_data_reader(shuffle) {
+  set_defaults();
   allocate_pixel_bufs();
+}
+
+void imagenet_reader::set_defaults() {
+  m_image_width = 256;
+  m_image_height = 256;
+  m_image_num_channels = 3;
+  m_num_labels = 1000;
 }
 
 void imagenet_reader::set_input_params(const int width, const int height, const int num_ch, const int num_labels) {

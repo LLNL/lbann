@@ -34,6 +34,7 @@ namespace lbann {
 
 imagenet_reader_cv::imagenet_reader_cv(const std::shared_ptr<cv_process>& pp, bool shuffle)
   : image_data_reader(shuffle) {
+  set_defaults();
 
   if (!pp) {
     std::stringstream err;
@@ -45,8 +46,7 @@ imagenet_reader_cv::imagenet_reader_cv(const std::shared_ptr<cv_process>& pp, bo
 }
 
 imagenet_reader_cv::imagenet_reader_cv(const imagenet_reader_cv& rhs)
-  : image_data_reader(rhs)
-{
+  : image_data_reader(rhs) {
   if (rhs.m_pps.size() == 0u || !rhs.m_pps[0]) {
     std::stringstream err;
     err << __FILE__<<" "<<__LINE__<< " :: Imagenet data reader construction error: no image processor";
@@ -73,6 +73,13 @@ imagenet_reader_cv& imagenet_reader_cv::operator=(const imagenet_reader_cv& rhs)
 }
 
 imagenet_reader_cv::~imagenet_reader_cv() {
+}
+
+void imagenet_reader_cv::set_defaults() {
+  m_image_width = 256;
+  m_image_height = 256;
+  m_image_num_channels = 3;
+  m_num_labels = 1000;
 }
 
 /// Replicate image processor for each OpenMP thread

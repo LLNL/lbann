@@ -31,11 +31,18 @@
 namespace lbann {
 
 cifar10_reader::cifar10_reader(bool shuffle)
-  : generic_data_reader(shuffle),
-    m_image_width(32), m_image_height(32), m_image_num_channels(3) {
+  : image_data_reader(shuffle) {
+  set_defaults();
 }
 
-cifar10_reader::~cifar10_reader() { }
+cifar10_reader::~cifar10_reader() {}
+
+void cifar10_reader::set_defaults() {
+  m_image_width = 32;
+  m_image_height = 32;
+  m_image_num_channels = 3;
+  m_num_labels = 10;
+}
 
 void cifar10_reader::load() {
   //open data file
@@ -69,7 +76,7 @@ void cifar10_reader::load() {
   }
 
   //read in the images; each image is 1 byte, which is the
-  //label (0-9), and 2072 pixels
+  //label (0-9), and 3072 pixels
   for (size_t h=0; h<m_data.size(); h++) {
     in.read((char *)&(m_data[h][0]), len);
   }
