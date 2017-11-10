@@ -66,6 +66,17 @@ message ImagePreprocessor {
   int32 resized_height = 30;
   int32 raw_width = 31;
   int32 raw_height = 32;
+  PatchExtractor patch_extractor = 70;
+}
+
+message PatchExtractor {
+  string name = 1;
+  uint32 patch_width = 2;
+  uint32 patch_height = 3;
+  uint32 patch_gap = 4; // gap between patches
+  uint32 patch_jitter = 5; // max jittering amount for patch positions
+  uint32 centering_mode = 6; // center patch positioning mode
+  uint32 ca_correction_mode = 7; // chromatic abberation correction mode
 }
 
 //========================================================================

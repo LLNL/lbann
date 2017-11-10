@@ -10,6 +10,7 @@
 
 #include <unordered_map>
 #include <sys/stat.h>
+#include <memory> // for dynamic_pointer_cast
 
 using namespace lbann;
 
@@ -1694,6 +1695,114 @@ optimizer_factory *init_optimizer_factory(lbann_comm *comm, cudnn::cudnn_manager
   return factory;
 }
 
+
+void init_imagenet_data_readers(const lbann_data::Reader& readme, const bool master, generic_data_reader* &reader) {
+  const lbann_data::ImagePreprocessor& preprocessor = readme.image_preprocessor();
+  const lbann_data::PatchExtractor& patch_extractor = preprocessor.patch_extractor();
+  const string& name = readme.name();
+  const bool shuffle = readme.shuffle();
+
+  std::shared_ptr<cv_process> pp;
+  // set up the image preprocessor
+  if ((name == "imagenet_cv") || (name == "imagenet_single_cv")) {
+    pp = std::make_shared<cv_process>();
+  } else if (name == "imagenet_patches") {
+    pp = std::make_shared<cv_process_patches>();
+  }
+
+  // set up cropper as needed
+  if(preprocessor.crop_first()) {
+    std::unique_ptr<lbann::cv_cropper> cropper(new(lbann::cv_cropper));
+    cropper->set(preprocessor.crop_width(),
+                 preprocessor.crop_height(),
+                 preprocessor.crop_randomly(),
+                 std::make_pair<int,int>(preprocessor.resized_width(),
+                                         preprocessor.resized_height()));
+    pp->add_transform(std::move(cropper));
+    if (master) cout << "imagenet: cropper is set" << endl;
+  }
+
+  // set up augmenter if necessary
+  if (!preprocessor.disable_augmentation() &&
+      (preprocessor.horizontal_flip() ||
+       preprocessor.vertical_flip() ||
+       preprocessor.rotation() != 0.0 ||
+       preprocessor.horizontal_shift() != 0.0 ||
+       preprocessor.vertical_shift() != 0.0 ||
+       preprocessor.shear_range() != 0.0))
+  {
+    std::unique_ptr<lbann::cv_augmenter> augmenter(new(lbann::cv_augmenter));
+    augmenter->set(preprocessor.horizontal_flip(),
+                   preprocessor.vertical_flip(),
+                   preprocessor.rotation(),
+                   preprocessor.horizontal_shift(),
+                   preprocessor.vertical_shift(),
+                   preprocessor.shear_range());
+    pp->add_transform(std::move(augmenter));
+    if (master) cout << "imagenet: augmenter is set" << endl;
+  }
+
+  // set up a custom transform (colorizer)
+  if (!preprocessor.no_colorize()) {
+    // If every image in the dataset is a color image, this is not needed
+    std::unique_ptr<lbann::cv_colorizer> colorizer(new(lbann::cv_colorizer));
+    pp->add_transform(std::move(colorizer));
+    if (master) cout << "imagenet: colorizer is set" << endl;
+  }
+
+  // set up the normalizer
+  std::unique_ptr<lbann::cv_normalizer> normalizer(new(lbann::cv_normalizer));
+  normalizer->unit_scale(preprocessor.scale());
+  normalizer->subtract_mean(preprocessor.subtract_mean());
+  normalizer->unit_variance(preprocessor.unit_variance());
+  normalizer->z_score(preprocessor.z_score());
+  pp->add_normalizer(std::move(normalizer));
+  if (master) cout << "imagenet: normalizer is set" << endl;
+
+  // determine the final size of image
+  int width=0, height=0;
+  const int n_labels = readme.num_labels();
+  if (preprocessor.crop_first()) {
+    width = preprocessor.crop_width();
+    height = preprocessor.crop_height();
+  } else {
+    width = preprocessor.raw_width();
+    height = preprocessor.raw_height();
+  }
+
+  // create a data reader
+  if (name == "imagenet_patches") {
+    std::shared_ptr<cv_process_patches> ppp = std::dynamic_pointer_cast<cv_process_patches>(pp);
+    if (patch_extractor.name() == "patchworks") {
+      lbann::patchworks::patch_descriptor pi;
+      pi.set_sample_image(static_cast<unsigned int>(width),
+                          static_cast<unsigned int>(height));
+      pi.set_size(patch_extractor.patch_width(), patch_extractor.patch_height ());
+      pi.set_gap(patch_extractor.patch_gap());
+      pi.set_jitter(patch_extractor.patch_jitter());
+      pi.set_mode_centering(patch_extractor.centering_mode());
+      pi.set_mode_chromatic_aberration(patch_extractor.ca_correction_mode());
+      pi.set_self_label();
+      pi.define_patch_set();
+      ppp->set_patch_descriptor(pi);
+    } else {
+      if (master) cout << "unrecognized patch extractor name: " << patch_extractor.name() << endl;
+    }
+    reader = new imagenet_reader_patches(ppp, shuffle);
+    if (master) cout << "imagenet_reader_patches is set" << endl;
+  } else if (name == "imagenet_cv") {
+    reader = new imagenet_reader_cv(pp, shuffle);
+    if (master) cout << "imagenet_reader_cv is set" << endl;
+  } else {
+    reader = new imagenet_reader_single_cv(pp, shuffle);
+    if (master) cout << "imagenet_reader_single_cv is set" << endl;
+  }
+
+  // configure the data reader
+  dynamic_cast<imagenet_reader_cv*>(reader)->set_input_params(width, height, 3, n_labels);
+}
+
+
 void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execution_mode, generic_data_reader *>& data_readers)
 {
   std::stringstream err;
@@ -1707,7 +1816,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
 
     const string& name = readme.name();
 
-    bool shuffle = readme.shuffle();
+    const bool shuffle = readme.shuffle();
 
     generic_data_reader *reader = 0;
     generic_data_reader *reader_validation = 0;
@@ -1722,76 +1831,8 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       dynamic_cast<imagenet_reader*>(reader)->set_input_params(width, height, 3, n_labels);
     } else if (name == "imagenet_single") {
       reader = new imagenet_readerSingle(shuffle);
-    } else if ((name == "imagenet_cv") || (name == "imagenet_single_cv")) {
-      // set up the image preprocessor
-      std::shared_ptr<cv_process> pp = std::make_shared<cv_process>();
-
-      // set up cropper as needed
-      if(preprocessor.crop_first()) {
-        std::unique_ptr<lbann::cv_cropper> cropper(new(lbann::cv_cropper));
-        cropper->set(preprocessor.crop_width(),
-                     preprocessor.crop_height(),
-                     preprocessor.crop_randomly(),
-                     std::make_pair<int,int>(preprocessor.resized_width(),
-                                             preprocessor.resized_height()));
-        pp->add_transform(std::move(cropper));
-        if (master) cout << "imagenet: cropper is set" << endl;
-      }
-
-      // set up augmenter if necessary
-      if (!preprocessor.disable_augmentation() &&
-          (preprocessor.horizontal_flip() ||
-           preprocessor.vertical_flip() ||
-           preprocessor.rotation() != 0.0 ||
-           preprocessor.horizontal_shift() != 0.0 ||
-           preprocessor.vertical_shift() != 0.0 ||
-           preprocessor.shear_range() != 0.0))
-      {
-        std::unique_ptr<lbann::cv_augmenter> augmenter(new(lbann::cv_augmenter));
-        augmenter->set(preprocessor.horizontal_flip(),
-                       preprocessor.vertical_flip(),
-                       preprocessor.rotation(),
-                       preprocessor.horizontal_shift(),
-                       preprocessor.vertical_shift(),
-                       preprocessor.shear_range());
-        pp->add_transform(std::move(augmenter));
-        if (master) cout << "imagenet: augmenter is set" << endl;
-      }
-
-      // set up a custom transform (colorizer)
-      if (!preprocessor.no_colorize()) {
-        // If every image in the dataset is a color image, this is not needed
-        std::unique_ptr<lbann::cv_colorizer> colorizer(new(lbann::cv_colorizer));
-        pp->add_transform(std::move(colorizer));
-        if (master) cout << "imagenet: colorizer is set" << endl;
-      }
-
-      // set up the normalizer
-      std::unique_ptr<lbann::cv_normalizer> normalizer(new(lbann::cv_normalizer));
-      normalizer->unit_scale(preprocessor.scale());
-      normalizer->subtract_mean(preprocessor.subtract_mean());
-      normalizer->unit_variance(preprocessor.unit_variance());
-      normalizer->z_score(preprocessor.z_score());
-      pp->add_normalizer(std::move(normalizer));
-      if (master) cout << "imagenet: normalizer is set" << endl;
-
-      if (name == "imagenet_cv") {
-        reader = new imagenet_reader_cv(pp, shuffle);
-        if (master) cout << "imagenet_reader_cv is set" << endl;
-      } else {
-        reader = new imagenet_reader_single_cv(pp, shuffle);
-        if (master) cout << "imagenet_reader_single_cv is set" << endl;
-      }
-      int width=0, height=0;
-      const int n_labels = readme.num_labels();
-      if (preprocessor.crop_first()) {
-        width = preprocessor.crop_width();
-        height = preprocessor.crop_height();
-      } else {
-        width = preprocessor.raw_width();
-        height = preprocessor.raw_height();
-      }
-      dynamic_cast<imagenet_reader_cv*>(reader)->set_input_params(width, height, 3, n_labels);
+    } else if ((name == "imagenet_cv") || (name == "imagenet_single_cv") || (name == "imagenet_patches")) {
+      init_imagenet_data_readers(readme, master, reader);
     } else if (name == "nci") {
       reader = new data_reader_nci(shuffle);
     } else if (name == "csv") {
@@ -1867,7 +1908,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
     reader->set_absolute_sample_count( readme.absolute_sample_count() );
     reader->set_use_percent( readme.percent_of_data_to_use() );
 
-    if ((name != "imagenet_cv") && (name != "imagenet_single_cv")) {
+    if ((name != "imagenet_cv") && (name != "imagenet_single_cv") && (name != "imagenet_patches")) {
       reader->horizontal_flip( preprocessor.horizontal_flip() );
       reader->vertical_flip( preprocessor.vertical_flip() );
       reader->rotation( preprocessor.rotation() );
@@ -1918,6 +1959,8 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
         reader_validation = new imagenet_reader_cv(*dynamic_cast<const imagenet_reader_cv *>(reader));
       } else if (name == "imagenet_single_cv") {
         reader_validation = new imagenet_reader_single_cv(*dynamic_cast<const imagenet_reader_single_cv *>(reader));
+      } else if (name == "imagenet_patches") {
+        reader_validation = new imagenet_reader_patches(*dynamic_cast<const imagenet_reader_patches *>(reader));
       } else if (name == "nci") {
         reader_validation = new data_reader_nci(shuffle);
         (*(data_reader_nci *)reader_validation) = (*(data_reader_nci *)reader);
