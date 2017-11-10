@@ -33,15 +33,15 @@
 #include "cv_process.hpp"
 
 namespace lbann {
-class imagenet_reader_cv : public image_data_reader {
+class imagenet_reader : public image_data_reader {
  public:
-  imagenet_reader_cv(bool shuffle) = delete;
-  imagenet_reader_cv(const std::shared_ptr<cv_process>& pp, bool shuffle = true);
-  imagenet_reader_cv(const imagenet_reader_cv&);
-  imagenet_reader_cv& operator=(const imagenet_reader_cv&);
-  ~imagenet_reader_cv() override;
+  imagenet_reader(bool shuffle) = delete;
+  imagenet_reader(const std::shared_ptr<cv_process>& pp, bool shuffle = true);
+  imagenet_reader(const imagenet_reader&);
+  imagenet_reader& operator=(const imagenet_reader&);
+  ~imagenet_reader() override;
 
-  imagenet_reader_cv* copy() const override { return new imagenet_reader_cv(*this); }
+  imagenet_reader* copy() const override { return new imagenet_reader(*this); }
 
  protected:
   void set_defaults() override;

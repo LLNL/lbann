@@ -37,11 +37,11 @@ using namespace El;
 namespace lbann {
 
 imagenet_readerSingle::imagenet_readerSingle(bool shuffle)
-  : imagenet_reader(shuffle) {
+  : imagenet_reader_org(shuffle) {
 }
 
 imagenet_readerSingle::imagenet_readerSingle(const imagenet_readerSingle& source)
-  : imagenet_reader(source) {
+  : imagenet_reader_org(source) {
   m_offsets = source.m_offsets;
   open_data_stream();
 }
@@ -170,7 +170,7 @@ imagenet_readerSingle& imagenet_readerSingle::operator=(const imagenet_readerSin
   }
 
   // Call the parent operator= function
-  imagenet_reader::operator=(source);
+  imagenet_reader_org::operator=(source);
 
   m_offsets = source.m_offsets;
   open_data_stream();

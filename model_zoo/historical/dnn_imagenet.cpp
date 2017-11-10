@@ -138,9 +138,9 @@ int main(int argc, char *argv[]) {
     ///////////////////////////////////////////////////////////////////
     if (not use_new_reader) {
       if (comm->am_world_master()) {
-        cout << endl << "USING imagenet_reader\n\n";
+        cout << endl << "USING imagenet_reader_org\n\n";
       }
-      imagenet_reader *imagenet_trainset = new imagenet_reader(true);
+      imagenet_reader_org *imagenet_trainset = new imagenet_reader_org(true);
       imagenet_trainset->set_role("train");
       imagenet_trainset->set_master(comm->am_world_master());
       imagenet_trainset->set_rank(comm->get_rank_in_world());
@@ -157,7 +157,7 @@ int main(int argc, char *argv[]) {
       ///////////////////////////////////////////////////////////////////
       // create a validation set from the unused training data (ImageNet)
       ///////////////////////////////////////////////////////////////////
-      imagenet_reader *imagenet_validation_set = new imagenet_reader(*imagenet_trainset); // Clone the training set object
+      imagenet_reader_org *imagenet_validation_set = new imagenet_reader_org(*imagenet_trainset); // Clone the training set object
       imagenet_validation_set->set_role("validation");
       imagenet_validation_set->use_unused_index_set();
 
@@ -173,7 +173,7 @@ int main(int argc, char *argv[]) {
       ///////////////////////////////////////////////////////////////////
       // load testing data (ImageNet)
       ///////////////////////////////////////////////////////////////////
-      imagenet_reader *imagenet_testset = new imagenet_reader(true);
+      imagenet_reader_org *imagenet_testset = new imagenet_reader_org(true);
       imagenet_testset->set_role("test");
       imagenet_testset->set_master(comm->am_world_master());
       imagenet_testset->set_rank(comm->get_rank_in_world());

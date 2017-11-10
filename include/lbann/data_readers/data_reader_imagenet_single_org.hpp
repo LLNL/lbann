@@ -34,7 +34,7 @@
 #include "image_preprocessor.hpp"
 
 namespace lbann {
-class imagenet_readerSingle : public imagenet_reader {
+class imagenet_readerSingle : public imagenet_reader_org {
  public:
   imagenet_readerSingle(bool shuffle = true);
   imagenet_readerSingle(const imagenet_readerSingle& source);

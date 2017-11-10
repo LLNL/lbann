@@ -34,25 +34,25 @@
 
 namespace lbann {
 
-imagenet_reader_single_cv::imagenet_reader_single_cv(const std::shared_ptr<cv_process>& pp, bool shuffle)
-  : imagenet_reader_cv(pp, shuffle) {
+imagenet_reader_single::imagenet_reader_single(const std::shared_ptr<cv_process>& pp, bool shuffle)
+  : imagenet_reader(pp, shuffle) {
 }
 
-imagenet_reader_single_cv::imagenet_reader_single_cv(const imagenet_reader_single_cv& source)
-  : imagenet_reader_cv(source) {
+imagenet_reader_single::imagenet_reader_single(const imagenet_reader_single& source)
+  : imagenet_reader(source) {
   m_offsets = source.m_offsets;
   open_data_stream();
 }
 
 // Assignment operator
-imagenet_reader_single_cv& imagenet_reader_single_cv::operator=(const imagenet_reader_single_cv& source) {
+imagenet_reader_single& imagenet_reader_single::operator=(const imagenet_reader_single& source) {
   // check for self-assignment
   if (this == &source) {
     return *this;
   }
 
   // Call the parent operator= function
-  imagenet_reader_cv::operator=(source);
+  imagenet_reader::operator=(source);
 
   m_offsets = source.m_offsets;
   open_data_stream();
@@ -60,13 +60,13 @@ imagenet_reader_single_cv& imagenet_reader_single_cv::operator=(const imagenet_r
   return (*this);
 }
 
-imagenet_reader_single_cv::~imagenet_reader_single_cv() {
+imagenet_reader_single::~imagenet_reader_single() {
   for(size_t i=0u; i < m_data_filestream.size(); ++i) {
     if (m_data_filestream[i]) delete m_data_filestream[i];
   }
 }
 
-void imagenet_reader_single_cv::load() {
+void imagenet_reader_single::load() {
   const std::string image_dir = get_file_dir();
   const std::string base_filename = get_data_filename();
 
@@ -122,7 +122,7 @@ void imagenet_reader_single_cv::load() {
 }
 
 
-bool imagenet_reader_single_cv::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
+bool imagenet_reader_single::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
   const int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
   std::stringstream err;
 
@@ -166,13 +166,13 @@ bool imagenet_reader_single_cv::fetch_datum(Mat& X, int data_id, int mb_idx, int
   return true;
 }
 
-bool imagenet_reader_single_cv::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
+bool imagenet_reader_single::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
   const int label = m_offsets[data_id+1].second;
   Y.Set(label, mb_idx, 1);
   return true;
 }
 
-void imagenet_reader_single_cv::open_data_stream() {
+void imagenet_reader_single::open_data_stream() {
   const std::string image_dir = get_file_dir();
   const std::string base_filename = get_data_filename();
 

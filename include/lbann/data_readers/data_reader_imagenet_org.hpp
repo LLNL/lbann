@@ -33,14 +33,14 @@
 #include "image_preprocessor.hpp"
 
 namespace lbann {
-class imagenet_reader : public image_data_reader {
+class imagenet_reader_org : public image_data_reader {
  public:
-  imagenet_reader(bool shuffle = true);
-  imagenet_reader(const imagenet_reader&) = default;
-  imagenet_reader& operator=(const imagenet_reader&) = default;
-  ~imagenet_reader() override {}
+  imagenet_reader_org(bool shuffle = true);
+  imagenet_reader_org(const imagenet_reader_org&) = default;
+  imagenet_reader_org& operator=(const imagenet_reader_org&) = default;
+  ~imagenet_reader_org() override {}
 
-  imagenet_reader* copy() const override { return new imagenet_reader(*this); }
+  imagenet_reader_org* copy() const override { return new imagenet_reader_org(*this); }
 
   /// Set up imagenet specific input parameters
   void set_input_params(const int width=256, const int height=256, const int num_ch=3, const int num_labels=1000) override;

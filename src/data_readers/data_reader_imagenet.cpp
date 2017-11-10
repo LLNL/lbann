@@ -32,7 +32,7 @@
 
 namespace lbann {
 
-imagenet_reader_cv::imagenet_reader_cv(const std::shared_ptr<cv_process>& pp, bool shuffle)
+imagenet_reader::imagenet_reader(const std::shared_ptr<cv_process>& pp, bool shuffle)
   : image_data_reader(shuffle) {
   set_defaults();
 
@@ -45,7 +45,7 @@ imagenet_reader_cv::imagenet_reader_cv(const std::shared_ptr<cv_process>& pp, bo
   replicate_processor(*pp);
 }
 
-imagenet_reader_cv::imagenet_reader_cv(const imagenet_reader_cv& rhs)
+imagenet_reader::imagenet_reader(const imagenet_reader& rhs)
   : image_data_reader(rhs) {
   if (rhs.m_pps.size() == 0u || !rhs.m_pps[0]) {
     std::stringstream err;
@@ -55,7 +55,7 @@ imagenet_reader_cv::imagenet_reader_cv(const imagenet_reader_cv& rhs)
   replicate_processor(*rhs.m_pps[0]);
 }
 
-imagenet_reader_cv& imagenet_reader_cv::operator=(const imagenet_reader_cv& rhs) {
+imagenet_reader& imagenet_reader::operator=(const imagenet_reader& rhs) {
   // check for self-assignment
   if (this == &rhs) {
     return (*this);
@@ -72,10 +72,10 @@ imagenet_reader_cv& imagenet_reader_cv::operator=(const imagenet_reader_cv& rhs)
   return (*this);
 }
 
-imagenet_reader_cv::~imagenet_reader_cv() {
+imagenet_reader::~imagenet_reader() {
 }
 
-void imagenet_reader_cv::set_defaults() {
+void imagenet_reader::set_defaults() {
   m_image_width = 256;
   m_image_height = 256;
   m_image_num_channels = 3;
@@ -83,7 +83,7 @@ void imagenet_reader_cv::set_defaults() {
 }
 
 /// Replicate image processor for each OpenMP thread
-bool imagenet_reader_cv::replicate_processor(const cv_process& pp) {
+bool imagenet_reader::replicate_processor(const cv_process& pp) {
   const int nthreads = omp_get_max_threads();
   m_pps.resize(nthreads);
 
@@ -110,11 +110,11 @@ bool imagenet_reader_cv::replicate_processor(const cv_process& pp) {
   return true;
 }
 
-::Mat imagenet_reader_cv::create_datum_view(::Mat& X, const int mb_idx) const {
+::Mat imagenet_reader::create_datum_view(::Mat& X, const int mb_idx) const {
   return El::View(X, El::IR(0, X.Height()), El::IR(mb_idx, mb_idx + 1));
 }
 
-bool imagenet_reader_cv::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
+bool imagenet_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
   const int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
   const std::string imagepath = get_file_dir() + m_image_list[data_id].first;
 

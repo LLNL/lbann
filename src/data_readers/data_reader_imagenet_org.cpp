@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_imagenet .hpp .cpp - generic_data_reader class for ImageNet dataset
+// data_reader_imagenet_org .hpp .cpp - generic_data_reader class for ImageNet dataset
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_imagenet_org.hpp"
@@ -33,25 +33,25 @@
 
 namespace lbann {
 
-imagenet_reader::imagenet_reader(bool shuffle)
+imagenet_reader_org::imagenet_reader_org(bool shuffle)
   : image_data_reader(shuffle) {
   set_defaults();
   allocate_pixel_bufs();
 }
 
-void imagenet_reader::set_defaults() {
+void imagenet_reader_org::set_defaults() {
   m_image_width = 256;
   m_image_height = 256;
   m_image_num_channels = 3;
   m_num_labels = 1000;
 }
 
-void imagenet_reader::set_input_params(const int width, const int height, const int num_ch, const int num_labels) {
+void imagenet_reader_org::set_input_params(const int width, const int height, const int num_ch, const int num_labels) {
   image_data_reader::set_input_params(width, height, num_ch, num_labels);
   allocate_pixel_bufs();
 }
 
-void imagenet_reader::allocate_pixel_bufs() {
+void imagenet_reader_org::allocate_pixel_bufs() {
   // Preallocate buffer space for each thread.
   m_pixel_bufs.resize(omp_get_max_threads());
   const int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
@@ -60,7 +60,7 @@ void imagenet_reader::allocate_pixel_bufs() {
   }
 }
 
-bool imagenet_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
+bool imagenet_reader_org::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
   const int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
   const std::string imagepath = get_file_dir() + m_image_list[data_id].first;
 

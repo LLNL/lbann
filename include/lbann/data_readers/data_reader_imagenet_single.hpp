@@ -34,14 +34,14 @@
 #include <vector>
 
 namespace lbann {
-class imagenet_reader_single_cv : public imagenet_reader_cv {
+class imagenet_reader_single : public imagenet_reader {
  public:
-  imagenet_reader_single_cv(const std::shared_ptr<cv_process>& pp, bool shuffle = true);
-  imagenet_reader_single_cv(const imagenet_reader_single_cv& source);
-  imagenet_reader_single_cv& operator=(const imagenet_reader_single_cv& source);
-  ~imagenet_reader_single_cv() override;
+  imagenet_reader_single(const std::shared_ptr<cv_process>& pp, bool shuffle = true);
+  imagenet_reader_single(const imagenet_reader_single& source);
+  imagenet_reader_single& operator=(const imagenet_reader_single& source);
+  ~imagenet_reader_single() override;
 
-  imagenet_reader_single_cv* copy() const override { return new imagenet_reader_single_cv(*this); }
+  imagenet_reader_single* copy() const override { return new imagenet_reader_single(*this); }
 
   // ImageNet specific functions
   void load() override;

@@ -1791,15 +1791,15 @@ void init_imagenet_data_readers(const lbann_data::Reader& readme, const bool mas
     reader = new imagenet_reader_patches(ppp, shuffle);
     if (master) cout << "imagenet_reader_patches is set" << endl;
   } else if (name == "imagenet") {
-    reader = new imagenet_reader_cv(pp, shuffle);
+    reader = new imagenet_reader(pp, shuffle);
     if (master) cout << "imagenet_reader is set" << endl;
   } else { // imagenet_single
-    reader = new imagenet_reader_single_cv(pp, shuffle);
+    reader = new imagenet_reader_single(pp, shuffle);
     if (master) cout << "imagenet_reader_single is set" << endl;
   }
 
   // configure the data reader
-  dynamic_cast<imagenet_reader_cv*>(reader)->set_input_params(width, height, 3, n_labels);
+  dynamic_cast<imagenet_reader*>(reader)->set_input_params(width, height, 3, n_labels);
 }
 
 
@@ -1824,11 +1824,11 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
     if (name == "mnist") {
       reader = new mnist_reader(shuffle);
     } else if (name == "imagenet_org") {
-      reader = new imagenet_reader(shuffle);
+      reader = new imagenet_reader_org(shuffle);
       const int n_labels = readme.num_labels();
       const int width = preprocessor.raw_width();
       const int height = preprocessor.raw_height();
-      dynamic_cast<imagenet_reader*>(reader)->set_input_params(width, height, 3, n_labels);
+      dynamic_cast<imagenet_reader_org*>(reader)->set_input_params(width, height, 3, n_labels);
       if (master) cout << "imagenet_reader_org is set" << endl;
     } else if (name == "imagenet_single_org") {
       reader = new imagenet_readerSingle(shuffle);
@@ -1951,15 +1951,15 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
         reader_validation = new mnist_reader(shuffle);
         (*(mnist_reader *)reader_validation) = (*(mnist_reader *)reader);
       } else if (name == "imagenet_org") {
-        reader_validation = new imagenet_reader(shuffle);
-        (*(imagenet_reader *)reader_validation) = (*(imagenet_reader *)reader);
+        reader_validation = new imagenet_reader_org(shuffle);
+        (*(imagenet_reader_org *)reader_validation) = (*(imagenet_reader_org *)reader);
       } else if (name == "imagenet_single_org") {
         reader_validation = new imagenet_readerSingle(shuffle);
         (*(imagenet_readerSingle *)reader_validation) = (*(imagenet_readerSingle *)reader);
       } else if (name == "imagenet") {
-        reader_validation = new imagenet_reader_cv(*dynamic_cast<const imagenet_reader_cv *>(reader));
+        reader_validation = new imagenet_reader(*dynamic_cast<const imagenet_reader *>(reader));
       } else if (name == "imagenet_single") {
-        reader_validation = new imagenet_reader_single_cv(*dynamic_cast<const imagenet_reader_single_cv *>(reader));
+        reader_validation = new imagenet_reader_single(*dynamic_cast<const imagenet_reader_single *>(reader));
       } else if (name == "imagenet_patches") {
         reader_validation = new imagenet_reader_patches(*dynamic_cast<const imagenet_reader_patches *>(reader));
       } else if (name == "nci") {
