@@ -121,7 +121,7 @@ then
     unit_tests/ridge_regression_test.sh
     print_results "GRADIENT CHECK"
 
-    python -m pytest unit_tests/test_check_proto_models.py
+    python -m pytest -s unit_tests/test_check_proto_models.py
     print_results "PROTOTEXT CHECK"
 fi
 
@@ -129,10 +129,10 @@ if [ ${RUN_ALL} == ${TRUE} ] || [ ${RUN_INTEGRATION_TESTS} == ${TRUE} ]
 then
     print_label "INTEGRATION"
 
-    python -m pytest integration_tests/accuracy_tests/test_wrapper.py --exe="${LBANN_EXE}"
+    python -m pytest -s integration_tests/accuracy_tests/test_wrapper.py --exe="${LBANN_EXE}"
     print_results "TEST_ACCURACY"
 
-    python -m pytest integration_tests/performance_tests/test_performance.py --exe="${LBANN_EXE}" --dirname="${LBANN_DIR}"
+    python -m pytest -s integration_tests/performance_tests/test_performance.py --exe="${LBANN_EXE}" --dirname="${LBANN_DIR}"
     print_results "TEST_PERFORMANCE"
 fi
 
@@ -140,9 +140,11 @@ if [ ${RUN_ALL} == ${TRUE} ] || [ ${RUN_COMPILER_TESTS} == ${TRUE} ]
 then
     print_label "COMPILER"
 
-    compiler_tests/test_compiler_variants.sh
+    cd compiler_tests
+    ./test_compiler_variants.sh
     print_results "TEST_COMPILER_VARIANTS"
+    cd ..
 fi
 
-echo "***Fail Count: ${FAIL_COUNT}***"
+echo "***Fail Count (test_suite): ${FAIL_COUNT}***"
 exit ${EXIT_CODE}

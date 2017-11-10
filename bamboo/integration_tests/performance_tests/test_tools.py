@@ -112,7 +112,7 @@ def run_tests(performance, model_name):
         errors.append('%.2f < %.2f %s %s min_accuracy' % (accuracy, e['min_accuracy'], model_name, model_num))
   print "Errors for: %s" % model_name
   for error in errors:
-    print errors
+    print error
   assert errors == []
 
 def mnist_distributed_io_skeleton(executable, dir_name):
@@ -132,6 +132,6 @@ def alexnet_skeleton(executable, dir_name):
 def resnet50_skeleton(executable, dir_name):
   model_name = 'resnet50'
   output_file_name = '%s_output.txt' % model_name
-  run_lbann(model_name=model_name, reader_name='imagenet', optimizer_name='adagrad', output_file_name=output_file_name, executable=executable, dir_name=dir_name, num_epochs=2, procs_per_model=2)
+  run_lbann(model_name=model_name, reader_name='imagenet', optimizer_name='adagrad', output_file_name=output_file_name, executable=executable, dir_name=dir_name, num_epochs=1, procs_per_model=2)
   performance = get_performance(output_file_name)
   run_tests(performance, model_name)

@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set +e
+
 SUCCESS=0
 FAILURE=1
 
@@ -32,6 +34,7 @@ SCRIPT=`basename ${0}`
 COMPILERS="clang@4.0.0 gcc@4.9.3 gcc@7.1.0 intel@18.0.0"
 MPI_LIBS="mvapich2@2.2"
 
+cd builds
 for c in ${COMPILERS}; do
   for m in ${MPI_LIBS}; do
     CMD="${LBANN_DIR}/scripts/spack_recipes/build_lbann.sh -c ${c} -m ${m}"
@@ -48,10 +51,12 @@ for f in *; do
         # $f is a directory
         echo "Building LBANN in $f"
         cd $f/build
-	make -j all
-	print_results "${f} BUILD"
+        make -j all
+        print_results "${f} BUILD"
+        cd ../..
     fi
 done
+cd ..
 
-echo "***Fail Count: ${COMPILER_FAIL_COUNT}***"
+echo "***Fail Count (test_compiler_variants): ${COMPILER_FAIL_COUNT}***"
 exit ${COMPILER_EXIT_CODE}

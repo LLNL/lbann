@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 HOSTNAME=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
 PARTITION="pbatch"
 MODEL="MNIST"
