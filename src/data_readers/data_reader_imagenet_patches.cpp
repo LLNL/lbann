@@ -109,7 +109,7 @@ bool imagenet_reader_patches::replicate_processor(const cv_process_patches& pp) 
     throw lbann_exception(err.str());
     return false;
   }
-  m_num_patches = pp.get_num_patches();
+  m_num_patches = static_cast<int>(pp.get_num_patches());
 
   return true;
 }
@@ -124,7 +124,7 @@ std::vector<::Mat> imagenet_reader_patches::create_datum_views(::Mat& X, const i
 */
   std::vector<::Mat> X_v(m_num_patches);
   El::Int h = 0;
-  for(unsigned int i=0u; i < m_num_patches; ++i) {
+  for(int i=0; i < m_num_patches; ++i) {
     El::View(X_v[i], X, El::IR(h, h + m_image_height), El::IR(mb_idx, mb_idx + 1));
     h = h + m_image_height;
   }
@@ -145,9 +145,7 @@ bool imagenet_reader_patches::fetch_datum(Mat& X, int data_id, int mb_idx, int t
   const std::string imagepath = get_file_dir() + m_image_list[data_id].first;
 
   int width=0, height=0, img_type=0;
-  std::vector<::Mat> X_v = create_datum_views(X, mb_idx)
-
-  El::View(X_v, X, El::IR(0, X.Height()), El::IR(mb_idx, mb_idx + 1));
+  std::vector<::Mat> X_v = create_datum_views(X, mb_idx);
 
   const bool ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v);
 

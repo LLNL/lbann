@@ -7,6 +7,7 @@ add_sources(data_reader.cpp
             data_reader_imagenet_single.cpp
             data_reader_imagenet_cv.cpp
             data_reader_imagenet_single_cv.cpp
+            data_reader_imagenet_patches.cpp
             data_reader_nci.cpp
             data_reader_cifar10.cpp
             image_utils.cpp
