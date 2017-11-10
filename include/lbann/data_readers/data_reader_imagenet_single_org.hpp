@@ -23,37 +23,41 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// data_reader_imagenet .hpp .cpp - data reader class for ImageNet dataset
+// data_reader_imagenet_single .hpp .cpp - data reader class for ImageNet
+//                                         dataset packed into a single file
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_DATA_READER_IMAGENET_CV_HPP
-#define LBANN_DATA_READER_IMAGENET_CV_HPP
+#ifndef LBANN_DATA_READER_IMAGENET_SINGLE_ORG_HPP
+#define LBANN_DATA_READER_IMAGENET_SINGLE_ORG_HPP
 
-#include "data_reader_image.hpp"
-#include "cv_process.hpp"
+#include "data_reader_imagenet_org.hpp"
+#include "image_preprocessor.hpp"
 
 namespace lbann {
-class imagenet_reader_cv : public image_data_reader {
+class imagenet_readerSingle : public imagenet_reader {
  public:
-  imagenet_reader_cv(bool shuffle) = delete;
-  imagenet_reader_cv(const std::shared_ptr<cv_process>& pp, bool shuffle = true);
-  imagenet_reader_cv(const imagenet_reader_cv&);
-  imagenet_reader_cv& operator=(const imagenet_reader_cv&);
-  ~imagenet_reader_cv() override;
+  imagenet_readerSingle(bool shuffle = true);
+  imagenet_readerSingle(const imagenet_readerSingle& source);
+  ~imagenet_readerSingle() override;
 
-  imagenet_reader_cv* copy() const override { return new imagenet_reader_cv(*this); }
+  imagenet_readerSingle& operator=(const imagenet_readerSingle& source);
+  imagenet_readerSingle* copy() const override { return new imagenet_readerSingle(*this); }
+
+  void load() override;
 
  protected:
-  void set_defaults() override;
-  virtual bool replicate_processor(const cv_process& pp);
-  virtual ::Mat create_datum_view(::Mat& X, const int mb_idx) const;
   bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;
 
- protected:
-  /// preprocessor duplicated for each omp thread
-  std::vector<std::unique_ptr<cv_process> > m_pps;
+ private:
+  std::ifstream m_data_filestream;
+  size_t m_file_size;
+  std::vector<unsigned char> m_work_buffer;
+  std::vector<std::pair<size_t, int> > m_offsets; //stores: <offset, label>
+
+  void open_data_stream();
 };
 
 }  // namespace lbann
 
-#endif  // LBANN_DATA_READER_IMAGENET_CV_HPP
+#endif  // LBANN_DATA_READER_IMAGENET_ORG_HPP

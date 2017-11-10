@@ -1704,7 +1704,7 @@ void init_imagenet_data_readers(const lbann_data::Reader& readme, const bool mas
 
   std::shared_ptr<cv_process> pp;
   // set up the image preprocessor
-  if ((name == "imagenet_cv") || (name == "imagenet_single_cv")) {
+  if ((name == "imagenet") || (name == "imagenet_single")) {
     pp = std::make_shared<cv_process>();
   } else if (name == "imagenet_patches") {
     pp = std::make_shared<cv_process_patches>();
@@ -1790,12 +1790,12 @@ void init_imagenet_data_readers(const lbann_data::Reader& readme, const bool mas
     }
     reader = new imagenet_reader_patches(ppp, shuffle);
     if (master) cout << "imagenet_reader_patches is set" << endl;
-  } else if (name == "imagenet_cv") {
+  } else if (name == "imagenet") {
     reader = new imagenet_reader_cv(pp, shuffle);
-    if (master) cout << "imagenet_reader_cv is set" << endl;
-  } else {
+    if (master) cout << "imagenet_reader is set" << endl;
+  } else { // imagenet_single
     reader = new imagenet_reader_single_cv(pp, shuffle);
-    if (master) cout << "imagenet_reader_single_cv is set" << endl;
+    if (master) cout << "imagenet_reader_single is set" << endl;
   }
 
   // configure the data reader
@@ -1823,15 +1823,16 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
 
     if (name == "mnist") {
       reader = new mnist_reader(shuffle);
-    } else if (name == "imagenet") {
+    } else if (name == "imagenet_org") {
       reader = new imagenet_reader(shuffle);
       const int n_labels = readme.num_labels();
       const int width = preprocessor.raw_width();
       const int height = preprocessor.raw_height();
       dynamic_cast<imagenet_reader*>(reader)->set_input_params(width, height, 3, n_labels);
-    } else if (name == "imagenet_single") {
+      if (master) cout << "imagenet_reader_org is set" << endl;
+    } else if (name == "imagenet_single_org") {
       reader = new imagenet_readerSingle(shuffle);
-    } else if ((name == "imagenet_cv") || (name == "imagenet_single_cv") || (name == "imagenet_patches")) {
+    } else if ((name == "imagenet") || (name == "imagenet_single") || (name == "imagenet_patches")) {
       init_imagenet_data_readers(readme, master, reader);
     } else if (name == "nci") {
       reader = new data_reader_nci(shuffle);
@@ -1908,7 +1909,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
     reader->set_absolute_sample_count( readme.absolute_sample_count() );
     reader->set_use_percent( readme.percent_of_data_to_use() );
 
-    if ((name != "imagenet_cv") && (name != "imagenet_single_cv") && (name != "imagenet_patches")) {
+    if ((name != "imagenet") && (name != "imagenet_single") && (name != "imagenet_patches")) {
       reader->horizontal_flip( preprocessor.horizontal_flip() );
       reader->vertical_flip( preprocessor.vertical_flip() );
       reader->rotation( preprocessor.rotation() );
@@ -1949,15 +1950,15 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       if (name == "mnist") {
         reader_validation = new mnist_reader(shuffle);
         (*(mnist_reader *)reader_validation) = (*(mnist_reader *)reader);
-      } else if (name == "imagenet") {
+      } else if (name == "imagenet_org") {
         reader_validation = new imagenet_reader(shuffle);
         (*(imagenet_reader *)reader_validation) = (*(imagenet_reader *)reader);
-      } else if (name == "imagenet_single") {
+      } else if (name == "imagenet_single_org") {
         reader_validation = new imagenet_readerSingle(shuffle);
         (*(imagenet_readerSingle *)reader_validation) = (*(imagenet_readerSingle *)reader);
-      } else if (name == "imagenet_cv") {
+      } else if (name == "imagenet") {
         reader_validation = new imagenet_reader_cv(*dynamic_cast<const imagenet_reader_cv *>(reader));
-      } else if (name == "imagenet_single_cv") {
+      } else if (name == "imagenet_single") {
         reader_validation = new imagenet_reader_single_cv(*dynamic_cast<const imagenet_reader_single_cv *>(reader));
       } else if (name == "imagenet_patches") {
         reader_validation = new imagenet_reader_patches(*dynamic_cast<const imagenet_reader_patches *>(reader));

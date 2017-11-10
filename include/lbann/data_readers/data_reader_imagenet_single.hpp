@@ -31,18 +31,19 @@
 #define LBANN_DATA_READER_IMAGENET_SINGLE_HPP
 
 #include "data_reader_imagenet.hpp"
-#include "image_preprocessor.hpp"
+#include <vector>
 
 namespace lbann {
-class imagenet_readerSingle : public imagenet_reader {
+class imagenet_reader_single_cv : public imagenet_reader_cv {
  public:
-  imagenet_readerSingle(bool shuffle = true);
-  imagenet_readerSingle(const imagenet_readerSingle& source);
-  ~imagenet_readerSingle() override;
+  imagenet_reader_single_cv(const std::shared_ptr<cv_process>& pp, bool shuffle = true);
+  imagenet_reader_single_cv(const imagenet_reader_single_cv& source);
+  imagenet_reader_single_cv& operator=(const imagenet_reader_single_cv& source);
+  ~imagenet_reader_single_cv() override;
 
-  imagenet_readerSingle& operator=(const imagenet_readerSingle& source);
-  imagenet_readerSingle* copy() const override { return new imagenet_readerSingle(*this); }
+  imagenet_reader_single_cv* copy() const override { return new imagenet_reader_single_cv(*this); }
 
+  // ImageNet specific functions
   void load() override;
 
  protected:
@@ -50,9 +51,9 @@ class imagenet_readerSingle : public imagenet_reader {
   bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;
 
  private:
-  std::ifstream m_data_filestream;
+  std::vector<std::ifstream*> m_data_filestream;
   size_t m_file_size;
-  std::vector<unsigned char> m_work_buffer;
+  std::vector<std::vector<unsigned char> > m_work_buffer;
   std::vector<std::pair<size_t, int> > m_offsets; //stores: <offset, label>
 
   void open_data_stream();
