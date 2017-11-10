@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
     // initalize grid, block
     ///////////////////////////////////////////////////////////////////
     TrainingParams trainParams;
-    trainParams.DatasetRootDir = "/p/lscratchf/brainusr/datasets/ILSVRC2012/";
+    trainParams.DatasetRootDir = "/p/lscratchh/brainusr/datasets/ILSVRC2012/";
     trainParams.LearnRate = 5e-3;
     trainParams.DropOut = 0.9;
     trainParams.ProcsPerModel = 0;
@@ -132,15 +132,30 @@ int main(int argc, char *argv[]) {
       }
     }
 
+    // set up the image preprocessor
+    std::shared_ptr<cv_process> pp = std::make_shared<cv_process>();
+
+    // set up a custom transform (colorizer)
+    std::unique_ptr<lbann::cv_colorizer> colorizer(new(lbann::cv_colorizer));
+    pp->add_transform(std::move(colorizer));
+
+    // set up the normalizer
+    std::unique_ptr<lbann::cv_normalizer> normalizer(new(lbann::cv_normalizer));
+    normalizer->unit_scale(unit_scale);
+    normalizer->subtract_mean(subtract_mean);
+    normalizer->unit_variance(unit_variance);
+    normalizer->z_score(z_score);
+    pp->add_normalizer(std::move(normalizer));
+
     std::map<execution_mode, generic_data_reader *> data_readers;
     ///////////////////////////////////////////////////////////////////
     // load training data (ImageNet)
     ///////////////////////////////////////////////////////////////////
     if (not use_new_reader) {
       if (comm->am_world_master()) {
-        cout << endl << "USING imagenet_reader_org\n\n";
+        cout << endl << "USING imagenet_reader\n\n";
       }
-      imagenet_reader_org *imagenet_trainset = new imagenet_reader_org(true);
+      imagenet_reader *imagenet_trainset = new imagenet_reader(pp, true);
       imagenet_trainset->set_role("train");
       imagenet_trainset->set_master(comm->am_world_master());
       imagenet_trainset->set_rank(comm->get_rank_in_world());
@@ -149,15 +164,10 @@ int main(int argc, char *argv[]) {
       imagenet_trainset->set_validation_percent(trainParams.PercentageValidationSamples);
       imagenet_trainset->load();
 
-      imagenet_trainset->scale(unit_scale);
-      imagenet_trainset->subtract_mean(subtract_mean);
-      imagenet_trainset->unit_variance(unit_variance);
-      imagenet_trainset->z_score(z_score);
-
       ///////////////////////////////////////////////////////////////////
       // create a validation set from the unused training data (ImageNet)
       ///////////////////////////////////////////////////////////////////
-      imagenet_reader_org *imagenet_validation_set = new imagenet_reader_org(*imagenet_trainset); // Clone the training set object
+      imagenet_reader *imagenet_validation_set = new imagenet_reader(*imagenet_trainset); // Clone the training set object
       imagenet_validation_set->set_role("validation");
       imagenet_validation_set->use_unused_index_set();
 
@@ -173,7 +183,7 @@ int main(int argc, char *argv[]) {
       ///////////////////////////////////////////////////////////////////
       // load testing data (ImageNet)
       ///////////////////////////////////////////////////////////////////
-      imagenet_reader_org *imagenet_testset = new imagenet_reader_org(true);
+      imagenet_reader *imagenet_testset = new imagenet_reader(pp, true);
       imagenet_testset->set_role("test");
       imagenet_testset->set_master(comm->am_world_master());
       imagenet_testset->set_rank(comm->get_rank_in_world());
@@ -186,22 +196,17 @@ int main(int argc, char *argv[]) {
         cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << imagenet_testset->get_num_data() << " samples." << endl;
       }
 
-      imagenet_testset->scale(unit_scale);
-      imagenet_testset->subtract_mean(subtract_mean);
-      imagenet_testset->unit_variance(unit_variance);
-      imagenet_testset->z_score(z_score);
-
       data_readers[execution_mode::training] = imagenet_trainset;
       data_readers[execution_mode::validation] = imagenet_validation_set;
       data_readers[execution_mode::testing] = imagenet_testset;
     } else {
       //===============================================================
-      // imagenet_readerSingle
+      // imagenet_reader_single
       //===============================================================
       if (comm->am_world_master()) {
-        cout << endl << "USING imagenet_readerSingle\n\n";
+        cout << endl << "USING imagenet_reader_single\n\n";
       }
-      imagenet_readerSingle *imagenet_trainset = new imagenet_readerSingle(true);
+      imagenet_reader_single *imagenet_trainset = new imagenet_reader_single(pp, true);
       imagenet_trainset->set_role("train");
       imagenet_trainset->set_master(comm->am_world_master());
       imagenet_trainset->set_rank(comm->get_rank_in_world());
@@ -214,15 +219,10 @@ int main(int argc, char *argv[]) {
 
       imagenet_trainset->load();
 
-      imagenet_trainset->scale(unit_scale);
-      imagenet_trainset->subtract_mean(subtract_mean);
-      imagenet_trainset->unit_variance(unit_variance);
-      imagenet_trainset->z_score(z_score);
-
       ///////////////////////////////////////////////////////////////////
       // create a validation set from the unused training data (ImageNet)
       ///////////////////////////////////////////////////////////////////
-      imagenet_readerSingle *imagenet_validation_set = new imagenet_readerSingle(*imagenet_trainset); // Clone the training set object
+      imagenet_reader_single *imagenet_validation_set = new imagenet_reader_single(*imagenet_trainset); // Clone the training set object
       imagenet_validation_set->set_role("validation");
       imagenet_validation_set->use_unused_index_set();
 
@@ -241,7 +241,7 @@ int main(int argc, char *argv[]) {
       ss.clear();
       ss.str("");
       ss << "Single_" << g_ImageNet_TestLabelFile.substr(0, g_ImageNet_TestLabelFile.size()-4);
-      imagenet_readerSingle *imagenet_testset = new imagenet_readerSingle(true);
+      imagenet_reader_single *imagenet_testset = new imagenet_reader_single(pp, true);
       imagenet_testset->set_role("test");
       imagenet_testset->set_master(comm->am_world_master());
       imagenet_testset->set_rank(comm->get_rank_in_world());
@@ -254,19 +254,10 @@ int main(int argc, char *argv[]) {
         cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << imagenet_testset->get_num_data() << " samples." << endl;
       }
 
-      imagenet_testset->scale(unit_scale);
-      imagenet_testset->subtract_mean(subtract_mean);
-      imagenet_testset->unit_variance(unit_variance);
-      imagenet_testset->z_score(z_score);
-
       data_readers[execution_mode::training] = imagenet_trainset;
       data_readers[execution_mode::validation] = imagenet_validation_set;
       data_readers[execution_mode::testing] = imagenet_testset;
     }
-
-    //data_readers[execution_mode::training]->set_num_parallel_readers(parallel_io);
-    //data_readers[execution_mode::validation]->set_num_parallel_readers(parallel_io);
-    //data_readers[execution_mode::testing]->set_num_parallel_readers(parallel_io);
 
     ///////////////////////////////////////////////////////////////////
     // initalize neural network (layers)

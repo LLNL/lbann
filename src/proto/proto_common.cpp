@@ -1830,8 +1830,6 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       const int height = preprocessor.raw_height();
       dynamic_cast<imagenet_reader_org*>(reader)->set_input_params(width, height, 3, n_labels);
       if (master) cout << "imagenet_reader_org is set" << endl;
-    } else if (name == "imagenet_single_org") {
-      reader = new imagenet_readerSingle(shuffle);
     } else if ((name == "imagenet") || (name == "imagenet_single") || (name == "imagenet_patches")) {
       init_imagenet_data_readers(readme, master, reader);
     } else if (name == "nci") {
@@ -1953,9 +1951,6 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       } else if (name == "imagenet_org") {
         reader_validation = new imagenet_reader_org(shuffle);
         (*(imagenet_reader_org *)reader_validation) = (*(imagenet_reader_org *)reader);
-      } else if (name == "imagenet_single_org") {
-        reader_validation = new imagenet_readerSingle(shuffle);
-        (*(imagenet_readerSingle *)reader_validation) = (*(imagenet_readerSingle *)reader);
       } else if (name == "imagenet") {
         reader_validation = new imagenet_reader(*dynamic_cast<const imagenet_reader *>(reader));
       } else if (name == "imagenet_single") {
