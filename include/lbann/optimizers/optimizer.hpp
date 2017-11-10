@@ -38,7 +38,7 @@
 
 namespace lbann {
 
-/** Abstract optimizer class. */
+/** Abstract optimizer. */
 class optimizer {
  public:
 

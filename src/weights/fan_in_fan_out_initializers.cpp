@@ -26,11 +26,11 @@
 // fan_in_fan_out_initializer .hpp .cpp - Fan-in-fan-out initializer classes
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/variables/fan_in_fan_out_initializers.hpp"
+#include "lbann/weights/fan_in_fan_out_initializers.hpp"
 
 namespace lbann {
 
-void glorot_normal_initializer::intialize_entries(AbsDistMat& variable_matrix) const {
+void glorot_normal_initializer::intialize_entries(AbsDistMat& weights_matrix) const {
   if (m_fan_in <= 0 || m_fan_out <= 0) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
@@ -39,12 +39,12 @@ void glorot_normal_initializer::intialize_entries(AbsDistMat& variable_matrix) c
     throw lbann_exception(err.str());
   }
   const DataType variance = DataType(2) / (m_fan_in + m_fan_out);
-  gaussian_fill(variable_matrix,
+  gaussian_fill(weights_matrix,
                 height, width,
                 DataType(0), std::sqrt(variance));
 }
 
-void glorot_uniform_initializer::intialize_entries(AbsDistMat& variable_matrix) const {
+void glorot_uniform_initializer::intialize_entries(AbsDistMat& weights_matrix) const {
   if (m_fan_in <= 0 || m_fan_out <= 0) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
@@ -53,12 +53,12 @@ void glorot_uniform_initializer::intialize_entries(AbsDistMat& variable_matrix) 
     throw lbann_exception(err.str());
   }
   const DataType variance = DataType(2) / (m_fan_in + m_fan_out);
-  gaussian_fill(variable_matrix,
+  gaussian_fill(weights_matrix,
                 height, width,
                 DataType(0), std::sqrt(3*variance));
 }
 
-void he_normal_initializer::intialize_entries(AbsDistMat& variable_matrix) const {
+void he_normal_initializer::intialize_entries(AbsDistMat& weights_matrix) const {
   if (m_fan_in <= 0 || m_fan_out <= 0) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
@@ -67,12 +67,12 @@ void he_normal_initializer::intialize_entries(AbsDistMat& variable_matrix) const
     throw lbann_exception(err.str());
   }
   const DataType variance = DataType(1) / m_fan_in;
-  gaussian_fill(variable_matrix,
+  gaussian_fill(weights_matrix,
                 height, width,
                 DataType(0), std::sqrt(variance));
 }
 
-void he_uniform_initializer::intialize_entries(AbsDistMat& variable_matrix) const {
+void he_uniform_initializer::intialize_entries(AbsDistMat& weights_matrix) const {
   if (m_fan_in <= 0 || m_fan_out <= 0) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
@@ -81,7 +81,7 @@ void he_uniform_initializer::intialize_entries(AbsDistMat& variable_matrix) cons
     throw lbann_exception(err.str());
   }
   const DataType variance = DataType(1) / m_fan_in;
-  gaussian_fill(variable_matrix,
+  gaussian_fill(weights_matrix,
                 height, width,
                 DataType(0), std::sqrt(3*variance));
 }

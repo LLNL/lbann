@@ -23,25 +23,25 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// variable .hpp .cpp - Layer variable class
+// weights .hpp .cpp - Layer weights class
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/variables/variable.hpp"
+#include "lbann/weights/weights.hpp"
 
 namespace lbann {
 
-variable::variable(lbann_comm* comm,
-                   cudnn::cudnn_manager* cudnn)
+weights::weights(lbann_comm* comm,
+                 cudnn::cudnn_manager* cudnn)
   : m_comm(comm),
     m_cudnn(cudnn),
     m_values(nullptr)
     m_initializer(nullptr),
     m_optimizer(nullptr) {
 
-  // Initialize variable name
-  static int num_variables = 0;
-  m_name = "variable" + std::to_string(num_variables);
-  num_variables++;
+  // Initialize weights name
+  static int num_weights = 0;
+  m_name = "weights" + std::to_string(num_weights);
+  num_weights++;
 
   // Zero initialization is default
   if (m_initializer == nullptr) {
@@ -50,7 +50,7 @@ variable::variable(lbann_comm* comm,
 
 }
 
-variable::variable(const variable& other) 
+weights::weights(const weights& other) 
   : m_name(other.m_name),
     m_comm(other.m_comm),
     m_cudnn(other.m_cudnn),
@@ -63,17 +63,17 @@ variable::variable(const variable& other)
   if (m_initializer != nullptr) { m_initializer = m_initializer->copy(); }
   if (m_optimizer != nullptr) {
     m_optimizer = m_optimizer->copy();
-    m_optimizer->set_variable(*this);
+    m_optimizer->set_weights(*this);
   }
 
 }
 
-variable& variable::operator=(const variable& other) {
+weights& weights::operator=(const weights& other) {
   m_name = other.m_name;
   m_comm = other.m_comm;
   m_cudnn = other.m_cudnn;
 
-  // Copy variable matrix
+  // Copy weights matrix
   if (m_values != nullptr && other.m_values != nullptr
       && m_values->DistData() == other.m_values->DistData()) {
     El::Copy(*others.m_values, *m_values);
@@ -102,23 +102,23 @@ variable& variable::operator=(const variable& other) {
   }
   if (other.m_optimizer != nullptr) {
     m_optimizer = other.m_optimizer->copy();
-    m_optimizer->set_variable(*this);
+    m_optimizer->set_weights(*this);
   }
 
 }
 
-variable::~variable() {
+weights::~weights() {
   if (m_values != nullptr)      { delete m_values; }
   if (m_initializer != nullptr) { delete m_initializer; }
   if (m_optimizer != nullptr)   { delete m_optimizer; }
 }
 
-void variable::setup(int height,
-                     int width,
-                     El::Distribution col_dist,
-                     El::Distribution row_dist) {
+void weights::setup(int height,
+                    int width,
+                    El::Distribution col_dist,
+                    El::Distribution row_dist) {
 
-  // Check if variable has already been set up
+  // Check if weights has already been set up
   if (m_values != nullptr) {
     const El::DistData dist_data(*m_values);
     if (m_values->Height() != height
@@ -127,12 +127,12 @@ void variable::setup(int height,
         || dist_data.rowDist != row_dist) {
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
-          << "attempted to setup a variable with "
+          << "attempted to setup " << m_name " with "
           << "height=" << height << ","
           << "width=" << width << ","
           << "col_dist=" << col_dist << ","
           << "row_dist=" << row_dist << ", "
-          << "but the variable is already setup with "
+          << "but the it is already setup with "
           << "height=" << m_values->Height() << ","
           << "width=" << m_values->Width() << ","
           << "col_dist=" << dist_data.colDist << ","
@@ -143,7 +143,7 @@ void variable::setup(int height,
     }
   }
   
-  // Initialize variable matrix
+  // Initialize weights matrix
   if (m_values != nullptr) { delete m_values; }
   m_values = m_initializer->construct_matrix(height, width, col_dist, row_dist);
 
@@ -154,7 +154,7 @@ void variable::setup(int height,
 
 }
 
-void variable::setup_gpu() {
+void weights::setup_gpu() {
   #ifndef __LIB_CUDNN
   std::stringstream err;
   err << __FILE__ << " " << __LINE__ << " :: " << "cuDNN not detected";
@@ -163,52 +163,52 @@ void variable::setup_gpu() {
   #endif // __LIB_CUDNN
 }
 
-void variable::set_initializer(variable_initializer* initializer) {
+void weights::set_initializer(weights_initializer* initializer) {
   if (m_initializer != nullptr) { delete m_initializer; }
   m_initializer = initializer;
 }
 
 
-void variable::set_optimizer(optimizer* opt) {
+void weights::set_optimizer(optimizer* opt) {
   if (m_optimizer != nullptr) { delete m_optimizer; }
   m_optimizer = opt;
 }
 
-AbsDistMat& variable::get_values() {
+AbsDistMat& weights::get_values() {
   if (m_values == nullptr) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to access variable values before they are setup";
+        << "attempted to access values of weights before they are setup";
     throw lbann_exception(err.str());
   }
   return *m_values;
 }
 
-const AbsDistMat& variable::get_values() const {
+const AbsDistMat& weights::get_values() const {
   if (m_values == nullptr) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to access variable values before they are setup";
+        << "attempted to access values of weights before they are setup";
     throw lbann_exception(err.str());
   }
   return *m_values;
 }
 
-void variable::set_values(const AbsDistMat& values) {
+void weights::set_values(const AbsDistMat& values) {
   if (m_values == nullptr) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to set variable values before they are setup";
+        << "attempted to set values of weights before they are setup";
     throw lbann_exception(err.str());
   }
   El::Copy(values, *m_values);
 }
 
-void variable::get_values_view(AbsDistMat& values_v) const {
+void weights::get_values_view(AbsDistMat& values_v) const {
   if (m_values == nullptr) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to access variable values before they are setup";
+        << "attempted to access values of weights before they are setup";
     throw lbann_exception(err.str());
   }
   if (m_values->DistData() == values.DistData()) {

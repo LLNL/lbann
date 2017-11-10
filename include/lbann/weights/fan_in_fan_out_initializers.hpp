@@ -26,23 +26,23 @@
 // fan_in_fan_out_initializer .hpp .cpp - Fan-in-fan-out initializer classes
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_FAN_IN_FAN_OUT_INITIALIZER_HPP
-#define LBANN_FAN_IN_FAN_OUT_INITIALIZER_HPP
+#ifndef LBANN_WEIGHTS_FAN_IN_FAN_OUT_INITIALIZER_HPP
+#define LBANN_WEIGHTS_FAN_IN_FAN_OUT_INITIALIZER_HPP
 
-#include "lbann/variables/initializer.hpp"
+#include "lbann/weights/initializer.hpp"
 
 namespace lbann {
 
-/** Abstract base class for fan-in-fan-out variable initializers.
- *  The initialization scheme only depends on the value of a fan-in
- *  dimension and a fan-out dimension.
+/** Abstract fan-in-fan-out weights initializer.
+ *  The initialization scheme only depends on the values of fan-in and
+ *  fan-out parameters.
  */
-class fan_in_fan_out_initializer : public variable_initializer {
+class fan_in_fan_out_initializer : public weights_initializer {
  public:
 
   /** Constructor. */
   fan_in_fan_out_initializer(lbann_comm* comm)
-    : variable_initializer(comm), m_fan_in(0), m_fan_out(0) {}
+    : weights_initializer(comm), m_fan_in(0), m_fan_out(0) {}
 
   /** Set fan-in dimension. */
   void set_fan_in(int fan_in) { m_fan_in = fan_in; }
@@ -73,8 +73,8 @@ class glorot_normal_initializer : public fan_in_fan_out_initializer {
     return new glorot_normal_initializer(*this);
   }
 
-  /** Initialize variable matrix entries. */
-  void intialize_entries(AbsDistMat& variable_matrix) const override;
+  /** Initialize weights matrix entries. */
+  void intialize_entries(AbsDistMat& weights_matrix) const override;
 
 };
 
@@ -93,8 +93,8 @@ class glorot_uniform_initializer : public fan_in_fan_out_initializer {
     return new glorot_uniform_initializer(*this);
   }
   
-  /** Initialize variable matrix entries. */
-  void intialize_entries(AbsDistMat& variable_matrix) const override;
+  /** Initialize weights matrix entries. */
+  void intialize_entries(AbsDistMat& weights_matrix) const override;
 
 };
 
@@ -111,8 +111,8 @@ class he_normal_initializer : public fan_in_fan_out_initializer {
     return new he_normal_initializer(*this);
   }
   
-  /** Initialize variable matrix entries. */
-  void intialize_entries(AbsDistMat& variable_matrix) const override;
+  /** Initialize weights matrix entries. */
+  void intialize_entries(AbsDistMat& weights_matrix) const override;
 
 };
 
@@ -130,11 +130,11 @@ class he_uniform_initializer : public fan_in_fan_out_initializer {
     return new he_uniform_initializer(*this);
   }
   
-  /** Initialize variable matrix entries. */
-  void intialize_entries(AbsDistMat& variable_matrix) const override;
+  /** Initialize weights matrix entries. */
+  void intialize_entries(AbsDistMat& weights_matrix) const override;
 
 };
 
 } // namespace lbann
 
-#endif // LBANN_FAN_IN_FAN_OUT_INITIALIZER_HPP
+#endif // LBANN_WEIGHTS_FAN_IN_FAN_OUT_INITIALIZER_HPP

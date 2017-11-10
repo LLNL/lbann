@@ -23,11 +23,11 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// variable .hpp .cpp - Layer variable class
+// weights .hpp .cpp - Layer weights class
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_VARIABLE_HPP
-#define LBANN_VARIABLE_HPP
+#ifndef LBANN_WEIGHTS_HPP
+#define LBANN_WEIGHTS_HPP
 
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
@@ -40,78 +40,80 @@ namespace lbann {
 // Class prototype
 class optimizer;
 
-/** Layer variable class. */
-class variable {
+/** Layer weights.
+ *  Similar to Tensorflow "variables."
+ */
+class weights {
 
  public:
 
   /** Constructor. */
-  variable(lbann_comm* comm,
-           cudnn::cudnn_manager* cudnn = nullptr);
+  weights(lbann_comm* comm,
+          cudnn::cudnn_manager* cudnn = nullptr);
 
   /** Copy constructor. */
-  variable(const variable& other);
+  weights(const weights& other);
   /** Copy assignment operator. */
-  variable& operator=(const variable& other);
+  weights& operator=(const weights& other);
   /** Destructor. */
-  virtual ~variable();
+  virtual ~weights();
 
-  /** Set variable name.
-   *  Each variable in a model should have a unique name.
+  /** Set weights name.
+   *  Each set of weights in a model should have a unique name.
    */
   void set_name(std::string name) { m_name = name; }
 
-  /** Get variable name. */
+  /** Get weights name. */
   std::string get_name() const { return m_name; }
 
-  /** Create a copy of the variable. */
-  virtual variable* copy() const { return new variable(*this); }
+  /** Create a copy of the weights. */
+  virtual weights* copy() const { return new weights(*this); }
 
-  /** Setup variable. */
+  /** Setup weights. */
   virtual void setup(int height,
                      int width,
                      El::Distribution col_dist,
                      El::Distribution row_dist);
-  /** Setup GPU objects for variable. */
+  /** Setup GPU objects for weights. */
   virtual void setup_gpu();
 
-  /** Get variable initializer. */
-  variable_initializer& get_initializer() { return *m_initializer; }
-  /** Get variable initializer (const). */
-  const variable_initializer& get_initializer() const { return *m_initializer; }
-  /** Set variable initializer.
-   *  The variable takes ownership of the initializer and deallocates
-   *  it during destruction.
-   */
-  void set_initializer(variable_initializer* initializer);
-
-  /** Get variable optimizer. */
-  optimizer* get_optimizer() { return m_optimizer; }
-  /** Get variable optimizer (const). */
-  const optimizer* get_optimizer() const { return m_optimizer; }
-  /** Set variable optimizer.
-   *  The variable takes ownership of the optimizer and deallocates it
+  /** Get weights initializer. */
+  weights_initializer& get_initializer() { return *m_initializer; }
+  /** Get weights initializer (const). */
+  const weights_initializer& get_initializer() const { return *m_initializer; }
+  /** Set weights initializer.
+   *  This takes ownership of the initializer and deallocates it
    *  during destruction.
+   */
+  void set_initializer(weights_initializer* initializer);
+
+  /** Get weights optimizer. */
+  optimizer* get_optimizer() { return m_optimizer; }
+  /** Get weights optimizer (const). */
+  const optimizer* get_optimizer() const { return m_optimizer; }
+  /** Set weights optimizer.
+   *  This takes ownership of the optimizer and deallocates it during
+   *  destruction.
    */
   void set_optimizer(optimizer* opt);
 
-  /** Get the variable matrix. */
+  /** Get the weights matrix. */
   AbsDistMat& get_values();
-  /** Get the variable matrix (const). */
+  /** Get the weights matrix (const). */
   const AbsDistMat& get_values() const;
-  /** Set the variable matrix. */
+  /** Set the weights matrix. */
   void set_values(const AbsDistMat& values);
 
-  /** Get a view into the variable matrix.
+  /** Get a view into the weights matrix.
    *  If values_v has a different matrix distribution than the
-   *  variable matrix, the matrix values are copied into values_v.
+   *  weights matrix, the matrix values are copied into values_v.
    */
   void get_values_view(AbsDistMat& values_v) const;
 
  protected:
 
-  /** Variable name.
-   *  Each variable in a model should have a unique name.
+  /** Weights name.
+   *  Each set of weights in a model should have a unique name.
    */
   std::string m_name;
 
@@ -120,14 +122,14 @@ class variable {
   /** cuDNN manager. */
   cudnn::cudnn_manager* m_cudnn;
 
-  /** Variable matrix. */
+  /** Weights matrix. */
   AbsDistMat* m_values;
 
-  /** Variable initializer.
+  /** Weights initializer.
    *  Default is zero initialization.
    */
-  variable_initializer* m_initializer;
-  /** Variable optimizer.
+  weights_initializer* m_initializer;
+  /** Weights optimizer.
    *  Default is nullptr, which corresponds to no optimizer.
    */
   optimizer* m_optimizer;
@@ -136,4 +138,4 @@ class variable {
 
 } // namespace lbann
 
-#endif // LBANN_VARIABLE_HPP
+#endif // LBANN_WEIGHTS_HPP

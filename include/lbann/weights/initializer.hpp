@@ -23,11 +23,11 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// variable_initializer .hpp .cpp - Variable initializer classes
+// weights_initializer .hpp .cpp - Weights initializer classes
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_VARIABLES_INITIALIZER_HPP
-#define LBANN_VARIABLES_INITIALIZER_HPP
+#ifndef LBANN_WEIGHTS_INITIALIZER_HPP
+#define LBANN_WEIGHTS_INITIALIZER_HPP
 
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
@@ -36,18 +36,18 @@
 
 namespace lbann {
 
-/** Abstract base class for variable initializers. */
-class variable_initializer {
+/** Abstract weights initializer. */
+class weights_initializer {
  public:
 
   /** Constructor. */
-  variable_initializer(lbann_comm* comm)
+  weights_initializer(lbann_comm* comm)
     : m_comm(comm) {}
 
   /** Create a copy. */
-  virtual variable_initializer* copy() const = 0;
+  virtual weights_initializer* copy() const = 0;
 
-  /** Construct a variable matrix with the initialization scheme.
+  /** Construct a weights matrix with the initialization scheme.
    *  The caller is responsible for deallocating the matrix.
    */
   AbsDistMat* construct_matrix(int height = 0,
@@ -55,8 +55,8 @@ class variable_initializer {
                                El::Distribution col_dist = El::STAR,
                                El::Distribution row_dist = El::STAR) const;
 
-  /** Initialize entries in a variable matrix. */
-  virtual void intialize_entries(AbsDistMat& variable_matrix) const = 0;
+  /** Initialize entries in a weights matrix. */
+  virtual void intialize_entries(AbsDistMat& weights_matrix) const = 0;
 
  protected:
 
@@ -65,21 +65,21 @@ class variable_initializer {
 
 };
 
-/** Variable initializer that sets to a constant value. */
-class constant_initializer : public variable_initializer {
+/** Constant weights initializer. */
+class constant_initializer : public weights_initializer {
  public:
 
   /** Constructor. */
   constant_initializer(lbann_comm* comm) 
-    : variable_initializer(comm), m_value(value) {}
+    : weights_initializer(comm), m_value(value) {}
 
   /** Create a copy. */
   constant_initializer* copy() const override {
     return new constant_initializer(*this);
   }
   
-  /** Initialize entries in a variable matrix to a constant value. */
-  void intialize_entries(AbsDistMat& variable_matrix) const override;
+  /** Initialize entries in a weights matrix to a constant value. */
+  void intialize_entries(AbsDistMat& weights_matrix) const override;
 
  private:
 
@@ -88,15 +88,15 @@ class constant_initializer : public variable_initializer {
 
 };
 
-/** Variable initializer that draws from a uniform distribution. */
-class uniform_initializer : public variable_initializer {
+/** Uniform random weights initializer. */
+class uniform_initializer : public weights_initializer {
  public:
 
   /** Constructor. */
   uniform_initializer(lbann_comm* comm,
                       DataType min_value = DataType(0),
                       DataType max_value = DataType(1))
-    : variable_initializer(comm),
+    : weights_initializer(comm),
       m_min_value(min_value),
       m_max_value(max_value) {}
 
@@ -105,8 +105,8 @@ class uniform_initializer : public variable_initializer {
     return new uniform_initializer(*this);
   }
   
-  /** Draw variable matrix entries from uniform distribution. */
-  void intialize_entries(AbsDistMat& variable_matrix) const override;
+  /** Draw weights matrix entries from uniform distribution. */
+  void intialize_entries(AbsDistMat& weights_matrix) const override;
 
  private:
 
@@ -117,15 +117,15 @@ class uniform_initializer : public variable_initializer {
 
 };
 
-/** Variable initializer that draws from a normal distribution. */
-class normal_initializer : public variable_initializer {
+/** Normal random weights initializer. */
+class normal_initializer : public weights_initializer {
  public:
 
   /** Constructor. */
   normal_initializer(lbann_comm* comm,
                      DataType mean = DataType(0),
                      DataType standard_deviation = DataType(1))
-    : variable_initializer(comm),
+    : weights_initializer(comm),
       m_mean(mean),
       m_standard_deviation(standard_deviation) {}
 
@@ -134,8 +134,8 @@ class normal_initializer : public variable_initializer {
     return new normal_initializer(*this);
   }
 
-  /** Draw variable matrix entries from normal distribution. */
-  void intialize_entries(AbsDistMat& variable_matrix) const override;
+  /** Draw weights matrix entries from normal distribution. */
+  void intialize_entries(AbsDistMat& weights_matrix) const override;
 
  private:
 
@@ -148,4 +148,4 @@ class normal_initializer : public variable_initializer {
 
 } // namespace lbann
 
-#endif // LBANN_VARIABLES_INITIALIZER_HPP
+#endif // LBANN_WEIGHTS_INITIALIZER_HPP
