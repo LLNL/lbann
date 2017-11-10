@@ -43,6 +43,11 @@ variable::variable(lbann_comm* comm,
   m_name = "variable" + std::to_string(num_variables);
   num_variables++;
 
+  // Zero initialization is default
+  if (m_initializer == nullptr) {
+    m_initializer = new constant_initializer(m_comm, DataType(0));
+  }
+
 }
 
 variable::variable(const variable& other) 
@@ -56,7 +61,10 @@ variable::variable(const variable& other)
   // Create deep copy of pointers
   if (m_values != nullptr)      { m_values = m_values->Copy(); }
   if (m_initializer != nullptr) { m_initializer = m_initializer->copy(); }
-  if (m_optimizer != nullptr)   { m_optimizer = m_optimizer->copy(); }
+  if (m_optimizer != nullptr) {
+    m_optimizer = m_optimizer->copy();
+    m_optimizer->set_variable(*this);
+  }
 
 }
 
@@ -94,6 +102,7 @@ variable& variable::operator=(const variable& other) {
   }
   if (other.m_optimizer != nullptr) {
     m_optimizer = other.m_optimizer->copy();
+    m_optimizer->set_variable(*this);
   }
 
 }
@@ -133,20 +142,10 @@ void variable::setup(int height,
       return;
     }
   }
-
-  // Perform zero initialization if no initialization if provided
-  if (m_initializer == nullptr) {
-    m_initializer = new constant_initializer(m_comm, DataType(0));
-  }
   
   // Initialize variable matrix
   if (m_values != nullptr) { delete m_values; }
   m_values = m_initializer->construct_matrix(height, width, col_dist, row_dist);
-  
-  // Use no optimizer if none is provided
-  if (m_optimizer == nullptr) {
-    m_optimizer = new no_optimizer(m_comm);
-  }
 
   // Setup GPU objects
   if (m_cudnn != nullptr) {
@@ -175,11 +174,43 @@ void variable::set_optimizer(optimizer* opt) {
   m_optimizer = opt;
 }
 
+AbsDistMat& variable::get_values() {
+  if (m_values == nullptr) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "attempted to access variable values before they are setup";
+    throw lbann_exception(err.str());
+  }
+  return *m_values;
+}
+
+const AbsDistMat& variable::get_values() const {
+  if (m_values == nullptr) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "attempted to access variable values before they are setup";
+    throw lbann_exception(err.str());
+  }
+  return *m_values;
+}
+
 void variable::set_values(const AbsDistMat& values) {
+  if (m_values == nullptr) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "attempted to set variable values before they are setup";
+    throw lbann_exception(err.str());
+  }
   El::Copy(values, *m_values);
 }
 
 void variable::get_values_view(AbsDistMat& values_v) const {
+  if (m_values == nullptr) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "attempted to access variable values before they are setup";
+    throw lbann_exception(err.str());
+  }
   if (m_values->DistData() == values.DistData()) {
     El::LockedView(values, *m_values);
   }

@@ -37,62 +37,100 @@
 
 namespace lbann {
 
-/// Layer variable class
+// Class prototype
+class optimizer;
+
+/** Layer variable class. */
 class variable {
 
  public:
 
-  /// Constructor
+  /** Constructor. */
   variable(lbann_comm* comm,
-           variable_initializer* initializer = nullptr,
            cudnn::cudnn_manager* cudnn = nullptr);
-  variable(const variable& other);
-  variable& operator=(const variable& other);
 
-  /// Destructor
+  /** Copy constructor. */
+  variable(const variable& other);
+  /** Copy assignment operator. */
+  variable& operator=(const variable& other);
+  /** Destructor. */
   virtual ~variable();
 
-  void set_name(const std::string name) { m_name = name; }
+  /** Set variable name.
+   *  Each variable in a model should have a unique name.
+   */
+  void set_name(std::string name) { m_name = name; }
 
+  /** Get variable name. */
   std::string get_name() const { return m_name; }
 
+  /** Create a copy of the variable. */
   virtual variable* copy() const { return new variable(*this); }
 
+  /** Setup variable. */
   virtual void setup(int height,
                      int width,
                      El::Distribution col_dist,
                      El::Distribution row_dist);
-  
+  /** Setup GPU objects for variable. */
   virtual void setup_gpu();
 
+  /** Get variable initializer. */
   variable_initializer& get_initializer() { return *m_initializer; }
+  /** Get variable initializer (const). */
   const variable_initializer& get_initializer() const { return *m_initializer; }
+  /** Set variable initializer.
+   *  The variable takes ownership of the initializer and deallocates
+   *  it during destruction.
+   */
   void set_initializer(variable_initializer* initializer);
 
-  optimizer& get_optimizer() { return *m_optimizer; }
-  const optimizer& get_optimizer() const { return *m_optimizer; }
+  /** Get variable optimizer. */
+  optimizer* get_optimizer() { return m_optimizer; }
+  /** Get variable optimizer (const). */
+  const optimizer* get_optimizer() const { return m_optimizer; }
+  /** Set variable optimizer.
+   *  The variable takes ownership of the optimizer and deallocates it
+   *  during destruction.
+   */
   void set_optimizer(optimizer* opt);
 
-  AbsDistMat& get_values() { return *m_values; }
-  const AbsDistMat& get_values() const { return *m_values; }
+  /** Get the variable matrix. */
+  AbsDistMat& get_values();
+  /** Get the variable matrix (const). */
+  const AbsDistMat& get_values() const;
+  /** Set the variable matrix. */
   void set_values(const AbsDistMat& values);
 
+  /** Get a view into the variable matrix.
+   *  If values_v has a different matrix distribution than the
+   *  variable matrix, the matrix values are copied into values_v.
+   */
   void get_values_view(AbsDistMat& values_v) const;
 
  protected:
 
+  /** Variable name.
+   *  Each variable in a model should have a unique name.
+   */
   std::string m_name;
 
-  /// LBANN communicator
+  /** LBANN communicator. */
   lbann_comm* m_comm;
-  /// cuDNN manager
+  /** cuDNN manager. */
   cudnn::cudnn_manager* m_cudnn;
 
+  /** Variable matrix. */
   AbsDistMat* m_values;
 
+  /** Variable initializer.
+   *  Default is zero initialization.
+   */
   variable_initializer* m_initializer;
+  /** Variable optimizer.
+   *  Default is nullptr, which corresponds to no optimizer.
+   */
   optimizer* m_optimizer;
-  
 
 };
 

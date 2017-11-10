@@ -30,10 +30,6 @@
 
 namespace lbann {
 
-bool variable_initializer::operator==(const variable_initializer& other) const {
-  return typeid(*this) == typeid(other);
-}
-
 AbsDistMat* variable_initializer::construct_matrix(int height,
                                                    int width,
                                                    El::Distribution col_dist,
@@ -67,11 +63,6 @@ AbsDistMat* variable_initializer::construct_matrix(int height,
 
 }
 
-bool constant_initializer::operator==(const variable_initializer& other) const {
-  return (variable_initializer::operator==(other)
-          && m_value == ((constant_initializer)other).m_value);
-}
-
 void constant_initializer::intialize_entries(AbsDistMat& variable_matrix) const {
   if (m_value == DataType(0)) {
     El::Zero(variable_matrix);
@@ -80,22 +71,10 @@ void constant_initializer::intialize_entries(AbsDistMat& variable_matrix) const 
   }
 }
 
-bool uniform_initializer::operator==(const variable_initializer& other) const {
-  return (variable_initializer::operator==(other)
-          && m_min_value == ((uniform_initializer)other).m_min_value
-          && m_max_value == ((uniform_initializer)other).m_max_value);
-}
-
 void uniform_initializer::intialize_entries(AbsDistMat& variable_matrix) const {
   const DataType center = (m_max_value + m_min_value) / 2;
   const DataType radius = (m_max_value - m_min_value) / 2;
   uniform_fill(variable_matrix, height, width, center, radius);
-}
-
-bool normal_initializer::operator==(const variable_initializer& other) const {
-  return (variable_initializer::operator==(other)
-          && m_mean == ((normal_initializer)other).m_mean
-          && m_standard_deviation == ((normal_initializer)other).m_standard_deviation);
 }
 
 void normal_initializer::intialize_entries(AbsDistMat& variable_matrix) const {

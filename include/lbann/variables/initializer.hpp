@@ -47,9 +47,6 @@ class variable_initializer {
   /** Create a copy. */
   virtual variable_initializer* copy() const = 0;
 
-  /** Equality comparison operator. */
-  virtual bool operator==(const variable_initializer& other) const;
-
   /** Construct a variable matrix with the initialization scheme.
    *  The caller is responsible for deallocating the matrix.
    */
@@ -77,13 +74,12 @@ class constant_initializer : public variable_initializer {
     : variable_initializer(comm), m_value(value) {}
 
   /** Create a copy. */
-  constant_initializer* copy() const { return new constant_initializer(*this); }
-
-  /** Equality comparison operator. */
-  bool operator==(const variable_initializer& other) const;
+  constant_initializer* copy() const override {
+    return new constant_initializer(*this);
+  }
   
   /** Initialize entries in a variable matrix to a constant value. */
-  void intialize_entries(AbsDistMat& variable_matrix) const;
+  void intialize_entries(AbsDistMat& variable_matrix) const override;
 
  private:
 
@@ -105,13 +101,12 @@ class uniform_initializer : public variable_initializer {
       m_max_value(max_value) {}
 
   /** Create a copy. */
-  uniform_initializer* copy() const { return new uniform_initializer(*this); }
-
-  /** Equality comparison operator. */
-  bool operator==(const variable_initializer& other) const;
+  uniform_initializer* copy() const override {
+    return new uniform_initializer(*this);
+  }
   
   /** Draw variable matrix entries from uniform distribution. */
-  void intialize_entries(AbsDistMat& variable_matrix) const;
+  void intialize_entries(AbsDistMat& variable_matrix) const override;
 
  private:
 
@@ -135,13 +130,12 @@ class normal_initializer : public variable_initializer {
       m_standard_deviation(standard_deviation) {}
 
   /** Create a copy. */
-  normal_initializer* copy() const { return new normal_initializer(*this); }
+  normal_initializer* copy() const override {
+    return new normal_initializer(*this);
+  }
 
-  /** Equality comparison operator. */
-  bool operator==(const variable_initializer& other) const;
-  
   /** Draw variable matrix entries from normal distribution. */
-  void intialize_entries(AbsDistMat& variable_matrix) const;
+  void intialize_entries(AbsDistMat& variable_matrix) const override;
 
  private:
 

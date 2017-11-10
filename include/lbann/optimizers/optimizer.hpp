@@ -33,121 +33,74 @@
 #include "lbann/comm.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
+#include "lbann/variables/variable.hpp"
 #include <string>
 
 namespace lbann {
 
-/// Optimizer base class
+/** Abstract optimizer class. */
 class optimizer {
-
  public:
 
-  /// Constructor
-  optimizer(lbann_comm *comm,
-            DataType learning_rate = DataType(0),
-            cudnn::cudnn_manager *cudnn=nullptr);
-  optimizer(const optimizer&) = default;
-  optimizer& operator=(const optimizer&) = default;
+  /** Constructor. */
+  optimizer(DataType learning_rate = DataType(0),
+            cudnn::cudnn_manager *cudnn = nullptr);
 
-  /// Destructor
+  /** Copy constructor. */
+  optimizer(const optimizer& other);
+  /** Copy assignment operator. */
+  optimizer& operator=(const optimizer& other);
+  /** Destructor. */
   virtual ~optimizer();
-
-  /**
-   * Virtual copy operator. Returns a copy of the true class.
-   */
+  /** Create a copy of the optimizer. */
   virtual optimizer* copy() const = 0;
 
-  /// Set parameters to optimize and initialize optimizer
-  virtual void setup(AbsDistMat *parameters);
-  virtual void setup_gpu(AbsDistMat *parameters,
-                         const std::vector<DataType *> &parameters_d);
+  /** Get the optimizer name. */
+  virtual std::string get_type() const = 0;
+  /** Get a human-readable description of the optimizer. */
+  virtual std::string get_description() const;
 
-  /// Returns the optimizer's name
-  virtual std::string get_name() const = 0;
-
-  virtual std::string get_description() const = 0;
-
-  /// Update parameters using objective function gradient
-  virtual void update(const AbsDistMat *gradient) = 0;
-  
-  virtual void update_gpu(const std::vector<DataType *> &gradient_d) {
-    throw new lbann_exception("update_gpu not supported");
-  }
-
-  /// Get learning rate
-  virtual DataType get_learning_rate() const {
-    return m_learning_rate;
-  }
-
-  /// Set learning rate
-  virtual void set_learning_rate(DataType learning_rate) {
+  /** Get variable being optimized. */
+  variable& get_variable();
+  /** Set variable being optimized. */
+  void set_variable(variable& var) { return m_variable = &var; }
+  /** Get learning rate. */
+  DataType get_learning_rate() const { return m_learning_rate; }
+  /** Set learning rate. */
+  void set_learning_rate(DataType learning_rate) {
     m_learning_rate = learning_rate;
   };
 
-  /// Get parameters
-  AbsDistMat *get_parameters() const {
-    return m_parameters;
-  }
+  /** Setup optimizer. */
+  virtual void setup(variable& var);
 
-  /**
-   * Set parameters to optimize.
-   * Undefined if parameters is different dimensions or distribution than what
-   * was originally set!
+  /** Clear gradient matrix. */
+  void clear_gradient();
+  /** Add to the gradient matrix. */
+  void add_to_gradient(AbsDistMat& gradient);
+
+  /** Apply an optimization step. */
+  void step();
+  /** Perform the computation in an optimization step.
+   *  It can be assumed that values and gradient are the same size and
+   *  have the same matrix distribution.
    */
-  void set_parameters(AbsDistMat *parameters) {
-    m_parameters = parameters;
-  }
-  
-  void set_parameters_gpu(AbsDistMat *parameters,
-                          const std::vector<DataType *> &parameters_d) {
-    set_parameters(parameters);
-    m_parameters_d = parameters_d;
-  }
-
-  /// Get optimizer name
-  virtual std::string name() const = 0;
+  virtual void step_compute(AbsDistMat& values, AbsDistMat& gradient) = 0;
 
  protected:
-  /// LBANN communicator
-  lbann_comm *m_comm;
-  /// cuDNN manager
-  cudnn::cudnn_manager *m_cudnn;
-  /// Parameters to optimize
-  AbsDistMat *m_parameters;
-  /// m_parameters on GPU memory
-  std::vector<DataType *> m_parameters_d;
-  
-  /// Parameter matrix height
-  int m_height;
-  /// Parameter matrix width
-  int m_width;
-  /// Parameter matrix format
-  matrix_format m_matrix_format;
-  /// Learning rate
+ 
+  /** cuDNN manager. */
+  cudnn::cudnn_manager* m_cudnn;
+
+  /** Variable being optimized. */
+  variable* m_variable;
+
+  /** Learning rate. */
   DataType m_learning_rate;
-};
 
-/// Optimizer factory base class
-class optimizer_factory {
- public:
-  /// Constructor
-  optimizer_factory
-  (lbann_comm *comm,
-   const std::string name);
-  /// Destructor
-  virtual ~optimizer_factory();
-  /// Create optimizer; caller is responsible for freeing memory.
-  virtual optimizer *create_optimizer() = 0;
-  /// Get optimizer name
-  virtual const std::string name() const {
-    return m_name;
-  };
- protected:
-  /// LBANN communicator
-  lbann_comm *m_comm;
- private:
-  /// Optimizer name
-  const std::string m_name;
+  /** Gradient matrix. */
+  AbsDistMat* m_gradient;
+
 };
 
 } // namespace lbann

@@ -33,79 +33,56 @@
 
 namespace lbann {
 
-/// Stochastic gradient descent optimizer
-/** Supports momentum, learning rate decay, and Nesterov acceleration.
+/** Stochastic gradient descent optimizer
+ *  Supports momentum and Nesterov acceleration.
  */
 class sgd : public optimizer {
 
  public:
-  /// Constructor
-  sgd
-  (lbann_comm *comm,
-   DataType learning_rate,
-   DataType momentum = DataType(0),
-   DataType decay_rate = DataType(0),
-   bool nesterov = false);
+
+  /** Constructor. */
+  sgd(DataType learning_rate,
+      DataType momentum = DataType(0),
+      bool nesterov = false,
+      cudnn::cudnn_manager* cudnn = nullptr);
+
+  /** Copy constructor. */
   sgd(const sgd& other);
+  /** Copy assignment operator. */
   sgd& operator=(const sgd& other);
-  /// Destructor
-  ~sgd() override;
-  
-  /// Returns the optimizer's name
-  std::string get_name() const override { return "sgd"; }
+  /** Destructor. */
+  virtual ~sgd();
+  /** Create a copy of the SGD optimizer. */
+  sgd* copy() const override { return new sgd(*this); }
+
+  /** Get the optimizer name. */
+  std::string get_type() const override { return "sgd"; }
+  /** Get a human-readable description of the optimizer. */
+  std::string get_description() const override;
 
   /** Returns description of ctor params */
   std::string get_description() const override {
-    return std::string {} +
-     " sgd; learning_rate: " + std::to_string(m_learning_rate) 
-     + " momentum: " + std::to_string(m_momentum)
-     + " decay_rate: " + std::to_string(m_decay)
-     + " nesterov: " + std::to_string(m_nesterov);
+    return (std::string {} + " sgd; "
+            + "learning_rate: " + std::to_string(m_learning_rate) 
+            + " momentum: " + std::to_string(m_momentum)
+            + " nesterov: " + std::to_string(m_nesterov));
   }
 
-  sgd* copy() const override { return new sgd(*this); }
-  /// Set parameters to optimize and initialize optimizer
-  void setup(AbsDistMat *parameters) override;
-  /// Update parameters using objective function gradient
-  void update(const AbsDistMat *gradient) override;
-  std::string name() const override { return "sgd"; }
- private:
-  /// Number of iterations
-  int m_iterations;
-  /// Momentum
-  DataType m_momentum;
-  /// Learning rate decay
-  DataType m_decay;
-  /// Nesterov acceleration
-  bool m_nesterov;
-  /// Velocity term for momentum SGD
-  AbsDistMat *m_velocity;
+  /** Setup optimizer. */
+  void setup(variable& var) override;
 
-};
+  /** Perform the computation in an SGD step. */
+  void step_compute(AbsDistMat& values, AbsDistMat& gradient) override;
 
-/// Factory for stochastic gradient descent optimizer
-class sgd_factory : public optimizer_factory {
- public:
-  /// Constructor
-  sgd_factory
-  (lbann_comm *comm,
-   DataType learning_rate,
-   DataType momentum = DataType(0),
-   DataType decay = DataType(0),
-   bool nesterov = false);
-  /// Destructor
-  ~sgd_factory() override;
-  /// Create SGD optimizer
-  optimizer *create_optimizer() override;
  private:
-  /// Learning rate
-  DataType m_learning_rate;
-  /// Momentum
+
+  /** Momentum. */
   DataType m_momentum;
-  /// Learning rate decay
-  DataType m_decay;
-  /// Nesterov acceleration
+  /** Nesterov acceleration. */
   bool m_nesterov;
+  /** Velocity term for momentum SGD. */
+  AbsDistMat* m_velocity;
+
 };
 
 } // namespace lbann

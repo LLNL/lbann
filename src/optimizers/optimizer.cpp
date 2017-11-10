@@ -30,43 +30,96 @@
 
 namespace lbann {
 
-optimizer::optimizer(lbann_comm *comm, DataType learning_rate,
+optimizer::optimizer(DataType learning_rate,
                      cudnn::cudnn_manager *cudnn)
-  : m_comm(comm), m_cudnn(cudnn), m_parameters(nullptr),
-    m_learning_rate(learning_rate) {}
+  : m_cudnn(cudnn),
+    m_variable(nullptr),
+    m_learning_rate(learning_rate),
+    m_gradient(nullptr) {}
 
-optimizer::~optimizer() {}
+optimizer::optimizer(const optimizer& other)
+  : m_cudnn(other.m_cudnn),
+    m_variable(other.m_variable),
+    m_learning_rate(other.m_learning_rate),
+    m_gradient(other.m_gradient) {
+  if (m_gradient != nullptr) { m_gradient = m_gradient->Copy(); }
+}
 
-void optimizer::setup(AbsDistMat *parameters) {
-  m_parameters = parameters;
-  m_height = m_parameters->Height();
-  m_width = m_parameters->Width();
-  El::DistData dist(*m_parameters);
-  if(dist.colDist == El::MC && dist.rowDist == El::MR) {
-    m_matrix_format = matrix_format::MC_MR;
-  } else if(dist.colDist == El::CIRC && dist.rowDist == El::CIRC) {
-    m_matrix_format = matrix_format::CIRC_CIRC;
-  } else if(dist.colDist == El::STAR && dist.rowDist == El::STAR) {
-    m_matrix_format = matrix_format::STAR_STAR;
-  } else if(dist.colDist == El::STAR && dist.rowDist == El::VC) {
-    m_matrix_format = matrix_format::STAR_VC;
-  } else if(dist.colDist == El::MC && dist.rowDist == El::STAR) {
-    m_matrix_format = matrix_format::MC_STAR;
-  } else {
-    m_matrix_format = matrix_format::invalid;
+optimizer& optimizer::operator=(const optimizer& other) {
+  m_cudnn = other.m_cudnn;
+  m_variable = other.m_variable;
+  m_learning_rate = other.m_learning_rate;
+
+  // Copy gradient matrix
+  if (m_gradient != nullptr && other.m_gradient != nullptr
+      && m_gradient->DistData() == other.m_gradient->DistData()) {
+    El::Copy(*others.m_gradient, *m_gradient);
   }
+  if (m_gradient != nullptr) {
+    delete m_gradient;
+    m_gradient = nullptr;
+  }
+  if (other.m_gradient != nullptr) {
+    m_gradient = other.m_gradient->Copy();
+  }
+
+  return *this;
 }
 
-void optimizer::setup_gpu(AbsDistMat *parameters,
-                          const std::vector<DataType *> &parameters_d) {
-  setup(parameters);
-  m_parameters_d = parameters_d;
+variable::~variable() {
+  if (m_gradient != nullptr) { delete m_gradient; }
 }
 
-optimizer_factory::optimizer_factory(lbann_comm *comm,
-                                     const std::string _name)
-  : m_comm(comm), m_name(_name) {}
+std::string optimizer::get_description() const {
+  std::stringstream ss;
+  ss << get_type();
+  if (m_variable != nullptr) {
+    ss << " is optimizing " << m_variable->get_name();
+  } else {
+    ss << " is not optimizing anything";
+  }
+  ss << "; learning_rate=" << m_learning_rate;
+  return ss.str();
+}
 
-optimizer_factory::~optimizer_factory() {}
+variable& optimizer::get_variable() {
+  if (m_variable == nullptr) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "attempted to access the variable being optimized before it is set";
+    throw lbann_exception(err.str());
+  }
+  return *m_variable;
+}
+
+void optimizer::setup(variable& var) {
+  if (m_variable != nullptr) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "attempted to setup an optimizer that is already set up";
+    throw lbann_exception(err.str());
+  }
+  set_variable(var);
+  
+  // Initialize gradient matrix
+  const AbsDistMat& values = m_variable->get_values();
+  m_gradient = values.Construct(values.Grid(), values.Root());
+  El::Zeros(*m_gradient, values.Height(), values.Width());
+
+}
+
+void optimizer::clear_gradient() {
+  El::Zero(*m_gradient);
+}
+
+void optimizer::add_to_gradient(AbsDistMat& gradient) {
+  *m_gradient += gradient;
+}
+
+void optimizer::step() {
+  AbsDistMat& values = m_variable->get_values();
+  update_variable(values, *m_gradient);
+  clear_gradient();
+}
 
 }  // namespace lbann

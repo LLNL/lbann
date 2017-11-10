@@ -44,9 +44,6 @@ class fan_in_fan_out_initializer : public variable_initializer {
   fan_in_fan_out_initializer(lbann_comm* comm)
     : variable_initializer(comm), m_fan_in(0), m_fan_out(0) {}
 
-  /** Equality comparison operator. */
-  bool operator==(const fan_in_fan_out_initializer& other) const;
-
   /** Set fan-in dimension. */
   void set_fan_in(int fan_in) { m_fan_in = fan_in; }
   /** Set fan-out dimension. */
@@ -72,10 +69,12 @@ class glorot_normal_initializer : public fan_in_fan_out_initializer {
     : fan_in_fan_out_initializer(comm) {}
   
   /** Create a copy. */
-  glorot_normal_initializer* copy() const { return new glorot_normal_initializer(*this); }
+  glorot_normal_initializer* copy() const override {
+    return new glorot_normal_initializer(*this);
+  }
 
   /** Initialize variable matrix entries. */
-  void intialize_entries(AbsDistMat& variable_matrix) const;
+  void intialize_entries(AbsDistMat& variable_matrix) const override;
 
 };
 
@@ -90,10 +89,12 @@ class glorot_uniform_initializer : public fan_in_fan_out_initializer {
     : fan_in_fan_out_initializer(comm) {}
 
   /** Create a copy. */
-  glorot_uniform_initializer* copy() const { return new glorot_uniform_initializer(*this); }
+  glorot_uniform_initializer* copy() const override {
+    return new glorot_uniform_initializer(*this);
+  }
   
   /** Initialize variable matrix entries. */
-  void intialize_entries(AbsDistMat& variable_matrix) const;
+  void intialize_entries(AbsDistMat& variable_matrix) const override;
 
 };
 
@@ -106,10 +107,12 @@ class he_normal_initializer : public fan_in_fan_out_initializer {
     : fan_in_fan_out_initializer(comm) {}
 
   /** Create a copy. */
-  he_normal_initializer* copy() const { return new he_normal_initializer(*this); }
+  he_normal_initializer* copy() const override {
+    return new he_normal_initializer(*this);
+  }
   
   /** Initialize variable matrix entries. */
-  void intialize_entries(AbsDistMat& variable_matrix) const;
+  void intialize_entries(AbsDistMat& variable_matrix) const override;
 
 };
 
@@ -123,10 +126,12 @@ class he_uniform_initializer : public fan_in_fan_out_initializer {
     : fan_in_fan_out_initializer(comm) {}
 
   /** Create a copy. */
-  he_uniform_initializer* copy() const { return new he_uniform_initializer(*this); }
+  he_uniform_initializer* copy() const override {
+    return new he_uniform_initializer(*this);
+  }
   
   /** Initialize variable matrix entries. */
-  void intialize_entries(AbsDistMat& variable_matrix) const;
+  void intialize_entries(AbsDistMat& variable_matrix) const override;
 
 };
 

@@ -30,12 +30,6 @@
 
 namespace lbann {
 
-bool fan_in_fan_out_initializer::operator==(const variable_initializer& other) const {
-  return (variable_initializer::operator==(other)
-          && m_fan_in == ((fan_in_fan_out_initializer)other).m_fan_in
-          && m_fan_out == ((fan_in_fan_out_initializer)other).m_fan_out);
-}
-
 void glorot_normal_initializer::intialize_entries(AbsDistMat& variable_matrix) const {
   if (m_fan_in <= 0 || m_fan_out <= 0) {
     std::stringstream err;
