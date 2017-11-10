@@ -47,12 +47,12 @@ class patch_descriptor {
   unsigned int m_width; ///< patch width
   unsigned int m_height; ///< patch height
   unsigned int m_gap; ///< gap between patches
-  unsigned int m_jitter; ///< patch position randomization
+  unsigned int m_jitter; ///< for patch position randomization
 
   /** patch centering mode
    *  0: place the center patch anywhere within the image
-   *  1: place the center patch anywhere allowing the space for all 8 neighbor patches
-   *  the rest: place the center patch at the center of the image
+   *  1: place the center patch anywhere as long as it allows the space for all 8 neighboring patches
+   *  other: place the center patch at the center of the image
    */
   unsigned int m_mode_center;
 
@@ -70,10 +70,13 @@ class patch_descriptor {
   /// The index of displacement used to generate the current patch
   unsigned int m_cur_patch_idx;
 
-  /// The list of displacements to used to generate consecutive patches
+  /// The list of displacements used to generate consecutive patches
   std::vector<displacement_type> m_displacements;
   /// The actual patch positions
   std::vector<ROI> m_positions;
+
+  /// Whether patches are self-labeled
+  bool m_self_label;
 
  public:
   patch_descriptor() {
@@ -111,6 +114,14 @@ class patch_descriptor {
     m_ext = e;
   }
 
+  /// Mark self labeling for patches
+  void set_self_label() { m_self_label = true; }
+
+  /// Unmark self labeling
+  void unset_self_label() { m_self_label = false; }
+
+  bool is_self_labeling() const { return m_self_label; }
+
   /// A function that populates the list of displacements from the base patch to the next one
   virtual void define_patch_set();
 
@@ -144,7 +155,7 @@ class patch_descriptor {
   const std::vector<ROI>& access_positions() const {
     return m_positions;
   }
-  /// print out the content of patch descriptor
+  /// Print out the content of patch descriptor
   virtual std::ostream& print(std::ostream& os) const;
 };
 

@@ -47,6 +47,7 @@ void patch_descriptor::init() {
   m_mode_chrom = 0u;
   m_ext = "";
   m_cur_patch_idx = 0u;
+  m_self_label = false;
 }
 
 void patch_descriptor::set_size(const int width, const int height) {
@@ -232,6 +233,7 @@ std::ostream& patch_descriptor::print(std::ostream& os) const {
      << '\t' << "m_jitter: " << m_jitter << std::endl
      << '\t' << "m_mode_center: " << m_mode_center << std::endl
      << '\t' << "m_mode_chrom: " << m_mode_chrom << std::endl
+     << '\t' << "m_self_label: " << m_self_label << std::endl
      << '\t' << "m_ext: " << m_ext << std::endl
      << '\t' << "m_sample_area: " << m_sample_area << std::endl
      << '\t' << "m_cur_patch_idx: " << m_cur_patch_idx << std::endl;

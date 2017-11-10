@@ -55,6 +55,7 @@ class cv_process_patches : public cv_process {
 
   void set_patch_descriptor(const patchworks::patch_descriptor& pd) {
     m_pd = pd;
+    m_self_label = m_pd.is_self_labeling();
   }
   patchworks::patch_descriptor& patch_descriptor() {
     return m_pd;
