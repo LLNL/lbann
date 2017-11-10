@@ -140,10 +140,10 @@ bool imagenet_readerSingle::fetch_datum(Mat& X, int data_id, int mb_idx, int tid
   m_data_filestream.read((char *)&m_work_buffer[0], ssz);
 
   unsigned char *pixels = m_pixel_bufs[tid].data();
-  bool ret = lbann::image_utils::loadJPG(m_work_buffer, width, height, false, pixels);
+  bool ret = lbann::image_utils::loadIMG(m_work_buffer, width, height, false, pixels);
 
   if(!ret) {
-    err << __FILE__ << " " << __LINE__ << " :: ImageNetSingle: image_utils::loadJPG failed to load index: " << data_id;
+    err << __FILE__ << " " << __LINE__ << " :: ImageNetSingle: image_utils::loadIMG failed to load index: " << data_id;
     throw lbann_exception(err.str());
   }
   if(width != m_image_width || height != m_image_height) {
