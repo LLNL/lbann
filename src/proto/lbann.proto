@@ -113,6 +113,8 @@ message Model {
   double checkpoint_secs = 33;
 
   int64 random_seed = 34;
+  // If true, models will have their model rank mixed into their random seed.
+  bool random_init_models_differently = 35;
 }
 
 //========================================================================
