@@ -33,10 +33,6 @@
 #include "lbann/comm.hpp"
 #include "lbann/utils/summary.hpp"
 #include "lbann/optimizers/optimizer.hpp"
-#include "lbann/optimizers/optimizer_sgd.hpp"
-#include "lbann/optimizers/optimizer_adagrad.hpp"
-#include "lbann/optimizers/optimizer_rmsprop.hpp"
-#include "lbann/optimizers/optimizer_adam.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/utils/timer.hpp"
@@ -238,6 +234,9 @@ class Layer {
   AbsDistMat *m_prev_error_signal;  ///< Local copy of the error signal from "previous" layer ((# neurons) x mini-batch size)
   AbsDistMat *m_error_signal;       ///< Error signal to "next" layer (i.e. deltas) ((# neurons) x mini-batch size)
   AbsDistMat *m_error_signal_v;     ///< View of active columns in error signal matrix
+
+  /** List of layer weights. */
+  std::vector<weights*> m_weights;
 
   /** List of parent layers. */
   std::vector<const Layer*> m_parent_layers;

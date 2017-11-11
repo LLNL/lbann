@@ -72,7 +72,7 @@
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
 #include "lbann/layers/regularizers/dropout.hpp"
 #include "lbann/layers/regularizers/selu_dropout.hpp"
-#include "lbann/layers/regularizers/batch_normalization.hpp"
+// #include "lbann/layers/regularizers/batch_normalization.hpp"
 
 /// I/O Layers
 #include "lbann/layers/io/input/input_layer_distributed_minibatch.hpp"
@@ -125,11 +125,16 @@
 #include "lbann/callbacks/callback_variable_minibatch.hpp"
 #include "lbann/callbacks/callback_gradient_check.hpp"
 
+/// Weights and weight initializers
+#include "lbann/weights/weights.hpp"
+#include "lbann/weights/initializer.hpp"
+#include "lbann/weights/fan_in_fan_out_initializers.hpp"
+
 /// Optimizers
-#include "lbann/optimizers/optimizer_adagrad.hpp"
-#include "lbann/optimizers/optimizer_adam.hpp"
-#include "lbann/optimizers/optimizer_hypergradient_adam.hpp"
-#include "lbann/optimizers/optimizer_rmsprop.hpp"
+// #include "lbann/optimizers/optimizer_adagrad.hpp"
+// #include "lbann/optimizers/optimizer_adam.hpp"
+// #include "lbann/optimizers/optimizer_hypergradient_adam.hpp"
+// #include "lbann/optimizers/optimizer_rmsprop.hpp"
 #include "lbann/optimizers/optimizer_sgd.hpp"
 
 /// Objective functions (cost functions)
@@ -139,7 +144,6 @@
 #include "lbann/objective_functions/mean_absolute_deviation.hpp"
 #include "lbann/objective_functions/mean_squared_error.hpp"
 #include "lbann/objective_functions/poisson_negloglike.hpp"
-
 
 /// Metrics
 #include "lbann/metrics/metric_categorical_accuracy.hpp"

@@ -49,24 +49,27 @@ enum class device {CPU, CUDA};
 template <data_layout T_layout>
 class fully_connected_layer : public learning {
  private:
-  weight_initialization m_weight_initialization;
 
-  /// Views of the weight matrix that allow you to separate activation weights from bias weights
-  AbsDistMat *m_activation_weights_v;
-  AbsDistMat *m_bias_weights_v;
-  AbsDistMat *m_activation_weights_gradient_v;
-  AbsDistMat *m_bias_weights_gradient_v;
+  /** View into matrix weights. */
+  AbsDistMat* m_matrix_weights_v;
+  /** View into bias weights. */
+  AbsDistMat* m_bias_weights_v;
 
-  /// Special matrices to allow backprop across the bias term
-  AbsDistMat *m_bias_weights_repl;
-  AbsDistMat *m_bias_weights_gradient_repl;
+  /** Matrix weights gradient.
+   *  This is this layer's contribution to the objective function
+   *  gradient w.r.t. the matrix weights.
+   */
+  AbsDistMat* m_matrix_weights_gradient;
+  /** Bias weights gradient.
+   *  This is this layer's contribution to the objective function
+   *  gradient w.r.t. the bias weights.
+   */
+  AbsDistMat* m_bias_weights_gradient;
 
   /** Scaling factor for bias term. 
    *  If the scaling factor is zero, bias is not applied.
    */
   DataType m_bias_scaling_factor;
-  /** Initial value for bias. */
-  DataType m_bias_initial_value;
 
 #if defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA)
   /// GPU memory for activation weights
@@ -86,7 +89,6 @@ class fully_connected_layer : public learning {
   std::vector<DataType *> m_work_column_d;
 #endif
 
-
   /**
    * Do layout-dependent forward propagation computation of the weights.
    */
@@ -100,32 +102,13 @@ class fully_connected_layer : public learning {
   inline void bp_compute_weights();
 
  public:
-  ////////////////////////////////////////////////////////////////////////////////
-  // fully_connected_layer : single network layer class
-  ////////////////////////////////////////////////////////////////////////////////
-  // WB structure: (num units "neurons / filters" x (num features + 1))
-  // Each row represents a neuron / filter
-  // There is a column for each feature coming in from the previous layer plus 1 for the bias
-  // [W00 ...   B0]
-  // [|         |]
-  // [Wn0       Bn]
-  //
-  // WB_D structure:
-  // [dW     dB]
-  // D structure:
-  // [D        ]
-  // Z, Zs, Act, Acts structure:
-  // [Acts     ]
 
   fully_connected_layer(lbann_comm *comm,
                         int num_neurons,  // TODO: accept a vector for neuron dims
-                        weight_initialization init,
-                        optimizer *opt,
+                        weights* weight,
                         bool has_bias = true,
-                        DataType bias_initial_value = DataType(0),
                         cudnn::cudnn_manager *cudnn = nullptr)
-    : learning(comm, opt),
-      m_weight_initialization(init) {
+    : learning(comm) {
 
     // Setup the data distribution
     initialize_distributed_matrices();
@@ -137,7 +120,6 @@ class fully_connected_layer : public learning {
 
     // Initialize bias
     m_bias_scaling_factor = has_bias ? DataType(1) : DataType(0);
-    m_bias_initial_value = bias_initial_value;
 
 #if defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA)
     if (cudnn && T_layout == data_layout::DATA_PARALLEL) {
@@ -152,9 +134,7 @@ class fully_connected_layer : public learning {
     return std::string {} +
      " fully_connected; num_neurons: " 
      + std::to_string(this->m_num_neurons)
-     + " weight_init: " + get_weight_initialization_name(this->m_weight_initialization)
      + " has_bias: " + std::to_string(this->m_bias_scaling_factor)
-     + " bias_initial_value: " + std::to_string(this->m_bias_initial_value)
      + " dataLayout: " + this->get_data_layout_string(get_data_layout());
   }
 
@@ -171,9 +151,7 @@ class fully_connected_layer : public learning {
 
   fully_connected_layer(const fully_connected_layer& other) :
     learning(other),
-    m_weight_initialization(other.m_weight_initialization),
-    m_bias_scaling_factor(other.m_bias_scaling_factor),
-    m_bias_initial_value(other.m_bias_initial_value) {
+    m_bias_scaling_factor(other.m_bias_scaling_factor) {
     m_bias_weights_repl = other.m_bias_weights_repl->Copy();
     m_bias_weights_gradient_repl = other.m_bias_weights_gradient_repl->Copy();
     m_activation_weights_v = other.m_activation_weights_v->Copy();
@@ -212,17 +190,6 @@ class fully_connected_layer : public learning {
     }
  #endif
     
-    // Update optimizer parameters if needed.
-    if (this->m_optimizer->get_parameters()) {
-#if defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA)
-      if (m_cudnn != nullptr) {
-        this->m_optimizer->set_parameters_gpu(this->m_weights,
-                                              m_weights_d);
-      }
-#else
-      this->m_optimizer->set_parameters(this->m_weights);
-#endif      
-    }
   }
 
   fully_connected_layer& operator=(const fully_connected_layer& other) {
@@ -336,44 +303,70 @@ class fully_connected_layer : public learning {
 
   void setup_data() override {
     learning::setup_data();
-    // Initialize matrices
-    // Note: the weights-bias matrix has an extra column so it includes bias term
-    El::Zeros(*this->m_weights,
-              this->m_num_neurons,
-              this->m_num_prev_neurons + 1);
-    El::Zeros(*this->m_weights_gradient,
-              this->m_num_neurons,
-              this->m_num_prev_neurons + 1);
 
-    // Initialize weight matrix
-    setup_views();
-    initialize_matrix(*m_activation_weights_v, m_weight_initialization,
-                      this->m_num_prev_neurons, this->m_num_neurons);
-    El::Fill(*m_bias_weights_v, m_bias_initial_value);
-
-    // Initialize optimizer
-    if (this->m_optimizer != nullptr) {
-#if !(defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA))
-      this->m_optimizer->setup(this->m_weights);
-#else
-      // setup_gpu is used when using GPUs
-      if (!this->m_using_gpus) {
-        this->m_optimizer->setup(this->m_weights);        
-      }
-#endif
+    // Initialize default weights if none are provided
+    if (this->m_weights.size() > 2) {
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "attempted to setup " << m_name << " with an invalid number of weights";
+      throw lbann_exception(err.str());
     }
+    this->m_weights.resize(2, nullptr);
+    if (this->m_weights[0] == nullptr) {
+      this->m_weights[0] = new weights(this->m_comm, this->m_cudnn);
+      this->m_weights[0]->set_name(this->m_name + "_matrix_weights");
+      this->m_weights[0]->set_initializer(new he_normal_initializer(this->m_comm));
+      this->m_model->add_weights(this->m_weights[0]);
+    }
+    if (this->m_weights[1] == nullptr) {
+      this->m_weights[1] = new weights(this->m_comm, this->m_cudnn);
+      this->m_weights[1]->set_name(this->m_name + "_bias_weights");
+      this->m_model->add_weights(this->m_weights[1]);
+    }
+
+    // Initialize Glorot or He weight initialization
+    fan_in_fan_out_initializer* cast_initializer
+      = dynamic_cast<fan_in_fan_out_initializer*>(&this->m_weights[0]->get_initializer());
+    if (cast_initializer != nullptr) {
+      cast_initializer->set_fan_in(this->m_num_prev_neurons);
+      cast_initializer->set_fan_out(this->m_num_neurons);
+    }
+
+    // Setup weights
+    if (this->get_data_layout() == data_layout::MODEL_PARALLEL) {
+      this->m_weights[0]->setup(this->m_num_neurons,
+                                this->m_num_prev_neurons,
+                                El::MC, El::MR);
+      this->m_weights[1]->setup(this->m_num_neurons, 1,
+                                El::MC, El::STAR);
+    }
+    else if (this->get_data_layout() == data_layout::DATA_PARALLEL) {
+      this->m_weights[0]->setup(this->m_num_neurons,
+                                this->m_num_prev_neurons,
+                                El::STAR, El::STAR);
+      this->m_weights[1]->setup(this->m_num_neurons, 1,
+                                El::STAR, El::STAR);
+    }
+    else {
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "attempted to setup " << m_name " with an invalid data layout";
+      throw lbann_exception(err.str());
+    }
+
+    // Setup weight gradients
+    const AbsDistMat& matrix_weights = this->m_weights[0]->get_values();
+    El::Zeros(*this->m_matrix_weights_gradient,
+              this->m_weights[0]->get_height(),
+              this->m_weights[0]->get_width());
+    El::Zeros(*this->m_bias_weights_gradient,
+              this->m_weights[1]->get_height(),
+              this->m_weights[1]->get_width());
+
   }
 
   void setup_views() override {
     learning::setup_views();
-    El::View(*m_activation_weights_v, *this->m_weights,
-             El::ALL, El::IR(0, this->m_num_prev_neurons));
-    El::View(*m_activation_weights_gradient_v, *this->m_weights_gradient,
-             El::ALL, El::IR(0, this->m_num_prev_neurons));
-    El::View(*m_bias_weights_v, *this->m_weights,
-             El::ALL, El::IR(this->m_num_prev_neurons));
-    El::View(*m_bias_weights_gradient_v, *this->m_weights_gradient,
-             El::ALL, El::IR(this->m_num_prev_neurons));
+    this->m_weights[0]->get_values_view(*m_matrix_weights_v);
+    this->m_weights[1]->get_values_view(*m_bias_weights_v);
   }
 
   void setup_gpu() override {
@@ -452,17 +445,19 @@ class fully_connected_layer : public learning {
   }
 
   void fp_compute_cpu() {  
-  // Apply weight matrix
+    // Apply weight matrix
+    m_weights[0]->get_values_view(*m_matrix_weights_v);
     fp_compute_weights<device::CPU>();
 
     // Apply bias if needed
     if(m_bias_scaling_factor != DataType(0)) {
-      El::Copy(*m_bias_weights_v, *m_bias_weights_repl);
-      const Mat& local_bias_weights = m_bias_weights_repl->LockedMatrix();
+      m_weights[1]->get_values_view(*m_bias_weights_v);
+      const Mat& local_bias_weights = m_bias_weights_v->LockedMatrix();
       El::IndexDependentMap(this->m_activations_v->Matrix(),
                             (std::function<DataType(El::Int,El::Int,const DataType&)>)
-                            ([this,&local_bias_weights](El::Int r, El::Int c,const DataType& z)->DataType {
-                              return z + m_bias_scaling_factor * local_bias_weights.Get(r, 0);
+                            ([this,&local_bias_weights](El::Int r, El::Int c,const DataType& z)
+                             ->DataType {
+                              return z + m_bias_scaling_factor * local_bias_weights(r, 0);
                             }));
     }
   }
@@ -520,13 +515,14 @@ class fully_connected_layer : public learning {
     bp_compute_weights<device::CPU>();
 
     // Compute bias update if needed
-    if(m_bias_scaling_factor != DataType(0)) {
+    optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
+    if(m_bias_scaling_factor != DataType(0) && bias_optimizer != nullptr) {
       El::RowSum(*this->m_prev_error_signal,
-                 *m_bias_weights_gradient_repl);
+                 *m_bias_weights_gradient);
       El::Scale(m_bias_scaling_factor /
                 this->m_neural_network_model->get_effective_mini_batch_size(),
-                *m_bias_weights_gradient_repl);
-      El::Copy(*m_bias_weights_gradient_repl, *m_bias_weights_gradient_v);
+                *m_bias_weights_gradient);
+      bias_optimizer->add_to_gradient(*m_bias_weights_gradient);
     }
 
   }
@@ -588,46 +584,26 @@ class fully_connected_layer : public learning {
 
 };
 
-/// Matrices should be in MC,MR distributions
 template<> inline void fully_connected_layer<data_layout::MODEL_PARALLEL>::initialize_distributed_matrices() {
   learning::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>();
-  m_bias_weights_repl = new El::DistMatrix<DataType,MC,STAR>(this->m_comm->get_model_grid());
-  m_bias_weights_gradient_repl = new El::DistMatrix<DataType,MC,STAR>(this->m_comm->get_model_grid());
-
-  // Construct matrix views
-  m_activation_weights_v          = m_weights->Construct(m_weights->Grid(),
-                                                         m_weights->Root());
-  m_activation_weights_gradient_v = m_weights_gradient->Construct(m_weights_gradient->Grid(),
-                                                                  m_weights_gradient->Root());
-  m_bias_weights_v                = m_weights->Construct(m_weights->Grid(),
-                                                         m_weights->Root());
-  m_bias_weights_gradient_v       = m_weights_gradient->Construct(m_weights_gradient->Grid(),
-                                                                  m_weights_gradient->Root());
-
+  m_matrix_weights_gradient = new DistMat(this->m_comm->get_model_grid());
+  m_bias_weights_gradient = new El::DistMatrix<DataType,MC,STAR>(this->m_comm->get_model_grid());
+  m_matrix_weights_v = new DistMat(this->m_comm->get_model_grid());
+  m_bias_weights_v = new El::DistMatrix<DataType,MC,STAR>(this->m_comm->get_model_grid());
 }
 
-/// Weight matrices should be in Star,Star and data matrices Star,VC distributions
 template<> inline void fully_connected_layer<data_layout::DATA_PARALLEL>::initialize_distributed_matrices() {
   learning::initialize_distributed_matrices<data_layout::DATA_PARALLEL>();
-  m_bias_weights_repl = new StarMat(this->m_comm->get_model_grid());
-  m_bias_weights_gradient_repl = new StarMat(this->m_comm->get_model_grid());
-
-  // Construct matrix views
-  m_activation_weights_v          = m_weights->Construct(m_weights->Grid(),
-                                                         m_weights->Root());
-  m_activation_weights_gradient_v = m_weights_gradient->Construct(m_weights_gradient->Grid(),
-                                                                  m_weights_gradient->Root());
-  m_bias_weights_v                = m_weights->Construct(m_weights->Grid(),
-                                                         m_weights->Root());
-  m_bias_weights_gradient_v       = m_weights_gradient->Construct(m_weights_gradient->Grid(),
-                                                                  m_weights_gradient->Root());
-
+  m_matrix_weights_gradient = new StarMat(this->m_comm->get_model_grid());
+  m_bias_weights_gradient = new StarMat(this->m_comm->get_model_grid());
+  m_matrix_weights_v = new StarMat(this->m_comm->get_model_grid());
+  m_bias_weights_v = new StarMat(this->m_comm->get_model_grid());
 }
 
 template<> template<device Dev> inline void
 fully_connected_layer<data_layout::MODEL_PARALLEL>::fp_compute_weights() {
   El::Gemm(NORMAL, NORMAL, DataType(1),
-           *this->m_activation_weights_v,
+           *this->m_matrix_weights_v,
            *this->m_prev_activations,
            DataType(0),
            *this->m_activations_v);
@@ -636,7 +612,7 @@ fully_connected_layer<data_layout::MODEL_PARALLEL>::fp_compute_weights() {
 template<> template<> inline void
 fully_connected_layer<data_layout::DATA_PARALLEL>::fp_compute_weights<device::CPU>() {
   El::Gemm(NORMAL, NORMAL, DataType(1),
-           this->m_activation_weights_v->LockedMatrix(),
+           this->m_matrix_weights_v->LockedMatrix(),
            this->m_prev_activations->LockedMatrix(),
            DataType(0),
            this->m_activations_v->Matrix());
@@ -669,37 +645,45 @@ template<> template<device dev> inline void
 fully_connected_layer<data_layout::MODEL_PARALLEL>::bp_compute_weights() {
   // Compute the partial delta update for the next lower layer
   El::Gemm(El::TRANSPOSE, El::NORMAL, DataType(1),
-           *this->m_activation_weights_v,
+           *this->m_matrix_weights_v,
            *this->m_prev_error_signal,
            DataType(0),
            *this->m_error_signal_v);
 
   // Compute update for activation weights
-  El::Gemm(El::NORMAL, El::TRANSPOSE, DataType(1)/
-           this->m_neural_network_model->get_effective_mini_batch_size(),
-           *this->m_prev_error_signal,
-           *this->m_prev_activations,
-           DataType(0),
-           *this->m_activation_weights_gradient_v);
+  optimizer* matrix_optimizer = this->m_weights[0]->get_optimizer();
+  if (matrix_optimizer != nullptr) {
+    El::Gemm(El::NORMAL, El::TRANSPOSE, DataType(1)/
+             this->m_neural_network_model->get_effective_mini_batch_size(),
+             *this->m_prev_error_signal,
+             *this->m_prev_activations,
+             DataType(0),
+             *this->m_matrix_weights_gradient);
+    matrix_optimizer->add_to_gradient(*this->m_matrix_weights_gradient);
+  }
 }
 
 template<> template<> inline void
 fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_weights<device::CPU>() {
   El::Gemm(El::TRANSPOSE, El::NORMAL, DataType(1),
-           this->m_activation_weights_v->LockedMatrix(),
+           this->m_matrix_weights_v->LockedMatrix(),
            this->m_prev_error_signal->LockedMatrix(),
            DataType(0),
            this->m_error_signal_v->Matrix());
 
   // Compute update for activation weights
-  El::Gemm(El::NORMAL, El::TRANSPOSE, DataType(1)/
-           this->m_neural_network_model->get_effective_mini_batch_size(),
-           this->m_prev_error_signal->LockedMatrix(),
-           this->m_prev_activations->LockedMatrix(),
-           DataType(0),
-           this->m_activation_weights_gradient_v->Matrix());
-  El::AllReduce(*this->m_activation_weights_gradient_v,
-                this->m_activation_weights_gradient_v->RedundantComm());
+  optimizer* matrix_optimizer = this->m_weights[0]->get_optimizer();
+  if (matrix_optimizer != nullptr) {
+    El::Gemm(El::NORMAL, El::TRANSPOSE, DataType(1)/
+             this->m_neural_network_model->get_effective_mini_batch_size(),
+             this->m_prev_error_signal->LockedMatrix(),
+             this->m_prev_activations->LockedMatrix(),
+             DataType(0),
+             this->m_matrix_weights_gradient->Matrix());
+    El::AllReduce(*this->m_matrix_weights_gradient,
+                  this->m_matrix_weights_gradient->RedundantComm());
+    matrix_optimizer->add_to_gradient(*this->m_matrix_weights_gradient);
+  }
 }
 
 #if defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA)

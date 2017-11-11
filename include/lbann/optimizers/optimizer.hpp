@@ -33,7 +33,7 @@
 #include "lbann/comm.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
-#include "lbann/variables/variable.hpp"
+#include "lbann/weights/weights.hpp"
 #include <string>
 
 namespace lbann {
@@ -60,10 +60,10 @@ class optimizer {
   /** Get a human-readable description of the optimizer. */
   virtual std::string get_description() const;
 
-  /** Get variable being optimized. */
-  variable& get_variable();
-  /** Set variable being optimized. */
-  void set_variable(variable& var) { return m_variable = &var; }
+  /** Get weights being optimized. */
+  weights& get_weights();
+  /** Set weights being optimized. */
+  void set_weights(weights& w) { return m_weights = &w; }
   /** Get learning rate. */
   DataType get_learning_rate() const { return m_learning_rate; }
   /** Set learning rate. */
@@ -72,7 +72,7 @@ class optimizer {
   };
 
   /** Setup optimizer. */
-  virtual void setup(variable& var);
+  virtual void setup(weights& w);
 
   /** Clear gradient matrix. */
   void clear_gradient();
@@ -92,8 +92,8 @@ class optimizer {
   /** cuDNN manager. */
   cudnn::cudnn_manager* m_cudnn;
 
-  /** Variable being optimized. */
-  variable* m_variable;
+  /** Weights being optimized. */
+  weights* m_weights;
 
   /** Learning rate. */
   DataType m_learning_rate;

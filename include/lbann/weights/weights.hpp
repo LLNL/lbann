@@ -29,11 +29,13 @@
 #ifndef LBANN_WEIGHTS_HPP
 #define LBANN_WEIGHTS_HPP
 
+#include <string>
+
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
-#include <string>
+#include "lbann/weights/initializer.hpp"
 
 namespace lbann {
 
@@ -76,6 +78,11 @@ class weights {
                      El::Distribution row_dist);
   /** Setup GPU objects for weights. */
   virtual void setup_gpu();
+
+  /** Get height of weights matrix. */
+  int get_height() const { return get_values().Height(); }
+  /** Get width of weights matrix. */
+  int get_width() const { return get_values().Width(); }
 
   /** Get weights initializer. */
   weights_initializer& get_initializer() { return *m_initializer; }

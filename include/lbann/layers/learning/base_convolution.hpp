@@ -45,7 +45,9 @@ namespace lbann {
 // Forward declaration.
 class lbann_callback_imcomm;
 
-/// Base Convolution layer
+/** Base convolution layer.
+ *  Parent class for convolution and deconvolution layers.
+ */
 class base_convolution_layer : public learning {
 
  protected:
@@ -62,24 +64,26 @@ class base_convolution_layer : public learning {
   /** Size of convolutional kernel. */
   int m_kernel_size;
   
-  /** Weight initialization scheme. */
-  weight_initialization m_weight_initialization;
-
   /** Scaling factor for bias term.
    *  If the scaling factor is zero, bias is not applied.
    */
   DataType m_bias_scaling_factor;
-  /** Initial value for bias. */
-  DataType m_bias_initial_value;
 
   /** View into convolutional kernel weights. */
   AbsDistMat *m_kernel_weights_v;
-  /** View into convolutional kernel weights gradient. */
-  AbsDistMat *m_kernel_weights_gradient_v;
   /** View into bias weights. */
   AbsDistMat *m_bias_weights_v;
-  /** View into bias weights gradient. */
-  AbsDistMat *m_bias_weights_gradient_v;
+
+  /** Convolutional kernel weights gradient.
+   *  This is this layer's contribution to the objective function
+   *  gradient w.r.t. the convolutional kernel weights.
+   */
+  AbsDistMat *m_kernel_weights_gradient;
+  /** Bias weights gradient.
+   *  This is this layer's contribution to the objective function
+   *  gradient w.r.t. the bias weights.
+   */
+  AbsDistMat *m_bias_weights_gradient;
 
 #ifdef __LIB_CUDNN
 
@@ -114,12 +118,9 @@ class base_convolution_layer : public learning {
                          const int *conv_dims,
                          const int *conv_pads,
                          const int *conv_strides,
-                         weight_initialization init,
-                         optimizer *opt,
                          bool has_bias,
-                         DataType bias_initial_value,
                          cudnn::cudnn_manager *cudnn)
-    : learning(comm, opt) {
+    : learning(comm) {
 
     // Initialize convolution parameters
     m_kernel_dims.assign(conv_dims, conv_dims+num_data_dims);
@@ -127,12 +128,8 @@ class base_convolution_layer : public learning {
     m_conv_pads.assign(conv_pads, conv_pads+num_data_dims);
     m_conv_strides.assign(conv_strides, conv_strides+num_data_dims);
 
-    // Weight initialization scheme
-    m_weight_initialization = init;
-
     // Initialize bias
     m_bias_scaling_factor = has_bias ? DataType(1) : DataType(0);
-    m_bias_initial_value = bias_initial_value;
 
   #ifdef __LIB_CUDNN
 
@@ -325,17 +322,10 @@ class base_convolution_layer : public learning {
 
   template<data_layout T_layout> void initialize_distributed_matrices() {
     learning::initialize_distributed_matrices<T_layout>();
-
-    /// Instantiate these view objects but do not allocate data for them
-    /// @todo model parallel implementation
-    m_kernel_weights_v          = m_weights->Construct(m_weights->Grid(),
-                                                       m_weights->Root());
-    m_bias_weights_v            = m_weights->Construct(m_weights->Grid(),
-                                                       m_weights->Root());
-    m_kernel_weights_gradient_v = m_weights_gradient->Construct(m_weights_gradient->Grid(),
-                                                                m_weights_gradient->Root());
-    m_bias_weights_gradient_v   = m_weights_gradient->Construct(m_weights_gradient->Grid(),
-                                                                m_weights_gradient->Root());
+    m_kernel_weights_gradient = new StarMat(this->m_comm->get_model_grid());
+    m_bias_weights_gradient = new StarMat(this->m_comm->get_model_grid());
+    m_kernel_weights_v = new StarMat(this->m_comm->get_model_grid());
+    m_bias_weights_v = new StarMat(this->m_comm->get_model_grid());
   #ifdef __LIB_CUDNN
     m_kernel_weights_gradient_per_gpu = m_weights_gradient->Construct(m_weights_gradient->Grid(),
                                                                       m_weights_gradient->Root());
@@ -357,19 +347,41 @@ class base_convolution_layer : public learning {
     }
   #endif // #ifdef __LIB_CUDNN
 
-    // Initialize convolution kernel weights
-    setup_views();
-    initialize_matrix(*m_kernel_weights_v,
-                      this->m_weight_initialization,
-                      m_kernel_size / this->m_neuron_dims[0],
-                      m_kernel_size / this->m_prev_neuron_dims[0]);
-    El::Fill(*m_bias_weights_v, m_bias_initial_value);
-
-    // Initialize optimizer
-    if(this->m_optimizer != nullptr) {
-      this->m_optimizer->setup(this->m_weights);
+    // Initialize default weights if none are provided
+    if (this->m_weights.size() > 2) {
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "attempted to setup " << m_name << " with an invalid number of weights";
+      throw lbann_exception(err.str());
+    }
+    this->m_weights.resize(2, nullptr);
+    if (this->m_weights[0] == nullptr) {
+      this->m_weights[0] = new weights(this->m_comm, this->m_cudnn);
+      this->m_weights[0]->set_name(this->m_name + "_kernel_weights");
+      this->m_weights[0]->set_initializer(new he_normal_initializer(this->m_comm));
+      this->m_model->add_weights(this->m_weights[0]);
+    }
+    if (this->m_weights[1] == nullptr) {
+      this->m_weights[1] = new weights(this->m_comm, this->m_cudnn);
+      this->m_weights[1]->set_name(this->m_name + "_bias_weights");
+      this->m_model->add_weights(this->m_weights[1]);
     }
 
+    // Initialize Glorot or He weight initialization
+    fan_in_fan_out_initializer* cast_initializer
+      = dynamic_cast<fan_in_fan_out_initializer*>(&this->m_weights[0]->get_initializer());
+    if (cast_initializer != nullptr) {
+      cast_initializer->set_fan_in(m_kernel_size / this->m_neuron_dims[0]);
+      cast_initializer->set_fan_out(m_kernel_size / this->m_prev_neuron_dims[0]);
+    }
+
+  }
+
+  void setup_views() override {
+    learning::setup_views();
+    this->m_weights[0]->get_values_view(*m_kernel_weights_v);
+    if (m_bias_scaling_factor != DataType(0)) {
+      this->m_weights[1]->get_values_view(*m_bias_weights_v);
+    }
   }
 
   /// Initialize GPU objects

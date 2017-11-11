@@ -211,11 +211,11 @@ void weights::get_values_view(AbsDistMat& values_v) const {
         << "attempted to access values of weights before they are setup";
     throw lbann_exception(err.str());
   }
-  if (m_values->DistData() == values.DistData()) {
-    El::LockedView(values, *m_values);
+  if (m_values->DistData() == values_v.DistData()) {
+    El::LockedView(values_v, *m_values);
   }
   else {
-    El::Copy(*m_values, values);
+    El::Copy(*m_values, values_v);
   }
 }
 
