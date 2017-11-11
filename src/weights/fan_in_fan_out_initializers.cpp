@@ -40,8 +40,10 @@ void glorot_normal_initializer::intialize_entries(AbsDistMat& weights_matrix) co
   }
   const DataType variance = DataType(2) / (m_fan_in + m_fan_out);
   gaussian_fill(weights_matrix,
-                height, width,
-                DataType(0), std::sqrt(variance));
+                weights_matrix.Height(),
+                weights_matrix.Width(),
+                DataType(0),
+                std::sqrt(variance));
 }
 
 void glorot_uniform_initializer::intialize_entries(AbsDistMat& weights_matrix) const {
@@ -54,8 +56,10 @@ void glorot_uniform_initializer::intialize_entries(AbsDistMat& weights_matrix) c
   }
   const DataType variance = DataType(2) / (m_fan_in + m_fan_out);
   gaussian_fill(weights_matrix,
-                height, width,
-                DataType(0), std::sqrt(3*variance));
+                weights_matrix.Height(),
+                weights_matrix.Width(),
+                DataType(0),
+                std::sqrt(3*variance));
 }
 
 void he_normal_initializer::intialize_entries(AbsDistMat& weights_matrix) const {
@@ -68,8 +72,10 @@ void he_normal_initializer::intialize_entries(AbsDistMat& weights_matrix) const 
   }
   const DataType variance = DataType(1) / m_fan_in;
   gaussian_fill(weights_matrix,
-                height, width,
-                DataType(0), std::sqrt(variance));
+                weights_matrix.Height(),
+                weights_matrix.Width(),
+                DataType(0),
+                std::sqrt(variance));
 }
 
 void he_uniform_initializer::intialize_entries(AbsDistMat& weights_matrix) const {
@@ -82,8 +88,10 @@ void he_uniform_initializer::intialize_entries(AbsDistMat& weights_matrix) const
   }
   const DataType variance = DataType(1) / m_fan_in;
   gaussian_fill(weights_matrix,
-                height, width,
-                DataType(0), std::sqrt(3*variance));
+                weights_matrix.Height(),
+                weights_matrix.Width(),
+                DataType(0),
+                std::sqrt(3*variance));
 }
 
 }  // namespace lbann

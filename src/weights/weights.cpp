@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/weights/weights.hpp"
+#include "lbann/optimizers/optimizer.hpp"
 
 namespace lbann {
 
@@ -34,7 +35,7 @@ weights::weights(lbann_comm* comm,
                  cudnn::cudnn_manager* cudnn)
   : m_comm(comm),
     m_cudnn(cudnn),
-    m_values(nullptr)
+    m_values(nullptr),
     m_initializer(nullptr),
     m_optimizer(nullptr) {
 
@@ -76,7 +77,7 @@ weights& weights::operator=(const weights& other) {
   // Copy weights matrix
   if (m_values != nullptr && other.m_values != nullptr
       && m_values->DistData() == other.m_values->DistData()) {
-    El::Copy(*others.m_values, *m_values);
+    El::Copy(*other.m_values, *m_values);
   }
   if (m_values != nullptr) {
     delete m_values;
@@ -91,7 +92,7 @@ weights& weights::operator=(const weights& other) {
     delete m_initializer;
     m_initializer = nullptr;
   }
-  if (other.m_initizlier != nullptr) {
+  if (other.m_initializer != nullptr) {
     m_initializer = other.m_initializer->copy();
   }
 
@@ -105,6 +106,7 @@ weights& weights::operator=(const weights& other) {
     m_optimizer->set_weights(*this);
   }
 
+  return *this;
 }
 
 weights::~weights() {
@@ -127,7 +129,7 @@ void weights::setup(int height,
         || dist_data.rowDist != row_dist) {
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
-          << "attempted to setup " << m_name " with "
+          << "attempted to setup " << m_name << " with "
           << "height=" << height << ","
           << "width=" << width << ","
           << "col_dist=" << col_dist << ","

@@ -63,7 +63,7 @@ class optimizer {
   /** Get weights being optimized. */
   weights& get_weights();
   /** Set weights being optimized. */
-  void set_weights(weights& w) { return m_weights = &w; }
+  void set_weights(weights& w) { m_weights = &w; }
   /** Get learning rate. */
   DataType get_learning_rate() const { return m_learning_rate; }
   /** Set learning rate. */

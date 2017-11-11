@@ -39,7 +39,7 @@
 
 namespace lbann {
 
-// Class prototype
+// Forward declaration
 class optimizer;
 
 /** Layer weights.
