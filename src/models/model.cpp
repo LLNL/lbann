@@ -41,26 +41,28 @@ namespace lbann {
 // Constructors and destructor
 ////////////////////////////////////////////////////////////
 
-model::model(lbann_comm *comm, int mini_batch_size,
+model::model(lbann_comm *comm,
+             int mini_batch_size,
              objective_functions::objective_function *obj_fn,
-             optimizer_factory *optimizer_fac) :
-  m_obj_fn(obj_fn),
-  m_execution_mode(execution_mode::invalid),
-  m_terminate_training(false),
-  m_current_epoch(0), m_current_step(0),
-  m_current_validation_step(0),
-  m_current_testing_step(0),
-  m_max_mini_batch_size(mini_batch_size),
-  m_current_mini_batch_size(mini_batch_size),
-  m_effective_mini_batch_size(mini_batch_size),
-  m_current_phase(0),
-  m_comm(comm),
-  m_checkpoint_dir(""),
-  m_checkpoint_epochs(0),
-  m_checkpoint_steps(0),
-  m_checkpoint_secs(0.0),
-  m_checkpoint_last(MPI_Wtime()),
-  m_optimizer_fac(optimizer_fac) {}
+             optimizer* default_optimizer)
+  : m_obj_fn(obj_fn),
+    m_execution_mode(execution_mode::invalid),
+    m_terminate_training(false),
+    m_current_epoch(0),
+    m_current_step(0),
+    m_current_validation_step(0),
+    m_current_testing_step(0),
+    m_max_mini_batch_size(mini_batch_size),
+    m_current_mini_batch_size(mini_batch_size),
+    m_effective_mini_batch_size(mini_batch_size),
+    m_current_phase(0),
+    m_comm(comm),
+    m_checkpoint_dir(""),
+    m_checkpoint_epochs(0),
+    m_checkpoint_steps(0),
+    m_checkpoint_secs(0.0),
+    m_checkpoint_last(MPI_Wtime()),
+    m_default_optimizer(default_optimizer) {}
 
 model::model(const model& other) :
   m_execution_mode(other.m_execution_mode),
@@ -78,8 +80,7 @@ model::model(const model& other) :
   m_checkpoint_epochs(other.m_checkpoint_epochs),
   m_checkpoint_steps(other.m_checkpoint_steps),
   m_checkpoint_secs(other.m_checkpoint_secs),
-  m_checkpoint_last(other.m_checkpoint_last),
-  m_optimizer_fac(other.m_optimizer_fac) {
+  m_checkpoint_last(other.m_checkpoint_last) {
 
   // Deep copies
   for (const auto& metric : other.m_metrics) {
@@ -98,31 +99,40 @@ model::model(const model& other) :
     old_to_new_layer[old_layer] = new_layer;
     m_layers.push_back(new_layer);
   }
-
-  // Fix layer groups
-  for (auto& old_master_and_group : other.m_layer_groups) {
-    Layer *old_master = old_master_and_group.first;
-    std::vector<Layer *> old_group = old_master_and_group.second;
-    Layer *new_master = old_to_new_layer[old_master];
-    std::vector<Layer *> new_group;
-    for (Layer *old_layer : old_group) {
-      Layer *new_layer = old_to_new_layer[old_layer];
-      new_group.push_back(new_layer);
-      m_layer_group_masters[new_layer] = new_master;
-    }
-    m_layer_groups[new_master] = new_group;
+  std::unordered_map<weights *,weights *> old_to_new_weights;
+  for (weights *old_weights : other.m_weights) {
+    weights *new_weights = old_weights->copy();
+    old_to_new_weights[old_weights] = new_weights;
+    m_weights.push_back(new_weights);
+  }
+  if (other.m_default_optimizer != nullptr) {
+    m_default_optimizer = other.m_default_optimizer->copy();
+  } else {
+    m_default_optimizer = nullptr;
   }
 
-  // Fix layer pointers
+  // Fix pointers
   for (Layer *old_layer : other.m_layers) {
     Layer *new_layer = old_to_new_layer[old_layer];
-    std::vector<Layer *> old_pointers = old_layer->get_layer_pointers();
-    std::vector<Layer *> new_pointers;
-    for (Layer *old_pointer : old_pointers) {
-      Layer *new_pointer = old_to_new_layer[old_pointer];
-      new_pointers.push_back(new_pointer);
+
+    // Fix layer pointers
+    std::vector<Layer *> old_layer_pointers = old_layer->get_layer_pointers();
+    std::vector<Layer *> new_layer_pointers;
+    for (Layer *old_layer_pointer : old_layer_pointers) {
+      Layer *new_layer_pointer = old_to_new_layer[old_layer_pointer];
+      new_layer_pointers.push_back(new_layer_pointer);
     }
-    new_layer->set_layer_pointers(new_pointers);
+    new_layer->set_layer_pointers(new_layer_pointers);
+
+    // Fix weights pointers
+    std::vector<weights *> old_weights = old_layer->get_weights();
+    std::vector<weights *> new_weights;
+    for (weights *old_weights_pointer : old_weights) {
+      weights *new_weights_pointer = old_to_new_weights[old_weights_pointer];
+      new_weights.push_back(new_weights_pointer);
+    }
+    new_layer->set_weights(new_weights);
+
   }
 
 }
@@ -145,8 +155,6 @@ model& model::operator=(const model& other) {
   m_metrics.clear();
   m_callbacks.clear();
   m_layers.clear();
-  m_layer_groups.clear();
-  m_layer_group_masters.clear();
 
   // Shallow copies
   m_execution_mode = other.m_execution_mode;
@@ -165,7 +173,6 @@ model& model::operator=(const model& other) {
   m_checkpoint_steps = other.m_checkpoint_steps;
   m_checkpoint_secs = other.m_checkpoint_secs;
   m_checkpoint_last = other.m_checkpoint_last;
-  m_optimizer_fac = other.m_optimizer_fac;
 
   // Deep copies
   for (metrics::metric *m : m_metrics) {
@@ -183,34 +190,44 @@ model& model::operator=(const model& other) {
   std::unordered_map<Layer *,Layer *> old_to_new_layer;
   for (Layer* old_layer : other.m_layers) {
     Layer* new_layer = old_layer->copy();
+    new_layer->set_neural_network_model(this);
     old_to_new_layer[old_layer] = new_layer;
     m_layers.push_back(new_layer);
   }
-
-  // Fix layer groups
-  for (auto& old_master_and_group : other.m_layer_groups) {
-    Layer *old_master = old_master_and_group.first;
-    std::vector<Layer *> old_group = old_master_and_group.second;
-    Layer *new_master = old_to_new_layer[old_master];
-    std::vector<Layer *> new_group;
-    for (Layer *old_layer : old_group) {
-      Layer *new_layer = old_to_new_layer[old_layer];
-      new_group.push_back(new_layer);
-      m_layer_group_masters[new_layer] = new_master;
-    }
-    m_layer_groups[new_master] = new_group;
+  std::unordered_map<weights *,weights *> old_to_new_weights;
+  for (weights *old_weights : other.m_weights) {
+    weights *new_weights = old_weights->copy();
+    old_to_new_weights[old_weights] = new_weights;
+    m_weights.push_back(new_weights);
+  }
+  if (other.m_default_optimizer != nullptr) {
+    m_default_optimizer = other.m_default_optimizer->copy();
+  } else {
+    m_default_optimizer = nullptr;
   }
 
-  // Fix layer pointers
+  // Fix pointers
   for (Layer *old_layer : other.m_layers) {
     Layer *new_layer = old_to_new_layer[old_layer];
-    std::vector<Layer *> old_pointers = old_layer->get_layer_pointers();
-    std::vector<Layer *> new_pointers;
-    for (Layer *old_pointer : old_pointers) {
-      Layer *new_pointer = old_to_new_layer[old_pointer];
-      new_pointers.push_back(new_pointer);
+
+    // Fix layer pointers
+    std::vector<Layer *> old_layer_pointers = old_layer->get_layer_pointers();
+    std::vector<Layer *> new_layer_pointers;
+    for (Layer *old_layer_pointer : old_layer_pointers) {
+      Layer *new_layer_pointer = old_to_new_layer[old_layer_pointer];
+      new_layer_pointers.push_back(new_layer_pointer);
     }
-    new_layer->set_layer_pointers(new_pointers);
+    new_layer->set_layer_pointers(new_layer_pointers);
+
+    // Fix weights pointers
+    std::vector<weights *> old_weights = old_layer->get_weights();
+    std::vector<weights *> new_weights;
+    for (weights *old_weights_pointer : old_weights) {
+      weights *new_weights_pointer = old_to_new_weights[old_weights_pointer];
+      new_weights.push_back(new_weights_pointer);
+    }
+    new_layer->set_weights(new_weights);
+
   }
 
   return *this;
@@ -229,24 +246,30 @@ model::~model() {
   for (Layer *layer : m_layers) {
     delete layer;
   }
+  for (weights *w : m_weights) {
+    delete w;
+  }
+  if (m_default_optimizer != nullptr) {
+    delete m_default_optimizer;
+  }
 }
 
 ////////////////////////////////////////////////////////////
 // Initialization
 ////////////////////////////////////////////////////////////
 
-void model::add(Layer *layer) {
+void model::add_layer(Layer *layer) {
   if (layer == nullptr) {
     throw lbann_exception("model: Attempted to add null pointer as a layer.");
   }
-
-  // Add layer
   m_layers.push_back(layer);
+}
 
-  // Add layer group
-  m_layer_groups[layer] = std::vector<Layer*>(1, layer);
-  m_layer_group_masters[layer] = layer;
-
+void model::add_weights(weights *w) {
+  if (w == nullptr) {
+    throw lbann_exception("model: Attempted to add null pointer as a set of weights.");
+  }
+  m_weights.push_back(w);
 }
 
 void model::add_callback(lbann_callback *cb) {
@@ -270,39 +293,35 @@ void model::set_layers(std::vector<Layer*>& layers) {
     delete layer;
   }
   m_layers.clear();
-  m_layer_groups.clear();
-  m_layer_group_masters.clear();
 
   // Add new layers
   for (Layer* layer : layers) {
-    add(layer);
+    add_layer(layer);
   }
 
 }
 
-void model::link_layers(Layer *layer1, Layer *layer2) {
+void model::set_weights(std::vector<weights*>& w) {
 
-  // Check that layers are valid and are in different groups
-  Layer *master1 = m_layer_group_masters[layer1];
-  Layer *master2 = m_layer_group_masters[layer2];
-  if (master1 == nullptr
-      || master2 == nullptr
-      || typeid(*layer1).hash_code() != typeid(*layer2).hash_code()) {
-    throw lbann_exception("model: Attempted to link invalid layers");
+  // Delete old weights
+  for (weights *old_weights : m_weights) {
+    delete old_weights;
   }
-  if (master1 == master2) {
-    return;
+  m_weights.clear();
+
+  // Add new weights
+  for (weights* new_weights : w) {
+    add_weights(new_weights);
   }
 
-  // Move layers from layer2's group to layer1's
-  std::vector<Layer *>& group1 = m_layer_groups[master1];
-  std::vector<Layer *>& group2 = m_layer_groups[master2];
-  for (auto& layer : group2) {
-    m_layer_group_masters[layer] = master1;
-  }
-  group1.insert(group1.end(), group2.begin(), group2.end());
-  m_layer_groups.erase(master2);
+}
 
+optimizer* model::create_optimizer() const {
+  if (m_default_optimizer != nullptr) {
+    return m_default_optimizer->copy();
+  } else {
+    return nullptr;
+  }
 }
 
 ////////////////////////////////////////////////////////////
@@ -409,19 +428,10 @@ bool model::evaluate_mini_batch() {
   // Record and reset objective function value
   m_obj_fn->record_and_reset_value();
 
-  // Update target and input layers
+  // Update layers
   bool finished = true;
-  for (Layer* layer : m_layers) {
-    target_layer *target = dynamic_cast<target_layer *>(layer);
-    if (target != nullptr) {
-      target->update();
-    }
-  }
-  for (Layer* layer : m_layers) {
-    input_layer *input = dynamic_cast<input_layer *>(layer);
-    if (input != nullptr) {
-      finished = input->update() && finished;
-    }
+  for (int l = m_layers.size() - 1; l >= 0; --l) {
+    finished = m_layers[l]->update() && finished;
   }
 
   // Finish up
@@ -465,55 +475,18 @@ bool model::train_mini_batch() {
   }
   do_model_backward_prop_end_cbs();
 
-  // Update optimizable layers
-  // Note: We iterate through layer groups that are comprised of
-  // optimizable layers.
-  for (Layer* master_layer : m_layers) {
-    if (master_layer != m_layer_group_masters[master_layer]
-        || dynamic_cast<optimizable_layer *>(master_layer) == nullptr) {
-      continue;
+  // Apply optimization step
+  for (weights* w : m_weights) {
+    optimizer* opt = w->get_optimizer();
+    if (opt != nullptr) {
+      opt->step();
     }
-    optimizable_layer *master_opt_layer = (optimizable_layer *) master_layer;
-    std::vector<Layer *> group = m_layer_groups[master_layer];
-
-    // Accumulate gradients in master layer
-    for (Layer *layer : group) {
-      if (layer != master_layer) {
-        optimizable_layer *opt_layer = (optimizable_layer *) layer;
-        const AbsDistMat& gradient = opt_layer->get_parameters_gradient();
-        master_opt_layer->add_to_parameters_gradient(gradient);
-        opt_layer->clear_parameters_gradient();
-      }
-    }
-
-    // Update parameters in master layer
-    master_layer->update();
-    master_opt_layer->clear_parameters_gradient();
-
-    // Update non-master layers with master layer's parameters
-    const AbsDistMat& parameters = master_opt_layer->get_parameters();
-    for (Layer *layer : group) {
-      if (layer != master_layer) {
-        optimizable_layer *opt_layer = (optimizable_layer *) layer;
-        opt_layer->set_parameters(parameters);
-      }
-    }
-
   }
 
-  // Update target and input layers
+  // Update layers
   bool finished = true;
-  for (Layer* layer : m_layers) {
-    target_layer *target = dynamic_cast<target_layer *>(layer);
-    if (target != nullptr) {
-      target->update();
-    }
-  }
-  for (Layer* layer : m_layers) {
-    input_layer *input = dynamic_cast<input_layer *>(layer);
-    if (input != nullptr) {
-      finished = input->update() && finished;
-    }
+  for (int l = m_layers.size() - 1; l >= 0; --l) {
+    finished = m_layers[l]->update() && finished;
   }
 
   // Finish up

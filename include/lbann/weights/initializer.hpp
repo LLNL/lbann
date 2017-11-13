@@ -58,7 +58,7 @@ class weights_initializer {
                                El::Distribution row_dist = El::STAR) const;
 
   /** Initialize entries in a weights matrix. */
-  virtual void intialize_entries(AbsDistMat& weights_matrix) const = 0;
+  virtual void initialize_entries(AbsDistMat& weights_matrix) const = 0;
 
  protected:
 
@@ -83,7 +83,7 @@ class constant_initializer : public weights_initializer {
   }
   
   /** Initialize entries in a weights matrix to a constant value. */
-  void intialize_entries(AbsDistMat& weights_matrix) const override;
+  void initialize_entries(AbsDistMat& weights_matrix) const override;
 
  private:
 
@@ -112,7 +112,7 @@ class uniform_initializer : public weights_initializer {
   }
   
   /** Draw weights matrix entries from uniform distribution. */
-  void intialize_entries(AbsDistMat& weights_matrix) const override;
+  void initialize_entries(AbsDistMat& weights_matrix) const override;
 
  private:
 
@@ -143,7 +143,7 @@ class normal_initializer : public weights_initializer {
   }
 
   /** Draw weights matrix entries from normal distribution. */
-  void intialize_entries(AbsDistMat& weights_matrix) const override;
+  void initialize_entries(AbsDistMat& weights_matrix) const override;
 
  private:
 

@@ -34,6 +34,8 @@
 #include "lbann/utils/random.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/weights/initializer.hpp"
+#include "lbann/weights/fan_in_fan_out_initializers.hpp"
 #if defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA)
 #include "lbann/layers/learning/fully_connected_cuda.hpp"
 #include "lbann/utils/cublas_wrapper.hpp"
@@ -50,6 +52,11 @@ template <data_layout T_layout>
 class fully_connected_layer : public learning {
  private:
 
+  /** Scaling factor for bias term. 
+   *  If the scaling factor is zero, bias is not applied.
+   */
+  DataType m_bias_scaling_factor;
+
   /** View into matrix weights. */
   AbsDistMat* m_matrix_weights_v;
   /** View into bias weights. */
@@ -65,11 +72,6 @@ class fully_connected_layer : public learning {
    *  gradient w.r.t. the bias weights.
    */
   AbsDistMat* m_bias_weights_gradient;
-
-  /** Scaling factor for bias term. 
-   *  If the scaling factor is zero, bias is not applied.
-   */
-  DataType m_bias_scaling_factor;
 
 #if defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA)
   /// GPU memory for activation weights
@@ -152,12 +154,10 @@ class fully_connected_layer : public learning {
   fully_connected_layer(const fully_connected_layer& other) :
     learning(other),
     m_bias_scaling_factor(other.m_bias_scaling_factor) {
-    m_bias_weights_repl = other.m_bias_weights_repl->Copy();
-    m_bias_weights_gradient_repl = other.m_bias_weights_gradient_repl->Copy();
-    m_activation_weights_v = other.m_activation_weights_v->Copy();
-    m_activation_weights_gradient_v = other.m_activation_weights_gradient_v->Copy();
+    m_matrix_weights_v = other.m_matrix_weights_v->Copy();
     m_bias_weights_v = other.m_bias_weights_v->Copy();
-    m_bias_weights_gradient_v = other.m_bias_weights_gradient_v->Copy();
+    m_matrix_weights_gradient = other.m_matrix_weights_gradient->Copy();
+    m_bias_weights_gradient = other.m_bias_weights_gradient->Copy();
     setup_views();  // Update views.
 #if defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA)    
     if (m_cudnn != nullptr) {
@@ -194,23 +194,27 @@ class fully_connected_layer : public learning {
 
   fully_connected_layer& operator=(const fully_connected_layer& other) {
     learning::operator=(other);
-    m_weight_initialization = other.m_weight_initialization;
     m_bias_scaling_factor = other.m_bias_scaling_factor;
-    m_bias_initial_value = other.m_bias_initial_value;
-    if (m_bias_weights_repl) {
-      delete m_bias_weights_repl;
-      delete m_bias_weights_gradient_repl;
-      delete m_activation_weights_v;
-      delete m_activation_weights_gradient_v;
-      delete m_bias_weights_v;
-      delete m_bias_weights_gradient_v;
-    }
-    m_bias_weights_repl = other.m_bias_weights_repl->Copy();
-    m_bias_weights_gradient_repl = other.m_bias_weights_gradient_repl->Copy();
-    m_activation_weights_v = other.m_activation_weights_v->Copy();
-    m_activation_weights_gradient_v = other.m_activation_weights_gradient_v->Copy();
-    m_bias_weights_v = other.m_bias_weights_v->Copy();
-    m_bias_weights_gradient_v = other.m_bias_weights_gradient_v->Copy();
+
+    // Copy matrices
+  #define COPY_MATRIX(src, dst)                 \
+    do {                                        \
+      if(src != nullptr && dst != nullptr) {    \
+        El::Copy(*src, *dst);                   \
+      }                                         \
+      if(src != nullptr && dst == nullptr) {    \
+        dst = src->Copy();                      \
+      }                                         \
+      if(src == nullptr && dst != nullptr) {    \
+        delete dst;                             \
+        dst = nullptr;                          \
+      }                                         \
+    } while(false)
+    COPY_MATRIX(other.m_matrix_weights_v, m_matrix_weights_v);
+    COPY_MATRIX(other.m_bias_weights_v, m_bias_weights_v);
+    COPY_MATRIX(other.m_matrix_weights_gradient, m_matrix_weights_gradient);
+    COPY_MATRIX(other.m_bias_weights_gradient, m_bias_weights_gradient);
+  #undef COPY_MATRIX
     setup_views();  // Update views.
 #if defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA)
     if (m_cudnn != nullptr) {
@@ -243,27 +247,15 @@ class fully_connected_layer : public learning {
       setup_views();      
     }
 #endif
-    // Update optimizer parameters if needed.
-    if (this->m_optimizer->get_parameters()) {
-#if defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA)
-      if (m_cudnn != nullptr) {
-        this->m_optimizer->set_parameters_gpu(this->m_weights,
-                                              m_weights_d);
-      }
-#else
-      this->m_optimizer->set_parameters(this->m_weights);
-#endif      
-    }
+
     return *this;
   }
 
   ~fully_connected_layer() override {
-    delete m_bias_weights_repl;
-    delete m_bias_weights_gradient_repl;
-    delete m_activation_weights_v;
-    delete m_activation_weights_gradient_v;
-    delete m_bias_weights_v;
-    delete m_bias_weights_gradient_v;
+    if (m_matrix_weights_v != nullptr)        delete m_matrix_weights_v;
+    if (m_bias_weights_v != nullptr)          delete m_bias_weights_v;
+    if (m_matrix_weights_gradient != nullptr) delete m_matrix_weights_gradient;
+    if (m_bias_weights_gradient != nullptr)   delete m_bias_weights_gradient;
 
 #if defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA)
     if (m_cudnn != nullptr) {
@@ -306,6 +298,7 @@ class fully_connected_layer : public learning {
 
     // Initialize default weights if none are provided
     if (this->m_weights.size() > 2) {
+      std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
           << "attempted to setup " << m_name << " with an invalid number of weights";
       throw lbann_exception(err.str());
@@ -315,12 +308,14 @@ class fully_connected_layer : public learning {
       this->m_weights[0] = new weights(this->m_comm, this->m_cudnn);
       this->m_weights[0]->set_name(this->m_name + "_matrix_weights");
       this->m_weights[0]->set_initializer(new he_normal_initializer(this->m_comm));
-      this->m_model->add_weights(this->m_weights[0]);
+      this->m_weights[0]->set_optimizer(m_neural_network_model->create_optimizer());
+      this->m_neural_network_model->add_weights(this->m_weights[0]);
     }
     if (this->m_weights[1] == nullptr) {
       this->m_weights[1] = new weights(this->m_comm, this->m_cudnn);
       this->m_weights[1]->set_name(this->m_name + "_bias_weights");
-      this->m_model->add_weights(this->m_weights[1]);
+      this->m_weights[1]->set_optimizer(m_neural_network_model->create_optimizer());
+      this->m_neural_network_model->add_weights(this->m_weights[1]);
     }
 
     // Initialize Glorot or He weight initialization
@@ -347,8 +342,9 @@ class fully_connected_layer : public learning {
                                 El::STAR, El::STAR);
     }
     else {
+      std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
-          << "attempted to setup " << m_name " with an invalid data layout";
+          << "attempted to setup " << m_name << " with an invalid data layout";
       throw lbann_exception(err.str());
     }
 
@@ -435,8 +431,6 @@ class fully_connected_layer : public learning {
     } else {
       fp_compute_cpu();
     }
-    l2_regularize_objective_function();
-    group_lasso_regularize_objective_function();
 #ifdef __LBANN_DEBUG
     if(this->m_using_gpus) {
       this->m_cudnn->synchronize_all();
@@ -565,21 +559,6 @@ class fully_connected_layer : public learning {
     mpi::AllReduce(total_error, norms.DistComm());
     avg_error = total_error / norms.Height();
     return avg_error;
-  }
-
-  bool update_compute() override {
-    if(this->m_execution_mode == execution_mode::training) {
-#if !(defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA))      
-      this->m_optimizer->update(this->m_weights_gradient);
-#else
-      if (this->m_using_gpus) {
-        this->m_optimizer->update_gpu(m_weights_gradient_d);
-      } else {
-        this->m_optimizer->update(this->m_weights_gradient);        
-      }
-#endif
-    }
-    return true;
   }
 
 };

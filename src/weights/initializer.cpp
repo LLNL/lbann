@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/weights/initializer.hpp"
+#include "lbann/utils/random.hpp"
 
 namespace lbann {
 
@@ -44,6 +45,15 @@ AbsDistMat* weights_initializer::construct_matrix(int height,
   if (col_dist == El::STAR && row_dist == El::STAR) {
     weights_matrix = new StarMat(grid);
   }
+  if (col_dist == El::CIRC && row_dist == El::CIRC) {
+    weights_matrix = new CircMat(grid);
+  }
+  if (col_dist == El::MR && row_dist == El::STAR) {
+    weights_matrix = new ColSumMat(grid);
+  }
+  if (col_dist == El::MC && row_dist == El::STAR) {
+    weights_matrix = new RowSumMat(grid);
+  }
 
   // Check that weights has been constructed
   if (weights_matrix == nullptr) {
@@ -58,12 +68,12 @@ AbsDistMat* weights_initializer::construct_matrix(int height,
   weights_matrix->Resize(height, width);
 
   // Initialize weights matrix entries and return
-  initialize_values(*weights_matrix);
+  initialize_entries(*weights_matrix);
   return weights_matrix;
 
 }
 
-void constant_initializer::intialize_entries(AbsDistMat& weights_matrix) const {
+void constant_initializer::initialize_entries(AbsDistMat& weights_matrix) const {
   if (m_value == DataType(0)) {
     El::Zero(weights_matrix);
   } else {
@@ -71,16 +81,18 @@ void constant_initializer::intialize_entries(AbsDistMat& weights_matrix) const {
   }
 }
 
-void uniform_initializer::intialize_entries(AbsDistMat& weights_matrix) const {
+void uniform_initializer::initialize_entries(AbsDistMat& weights_matrix) const {
+  const El::Int height = weights_matrix.Height();
+  const El::Int width = weights_matrix.Width();
   const DataType center = (m_max_value + m_min_value) / 2;
   const DataType radius = (m_max_value - m_min_value) / 2;
   uniform_fill(weights_matrix, height, width, center, radius);
 }
 
-void normal_initializer::intialize_entries(AbsDistMat& weights_matrix) const {
-  gaussian_fill(weights_matrix,
-                height, width,
-                m_mean, m_standard_deviation);
+void normal_initializer::initialize_entries(AbsDistMat& weights_matrix) const {
+  const El::Int height = weights_matrix.Height();
+  const El::Int width = weights_matrix.Width();
+  gaussian_fill(weights_matrix, height, width, m_mean, m_standard_deviation);
 }
 
 }  // namespace lbann

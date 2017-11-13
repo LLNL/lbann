@@ -37,6 +37,7 @@
 #include "lbann/io/persist.hpp"
 #include "lbann/objective_functions/objective_function.hpp"
 #include "lbann/metrics/metric.hpp"
+#include "lbann/weights/weights.hpp"
 #include "lbann/optimizers/optimizer.hpp"
 #include <vector>
 #include <string>
@@ -51,9 +52,10 @@ class lbann_callback;
  */
 class model {
  public:
-  model(lbann_comm *comm, int mini_batch_size,
+  model(lbann_comm *comm,
+        int mini_batch_size,
         objective_functions::objective_function *obj_fn,
-        optimizer_factory *optimizer_fac);
+        optimizer* default_optimizer = nullptr);
   model(const model& other);
   model& operator=(const model& other);
   virtual ~model();
@@ -67,13 +69,21 @@ class model {
   virtual void setup() {}
 
   /** Add layer to model. */
-  virtual void add(Layer *layer);
+  void add_layer(Layer *layer);
+
+  /** Add weights to model. */
+  void add_weights(weights *w);
 
   /** Register a new callback for the model. */
-  virtual void add_callback(lbann_callback *cb);
+  void add_callback(lbann_callback *cb);
 
   /** Register a new metric for the model. */
-  virtual void add_metric(metrics::metric *m);
+  void add_metric(metrics::metric *m);
+
+  /** Construct an instance of the default optimizer.
+   *  If there is no default optimizer, a null pointer is returned.
+   */
+  optimizer* create_optimizer() const;
 
   /** Return the model's metrics. */
   virtual std::vector<metrics::metric *>& get_metrics() {
@@ -84,9 +94,13 @@ class model {
   void set_layers(std::vector<Layer *>& layers);
 
   /** Return the model's layers. */
-  std::vector<Layer *>& get_layers() {
-    return m_layers;
-  }
+  std::vector<Layer *>& get_layers() { return m_layers; }
+
+  /** Set the model's weights. */
+  void set_weights(std::vector<weights *>& w);
+
+  /** Return the model's weights. */
+  std::vector<weights *>& get_weights() { return m_weights; }
 
   /** Link two layers in model.
    *  If the layers are optimizable, they will share weights.
@@ -170,11 +184,6 @@ class model {
   /** Set the terminate training flag (on or off). */
   void set_terminate_training(bool f) {
     m_terminate_training = f;
-  }
-
-  /** Create a new optimizer. */
-  inline optimizer *create_optimizer() {
-    return m_optimizer_fac->create_optimizer();
   }
 
   /** Train model. */
@@ -277,8 +286,7 @@ class model {
   /** Timestamp of last checkpoint */
   double m_checkpoint_last;
 
-  /** Factory to create optimizers. */
-  optimizer_factory *m_optimizer_fac;
+  optimizer *m_default_optimizer;
 
   /**
    * A metric is a function that is used to judge the performance of your model.
@@ -292,10 +300,7 @@ class model {
    */
   std::vector<Layer *> m_layers;
 
-  /** Map from master layers to their layer group. */
-  std::unordered_map<Layer *,std::vector<Layer *>> m_layer_groups;
-  /** Map from layers to their layer group's master. */
-  std::unordered_map<Layer *,Layer *> m_layer_group_masters;
+  std::vector<weights *> m_weights;
 
   // Methods for calling every callback at different points.
   void setup_callbacks();

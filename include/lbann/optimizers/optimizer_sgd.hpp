@@ -60,16 +60,8 @@ class sgd : public optimizer {
   /** Get a human-readable description of the optimizer. */
   std::string get_description() const override;
 
-  /** Returns description of ctor params */
-  std::string get_description() const override {
-    return (std::string {} + " sgd; "
-            + "learning_rate: " + std::to_string(m_learning_rate) 
-            + " momentum: " + std::to_string(m_momentum)
-            + " nesterov: " + std::to_string(m_nesterov));
-  }
-
   /** Setup optimizer. */
-  void setup(variable& var) override;
+  void setup(weights& w) override;
 
   /** Perform the computation in an SGD step. */
   void step_compute(AbsDistMat& values, AbsDistMat& gradient) override;

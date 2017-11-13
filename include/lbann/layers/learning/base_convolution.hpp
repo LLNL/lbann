@@ -34,6 +34,8 @@
 #include "lbann/layers/learning/learning.hpp"
 #include "lbann/base.hpp"
 #include "lbann/layers/layer.hpp"
+#include "lbann/weights/initializer.hpp"
+#include "lbann/weights/fan_in_fan_out_initializers.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/random.hpp"
@@ -149,15 +151,13 @@ class base_convolution_layer : public learning {
     m_conv_pads(other.m_conv_pads),
     m_conv_strides(other.m_conv_strides),
     m_kernel_size(other.m_kernel_size),
-    m_weight_initialization(other.m_weight_initialization),
-    m_bias_scaling_factor(other.m_bias_scaling_factor),
-    m_bias_initial_value(other.m_bias_initial_value) {
+    m_bias_scaling_factor(other.m_bias_scaling_factor) {
 
     // Copy matrices
     m_kernel_weights_v = other.m_kernel_weights_v->Copy();
-    m_kernel_weights_gradient_v = other.m_kernel_weights_gradient_v->Copy();
     m_bias_weights_v = other.m_bias_weights_v->Copy();
-    m_bias_weights_gradient_v = other.m_bias_weights_gradient_v->Copy();
+    m_kernel_weights_gradient = other.m_kernel_weights_gradient->Copy();
+    m_bias_weights_gradient = other.m_bias_weights_gradient->Copy();
 
   #ifdef __LIB_CUDNN
 
@@ -195,11 +195,6 @@ class base_convolution_layer : public learning {
     // Update views
     setup_views();
 
-    // Update optimizer parameters if needed.
-    if(this->m_optimizer->get_parameters()) {
-      this->m_optimizer->set_parameters(this->m_weights);
-    }
-
   }
 
   base_convolution_layer& operator=(const base_convolution_layer& other) {
@@ -208,9 +203,7 @@ class base_convolution_layer : public learning {
     m_conv_pads = other.m_conv_pads;
     m_conv_strides = other.m_conv_strides;
     m_kernel_size = other.m_kernel_size;
-    m_weight_initialization = other.m_weight_initialization;
     m_bias_scaling_factor = other.m_bias_scaling_factor;
-    m_bias_initial_value = other.m_bias_initial_value;
 
     // Copy matrices
   #define COPY_MATRIX(src, dst)                 \
@@ -227,9 +220,9 @@ class base_convolution_layer : public learning {
       }                                         \
     } while(false)
     COPY_MATRIX(other.m_kernel_weights_v, m_kernel_weights_v);
-    COPY_MATRIX(other.m_kernel_weights_gradient_v, m_kernel_weights_gradient_v);
     COPY_MATRIX(other.m_bias_weights_v, m_bias_weights_v);
-    COPY_MATRIX(other.m_bias_weights_gradient_v, m_bias_weights_gradient_v);
+    COPY_MATRIX(other.m_kernel_weights_gradient, m_kernel_weights_gradient);
+    COPY_MATRIX(other.m_bias_weights_gradient, m_bias_weights_gradient);
   #ifdef __LIB_CUDNN
     COPY_MATRIX(other.m_kernel_weights_gradient_per_gpu, m_kernel_weights_gradient_per_gpu);
     COPY_MATRIX(other.m_bias_weights_gradient_per_gpu, m_bias_weights_gradient_per_gpu);
@@ -268,11 +261,6 @@ class base_convolution_layer : public learning {
 
     // Update views
     setup_views();
-
-    // Update optimizer parameters if needed.
-    if (this->m_optimizer->get_parameters()) {
-      this->m_optimizer->set_parameters(this->m_weights);
-    }
 
     return *this;
   }
@@ -313,9 +301,9 @@ class base_convolution_layer : public learning {
 
     // Delete matrix views
     delete m_kernel_weights_v;
-    delete m_kernel_weights_gradient_v;
     delete m_bias_weights_v;
-    delete m_bias_weights_gradient_v;
+    delete m_kernel_weights_gradient;
+    delete m_bias_weights_gradient;
 
   }
 
@@ -335,8 +323,7 @@ class base_convolution_layer : public learning {
   }
 
   /** Setup layer data.
-   *  Assumes the weight and weight gradient matrices are already
-   *  initialized by a child class.*/
+   *  The weights are setup in the convolution and deconvolution classes. */
   void setup_data() override {
     learning::setup_data();
 
@@ -349,6 +336,7 @@ class base_convolution_layer : public learning {
 
     // Initialize default weights if none are provided
     if (this->m_weights.size() > 2) {
+      std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
           << "attempted to setup " << m_name << " with an invalid number of weights";
       throw lbann_exception(err.str());
@@ -358,12 +346,15 @@ class base_convolution_layer : public learning {
       this->m_weights[0] = new weights(this->m_comm, this->m_cudnn);
       this->m_weights[0]->set_name(this->m_name + "_kernel_weights");
       this->m_weights[0]->set_initializer(new he_normal_initializer(this->m_comm));
-      this->m_model->add_weights(this->m_weights[0]);
+      this->m_weights[0]->set_optimizer(m_neural_network_model->create_optimizer());
+      this->m_neural_network_model->add_weights(this->m_weights[0]);
     }
     if (this->m_weights[1] == nullptr) {
       this->m_weights[1] = new weights(this->m_comm, this->m_cudnn);
       this->m_weights[1]->set_name(this->m_name + "_bias_weights");
-      this->m_model->add_weights(this->m_weights[1]);
+      this->m_weights[1]->set_initializer(new constant_initializer(this->m_comm, DataType(0)));
+      this->m_weights[1]->set_optimizer(m_neural_network_model->create_optimizer());
+      this->m_neural_network_model->add_weights(this->m_weights[1]);
     }
 
     // Initialize Glorot or He weight initialization
@@ -373,7 +364,7 @@ class base_convolution_layer : public learning {
       cast_initializer->set_fan_in(m_kernel_size / this->m_neuron_dims[0]);
       cast_initializer->set_fan_out(m_kernel_size / this->m_prev_neuron_dims[0]);
     }
-
+    
   }
 
   void setup_views() override {
@@ -931,8 +922,8 @@ class base_convolution_layer : public learning {
     // Get local matrices
     const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
     const Mat& prev_error_signal_local = this->m_prev_error_signal->LockedMatrix();
-    Mat& kernel_weights_gradient_local = m_kernel_weights_gradient_v->Matrix();
-    Mat& bias_weights_gradient_local = m_bias_weights_gradient_v->Matrix();
+    Mat& kernel_weights_gradient_local = m_kernel_weights_gradient->Matrix();
+    Mat& bias_weights_gradient_local = m_bias_weights_gradient->Matrix();
 
     // Get convolution parameters
     const El::Int width_local = prev_activations_local.Width();
@@ -941,7 +932,8 @@ class base_convolution_layer : public learning {
     const int num_per_output_channel = this->m_num_neurons / num_output_channels;
 
     // Initialize weight gradients to zero
-    El::Zero(*this->m_weights_gradient);
+    El::Zero(kernel_weights_gradient_local);
+    El::Zero(bias_weights_gradient_local);
 
     // Compute bias gradient
     // Note: Sum is computed with Kahan summation
@@ -963,6 +955,10 @@ class base_convolution_layer : public learning {
         }
         bias_weights_gradient_local(0, channel) = m_bias_scaling_factor * sum;
       }
+      *this->m_bias_weights_gradient *= 
+        DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size();
+      El::AllReduce(*this->m_bias_weights_gradient,
+                    this->m_bias_weights_gradient->RedundantComm());
     }
 
     // Initialize im2col matrix
@@ -1014,21 +1010,11 @@ class base_convolution_layer : public learning {
     }
 
     // Scale and accumulate gradients
-    *this->m_weights_gradient *= 
+    *this->m_kernel_weights_gradient *= 
       DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size();
-    El::AllReduce(*this->m_weights_gradient,
-                  this->m_weights_gradient->RedundantComm());
+    El::AllReduce(*this->m_kernel_weights_gradient,
+                  this->m_kernel_weights_gradient->RedundantComm());
 
-  }
-
-public:
-
-  /// Update convolution kernel and bias
-  bool update_compute() override {
-    if(this->m_execution_mode == execution_mode::training) {
-      this->m_optimizer->update(this->m_weights_gradient);
-    }
-    return true;
   }
 
 };

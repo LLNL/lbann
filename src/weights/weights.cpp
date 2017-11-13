@@ -123,10 +123,12 @@ void weights::setup(int height,
   // Check if weights has already been set up
   if (m_values != nullptr) {
     const El::DistData dist_data(*m_values);
-    if (m_values->Height() != height
-        || m_values->Width() != width
-        || dist_data.colDist != col_dist
-        || dist_data.rowDist != row_dist) {
+    if (m_values->Height() == height
+        && m_values->Width() == width
+        && dist_data.colDist == col_dist
+        && dist_data.rowDist == row_dist) {
+      return;
+    } else {
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
           << "attempted to setup " << m_name << " with "
@@ -140,18 +142,20 @@ void weights::setup(int height,
           << "col_dist=" << dist_data.colDist << ","
           << "row_dist=" << dist_data.rowDist;
       throw lbann_exception(err.str());
-    } else {
-      return;
     }
   }
   
   // Initialize weights matrix
-  if (m_values != nullptr) { delete m_values; }
   m_values = m_initializer->construct_matrix(height, width, col_dist, row_dist);
 
   // Setup GPU objects
   if (m_cudnn != nullptr) {
     setup_gpu();
+  }
+
+  // Setup optimizer
+  if (m_optimizer != nullptr) {
+    m_optimizer->setup(*this);
   }
 
 }

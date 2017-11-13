@@ -56,7 +56,7 @@ sgd& sgd::operator=(const sgd& other) {
   // Copy velocity matrix
   if (m_velocity != nullptr && other.m_velocity != nullptr
       && m_velocity->DistData() == other.m_velocity->DistData()) {
-    El::Copy(*others.m_velocity, *m_velocity);
+    El::Copy(*other.m_velocity, *m_velocity);
   }
   if (m_velocity != nullptr) {
     delete m_velocity;
@@ -73,8 +73,17 @@ sgd::~sgd() {
   if (m_velocity != nullptr) { delete m_velocity; }
 }
 
-void sgd::setup(variable* var) {
-  optimizer::setup(var);
+std::string sgd::get_description() const {
+  std::stringstream ss;
+  ss << optimizer::get_description() << ", "
+     << "momentum=" << std::to_string(m_momentum)
+     << "nesterov=" << std::to_string(m_nesterov);
+  return ss.str();
+}
+
+
+void sgd::setup(weights& w) {
+  optimizer::setup(w);
   m_velocity = m_gradient->Construct(m_gradient->Grid(),
                                      m_gradient->Root());
   El::Zeros(*m_velocity, m_gradient->Height(), m_gradient->Width());
@@ -94,7 +103,7 @@ void sgd::step_compute(AbsDistMat& values, AbsDistMat& gradient) {
   DataType* __restrict__ values_buffer = values.Buffer();
   const int values_ldim = values.LDim();
   const DataType* __restrict__ gradient_buffer = gradient.LockedBuffer();
-  const int gradient_buffer = gradient.LDim();
+  const int gradient_ldim = gradient.LDim();
   DataType* __restrict__ velocity_buffer = m_velocity->Buffer();
   const int velocity_ldim = m_velocity->LDim();
   

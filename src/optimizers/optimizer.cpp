@@ -33,13 +33,13 @@ namespace lbann {
 optimizer::optimizer(DataType learning_rate,
                      cudnn::cudnn_manager *cudnn)
   : m_cudnn(cudnn),
-    m_variable(nullptr),
+    m_weights(nullptr),
     m_learning_rate(learning_rate),
     m_gradient(nullptr) {}
 
 optimizer::optimizer(const optimizer& other)
   : m_cudnn(other.m_cudnn),
-    m_variable(other.m_variable),
+    m_weights(other.m_weights),
     m_learning_rate(other.m_learning_rate),
     m_gradient(other.m_gradient) {
   if (m_gradient != nullptr) { m_gradient = m_gradient->Copy(); }
@@ -47,13 +47,13 @@ optimizer::optimizer(const optimizer& other)
 
 optimizer& optimizer::operator=(const optimizer& other) {
   m_cudnn = other.m_cudnn;
-  m_variable = other.m_variable;
+  m_weights = other.m_weights;
   m_learning_rate = other.m_learning_rate;
 
   // Copy gradient matrix
   if (m_gradient != nullptr && other.m_gradient != nullptr
       && m_gradient->DistData() == other.m_gradient->DistData()) {
-    El::Copy(*others.m_gradient, *m_gradient);
+    El::Copy(*other.m_gradient, *m_gradient);
   }
   if (m_gradient != nullptr) {
     delete m_gradient;
@@ -66,15 +66,15 @@ optimizer& optimizer::operator=(const optimizer& other) {
   return *this;
 }
 
-variable::~variable() {
+optimizer::~optimizer() {
   if (m_gradient != nullptr) { delete m_gradient; }
 }
 
 std::string optimizer::get_description() const {
   std::stringstream ss;
   ss << get_type();
-  if (m_variable != nullptr) {
-    ss << " is optimizing " << m_variable->get_name();
+  if (m_weights != nullptr) {
+    ss << " is optimizing " << m_weights->get_name();
   } else {
     ss << " is not optimizing anything";
   }
@@ -82,27 +82,27 @@ std::string optimizer::get_description() const {
   return ss.str();
 }
 
-variable& optimizer::get_variable() {
-  if (m_variable == nullptr) {
+weights& optimizer::get_weights() {
+  if (m_weights == nullptr) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to access the variable being optimized before it is set";
+        << "attempted to access the weights being optimized before they are set";
     throw lbann_exception(err.str());
   }
-  return *m_variable;
+  return *m_weights;
 }
 
-void optimizer::setup(variable& var) {
-  if (m_variable != nullptr) {
+void optimizer::setup(weights& var) {
+  if (m_weights != nullptr) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
         << "attempted to setup an optimizer that is already set up";
     throw lbann_exception(err.str());
   }
-  set_variable(var);
+  set_weights(var);
   
   // Initialize gradient matrix
-  const AbsDistMat& values = m_variable->get_values();
+  const AbsDistMat& values = m_weights->get_values();
   m_gradient = values.Construct(values.Grid(), values.Root());
   El::Zeros(*m_gradient, values.Height(), values.Width());
 
@@ -113,12 +113,12 @@ void optimizer::clear_gradient() {
 }
 
 void optimizer::add_to_gradient(AbsDistMat& gradient) {
-  *m_gradient += gradient;
+  El::Axpy(DataType(1), gradient, *m_gradient);
 }
 
 void optimizer::step() {
-  AbsDistMat& values = m_variable->get_values();
-  update_variable(values, *m_gradient);
+  AbsDistMat& values = m_weights->get_values();
+  step_compute(values, *m_gradient);
   clear_gradient();
 }
 

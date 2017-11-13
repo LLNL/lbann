@@ -27,10 +27,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/weights/fan_in_fan_out_initializers.hpp"
+#include "lbann/utils/random.hpp"
 
 namespace lbann {
 
-void glorot_normal_initializer::intialize_entries(AbsDistMat& weights_matrix) const {
+void glorot_normal_initializer::initialize_entries(AbsDistMat& weights_matrix) const {
   if (m_fan_in <= 0 || m_fan_out <= 0) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
@@ -46,7 +47,7 @@ void glorot_normal_initializer::intialize_entries(AbsDistMat& weights_matrix) co
                 std::sqrt(variance));
 }
 
-void glorot_uniform_initializer::intialize_entries(AbsDistMat& weights_matrix) const {
+void glorot_uniform_initializer::initialize_entries(AbsDistMat& weights_matrix) const {
   if (m_fan_in <= 0 || m_fan_out <= 0) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
@@ -62,7 +63,7 @@ void glorot_uniform_initializer::intialize_entries(AbsDistMat& weights_matrix) c
                 std::sqrt(3*variance));
 }
 
-void he_normal_initializer::intialize_entries(AbsDistMat& weights_matrix) const {
+void he_normal_initializer::initialize_entries(AbsDistMat& weights_matrix) const {
   if (m_fan_in <= 0 || m_fan_out <= 0) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
@@ -78,7 +79,7 @@ void he_normal_initializer::intialize_entries(AbsDistMat& weights_matrix) const 
                 std::sqrt(variance));
 }
 
-void he_uniform_initializer::intialize_entries(AbsDistMat& weights_matrix) const {
+void he_uniform_initializer::initialize_entries(AbsDistMat& weights_matrix) const {
   if (m_fan_in <= 0 || m_fan_out <= 0) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "

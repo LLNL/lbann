@@ -42,11 +42,11 @@
 
 namespace lbann {
 
-sequential_model::sequential_model(int mini_batch_size,
-                                   lbann_comm *comm,
+sequential_model::sequential_model(lbann_comm *comm,
+                                   int mini_batch_size,
                                    objective_functions::objective_function *obj_fn,
-                                   optimizer_factory *optimizer_fac)
-  : model(comm, mini_batch_size, obj_fn, optimizer_fac) {}
+                                   optimizer* default_optimizer)
+  : model(comm, mini_batch_size, obj_fn, default_optimizer) {}
 
 void sequential_model::remove(int index) {
   if (m_layers[index]) {
@@ -66,21 +66,20 @@ Layer *sequential_model::swap(int index, Layer *layer) {
 }
 
 void sequential_model::setup() {
-  setup_subset(0, 0);
+  setup_subset(0, m_layers.size());
 }
 
 void sequential_model::setup_subset(int start_index, int end_index) {
-  if(end_index <= 0) {
-    end_index = m_layers.size();
-  }
 
   // Setup each layer
   for (int l=start_index; l<end_index; ++l) {
     m_layers[l]->set_neural_network_model(this); /// Provide a reverse point from each layer to the model
-    const Layer* prev_layer = l > 0 ? m_layers[l-1] : nullptr;
-    const Layer* next_layer = l < end_index-1 ? m_layers[l+1] : nullptr;
-    m_layers[l]->add_parent_layer(prev_layer);
-    m_layers[l]->add_child_layer(next_layer);
+    if (l > 0) {
+      m_layers[l]->add_parent_layer(m_layers[l-1]);
+    }
+    if (l < end_index - 1) {
+      m_layers[l]->add_child_layer(m_layers[l+1]);
+    }
     m_layers[l]->setup();
     m_layers[l]->check_setup();
     if (m_comm->am_world_master()) {

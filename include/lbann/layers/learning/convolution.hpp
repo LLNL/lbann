@@ -231,7 +231,6 @@ class convolution_layer : public base_convolution_layer {
       apply_convolution_im2col(true);
       apply_bias_cpu();
     }
-    l2_regularize_objective_function();
   }
 
   void bp_compute() override {
@@ -242,7 +241,6 @@ class convolution_layer : public base_convolution_layer {
       apply_transposed_convolution_im2col(false);
       compute_gradients_im2col(false);
     }
-    l2_regularize_gradient();
   }
 
 };

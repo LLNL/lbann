@@ -37,7 +37,7 @@
 namespace lbann {
 
 class learning : public Layer, public optimizable_layer {
-
+ public:
   learning(lbann_comm *comm) : Layer(comm) {}
 
 #if 0

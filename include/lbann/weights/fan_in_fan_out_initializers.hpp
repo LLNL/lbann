@@ -78,7 +78,7 @@ class glorot_normal_initializer : public fan_in_fan_out_initializer {
   }
 
   /** Initialize weights matrix entries. */
-  void intialize_entries(AbsDistMat& weights_matrix) const override;
+  void initialize_entries(AbsDistMat& weights_matrix) const override;
 
 };
 
@@ -100,7 +100,7 @@ class glorot_uniform_initializer : public fan_in_fan_out_initializer {
   }
   
   /** Initialize weights matrix entries. */
-  void intialize_entries(AbsDistMat& weights_matrix) const override;
+  void initialize_entries(AbsDistMat& weights_matrix) const override;
 
 };
 
@@ -120,7 +120,7 @@ class he_normal_initializer : public fan_in_fan_out_initializer {
   }
   
   /** Initialize weights matrix entries. */
-  void intialize_entries(AbsDistMat& weights_matrix) const override;
+  void initialize_entries(AbsDistMat& weights_matrix) const override;
 
 };
 
@@ -141,7 +141,7 @@ class he_uniform_initializer : public fan_in_fan_out_initializer {
   }
   
   /** Initialize weights matrix entries. */
-  void intialize_entries(AbsDistMat& weights_matrix) const override;
+  void initialize_entries(AbsDistMat& weights_matrix) const override;
 
 };
 

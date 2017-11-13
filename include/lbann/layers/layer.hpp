@@ -217,6 +217,11 @@ class Layer {
   /** Set list of pointers to other layers. */
   virtual void set_layer_pointers(std::vector<Layer*> layers);
 
+  /** Get list of pointers to weights. */
+  std::vector<weights*> get_weights() { return m_weights; }
+  /** Set list of pointers to weights. */
+  void set_weights(std::vector<weights*> w) { m_weights = w; }
+
  protected:
 
   lbann_comm *m_comm;

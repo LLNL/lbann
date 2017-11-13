@@ -1,25 +1,25 @@
 add_sources(
-  callback_print.cpp
-  callback_summary.cpp
-  callback_timer.cpp
-  callback_imcomm.cpp
-  callback_learning_rate.cpp
-  callback_early_stopping.cpp
-  callback_io.cpp
-  callback_debug.cpp
-  callback_debug_io.cpp
-  callback_dump_weights.cpp
-  callback_dump_activations.cpp
-  callback_dump_gradients.cpp
-  callback_dump_minibatch_sample_indices.cpp
-  callback_check_dataset.cpp
-  callback_checknan.cpp
-  callback_save_images.cpp
-  callback_checksmall.cpp
-  callback_check_init.cpp
-  profiler.cpp
-  callback_ltfb.cpp
-  callback_check_reconstruction_error.cpp
-  callback_variable_minibatch.cpp
-  callback_gradient_check.cpp
+  # callback_print.cpp
+  # callback_summary.cpp
+  # callback_timer.cpp
+  # callback_imcomm.cpp
+  # callback_learning_rate.cpp
+  # callback_early_stopping.cpp
+  # callback_io.cpp
+  # callback_debug.cpp
+  # callback_debug_io.cpp
+  # callback_dump_weights.cpp
+  # callback_dump_activations.cpp
+  # callback_dump_gradients.cpp
+  # callback_dump_minibatch_sample_indices.cpp
+  # callback_check_dataset.cpp
+  # callback_checknan.cpp
+  # callback_save_images.cpp
+  # callback_checksmall.cpp
+  # callback_check_init.cpp
+  # profiler.cpp
+  # callback_ltfb.cpp
+  # callback_check_reconstruction_error.cpp
+  # callback_variable_minibatch.cpp
+  # callback_gradient_check.cpp
 )
