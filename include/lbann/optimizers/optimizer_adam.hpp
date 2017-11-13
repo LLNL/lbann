@@ -72,7 +72,7 @@ class adam : public optimizer {
   /// Update parameters using objective function gradient
   void update(const AbsDistMat *gradient) override;
 #ifdef __LIB_CUDA
-  void update_gpu(const std::vector<DataType *> &gradient_d);
+  void update_gpu(const std::vector<DataType *> &gradient_d) override;
 #endif  
   std::string name() const override { return "adam"; }
  private:
