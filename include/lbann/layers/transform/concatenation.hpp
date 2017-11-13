@@ -417,7 +417,7 @@ class concatenation_layer : public transform {
   }
 
   #ifdef __LIB_CUDNN
-  void get_gpu_bp_output(std::vector<DataType*>& bp_output, const Layer* prev_layer) const {
+  void get_gpu_bp_output(std::vector<DataType*>& bp_output, const Layer* prev_layer) const override {
 
     // Check if input is in the list of child layers
     const int parent_index = (std::find(this->m_parent_layers.begin(),

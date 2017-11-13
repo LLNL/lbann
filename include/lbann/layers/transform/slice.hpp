@@ -420,7 +420,7 @@ class slice_layer : public transform {
   }
 
   #ifdef __LIB_CUDNN
-  void get_gpu_fp_output(std::vector<DataType*>& fp_output, const Layer* next_layer) const {
+  void get_gpu_fp_output(std::vector<DataType*>& fp_output, const Layer* next_layer) const override {
 
     // Check if input is in the list of child layers
     const int child_index = (std::find(this->m_child_layers.begin(),
