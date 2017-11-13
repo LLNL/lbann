@@ -108,7 +108,7 @@ class cv_transform {
   std::string get_name() const { return m_name; }
 
   /** Sets this transform's name; this is an arbitrary string, e.g, assigned in a prototext file. */
-  void set_name(std::string name) { m_name = name; }
+  void set_name(const std::string& name) { m_name = name; }
   
   /** Returns a description of the parameters passed to the ctor */
   virtual std::string get_description() const;

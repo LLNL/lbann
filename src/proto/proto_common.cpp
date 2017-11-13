@@ -1713,20 +1713,18 @@ void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool mas
   if (pb_preprocessor.has_cropper()) {
     const lbann_data::ImagePreprocessor::Cropper& pb_cropper = pb_preprocessor.cropper();
     if (!pb_cropper.disable()) {
-      if (pb_cropper.name() == "") {
-        std::unique_ptr<lbann::cv_cropper> cropper(new(lbann::cv_cropper));
-        cropper->set(pb_cropper.crop_width(),
-                     pb_cropper.crop_height(),
-                     pb_cropper.crop_randomly(),
-                     std::make_pair<int,int>(pb_cropper.resized_width(),
-                                             pb_cropper.resized_height()));
-        pp->add_transform(std::move(cropper));
-        width = pb_cropper.crop_width();
-        height = pb_cropper.crop_height();
-        if (master) cout << "image processor: " << pb_cropper.name() << " cropper is set" << endl;
-      } else {
-        if (master) cout << "unrecognized cropper name: " << pb_cropper.name() << endl;
-      }
+      const string cropper_name = ((pb_cropper.name() == "")? "default_cropper" : pb_cropper.name());
+      std::unique_ptr<lbann::cv_cropper> cropper(new(lbann::cv_cropper));
+      cropper->set_name(cropper_name);
+      cropper->set(pb_cropper.crop_width(),
+                   pb_cropper.crop_height(),
+                   pb_cropper.crop_randomly(),
+                   std::make_pair<int,int>(pb_cropper.resized_width(),
+                                           pb_cropper.resized_height()));
+      pp->add_transform(std::move(cropper));
+      width = pb_cropper.crop_width();
+      height = pb_cropper.crop_height();
+      if (master) cout << "image processor: " << cropper_name << " cropper is set" << endl;
     }
   } else { // For backward compatibility. TODO: will be deprecated
     if(pb_preprocessor.crop_first()) {
@@ -1753,19 +1751,16 @@ void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool mas
          pb_augmenter.shear_range() != 0.0))
     {
       const string augmenter_name = ((pb_augmenter.name() == "")? "default_augmenter" : pb_augmenter.name());
-      if (augmenter_name == "default_augmenter") {
-        std::unique_ptr<lbann::cv_augmenter> augmenter(new(lbann::cv_augmenter));
-        augmenter->set(pb_augmenter.horizontal_flip(),
-                       pb_augmenter.vertical_flip(),
-                       pb_augmenter.rotation(),
-                       pb_augmenter.horizontal_shift(),
-                       pb_augmenter.vertical_shift(),
-                       pb_augmenter.shear_range());
-        pp->add_transform(std::move(augmenter));
-        if (master) cout << "image processor: " << augmenter_name << " augmenter is set" << endl;
-      } else {
-        if (master) cout << "unrecognized augmenter name: " << augmenter_name << endl;
-      }
+      std::unique_ptr<lbann::cv_augmenter> augmenter(new(lbann::cv_augmenter));
+      augmenter->set_name(augmenter_name);
+      augmenter->set(pb_augmenter.horizontal_flip(),
+                     pb_augmenter.vertical_flip(),
+                     pb_augmenter.rotation(),
+                     pb_augmenter.horizontal_shift(),
+                     pb_augmenter.vertical_shift(),
+                     pb_augmenter.shear_range());
+      pp->add_transform(std::move(augmenter));
+      if (master) cout << "image processor: " << augmenter_name << " augmenter is set" << endl;
     }
   } else { // For backward compatibility. TODO: will be deprecated
     if (!pb_preprocessor.disable_augmentation()) {
@@ -1786,14 +1781,11 @@ void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool mas
     const lbann_data::ImagePreprocessor::Colorizer& pb_colorizer = pb_preprocessor.colorizer();
     if  (!pb_colorizer.disable()) {
       const string colorizer_name = ((pb_colorizer.name() == "")? "default_colorizer" : pb_colorizer.name());
-      if (colorizer_name == "default_colorizer") {
-        // If every image in the dataset is a color image, this is not needed
-        std::unique_ptr<lbann::cv_colorizer> colorizer(new(lbann::cv_colorizer));
-        pp->add_transform(std::move(colorizer));
-        if (master) cout << "image processor: " << colorizer_name << " colorizer is set" << endl;
-      } else {
-        if (master) cout << "unrecognized colorizer name: " << colorizer_name << endl;
-      }
+      // If every image in the dataset is a color image, this is not needed
+      std::unique_ptr<lbann::cv_colorizer> colorizer(new(lbann::cv_colorizer));
+      colorizer->set_name(colorizer_name);
+      pp->add_transform(std::move(colorizer));
+      if (master) cout << "image processor: " << colorizer_name << " colorizer is set" << endl;
     }
   } else { // For backward compatibility. TODO: will be deprecated
     if (!pb_preprocessor.no_colorize()) {
@@ -1808,18 +1800,14 @@ void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool mas
     const lbann_data::ImagePreprocessor::Normalizer& pb_normalizer = pb_preprocessor.normalizer();
     if (!pb_normalizer.disable()) {
       const string normalizer_name = ((pb_normalizer.name() == "")? "default_normalizer" : pb_normalizer.name());
-      if (normalizer_name == "default_normalizer") {
-        std::unique_ptr<lbann::cv_normalizer> normalizer(new(lbann::cv_normalizer));
-        normalizer->unit_scale(pb_normalizer.scale());
-        normalizer->subtract_mean(pb_normalizer.subtract_mean());
-        normalizer->unit_variance(pb_normalizer.unit_variance());
-        normalizer->z_score(pb_normalizer.z_score());
-
-        pp->add_normalizer(std::move(normalizer));
-        if (master) cout << "image processor: " << normalizer_name << " normalizer is set" << endl;
-      } else {
-        if (master) cout << "unrecognized normalizer name: " << normalizer_name << endl;
-      }
+      std::unique_ptr<lbann::cv_normalizer> normalizer(new(lbann::cv_normalizer));
+      normalizer->set_name(normalizer_name);
+      normalizer->unit_scale(pb_normalizer.scale());
+      normalizer->subtract_mean(pb_normalizer.subtract_mean());
+      normalizer->unit_variance(pb_normalizer.unit_variance());
+      normalizer->z_score(pb_normalizer.z_score());
+      pp->add_normalizer(std::move(normalizer));
+      if (master) cout << "image processor: " << normalizer_name << " normalizer is set" << endl;
     }
   } else { // For backward compatibility. TODO: will be deprecated
     std::unique_ptr<lbann::cv_normalizer> normalizer(new(lbann::cv_normalizer));
@@ -1836,16 +1824,13 @@ void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool mas
     const lbann_data::ImagePreprocessor::Noiser& pb_noiser = pb_preprocessor.noiser();
     if (!pb_noiser.disable()) {
       const string noiser_name = ((pb_noiser.name() == "")? "default_noiser" : pb_noiser.name());
-      if (noiser_name == "default_noiser") {
 /* TODO: implement noiser in opencv
-        std::unique_ptr<lbann::cv_noiser> noiser(new(lbann::cv_noiser));
-        noiser->set(pb_noiser.factor());
-        pp->add_transform(std::move(noiser));
+      std::unique_ptr<lbann::cv_noiser> noiser(new(lbann::cv_noiser));
+      noiser->set_name(noiser_name);
+      noiser->set(pb_noiser.factor());
+      pp->add_transform(std::move(noiser));
 */
-        if (master) cout << "image processor: " << noiser_name << " noiser is not supported yet" << endl;
-      } else {
-        if (master) cout << "unrecognized noiser name: " << noiser_name << endl;
-      }
+      if (master) cout << "image processor: " << noiser_name << " noiser is not supported yet" << endl;
     }
   } else { // For backward compatibility. TODO: will be deprecated
 /* TODO: implement noiser in opencv
@@ -1864,22 +1849,19 @@ void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool mas
       const lbann_data::ImagePreprocessor::PatchExtractor& pb_patch_extractor = pb_preprocessor.patch_extractor();
       if (!pb_patch_extractor.disable()) {
         const string patch_extractor_name = ((pb_patch_extractor.name() == "")? "default_patch_extractor" : pb_patch_extractor.name());
-        if (patch_extractor_name == "default_patch_extractor") {
-          lbann::patchworks::patch_descriptor pi;
-          pi.set_sample_image(static_cast<unsigned int>(width),
-                              static_cast<unsigned int>(height));
-          pi.set_size(pb_patch_extractor.patch_width(), pb_patch_extractor.patch_height ());
-          pi.set_gap(pb_patch_extractor.patch_gap());
-          pi.set_jitter(pb_patch_extractor.patch_jitter());
-          pi.set_mode_centering(pb_patch_extractor.centering_mode());
-          pi.set_mode_chromatic_aberration(pb_patch_extractor.ca_correction_mode());
-          pi.set_self_label();
-          pi.define_patch_set();
-          ppp->set_patch_descriptor(pi);
-          if (master) cout << "image processor: " << patch_extractor_name << " patch_extractor is set" << endl;
-        } else {
-          if (master) cout << "unrecognized patch extractor name: " << patch_extractor_name << endl;
-        }
+        lbann::patchworks::patch_descriptor pi;
+        pi.set_sample_image(static_cast<unsigned int>(width),
+                            static_cast<unsigned int>(height));
+        pi.set_size(pb_patch_extractor.patch_width(), pb_patch_extractor.patch_height ());
+        pi.set_gap(pb_patch_extractor.patch_gap());
+        pi.set_jitter(pb_patch_extractor.patch_jitter());
+        pi.set_mode_centering(pb_patch_extractor.centering_mode());
+        pi.set_mode_chromatic_aberration(pb_patch_extractor.ca_correction_mode());
+        pi.set_self_label();
+        pi.define_patch_set();
+        ppp->set_name(patch_extractor_name);
+        ppp->set_patch_descriptor(pi);
+        if (master) cout << "image processor: " << patch_extractor_name << " patch_extractor is set" << endl;
       }
     }
   }

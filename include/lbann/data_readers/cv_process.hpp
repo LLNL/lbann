@@ -48,6 +48,8 @@ class cv_process {
   /// OpenCV flip codes: c<0 for top_left <-> bottom_right, c=0 for top<->down, and c>0 for left<->right
 
  protected:
+  /// unique name for the processor
+  std::string m_name;
   /// Whether to flip an image
   cv_transform::cv_flipping m_flip;
   /// Whether to split channels
@@ -76,6 +78,9 @@ class cv_process {
     : m_flip(flip_code), m_split(tosplit), m_is_normalizer_set(false), m_normalizer_idx(0u) {}
 
   virtual ~cv_process() {}
+
+  std::string get_name() const { return m_name; }
+  void set_name(const std::string& name) { m_name = name; }
 
   /// Reset all the transforms
   void reset();
