@@ -1,6 +1,6 @@
 data_reader {
   reader {
-    name: "imagenet"
+    name: "imagenet_org"
     role: "train"
     shuffle: true
     data_filedir: "/p/lscratchf/brainusr/datasets/ILSVRC2012/resized_256x256/train/"
@@ -11,23 +11,6 @@ data_reader {
     num_labels: 1000
 
     image_preprocessor {
-      # assume fixed size of input images if cropper is not used
-      raw_width: 256
-      raw_height: 256
-
-      cropper {
-        disable: true
-        crop_width: 224
-        crop_height: 224
-        crop_randomly: true
-        resized_width: 256
-        resized_height: 256
-      }
-
-      colorizer {
-        disable: false
-      }
-
       normalizer {
         scale: true
         subtract_mean: true
@@ -36,9 +19,8 @@ data_reader {
       }
     }
   }
-
   reader {
-    name: "imagenet"
+    name: "imagenet_org"
     role: "test"
     shuffle: true
     data_filedir: "/p/lscratchf/brainusr/datasets/ILSVRC2012/resized_256x256/val/"
@@ -49,23 +31,6 @@ data_reader {
     num_labels: 1000
 
     image_preprocessor {
-      # assume fixed size of input images if cropper is not used
-      raw_width: 256
-      raw_height: 256
-
-      cropper {
-        disable: true
-        crop_width: 224
-        crop_height: 224
-        crop_randomly: false
-        resized_width: 256
-        resized_height: 256
-      }
-
-      colorizer {
-        disable: false
-      }
-
       normalizer {
         scale: true
         subtract_mean: true

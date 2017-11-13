@@ -1,10 +1,10 @@
 data_reader {
   reader {
-    name: "imagenet"
+    name: "imagenet_single"
     role: "train"
     shuffle: true
-    data_filedir: "/p/lscratchf/brainusr/datasets/ILSVRC2012/resized_256x256/train/"
-    data_filename: "/p/lscratchf/brainusr/datasets/ILSVRC2012/labels/train_c0-9_01.txt"
+    data_filedir: "/p/lscratchf/brainusr/datasets/ILSVRC2012"
+    data_filename: "Single_train_c0-9_01"
     validation_percent: 0.1
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
@@ -38,11 +38,11 @@ data_reader {
   }
 
   reader {
-    name: "imagenet"
+    name: "imagenet_single"
     role: "test"
     shuffle: true
-    data_filedir: "/p/lscratchf/brainusr/datasets/ILSVRC2012/resized_256x256/val/"
-    data_filename: "/p/lscratchf/brainusr/datasets/ILSVRC2012/labels/val_c0-9_01.txt"
+    data_filedir: "/p/lscratchf/brainusr/datasets/ILSVRC2012"
+    data_filename: "Single_val_c0-9_01"
     validation_percent: 1.0
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
