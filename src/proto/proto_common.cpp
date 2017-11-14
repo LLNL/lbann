@@ -51,11 +51,12 @@ void setup_pointers(
   lbann::model *model,
   bool master)
 {
-  std::string name;
-  std::stringstream ss;
-  std::stringstream err;
   for (size_t i=0; i<proto_layers.size(); i++) {
     Layer *layer = model_layers[proto_layers[i].name()];
+
+    std::string name;
+    std::stringstream ss;
+    std::stringstream err;
 
     // Set layer parents
     ss.str(proto_layers[i].parents());
