@@ -30,13 +30,12 @@
 #define LBANN_LAYER_LEARNING_HPP_INCLUDED
 
 #include "lbann/layers/layer.hpp"
-#include "lbann/layers/optimizable_layer.hpp"
 #include <string>
 #include <vector>
 
 namespace lbann {
 
-class learning : public Layer, public optimizable_layer {
+class learning : public Layer {
  public:
   learning(lbann_comm *comm) : Layer(comm) {}
 

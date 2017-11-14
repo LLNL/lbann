@@ -29,7 +29,7 @@
 #ifndef LBANN_LAYER_REGULARIZER_BATCH_NORMALIZATION_HPP_INCLUDED
 #define LBANN_LAYER_REGULARIZER_BATCH_NORMALIZATION_HPP_INCLUDED
 
-#include "lbann/layers/regularizers/learning_regularizer.hpp"
+#include "lbann/layers/regularizers/regularizer.hpp"
 
 namespace lbann {
 
@@ -109,7 +109,7 @@ void batch_normalization_backprop2(int height,
  * https://cthorey.github.io/backpropagation/
  */
 template <data_layout T_layout>
-class batch_normalization : public learning_regularizer {
+class batch_normalization : public regularizer_layer {
 
  private:
   /** Batch normalization parameters. */

@@ -381,7 +381,6 @@ message Layer {
    string children = 152;
    string data_layout = 52;
    bool num_neurons_from_data_reader = 53;
-   string linked_layers = 54;   
 
    Imcomm imcomm = 55;
 

@@ -44,17 +44,12 @@
 
 namespace lbann {
 
-// Forward declaration.
-class lbann_callback_imcomm;
-
 /** Base convolution layer.
  *  Parent class for convolution and deconvolution layers.
  */
 class base_convolution_layer : public learning {
 
  protected:
-
-  friend class lbann_callback_imcomm;
 
   /** Convolution kernel dimensions. */
   std::vector<int> m_kernel_dims;
@@ -117,18 +112,40 @@ class base_convolution_layer : public learning {
   base_convolution_layer(lbann_comm *comm,
                          int num_data_dims,
                          int num_output_channels,
-                         const int *conv_dims,
-                         const int *conv_pads,
-                         const int *conv_strides,
+                         std::vector<int> conv_dims,
+                         std::vector<int> conv_pads,
+                         std::vector<int> conv_strides,
                          bool has_bias,
                          cudnn::cudnn_manager *cudnn)
     : learning(comm) {
 
+    if (conv_dims.size() == 1) {
+      conv_dims.resize(num_data_dims, conv_dims[0]);
+    } 
+    if (conv_pads.size() == 1) {
+      conv_pads.resize(num_data_dims, conv_pads[0]);
+    }
+    if (conv_strides.size() == 1) {
+      conv_strides.resize(num_data_dims, conv_strides[0]);
+    }
+    if ((int)conv_dims.size() != num_data_dims
+        && (int)conv_pads.size() != num_data_dims
+        && (int)conv_strides.size() != num_data_dims) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "invalid number of convolution parameters " 
+          << "(expected " << num_data_dims << " parameters, "
+          << "conv_dims has " << conv_dims.size() << ", "
+          << "conv_pads has " << conv_pads.size() << ", "
+          << "conv_strides has " << conv_strides.size() << ")";
+      throw lbann_exception(err.str());
+    }
+
     // Initialize convolution parameters
-    m_kernel_dims.assign(conv_dims, conv_dims+num_data_dims);
+    m_kernel_dims = conv_dims;
     m_kernel_dims.insert(m_kernel_dims.begin(), num_output_channels);
-    m_conv_pads.assign(conv_pads, conv_pads+num_data_dims);
-    m_conv_strides.assign(conv_strides, conv_strides+num_data_dims);
+    m_conv_pads = conv_pads;
+    m_conv_strides = conv_strides;
 
     // Initialize bias
     m_bias_scaling_factor = has_bias ? DataType(1) : DataType(0);

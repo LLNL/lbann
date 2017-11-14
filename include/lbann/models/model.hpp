@@ -102,11 +102,6 @@ class model {
   /** Return the model's weights. */
   std::vector<weights *>& get_weights() { return m_weights; }
 
-  /** Link two layers in model.
-   *  If the layers are optimizable, they will share weights.
-   */
-  virtual void link_layers(Layer *layer1, Layer *layer2);
-  
   /** Get the model's comm. */
   inline lbann_comm *get_comm() const {
     return m_comm;

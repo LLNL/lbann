@@ -40,9 +40,6 @@
 
 namespace lbann {
 
-// Forward declaration.
-class lbann_callback_imcomm;
-
 /// Convolution layer
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
 class convolution_layer : public base_convolution_layer {
@@ -72,9 +69,7 @@ class convolution_layer : public base_convolution_layer {
       s << this->m_conv_strides[h] << " ";
     }
     s << " num_output_channels: " << this->m_neuron_dims[0]
-      << " weight_init: " + get_weight_initialization_name(this->m_weight_initialization) 
       << " has_bias: " << this->m_bias_scaling_factor
-      << " bias_initial_value: " << this->m_bias_initial_value
       << " dataLayout: " << this->get_data_layout_string(get_data_layout());
     return s.str();
   }
@@ -111,18 +106,18 @@ class convolution_layer : public base_convolution_layer {
     : convolution_layer(comm,
                         num_data_dims,
                         num_output_channels,
-                        std::vector<int>(num_data_dims, conv_dim).data(),
-                        std::vector<int>(num_data_dims, conv_pad).data(),
-                        std::vector<int>(num_data_dims, conv_stride).data(),
+                        std::vector<int>(num_data_dims, conv_dim),
+                        std::vector<int>(num_data_dims, conv_pad),
+                        std::vector<int>(num_data_dims, conv_stride),
                         has_bias,
                         cudnn) {}
 
   convolution_layer(lbann_comm *comm,
                     int num_data_dims,
                     int num_output_channels,
-                    const int *conv_dims,
-                    const int *conv_pads,
-                    const int *conv_strides,
+                    std::vector<int> conv_dims,
+                    std::vector<int> conv_pads,
+                    std::vector<int> conv_strides,
                     bool has_bias = true,
                     cudnn::cudnn_manager *cudnn = NULL)
     : base_convolution_layer(comm,

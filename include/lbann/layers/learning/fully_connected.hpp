@@ -349,7 +349,6 @@ class fully_connected_layer : public learning {
     }
 
     // Setup weight gradients
-    const AbsDistMat& matrix_weights = this->m_weights[0]->get_values();
     El::Zeros(*this->m_matrix_weights_gradient,
               this->m_weights[0]->get_height(),
               this->m_weights[0]->get_width());
@@ -500,8 +499,6 @@ class fully_connected_layer : public learning {
     } else {
       bp_compute_cpu();
     }
-    this->l2_regularize_gradient();
-    this->group_lasso_regularize_gradient();
   }
 
   void bp_compute_cpu() {
@@ -543,22 +540,6 @@ class fully_connected_layer : public learning {
     this->m_cudnn->check_error();
 #endif
 #endif // __LIB_CUDA    
-  }
-  
-
-  DataType computeCost(DistMat& deltas) {
-    DataType avg_error = 0.0, total_error = 0.0;
-    // Compute the L2 norm on the deltas (activation - y)
-    ColSumMat norms;
-    ColumnTwoNorms(deltas, norms);
-    int c = 0;
-    // Sum the local, total error
-    for(int r = 0; r < norms.LocalHeight(); r++) {
-      total_error += norms.GetLocal(r,c);
-    }
-    mpi::AllReduce(total_error, norms.DistComm());
-    avg_error = total_error / norms.Height();
-    return avg_error;
   }
 
 };

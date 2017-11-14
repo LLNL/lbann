@@ -9,6 +9,7 @@
 #include <google/protobuf/text_format.h>
 
 #include <unordered_map>
+#include <unordered_set>
 #include <sys/stat.h>
 
 using namespace lbann;
@@ -82,19 +83,6 @@ void setup_pointers(
       layer->add_child_layer(child_layer);
     }
 
-    // Set linked layers
-    ss.clear();
-    ss.str(proto_layers[i].linked_layers());
-    while (ss >> name) {
-      if (master and not layer_is_in_model(name)) {
-        err << __FILE__ << " " << __LINE__ << " :: "
-            << "could not find layer " << name << " to link with layer " << proto_layers[i].name();
-        throw lbann_exception(err.str());
-      }
-      Layer *other_layer = model_layers[name];
-      model->link_layers(other_layer, layer);
-    }
-
     // Set a target layer's paired input layer
     if (dynamic_cast<target_layer*>(layer) != nullptr) {
       target_layer *target = dynamic_cast<target_layer*>(layer);
@@ -164,6 +152,7 @@ void setup_pointers(
   }
 }
 
+#if 0
 lbann_callback_imcomm::comm_type get_comm_type(const string &s, bool master)
 {
   if (s == "none") {
@@ -188,6 +177,7 @@ lbann_callback_imcomm::comm_type get_comm_type(const string &s, bool master)
     }
   }
 }
+#endif
 
 pool_mode get_pool_mode(const string& s, bool master)
 {
@@ -304,9 +294,8 @@ void add_layers(
   std::vector<lbann_data::Layer> proto_layers;
   get_proto_layers(proto_layers, m, comm);
 
-  Layer *d = nullptr;
-
   for (lbann_data::Layer& layer : proto_layers) {
+    Layer *d = nullptr;
 
     // Get layer layout
     const data_layout layout = get_data_layout(layer.data_layout());
@@ -422,24 +411,16 @@ void add_layers(
         d = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
           comm,
           num_neurons,
-          get_weight_initialization(ell.weight_initialization(), master),
-          model->create_optimizer(),
+          nullptr,
           ell.has_bias(),
-          ell.bias_initial_value(),
           cudnn);
       } else {
         d = new fully_connected_layer<data_layout::DATA_PARALLEL>(
           comm,
           num_neurons,
-          get_weight_initialization(ell.weight_initialization(), master),
-          model->create_optimizer(),
+          nullptr,
           ell.has_bias(),
-          ell.bias_initial_value(),
           cudnn);
-      }
-      double l2_regularization_factor = ell.l2_regularization_factor();
-      if(l2_regularization_factor != double(0.0)) {
-        ((learning *) d)->set_l2_regularization_factor(l2_regularization_factor);
       }
     }
 
@@ -625,13 +606,10 @@ void add_layers(
             comm,
             ell.num_dims(),
             ell.num_output_channels(),
-            &conv_dims[0],
-            &conv_pads[0],
-            &conv_strides[0],
-            get_weight_initialization(ell.weight_initialization(), master),
-            model->create_optimizer(),
+            conv_dims,
+            conv_pads,
+            conv_strides,
             ell.has_bias(),
-            ell.bias_initial_value(),
             cudnn
           );
         }
@@ -650,18 +628,10 @@ void add_layers(
             ell.conv_dims_i(),
             ell.conv_pads_i(),
             ell.conv_strides_i(),
-            get_weight_initialization(ell.weight_initialization(), master),
-            model->create_optimizer(),
             ell.has_bias(),
-            ell.bias_initial_value(),
             cudnn
           );
         }
-      }
-
-      double l2_regularization_factor = ell.l2_regularization_factor();
-      if(l2_regularization_factor != double(0.0)) {
-        ((learning *) d)->set_l2_regularization_factor(l2_regularization_factor);
       }
     }
 
@@ -704,13 +674,10 @@ void add_layers(
             comm,
             ell.num_dims(),
             ell.num_output_channels(),
-            &conv_dims[0],
-            &conv_pads[0],
-            &conv_strides[0],
-            get_weight_initialization(ell.weight_initialization(), master),
-            model->create_optimizer(),
+            conv_dims,
+            conv_pads,
+            conv_strides,
             ell.has_bias(),
-            ell.bias_initial_value(),
             cudnn
           );
         }
@@ -729,20 +696,12 @@ void add_layers(
             ell.conv_dims_i(),
             ell.conv_pads_i(),
             ell.conv_strides_i(),
-            get_weight_initialization(ell.weight_initialization(), master),
-            model->create_optimizer(),
             ell.has_bias(),
-            ell.bias_initial_value(),
             cudnn
           );
         }
       }
-
-      double l2_regularization_factor = ell.l2_regularization_factor();
-      if(l2_regularization_factor != double(0.0)) {
-        ((learning *) d)->set_l2_regularization_factor(l2_regularization_factor);
-      }
-     }
+    }
 
     //////////////////////////////////////////////////////////////////
     // LAYER: local_response_normalization
@@ -791,6 +750,7 @@ void add_layers(
       }
     }
 
+#if 0
     //////////////////////////////////////////////////////////////////
     // LAYER: batch_normalization
     //////////////////////////////////////////////////////////////////
@@ -812,6 +772,7 @@ void add_layers(
                  ell.global_stats()*/);
       }
     }
+#endif
 
     //////////////////////////////////////////////////////////////////
     // LAYER: selu (activation)
@@ -1013,8 +974,7 @@ void add_layers(
 
     // Add layer to model
     model_layers[d->get_name()] = d;
-    model->add(d);
-    d = nullptr;
+    model->add_layer(d);
 
   }
 
@@ -1086,6 +1046,7 @@ void init_callbacks(
   std::map<execution_mode, lbann::generic_data_reader *>& data_readers,
   const lbann_data::LbannPB& p)
 {
+#if 0
   std::stringstream err;
   bool master = comm->am_world_master();
 
@@ -1546,13 +1507,13 @@ void init_callbacks(
         lbann_callback_layerwise_adaptive_learning_rate(c.scale(), layers);
       model->add_callback(lwalr_cb);
     }
-
   }
+#endif
 
 }
 
 
-model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac, const lbann_data::LbannPB& p)
+model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_data::LbannPB& p)
 {
   std::stringstream err;
   bool master = comm->am_world_master();
@@ -1589,22 +1550,25 @@ model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac, const lban
   }
 
   //instantiate the network; layers will be added in a separate function call
-  if (name == "sequential_model" || name == "dnn") {
-    if (master && name == "dnn") std::cout << "WARNING: \"dnn\" model is deprecated in favor of \"sequential_model\"\n";
-    model = new sequential_model(mini_batch_size, comm, obj, optimizer_fac);
+  if (name == "sequential_model") {
+    model = new sequential_model(comm, mini_batch_size, obj, default_optimizer);
     if (master) std::cout << "instantiating sequential_model\n";
-  } else if (name == "dag_model") {
-    model = new dag_model(mini_batch_size, comm, obj, optimizer_fac);
+  } 
+#if 0
+  else if (name == "dag_model") {
+    model = new dag_model(comm, mini_batch_size, obj, default_optimizer);
     if (master) std::cout << "instantiating dag_model\n";
   } else if(name == "planar_model") {
 /// XXX
 /// Settting the number of heads to 3 temporarly; will be fixed as a parameter
-    model = new planar_model(mini_batch_size, comm, obj, optimizer_fac, 3);
+    model = new planar_model(comm, mini_batch_size, obj, default_optimizer, 3);
     if (master) std::cout << "instantiating planar_model\n";
   } else if (name == "greedy_layerwise_autoencoder") {
-    model = new greedy_layerwise_autoencoder(mini_batch_size, comm, obj, optimizer_fac);
+    model = new greedy_layerwise_autoencoder(comm, mini_batch_size, obj, default_optimizer);
     if (master) std::cout << "instantiating greedy_layerwise_autoencoder\n";
-  } else {
+  } 
+#endif
+else {
     if (master) {
       err << __FILE__ << " " << __LINE__
           << " :: init_model() - unknown model name: " << name << endl
@@ -1661,37 +1625,21 @@ model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac, const lban
   return model;
 }
 
-optimizer_factory *init_optimizer_factory(lbann_comm *comm, cudnn::cudnn_manager *cudnn,
-    const lbann_data::LbannPB& p)
+optimizer *init_default_optimizer(lbann_comm *comm,
+                                  cudnn::cudnn_manager *cudnn,
+                                  const lbann_data::LbannPB& params)
 {
-  bool master = comm->am_world_master();
-  optimizer_factory *factory = 0;
-  const lbann_data::Optimizer &opt = p.optimizer();
-  if (opt.has_adagrad()) {
-    const lbann_data::Adagrad &a = opt.adagrad();
-    factory = new adagrad_factory(comm, a.learn_rate(), a.eps());
-  } else if (opt.has_rmsprop()) {
-    const lbann_data::Rmsprop &a = opt.rmsprop();
-    factory = new rmsprop_factory(comm, a.learn_rate(), a.decay_rate(), a.eps());
-  } else if (opt.has_adam()) {
-    const lbann_data::Adam &a = opt.adam();
-    factory = new adam_factory(comm, a.learn_rate(), a.beta1(), a.beta2(), a.eps(), cudnn);
-  } else if (opt.has_hypergradient_adam()) {
-    const lbann_data::HypergradientAdam &a = opt.hypergradient_adam();
-    factory = new hypergradient_adam_factory(comm, a.init_learning_rate(), a.hyper_learning_rate(), a.beta1(), a.beta2(), a.eps());
-  } else if (opt.has_sgd()) {
-    const lbann_data::Sgd &a = opt.sgd();
-    factory = new sgd_factory(comm, a.learn_rate(), a.momentum(), a.decay_rate(), a.nesterov());
-  } else {
-    if (master) {
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__
-          << " :: init_optimizer_factory: prototext does not appear to contain an optimizer!";
-      throw lbann_exception(err.str());
-    }
+  optimizer *opt = nullptr;
+  const lbann_data::Optimizer &opt_params = params.optimizer();
+  if (opt_params.has_sgd()) {
+    const lbann_data::Sgd &sgd_params = opt_params.sgd();
+    opt = new sgd(sgd_params.learn_rate(),
+                  sgd_params.momentum(),
+                  sgd_params.nesterov(),
+                  cudnn);
   }
 
-  return factory;
+  return opt;
 }
 
 void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execution_mode, generic_data_reader *>& data_readers)
