@@ -154,7 +154,13 @@ class slice_layer : public transform {
     // Check that slice points are valid
     if(m_slice_points.size() != m_child_layers.size() + 1
        || !std::is_sorted(m_slice_points.begin(), m_slice_points.end())) {
-      throw lbann_exception("slice_layer: invalid list of slice points");
+      err << __FILE__ << " " << __LINE__ << " :: slice_layer: ";
+      if (!std::is_sorted(m_slice_points.begin(), m_slice_points.end())) {
+        err << "not sorted";
+      } else {
+        err << m_slice_points.size() << " != " << m_child_layers.size() + 1;
+      }
+      throw lbann_exception(err.str());
     }
 
   }
