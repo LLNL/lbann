@@ -340,7 +340,8 @@ class base_convolution_layer : public learning {
   }
 
   /** Setup layer data.
-   *  The weights are setup in the convolution and deconvolution classes. */
+   *  The kernel weights are setup in the convolution and
+   *  deconvolution classes. */
   void setup_data() override {
     learning::setup_data();
 
@@ -382,6 +383,15 @@ class base_convolution_layer : public learning {
       cast_initializer->set_fan_out(m_kernel_size / this->m_prev_neuron_dims[0]);
     }
     
+    // Initialize bias
+    if (m_bias_scaling_factor != DataType(0)) {
+      this->m_weights[1]->setup(this->m_neuron_dims[0], 1,
+                                El::STAR, El::STAR);
+      El::Zeros(*this->m_bias_weights_gradient,
+                this->m_weights[1]->get_height(),
+                this->m_weights[1]->get_width());
+    }
+
   }
 
   void setup_views() override {
@@ -970,7 +980,7 @@ class base_convolution_layer : public learning {
             sum = next_sum;
           }
         }
-        bias_weights_gradient_local(0, channel) = m_bias_scaling_factor * sum;
+        bias_weights_gradient_local(channel, 0) = m_bias_scaling_factor * sum;
       }
       *this->m_bias_weights_gradient *= 
         DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size();

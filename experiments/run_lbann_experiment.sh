@@ -4,7 +4,7 @@
 EXPERIMENT_NAME=lbann_alexnet
 LBANN_DIR=$(git rev-parse --show-toplevel)
 READER_PROTO="--reader=${LBANN_DIR}/model_zoo/data_readers/data_reader_imagenet.prototext"
-MODEL_PROTO="--model=${LBANN_DIR}/model_zoo/models/alexnet/model_alexnet.prototext --num_epochs=10"
+MODEL_PROTO="--model=${LBANN_DIR}/model_zoo/models/alexnet/model_alexnet.prototext --num_epochs=1"
 OPTIMIZER_PROTO="--optimizer=${LBANN_DIR}/model_zoo/optimizers/opt_sgd.prototext"
 IMAGENET_CLASSES=10 # options: 10, 100, 300, 1000 (leave blank to use other dataset)
 
@@ -12,7 +12,7 @@ IMAGENET_CLASSES=10 # options: 10, 100, 300, 1000 (leave blank to use other data
 NUM_NODES=      # default: number of allocated nodes (1 if none)
 PROCS_PER_NODE= # default: 2 (1 if NUM_NODES=1)
 CLUSTER=
-PARTITION=
+PARTITION=pdebug
 ACCOUNT=
 TIME_LIMIT=     # default: 1:00 (format is hours:minutes)
 
