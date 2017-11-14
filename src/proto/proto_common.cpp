@@ -54,52 +54,75 @@ void setup_pointers(
   for (size_t i=0; i<proto_layers.size(); i++) {
     Layer *layer = model_layers[proto_layers[i].name()];
 
-    std::string name;
-    std::stringstream ss;
     std::stringstream err;
 
     // Set layer parents
-    ss.str(proto_layers[i].parents());
-    while (ss >> name) {
-      if (master and not layer_is_in_model(name)) {
+    {
+      std::string name;
+      std::stringstream ss(proto_layers[i].parents());
+      while (ss >> name) {
+        if (master and not layer_is_in_model(name)) {
+          err << __FILE__ << " " << __LINE__ << " :: "
+              << "could not find parent layer " << name;
+          throw lbann_exception(err.str());
+        }
+        Layer *parent_layer = model_layers[name];
+        layer->add_parent_layer(parent_layer);
+      }
+      if (ss.bad()) {
         err << __FILE__ << " " << __LINE__ << " :: "
-            << "could not find parent layer " << name;
+            << "could not parse " << proto_layers[i].parents();
         throw lbann_exception(err.str());
       }
-      Layer *parent_layer = model_layers[name];
-      layer->add_parent_layer(parent_layer);
     }
 
     // Set layer children
-    ss.str(proto_layers[i].children());
-    while (ss >> name) {
-      if (master and not layer_is_in_model(name)) {
+    {
+      std::string name;
+      std::stringstream ss(proto_layers[i].children());
+      while (ss >> name) {
+        if (master and not layer_is_in_model(name)) {
+          err << __FILE__ << " " << __LINE__ << " :: "
+              << "could not find child layer " << name;
+          throw lbann_exception(err.str());
+        }
+        Layer *child_layer = model_layers[name];
+        layer->add_child_layer(child_layer);
+      }
+      if (ss.bad()) {
         err << __FILE__ << " " << __LINE__ << " :: "
-            << "could not find child layer " << name;
+            << "could not parse " << proto_layers[i].children();
         throw lbann_exception(err.str());
       }
-      Layer *child_layer = model_layers[name];
-      layer->add_child_layer(child_layer);
     }
 
     // Set linked layers
-    ss.str(proto_layers[i].linked_layers());
-    while (ss >> name) {
-      if (master and not layer_is_in_model(name)) {
+    {
+      std::string name;
+      std::stringstream ss(proto_layers[i].linked_layers());
+      while (ss >> name) {
+        if (master and not layer_is_in_model(name)) {
+          err << __FILE__ << " " << __LINE__ << " :: "
+              << "could not find layer " << name << " to link with layer " << proto_layers[i].name();
+          throw lbann_exception(err.str());
+        }
+        Layer *other_layer = model_layers[name];
+        model->link_layers(other_layer, layer);
+      }
+      if (ss.bad()) {
         err << __FILE__ << " " << __LINE__ << " :: "
-            << "could not find layer " << name << " to link with layer " << proto_layers[i].name();
+            << "could not parse " << proto_layers[i].linked_layers();
         throw lbann_exception(err.str());
       }
-      Layer *other_layer = model_layers[name];
-      model->link_layers(other_layer, layer);
     }
 
     // Set a target layer's paired input layer
     if (dynamic_cast<target_layer*>(layer) != nullptr) {
       target_layer *target = dynamic_cast<target_layer*>(layer);
 
+      std::string name;
+
       // Get input layer name
-      name.clear();
       if (proto_layers[i].has_target_distributed_minibatch()) {
         name = proto_layers[i].target_distributed_minibatch().paired_input_layer();
       }
@@ -128,6 +151,8 @@ void setup_pointers(
 
     // Set a reconstruction layer's original layer
     if (proto_layers[i].has_reconstruction()) {
+
+      std::string name;
 
       // Get original layer name
       name = proto_layers[i].reconstruction().original_layer();
