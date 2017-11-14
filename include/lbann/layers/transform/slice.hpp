@@ -101,7 +101,7 @@ class slice_layer : public transform {
     m_output_slice_v = other.m_output_slice_v->Copy();
   }
 
-  ~slice_layer() {
+  ~slice_layer() override {
     delete m_fp_output;
     delete m_input_slice_v;
     delete m_output_slice_v;
@@ -156,9 +156,11 @@ class slice_layer : public transform {
        || !std::is_sorted(m_slice_points.begin(), m_slice_points.end())) {
       err << __FILE__ << " " << __LINE__ << " :: slice_layer: ";
       if (!std::is_sorted(m_slice_points.begin(), m_slice_points.end())) {
-        err << "not sorted";
+        err << "slice points not sorted";
       } else {
-        err << m_slice_points.size() << " != " << m_child_layers.size() + 1;
+        err << "number of slice points (" << m_slice_points.size()
+            << ") != number of children (" << m_child_layers.size() << ") + 1"
+            << " {" << get_layer_names(m_child_layers) << "}";
       }
       throw lbann_exception(err.str());
     }
