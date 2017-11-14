@@ -1909,8 +1909,15 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
     if (master) cout << "imagenet_reader_single is set" << endl;
   }
 
+  image_data_reader* image_data_reader_ptr = dynamic_cast<image_data_reader*>(reader);
+  if (!image_data_reader_ptr && master) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: invalid image data reade pointer";
+    throw lbann_exception(err.str());
+  }
+
   // configure the data reader
-  dynamic_cast<imagenet_reader*>(reader)->set_input_params(width, height, 3, n_labels);
+  image_data_reader_ptr->set_input_params(width, height, 3, n_labels);
 }
 
 
