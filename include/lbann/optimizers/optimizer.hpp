@@ -71,13 +71,20 @@ class optimizer {
     m_learning_rate = learning_rate;
   };
 
+  /** Get gradient matrix. */
+  AbsDistMat& get_gradient();
+  /** Get gradient matrix (const). */
+  const AbsDistMat& get_gradient() const;
+  
+  /** Clear gradient matrix. */
+  void clear_gradient() { El::Zero(get_gradient()); }
+  /** Add to the gradient matrix. */
+  void add_to_gradient(AbsDistMat& gradient) {
+    El::Axpy(DataType(1), gradient, get_gradient());
+  }
+
   /** Setup optimizer. */
   virtual void setup(weights& w);
-
-  /** Clear gradient matrix. */
-  void clear_gradient();
-  /** Add to the gradient matrix. */
-  void add_to_gradient(AbsDistMat& gradient);
 
   /** Apply an optimization step. */
   void step();

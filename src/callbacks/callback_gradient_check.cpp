@@ -73,7 +73,7 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
   expected_error = std::pow(expected_error, 0.9);
 
   // Compute gradients
-  for (size_t l = layers.size(); l-- > 0u;) {
+  for (int l = layers.size() - 1; l > 0; --l) {
     layers[l]->back_prop();
   }
 
@@ -86,60 +86,63 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
               << "  Expected gradient error  = " << expected_error << std::endl;
   }
 
-  // Iterate through layers
-  for (size_t layer_index = 1; layer_index < layers.size() - 1; ++layer_index) {
-
-    // Check that current layer is a learning layer
-    learning* layer = dynamic_cast<learning*>(layers[layer_index]);
-    if (layer == nullptr) {
+  for (weights *w : m->get_weights()) {
+    if (w->get_optimizer() == nullptr) {
       continue;
     }
     if (comm->am_world_master()) {
-      std::cout << "Checking layer " << layer->get_name() << std::endl;
+      std::cout << "Checking " << w->get_name() << std::endl;
     }
 
-    // Get weights and gradients
-    auto& weights = layer->get_weights();
-    auto& weights_gradient = layer->get_weights_gradient();
+    // Get weights matrix and gradient
+    AbsDistMat& weights_matrix = w->get_values();
+    AbsDistMat& gradient = w->get_optimizer()->get_gradient();
 
-    // Iterate through weights in current layer
-    for (El::Int col = 0; col < weights.Width(); ++col) {
-      for (El::Int row = 0; row < weights.Height(); ++row) {
-        const bool weight_local = weights.IsLocal(row, col);
-        DataType initial_weight = DataType(0);
+    // Iterate through weights matrix entries
+    for (El::Int col = 0; col < weights_matrix.Width(); ++col) {
+      for (El::Int row = 0; row < weights_matrix.Height(); ++row) {
+        const bool weight_local = weights_matrix.IsLocal(row, col);
         El::Int local_row = 0;
         El::Int local_col = 0;
+        DataType initial_weight = DataType(0);
         if (weight_local) {
-          local_row = weights.LocalRow(row);
-          local_col = weights.LocalCol(col);
-          initial_weight = weights.GetLocal(local_row, local_col);
+          local_row = weights_matrix.LocalRow(row);
+          local_col = weights_matrix.LocalCol(col);
+          initial_weight = weights_matrix.GetLocal(local_row, local_col);
         }
 
         // Compute objective function values
+        // Note: matrix entry is reset after computing objective
+        // function values
         if (weight_local) {
-          weights.SetLocal(local_row, local_col,
-                           initial_weight + 2 * step_size);
+          weights_matrix.SetLocal(local_row, local_col,
+                                  initial_weight + 2 * step_size);
         }
         const DataType f_2h = compute_objective_function(m);
         if (weight_local) {
-          weights.SetLocal(local_row, local_col, initial_weight + step_size);
+          weights_matrix.SetLocal(local_row, local_col,
+                                  initial_weight + step_size);
         }
         const DataType f_h = compute_objective_function(m);
         if (weight_local) {
-          weights.SetLocal(local_row, local_col, initial_weight - step_size);
+          weights_matrix.SetLocal(local_row, local_col,
+                                  initial_weight - step_size);
         }
         const DataType f_nh = compute_objective_function(m);
         if (weight_local) {
-          weights.SetLocal(local_row, local_col,
-                           initial_weight - 2 * step_size);
+          weights_matrix.SetLocal(local_row, local_col,
+                                  initial_weight - 2 * step_size);
         }
         const DataType f_n2h = compute_objective_function(m);
+        if (weight_local) {
+          weights_matrix.SetLocal(local_row, local_col, initial_weight);
+        }        
 
         // Compute relative error in gradient.
         // Only the owner of this entry participates.
-        if (weights.DistRank() == weights.Owner(row, col)) {
+        if (weights_matrix.DistRank() == weights_matrix.Owner(row, col)) {
           const DataType analytical_gradient =
-            weights_gradient.GetLocal(local_row, local_col);
+            gradient.GetLocal(local_row, local_col);
           const DataType numerical_gradient
             = (- f_2h + 8 * f_h - 8 * f_nh + f_n2h) / (12 * step_size);
           const DataType error = std::fabs(analytical_gradient - numerical_gradient);
@@ -151,7 +154,7 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
         
           // Print warning if relative error is large
           if (error > expected_error) {
-            std::cout << "  GRADIENT ERROR: Layer " << layer->get_name() << ", "
+            std::cout << "  GRADIENT ERROR: " << w->get_name() << ", "
                       << "entry (" << row << "," << col << ")" << std::endl;
             std::cout << "    Weight              = " << initial_weight << std::endl
                       << "    Analytical gradient = " << analytical_gradient << std::endl
@@ -163,7 +166,7 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
             }
           }
           else if (m_verbose) {
-            std::cout << "  Layer " << layer_index << ", "
+            std::cout << "  " << w->get_name() << ", "
                       << "entry (" << row << "," << col << ")" << std::endl;
             std::cout << "    Weight              = " << initial_weight << std::endl
                       << "    Analytical gradient = " << analytical_gradient << std::endl
@@ -173,10 +176,6 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
           }
         }
 
-        // Reset weight
-        if (weight_local) {
-          weights.SetLocal(local_row, local_col, initial_weight);
-        }        
       }
     }
 

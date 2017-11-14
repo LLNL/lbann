@@ -152,7 +152,6 @@ void setup_pointers(
   }
 }
 
-#if 0
 lbann_callback_imcomm::comm_type get_comm_type(const string &s, bool master)
 {
   if (s == "none") {
@@ -177,7 +176,6 @@ lbann_callback_imcomm::comm_type get_comm_type(const string &s, bool master)
     }
   }
 }
-#endif
 
 pool_mode get_pool_mode(const string& s, bool master)
 {
@@ -1046,7 +1044,6 @@ void init_callbacks(
   std::map<execution_mode, lbann::generic_data_reader *>& data_readers,
   const lbann_data::LbannPB& p)
 {
-#if 0
   std::stringstream err;
   bool master = comm->am_world_master();
 
@@ -1508,7 +1505,6 @@ void init_callbacks(
       model->add_callback(lwalr_cb);
     }
   }
-#endif
 
 }
 

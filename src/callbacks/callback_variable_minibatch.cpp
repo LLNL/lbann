@@ -112,13 +112,8 @@ void lbann_callback_variable_minibatch::on_epoch_end(model *m) {
 
 void lbann_callback_variable_minibatch::change_learning_rate(
   model *m, float new_lr) const {
-  std::vector<Layer*>& layers = m->get_layers();
-  for (size_t l = 0; l < layers.size(); ++l) {
-    optimizable_layer *opt_layer = dynamic_cast<optimizable_layer*>(layers[l]);
-    if (opt_layer == nullptr) {
-      continue;
-    }
-    optimizer *opt = opt_layer->get_optimizer();
+  for (weights *w : m->get_weights()) {
+    optimizer *opt = w->get_optimizer();
     if (opt != nullptr) {
       opt->set_learning_rate(new_lr);
     }
@@ -127,13 +122,8 @@ void lbann_callback_variable_minibatch::change_learning_rate(
 
 float lbann_callback_variable_minibatch::get_current_learning_rate(
   model *m) const {
-  std::vector<Layer*>& layers = m->get_layers();
-  for (size_t l = 0; l < layers.size(); ++l) {
-    optimizable_layer *opt_layer = dynamic_cast<optimizable_layer*>(layers[l]);
-    if (opt_layer == nullptr) {
-      continue;
-    }
-    optimizer *opt = opt_layer->get_optimizer();
+  for (weights *w : m->get_weights()) {
+    optimizer *opt = w->get_optimizer();
     if (opt != nullptr) {
       return opt->get_learning_rate();
     }

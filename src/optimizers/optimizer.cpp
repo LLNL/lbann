@@ -92,6 +92,26 @@ weights& optimizer::get_weights() {
   return *m_weights;
 }
 
+AbsDistMat& optimizer::get_gradient() {
+  if (m_gradient != nullptr) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "attempted to access gradients before they are set";
+    throw lbann_exception(err.str());
+  }
+  return *m_gradient;
+}
+
+const AbsDistMat& optimizer::get_gradient() const {
+  if (m_gradient != nullptr) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "attempted to access gradients before they are set";
+    throw lbann_exception(err.str());
+  }
+  return *m_gradient;
+}
+
 void optimizer::setup(weights& var) {
   if (m_weights != nullptr) {
     std::stringstream err;
@@ -108,17 +128,9 @@ void optimizer::setup(weights& var) {
 
 }
 
-void optimizer::clear_gradient() {
-  El::Zero(*m_gradient);
-}
-
-void optimizer::add_to_gradient(AbsDistMat& gradient) {
-  El::Axpy(DataType(1), gradient, *m_gradient);
-}
-
 void optimizer::step() {
   AbsDistMat& values = m_weights->get_values();
-  step_compute(values, *m_gradient);
+  step_compute(values, get_gradient());
   clear_gradient();
 }
 
