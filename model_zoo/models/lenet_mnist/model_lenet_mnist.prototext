@@ -49,13 +49,12 @@ model {
     adaptive_learning_rate {
       patience: 4
       amt: 0.1
-      layers: ""
     }
   }
   # callback {
   #   imcomm {
   #     intermodel_comm_method: "normal"
-  #     all_learning_layers: true
+  #     all_optimizers: true
   #   }
   # }
   # callback {

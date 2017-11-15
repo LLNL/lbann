@@ -41,7 +41,7 @@ model {
   callback {
     imcomm {
       intermodel_comm_method: "normal"
-      layers: "1 5 9 12 17 20 23 28 31 34 38 42 45 50 53 56 61 64 67 72 75 78 82 86 89 94 97 100 105 108 111 116 119 122 127 130 133 138 141 144 148 152 155 160 163 166 171 174 177 182"
+      all_optimizers: true
     }
   }
 

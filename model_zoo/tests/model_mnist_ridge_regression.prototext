@@ -1,5 +1,5 @@
 model {
-  name: "dnn"
+  name: "sequential_model"
   objective_function: "mean_squared_error"
   metric {
     categorical_accuracy {
@@ -49,19 +49,14 @@ model {
   # INPUT
   #######
   layer {
-    name: "1"
-    parents: "1"
     data_layout: "data_parallel"
-    input_partitioned_minibatch {
-    }
+    input_partitioned_minibatch {}
   }
 
   #################
   # FULLY_CONNECTED
   #################
   layer {
-    name: "2"
-    parents: "1"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 10
@@ -72,11 +67,9 @@ model {
   }
 
   ########
-  # TARGET
+  # Target
   ########
   layer {
-    name: "3"
-    parents: "2"
     data_layout: "data_parallel"
     target_partitioned_minibatch {
       shared_data_reader: true

@@ -93,7 +93,7 @@ weights& optimizer::get_weights() {
 }
 
 AbsDistMat& optimizer::get_gradient() {
-  if (m_gradient != nullptr) {
+  if (m_gradient == nullptr) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
         << "attempted to access gradients before they are set";
@@ -103,7 +103,7 @@ AbsDistMat& optimizer::get_gradient() {
 }
 
 const AbsDistMat& optimizer::get_gradient() const {
-  if (m_gradient != nullptr) {
+  if (m_gradient == nullptr) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
         << "attempted to access gradients before they are set";

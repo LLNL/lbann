@@ -41,7 +41,7 @@ model {
   callback {
     imcomm {
       intermodel_comm_method: "normal"
-      all_learning_layers: true
+      all_optimizers: true
     }
   }
 

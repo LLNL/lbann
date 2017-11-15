@@ -91,6 +91,8 @@ message Model {
 
   repeated Layer layer = 10;
 
+  repeated Weights weights = 11;
+
   // checknan, debug, dump_activations, etc;
   // for complete list, see: lbann/include/lbann/callbacks
   repeated Callback callback = 20; 
@@ -206,7 +208,7 @@ message Callback {
    CallbackLTFB ltfb = 24;
    CallbackDebugIO debug_io = 25;
    CallbackMinibatchSchedule minibatch_schedule = 26;
-   CallbackLayerwiseAdaptiveLearningRate layerwise_adaptive_learning_rate = 27;
+   CallbackOptimizerwiseAdaptiveLearningRate optimizerwise_adaptive_learning_rate = 27;
 }
 
 message CallbackLTFB {
@@ -214,7 +216,7 @@ message CallbackLTFB {
 }
 
 message CallbackStepLearningRate {
-  string layers = 1; //e.g: "1 5 6" use "10000" to apply to all layers
+  string weights = 1; //default: all weights
   int64 step = 2;
   double amt = 3;
 }
@@ -224,7 +226,7 @@ message CallbackCustomLearningRate {
 }
 
 message CallbackAdaptiveLearningRate {
-  string layers = 1; //e.g: "1 5 6" use "10000" to apply to all layers
+  string weights = 1; //default: all weights
   int64 patience = 2;
   double amt = 3;
 }
@@ -276,7 +278,7 @@ message CallbackDispIOStats {
 
 message CallbackImComm {
   string intermodel_comm_method = 1;
-  bool all_learning_layers = 2;
+  bool all_optimizers = 2;
 }
 
 message CallbackDebug {
@@ -302,13 +304,13 @@ message CallbackHang {
 }
 
 message CallbackDropFixedLearningRate {
-  repeated string layer = 1;
+  string weights = 1;
   repeated int64 drop_epoch = 2;
   double amt = 3;
 }
 
 message CallbackLinearGrowthLearningRate {
-  repeated string layer = 1;
+  string weights = 1;
   double target = 2;
   int64 num_epochs = 3;
   int64 delay = 4;
@@ -327,8 +329,8 @@ message MinibatchScheduleStep {
   int64 ramp_time = 4;
 }
 
-message CallbackLayerwiseAdaptiveLearningRate {
-  repeated string layer = 1;
+message CallbackOptimizerwiseAdaptiveLearningRate {
+  string weights = 1;
   double scale = 2;
 }
 
@@ -342,22 +344,11 @@ message CallbackGradientCheck {
   bool verbose = 2;
   bool fail_on_error = 3;
 }
-//========================================================================
-// MotifDefinitions
-//========================================================================
-
-message MotifDefinitions {
-  repeated Motif motif = 1;
-}
-
-message Motif {
-  string name = 1;
-  repeated Layer layer = 2;
-}
 
 //========================================================================
-// Layers
+// Weights
 //========================================================================
+
 //
 // weight initialization should be one of: 
 //    zero, uniform, normal, glorot_normal, he_normal, he_uniform
@@ -375,14 +366,35 @@ enum Imcomm {
                 //in the CallbackImComm is set to true or false
 }
 
+message Weights {
+  string name = 1;
+    
+  Imcomm imcomm = 55;
+}
+
+//========================================================================
+// MotifDefinitions
+//========================================================================
+
+message MotifDefinitions {
+  repeated Motif motif = 1;
+}
+
+message Motif {
+  string name = 1;
+  repeated Layer layer = 2;
+}
+
+//========================================================================
+// Layers
+//========================================================================
+
 message Layer {
    string name = 50; 
    string parents = 151;
    string children = 152;
    string data_layout = 52;
    bool num_neurons_from_data_reader = 53;
-
-   Imcomm imcomm = 55;
 
    // a Layer should contain exactly one of the following
    // (this may or may not be properly checked for in proto_common.cpp)
