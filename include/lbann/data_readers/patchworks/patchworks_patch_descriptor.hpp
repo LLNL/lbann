@@ -85,6 +85,9 @@ class patch_descriptor {
   virtual ~patch_descriptor() {}
   void init(); ///< Initializer
 
+  /// Get patch size
+  unsigned int get_patch_width() const { return m_width; }
+  unsigned int get_patch_height() const { return m_height; }
   /// Set patch size
   void set_size(const int w, const int h);
   /// Set the gap between neighboring patches

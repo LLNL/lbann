@@ -109,7 +109,12 @@ bool imagenet_reader_patches::replicate_processor(const cv_process_patches& pp) 
     throw lbann_exception(err.str());
     return false;
   }
-  m_num_patches = static_cast<int>(pp.get_num_patches());
+  const std::vector<unsigned int> dims = pp.get_data_dims();
+  if ((dims.size() == 3u) && (dims[0] != 0u) && (dims[1] != 0u) && (dims[2] != 0u)) {
+    m_num_patches = static_cast<int>(dims[0]);
+    m_image_width = static_cast<int>(dims[1]);
+    m_image_height = static_cast<int>(dims[2]);
+  }
 
   return true;
 }

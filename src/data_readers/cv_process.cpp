@@ -141,6 +141,16 @@ cv_transform* cv_process::get_transform(const unsigned int idx) {
   return m_transforms[idx].get();
 }
 
+std::vector<unsigned int> cv_process::get_data_dims() const {
+  for(const std::unique_ptr<cv_transform>& tr: m_transforms) {
+    const cv_cropper* const c = dynamic_cast<const cv_cropper*>(&(*tr));
+    if (c != nullptr) {
+      return {c->get_crop_width(), c->get_crop_height()};
+    }
+  }
+  return {0u, 0u};
+}
+
 /**
  * Call this before image saving/exporting in postprocessing if inverse normalization
  * is needed to save image.  Unless normalization is followed by a transform, inverse
