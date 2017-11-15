@@ -528,7 +528,7 @@ message Layer {
 // MotifLayer //
 ///////////////////////
 message MotifLayer {
-  string name = 1;
+  string motif_id = 1;
   repeated string variable = 2;
 }
 
