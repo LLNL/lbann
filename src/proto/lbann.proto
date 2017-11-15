@@ -184,6 +184,24 @@ message Model {
   int64 random_seed = 34;
   // If true, models will have their model rank mixed into their random seed.
   bool random_init_models_differently = 35;
+
+  // For planar model. Eventtually, this should be oneof the existing models
+  message Planar {
+    message Planar_simple {
+      string name = 1;
+      uint32 num_heads = 2;
+    }
+    message Planar_regular {
+      string name = 1;
+      uint32 outdegrees_fanout = 2;
+      uint32 outdegrees_fanin = 3;
+    }
+    oneof planar_type {
+      Planar_simple simple = 1;
+      Planar_regular regular = 2;
+    }
+  }
+  Planar planar = 36;
 }
 
 //========================================================================

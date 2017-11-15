@@ -1621,9 +1621,21 @@ model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac, const lban
     model = new dag_model(mini_batch_size, comm, obj, optimizer_fac);
     if (master) std::cout << "instantiating dag_model\n";
   } else if(name == "planar_model") {
-/// XXX
-/// Settting the number of heads to 3 temporarly; will be fixed as a parameter
-    model = new planar_model(mini_batch_size, comm, obj, optimizer_fac, 3);
+    if (m.has_planar()) {
+      const lbann_data::Model::Planar& planar = m.planar();
+      if (planar.has_simple()) {
+        const int num_heads = planar.simple().num_heads();
+        model = new planar_model(mini_batch_size, comm, obj, optimizer_fac, num_heads);
+      } else if (planar.has_regular()) {
+        // TODO: parse the vector and pass it to the overloaded constructor
+        // vector<int> outdegrees_fanout;
+        // vector<int> outdegrees_fanin;
+      }
+    } else {
+      err << __FILE__ << " " << __LINE__
+          << " :: init_model() - " << name << " needs definition" << endl;
+      throw lbann_exception(err.str());
+    }
     if (master) std::cout << "instantiating planar_model\n";
   } else if (name == "greedy_layerwise_autoencoder") {
     model = new greedy_layerwise_autoencoder(mini_batch_size, comm, obj, optimizer_fac);
