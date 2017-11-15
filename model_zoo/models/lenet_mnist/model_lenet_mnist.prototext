@@ -68,7 +68,12 @@ model {
   #     layers: "data"
   #   }
   # }
-
+  # callback {
+  #   gradient_check {
+  #     verbose: false
+  #     fail_on_error: false
+  #   }
+  # }
 
   ###################################################
   # Layers
@@ -76,8 +81,8 @@ model {
 
 layer {
   name: "data"
-  data_layout: "model_parallel"
-  input_distributed_minibatch {
+  data_layout: "data_parallel"
+  input_partitioned_minibatch {
   }
 }
 
@@ -137,7 +142,7 @@ layer {
 
 layer {
   name: "ip1"
-  data_layout: "data_parallel"
+  data_layout: "model_parallel"
   fully_connected {
     num_neurons: 500
     weight_initialization: "glorot_uniform"
@@ -148,14 +153,14 @@ layer {
 
 layer {
   name: "relu1"
-  data_layout: "data_parallel"
+  data_layout: "model_parallel"
   relu {
   }
 }
 
 layer {
   name: "ip2"
-  data_layout: "data_parallel"
+  data_layout: "model_parallel"
   fully_connected {
     num_neurons: 10
     weight_initialization: "glorot_uniform"
@@ -174,7 +179,7 @@ layer {
 layer {
   name: "target"
   data_layout: "data_parallel"
-  target_distributed_minibatch {
+  target_partitioned_minibatch {
     shared_data_reader: true
   }
 }

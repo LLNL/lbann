@@ -817,6 +817,9 @@ class base_convolution_layer : public learning {
       output_size = this->m_num_prev_neurons;
     }
 
+    // Setup view
+    this->m_weights[0]->get_values_view(*m_kernel_weights_v);
+
     // Get local matrices
     const Mat& input_local = input->LockedMatrix();
     const Mat& kernel_weights_local = m_kernel_weights_v->LockedMatrix();
@@ -830,7 +833,7 @@ class base_convolution_layer : public learning {
     Mat input_col, output_col;
 
     // Iterate through input columns
-    El::Int width_local = input_local.Width();
+    const El::Int width_local = input_local.Width();
     for(El::Int col = 0; col < width_local; ++col) {
 
       // Construct im2col matrix from current input column
@@ -876,6 +879,9 @@ class base_convolution_layer : public learning {
       output_dims = this->m_prev_neuron_dims;
     }
 
+    // Setup view
+    this->m_weights[0]->get_values_view(*m_kernel_weights_v);
+
     // Get local matrices
     const Mat& input_local = input->LockedMatrix();
     const Mat& kernel_weights_local = m_kernel_weights_v->LockedMatrix();
@@ -889,7 +895,7 @@ class base_convolution_layer : public learning {
     Mat input_col, output_col;
 
     // Iterate through input columns
-    El::Int width_local = input_local.Width();
+    const El::Int width_local = input_local.Width();
     for(El::Int col = 0; col < width_local; ++col) {
 
       // Apply transposed convolution to current input column
@@ -919,6 +925,9 @@ class base_convolution_layer : public learning {
     // Return immediately if there is no bias
     if(m_bias_scaling_factor == DataType(0)) return;
 
+    // Setup view
+    this->m_weights[1]->get_values_view(*m_bias_weights_v);
+
     // Get local matrices
     const Mat& bias_weights_local = this->m_bias_weights_v->LockedMatrix();
     Mat& activations_local = m_activations_v->Matrix();
@@ -934,7 +943,7 @@ class base_convolution_layer : public learning {
       const El::Int row_start = channel * num_per_output_channel;
       const El::Int row_end = (channel+1) * num_per_output_channel;
       const DataType bias_term
-        = m_bias_scaling_factor * bias_weights_local(0, channel);
+        = m_bias_scaling_factor * bias_weights_local(channel, 0);
       for(El::Int col = 0; col < width_local; ++col) {
         for(El::Int row = row_start; row < row_end; ++row) {
           activations_local(row, col) += bias_term;
@@ -964,7 +973,8 @@ class base_convolution_layer : public learning {
 
     // Compute bias gradient
     // Note: Sum is computed with Kahan summation
-    if(m_bias_scaling_factor != DataType(0)) {
+    optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
+    if(m_bias_scaling_factor != DataType(0) && bias_optimizer != nullptr) {
       #pragma omp parallel for
       for(int channel = 0; channel < num_output_channels; ++channel) {
         const El::Int row_start = channel * num_per_output_channel;
@@ -986,7 +996,12 @@ class base_convolution_layer : public learning {
         DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size();
       El::AllReduce(*this->m_bias_weights_gradient,
                     this->m_bias_weights_gradient->RedundantComm());
+      bias_optimizer->add_to_gradient(*m_bias_weights_gradient);
     }
+
+    // Stop early if kernel is not being optimized
+    optimizer* kernel_optimizer = this->m_weights[0]->get_optimizer();
+    if (kernel_optimizer == nullptr) { return; }
 
     // Initialize im2col matrix
     const int m = (using_transposed_convolution ?
@@ -1041,6 +1056,7 @@ class base_convolution_layer : public learning {
       DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size();
     El::AllReduce(*this->m_kernel_weights_gradient,
                   this->m_kernel_weights_gradient->RedundantComm());
+    kernel_optimizer->add_to_gradient(*this->m_kernel_weights_gradient);
 
   }
 

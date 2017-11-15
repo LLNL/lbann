@@ -101,48 +101,50 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
     // Iterate through weights matrix entries
     for (El::Int col = 0; col < weights_matrix.Width(); ++col) {
       for (El::Int row = 0; row < weights_matrix.Height(); ++row) {
-        const bool weight_local = weights_matrix.IsLocal(row, col);
-        El::Int local_row = 0;
-        El::Int local_col = 0;
-        DataType initial_weight = DataType(0);
-        if (weight_local) {
-          local_row = weights_matrix.LocalRow(row);
-          local_col = weights_matrix.LocalCol(col);
-          initial_weight = weights_matrix.GetLocal(local_row, local_col);
-        }
+        const bool weight_is_local = weights_matrix.IsLocal(row, col);
+        const El::Int local_row = (weight_is_local ?
+                                   weights_matrix.LocalRow(row) :
+                                   0);
+        const El::Int local_col = (weight_is_local ?
+                                   weights_matrix.LocalCol(col) :
+                                   0);
+        const DataType initial_weight = (weight_is_local ?
+                                         weights_matrix.GetLocal(local_row,
+                                                                 local_col) :
+                                         DataType(0));
 
         // Compute objective function values
         // Note: matrix entry is reset after computing objective
         // function values
-        if (weight_local) {
+        if (weight_is_local) {
           weights_matrix.SetLocal(local_row, local_col,
                                   initial_weight + 2 * step_size);
         }
         const DataType f_2h = compute_objective_function(m);
-        if (weight_local) {
+        if (weight_is_local) {
           weights_matrix.SetLocal(local_row, local_col,
                                   initial_weight + step_size);
         }
         const DataType f_h = compute_objective_function(m);
-        if (weight_local) {
+        if (weight_is_local) {
           weights_matrix.SetLocal(local_row, local_col,
                                   initial_weight - step_size);
         }
         const DataType f_nh = compute_objective_function(m);
-        if (weight_local) {
+        if (weight_is_local) {
           weights_matrix.SetLocal(local_row, local_col,
                                   initial_weight - 2 * step_size);
         }
         const DataType f_n2h = compute_objective_function(m);
-        if (weight_local) {
+        if (weight_is_local) {
           weights_matrix.SetLocal(local_row, local_col, initial_weight);
-        }        
+        }
 
         // Compute relative error in gradient.
-        // Only the owner of this entry participates.
-        if (weights_matrix.DistRank() == weights_matrix.Owner(row, col)) {
-          const DataType analytical_gradient =
-            gradient.GetLocal(local_row, local_col);
+        // Note: only weight owner participates
+        if (weight_is_local && weights_matrix.RedundantRank() == 0) {
+          const DataType analytical_gradient
+            = gradient.GetLocal(local_row, local_col);
           const DataType numerical_gradient
             = (- f_2h + 8 * f_h - 8 * f_nh + f_n2h) / (12 * step_size);
           const DataType error = std::fabs(analytical_gradient - numerical_gradient);
@@ -153,7 +155,7 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
           }
         
           // Print warning if relative error is large
-          if (error > expected_error) {
+          if (error > expected_error || std::isnan(error) || std::isinf(error)) {
             std::cout << "  GRADIENT ERROR: " << w->get_name() << ", "
                       << "entry (" << row << "," << col << ")" << std::endl;
             std::cout << "    Weight              = " << initial_weight << std::endl
@@ -164,8 +166,7 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
             if (m_fail_on_error) {
               throw lbann_exception("callback_gradient_check: found large error in gradient");
             }
-          }
-          else if (m_verbose) {
+          } else if (m_verbose) {
             std::cout << "  " << w->get_name() << ", "
                       << "entry (" << row << "," << col << ")" << std::endl;
             std::cout << "    Weight              = " << initial_weight << std::endl

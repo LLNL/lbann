@@ -35,7 +35,6 @@ model {
   }
   callback {
     gradient_check {
-      step_size: 0
       verbose: false
       fail_on_error: true
     }
