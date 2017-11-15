@@ -508,12 +508,12 @@ class fully_connected_layer : public learning {
     // Compute bias update if needed
     optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
     if(m_bias_scaling_factor != DataType(0) && bias_optimizer != nullptr) {
-      El::RowSum(*this->m_prev_error_signal,
-                 *m_bias_weights_gradient);
+      El::RowSum(this->m_prev_error_signal->LockedMatrix(),
+                 m_bias_weights_gradient->Matrix());
       El::Scale(m_bias_scaling_factor /
                 this->m_neural_network_model->get_effective_mini_batch_size(),
                 *m_bias_weights_gradient);
-      bias_optimizer->add_to_gradient(*m_bias_weights_gradient);
+      bias_optimizer->allreduce_and_add_to_gradient(*m_bias_weights_gradient);
     }
 
   }
@@ -618,8 +618,8 @@ fully_connected_layer<data_layout::MODEL_PARALLEL>::bp_compute_weights() {
              *this->m_prev_error_signal,
              *this->m_prev_activations,
              DataType(0),
-             *this->m_matrix_weights_gradient);
-    matrix_optimizer->add_to_gradient(*this->m_matrix_weights_gradient);
+             *m_matrix_weights_gradient);
+    matrix_optimizer->add_to_gradient(*m_matrix_weights_gradient);
   }
 }
 
@@ -639,10 +639,8 @@ fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_weights<device::CP
              this->m_prev_error_signal->LockedMatrix(),
              this->m_prev_activations->LockedMatrix(),
              DataType(0),
-             this->m_matrix_weights_gradient->Matrix());
-    El::AllReduce(*this->m_matrix_weights_gradient,
-                  this->m_matrix_weights_gradient->RedundantComm());
-    matrix_optimizer->add_to_gradient(*this->m_matrix_weights_gradient);
+             m_matrix_weights_gradient->Matrix());
+    matrix_optimizer->allreduce_and_add_to_gradient(*m_matrix_weights_gradient);
   }
 }
 

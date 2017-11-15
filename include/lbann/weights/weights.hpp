@@ -141,6 +141,11 @@ class weights {
    */
   optimizer* m_optimizer;
 
+#ifdef __LIB_CUDNN
+  /** GPU memory for weights matrix. */
+  std::vector<DataType*> m_values_d;
+#endif // __LIB_CUDNN
+
 };
 
 } // namespace lbann

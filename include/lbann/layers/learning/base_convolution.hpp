@@ -992,11 +992,9 @@ class base_convolution_layer : public learning {
         }
         bias_weights_gradient_local(channel, 0) = m_bias_scaling_factor * sum;
       }
-      *this->m_bias_weights_gradient *= 
-        DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size();
-      El::AllReduce(*this->m_bias_weights_gradient,
-                    this->m_bias_weights_gradient->RedundantComm());
-      bias_optimizer->add_to_gradient(*m_bias_weights_gradient);
+      El::Scale(DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size(),
+                *m_bias_weights_gradient);
+      bias_optimizer->allreduce_and_add_to_gradient(*m_bias_weights_gradient);
     }
 
     // Stop early if kernel is not being optimized
@@ -1052,11 +1050,9 @@ class base_convolution_layer : public learning {
     }
 
     // Scale and accumulate gradients
-    *this->m_kernel_weights_gradient *= 
-      DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size();
-    El::AllReduce(*this->m_kernel_weights_gradient,
-                  this->m_kernel_weights_gradient->RedundantComm());
-    kernel_optimizer->add_to_gradient(*this->m_kernel_weights_gradient);
+    El::Scale(DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size(),
+              *m_kernel_weights_gradient);
+    kernel_optimizer->allreduce_and_add_to_gradient(*m_kernel_weights_gradient);
 
   }
 

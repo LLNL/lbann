@@ -77,11 +77,18 @@ class optimizer {
   const AbsDistMat& get_gradient() const;
   
   /** Clear gradient matrix. */
-  void clear_gradient() { El::Zero(get_gradient()); }
+  void clear_gradient();
   /** Add to the gradient matrix. */
-  void add_to_gradient(AbsDistMat& gradient) {
+  void add_to_gradient(const AbsDistMat& gradient) {
     El::Axpy(DataType(1), gradient, get_gradient());
   }
+  /** Allreduce and add to gradient matrix.
+   *  The input is added to a staging matrix. When an optimization
+   *  step is applied, an allreduce is applied over the redundant
+   *  communicator of the staging matrix and the result is added to
+   *  the gradient.
+   */
+  void allreduce_and_add_to_gradient(const AbsDistMat& gradient);
 
   /** Setup optimizer. */
   virtual void setup(weights& w);
@@ -107,6 +114,13 @@ class optimizer {
 
   /** Gradient matrix. */
   AbsDistMat* m_gradient;
+
+  /** Staging matrix for gradient allreduce.
+   *  When an optimization step is applied, an allreduce is applied
+   *  over the redundant communicator of the staging matrix and the
+   *  result is added to the gradient matrix.
+   */
+  AbsDistMat* m_gradient_staging;
 
 };
 
