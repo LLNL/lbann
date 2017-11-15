@@ -85,7 +85,11 @@ class reshape_layer : public transform {
                                               this->m_neuron_dims.end(),
                                               1,
                                               std::multiplies<int>())) {
-      throw lbann_exception("reshape_layer: invalid neuron dimensions");
+      std::string num_neurons = " {";
+      for(int n: m_neuron_dims) num_neurons += " " + std::to_string(n);
+      num_neurons += " }";
+      throw lbann_exception("reshape_layer: invalid neuron dimensions, " +
+                             std::to_string(m_num_neurons) + " != " + num_neurons);
     }
 
   }
