@@ -174,7 +174,7 @@ void optimizer::step() {
   }
 
   // Perform optimization step
-  step_compute(m_weights->get_values(), gradient);
+  step_compute(*m_weights->m_values, gradient);
   clear_gradient();
 
 }

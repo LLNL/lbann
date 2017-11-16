@@ -162,15 +162,34 @@ class cudnn_manager {
   /** Deallocate memory on GPUs. */
   void deallocate_on_gpus(std::vector<DataType*>& gpu_data);
 
+  /** Zero out memory on ith GPU. */
+  void clear_on_gpu(int i,
+                    DataType* gpu_data,
+                    int height,
+                    int width,
+                    int leading_dim = 0);
+  /** Copy data from CPU to ith GPU. */
+  void copy_to_gpu(int i,
+                   DataType* gpu_data,
+                   const Mat& cpu_data,
+                   int gpu_data_leading_dim = 0);
+  /** Copy data from ith GPU to CPU. */
+  void copy_from_gpu(int i,
+                     Mat& cpu_data,
+                     const DataType* gpu_data,
+                     int gpu_data_leading_dim = 0);
+
   /** Zero out memory on GPUs. */
   void clear_on_gpus(std::vector<DataType*>& gpu_data,
                      int height,
-                     int width_per_gpu);
+                     int width_per_gpu,
+                     int leading_dim = 0);
   /** Zero out memory corresponding to unused columns on GPUs. */
   void clear_unused_columns_on_gpus(std::vector<DataType*>& gpu_data,
                                     int height,
                                     int width,
-                                    int width_per_gpu);
+                                    int width_per_gpu,
+                                    int leading_dim = 0);
 
   /** Copy data on GPUs. */
   void copy_on_gpus(std::vector<DataType*>& gpu_dst_data,

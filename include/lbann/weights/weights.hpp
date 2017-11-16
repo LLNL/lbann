@@ -47,6 +47,8 @@ class optimizer;
  */
 class weights {
 
+  friend class optimizer;
+
  public:
 
   /** Constructor. */
@@ -80,9 +82,9 @@ class weights {
   virtual void setup_gpu();
 
   /** Get height of weights matrix. */
-  int get_height() const { return get_values().Height(); }
+  int get_height() const { return m_height; }
   /** Get width of weights matrix. */
-  int get_width() const { return get_values().Width(); }
+  int get_width() const { return m_width; }
 
   /** Get weights initializer. */
   weights_initializer& get_initializer() { return *m_initializer; }
@@ -105,17 +107,22 @@ class weights {
   void set_optimizer(optimizer* opt);
 
   /** Get the weights matrix. */
-  AbsDistMat& get_values();
-  /** Get the weights matrix (const). */
   const AbsDistMat& get_values() const;
   /** Set the weights matrix. */
   void set_values(const AbsDistMat& values);
+  /** Set an entry in the weights matrix. */
+  void set_value(int row, int col, DataType value);
 
   /** Get a view into the weights matrix.
    *  If values_v has a different matrix distribution than the
    *  weights matrix, the matrix values are copied into values_v.
    */
   void get_values_view(AbsDistMat& values_v) const;
+
+#ifdef __LIB_CUDNN
+  /** Get the weights matrix on GPU. */
+  std::vector<DataType*> get_values_gpu();
+#endif // __LIB_CUDNN
 
  protected:
 
@@ -128,6 +135,11 @@ class weights {
   lbann_comm* m_comm;
   /** cuDNN manager. */
   cudnn::cudnn_manager* m_cudnn;
+  
+  /** Height of weights matrix. */
+  int m_height;
+  /** Width of weights matrix. */
+  int m_width;
 
   /** Weights matrix. */
   AbsDistMat* m_values;

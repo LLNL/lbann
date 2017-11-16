@@ -136,17 +136,18 @@ void lbann_callback_ltfb::exchange(model *m, int partner) {
   std::vector<weights *> remote_weights = m_remote_model->get_weights();
   for (size_t i = 0; i < local_weights.size(); ++i) {
     // TODO: Support sending optimizer state
-    AbsDistMat& local_matrix = local_weights[i]->get_values();
-    AbsDistMat& remote_matrix = remote_weights[i]->get_values();
+    const AbsDistMat& local_matrix = local_weights[i]->get_values();
+    AbsDistMat *remote_matrix = local_matrix.Copy();
     if (local_matrix.Height() > 0) {
       m_comm->sendrecv(local_matrix.LockedBuffer(),
                        local_matrix.LocalHeight()*local_matrix.LocalWidth(),
                        partner,
-                       remote_matrix.Buffer(),
+                       remote_matrix->Buffer(),
                        local_matrix.LocalHeight()*local_matrix.LocalWidth(),
                        partner);
-      
+      remote_weights[i]->set_values(*remote_matrix);
     }
+    delete remote_matrix;
   }
 }
 
@@ -174,9 +175,7 @@ void lbann_callback_ltfb::replace_with_remote(model *m) {
   std::vector<weights *> remote_weights = m_remote_model->get_weights();
   for (size_t i = 0; i < local_weights.size(); ++i) {
     // TODO: Update optimizers.
-    AbsDistMat& local_matrix = local_weights[i]->get_values();
-    AbsDistMat& remote_matrix = remote_weights[i]->get_values();
-    local_matrix.Matrix() = remote_matrix.LockedMatrix();
+    local_weights[i]->set_values(remote_weights[i]->get_values());
   }
 }
 
