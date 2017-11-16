@@ -405,8 +405,11 @@ void planar_model::setup() {
         m_multi_headed = false;
       } else{
         /// Expand current layer to m_width heads
+        const std::string layer_name = layer->get_name();
+        layer->set_name("h1_" + layer_name);
         for(int k=1; k<m_width; k++){
           Layer *layer_copy = layer->copy();
+          layer_copy->set_name("h" + std::to_string(k+1) + "_" + layer_name);
           m_layers[l].push_back(layer_copy);
         }
         //stackup_duplicate(layer, m_width);
@@ -418,6 +421,7 @@ void planar_model::setup() {
 
 void planar_model::setup_subset() {
 
+#if 0
   /// Setup each layer
   std::vector<Layer*> prev_layers;
   std::vector<Layer*> next_layers;
@@ -487,7 +491,49 @@ void planar_model::setup_subset() {
       }
     }
   }
+#else
+  for (size_t l=0u; l<m_layers.size(); ++l) {
+    std::vector<Layer *>& horizontal_layers = m_layers[l];
 
+    for(size_t k=0u; k<horizontal_layers.size(); ++k) {
+
+      Layer* current_layer = horizontal_layers[k];
+
+      // Provide a reverse point from each layer to the model
+      current_layer->set_neural_network_model(this);
+      // setup links to parent layers
+      if (l <= 0u) {
+        current_layer->add_parent_layer(nullptr);
+      } else {
+        for(size_t i=0u; i < m_layers[l-1].size(); ++i)
+          current_layer->add_parent_layer(m_layers[l-1][i]);
+      }
+      // setup links to children layers
+      if (l+1 >= m_layers.size()) {
+        current_layer->add_child_layer(nullptr);
+      } else {
+        for(size_t i=0u; i < m_layers[l+1].size(); ++i)
+          current_layer->add_child_layer(m_layers[l+1][i]);
+      }
+
+      current_layer->setup();
+      current_layer->check_setup();
+
+      if (m_comm->am_world_master()) {
+        string description = current_layer->get_description();
+        std::cout << std::setw(12) << current_layer->get_name() << ":[" << std::setw(18)
+                  << current_layer->get_type() <<  "] Set up a layer with input " << std::setw(7)
+                  << current_layer->get_num_prev_neurons() << " and " << std::setw(7)
+                  << current_layer->get_num_neurons() << " neurons.";
+        std::string s = current_layer->get_topo_description();
+        if(s != "") {
+          std::cout << " (" << s << ")";
+        }
+        std::cout << std::endl;
+      }
+    }
+  }
+#endif
   /// Share the weights between Siamese heads
   equalize(); 
 

@@ -100,7 +100,7 @@ model {
   layer {
     parents: "data"
     name: "slice1"
-    children: "h1_reshape1"
+    children: "reshape1"
     data_layout: "data_parallel"
     slice {
       slice_axis: 0
@@ -110,8 +110,8 @@ model {
 
   layer {
     parents: "slice1"
-    name: "h1_reshape1"
-    children: "h1_conv1"
+    name: "reshape1"
+    children: "conv1"
     data_layout: "data_parallel"
     reshape {
       num_dims: 3
@@ -120,9 +120,9 @@ model {
   }
 
   layer {
-    parents: "h1_reshape1"
-    name: "h1_conv1"
-    children: "h1_relu1"
+    parents: "reshape1"
+    name: "conv1"
+    children: "relu1"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -138,18 +138,18 @@ model {
   }
 
   layer {
-    parents: "h1_conv1"
-    name: "h1_relu1"
-    children: "h1_norm1"
+    parents: "conv1"
+    name: "relu1"
+    children: "norm1"
     data_layout: "data_parallel"
     relu {
     }
   }
 
   layer {
-    parents: "h1_relu1"
-    name: "h1_norm1"
-    children: "h1_pool1"
+    parents: "relu1"
+    name: "norm1"
+    children: "pool1"
     data_layout: "data_parallel"
     local_response_normalization {
       window_width: 5
@@ -160,9 +160,9 @@ model {
   }
 
   layer {
-    parents: "h1_norm1"
-    name: "h1_pool1"
-    children: "h1_conv2"
+    parents: "norm1"
+    name: "pool1"
+    children: "conv2"
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
@@ -175,9 +175,9 @@ model {
   }
 
   layer {
-    parents: "h1_pool1"
-    name: "h1_conv2"
-    children: "h1_relu2"
+    parents: "pool1"
+    name: "conv2"
+    children: "relu2"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -194,18 +194,18 @@ model {
   }
 
   layer {
-    parents: "h1_conv2"
-    name: "h1_relu2"
-    children: "h1_norm2"
+    parents: "conv2"
+    name: "relu2"
+    children: "norm2"
     data_layout: "data_parallel"
     relu {
     }
   }
 
   layer {
-    parents: "h1_relu2"
-    name: "h1_norm2"
-    children: "h1_pool2"
+    parents: "relu2"
+    name: "norm2"
+    children: "pool2"
     data_layout: "data_parallel"
     local_response_normalization {
       window_width: 5
@@ -216,9 +216,9 @@ model {
   }
 
   layer {
-    parents: "h1_norm2"
-    name: "h1_pool2"
-    children: "h1_conv3"
+    parents: "norm2"
+    name: "pool2"
+    children: "conv3"
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
@@ -231,9 +231,9 @@ model {
   }
 
   layer {
-    parents: "h1_pool2"
-    name: "h1_conv3"
-    children: "h1_relu3"
+    parents: "pool2"
+    name: "conv3"
+    children: "relu3"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -249,18 +249,18 @@ model {
   }
 
   layer {
-    parents: "h1_conv3"
-    name: "h1_relu3"
-    children: "h1_conv4"
+    parents: "conv3"
+    name: "relu3"
+    children: "conv4"
     data_layout: "data_parallel"
     relu {
     }
   }
 
   layer {
-    parents: "h1_relu3"
-    name: "h1_conv4"
-    children: "h1_relu4"
+    parents: "relu3"
+    name: "conv4"
+    children: "relu4"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -277,18 +277,18 @@ model {
   }
 
   layer {
-    parents: "h1_conv4"
-    name: "h1_relu4"
-    children: "h1_conv5"
+    parents: "conv4"
+    name: "relu4"
+    children: "conv5"
     data_layout: "data_parallel"
     relu {
     }
   }
 
   layer {
-    parents: "h1_relu4"
-    name: "h1_conv5"
-    children: "h1_relu5"
+    parents: "relu4"
+    name: "conv5"
+    children: "relu5"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -305,18 +305,18 @@ model {
   }
 
   layer {
-    parents: "h1_conv5"
-    name: "h1_relu5"
-    children: "h1_pool3"
+    parents: "conv5"
+    name: "relu5"
+    children: "pool3"
     data_layout: "data_parallel"
     relu {
     }
   }
 
   layer {
-    parents: "h1_relu5"
-    name: "h1_pool3"
-    children: "h1_fc6"
+    parents: "relu5"
+    name: "pool3"
+    children: "fc6"
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
@@ -329,9 +329,9 @@ model {
   }
 
   layer {
-    parents: "h1_pool3"
-    name: "h1_fc6"
-    children: "h1_relu6"
+    parents: "pool3"
+    name: "fc6"
+    children: "relu6"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 4096
@@ -343,17 +343,17 @@ model {
   }
 
   layer {
-    parents: "h1_fc6"
-    name: "h1_relu6"
-    children: "h1_drop6"
+    parents: "fc6"
+    name: "relu6"
+    children: "drop6"
     data_layout: "model_parallel"
     relu {
     }
   }
 
   layer {
-    parents: "h1_relu6"
-    name: "h1_drop6"
+    parents: "relu6"
+    name: "drop6"
     children: "concatenation1"
     data_layout: "model_parallel"
     dropout {
@@ -362,7 +362,7 @@ model {
   }
 
   layer {
-    parents: "h1_drop6"
+    parents: "drop6"
     name: "concatenation1"
     children: "fc7"
     data_layout: "model_parallel"
