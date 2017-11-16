@@ -33,7 +33,7 @@ namespace lbann {
 
 void lbann_callback_dump_gradients::on_backward_prop_end(model *m) {
   for (weights *w : m->get_weights()) {
-    const optimizer *opt = w->get_optimizer();
+    optimizer *opt = w->get_optimizer();
     if (opt != nullptr) {
       const std::string file
         = (m_basename
@@ -43,7 +43,6 @@ void lbann_callback_dump_gradients::on_backward_prop_end(model *m) {
            + "-" + w->get_name()
            + "-Gradient");
       El::Write(opt->get_gradient(), file, El::ASCII);
-      
     }
   }
 }

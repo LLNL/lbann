@@ -88,7 +88,7 @@ void sgd::setup(weights& w) {
   El::Zeros(*m_velocity, m_gradient->Height(), m_gradient->Width());
 }
 
-void sgd::step_compute(AbsDistMat& values, AbsDistMat& gradient) {
+void sgd::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
 
   // SGD without momentum is just an Axpy
   if (m_momentum == DataType(0)) {

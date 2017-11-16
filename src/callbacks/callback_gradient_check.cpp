@@ -96,7 +96,7 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
 
     // Get weights matrix and gradient
     const AbsDistMat& weights_matrix = w->get_values();
-    AbsDistMat& gradient = w->get_optimizer()->get_gradient();
+    const AbsDistMat& gradient = w->get_optimizer()->get_gradient();
 
     // Iterate through weights matrix entries
     for (El::Int col = 0; col < weights_matrix.Width(); ++col) {

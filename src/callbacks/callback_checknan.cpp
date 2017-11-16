@@ -49,7 +49,7 @@ void lbann_callback_checknan::on_forward_prop_end(model *m, Layer *l) {
 
 void lbann_callback_checknan::on_backward_prop_end(model *m) {
   for (weights *w : m->get_weights()) {
-    const optimizer *opt = w->get_optimizer();
+    optimizer *opt = w->get_optimizer();
     if (opt != nullptr && !is_good(opt->get_gradient())) {
       dump_network(m);
       std::stringstream ss;
@@ -121,7 +121,7 @@ void lbann_callback_checknan::dump_network(model *m) {
     El::Write(w->get_values().LockedMatrix(),
               prefix + "Weights",
               El::ASCII);
-    const optimizer *opt = w->get_optimizer();
+    optimizer *opt = w->get_optimizer();
     if (opt != nullptr) {
       El::Write(opt->get_gradient().LockedMatrix(),
                 prefix + "Gradient",

@@ -59,6 +59,9 @@ class optimizer {
   /** Get a human-readable description of the optimizer. */
   virtual std::string get_description() const;
 
+  /** Whether the optimizer has been set up. */
+  inline bool is_initialized() const { return m_weights != nullptr; }
+
   /** Get weights being optimized. */
   weights& get_weights();
   /** Set weights being optimized. */
@@ -70,29 +73,30 @@ class optimizer {
     m_learning_rate = learning_rate;
   };
 
-  /** Get gradient matrix. */
+  /** Get gradient matrix.
+   *  Gradient contributions in staging matrices (see the
+   *  allreduce_and_add_to_gradient and
+   *  gpu_allreduce_and_add_to_gradient functions) are allreduced and
+   *  added to the gradient contribution.
+   */
   AbsDistMat& get_gradient();
-  /** Get gradient matrix (const). */
-  const AbsDistMat& get_gradient() const;
   
   /** Clear gradient matrix. */
   void clear_gradient();
   /** Add to the gradient matrix. */
-  void add_to_gradient(const AbsDistMat& gradient) {
-    El::Axpy(DataType(1), gradient, get_gradient());
-  }
+  void add_to_gradient(const AbsDistMat& gradient);
   /** Allreduce and add to gradient matrix.
-   *  The input is added to an allreduce staging matrix. When an
-   *  optimization step is applied, an allreduce is applied over the
-   *  redundant communicator of the gradient matrix and the result is
-   *  added to the gradient.
+   *  The input is added to an allreduce staging matrix. When the
+   *  gradient is needed, an allreduce is applied over the redundant
+   *  communicator of the gradient matrix and the result is added to
+   *  the gradient.
    */
   void allreduce_and_add_to_gradient(const AbsDistMat& gradient);
 #ifdef __LIB_CUDNN
   /** Allreduce GPU data and add to gradient matrix.
-   *  The input is added to a GPU allreduce staging matrix. When an
-   *  optimization step is applied, an allreduce is applied over the
-   *  GPUs and added to an allreduce staging matrix (see the
+   *  The input is added to a GPU allreduce staging matrix. When the
+   *  gradient is needed, an allreduce is applied over the GPUs and
+   *  added to an allreduce staging matrix (see the
    *  allreduce_and_add_to_gradient function).
    */
   void gpu_allreduce_and_add_to_gradient(std::vector<DataType*>& gradient);
@@ -107,7 +111,7 @@ class optimizer {
    *  It can be assumed that values and gradient are the same size and
    *  have the same matrix distribution.
    */
-  virtual void step_compute(AbsDistMat& values, AbsDistMat& gradient) = 0;
+  virtual void step_compute(AbsDistMat& values, const AbsDistMat& gradient) = 0;
 
  protected:
  
@@ -124,18 +128,18 @@ class optimizer {
   AbsDistMat* m_gradient;
 
   /** Gradient allreduce staging matrix.
-   *  When an optimization step is applied, an allreduce is applied
-   *  over the redundant communicator of the staging matrix and the
-   *  result is added to the gradient matrix.
+   *  When the gradient is needed, an allreduce is applied over the
+   *  redundant communicator of the staging matrix and the result is
+   *  added to the gradient matrix.
    */
   AbsDistMat* m_gradient_allreduce_staging;
 
 #ifdef __LIB_CUDNN
 
   /** GPU memory for gradient allreduce staging matrix.
-   *  When an optimization step is applied, an allreduce is applied
-   *  over the redundant communicator of the staging matrix and the
-   *  result is added to the gradient matrix.
+   *  When the gradient is needed, an allreduce is applied over the
+   *  GPUs and over the redundant communicator of the staging matrix
+   *  and the result is added to the gradient matrix.
    */
   std::vector<DataType*> m_gradient_allreduce_staging_d;
 

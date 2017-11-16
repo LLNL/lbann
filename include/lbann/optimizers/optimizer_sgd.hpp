@@ -63,7 +63,7 @@ class sgd : public optimizer {
   void setup(weights& w) override;
 
   /** Perform the computation in an SGD step. */
-  void step_compute(AbsDistMat& values, AbsDistMat& gradient) override;
+  void step_compute(AbsDistMat& values, const AbsDistMat& gradient) override;
 
  private:
 

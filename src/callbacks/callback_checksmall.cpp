@@ -48,7 +48,7 @@ void lbann_callback_checksmall::on_forward_prop_end(model *m, Layer *l) {
 
 void lbann_callback_checksmall::on_backward_prop_end(model *m) {
   for (weights *w : m->get_weights()) {
-    const optimizer *opt = w->get_optimizer();
+    optimizer *opt = w->get_optimizer();
     if (opt != nullptr && !is_good(opt->get_gradient())) {
       std::stringstream ss;
       ss << name() << ": "
