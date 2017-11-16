@@ -1653,8 +1653,7 @@ optimizer *init_default_optimizer(lbann_comm *comm,
     const lbann_data::Sgd &sgd_params = opt_params.sgd();
     opt = new sgd(sgd_params.learn_rate(),
                   sgd_params.momentum(),
-                  sgd_params.nesterov(),
-                  cudnn);
+                  sgd_params.nesterov());
   }
 
   return opt;

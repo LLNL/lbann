@@ -71,6 +71,13 @@ weights::weights(const weights& other)
     m_optimizer->set_weights(*this);
   }
 
+  #ifdef __LIB_CUDNN
+  // Copy GPU data
+  if (m_cudnn != nullptr) {
+    m_values_d = m_cudnn->copy(other.m_values_d, m_height, m_width);
+  }
+  #endif // __LIB_CUDNN
+
 }
 
 weights& weights::operator=(const weights& other) {
@@ -111,6 +118,14 @@ weights& weights::operator=(const weights& other) {
     m_optimizer = other.m_optimizer->copy();
     m_optimizer->set_weights(*this);
   }
+
+  #ifdef __LIB_CUDNN
+  // Copy GPU data
+  if (m_cudnn != nullptr) {
+    m_cudnn->deallocate_on_gpus(m_values_d);
+    m_values_d = m_cudnn->copy(other.m_values_d, m_height, m_width);
+  }
+  #endif // __LIB_CUDNN
 
   return *this;
 }
@@ -253,9 +268,9 @@ void weights::set_values(const AbsDistMat& values) {
 void weights::set_value(int row, int col, DataType value) {
   if (m_cudnn == nullptr) {
     if (m_values->IsLocal(row, col)) {
-      m_values->SetLocal(m_values->LocalRow(row),
-                         m_values->LocalCol(col),
-                         value);
+      const El::Int local_row = m_values->LocalRow(row);
+      const El::Int local_col = m_values->LocalCol(col);
+      m_values->SetLocal(local_row, local_col, value);
     }
   } else {
     #if __LIB_CUDNN
@@ -272,16 +287,22 @@ void weights::set_value(int row, int col, DataType value) {
 
 void weights::get_values_view(AbsDistMat& values_v) const {
   const AbsDistMat& values = get_values();
-  if (values.DistData() == values_v.DistData()) {
+  if (values.DistData() == values_v.DistData()
+      && m_cudnn == nullptr) {
     El::LockedView(values_v, values);
   }
   else {
+    #if __LIB_CUDNN
+    if (m_cudnn != nullptr) {
+      m_cudnn->copy_from_gpu(0, m_values->Matrix(), m_values_d[0]);
+    }
+    #endif // __LIB_CUDNN
     El::Copy(values, values_v);
   }
 }
 
 #ifdef __LIB_CUDNN
-std::vector<DataType*> weights::get_values_gpu() const {
+std::vector<DataType*> weights::get_values_gpu() {
   if (m_cudnn == nullptr) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "

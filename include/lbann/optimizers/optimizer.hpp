@@ -43,8 +43,7 @@ class optimizer {
  public:
 
   /** Constructor. */
-  optimizer(DataType learning_rate = DataType(0),
-            cudnn::cudnn_manager *cudnn = nullptr);
+  optimizer(DataType learning_rate = DataType(0));
 
   /** Copy constructor. */
   optimizer(const optimizer& other);
@@ -115,12 +114,26 @@ class optimizer {
   /** Gradient matrix. */
   AbsDistMat* m_gradient;
 
-  /** Staging matrix for gradient allreduce.
+  /** Gradient allreduce staging matrix.
    *  When an optimization step is applied, an allreduce is applied
    *  over the redundant communicator of the staging matrix and the
    *  result is added to the gradient matrix.
    */
-  AbsDistMat* m_gradient_staging;
+  AbsDistMat* m_gradient_allreduce_staging;
+
+#ifdef __LIB_CUDNN
+
+  /** GPU memory for gradient allreduce staging matrix.
+   *  When an optimization step is applied, an allreduce is applied
+   *  over the redundant communicator of the staging matrix and the
+   *  result is added to the gradient matrix.
+   */
+  std::vector<DataType*> m_gradient_allreduce_staging_d;
+
+  /** Gradient GPU staging matrix. */
+  AbsDistMat* m_gradient_gpu_staging;
+
+#endif // __LIB_CUDNN
 
 };
 

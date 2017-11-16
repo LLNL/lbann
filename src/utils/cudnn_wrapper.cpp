@@ -368,6 +368,7 @@ void cudnn_manager::cudnn_manager::gather_from_gpus(Mat& cpu_data,
                                                     const std::vector<DataType *>& gpu_data,
                                                     int width_per_gpu,
                                                     int gpu_data_leading_dim) {
+  const int width = cpu_data.Width();
   for(int i=0; i<m_num_gpus; ++i) {
     const int first_pos = std::min(i * width_per_gpu, width);
     const int last_pos = std::min((i+1) * width_per_gpu, width);

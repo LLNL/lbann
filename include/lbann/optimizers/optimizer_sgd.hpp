@@ -43,8 +43,7 @@ class sgd : public optimizer {
   /** Constructor. */
   sgd(DataType learning_rate,
       DataType momentum = DataType(0),
-      bool nesterov = false,
-      cudnn::cudnn_manager* cudnn = nullptr);
+      bool nesterov = false);
 
   /** Copy constructor. */
   sgd(const sgd& other);

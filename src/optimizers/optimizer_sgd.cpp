@@ -33,9 +33,8 @@ namespace lbann {
 
 sgd::sgd(DataType learning_rate,
          DataType momentum,
-         bool nesterov,
-         cudnn::cudnn_manager* cudnn)
-  : optimizer(learning_rate, cudnn),
+         bool nesterov)
+  : optimizer(learning_rate),
     m_momentum(momentum),
     m_nesterov(nesterov),
     m_velocity(nullptr) {}
