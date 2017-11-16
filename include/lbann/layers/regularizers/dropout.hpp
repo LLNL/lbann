@@ -72,25 +72,25 @@ class dropout : public regularizer_layer {
     return *this;
   }
 
-  ~dropout() {
+  ~dropout() override {
     delete m_mask;
   }
 
-  dropout* copy() const { return new dropout(*this); }
+  dropout* copy() const override { return new dropout(*this); }
 
-  std::string get_type() const { return "dropout"; }
+  std::string get_type() const override { return "dropout"; }
 
-  std::string get_description() const {
+  std::string get_description() const override {
     return " dropout keep_prob: " + std::to_string(m_keep_prob) 
            + " dataLayout: " + get_data_layout_string(get_data_layout());
   }
 
   virtual inline void initialize_distributed_matrices();
-  virtual data_layout get_data_layout() const { return T_layout; }
+  virtual data_layout get_data_layout() const override { return T_layout; }
 
  protected:
   /** Drop out units in forward propagation. */
-  void fp_compute() {
+  void fp_compute() override {
 
     // Copy previous activations if dropout is disabled
     if (this->get_execution_mode() != execution_mode::training
@@ -123,7 +123,7 @@ class dropout : public regularizer_layer {
   }
 
   /** Adjust gradients for dropout in backprop. */
-  void bp_compute() {
+  void bp_compute() override {
 
     // Copy previous error signal if dropout is disabled
     if (this->get_execution_mode() != execution_mode::training

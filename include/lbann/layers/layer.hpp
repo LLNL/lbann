@@ -162,13 +162,13 @@ class Layer {
   }
 
   /// Following function tells whether a layer has weights; default is false
-  virtual bool is_learning_layer() { return false; }
+  virtual bool is_learning_layer() const { return false; }
 
   /// Following functions tell whether current layer is a fan-out layer; default is false
-  virtual bool is_fanout_layer() { return false; }
+  virtual bool is_fanout_layer() const { return false; }
 
   /// Following functions tell whether current layer is a fan-in layer; default is false
-  virtual bool is_fanin_layer() { return false; }
+  virtual bool is_fanin_layer() const { return false; }
 
   /** Return the neural network model of this layer. */
   inline model* get_neural_network_model() const {

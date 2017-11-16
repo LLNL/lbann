@@ -114,7 +114,7 @@ class slice_layer : public transform {
   }
 
   /// Following function tells this layer is is a fan-out layer
-  bool is_fanout_layer() override { return true; }
+  bool is_fanout_layer() const override { return true; }
   
   /** Returns description of ctor params */
   std::string get_description() const override {

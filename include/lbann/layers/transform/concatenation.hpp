@@ -98,7 +98,7 @@ class concatenation_layer : public transform {
     m_output_slice_v = other.m_output_slice_v->Copy();
   }
 
-  ~concatenation_layer() {
+  ~concatenation_layer() override {
     delete m_bp_output;
     delete m_input_slice_v;
     delete m_output_slice_v;
@@ -113,7 +113,7 @@ class concatenation_layer : public transform {
   concatenation_layer* copy() const override { return new concatenation_layer(*this); }
 
   /// Following function tells this layer is is a fan-in layer
-  bool is_fanin_layer() override { return true; }
+  bool is_fanin_layer() const override { return true; }
 
   std::string get_type() const override { return "concatenation"; }
 

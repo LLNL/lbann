@@ -65,7 +65,7 @@ class split_layer : public transform {
 
   split_layer(const split_layer&) = default;
   split_layer& operator=(const split_layer&) = default;
-  ~split_layer() {
+  ~split_layer() override {
   #ifdef __LIB_CUDNN
     // GPU memory for activations is a copy of previous layer's activations
     this->m_activations_d.clear();
@@ -73,10 +73,10 @@ class split_layer : public transform {
   }
 
   /// Following function tells this layer is is a fan-out layer
-  bool is_fanout_layer() { return true; }
+  bool is_fanout_layer() const override { return true; }
 
   /** Returns description of ctor params */
-  std::string get_description() const {
+  std::string get_description() const override {
     std::stringstream s;
     s << " split; children: ";
     for (size_t h=0; h<this->m_child_layers.size(); h++) {
@@ -86,16 +86,16 @@ class split_layer : public transform {
     return s.str();
   }
 
-  split_layer* copy() const { return new split_layer(*this); }
+  split_layer* copy() const override { return new split_layer(*this); }
 
-  std::string get_type() const { return "split"; }
+  std::string get_type() const override { return "split"; }
 
   virtual inline void initialize_distributed_matrices() {
     transform::initialize_distributed_matrices<T_layout>();
   }
-  virtual data_layout get_data_layout() const { return T_layout; }
+  virtual data_layout get_data_layout() const override { return T_layout; }
 
-  void setup_gpu() {
+  void setup_gpu() override {
     transform::setup_gpu();
   #ifndef __LIB_CUDNN
     throw lbann_exception("split_layer: cuDNN not detected");
@@ -114,7 +114,7 @@ class split_layer : public transform {
 
   protected:
 
-  void fp_compute() {
+  void fp_compute() override {
     if(this->m_using_gpus) {
   #ifndef __LIB_CUDNN
       throw lbann_exception("split_layer: cuDNN not detected");
@@ -130,7 +130,7 @@ class split_layer : public transform {
     }
   }
 
-  void bp_compute() {
+  void bp_compute() override {
     if(this->m_using_gpus) {
       bp_compute_cudnn();
     } else {

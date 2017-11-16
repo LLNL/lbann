@@ -245,7 +245,7 @@ class learning : public Layer, public optimizable_layer {
   virtual const AbsDistMat& get_weights_gradient() const { return *m_weights_gradient; }
 
   /// Following function tells this layer has weights
-  bool is_learning_layer() override { return true; }
+  bool is_learning_layer() const override { return true; }
 
   template <data_layout T_layout>
   inline void initialize_distributed_matrices();
