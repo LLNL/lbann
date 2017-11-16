@@ -10,7 +10,7 @@ motif_definitions {
     #----------------------------------------------------------
     layer {
       parents: ""
-      children: "branch1 branch2"
+      children: "branch1 branch2a"
       name: "split"
       data_layout: "data_parallel"
       split { }
@@ -21,14 +21,14 @@ motif_definitions {
     #----------------------------------------------------------
     layer {
       name: "sum"
-      parents: "branch2c_bn"
+      parents: "branch2c_bn branch1_bn"
       children: "relu"
       data_layout: "data_parallel"
       sum { }
     }
     layer {
       name: "relu"
-      parents: "branch2c_bn"
+      parents: "sum"
       children: ""
       data_layout: "data_parallel"
       relu { }
@@ -73,7 +73,7 @@ motif_definitions {
     #----------------------------------------------------------
     layer {
       name: "branch2a"
-      parents: ""
+      parents: "split"
       children: "branch2a_bn" 
       data_layout: "data_parallel"
       convolution {
@@ -102,7 +102,7 @@ motif_definitions {
     layer {
       name: "branch2a_relu"
       parents: "branch2a_bn"
-      children: ""
+      children: "branch2b"
       data_layout: "data_parallel"
       relu { }
     }
@@ -202,6 +202,42 @@ model {
 
   # conv1
   layer {
+    parents: ""
+    name: "data"
+    children: "conv1"
+    data_layout: "data_parallel"
+    input_partitioned_minibatch {
+    }
+  }
+  layer {
+    parents: "data"
+    name: "conv1"
+    children: "bn_conv1"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 64
+      conv_dims_i: 7
+      conv_pads_i: 3
+      conv_strides_i: 2
+      weight_initialization: "he_normal"
+      has_bias: false
+      l2_regularization_factor: 1e-4
+    }
+  }
+  layer {
+    parents: "conv1"
+    name: "bn_conv1"
+    children: "conv1_relu"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
     name: "conv1_relu"
     parents: "bn_conv1"
     children: "pool1"
@@ -212,7 +248,7 @@ model {
   layer {
     name: "pool1"
     parents: "conv1_relu"
-    children: "res2"
+    children: "res2a"
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
@@ -349,7 +385,7 @@ model {
   layer {
     name: "res4b"
     parents: "res4a"
-    children: "resrc"
+    children: "res4c"
     data_layout: "data_parallel"
     motif_layer {
       motif_id: "motif_resnet"
@@ -408,7 +444,7 @@ model {
   # res4f
   layer {
     name: "res4f"
-    parents: "res4d"
+    parents: "res4e"
     children: "res5a"
     data_layout: "data_parallel"
     motif_layer {

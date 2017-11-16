@@ -44,6 +44,12 @@ class Layer :
       if b.find('weight_initialization') != -1 :
         b = b.replace('weight_initialization', 'weight_init')
       self._attr.append(b)
+    '''
+    if self.name().find('sum') != -1 :
+      self.printme()
+      print 'parents:', self.parents()
+      #exit(0)
+    '''
 
   def __getLayer(self, a) :
     '''for internal use'''
