@@ -1,11 +1,10 @@
 import os, sys, re, subprocess
 import pytest
 
-
-def run_lbann(executable, test='accuracy_test.sh',model='mnist',optimizer='adagrad',epochs=2,nodes=1,procs=2,iterative=0):
-    lbann_dir = subprocess.check_output('git rev-parse --show-toplevel'.split()).strip()
+lbann_dir = subprocess.check_output('git rev-parse --show-toplevel'.split()).strip()
+def run_lbann(executable, test='accuracy_test.sh',model='mnist',optimizer='adagrad',epochs=2,nodes=1,rank=2,ppm=1,iterative=0):
     test_cmd = lbann_dir + '/bamboo/integration_tests/accuracy_tests/' + test
-    CMD = test_cmd + ' -exe ' + executable +  ' -m ' + model + ' -o ' + optimizer + ' -N %d -n %d -e %d'% (nodes, procs, epochs)
+    CMD = test_cmd + ' -exe ' + executable +  ' -m ' + model + ' -o ' + optimizer + ' -N %d -n %d -ppm %d -e %d'% (nodes, rank, ppm, epochs)
     if iterative == 1:
         CMD = CMD + ' -i'
         print CMD
@@ -43,11 +42,12 @@ def test_accuracy_mnist(log,exe):
     if log == 0:
         os.system("rm res_mnist*")
 
-#def test_accuracy_alexnet(log,exe):
-#    run_lbann(exe, model='alexnet')
-#    general_assert('alexnet')
-#    if log == 0:
-#        os.system("rm res_alexnet*")
+def test_accuracy_alexnet(log,exe):
+    run_lbann(exe, model='alexnet')
+    general_assert('alexnet')
+    if log == 0:
+        os.system("rm res_alexnet*")
+
 #    run_lbann(iterative=1,model='resnet')
 #    general_assert('resnet')
 #    if log == 0:
@@ -64,6 +64,6 @@ def general_assert(model):
             epochs = numbers[1]
 
             actual_acc = data_format(filename)
-            expected_acc = fetch_expected('integration_tests/accuracy_tests/masters.txt',model,model_num,epochs)
+            expected_acc = fetch_expected(lbann_dir + '/bamboo/integration_tests/accuracy_tests/masters.txt',model,model_num,epochs)
             for expected, actual in zip(expected_acc, actual_acc):
                 assert expected <= actual

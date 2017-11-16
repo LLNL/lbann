@@ -86,8 +86,8 @@ def csv_to_dict(csv_path):
       expected_times[model] = dict(zip(keys[1:], map(float, row[1:])))
   return expected_times
 
-def run_tests(performance, model_name):
-  expected_times = csv_to_dict('integration_tests/performance_tests/expected_performance.csv')
+def run_tests(performance, model_name, dir_name):
+  expected_times = csv_to_dict('%s/bamboo/integration_tests/performance_tests/expected_performance.csv' % dir_name)
   errors = []
   for model_num in performance.keys():
     p = performance[model_num]
@@ -120,18 +120,18 @@ def mnist_distributed_io_skeleton(executable, dir_name):
   output_file_name = '%s_output.txt' % model_name
   run_lbann(model_name=model_name, reader_name='mnist', optimizer_name='adagrad', output_file_name=output_file_name, executable=executable, dir_name=dir_name)
   performance = get_performance(output_file_name)
-  run_tests(performance, model_name)
+  run_tests(performance, model_name, dir_name)
 
 def alexnet_skeleton(executable, dir_name):
   model_name = 'alexnet'
   output_file_name = '%s_output.txt' % model_name
   run_lbann(model_name=model_name, reader_name='imagenet', optimizer_name='adagrad', output_file_name=output_file_name, executable=executable, dir_name=dir_name)
   performance = get_performance(output_file_name)
-  run_tests(performance, model_name)
+  run_tests(performance, model_name, dir_name)
 
 def resnet50_skeleton(executable, dir_name):
   model_name = 'resnet50'
   output_file_name = '%s_output.txt' % model_name
   run_lbann(model_name=model_name, reader_name='imagenet', optimizer_name='adagrad', output_file_name=output_file_name, executable=executable, dir_name=dir_name, num_epochs=1, procs_per_model=2)
   performance = get_performance(output_file_name)
-  run_tests(performance, model_name)
+  run_tests(performance, model_name, dir_name)
