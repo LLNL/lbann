@@ -36,6 +36,11 @@ using namespace lbann;
 
 void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool master,
                              std::shared_ptr<cv_process>& pp, int& width, int& height) {
+// Currently we set width and height for image_data_reader here considering the transform
+// pipeline. image_data_reader reports the final dimension of data to the child layer based
+// on these information.
+// TODO: However, for composible pipeline, this needs to be automatically determined by each
+// cv_process at the setup finalization stage.
   if (!pb_readme.has_image_preprocessor()) return;
 
   const lbann_data::ImagePreprocessor& pb_preprocessor = pb_readme.image_preprocessor();
@@ -190,13 +195,15 @@ void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool mas
         lbann::patchworks::patch_descriptor pi;
         pi.set_sample_image(static_cast<unsigned int>(width),
                             static_cast<unsigned int>(height));
-        pi.set_size(pb_patch_extractor.patch_width(), pb_patch_extractor.patch_height ());
+        pi.set_size(pb_patch_extractor.patch_width(), pb_patch_extractor.patch_height());
         pi.set_gap(pb_patch_extractor.patch_gap());
         pi.set_jitter(pb_patch_extractor.patch_jitter());
         pi.set_mode_centering(pb_patch_extractor.centering_mode());
         pi.set_mode_chromatic_aberration(pb_patch_extractor.ca_correction_mode());
         pi.set_self_label();
         pi.define_patch_set();
+        width = pb_patch_extractor.patch_width();
+        height = pb_patch_extractor.patch_height();
         ppp->set_name(patch_extractor_name);
         ppp->set_patch_descriptor(pi);
         if (master) cout << "image processor: " << patch_extractor_name << " patch_extractor is set" << endl;

@@ -107,6 +107,12 @@ bool imagenet_reader::replicate_processor(const cv_process& pp) {
     return false;
   }
 
+  const std::vector<unsigned int> dims = pp.get_data_dims();
+  if ((dims.size() == 2u) && (dims[0] != 0u) && (dims[1] != 0u)) {
+    m_image_width = static_cast<int>(dims[0]);
+    m_image_height = static_cast<int>(dims[1]);
+  }
+
   return true;
 }
 

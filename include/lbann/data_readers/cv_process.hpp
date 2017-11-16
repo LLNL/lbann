@@ -138,6 +138,10 @@ class cv_process {
   /// Retrun the number of transforms registered
   unsigned int get_num_transforms() const { return m_transforms.size(); }
 
+  /** Return final image dimension {width, height} after all the transforms
+   *  If a cropper is set, returns {crop_width, crop_height}. Otherwise, {0,0}.
+   */
+  std::vector<unsigned int> get_data_dims() const;
 
   void determine_inverse_normalization();
 

@@ -799,7 +799,7 @@ const std::vector<const Layer*>& Layer::get_child_layers() const {
   return m_child_layers;
 }
 
-std::string Layer::get_layer_names(const std::vector<const Layer*>& list) const {
+std::string Layer::get_layer_names(const std::vector<const Layer*>& list) {
   std::string layer_names = ((list.size()==0u || !list[0])? "" : list[0]->get_name());
 
   for (size_t i=1u; i < list.size(); ++i) {

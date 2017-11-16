@@ -66,6 +66,9 @@ class cv_process_patches : public cv_process {
   bool is_self_labeling() const { return m_self_label; }
   virtual unsigned int get_patch_label() const { return m_pd.get_current_patch_idx(); }
   unsigned int get_num_patches() const { return m_pd.get_num_patches(); }
+  std::vector<unsigned int> get_data_dims() const {
+    return {m_pd.get_num_patches(), m_pd.get_patch_width(), m_pd.get_patch_height()};
+  }
 
   bool preprocess(const cv::Mat& image, std::vector<cv::Mat>& patches);
 };
