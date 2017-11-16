@@ -44,10 +44,10 @@ namespace cublas {
 inline
 cublasStatus_t axpy(const cublasHandle_t &handle,
                     int n,
-                    const float *alpha,
+                    const float alpha,
                     const float *x, int incx,
                     float *y, int incy) {
-  return cublasSaxpy(handle, n, alpha, x, incx, y, incy);
+  return cublasSaxpy(handle, n, &alpha, x, incx, y, incy);
 }
 inline
 cublasStatus_t gemm(const cublasHandle_t &handle,
@@ -68,10 +68,10 @@ cublasStatus_t gemm(const cublasHandle_t &handle,
 inline
 cublasStatus_t axpy(const cublasHandle_t &handle,
                     int n,
-                    const double *alpha,
+                    const double alpha,
                     const double *x, int incx,
                     double *y, int incy) {
-  return cublasDaxpy(handle, n, alpha, x, incx, y, incy);
+  return cublasDaxpy(handle, n, &alpha, x, incx, y, incy);
 }
 inline
 cublasStatus_t gemm(const cublasHandle_t &handle,

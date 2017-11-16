@@ -36,11 +36,11 @@
 #include "lbann/models/model.hpp"
 #include "lbann/weights/initializer.hpp"
 #include "lbann/weights/fan_in_fan_out_initializers.hpp"
-#if defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA)
+#ifdef __LIB_CUDNN
 #include "lbann/layers/learning/fully_connected_cuda.hpp"
 #include "lbann/utils/cublas_wrapper.hpp"
 #include "lbann/base.hpp"
-#endif
+#endif // __LIB_CUDNN
 #include <string>
 #include <sstream>
 
@@ -73,23 +73,19 @@ class fully_connected_layer : public learning {
    */
   AbsDistMat* m_bias_weights_gradient;
 
-#if defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA)
-  /// GPU memory for activation weights
-  std::vector<DataType *> m_weights_d;
-  /// View to m_weights_d;
-  std::vector<DataType *> m_activation_weights_d;
-  /// View to m_weights_d;  
-  std::vector<DataType *> m_bias_weights_d;
-  std::vector<DataType *> m_weights_gradient_d;
-  /// View to m_weights_gradient_d;
-  std::vector<DataType *> m_activation_weights_gradient_d;
-  Mat m_activation_weights_gradient_host_buf;
-  /// View to m_weights_gradient_d;  
+#ifdef __LIB_CUDNN
+
+  /** GPU memory for matrix weights gradient. */
+  std::vector<DataType *> m_matrix_weights_gradient_d;
+  /** GPU memory for bias weights gradient. */
   std::vector<DataType *> m_bias_weights_gradient_d;
+
+  /** Bias tensor cuDNN descriptor. */
   cudnnTensorDescriptor_t m_bias_weights_desc;
+  /** Activations matrix cuDNN descriptor*/
   cudnnTensorDescriptor_t m_activations_desc;
-  std::vector<DataType *> m_work_column_d;
-#endif
+
+#endif // __LIB_CUNN
 
   /**
    * Do layout-dependent forward propagation computation of the weights.
@@ -123,7 +119,7 @@ class fully_connected_layer : public learning {
     // Initialize bias
     m_bias_scaling_factor = has_bias ? DataType(1) : DataType(0);
 
-#if defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA)
+#ifdef __LIB_CUDNN
     if (cudnn && T_layout == data_layout::DATA_PARALLEL) {
       this->m_using_gpus = true;
       this->m_cudnn = cudnn;
@@ -159,36 +155,20 @@ class fully_connected_layer : public learning {
     m_matrix_weights_gradient = other.m_matrix_weights_gradient->Copy();
     m_bias_weights_gradient = other.m_bias_weights_gradient->Copy();
     setup_views();  // Update views.
-#if defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA)    
+#ifdef __LIB_CUDNN
     if (m_cudnn != nullptr) {
-      m_weights_d = m_cudnn->copy(other.m_weights_d,
-                                  this->m_weights->Height(),
-                                  this->m_weights->Width());
-      setup_gpu_activation_bias(m_weights_d, m_activation_weights_d,
-                                m_bias_weights_d, m_weights->Height(), m_weights->Width());
-      m_weights_gradient_d = m_cudnn->copy(other.m_weights_gradient_d,
-                                           this->m_weights_gradient->Height(),
-                                           this->m_weights_gradient->Width());
-      setup_gpu_activation_bias(m_weights_gradient_d,
-                                m_activation_weights_gradient_d,
-                                m_bias_weights_gradient_d,
-                                m_weights_gradient->Width(), m_weights_gradient->Height());
-    
-      if (!other.m_work_column_d.empty()) {
-        m_cudnn->allocate_on_gpus(m_work_column_d, this->m_num_neurons, 1);
-      }
-
-      m_bias_weights_desc = nullptr;
+      m_matrix_weights_gradient_d = m_cudnn->copy(other.m_matrix_weights_gradient_d,
+                                                  other.m_matrix_weights_gradient->Height(),
+                                                  other.m_matrix_weights_gradient->Width());
+      m_bias_weights_gradient_d = m_cudnn->copy(other.m_bias_weights_gradient_d,
+                                                other.m_bias_weights_gradient->Height(),
+                                                other.m_bias_weights_gradient->Width());
       cudnn::copy_tensor_cudnn_desc(other.m_bias_weights_desc,
                                     m_bias_weights_desc);
-      m_activations_desc = nullptr;
       cudnn::copy_tensor_cudnn_desc(other.m_activations_desc,
                                     m_activations_desc);
-
-      this->m_cudnn->pin_matrix(*m_weights_gradient);
-      setup_views();      
     }
- #endif
+#endif // __LIB_CUDNN
     
   }
 
@@ -216,37 +196,22 @@ class fully_connected_layer : public learning {
     COPY_MATRIX(other.m_bias_weights_gradient, m_bias_weights_gradient);
   #undef COPY_MATRIX
     setup_views();  // Update views.
-#if defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA)
+  #ifdef __LIB_CUDNN
     if (m_cudnn != nullptr) {
-      m_cudnn->deallocate_on_gpus(m_weights_d);
-      m_weights_d = m_cudnn->copy(other.m_weights_d,
-                                  this->m_weights->Height(),
-                                  this->m_weights->Width());
-      setup_gpu_activation_bias(m_weights_d, m_activation_weights_d,
-                                m_bias_weights_d, m_weights->Height(), m_weights->Width());
-      m_cudnn->deallocate_on_gpus(m_weights_gradient_d);
-      m_weights_gradient_d = m_cudnn->copy(other.m_weights_gradient_d,
-                                           this->m_weights_gradient->Height(),
-                                           this->m_weights_gradient->Width());
-      setup_gpu_activation_bias(m_weights_gradient_d,
-                                m_activation_weights_gradient_d,
-                                m_bias_weights_gradient_d,
-                                m_weights_gradient->Width(), m_weights_gradient->Height());
-
-      m_cudnn->deallocate_on_gpus(m_work_column_d);
-      if (!other.m_work_column_d.empty()) {
-        m_cudnn->allocate_on_gpus(m_work_column_d, this->m_num_neurons, 1);
-      }
-
+      m_cudnn->deallocate_on_gpus(m_matrix_weights_gradient_d);
+      m_cudnn->deallocate_on_gpus(m_bias_weights_gradient_d);
+      m_matrix_weights_gradient_d = m_cudnn->copy(other.m_matrix_weights_gradient_d,
+                                                  this->m_matrix_weights_gradient->Height(),
+                                                  this->m_matrix_weights_gradient->Width());
+      m_bias_weights_gradient_d = m_cudnn->copy(other.m_bias_weights_gradient_d,
+                                                this->m_bias_weights_gradient->Height(),
+                                                this->m_bias_weights_gradient->Width());
       cudnn::copy_tensor_cudnn_desc(other.m_bias_weights_desc,
                                     m_bias_weights_desc);
       cudnn::copy_tensor_cudnn_desc(other.m_activations_desc,
                                     m_activations_desc);
-
-      this->m_cudnn->pin_matrix(*m_weights_gradient);
-      setup_views();      
     }
-#endif
+  #endif // __LIB_CUDNN
 
     return *this;
   }
@@ -257,15 +222,18 @@ class fully_connected_layer : public learning {
     if (m_matrix_weights_gradient != nullptr) delete m_matrix_weights_gradient;
     if (m_bias_weights_gradient != nullptr)   delete m_bias_weights_gradient;
 
-#if defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA)
+#ifdef __LIB_CUDNN
     if (m_cudnn != nullptr) {
-      this->m_cudnn->deallocate_on_gpus(m_weights_d);
-      this->m_cudnn->deallocate_on_gpus(m_weights_gradient_d);
-      CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_bias_weights_desc));
-      CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_activations_desc));
-      this->m_cudnn->unpin_matrix(*m_weights_gradient);
+      this->m_cudnn->deallocate_on_gpus(m_matrix_weights_gradient_d);
+      this->m_cudnn->deallocate_on_gpus(m_bias_weights_gradient_d);
+      if (m_bias_weights_desc != nullptr) {
+        CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_bias_weights_desc));
+      }
+      if (m_activations_desc != nullptr) {
+        CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_activations_desc));
+      }
     }
-#endif
+#endif // __LIB_CUDNN
     
   }
 
@@ -366,29 +334,19 @@ class fully_connected_layer : public learning {
 
   void setup_gpu() override {
     learning::setup_gpu();
-#if !(defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA))
+#ifndef __LIB_CUDNN
     throw lbann_exception("fully_connected_layer: CUDA not detected");
 #else
-    // DATA_PARALLEL is assumed
+
     // Allocate GPU memory
-    this->m_cudnn->allocate_on_gpus(m_weights_d,
-                                    m_weights->Height(),
-                                    m_weights->Width());
-    this->m_cudnn->broadcast_to_gpus(m_weights_d,
-                                     m_weights->LockedMatrix());
-    setup_gpu_activation_bias(m_weights_d, m_activation_weights_d,
-                              m_bias_weights_d, m_weights->Height(), m_weights->Width());
-
-    this->m_cudnn->allocate_on_gpus(m_weights_gradient_d,
-                                    m_weights_gradient->Height(),
-                                    m_weights_gradient->Width());
-    setup_gpu_activation_bias(m_weights_gradient_d,
-                              m_activation_weights_gradient_d,
-                              m_bias_weights_gradient_d,
-                              m_weights_gradient->Width(), m_weights_gradient->Height());
-
-    this->m_cudnn->allocate_on_gpus(m_work_column_d, this->m_num_neurons, 1);
-
+    this->m_cudnn->allocate_on_gpus(this->m_matrix_weights_gradient_d,
+                                    this->m_matrix_weights_gradient->Height(),
+                                    this->m_matrix_weights_gradient->Width());
+    if(m_bias_scaling_factor != DataType(0)) {
+      this->m_cudnn->allocate_on_gpus(this->m_bias_weights_gradient_d,
+                                      this->m_bias_weights_gradient->Height(),
+                                      this->m_bias_weights_gradient->Width());
+    }
 
     // CUDNN setup
     // NOTE: Setting tensor dimensions as (1, 1, X, Y), where X is the
@@ -409,32 +367,16 @@ class fully_connected_layer : public learning {
                                                  1, m_mini_batch_size_per_gpu, 1,
                                                  m_bias_weights_v->Height()));
 
-    this->m_cudnn->pin_matrix(*m_weights_gradient);
-    setup_views();
-    if (this->m_optimizer != nullptr) {
-      this->m_optimizer->setup_gpu(this->m_weights, this->m_weights_d);
-    }
-    
-#endif // __LIB_CUDA
+#endif // __LIB_CUDNN
   }
 
 
   void fp_compute() override {
-#ifdef __LBANN_DEBUG
-    if(this->m_using_gpus) {
-      this->m_cudnn->synchronize_all();
-    }      
-#endif
     if(this->m_using_gpus) {
       fp_compute_cuda();
     } else {
       fp_compute_cpu();
     }
-#ifdef __LBANN_DEBUG
-    if(this->m_using_gpus) {
-      this->m_cudnn->synchronize_all();
-    }      
-#endif    
   }
 
   void fp_compute_cpu() {  
@@ -456,7 +398,7 @@ class fully_connected_layer : public learning {
   }
 
   void fp_compute_cuda() {
-#if !(defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA))
+#ifndef __LIB_CUDNN
     throw lbann_exception("fully_connected: CUDA not detected");
 #else
     // Apply weight matrix
@@ -464,6 +406,7 @@ class fully_connected_layer : public learning {
 
     // Apply bias if needed
     if(m_bias_scaling_factor != DataType(0)) {
+      std::vector<DataType*> bias_weights_d = m_weights[1]->get_values_gpu();
       const int num_gpus = this->m_cudnn->get_num_gpus();
       for (int i = 0; i < num_gpus; ++i) {
         CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
@@ -474,12 +417,13 @@ class fully_connected_layer : public learning {
         FORCE_CHECK_CUDNN(cudnnAddTensor(this->m_cudnn->get_handle(i),
                                          &m_bias_scaling_factor,
                                          m_bias_weights_desc,
-                                         m_bias_weights_d[i],
+                                         bias_weights_d[i],
                                          &one,
                                          m_activations_desc,
                                          m_activations_d[i]));
 #else
-        fully_connected_cuda::add_tensor(m_bias_scaling_factor, m_bias_weights_d[i],
+        fully_connected_cuda::add_tensor(m_bias_scaling_factor,
+                                         bias_weights_d[i],
                                          m_bias_weights_v->Height(), 1,
                                          DataType(1), m_activations_d[i],
                                          this->m_activations_v->Height(),
@@ -519,27 +463,28 @@ class fully_connected_layer : public learning {
   }
 
   void bp_compute_cuda() {
-#if !(defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA))
+#ifndef __LIB_CUDNN
     throw lbann_exception("fully_connected: CUDA not detected");
 #else
     // Compute the error signal and gradients.
     bp_compute_weights<device::CUDA>();
 
     // Compute bias update if needed
-    if(m_bias_scaling_factor != DataType(0)) {
+    optimizer* bias_optimizer = m_weights[1]->get_optimizer();
+    if(bias_optimizer != nullptr && m_bias_scaling_factor != DataType(0)) {
       fully_connected_cuda::row_sum(*this->m_cudnn,
                                     m_prev_error_signal_d,
                                     m_prev_error_signal->Height(),
                                     m_mini_batch_size_per_gpu,
                                     m_bias_scaling_factor / this->m_neural_network_model->get_effective_mini_batch_size(),
                                     m_bias_weights_gradient_d);
+      bias_optimizer->gpu_allreduce_and_add_to_gradient(m_bias_weights_gradient_d);
     }
 
-    // TODO: L2 regularization
 #ifdef LBANN_DEBUG
     this->m_cudnn->check_error();
 #endif
-#endif // __LIB_CUDA    
+#endif // __LIB_CUDNN
   }
 
 };
@@ -578,28 +523,30 @@ fully_connected_layer<data_layout::DATA_PARALLEL>::fp_compute_weights<device::CP
            this->m_activations_v->Matrix());
 }
 
-#if defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA)
+#ifdef __LIB_CUDNN
 template<> template<> inline void
 fully_connected_layer<data_layout::DATA_PARALLEL>::fp_compute_weights<device::CUDA>() {
+  std::vector<DataType*> matrix_weights_d = m_weights[0]->get_values_gpu();
   const int num_gpus = this->m_cudnn->get_num_gpus();
   for(int i=0; i<num_gpus; ++i) {
     CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-    CHECK_CUBLAS(cublas::Gemm<DataType>(this->m_cudnn->get_cublas_handle(i),
-                                        CUBLAS_OP_N, CUBLAS_OP_N, 
-                                        this->m_activation_weights_v->Height(),
-                                        m_mini_batch_size_per_gpu,
-                                        this->m_activation_weights_v->Width(),
-                                        DataType(1),
-                                        this->m_activation_weights_d[i],
-                                        this->m_activation_weights_v->Height(),
-                                        this->m_prev_activations_d[i],
-                                        this->m_prev_activations->Height(),
-                                        DataType(0),
-                                        this->m_activations_d[i],
-                                        this->m_activations_v->Height()));
+    CHECK_CUBLAS(cublas::gemm(this->m_cudnn->get_cublas_handle(i),
+                              CUBLAS_OP_N,
+                              CUBLAS_OP_N,
+                              m_weights[0]->get_height(),
+                              m_mini_batch_size_per_gpu,
+                              m_weights[0]->get_width(),
+                              DataType(1),
+                              matrix_weights_d[i],
+                              m_weights[0]->get_height(),
+                              this->m_prev_activations_d[i],
+                              this->m_prev_activations->Height(),
+                              DataType(0),
+                              this->m_activations_d[i],
+                              this->m_activations_v->Height()));
   }
 }
-#endif // __LIB_CUDA
+#endif // __LIB_CUDNN
 
 template<> template<device dev> inline void
 fully_connected_layer<data_layout::MODEL_PARALLEL>::bp_compute_weights() {
@@ -644,76 +591,57 @@ fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_weights<device::CP
   }
 }
 
-#if defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA)
+#ifdef __LIB_CUDNN
 template<> template<> inline void
 fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_weights<device::CUDA>() {
+
+  // Compute objective function gradient w.r.t. input
+  std::vector<DataType*> matrix_weights_d = m_weights[0]->get_values_gpu();
   const int num_gpus = this->m_cudnn->get_num_gpus();
   for(int i=0; i<num_gpus; ++i) {
     CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-    CHECK_CUBLAS(cublas::Gemm<DataType>(this->m_cudnn->get_cublas_handle(i),
-                                        CUBLAS_OP_T, CUBLAS_OP_N, 
-                                        this->m_activation_weights_v->Width(),
-                                        m_mini_batch_size_per_gpu,
-                                        this->m_activation_weights_v->Height(),
-                                        DataType(1),
-                                        this->m_activation_weights_d[i],
-                                        this->m_activation_weights_v->Height(),
-                                        this->m_prev_error_signal_d[i],
-                                        this->m_prev_error_signal->Height(),
-                                        DataType(0),
-                                        this->m_error_signal_d[i],
-                                        this->m_error_signal_v->Height()));
-    
-    // Compute update for activation weights
-    CHECK_CUBLAS(cublas::Gemm<DataType>(this->m_cudnn->get_cublas_handle(i),
-                                        CUBLAS_OP_N, CUBLAS_OP_T,
-                                        this->m_prev_error_signal->Height(),
-                                        this->m_prev_activations->Height(),
-                                        m_mini_batch_size_per_gpu,
-                                        DataType(1)/
-                                        this->m_neural_network_model->get_effective_mini_batch_size(),
-                                        this->m_prev_error_signal_d[i],
-                                        this->m_prev_error_signal->Height(),
-                                        this->m_prev_activations_d[i],
-                                        this->m_prev_activations->Height(),
-                                        DataType(0),
-                                        this->m_activation_weights_gradient_d[i],
-                                        this->m_activation_weights_gradient_v->Height()));
-
+    CHECK_CUBLAS(cublas::gemm(this->m_cudnn->get_cublas_handle(i),
+                              CUBLAS_OP_T,
+                              CUBLAS_OP_N,
+                              m_weights[0]->get_width(),
+                              m_mini_batch_size_per_gpu,
+                              m_weights[0]->get_height(),
+                              DataType(1),
+                              matrix_weights_d[i],
+                              m_weights[0]->get_height(),
+                              this->m_prev_error_signal_d[i],
+                              this->m_prev_error_signal->Height(),
+                              DataType(0),
+                              this->m_error_signal_d[i],
+                              this->m_error_signal_v->Height()));
   }
 
-#if 1
-  this->m_cudnn->allreduce(m_activation_weights_gradient_d,
-                           m_activation_weights_gradient_v->Height(),
-                           m_activation_weights_gradient_v->Width());
-
-  // Skip the reduction if there is only one process for this model
-  if (this->m_comm->get_procs_per_model() > 1) {
-
-    std::vector<DataType*> t;
-    t.push_back(m_activation_weights_gradient_d[0]);
-    // Since we assume MPI allreduce only runs with CPU memory, the
-    // data must be first copied to host, and then be copied back to GPU
-    // after MPI.
-    // TODO: Use CUDA-aware MPI to remove manual host-GPU transfers
-    this->m_cudnn->gather_from_gpus(m_activation_weights_gradient_v->Matrix(),
-                                    t, m_activation_weights_gradient_v->Width());
-    this->m_cudnn->synchronize();
-    El::AllReduce(*this->m_activation_weights_gradient_v,
-                  this->m_activation_weights_gradient_v->RedundantComm());
-    this->m_cudnn->broadcast_to_gpus(
-        m_activation_weights_gradient_d,
-        m_activation_weights_gradient_v->LockedMatrix());
+  // Compute objective function gradient w.r.t. matrix weights
+  optimizer* matrix_optimizer = m_weights[0]->get_optimizer();
+  if (matrix_optimizer != nullptr) {
+    for(int i=0; i<num_gpus; ++i) {
+      CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
+      CHECK_CUBLAS(cublas::gemm(this->m_cudnn->get_cublas_handle(i),
+                                CUBLAS_OP_N,
+                                CUBLAS_OP_T,
+                                m_weights[0]->get_height(),
+                                m_weights[0]->get_width(),
+                                m_mini_batch_size_per_gpu,
+                                DataType(1)/
+                                this->m_neural_network_model->get_effective_mini_batch_size(),
+                                this->m_prev_error_signal_d[i],
+                                this->m_prev_error_signal->Height(),
+                                this->m_prev_activations_d[i],
+                                this->m_prev_activations->Height(),
+                                DataType(0),
+                                this->m_matrix_weights_gradient_d[i],
+                                this->m_matrix_weights_gradient->Height()));
+    }
+    matrix_optimizer->gpu_allreduce_and_add_to_gradient(m_matrix_weights_gradient_d);
   }
-#else
-  // New implementation with NCCL 2
-  this->m_cudnn->allreduce_nccl(m_activation_weights_gradient_d,
-                           m_activation_weights_gradient_v->Height(),
-                           m_activation_weights_gradient_v->Width());
-#endif
   
 }
-#endif // __LIB_CUDA
+#endif // __LIB_CUDNN
 
 }  // namespace lbann
 

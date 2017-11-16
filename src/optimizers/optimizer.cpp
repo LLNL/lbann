@@ -289,13 +289,12 @@ void optimizer::gpu_allreduce_and_add_to_gradient(std::vector<DataType*>& gradie
   }
 
   // Add input to staging matrix
-  const DataType one = DataType(1);
   const int num_gpus = m_cudnn->get_num_gpus();
   for(int i=0; i<num_gpus; ++i) {
     CHECK_CUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
     CHECK_CUBLAS(cublas::axpy(m_cudnn->get_cublas_handle(i),
                               m_weights->get_height() * m_weights->get_width(),
-                              &one, gradient[i], 1,
+                              DataType(1), gradient[i], 1,
                               m_gradient_allreduce_staging_d[i], 1));
   }
 
