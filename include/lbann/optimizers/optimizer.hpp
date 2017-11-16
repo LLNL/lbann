@@ -82,12 +82,21 @@ class optimizer {
     El::Axpy(DataType(1), gradient, get_gradient());
   }
   /** Allreduce and add to gradient matrix.
-   *  The input is added to a staging matrix. When an optimization
-   *  step is applied, an allreduce is applied over the redundant
-   *  communicator of the staging matrix and the result is added to
-   *  the gradient.
+   *  The input is added to an allreduce staging matrix. When an
+   *  optimization step is applied, an allreduce is applied over the
+   *  redundant communicator of the gradient matrix and the result is
+   *  added to the gradient.
    */
   void allreduce_and_add_to_gradient(const AbsDistMat& gradient);
+#ifdef __LIB_CUDNN
+  /** Allreduce GPU data and add to gradient matrix.
+   *  The input is added to a GPU allreduce staging matrix. When an
+   *  optimization step is applied, an allreduce is applied over the
+   *  GPUs and added to an allreduce staging matrix (see the
+   *  allreduce_and_add_to_gradient function).
+   */
+  void gpu_allreduce_and_add_to_gradient(std::vector<DataType*>& gradient);
+#endif // __LIB_CUDNN
 
   /** Setup optimizer. */
   virtual void setup(weights& w);
