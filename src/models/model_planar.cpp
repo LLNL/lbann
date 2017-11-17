@@ -43,12 +43,12 @@
 
 namespace lbann {
 
-planar_model::planar_model(int mini_batch_size,
-                                   lbann_comm *comm,
-                                   objective_functions::objective_function *obj_fn,
-                                   optimizer_factory *optimizer_fac,
-                                   int width)
-  : model(comm, mini_batch_size, obj_fn, optimizer_fac) {m_width = width; m_multi_headed = false;}
+planar_model::planar_model(lbann_comm *comm,
+                           int mini_batch_size,
+                           objective_functions::objective_function *obj_fn,
+                           optimizer *default_optimizer,
+                           int width)
+  : model(comm, mini_batch_size, obj_fn, default_optimizer) {m_width = width; m_multi_headed = false;}
 
 /**
 planar_model::planar_model(const planar_model& other) :
@@ -327,7 +327,7 @@ void planar_model::add(Layer *layer){
 }
 */
 
-void planar_model::add(Layer *layer){
+void planar_model::add_layer(Layer *layer){
   if (layer == nullptr) {
     throw lbann_exception("model: Attempted to add null pointer as a layer.");
   }

@@ -69,7 +69,7 @@ class model {
   virtual void setup() {}
 
   /** Add layer to model. */
-  void add_layer(Layer *layer);
+  virtual void add_layer(Layer *layer);
 
   /** Add weights to model. */
   void add_weights(weights *w);

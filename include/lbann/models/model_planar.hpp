@@ -41,11 +41,11 @@ class planar_model : public model {
  public:
 
   /// Constructor
-  planar_model(int mini_batch_size,
-                   lbann_comm *comm,
-                   objective_functions::objective_function *obj_fn,
-                   optimizer_factory *optimizer_fac,
-                   int width);
+  planar_model(lbann_comm *comm,
+               int mini_batch_size,
+               objective_functions::objective_function *obj_fn,
+               optimizer *default_optimizer,
+               int width);
   /** Copy constructor. */
   planar_model(const planar_model& other) = default;
 
@@ -64,7 +64,7 @@ class planar_model : public model {
    *  or placing individual layers. */
   void stackup_duplicate(Layer *new_layer, int num_heads);
 
-  void add(Layer *layer) override;
+  void add_layer(Layer *layer) override;
 
   /// Setup planar model
   virtual void setup() override;

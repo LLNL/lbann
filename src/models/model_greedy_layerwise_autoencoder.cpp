@@ -31,11 +31,11 @@
 
 namespace lbann {
 
-greedy_layerwise_autoencoder::greedy_layerwise_autoencoder(int mini_batch_size,
-                                                           lbann_comm *comm,
+greedy_layerwise_autoencoder::greedy_layerwise_autoencoder(lbann_comm *comm,
+                                                           int mini_batch_size,
                                                            objective_functions::objective_function *obj_fn,
-                                                           optimizer_factory *_optimizer_fac)
-  : sequential_model(mini_batch_size, comm, obj_fn, _optimizer_fac),
+                                                           optimizer *default_optimizer)
+  : sequential_model(comm, mini_batch_size, obj_fn, default_optimizer),
     m_phase_end(2), m_start_index(0), m_end_index(0), m_have_mirror(0) {}
 
 void greedy_layerwise_autoencoder::reset_phase() {

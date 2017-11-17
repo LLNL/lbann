@@ -1567,21 +1567,24 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
     model = new sequential_model(comm, mini_batch_size, obj, default_optimizer);
     if (master) std::cout << "instantiating sequential_model\n";
   } 
-#if 0
   else if (name == "dag_model") {
     model = new dag_model(comm, mini_batch_size, obj, default_optimizer);
     if (master) std::cout << "instantiating dag_model\n";
   } else if(name == "planar_model") {
 /// XXX
 /// Settting the number of heads to 3 temporarly; will be fixed as a parameter
-    model = new planar_model(comm, mini_batch_size, obj, default_optimizer, 3);
-    if (master) std::cout << "instantiating planar_model\n";
+    // model = new planar_model(comm, mini_batch_size, obj, default_optimizer, 3);
+    // if (master) std::cout << "instantiating planar_model\n";
+    if (master) {
+      err << __FILE__ << " " << __LINE__
+          << " :: planar model is currently not supported";
+      throw lbann_exception(err.str());
+    }
   } else if (name == "greedy_layerwise_autoencoder") {
     model = new greedy_layerwise_autoencoder(comm, mini_batch_size, obj, default_optimizer);
     if (master) std::cout << "instantiating greedy_layerwise_autoencoder\n";
   } 
-#endif
-else {
+  else {
     if (master) {
       err << __FILE__ << " " << __LINE__
           << " :: init_model() - unknown model name: " << name << endl

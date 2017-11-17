@@ -37,11 +37,11 @@
 
 namespace lbann {
 
-dag_model::dag_model(int mini_batch_size,
-                     lbann_comm *comm,
+dag_model::dag_model(lbann_comm *comm,
+                     int mini_batch_size,
                      objective_functions::objective_function *obj_fn,
-                     optimizer_factory *optimizer_fac)
-  : model(comm, mini_batch_size, obj_fn, optimizer_fac) {}
+                     optimizer* default_optimizer)
+  : model(comm, mini_batch_size, obj_fn, default_optimizer) {}
 
 void dag_model::setup() {
 
