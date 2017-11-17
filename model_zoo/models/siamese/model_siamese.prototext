@@ -2,13 +2,8 @@ model {
 # This model does not have the connection across heads as a planar model does
 # Also, it manually setup layer connections (by the prototext parser rather than by the model method)
 # This is to facilitate debugging
-  name: "siamese_manual_model"
+  name: "dag_model"
   objective_function: "cross_entropy"
-  planar {
-    simple {
-      num_heads: 2
-    }
-  }
   metric {
     categorical_accuracy {
     }
@@ -172,7 +167,7 @@ model {
   layer {
     parents: "h1_conv1"
     name: "h1_relu1"
-    children: "h1_norm1"
+    children: "h1_pool1"
     data_layout: "data_parallel"
     relu {
     }
@@ -181,7 +176,7 @@ model {
   layer {
     parents: "h2_conv1"
     name: "h2_relu1"
-    children: "h2_norm1"
+    children: "h2_pool1"
     data_layout: "data_parallel"
     relu {
     }
@@ -189,34 +184,8 @@ model {
 
   layer {
     parents: "h1_relu1"
-    name: "h1_norm1"
-    children: "h1_pool1"
-    data_layout: "data_parallel"
-    local_response_normalization {
-      window_width: 5
-      lrn_alpha: 0.0001
-      lrn_beta: 0.75
-      lrn_k: 2
-    }
-  }
-
-  layer {
-    parents: "h2_relu1"
-    name: "h2_norm1"
-    children: "h2_pool1"
-    data_layout: "data_parallel"
-    local_response_normalization {
-      window_width: 5
-      lrn_alpha: 0.0001
-      lrn_beta: 0.75
-      lrn_k: 2
-    }
-  }
-
-  layer {
-    parents: "h1_norm1"
     name: "h1_pool1"
-    children: "h1_conv2"
+    children: "h1_norm1"
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
@@ -229,9 +198,9 @@ model {
   }
 
   layer {
-    parents: "h2_norm1"
+    parents: "h2_relu1"
     name: "h2_pool1"
-    children: "h2_conv2"
+    children: "h2_norm1"
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
@@ -245,6 +214,32 @@ model {
 
   layer {
     parents: "h1_pool1"
+    name: "h1_norm1"
+    children: "h1_conv2"
+    data_layout: "data_parallel"
+    local_response_normalization {
+      window_width: 5
+      lrn_alpha: 0.0001
+      lrn_beta: 0.75
+      lrn_k: 2
+    }
+  }
+
+  layer {
+    parents: "h2_pool1"
+    name: "h2_norm1"
+    children: "h2_conv2"
+    data_layout: "data_parallel"
+    local_response_normalization {
+      window_width: 5
+      lrn_alpha: 0.0001
+      lrn_beta: 0.75
+      lrn_k: 2
+    }
+  }
+
+  layer {
+    parents: "h1_norm1"
     name: "h1_conv2"
     children: "h1_relu2"
     data_layout: "data_parallel"
@@ -263,7 +258,7 @@ model {
   }
 
   layer {
-    parents: "h2_pool1"
+    parents: "h2_norm1"
     name: "h2_conv2"
     children: "h2_relu2"
     data_layout: "data_parallel"
@@ -284,7 +279,7 @@ model {
   layer {
     parents: "h1_conv2"
     name: "h1_relu2"
-    children: "h1_norm2"
+    children: "h1_pool2"
     data_layout: "data_parallel"
     relu {
     }
@@ -293,7 +288,7 @@ model {
   layer {
     parents: "h2_conv2"
     name: "h2_relu2"
-    children: "h2_norm2"
+    children: "h2_pool2"
     data_layout: "data_parallel"
     relu {
     }
@@ -301,34 +296,8 @@ model {
 
   layer {
     parents: "h1_relu2"
-    name: "h1_norm2"
-    children: "h1_pool2"
-    data_layout: "data_parallel"
-    local_response_normalization {
-      window_width: 5
-      lrn_alpha: 0.0001
-      lrn_beta: 0.75
-      lrn_k: 2
-    }
-  }
-
-  layer {
-    parents: "h2_relu2"
-    name: "h2_norm2"
-    children: "h2_pool2"
-    data_layout: "data_parallel"
-    local_response_normalization {
-      window_width: 5
-      lrn_alpha: 0.0001
-      lrn_beta: 0.75
-      lrn_k: 2
-    }
-  }
-
-  layer {
-    parents: "h1_norm2"
     name: "h1_pool2"
-    children: "h1_conv3"
+    children: "h1_norm2"
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
@@ -341,9 +310,9 @@ model {
   }
 
   layer {
-    parents: "h2_norm2"
+    parents: "h2_relu2"
     name: "h2_pool2"
-    children: "h2_conv3"
+    children: "h2_norm2"
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
@@ -357,6 +326,32 @@ model {
 
   layer {
     parents: "h1_pool2"
+    name: "h1_norm2"
+    children: "h1_conv3"
+    data_layout: "data_parallel"
+    local_response_normalization {
+      window_width: 5
+      lrn_alpha: 0.0001
+      lrn_beta: 0.75
+      lrn_k: 2
+    }
+  }
+
+  layer {
+    parents: "h2_pool2"
+    name: "h2_norm2"
+    children: "h2_conv3"
+    data_layout: "data_parallel"
+    local_response_normalization {
+      window_width: 5
+      lrn_alpha: 0.0001
+      lrn_beta: 0.75
+      lrn_k: 2
+    }
+  }
+
+  layer {
+    parents: "h1_norm2"
     name: "h1_conv3"
     children: "h1_relu3"
     data_layout: "data_parallel"
@@ -374,7 +369,7 @@ model {
   }
 
   layer {
-    parents: "h2_pool2"
+    parents: "h2_norm2"
     name: "h2_conv3"
     children: "h2_relu3"
     data_layout: "data_parallel"

@@ -13,8 +13,8 @@ data_reader {
 
     image_preprocessor {
       # assume fixed size of input images if cropper is not used
-      raw_width: 256
-      raw_height: 256
+      raw_width: 512
+      raw_height: 512
 
       # crop_size must be at least 3*patch_size+2*patch_gap+2*patch_jitter
       # In addition, it might be better to leave some margin such that patches are
@@ -75,8 +75,8 @@ data_reader {
 
     image_preprocessor {
       # assume fixed size of input images if cropper is not used
-      raw_width: 256
-      raw_height: 256
+      raw_width: 512
+      raw_height: 512
 
       cropper {
         disable: false
