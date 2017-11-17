@@ -101,7 +101,7 @@ class slice_layer : public transform {
     m_output_slice_v = other.m_output_slice_v->Copy();
   }
 
-  ~slice_layer() {
+  ~slice_layer() override {
     delete m_fp_output;
     delete m_input_slice_v;
     delete m_output_slice_v;
@@ -114,7 +114,7 @@ class slice_layer : public transform {
   }
 
   /// Following function tells this layer is is a fan-out layer
-  bool is_fanout_layer() override { return true; }
+  bool is_fanout_layer() const override { return true; }
   
   /** Returns description of ctor params */
   std::string get_description() const override {
@@ -154,7 +154,15 @@ class slice_layer : public transform {
     // Check that slice points are valid
     if(m_slice_points.size() != m_child_layers.size() + 1
        || !std::is_sorted(m_slice_points.begin(), m_slice_points.end())) {
-      throw lbann_exception("slice_layer: invalid list of slice points");
+      err << __FILE__ << " " << __LINE__ << " :: slice_layer: ";
+      if (!std::is_sorted(m_slice_points.begin(), m_slice_points.end())) {
+        err << "slice points not sorted";
+      } else {
+        err << "number of slice points (" << m_slice_points.size()
+            << ") != number of children (" << m_child_layers.size() << ") + 1"
+            << " {" << get_layer_names(m_child_layers) << "}";
+      }
+      throw lbann_exception(err.str());
     }
 
   }
@@ -420,7 +428,7 @@ class slice_layer : public transform {
   }
 
   #ifdef __LIB_CUDNN
-  void get_gpu_fp_output(std::vector<DataType*>& fp_output, const Layer* next_layer) const {
+  void get_gpu_fp_output(std::vector<DataType*>& fp_output, const Layer* next_layer) const override {
 
     // Check if input is in the list of child layers
     const int child_index = (std::find(this->m_child_layers.begin(),

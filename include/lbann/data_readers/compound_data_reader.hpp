@@ -64,17 +64,17 @@ class generic_compound_data_reader : public generic_data_reader {
     }
     return *this;
   }
-  ~generic_compound_data_reader() {
+  ~generic_compound_data_reader() override {
     for (auto&& reader : m_data_readers) {
       delete reader;
     }
   }
-  virtual generic_compound_data_reader* copy() const = 0;
+  generic_compound_data_reader* copy() const override = 0;
 
   //************************************************************************
   /// Apply operations to subsidiary data readers
   //************************************************************************
-  virtual void set_validation_percent(double s) {
+  void set_validation_percent(double s) override {
     generic_data_reader::set_validation_percent(s);
     /// Don't propagate the validation percentage to subsidiary readers
     /// The percentage is applied at the top level
@@ -83,28 +83,28 @@ class generic_compound_data_reader : public generic_data_reader {
     }
   }
 
-  virtual void set_role(std::string role) {
+  void set_role(std::string role) override {
     generic_data_reader::set_role(role);
     for (auto&& reader : m_data_readers) {
       reader->set_role(role);
     }
   }
 
-  virtual void swap_role(std::string role) {
+  void swap_role(std::string role) override {
     generic_data_reader::swap_role(role);
     for (auto&& reader : m_data_readers) {
       reader->swap_role(role);
     }
   }
 
-  virtual void set_master(bool m) {
+  void set_master(bool m) override {
     generic_data_reader::set_master(m);
     for (auto&& reader : m_data_readers) {
       reader->set_master(m);
     }
   }
 
-  virtual void set_rank(int rank) {
+  void set_rank(int rank) override {
     generic_data_reader::set_rank(rank);
     for (auto&& reader : m_data_readers) {
       reader->set_rank(rank);

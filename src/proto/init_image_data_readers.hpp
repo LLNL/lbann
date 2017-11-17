@@ -23,37 +23,18 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// data_reader_imagenet .hpp .cpp - data reader class for ImageNet dataset
+// init_image_data_readers .hpp .cpp - initialize image_data_reader by prototext
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_DATA_READER_IMAGENET_CV_HPP
-#define LBANN_DATA_READER_IMAGENET_CV_HPP
+#ifndef _INIT_IMAGE_DATA_READERS_HPP_
+#define _INIT_IMAGE_DATA_READERS_HPP_
+#include "lbann/proto/proto_common.hpp"
+#include "lbann/comm.hpp"
 
-#include "data_reader_image.hpp"
-#include "cv_process.hpp"
+extern void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool master,
+                                    std::shared_ptr<lbann::cv_process>& pp, int& width, int& height);
+extern void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool master, lbann::generic_data_reader* &reader);
+extern void init_generic_preprocessor(const lbann_data::Reader& pb_readme, const bool master, lbann::generic_data_reader* reader);
+extern void init_org_image_data_reader(const lbann_data::Reader& pb_readme, const bool master, lbann::generic_data_reader* &reader);
 
-namespace lbann {
-class imagenet_reader_cv : public image_data_reader {
- public:
-  imagenet_reader_cv(bool shuffle) = delete;
-  imagenet_reader_cv(const std::shared_ptr<cv_process>& pp, bool shuffle = true);
-  imagenet_reader_cv(const imagenet_reader_cv&);
-  imagenet_reader_cv& operator=(const imagenet_reader_cv&);
-  ~imagenet_reader_cv() override;
-
-  imagenet_reader_cv* copy() const override { return new imagenet_reader_cv(*this); }
-
- protected:
-  void set_defaults() override;
-  virtual bool replicate_processor(const cv_process& pp);
-  virtual ::Mat create_datum_view(::Mat& X, const int mb_idx) const;
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
-
- protected:
-  /// preprocessor duplicated for each omp thread
-  std::vector<std::unique_ptr<cv_process> > m_pps;
-};
-
-}  // namespace lbann
-
-#endif  // LBANN_DATA_READER_IMAGENET_CV_HPP
+#endif // _INIT_IMAGE_DATA_READERS_HPP_

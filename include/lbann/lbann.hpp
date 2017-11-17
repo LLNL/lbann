@@ -84,13 +84,12 @@
 #include "lbann/layers/io/target/reconstruction.hpp"
 
 /// Data Readers
+#include "lbann/data_readers/data_reader_imagenet_org.hpp"
 #include "lbann/data_readers/data_reader_imagenet.hpp"
 #include "lbann/data_readers/data_reader_imagenet_single.hpp"
-#include "lbann/data_readers/data_reader_imagenet_cv.hpp"
-#include "lbann/data_readers/data_reader_imagenet_single_cv.hpp"
+#include "lbann/data_readers/data_reader_imagenet_patches.hpp"
 #include "lbann/data_readers/data_reader_cifar10.hpp"
 #include "lbann/data_readers/data_reader_mnist.hpp"
-#include "lbann/data_readers/data_reader_imagenet_single_cv.hpp"
 #include "lbann/data_readers/data_reader_synthetic.hpp"
 #include "lbann/data_readers/data_reader_nci.hpp"
 #include "lbann/data_readers/data_reader_numpy.hpp"

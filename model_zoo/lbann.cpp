@@ -116,6 +116,22 @@ int main(int argc, char *argv[]) {
       init_random(random_seed);
       init_data_seq_random(random_seed);
     }
+    // Initialize models differently if needed.
+#ifndef LBANN_SEQUENTIAL_CONSISTENCY
+    if (pb_model->random_init_models_differently()) {
+      random_seed = random_seed + comm->get_model_rank();
+      // Reseed here so that setup is done with this new seed.
+      init_random(random_seed);
+      init_data_seq_random(random_seed);
+    }
+#else
+    if (pb_model->random_init_models_differently()) {
+      if (master) {
+        std::cout << "WARNING: Ignoring random_init_models_differently " <<
+          "due to sequential consistency" << std::endl;
+      }
+    }
+#endif
 
     // Set up the communicator and get the grid.
     int procs_per_model = pb_model->procs_per_model();

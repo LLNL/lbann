@@ -11,6 +11,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <sys/stat.h>
+#include "init_image_data_readers.hpp"
 
 using namespace lbann;
 
@@ -63,45 +64,59 @@ void setup_pointers(
   lbann::model *model,
   bool master)
 {
-  std::string name;
-  std::stringstream ss;
-  std::stringstream err;
   for (size_t i=0; i<proto_layers.size(); i++) {
     std::string layer_name = model_layer_names[i];
     Layer *layer = model_layers[layer_name];
 
+    std::stringstream err;
+
     // Set layer parents
-    ss.clear();
-    ss.str(proto_layers[i].parents());
-    while (ss >> name) {
-      if (master and not layer_is_in_model(name)) {
+    {
+      std::string name;
+      std::stringstream ss(proto_layers[i].parents());
+      while (ss >> name) {
+        if (master and not layer_is_in_model(name)) {
+          err << __FILE__ << " " << __LINE__ << " :: "
+              << "could not find parent layer " << name;
+          throw lbann_exception(err.str());
+        }
+        Layer *parent_layer = model_layers[name];
+        layer->add_parent_layer(parent_layer);
+      }
+      if (ss.bad()) {
         err << __FILE__ << " " << __LINE__ << " :: "
-            << "could not find parent layer " << name;
+            << "could not parse " << proto_layers[i].parents();
         throw lbann_exception(err.str());
       }
-      Layer *parent_layer = model_layers[name];
-      layer->add_parent_layer(parent_layer);
     }
 
     // Set layer children
-    ss.clear();
-    ss.str(proto_layers[i].children());
-    while (ss >> name) {
-      if (master and not layer_is_in_model(name)) {
+    {
+      std::string name;
+      std::stringstream ss(proto_layers[i].children());
+      while (ss >> name) {
+        if (master and not layer_is_in_model(name)) {
+          err << __FILE__ << " " << __LINE__ << " :: "
+              << "could not find child layer " << name;
+          throw lbann_exception(err.str());
+        }
+        Layer *child_layer = model_layers[name];
+        layer->add_child_layer(child_layer);
+      }
+      if (ss.bad()) {
         err << __FILE__ << " " << __LINE__ << " :: "
-            << "could not find child layer " << name;
+            << "could not parse " << proto_layers[i].children();
         throw lbann_exception(err.str());
       }
-      Layer *child_layer = model_layers[name];
-      layer->add_child_layer(child_layer);
     }
 
     // Set a target layer's paired input layer
     if (dynamic_cast<target_layer*>(layer) != nullptr) {
       target_layer *target = dynamic_cast<target_layer*>(layer);
 
+      std::string name;
+
       // Get input layer name
-      name.clear();
       if (proto_layers[i].has_target_distributed_minibatch()) {
         name = proto_layers[i].target_distributed_minibatch().paired_input_layer();
       }
@@ -130,6 +145,8 @@ void setup_pointers(
 
     // Set a reconstruction layer's original layer
     if (proto_layers[i].has_reconstruction()) {
+
+      std::string name;
 
       // Get original layer name
       name = proto_layers[i].reconstruction().original_layer();
@@ -1571,15 +1588,30 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
     model = new dag_model(comm, mini_batch_size, obj, default_optimizer);
     if (master) std::cout << "instantiating dag_model\n";
   } else if(name == "planar_model") {
-/// XXX
-/// Settting the number of heads to 3 temporarly; will be fixed as a parameter
-    // model = new planar_model(comm, mini_batch_size, obj, default_optimizer, 3);
-    // if (master) std::cout << "instantiating planar_model\n";
+#if 0
+    if (m.has_planar()) {
+      const lbann_data::Model::Planar& planar = m.planar();
+      if (planar.has_simple()) {
+        const int num_heads = planar.simple().num_heads();
+        model = new planar_model(mini_batch_size, comm, obj, optimizer_fac, num_heads);
+      } else if (planar.has_regular()) {
+        // TODO: parse the vector and pass it to the overloaded constructor
+        // vector<int> outdegrees_fanout;
+        // vector<int> outdegrees_fanin;
+      }
+    } else {
+      err << __FILE__ << " " << __LINE__
+          << " :: init_model() - " << name << " needs definition" << endl;
+      throw lbann_exception(err.str());
+    }
+    if (master) std::cout << "instantiating planar_model\n";
+#else
     if (master) {
       err << __FILE__ << " " << __LINE__
           << " :: planar model is currently not supported";
       throw lbann_exception(err.str());
     }
+#endif // 0      
   } else if (name == "greedy_layerwise_autoencoder") {
     model = new greedy_layerwise_autoencoder(comm, mini_batch_size, obj, default_optimizer);
     if (master) std::cout << "instantiating greedy_layerwise_autoencoder\n";
@@ -1683,6 +1715,7 @@ optimizer *init_default_optimizer(lbann_comm *comm,
   return opt;
 }
 
+
 void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execution_mode, generic_data_reader *>& data_readers)
 {
   std::stringstream err;
@@ -1692,95 +1725,22 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
 
   for (int j=0; j<size; j++) {
     const lbann_data::Reader& readme = d_reader.reader(j);
-    const lbann_data::ImagePreprocessor& preprocessor = readme.image_preprocessor();
+    // This is a temporary measure until we individually setup data reader specific preprocessors
+    bool set_up_generic_preprocessor = true;
 
     const string& name = readme.name();
 
-    bool shuffle = readme.shuffle();
+    const bool shuffle = readme.shuffle();
 
     generic_data_reader *reader = 0;
     generic_data_reader *reader_validation = 0;
 
-    if (name == "mnist") {
-      reader = new mnist_reader(shuffle);
-    } else if (name == "imagenet") {
-      reader = new imagenet_reader(shuffle);
-      const int n_labels = readme.num_labels();
-      const int width = preprocessor.raw_width();
-      const int height = preprocessor.raw_height();
-      dynamic_cast<imagenet_reader*>(reader)->set_input_params(width, height, 3, n_labels);
-    } else if (name == "imagenet_single") {
-      reader = new imagenet_readerSingle(shuffle);
-    } else if ((name == "imagenet_cv") || (name == "imagenet_single_cv")) {
-      // set up the image preprocessor
-      std::shared_ptr<cv_process> pp = std::make_shared<cv_process>();
-
-      // set up cropper as needed
-      if(preprocessor.crop_first()) {
-        std::unique_ptr<lbann::cv_cropper> cropper(new(lbann::cv_cropper));
-        cropper->set(preprocessor.crop_width(),
-                     preprocessor.crop_height(),
-                     preprocessor.crop_randomly(),
-                     std::make_pair<int,int>(preprocessor.resized_width(),
-                                             preprocessor.resized_height()));
-        pp->add_transform(std::move(cropper));
-        if (master) cout << "imagenet: cropper is set" << endl;
-      }
-
-      // set up augmenter if necessary
-      if (!preprocessor.disable_augmentation() &&
-          (preprocessor.horizontal_flip() ||
-           preprocessor.vertical_flip() ||
-           preprocessor.rotation() != 0.0 ||
-           preprocessor.horizontal_shift() != 0.0 ||
-           preprocessor.vertical_shift() != 0.0 ||
-           preprocessor.shear_range() != 0.0))
-      {
-        std::unique_ptr<lbann::cv_augmenter> augmenter(new(lbann::cv_augmenter));
-        augmenter->set(preprocessor.horizontal_flip(),
-                       preprocessor.vertical_flip(),
-                       preprocessor.rotation(),
-                       preprocessor.horizontal_shift(),
-                       preprocessor.vertical_shift(),
-                       preprocessor.shear_range());
-        pp->add_transform(std::move(augmenter));
-        if (master) cout << "imagenet: augmenter is set" << endl;
-      }
-
-      // set up a custom transform (colorizer)
-      if (!preprocessor.no_colorize()) {
-        // If every image in the dataset is a color image, this is not needed
-        std::unique_ptr<lbann::cv_colorizer> colorizer(new(lbann::cv_colorizer));
-        pp->add_transform(std::move(colorizer));
-        if (master) cout << "imagenet: colorizer is set" << endl;
-      }
-
-      // set up the normalizer
-      std::unique_ptr<lbann::cv_normalizer> normalizer(new(lbann::cv_normalizer));
-      normalizer->unit_scale(preprocessor.scale());
-      normalizer->subtract_mean(preprocessor.subtract_mean());
-      normalizer->unit_variance(preprocessor.unit_variance());
-      normalizer->z_score(preprocessor.z_score());
-      pp->add_normalizer(std::move(normalizer));
-      if (master) cout << "imagenet: normalizer is set" << endl;
-
-      if (name == "imagenet_cv") {
-        reader = new imagenet_reader_cv(pp, shuffle);
-        if (master) cout << "imagenet_reader_cv is set" << endl;
-      } else {
-        reader = new imagenet_reader_single_cv(pp, shuffle);
-        if (master) cout << "imagenet_reader_single_cv is set" << endl;
-      }
-      int width=0, height=0;
-      const int n_labels = readme.num_labels();
-      if (preprocessor.crop_first()) {
-        width = preprocessor.crop_width();
-        height = preprocessor.crop_height();
-      } else {
-        width = preprocessor.raw_width();
-        height = preprocessor.raw_height();
-      }
-      dynamic_cast<imagenet_reader_cv*>(reader)->set_input_params(width, height, 3, n_labels);
+    if ((name == "imagenet_org") || (name == "mnist") || (name == "cifar10")) {
+      init_org_image_data_reader(readme, master, reader);
+      set_up_generic_preprocessor = false;
+    } else if ((name == "imagenet") || (name == "imagenet_single") || (name == "imagenet_patches")) {
+      init_image_data_reader(readme, master, reader);
+      set_up_generic_preprocessor = false;
     } else if (name == "nci") {
       reader = new data_reader_nci(shuffle);
     } else if (name == "csv") {
@@ -1809,7 +1769,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
           reader_numpy->set_has_labels(!readme.disable_labels());
           reader_numpy->set_has_responses(!readme.disable_responses());
           npy_readers.push_back(reader_numpy);
-        }else if (readme.format() == "csv") {
+        } else if (readme.format() == "csv") {
           csv_reader* reader_csv = new csv_reader(shuffle);
           reader_csv->set_data_filename(path);
           reader_csv->set_label_col(readme.label_col());
@@ -1821,7 +1781,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
           reader_csv->set_skip_rows(readme.skip_rows());
           reader_csv->set_has_header(readme.has_header());
           npy_readers.push_back(reader_csv);
-        }else {
+        } else {
           err << __FILE__ << " " << __LINE__ << " :: unknown format for merged data reader: "
               << name;
           throw lbann_exception(err.str());
@@ -1829,8 +1789,6 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       }
       data_reader_merge_samples* merged_reader = new data_reader_merge_samples(npy_readers, shuffle);
       reader = merged_reader;
-    } else if (name == "cifar10") {
-      reader = new cifar10_reader(shuffle);
     } else if (name == "synthetic") {
       reader = new data_reader_synthetic(readme.num_samples(), readme.num_features(), shuffle);
     } else if (name == "ascii") {
@@ -1856,22 +1814,10 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
     reader->set_absolute_sample_count( readme.absolute_sample_count() );
     reader->set_use_percent( readme.percent_of_data_to_use() );
 
-    if ((name != "imagenet_cv") && (name != "imagenet_single_cv")) {
-      reader->horizontal_flip( preprocessor.horizontal_flip() );
-      reader->vertical_flip( preprocessor.vertical_flip() );
-      reader->rotation( preprocessor.rotation() );
-      reader->horizontal_shift( preprocessor.horizontal_shift() );
-      reader->vertical_shift( preprocessor.vertical_shift() );
-      reader->shear_range( preprocessor.shear_range() );
-      reader->subtract_mean( preprocessor.subtract_mean() );
-      reader->unit_variance( preprocessor.unit_variance() );
-      reader->scale( preprocessor.scale() );
-      reader->z_score( preprocessor.z_score() );
-      reader->add_noise( preprocessor.noise_factor() );
-      if (preprocessor.disable_augmentation()) {
-        reader->disable_augmentation();
-      }
+    if (set_up_generic_preprocessor) {
+      init_generic_preprocessor(readme, master, reader);
     }
+
     if (readme.role() == "train") {
       reader->set_role("train");
     } else if (readme.role() == "test") {
@@ -1897,16 +1843,15 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       if (name == "mnist") {
         reader_validation = new mnist_reader(shuffle);
         (*(mnist_reader *)reader_validation) = (*(mnist_reader *)reader);
+      } else if (name == "imagenet_org") {
+        reader_validation = new imagenet_reader_org(shuffle);
+        (*(imagenet_reader_org *)reader_validation) = (*(imagenet_reader_org *)reader);
       } else if (name == "imagenet") {
-        reader_validation = new imagenet_reader(shuffle);
-        (*(imagenet_reader *)reader_validation) = (*(imagenet_reader *)reader);
+        reader_validation = new imagenet_reader(*dynamic_cast<const imagenet_reader*>(reader));
       } else if (name == "imagenet_single") {
-        reader_validation = new imagenet_readerSingle(shuffle);
-        (*(imagenet_readerSingle *)reader_validation) = (*(imagenet_readerSingle *)reader);
-      } else if (name == "imagenet_cv") {
-        reader_validation = new imagenet_reader_cv(*dynamic_cast<const imagenet_reader_cv *>(reader));
-      } else if (name == "imagenet_single_cv") {
-        reader_validation = new imagenet_reader_single_cv(*dynamic_cast<const imagenet_reader_single_cv *>(reader));
+        reader_validation = new imagenet_reader_single(*dynamic_cast<const imagenet_reader_single*>(reader));
+      } else if (name == "imagenet_patches") {
+        reader_validation = new imagenet_reader_patches(*dynamic_cast<const imagenet_reader_patches*>(reader));
       } else if (name == "nci") {
         reader_validation = new data_reader_nci(shuffle);
         (*(data_reader_nci *)reader_validation) = (*(data_reader_nci *)reader);

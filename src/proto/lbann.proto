@@ -45,6 +45,71 @@ message Reader {
 }
 
 message ImagePreprocessor {
+  string name = 1;
+  bool disable = 2;
+  int32 raw_width = 3;
+  int32 raw_height = 4;
+
+  message Cropper {
+    string name = 1;
+    bool disable = 2;
+    bool crop_randomly = 3;
+    uint32 crop_width = 4;
+    uint32 crop_height = 5;
+    int32 resized_width = 6;
+    int32 resized_height = 7;
+  }
+
+  message Augmenter {
+    string name = 1;
+    bool disable = 2;
+    bool horizontal_flip = 3;
+    bool vertical_flip = 4;
+    double rotation = 5;
+    double horizontal_shift = 6;
+    double vertical_shift = 7;
+    double shear_range = 8;
+  }
+
+  message Colorizer {
+    string name = 1;
+    bool disable = 2;
+  }
+
+  message Normalizer {
+    string name = 1;
+    bool disable = 2;
+    bool scale = 3;
+    bool subtract_mean = 4;
+    bool unit_variance = 5;
+    bool z_score = 6;
+  }
+
+  message PatchExtractor {
+    string name = 1;
+    bool disable = 2;
+    uint32 patch_width = 3;
+    uint32 patch_height = 4;
+    uint32 patch_gap = 5; // gap between patches
+    uint32 patch_jitter = 6; // max jittering amount for patch positions
+    uint32 centering_mode = 7; // center patch positioning mode
+    uint32 ca_correction_mode = 8; // chromatic abberation correction mode
+  }
+
+  message Noiser {
+    string name = 1;
+    bool disable = 2;
+    float factor = 3;
+  }
+
+  Cropper cropper = 5;
+  Augmenter augmenter = 6;
+  Colorizer colorizer = 7;
+  Normalizer normalizer = 8;
+  Noiser noiser = 9;
+  PatchExtractor patch_extractor = 10;
+
+  // For backward compatibility. TODO: will be deprecated
   bool scale = 12;
   bool subtract_mean = 13;
   bool unit_variance = 14;
@@ -64,8 +129,23 @@ message ImagePreprocessor {
   bool crop_randomly = 28;
   int32 resized_width = 29;
   int32 resized_height = 30;
-  int32 raw_width = 31;
-  int32 raw_height = 32;
+}
+
+// TODO: wrap El::Mat based normalization into a generic preprocessor
+message GenericPreprocessor {
+  string name = 1;
+  bool disable = 2;
+
+  message Normalizer {
+    string name = 1;
+    bool disable = 2;
+    bool scale = 3;
+    bool subtract_mean = 4;
+    bool unit_variance = 5;
+    bool z_score = 6;
+  }
+
+  Normalizer normalizer = 3;
 }
 
 //========================================================================
@@ -104,6 +184,26 @@ message Model {
   double checkpoint_secs = 33;
 
   int64 random_seed = 34;
+  // If true, models will have their model rank mixed into their random seed.
+  bool random_init_models_differently = 35;
+
+  // For planar model. Eventtually, this should be oneof the existing models
+  message Planar {
+    message Planar_simple {
+      string name = 1;
+      uint32 num_heads = 2;
+    }
+    message Planar_regular {
+      string name = 1;
+      uint32 outdegrees_fanout = 2;
+      uint32 outdegrees_fanin = 3;
+    }
+    oneof planar_type {
+      Planar_simple simple = 1;
+      Planar_regular regular = 2;
+    }
+  }
+  Planar planar = 36;
 }
 
 //========================================================================
@@ -457,7 +557,7 @@ message Layer {
 // MotifLayer //
 ///////////////////////
 message MotifLayer {
-  string name = 1;
+  string motif_id = 1;
   repeated string variable = 2;
 }
 

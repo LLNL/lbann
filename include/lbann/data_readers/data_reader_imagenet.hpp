@@ -23,35 +23,35 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// data_reader_imagenet .hpp .cpp - generic_data_reader class for ImageNet dataset
+// data_reader_imagenet .hpp .cpp - data reader class for ImageNet dataset
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_DATA_READER_IMAGENET_HPP
 #define LBANN_DATA_READER_IMAGENET_HPP
 
 #include "data_reader_image.hpp"
-#include "image_preprocessor.hpp"
+#include "cv_process.hpp"
 
 namespace lbann {
 class imagenet_reader : public image_data_reader {
  public:
-  imagenet_reader(bool shuffle = true);
-  imagenet_reader(const imagenet_reader&) = default;
-  imagenet_reader& operator=(const imagenet_reader&) = default;
-  ~imagenet_reader() override {}
+  imagenet_reader(bool shuffle) = delete;
+  imagenet_reader(const std::shared_ptr<cv_process>& pp, bool shuffle = true);
+  imagenet_reader(const imagenet_reader&);
+  imagenet_reader& operator=(const imagenet_reader&);
+  ~imagenet_reader() override;
 
   imagenet_reader* copy() const override { return new imagenet_reader(*this); }
 
-  /// Set up imagenet specific input parameters
-  void set_input_params(const int width=256, const int height=256, const int num_ch=3, const int num_labels=1000) override;
-
  protected:
   void set_defaults() override;
-  void allocate_pixel_bufs();
+  virtual bool replicate_processor(const cv_process& pp);
+  virtual ::Mat create_datum_view(::Mat& X, const int mb_idx) const;
   bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
 
  protected:
-  std::vector<std::vector<unsigned char>> m_pixel_bufs;
+  /// preprocessor duplicated for each omp thread
+  std::vector<std::unique_ptr<cv_process> > m_pps;
 };
 
 }  // namespace lbann

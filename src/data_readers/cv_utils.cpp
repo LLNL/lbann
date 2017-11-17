@@ -33,6 +33,8 @@
 #ifdef __LIB_OPENCV
 namespace lbann {
 
+const constexpr char* const cv_transform::cv_flip_desc[];
+
 /** The mathematical constant (this is the way to get it in C++). */
 const float cv_transform::pi = static_cast<float>(std::acos(-1));
 

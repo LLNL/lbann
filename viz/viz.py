@@ -44,7 +44,6 @@ def parsePrototext(fn) :
   r = []
   for j in range(len(a)) :
     if a[j].find('layer {') != -1 and a[j].find('#') == -1 :
-      ell = Layer(a[j:])
       r.append(Layer(a[j:]))
   return r
 
@@ -96,8 +95,8 @@ def fixSequentialParents(layers) :
     print '      dealing with that ...'
     print
     assert(num_layers_with_children == 0)
-  for j in range(1, len(layers)) :
-    layers[j].setParents(layers[j-1])
+    for j in range(1, len(layers)) :
+      layers[j].setParents(layers[j-1])
 
 
 #=====================================================================
@@ -136,6 +135,7 @@ props = properties(prop_fn)
 
 #parse the prototext file; 'layers' is a list of Layer objects
 layers = parsePrototext(argv[1])
+
 fixSequentialParents(layers)
 
 #get list of linked layer sets
@@ -148,7 +148,8 @@ attributes = {}
 for layer in layers :
   name = layer.name()
   parents = layer.parents()
-  children = layer.children()
+
+  #children = layer.children()
   attributes[name] = layer.attributes()
   type = layer.type()
   name_to_type[name] = type
@@ -156,10 +157,6 @@ for layer in layers :
     if not edges.has_key(p) :
       edges[p] = set()
     edges[p].add(name)
-  if not edges.has_key(name) :
-    edges[name] = set()
-  for c in children :
-    edges[name].add(c)
 
 #write the dot file
 out = open('graph.dot', 'w')
@@ -169,6 +166,7 @@ if ranksep > 0 :
 
 #write vertices
 for parent in edges.keys() :
+ try :
   type = name_to_type[parent]
   label = ''
   if brief:
@@ -182,8 +180,11 @@ for parent in edges.keys() :
       for x in attr :
         label += x + '<br align="left"/>'
   label += '> '
+ except :
+   print '\n\ncaught exception; parent:', parent
+   exit(9)
 
-  out.write('  ' + parent + '[label=' + label + ' shape=' + props.shape(type) + ', style=filled, fillcolor=' + props.color(type) + ']\n')
+ out.write('  ' + parent + '[label=' + label + ' shape=' + props.shape(type) + ', style=filled, fillcolor=' + props.color(type) + ']\n')
 
 #write edges
 for parent in edges.keys() :
@@ -199,18 +200,6 @@ for parent in edges.keys() :
     else :
       out.write(parent + ' -> ' + child + '[];\n')
 
-#write linked layer edges
-# commenting this out, since it makes the graph pretty useless and unreadable!
-'''
-for layer in layers :
-  name = layer.name()
-  links = layer.linkedLayers()
-  for other in links :
-    if other != name :
-      pass
-      print name, other
-      out.write(name + ' -> ' + other + '[color=red, dir=none]\n')
-'''
 
 #alternatove to above: use subgraphs
 #write linked layer subgraphs    
