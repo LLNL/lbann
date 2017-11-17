@@ -131,10 +131,10 @@
 #include "lbann/weights/fan_in_fan_out_initializers.hpp"
 
 /// Optimizers
-// #include "lbann/optimizers/optimizer_adagrad.hpp"
-// #include "lbann/optimizers/optimizer_adam.hpp"
-// #include "lbann/optimizers/optimizer_hypergradient_adam.hpp"
-// #include "lbann/optimizers/optimizer_rmsprop.hpp"
+#include "lbann/optimizers/adagrad.hpp"
+#include "lbann/optimizers/adam.hpp"
+#include "lbann/optimizers/hypergradient_adam.hpp"
+#include "lbann/optimizers/rmsprop.hpp"
 #include "lbann/optimizers/sgd.hpp"
 
 /// Objective functions (cost functions)

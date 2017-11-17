@@ -57,12 +57,10 @@ sgd& sgd::operator=(const sgd& other) {
       && m_velocity->DistData() == other.m_velocity->DistData()) {
     El::Copy(*other.m_velocity, *m_velocity);
   }
-  if (m_velocity != nullptr) {
-    delete m_velocity;
-    m_velocity = nullptr;
-  }
-  if (other.m_velocity != nullptr) {
-    m_velocity = other.m_velocity->Copy();
+  else {
+    if (m_velocity != nullptr) { delete m_velocity; }
+    m_velocity = other.m_velocity;
+    if (m_velocity != nullptr) { m_velocity = m_velocity->Copy(); }
   }
 
   return *this;
@@ -75,11 +73,10 @@ sgd::~sgd() {
 std::string sgd::get_description() const {
   std::stringstream ss;
   ss << optimizer::get_description() << ", "
-     << "momentum=" << std::to_string(m_momentum)
-     << "nesterov=" << std::to_string(m_nesterov);
+     << "momentum=" << m_momentum << ", "
+     << "nesterov=" << m_nesterov;
   return ss.str();
 }
-
 
 void sgd::setup(weights& w) {
   optimizer::setup(w);
@@ -107,13 +104,13 @@ void sgd::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
   const int velocity_ldim = m_velocity->LDim();
   
   // Check if matrix data is contiguous
-  if(values_ldim != local_height
-     || gradient_ldim != local_height
-     || velocity_ldim != local_height) {
+  if (values_ldim != local_height
+      || gradient_ldim != local_height
+      || velocity_ldim != local_height) {
     // (Nesterov) momentum SGD for non-contiguous data
     #pragma omp parallel for collapse(2)
-    for(int j=0; j<local_width; ++j) {
-      for(int i=0; i<local_height; ++i) {
+    for (int j=0; j<local_width; ++j) {
+      for (int i=0; i<local_height; ++i) {
         const DataType g = gradient_buffer[i+j*gradient_ldim];
         DataType& v = velocity_buffer[i+j*velocity_ldim];
         DataType& x = values_buffer[i+j*values_ldim];
@@ -124,10 +121,10 @@ void sgd::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
       }
     }
   } else {
-    if(m_nesterov) {
+    if (m_nesterov) {
       // Nesterov's accelerated gradient descent for contiguous data
       #pragma omp parallel for
-      for(int i=0; i<local_height*local_width; ++i) {
+      for (int i=0; i<local_height*local_width; ++i) {
         DataType& x = values_buffer[i];
         const DataType g = gradient_buffer[i];
         DataType& v = velocity_buffer[i];
@@ -137,7 +134,7 @@ void sgd::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
     } else {
       // Momentum SGD for contiguous data
 #pragma omp parallel for
-      for(int i=0; i<local_height*local_width; ++i) {
+      for (int i=0; i<local_height*local_width; ++i) {
         DataType& x = values_buffer[i];
         const DataType g = gradient_buffer[i];
         DataType& v = velocity_buffer[i];

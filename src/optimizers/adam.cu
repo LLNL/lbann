@@ -23,12 +23,11 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_optimizer_adam .hpp .cpp - SGD with Adam
+// adam .hpp .cpp .cu - SGD with Adam
 // Reference:
 // Kingma, D. and Ba, J. 2014. Adam: A Method for Stochastic Optimization.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/optimizers/optimizer_adam.hpp"
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {

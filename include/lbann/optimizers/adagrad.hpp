@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_optimizer_adagrad .hpp .cpp - SGD with AdaGrad optimizer
+// adagrad .hpp .cpp - SGD with AdaGrad optimizer
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_OPTIMIZER_ADAGRAD_HPP
@@ -33,60 +33,42 @@
 
 namespace lbann {
 
-/// AdaGrad optimizer
+/** AdaGrad optimizer. */
 class adagrad : public optimizer {
  public:
-  /// Constructor
-  adagrad
-  (lbann_comm *comm,
-   DataType learning_rate,
-   DataType eps = DataType(1e-8));
+
+  /** Constructor. */
+  adagrad(DataType learning_rate,
+          DataType eps = DataType(1e-8));
+
+  /** Copy constructor. */
   adagrad(const adagrad& other);
+  /** Copy assignment operator. */
   adagrad& operator=(const adagrad& other);
-  /// Destructor
+  /** Destructor. */
   ~adagrad() override;
-
-  /// Returns the optimizer's name
-  std::string get_name() const override { return "adagrad"; }
-
-  /** Returns description of ctor params */
-  std::string get_description() const override {
-    return std::string {} +
-     " adagrad; learning_rate: "
-     + std::to_string(m_learning_rate) + " eps: " + std::to_string(m_eps);
-  }
-
+  /** Create a copy. */
   adagrad* copy() const override { return new adagrad(*this); }
 
-  /// Set parameters to optimize and initialize optimizer
-  void setup(AbsDistMat *parameters) override;
-  /// Update parameters using objective function gradient
-  void update(const AbsDistMat *gradient) override;
-  std::string name() const override { return "adagrad"; }
- private:
-  /// Small factor to avoid division by zero
-  DataType m_eps;
-  /// AdaGrad cache
-  AbsDistMat *m_cache;
-};
+  /** Get the optimizer name. */
+  std::string get_type() const override { return "adagrad"; }
+  /** Get a human-readable description of the optimizer. */
+  std::string get_description() const override;
 
-/// Factory for AdaGrad optimizer
-class adagrad_factory : public optimizer_factory {
- public:
-  /// Constructor
-  adagrad_factory
-  (lbann_comm *comm,
-   DataType learning_rate,
-   DataType eps = DataType(1e-8));
-  /// Destructor
-  ~adagrad_factory() override;
-  /// Create AdaGrad optimizer
-  optimizer *create_optimizer() override;
+
+  /** Setup optimizer. */
+  void setup(weights& w) override;
+
+  /** Perform the computation in an optimization step. */
+  void step_compute(AbsDistMat& values, const AbsDistMat& gradient) override;
+
  private:
-  /// Small factor to avoid division by zero
+
+  /** Small factor to avoid division by zero. */
   DataType m_eps;
-  /// Learning rate
-  DataType m_learning_rate;
+  /** AdaGrad cache. */
+  AbsDistMat *m_cache;
+
 };
 
 } // namespace lbann

@@ -23,39 +23,41 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// sgd .hpp .cpp - Stochastic gradient descent optimizer
+// adam .hpp .cpp .cu - SGD with Adam
+// Reference:
+// Kingma, D. and Ba, J. 2014. Adam: A Method for Stochastic Optimization.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_OPTIMIZER_SGD_HPP
-#define LBANN_OPTIMIZER_SGD_HPP
+#ifndef LBANN_OPTIMIZER_ADAM_HPP
+#define LBANN_OPTIMIZER_ADAM_HPP
 
 #include "lbann/optimizers/optimizer.hpp"
 
 namespace lbann {
 
-/** Stochastic gradient descent optimizer.
- *  Supports momentum and Nesterov acceleration.
- */
-class sgd : public optimizer {
-
+/** Adam optimizer. */
+class adam : public optimizer {
  public:
 
   /** Constructor. */
-  sgd(DataType learning_rate,
-      DataType momentum = DataType(0),
-      bool nesterov = false);
+  adam(DataType learning_rate,
+       DataType beta1 = DataType(0.9),
+       DataType beta2 = DataType(0.99),
+       DataType eps = DataType(1e-8),
+       cudnn::cudnn_manager *cudnn = nullptr);
+
 
   /** Copy constructor. */
-  sgd(const sgd& other);
+  adam(const adam& other);
   /** Copy assignment operator. */
-  sgd& operator=(const sgd& other);
+  adam& operator=(const adam& other);
   /** Destructor. */
-  virtual ~sgd();
+  ~adam() override;
   /** Create a copy. */
-  sgd* copy() const override { return new sgd(*this); }
-
-  /** Get the optimizer name. */
-  std::string get_type() const override { return "sgd"; }
+  adam* copy() const override { return new adam(*this); }
+  
+  /** Returns the optimizer name. */
+  std::string get_type() const override { return "adam"; }
   /** Get a human-readable description of the optimizer. */
   std::string get_description() const override;
 
@@ -67,15 +69,23 @@ class sgd : public optimizer {
 
  private:
 
-  /** Momentum. */
-  DataType m_momentum;
-  /** Nesterov acceleration. */
-  bool m_nesterov;
-  /** Velocity term for momentum SGD. */
-  AbsDistMat* m_velocity;
+  /** Update factor for first moment estimate. */
+  DataType m_beta1;
+  /** Update factor for second moment estimate. */
+  DataType m_beta2;
+  /** Small factor to avoid division by zero. */
+  DataType m_eps;
+  /** beta1 ^ iteration. */
+  DataType m_current_beta1;
+  /** beta2 ^ iteration. */
+  DataType m_current_beta2;
+  /** First moment estimates. */
+  AbsDistMat *m_moment1;
+  /** Second moment estimates. */
+  AbsDistMat *m_moment2;
 
 };
 
 } // namespace lbann
 
-#endif // LBANN_OPTIMIZER_SGD_HPP
+#endif  // LBANN_OPTIMIZER_ADAM_HPP

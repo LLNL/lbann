@@ -1,10 +1,10 @@
 add_sources(
   optimizer.cpp
   sgd.cpp
-#  optimizer_adagrad.cpp
-#  optimizer_rmsprop.cpp
-#  optimizer_adam.cpp
-#  optimizer_hypergradient_adam.cpp
+  adagrad.cpp
+  rmsprop.cpp
+  adam.cpp
+  hypergradient_adam.cpp
 )
 
 if(LBANN_HAS_CUDA)
