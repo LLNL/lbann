@@ -37,6 +37,7 @@
 #include "cv_cropper.hpp"
 #include "cv_mean_extractor.hpp"
 #include <memory>
+#include <limits> // std::numeric_limits
 
 #ifdef __LIB_OPENCV
 namespace lbann {
@@ -145,10 +146,13 @@ class cv_process {
 
   void determine_inverse_normalization();
 
-  bool preprocess(cv::Mat& image);
+  /// Execute a range of transforms [tr_strart, tr_end) on the given image in order
+  bool preprocess(cv::Mat& image, unsigned int tr_start = 0u,
+                  unsigned int tr_end = std::numeric_limits<unsigned int>::max());
+  /// Execute all the inverse transforms on the given image in the reverse order
   bool postprocess(cv::Mat& image);
 
-  virtual std::string get_type() const { return "image processor"; }
+  virtual std::string get_type() const { return "cv_process"; }
   virtual std::string get_description() const;
 };
 

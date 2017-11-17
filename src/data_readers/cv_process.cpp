@@ -30,6 +30,7 @@
 
 #include "lbann/data_readers/cv_process.hpp"
 #include "lbann/utils/exception.hpp"
+#include <algorithm> // std::min
 
 #ifdef __LIB_OPENCV
 namespace lbann {
@@ -167,15 +168,26 @@ void cv_process::determine_inverse_normalization() {
 
 /**
  * Preprocess an image.
+ * It executes a range of transforms specified as [tr_strart, tr_end). If tr_end
+ * is unspecified, it is considered as the total number of transforms. If it is 0,
+ * no transform will perform.
+ * By default, it executes all of them. Selective execution is useful whe
+ * generating multiple patches (small images) out of an image.
+ * We first run transforms until generating patches, and stop. Then, generate
+ * patches, and run the rest of the transforms on each patches generated.
  * @return true if successful
  */
-bool cv_process::preprocess(cv::Mat& image) {
+bool cv_process::preprocess(cv::Mat& image, unsigned int tr_start, unsigned int tr_end) {
   _LBANN_SILENT_EXCEPTION(image.empty(), "", false)
 
   bool ok = true;
 
-  if (to_flip()) {
-    cv::flip(image, image, how_to_flip());
+  if (tr_end == 0u) return true;
+  if (tr_start == 0u) {
+    if (to_flip())
+      cv::flip(image, image, how_to_flip());
+  } else if ((tr_start >= m_transforms.size()) || (tr_start >= tr_end)) {
+    return true;
   }
 
   // While many transforms can update pixel values in place, some require new
@@ -192,12 +204,13 @@ bool cv_process::preprocess(cv::Mat& image) {
 
   const bool is_normalizer_the_last = is_normalizer_last();
   const unsigned int n_immediate_transforms 
-      = (is_normalizer_the_last? m_normalizer_idx : m_transforms.size());
+      = std::min((is_normalizer_the_last?
+                  m_normalizer_idx : static_cast<unsigned int>(m_transforms.size())),
+                 tr_end);
 
-  for (size_t i = 0u; i < n_immediate_transforms; ++i) {
+  for (size_t i = tr_start; i < n_immediate_transforms; ++i) {
     if (m_transforms[i]->determine_transform(image)) {
       ok = m_transforms[i]->apply(image);
-      _LBANN_MILD_EXCEPTION(!ok, "transform " << i << " has failed!", false);
     }
   }
 
@@ -259,12 +272,21 @@ std::vector<cv_normalizer::channel_trans_t> cv_process::get_transform_normalize(
 std::string cv_process::get_description() const {
   std::stringstream os;
   os << get_type() + ":" << std::endl
-     << "flip: " << how_to_flip() << std::endl
-     << "split channels: " << m_split << std::endl
-     << "number of transforms: " << m_transforms.size() << std::endl
-     << "is normalizer set: " << m_is_normalizer_set << std::endl;
+     << " - flip: " << cv_transform::flip_desc(m_flip) << std::endl
+     << " - split channels: " << m_split << std::endl
+     << " - is normalizer set: " << m_is_normalizer_set << std::endl;
+
   if (m_is_normalizer_set)
-     os << "normalizer index: " << m_normalizer_idx << std::endl;
+     os << " - normalizer index: " << m_normalizer_idx << std::endl;
+
+  os << " - number of transforms: " << m_transforms.size() << std::endl;
+  for(size_t i = 0u; i< m_transforms.size(); ++i) {
+    if(!m_transforms[i])
+      os << "   transform [" << i << "]: not set" << std::endl;
+    else
+      os << "   transform [" << i << "]: " << m_transforms[i]->get_name()
+         << " of " << m_transforms[i]->get_type() << " type" << std::endl;
+  }
 
   return os.str();
 }
