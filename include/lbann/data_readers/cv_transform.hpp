@@ -62,6 +62,8 @@ class cv_transform {
 
  public:
   enum cv_flipping {_both_axes_=-1, _vertical_=0, _horizontal_=1, _no_flip_=2};
+  static const constexpr char* const cv_flip_desc[] = {"both_axes", "vertical", "horizontal", "none"};
+  static std::string flip_desc(const cv_flipping flip_code) { return std::string(cv_flip_desc[static_cast<int>(flip_code)+1]); }
 
   static const float pi;
 
