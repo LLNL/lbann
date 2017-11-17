@@ -118,16 +118,17 @@ class cv_transform {
 
 /// Default constructor
 inline cv_transform::cv_transform()
-  : m_enabled(false)//, m_manual_switch(false)
+  : m_name(""), m_enabled(false)//, m_manual_switch(false)
 {}
 
 /// Deep-copying constructor
 inline cv_transform::cv_transform(const cv_transform& rhs)
-  : m_enabled(rhs.m_enabled) {}
+  : m_name(rhs.m_name), m_enabled(rhs.m_enabled) {}
 
 /// Assignement operator. deep-copy everything
 inline cv_transform& cv_transform::operator=(const cv_transform& rhs) {
   m_enabled = rhs.m_enabled;
+  m_name = rhs.m_name;
   return *this;
 }
 
