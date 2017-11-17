@@ -838,6 +838,26 @@ void add_layers(
     }
 
     //////////////////////////////////////////////////////////////////
+    // LAYER: darc1
+    //////////////////////////////////////////////////////////////////
+    else if (layer.has_darc1()) {
+      const lbann_data::Darc1& ell = layer.darc1();
+      if (dl == data_layout::MODEL_PARALLEL) {
+        d = new darc1<data_layout::MODEL_PARALLEL>(
+          layer_id,
+          comm,
+          ell.scaling_factor()
+        );
+      } else {
+        d = new darc1<data_layout::DATA_PARALLEL>(
+          layer_id,
+          comm,
+          ell.scaling_factor()
+        );
+      }
+    }
+
+    //////////////////////////////////////////////////////////////////
     // LAYER: selu (activation)
     //////////////////////////////////////////////////////////////////
     else if (layer.has_selu()) {
