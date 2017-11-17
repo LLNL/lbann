@@ -44,20 +44,27 @@ namespace cublas {
 inline
 cublasStatus_t axpy(const cublasHandle_t &handle,
                     int n,
-                    const float alpha,
+                    float alpha,
                     const float *x, int incx,
                     float *y, int incy) {
   return cublasSaxpy(handle, n, &alpha, x, incx, y, incy);
+}
+inline
+cublasStatus_t scal(const cublasHandle_t &handle,
+                    int n,
+                    float alpha,
+                    float *x, int incx) {
+  return cublasSscal(handle, n, &alpha, x, incx);
 }
 inline
 cublasStatus_t gemm(const cublasHandle_t &handle,
                     cublasOperation_t transa,
                     cublasOperation_t transb,
                     int m, int n, int k,
-                    const float alpha,
+                    float alpha,
                     const float *A, int lda,
                     const float *B, int ldb,
-                    const float beta,
+                    float beta,
                     float *C, int ldc) {
   return cublasSgemm(handle, transa, transb, m, n, k,
                      &alpha, A, lda, B, ldb, &beta, C, ldc);
@@ -68,20 +75,27 @@ cublasStatus_t gemm(const cublasHandle_t &handle,
 inline
 cublasStatus_t axpy(const cublasHandle_t &handle,
                     int n,
-                    const double alpha,
+                    double alpha,
                     const double *x, int incx,
                     double *y, int incy) {
   return cublasDaxpy(handle, n, &alpha, x, incx, y, incy);
+}
+inline
+cublasStatus_t scal(const cublasHandle_t &handle,
+                    int n,
+                    double alpha,
+                    double *x, int incx) {
+  return cublasDscal(handle, n, &alpha, x, incx);
 }
 inline
 cublasStatus_t gemm(const cublasHandle_t &handle,
                     cublasOperation_t transa,
                     cublasOperation_t transb,
                     int m, int n, int k,
-                    const double alpha,
+                    double alpha,
                     const double *A, int lda,
                     const double *B, int ldb,
-                    const double beta,
+                    double beta,
                     double *C, int ldc) {
   return cublasDgemm(handle, transa, transb, m, n, k,
                      &alpha, A, lda, B, ldb, &beta, C, ldc);

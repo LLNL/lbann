@@ -30,73 +30,10 @@
 #define LBANN_LAYER_REGULARIZER_BATCH_NORMALIZATION_HPP_INCLUDED
 
 #include "lbann/layers/regularizers/regularizer.hpp"
-#include "lbann/optimizers/sgd.hpp"
-
-namespace lbann {
-
 #ifdef __LIB_CUDNN
-namespace batch_normalization_cuda {
-/** Compute sums and squares of sums over channels on GPUs. */
-template <typename T>
-void channel_sums_and_sqsums(int height,
-                             int width,
-                             int num_channels,
-                             const T *data_d,
-                                   T *sums_d,
-                                   T *sqsums_d,
-                             cudaStream_t stream);
-/** Apply batch normalization on GPUs. */
-template <typename T>
-void batch_normalization(int height,
-                         int width,
-                         int num_channels,
-                         const T *prev_activations_d,
-                         const T *mean_d,
-                         const T *var_d,
-                         T epsilon,
-                         const T *scale_d,
-                         const T *bias_d,
-                               T *activations_d,
-                         cudaStream_t stream);
-/** Perform first phase of batch normalization backprop on GPUs.
- *  Compute gradient w.r.t. scaling factor, bias term, mean, and
- *  variance.
- */
-template <typename T>
-void batch_normalization_backprop1(int height,
-                                   int width,
-                                   int num_channels,
-                                   const T *prev_activations_d,
-                                   const T *prev_error_signal_d,
-                                   const T *mean_d,
-                                   const T *var_d,
-                                   T epsilon,
-                                   const T *scale_d,
-                                         T *dscale_d,
-                                         T *dbias_d,
-                                         T *dmean_d,
-                                         T *dvar_d,
-                                   cudaStream_t stream);
-/** Perform second phase of batch normalization backprop on GPUs.
- *  Compute error signal (i.e. gradient w.r.t. inputs).
- */
-template <typename T>
-void batch_normalization_backprop2(int height,
-                                   int local_width,
-                                   int global_width,
-                                   int num_channels,
-                                   const T *prev_activations_d,
-                                   const T *prev_error_signal_d,
-                                   const T *mean_d,
-                                   const T *var_d,
-                                   T epsilon,
-                                   const T *scale_d,
-                                   const T *dmean_d,
-                                   const T *dvar_d,
-                                         T *error_signal_d,
-                                   cudaStream_t stream);
-} // namespace batch_normalization_cuda
+#include "lbann/layers/regularizers/batch_normalization_cuda.hpp"
 #endif // __LIB_CUDNN
+namespace lbann {
 
 /**
  * Batch normalization: normalize layers to zero mean/unit standard deviation.
@@ -144,32 +81,18 @@ class batch_normalization : public regularizer_layer {
   AbsDistMat *m_bias_gradient;
 
 #ifdef __LIB_CUDNN
-
-  /** Channel tensor descriptor.
-   *  This tensor has the same dimensions as the means, variances,
-   *  scaling term and bias term. */
-  cudnnTensorDescriptor_t m_channel_tensor_cudnn_desc;
-
   /** GPU memory for current minibatch means. */
   std::vector<DataType *> m_mean_d;
   /** GPU memory for current minibatch variances. */
   std::vector<DataType *> m_var_d;
-  /** GPU memory for scaling term. */
-  std::vector<DataType *> m_scale_d;
-  /** GPU memory for bias term. */
-  std::vector<DataType *> m_bias_d;
-  /** GPU memory for scaling term gradient. */
-  std::vector<DataType *> m_scale_gradient_d;
-  /** GPU memory for bias term gradient. */
-  std::vector<DataType *> m_bias_gradient_d;
   /** GPU memory for mean gradient. */
   std::vector<DataType *> m_mean_gradient_d;
   /** GPU memory for variance gradient. */
   std::vector<DataType *> m_var_gradient_d;
-
-  /** Workspace with pinned memory. */
-  AbsDistMat *m_pinned_workspace;
-
+  /** GPU memory for scaling term gradient. */
+  std::vector<DataType *> m_scale_gradient_d;
+  /** GPU memory for bias term gradient. */
+  std::vector<DataType *> m_bias_gradient_d;
 #endif // __LIB_CUDNN
 
  public:
@@ -211,12 +134,8 @@ class batch_normalization : public regularizer_layer {
     initialize_distributed_matrices();
 
   #ifdef __LIB_CUDNN
-
-    // Initialize cuDNN objects
-    m_channel_tensor_cudnn_desc = NULL;    
-
     // Initialize GPU memory if using GPU
-    if(cudnn) {
+    if(cudnn != nullptr) {
       this->m_using_gpus = true;
       this->m_cudnn = cudnn;
     }
@@ -253,44 +172,27 @@ class batch_normalization : public regularizer_layer {
     if (m_bias_gradient != nullptr)  { m_bias_gradient = m_bias_gradient->Copy(); }
 
   #ifdef __LIB_CUDNN
-
-    // Copy cuDNN tensor descriptor
-    m_channel_tensor_cudnn_desc = nullptr;
-    cudnn::copy_tensor_cudnn_desc(other.m_channel_tensor_cudnn_desc,
-                                  m_channel_tensor_cudnn_desc);
-    
     // Copy GPU data
-    m_mean_d = m_cudnn->copy(other.m_mean_d,
-                             m_mean_v->Height(),
-                             m_mean_v->Width());
-    m_var_d = m_cudnn->copy(other.m_var_d,
-                            m_var_v->Height(),
-                            m_var_v->Width());
-    m_scale_d = m_cudnn->copy(other.m_scale_d,
-                              m_scale_v->Height(),
-                              m_scale_v->Width());
-    m_bias_d = m_cudnn->copy(other.m_bias_d,
-                             m_bias_v->Height(),
-                             m_bias_v->Width());
-    m_scale_gradient_d = m_cudnn->copy(other.m_scale_gradient_d,
-                                       m_scale_gradient_v->Height(),
-                                       m_scale_gradient_v->Width());
-    m_bias_gradient_d = m_cudnn->copy(other.m_bias_gradient_d,
-                                      m_bias_gradient_v->Height(),
-                                      m_bias_gradient_v->Width());
-    m_mean_gradient_d = m_cudnn->copy(other.m_mean_gradient_d,
-                                      m_mean_gradient_v->Height(),
-                                      m_mean_gradient_v->Width());
-    m_var_gradient_d = m_cudnn->copy(other.m_var_gradient_d,
-                                     m_var_gradient_v->Height(),
-                                     m_var_gradient_v->Width());
-
-    // Copy pinned workspace
-    m_pinned_workspace = other.m_pinned_workspace->Copy();
-    if(m_pinned_workspace != nullptr) {
-      m_cudnn->pin_matrix(*m_pinned_workspace);
+    if (m_cudnn != nullptr) {
+      m_mean_d = m_cudnn->copy(other.m_mean_d,
+                               m_mean->Height(),
+                               m_mean->Width());
+      m_var_d = m_cudnn->copy(other.m_var_d,
+                              m_var->Height(),
+                              m_var->Width());
+      m_mean_gradient_d = m_cudnn->copy(other.m_mean_gradient_d,
+                                        m_mean_gradient->Height(),
+                                        m_mean_gradient->Width());
+      m_var_gradient_d = m_cudnn->copy(other.m_var_gradient_d,
+                                       m_var_gradient->Height(),
+                                       m_var_gradient->Width());
+      m_scale_gradient_d = m_cudnn->copy(other.m_scale_gradient_d,
+                                         m_scale_gradient->Height(),
+                                         m_scale_gradient->Width());
+      m_bias_gradient_d = m_cudnn->copy(other.m_bias_gradient_d,
+                                        m_bias_gradient->Height(),
+                                        m_bias_gradient->Width());
     }
-
   #endif // __LIB_CUDNN
   }
 
@@ -327,54 +229,33 @@ class batch_normalization : public regularizer_layer {
   #undef COPY_MATRIX
 
   #ifdef __LIB_CUDNN
-
-    // Copy cuDNN tensor descriptor
-    cudnn::copy_tensor_cudnn_desc(other.m_channel_tensor_cudnn_desc,
-                                  m_channel_tensor_cudnn_desc);
-    
     // Copy GPU data
-    m_cudnn->deallocate_on_gpus(m_mean_d);
-    m_cudnn->deallocate_on_gpus(m_var_d);
-    m_cudnn->deallocate_on_gpus(m_scale_d);
-    m_cudnn->deallocate_on_gpus(m_bias_d);
-    m_cudnn->deallocate_on_gpus(m_scale_gradient_d);
-    m_cudnn->deallocate_on_gpus(m_bias_gradient_d);
-    m_cudnn->deallocate_on_gpus(m_mean_gradient_d);
-    m_cudnn->deallocate_on_gpus(m_var_gradient_d);
-    m_mean_d = m_cudnn->copy(other.m_mean_d,
-                             m_mean_v->Height(),
-                             m_mean_v->Width());
-    m_var_d = m_cudnn->copy(other.m_var_d,
-                            m_var_v->Height(),
-                            m_var_v->Width());
-    m_scale_d = m_cudnn->copy(other.m_scale_d,
-                              m_scale_v->Height(),
-                              m_scale_v->Width());
-    m_bias_d = m_cudnn->copy(other.m_bias_d,
-                             m_bias_v->Height(),
-                             m_bias_v->Width());
-    m_scale_gradient_d = m_cudnn->copy(other.m_scale_gradient_d,
-                                       m_scale_gradient_v->Height(),
-                                       m_scale_gradient_v->Width());
-    m_bias_gradient_d = m_cudnn->copy(other.m_bias_gradient_d,
-                                      m_bias_gradient_v->Height(),
-                                      m_bias_gradient_v->Width());
-    m_mean_gradient_d = m_cudnn->copy(other.m_mean_gradient_d,
-                                      m_mean_gradient_v->Height(),
-                                      m_mean_gradient_v->Width());
-    m_var_gradient_d = m_cudnn->copy(other.m_var_gradient_d,
-                                     m_var_gradient_v->Height(),
-                                     m_var_gradient_v->Width());
-
-    // Copy pinned workspace
-    if(m_pinned_workspace != nullptr) {
-      m_cudnn->unpin_matrix(*m_pinned_workspace);
+    if (m_cudnn != nullptr) {
+      m_cudnn->deallocate_on_gpus(m_mean_d);
+      m_cudnn->deallocate_on_gpus(m_var_d);
+      m_cudnn->deallocate_on_gpus(m_mean_gradient_d);
+      m_cudnn->deallocate_on_gpus(m_var_gradient_d);
+      m_cudnn->deallocate_on_gpus(m_scale_gradient_d);
+      m_cudnn->deallocate_on_gpus(m_bias_gradient_d);
+      m_mean_d = m_cudnn->copy(other.m_mean_d,
+                               m_mean->Height(),
+                               m_mean->Width());
+      m_var_d = m_cudnn->copy(other.m_var_d,
+                              m_var->Height(),
+                              m_var->Width());
+      m_mean_gradient_d = m_cudnn->copy(other.m_mean_gradient_d,
+                                        m_mean_gradient->Height(),
+                                        m_mean_gradient->Width());
+      m_var_gradient_d = m_cudnn->copy(other.m_var_gradient_d,
+                                       m_var_gradient->Height(),
+                                       m_var_gradient->Width());
+      m_scale_gradient_d = m_cudnn->copy(other.m_scale_gradient_d,
+                                         m_scale_gradient->Height(),
+                                         m_scale_gradient->Width());
+      m_bias_gradient_d = m_cudnn->copy(other.m_bias_gradient_d,
+                                        m_bias_gradient->Height(),
+                                        m_bias_gradient->Width());
     }
-    m_pinned_workspace = other.m_pinned_workspace->Copy();
-    if(m_pinned_workspace != nullptr) {
-      m_cudnn->pin_matrix(*m_pinned_workspace);
-    }
-
   #endif // __LIB_CUDNN
 
     return *this;
@@ -392,26 +273,15 @@ class batch_normalization : public regularizer_layer {
 
   ~batch_normalization() {
   #ifdef __LIB_CUDNN
-
-    // Destroy cuDNN objects
-    if(m_channel_tensor_cudnn_desc) {
-      CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_channel_tensor_cudnn_desc));
-    }
-
     // Deallocate GPU memory
-    this->m_cudnn->deallocate_on_gpus(m_mean_d);
-    this->m_cudnn->deallocate_on_gpus(m_var_d);
-    this->m_cudnn->deallocate_on_gpus(m_scale_d);
-    this->m_cudnn->deallocate_on_gpus(m_bias_d);
-    this->m_cudnn->deallocate_on_gpus(m_scale_gradient_d);
-    this->m_cudnn->deallocate_on_gpus(m_bias_gradient_d);
-    this->m_cudnn->deallocate_on_gpus(m_mean_gradient_d);
-    this->m_cudnn->deallocate_on_gpus(m_var_gradient_d);
-
-    // Delete pinned memory workspace
-    this->m_cudnn->unpin_matrix(*m_pinned_workspace);
-    delete m_pinned_workspace;
-
+    if (m_cudnn != nullptr) {
+      this->m_cudnn->deallocate_on_gpus(m_mean_d);
+      this->m_cudnn->deallocate_on_gpus(m_var_d);
+      this->m_cudnn->deallocate_on_gpus(m_mean_gradient_d);
+      this->m_cudnn->deallocate_on_gpus(m_var_gradient_d);
+      this->m_cudnn->deallocate_on_gpus(m_scale_gradient_d);
+      this->m_cudnn->deallocate_on_gpus(m_bias_gradient_d);
+    }
   #endif // #ifdef __LIB_CUDNN
 
     // Deallocate matrices
@@ -476,14 +346,12 @@ class batch_normalization : public regularizer_layer {
       this->m_weights[2] = new weights(this->m_comm, this->m_cudnn);
       this->m_weights[2]->set_name(this->m_name + "_running_mean");
       this->m_weights[2]->set_initializer(new constant_initializer(this->m_comm, DataType(0)));
-      this->m_weights[2]->set_optimizer(new sgd(DataType(1)-m_decay));
       this->m_neural_network_model->add_weights(this->m_weights[2]);
     }
     if (this->m_weights[3] == nullptr) {
       this->m_weights[3] = new weights(this->m_comm, this->m_cudnn);
       this->m_weights[3]->set_name(this->m_name + "_running_variance");
       this->m_weights[3]->set_initializer(new constant_initializer(this->m_comm, DataType(1)));
-      this->m_weights[3]->set_optimizer(new sgd(DataType(1)-m_decay));
       this->m_neural_network_model->add_weights(this->m_weights[3]);
     }
 
@@ -496,6 +364,8 @@ class batch_normalization : public regularizer_layer {
     // Initialize matrices
     El::Zeros(*m_mean, this->m_neuron_dims[0], 1);
     El::Zeros(*m_var, this->m_neuron_dims[0], 1);
+    El::Zeros(*m_mean_gradient, this->m_neuron_dims[0], 1);
+    El::Zeros(*m_var_gradient, this->m_neuron_dims[0], 1);
     El::Zeros(*m_scale_gradient, this->m_neuron_dims[0], 1);
     El::Zeros(*m_bias_gradient, this->m_neuron_dims[0], 1);
 
@@ -515,48 +385,25 @@ class batch_normalization : public regularizer_layer {
     throw lbann_exception("convolution_layer: cuDNN not detected");
   #else
 
-    // Set tensor descriptor
-    CHECK_CUDNN(cudnnCreateTensorDescriptor(&m_channel_tensor_cudnn_desc));
-    std::vector<int> tensor_dims(this->m_num_neuron_dims+1, 1);
-    std::vector<int> tensor_strides(this->m_num_neuron_dims+1, 1);
-    tensor_dims[1] = this->m_neuron_dims[0];
-    tensor_strides[0] = tensor_dims[1];
-    CHECK_CUDNN(cudnnSetTensorNdDescriptor(m_channel_tensor_cudnn_desc,
-                                           cudnn::get_cudnn_data_type(),
-                                           tensor_dims.size(),
-                                           tensor_dims.data(),
-                                           tensor_strides.data()));
-
     // Allocate GPU memory
     this->m_cudnn->allocate_on_gpus(m_mean_d,
-                                    m_mean_v->Height(),
-                                    m_mean_v->Width());
+                                    m_mean->Height(),
+                                    m_mean->Width());
     this->m_cudnn->allocate_on_gpus(m_var_d,
-                                    m_var_v->Height(),
-                                    m_var_v->Width());
-    this->m_cudnn->allocate_on_gpus(m_scale_d,
-                                    m_scale_v->Height(),
-                                    m_scale_v->Width());
-    this->m_cudnn->allocate_on_gpus(m_bias_d,
-                                    m_bias_v->Height(),
-                                    m_bias_v->Width());
+                                    m_var->Height(),
+                                    m_var->Width());
     this->m_cudnn->allocate_on_gpus(m_scale_gradient_d,
-                                    m_scale_gradient_v->Height(),
-                                    m_scale_gradient_v->Width());
+                                    m_scale_gradient->Height(),
+                                    m_scale_gradient->Width());
     this->m_cudnn->allocate_on_gpus(m_bias_gradient_d,
-                                    m_bias_gradient_v->Height(),
-                                    m_bias_gradient_v->Width());
+                                    m_bias_gradient->Height(),
+                                    m_bias_gradient->Width());
     this->m_cudnn->allocate_on_gpus(m_mean_gradient_d,
-                                    m_mean_gradient_v->Height(),
-                                    m_mean_gradient_v->Width());
+                                    m_mean_gradient->Height(),
+                                    m_mean_gradient->Width());
     this->m_cudnn->allocate_on_gpus(m_var_gradient_d,
-                                    m_var_gradient_v->Height(),
-                                    m_var_gradient_v->Width());
-
-    // Initialize pinned memory workspace
-    m_pinned_workspace->Resize(m_parameters->Height(),
-                               4 * this->m_cudnn->get_num_gpus());
-    this->m_cudnn->pin_matrix(*m_pinned_workspace);
+                                    m_var_gradient->Height(),
+                                    m_var_gradient->Width());
 
   #endif // __LIB_CUDNN
 
@@ -599,23 +446,11 @@ class batch_normalization : public regularizer_layer {
     throw lbann_exception("batch_normalization_layer: cuDNN not detected");
   #else
 
-    // Number of GPUs
-    const int num_gpus = this->m_cudnn->get_num_gpus();
+    // Check execution mode
+    const bool is_training = this->get_execution_mode() == execution_mode::training;
 
-    // Get local matrices
-    Mat& mean_local = m_mean_v->Matrix();
-    Mat& var_local = m_var_v->Matrix();
-    Mat& running_mean_local = m_running_mean_v->Matrix();
-    Mat& running_var_local = m_running_var_v->Matrix();
-    const Mat& scale_local = m_scale_v->LockedMatrix();
-    const Mat& bias_local = m_bias_v->LockedMatrix();
-    
-    // Setup pinned workspace
-    Mat& pinned_workspace_local = m_pinned_workspace->Matrix();
-    Mat workspace1 = pinned_workspace_local(El::ALL, El::IR(0, num_gpus));
-    Mat workspace2 = pinned_workspace_local(El::ALL, El::IR(num_gpus, 2*num_gpus));
-    
     // Matrix parameters
+    const int num_gpus = this->m_cudnn->get_num_gpus();
     const int height = this->m_prev_activations->Height();
     const int width = this->m_prev_activations->Width();
     const int local_width = this->m_prev_activations->LocalWidth();
@@ -623,9 +458,13 @@ class batch_normalization : public regularizer_layer {
     const int channel_size = this->m_num_neurons / num_channels;
 
     // Compute statistics
-    if(this->get_execution_mode() == execution_mode::training) {
+    if(is_training) {
 
-      // Compute sums and sums of squares on each GPU
+      // Get GPU objects
+      std::vector<DataType*> running_mean_d = m_weights[2]->get_values_gpu();
+      std::vector<DataType*> running_var_d = m_weights[3]->get_values_gpu();
+
+      // Compute sums and sums of squares on GPUs
       for(int i=0; i<num_gpus; ++i) {
         CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
         const int col_start = std::min(i * this->m_mini_batch_size_per_gpu, local_width);
@@ -640,54 +479,45 @@ class batch_normalization : public regularizer_layer {
                                               m_var_d[i],
                                               this->m_cudnn->get_stream(i));
       }
-      
-      // Reduce sums and sums of squares across GPUs and nodes
-      this->m_cudnn->gather_from_gpus(workspace1, m_mean_d, 1);
-      this->m_cudnn->gather_from_gpus(workspace2, m_var_d, 1);
-      this->m_cudnn->synchronize();
-      for(int i=0; i<num_gpus; ++i) {
-        if(i == 0) {
-          El::Copy(workspace1(El::ALL, El::IR(0)), mean_local);
-          El::Copy(workspace2(El::ALL, El::IR(0)), var_local);
-        }
-        else {
-          mean_local += workspace1(El::ALL, El::IR(i));
-          var_local += workspace2(El::ALL, El::IR(i));
-        }
-      }
+      this->m_cudnn->allreduce(m_mean_d, num_channels, 1);
+      this->m_cudnn->allreduce(m_var_d, num_channels, 1);
+
+      // Accumulate sums and sums of squares across nodes if needed
+      int samples_per_sum;
       if (m_use_global_stats) {
-        El::AllReduce(*m_statistics_v,
-                      m_statistics_v->RedundantComm(),
-                      El::mpi::SUM);
+        this->m_cudnn->copy_from_gpu(0, m_mean->Matrix(), m_mean_d[0]);
+        this->m_cudnn->copy_from_gpu(0, m_var->Matrix(), m_var_d[0]);
+        this->m_cudnn->synchronize();
+        El::AllReduce(*m_mean, m_mean->RedundantComm(), El::mpi::SUM);
+        El::AllReduce(*m_var, m_var->RedundantComm(), El::mpi::SUM);
+        this->m_cudnn->broadcast_to_gpus(m_mean_d, m_mean->LockedMatrix());
+        this->m_cudnn->broadcast_to_gpus(m_var_d, m_var->LockedMatrix());
+        samples_per_sum = channel_size * width;
+      } else {
+        samples_per_sum = channel_size * local_width;
       }
 
       // Compute minibatch statistics and running statistics
-      const DataType num_samples = width * channel_size;
-      #pragma omp parallel for
-      for(int channel = 0; channel < num_channels; ++channel) {
-        const DataType mean = mean_local(channel, 0) / num_samples;
-        const DataType sqmean = var_local(channel, 0) / num_samples;
-        const DataType var = num_samples / (num_samples - DataType(1)) * std::max(sqmean - mean * mean, DataType(0));
-        mean_local(channel, 0) = mean;
-        var_local(channel, 0) = var;
-        DataType& running_mean = running_mean_local(channel, 0);
-        DataType& running_var = running_var_local(channel, 0);
-        running_mean = m_decay * running_mean + (DataType(1) - m_decay) * mean;
-        running_var = m_decay * running_var + (DataType(1) - m_decay) * var;
+      for(int i=0; i<num_gpus; ++i) {
+        CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
+        batch_normalization_cuda
+          ::sums_to_statistics<DataType>(num_channels,
+                                         samples_per_sum,
+                                         m_decay,
+                                         m_mean_d[i],
+                                         m_var_d[i],
+                                         running_mean_d[i],
+                                         running_var_d[i],
+                                         this->m_cudnn->get_stream(i));
       }
       
     }
 
-    // Transfer parameters from CPU to GPUs
-    this->m_cudnn->broadcast_to_gpus(m_scale_d, scale_local);
-    this->m_cudnn->broadcast_to_gpus(m_bias_d, bias_local);
-    if(this->get_execution_mode() == execution_mode::training) {
-      this->m_cudnn->broadcast_to_gpus(m_mean_d, mean_local);
-      this->m_cudnn->broadcast_to_gpus(m_var_d, var_local);
-    } else {
-      this->m_cudnn->broadcast_to_gpus(m_mean_d, running_mean_local);
-      this->m_cudnn->broadcast_to_gpus(m_var_d, running_var_local);
-    }
+    // Get GPU objects
+    std::vector<DataType*> scale_d = m_weights[0]->get_values_gpu();
+    std::vector<DataType*> bias_d = m_weights[1]->get_values_gpu();
+    std::vector<DataType*> mean_d = is_training ? m_mean_d : m_weights[2]->get_values_gpu();
+    std::vector<DataType*> var_d = is_training ? m_var_d : m_weights[3]->get_values_gpu();
 
     // Perform batch normalization with each GPU
     for(int i=0; i<num_gpus; ++i) {
@@ -700,11 +530,11 @@ class batch_normalization : public regularizer_layer {
                                         current_width,
                                         num_channels,
                                         this->m_prev_activations_d[i],
-                                        m_mean_d[i],
-                                        m_var_d[i],
+                                        mean_d[i],
+                                        var_d[i],
                                         m_epsilon,
-                                        m_scale_d[i],
-                                        m_bias_d[i],
+                                        scale_d[i],
+                                        bias_d[i],
                                         this->m_activations_d[i],
                                         this->m_cudnn->get_stream(i));
     }
@@ -717,21 +547,14 @@ class batch_normalization : public regularizer_layer {
     throw lbann_exception("batch_normalization_layer: cuDNN not detected");
   #else
 
-    // Number of GPUs
+    // Check execution mode
+    const bool is_training = this->get_execution_mode() == execution_mode::training;
+
+    // GPU objects
     const int num_gpus = this->m_cudnn->get_num_gpus();
-
-    // Get local matrices
-    Mat& mean_gradient_local = m_mean_gradient_v->Matrix();
-    Mat& var_gradient_local = m_var_gradient_v->Matrix();
-    Mat& scale_gradient_local = m_scale_gradient_v->Matrix();
-    Mat& bias_gradient_local = m_bias_gradient_v->Matrix();
-
-    // Setup pinned workspace
-    Mat& pinned_workspace_local = m_pinned_workspace->Matrix();
-    Mat workspace1 = pinned_workspace_local(El::ALL, El::IR(0, num_gpus));
-    Mat workspace2 = pinned_workspace_local(El::ALL, El::IR(num_gpus, 2*num_gpus));
-    Mat workspace3 = pinned_workspace_local(El::ALL, El::IR(2*num_gpus, 3*num_gpus));
-    Mat workspace4 = pinned_workspace_local(El::ALL, El::IR(3*num_gpus, 4*num_gpus));
+    std::vector<DataType*> scale_d = m_weights[0]->get_values_gpu();
+    std::vector<DataType*> mean_d = is_training ? m_mean_d : m_weights[2]->get_values_gpu();
+    std::vector<DataType*> var_d = is_training ? m_var_d : m_weights[3]->get_values_gpu();
 
     // Matrix parameters
     const int height = this->m_prev_activations->Height();
@@ -751,48 +574,56 @@ class batch_normalization : public regularizer_layer {
                                                   num_channels,
                                                   this->m_prev_activations_d[i],
                                                   this->m_prev_error_signal_d[i],
-                                                  m_mean_d[i],
-                                                  m_var_d[i],
+                                                  mean_d[i],
+                                                  var_d[i],
                                                   m_epsilon,
-                                                  m_scale_d[i],
+                                                  scale_d[i],
                                                   m_scale_gradient_d[i],
                                                   m_bias_gradient_d[i],
                                                   m_mean_gradient_d[i],
                                                   m_var_gradient_d[i],
                                                   this->m_cudnn->get_stream(i));
     }
+    this->m_cudnn->allreduce(m_mean_gradient_d, num_channels, 1);
+    this->m_cudnn->allreduce(m_var_gradient_d, num_channels, 1);
 
-    // Reduce sums and sums of squares across GPUs and nodes
-    this->m_cudnn->gather_from_gpus(workspace1, m_scale_gradient_d, 1);
-    this->m_cudnn->gather_from_gpus(workspace2, m_bias_gradient_d, 1);
-    this->m_cudnn->gather_from_gpus(workspace3, m_mean_gradient_d, 1);
-    this->m_cudnn->gather_from_gpus(workspace4, m_var_gradient_d, 1);
-    this->m_cudnn->synchronize();
-    for(int i=0; i<num_gpus; ++i) {
-      if(i == 0) {
-        El::Copy(workspace1(El::ALL, El::IR(i)), scale_gradient_local);
-        El::Copy(workspace2(El::ALL, El::IR(i)), bias_gradient_local);
-        El::Copy(workspace3(El::ALL, El::IR(i)), mean_gradient_local);
-        El::Copy(workspace4(El::ALL, El::IR(i)), var_gradient_local);
+    // Accumulate gradients
+    if(is_training) {
+      if(m_use_global_stats) {
+        this->m_cudnn->copy_from_gpu(0, m_mean_gradient->Matrix(), m_mean_gradient_d[0]);
+        this->m_cudnn->copy_from_gpu(0, m_var_gradient->Matrix(), m_var_gradient_d[0]);
+        this->m_cudnn->synchronize();
+        El::AllReduce(*m_mean_gradient, m_mean_gradient->RedundantComm(), El::mpi::SUM);
+        El::AllReduce(*m_var_gradient, m_var_gradient->RedundantComm(), El::mpi::SUM);
+        this->m_cudnn->broadcast_to_gpus(m_mean_gradient_d, m_mean_gradient->LockedMatrix());
+        this->m_cudnn->broadcast_to_gpus(m_var_gradient_d, m_var_gradient->LockedMatrix());
       }
-      else {
-        scale_gradient_local += workspace1(El::ALL, El::IR(i));
-        bias_gradient_local += workspace2(El::ALL, El::IR(i));
-        mean_gradient_local += workspace3(El::ALL, El::IR(i));
-        var_gradient_local += workspace4(El::ALL, El::IR(i));
+    } else {
+      m_cudnn->clear_on_gpus(m_mean_gradient_d, num_channels, 1);
+      m_cudnn->clear_on_gpus(m_var_gradient_d, num_channels, 1);
+    }
+    optimizer* scale_optimizer = m_weights[0]->get_optimizer();
+    if (scale_optimizer != nullptr) {
+      for(int i=0; i<num_gpus; ++i) {
+        CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
+        CHECK_CUBLAS(cublas::scal(this->m_cudnn->get_cublas_handle(i),
+                                  num_channels,
+                                  DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size(),
+                                  m_scale_gradient_d[i], 1));
       }
+      scale_optimizer->gpu_allreduce_and_add_to_gradient(m_scale_gradient_d);
     }
-    scale_gradient_local
-      *= DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size();
-    bias_gradient_local
-      *= DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size();
-    if (m_use_global_stats) {
-      El::AllReduce(*m_parameters_gradient,
-                    m_parameters_gradient->RedundantComm(),
-                    El::mpi::SUM);
+    optimizer* bias_optimizer = m_weights[1]->get_optimizer();
+    if (bias_optimizer != nullptr) {
+      for(int i=0; i<num_gpus; ++i) {
+        CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
+        CHECK_CUBLAS(cublas::scal(this->m_cudnn->get_cublas_handle(i),
+                                  num_channels,
+                                  DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size(),
+                                  m_bias_gradient_d[i], 1));
+      }
+      bias_optimizer->gpu_allreduce_and_add_to_gradient(m_bias_gradient_d);
     }
-    this->m_cudnn->broadcast_to_gpus(m_mean_gradient_d, mean_gradient_local);
-    this->m_cudnn->broadcast_to_gpus(m_var_gradient_d, var_gradient_local);
 
     // Compute error signal
     for(int i=0; i<num_gpus; ++i) {
@@ -810,7 +641,7 @@ class batch_normalization : public regularizer_layer {
                                                   m_mean_d[i],
                                                   m_var_d[i],
                                                   m_epsilon,
-                                                  m_scale_d[i],
+                                                  scale_d[i],
                                                   m_mean_gradient_d[i],
                                                   m_var_gradient_d[i],
                                                   this->m_error_signal_d[i],
@@ -821,17 +652,14 @@ class batch_normalization : public regularizer_layer {
   }
 
   void fp_compute_cpu() {
+    
+    // Check execution mode
+    const bool is_training = this->get_execution_mode() == execution_mode::training;
 
     // Local matrices
     const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
-    Mat& mean_local = m_mean->Matrix();
-    Mat& var_local = m_var->Matrix();
-    const Mat& running_mean_local = m_running_mean_v->LockedMatrix();
-    const Mat& running_var_local = m_running_var_v->LockedMatrix();
-    const Mat& scale_local = m_scale_v->LockedMatrix();
-    const Mat& bias_local = m_bias_v->LockedMatrix();
     Mat& activations_local = this->m_activations_v->Matrix();
-    
+
     // Matrix parameters
     const int width = this->m_prev_activations->Width();
     const El::Int local_width = this->m_prev_activations->LocalWidth();
@@ -839,7 +667,15 @@ class batch_normalization : public regularizer_layer {
     const int channel_size = this->m_num_neurons / num_channels;
 
     // Compute statistics
-    if(this->get_execution_mode() == execution_mode::training) {
+    if(is_training) {
+
+      // Local matrices
+      Mat& mean_local = m_mean->Matrix();
+      Mat& var_local = m_var->Matrix();
+      const Mat& running_mean_local = m_running_mean_v->LockedMatrix();
+      const Mat& running_var_local = m_running_var_v->LockedMatrix();
+      Mat& new_running_mean_local = m_mean_gradient->Matrix();
+      Mat& new_running_var_local = m_var_gradient->Matrix();
 
       // Compute sums and sums of squares
       #pragma omp parallel for
@@ -868,44 +704,40 @@ class batch_normalization : public regularizer_layer {
       }
 
       // Compute minibatch statistics
+      // Note: new_running_mean and new_running_var are stored in
+      // m_mean_gradient and m_var_gradient
       #pragma omp parallel for
       for(int channel = 0; channel < num_channels; ++channel) {
         const DataType mean = mean_local(channel, 0) / num_samples;
         const DataType sqmean = var_local(channel, 0) / num_samples;
         const DataType var = num_samples / (num_samples - DataType(1)) * std::max(sqmean - mean * mean, DataType(0));
+        const DataType old_running_mean = running_mean_local(channel, 0);
+        const DataType old_running_var = running_var_local(channel, 0);
+        const DataType new_running_mean = m_decay * old_running_mean + (DataType(1) - m_decay) * mean;
+        const DataType new_running_var = m_decay * old_running_var + (DataType(1) - m_decay) * var;
         mean_local(channel, 0) = mean;
         var_local(channel, 0) = var;
+        new_running_mean_local(channel, 0) = new_running_mean;
+        new_running_var_local(channel, 0) = new_running_var;
       }
-
-      // Compute correction term for running statistics
-      optimizer* running_mean_optimizer = m_weights[2]->get_optimizer();
-      if(running_mean_optimizer != nullptr) {
-        El::Copy(*m_running_mean_v, *m_mean_gradient);
-        El::Axpy(DataType(-1), *m_mean, *m_mean_gradient);
-        running_mean_optimizer->add_to_gradient(*m_mean_gradient);
-      }
-      optimizer* running_var_optimizer = m_weights[3]->get_optimizer();
-      if(running_var_optimizer != nullptr) {
-        El::Copy(*m_running_var_v, *m_var_gradient);
-        El::Axpy(DataType(-1), *m_var, *m_var_gradient);
-        running_var_optimizer->add_to_gradient(*m_var_gradient);
-      }
+      m_weights[2]->set_values(*m_mean_gradient);
+      m_weights[3]->set_values(*m_var_gradient);
       
     }
+
+    // Local matrices
+    const Mat& mean_local = is_training ? m_mean->LockedMatrix() : m_running_mean_v->LockedMatrix();
+    const Mat& var_local = is_training ? m_var->LockedMatrix() : m_running_var_v->LockedMatrix();
+    const Mat& scale_local = m_scale_v->LockedMatrix();
+    const Mat& bias_local = m_bias_v->LockedMatrix();
 
     // Iterate through channels
     #pragma omp parallel for
     for(int channel = 0; channel < num_channels; ++channel) {
 
       // Get channel parameters
-      DataType mean, var;
-      if(this->get_execution_mode() == execution_mode::training) { 
-        mean = mean_local(channel, 0);
-        var = var_local(channel, 0);
-      } else {
-        mean = running_mean_local(channel, 0);
-        var = running_var_local(channel, 0);
-      }
+      const DataType mean = mean_local(channel, 0);
+      const DataType var = var_local(channel, 0);
       const DataType inv_stdev = 1 / std::sqrt(var + m_epsilon);
       const DataType scale = scale_local(channel, 0);
       const DataType bias = bias_local(channel, 0);
@@ -927,13 +759,16 @@ class batch_normalization : public regularizer_layer {
   }  
 
   void bp_compute_cpu() {
+    
+    // Check execution mode
+    const bool is_training = this->get_execution_mode() == execution_mode::training;
 
     // Local matrices
     const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
     const Mat& prev_error_signal_local = this->m_prev_error_signal->LockedMatrix();
     Mat& error_signal_local = this->m_error_signal_v->Matrix();
-    const Mat& mean_local = m_mean->LockedMatrix();
-    const Mat& var_local = m_var->LockedMatrix();
+    const Mat& mean_local = is_training ? m_mean->LockedMatrix() : m_running_mean_v->LockedMatrix();
+    const Mat& var_local = is_training ? m_var->LockedMatrix() : m_running_var_v->LockedMatrix();
     const Mat& scale_local = m_scale_v->LockedMatrix();
     Mat& mean_gradient_local = m_mean_gradient->Matrix();
     Mat& var_gradient_local = m_var_gradient->Matrix();
@@ -984,13 +819,18 @@ class batch_normalization : public regularizer_layer {
     }
 
     // Accumulate gradients
-    if (m_use_global_stats) {
-      El::AllReduce(*m_mean_gradient,
-                    m_mean_gradient->RedundantComm(),
-                    El::mpi::SUM);
-      El::AllReduce(*m_var_gradient,
-                    m_var_gradient->RedundantComm(),
-                    El::mpi::SUM);
+    if (is_training) {
+      if (m_use_global_stats) {
+        El::AllReduce(*m_mean_gradient,
+                      m_mean_gradient->RedundantComm(),
+                      El::mpi::SUM);
+        El::AllReduce(*m_var_gradient,
+                      m_var_gradient->RedundantComm(),
+                      El::mpi::SUM);
+      }
+    } else {
+      El::Zero(*m_mean_gradient);
+      El::Zero(*m_var_gradient);
     }
     optimizer* scale_optimizer = m_weights[0]->get_optimizer();
     if (scale_optimizer != nullptr) {
@@ -998,7 +838,7 @@ class batch_normalization : public regularizer_layer {
                 *m_scale_gradient);
       scale_optimizer->allreduce_and_add_to_gradient(*m_scale_gradient);
     }
-    optimizer* bias_optimizer = m_weights[0]->get_optimizer();
+    optimizer* bias_optimizer = m_weights[1]->get_optimizer();
     if (bias_optimizer != nullptr) {
       El::Scale(DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size(),
                 *m_bias_gradient);
