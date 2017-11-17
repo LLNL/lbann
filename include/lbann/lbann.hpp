@@ -72,7 +72,7 @@
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
 #include "lbann/layers/regularizers/dropout.hpp"
 #include "lbann/layers/regularizers/selu_dropout.hpp"
-// #include "lbann/layers/regularizers/batch_normalization.hpp"
+#include "lbann/layers/regularizers/batch_normalization.hpp"
 
 /// I/O Layers
 #include "lbann/layers/io/input/input_layer_distributed_minibatch.hpp"
@@ -135,7 +135,7 @@
 // #include "lbann/optimizers/optimizer_adam.hpp"
 // #include "lbann/optimizers/optimizer_hypergradient_adam.hpp"
 // #include "lbann/optimizers/optimizer_rmsprop.hpp"
-#include "lbann/optimizers/optimizer_sgd.hpp"
+#include "lbann/optimizers/sgd.hpp"
 
 /// Objective functions (cost functions)
 #include "lbann/objective_functions/binary_cross_entropy.hpp"

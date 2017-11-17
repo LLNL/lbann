@@ -23,10 +23,10 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_optimizer_sgd .hpp .cpp - Stochastic gradient descent
+// sgd .hpp .cpp - Stochastic gradient descent optimizer
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/optimizers/optimizer_sgd.hpp"
+#include "lbann/optimizers/sgd.hpp"
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {

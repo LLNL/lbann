@@ -761,7 +761,6 @@ void add_layers(
       }
     }
 
-#if 0
     //////////////////////////////////////////////////////////////////
     // LAYER: batch_normalization
     //////////////////////////////////////////////////////////////////
@@ -774,16 +773,12 @@ void add_layers(
       } else {
         d = new batch_normalization<data_layout::DATA_PARALLEL>(
           comm,
-          model->create_optimizer(),
           ell.decay(),
-          ell.scale_init(),
-          ell.bias_init(),
           ell.epsilon(),
           cudnn/*,
                  ell.global_stats()*/);
       }
     }
-#endif
 
     //////////////////////////////////////////////////////////////////
     // LAYER: selu (activation)

@@ -329,13 +329,11 @@ class base_convolution_layer : public learning {
     }
     
     // Initialize bias
-    if (m_bias_scaling_factor != DataType(0)) {
-      this->m_weights[1]->setup(this->m_neuron_dims[0], 1,
-                                El::STAR, El::STAR);
-      El::Zeros(*this->m_bias_weights_gradient,
-                this->m_weights[1]->get_height(),
-                this->m_weights[1]->get_width());
-    }
+    this->m_weights[1]->setup(this->m_neuron_dims[0], 1,
+                              El::STAR, El::STAR);
+    El::Zeros(*this->m_bias_weights_gradient,
+              this->m_weights[1]->get_height(),
+              this->m_weights[1]->get_width());
 
   }
 

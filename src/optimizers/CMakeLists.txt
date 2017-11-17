@@ -1,6 +1,6 @@
 add_sources(
   optimizer.cpp
-  optimizer_sgd.cpp
+  sgd.cpp
 #  optimizer_adagrad.cpp
 #  optimizer_rmsprop.cpp
 #  optimizer_adam.cpp
