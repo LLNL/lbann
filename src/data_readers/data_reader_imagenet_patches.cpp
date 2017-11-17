@@ -166,8 +166,8 @@ bool imagenet_reader_patches::fetch_datum(Mat& X, int data_id, int mb_idx, int t
   if((width * height * CV_MAT_CN(img_type)) != num_channel_values) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
                           + "ImageNet: mismatch data size -- either width, height or channel - "
-                          + imagepath + "[w,h,c]=[" + std::to_string(width) + "x" + std::to_string(height)
-                          + "x" + std::to_string(CV_MAT_CN(img_type)) + "]");
+                          + imagepath + " [w,h,c]=[" + std::to_string(width) + "x" + std::to_string(height)
+                          + "x" + std::to_string(CV_MAT_CN(img_type)) + "] != " + std::to_string(num_channel_values));
   }
   return true;
 }
@@ -193,8 +193,8 @@ bool imagenet_reader_patches::fetch_datum(std::vector<::Mat>& X, int data_id, in
   if((width * height * CV_MAT_CN(img_type)) != num_channel_values) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
                           + "ImageNet: mismatch data size -- either width, height or channel - "
-                          + imagepath + "[w,h,c]=[" + std::to_string(width) + "x" + std::to_string(height)
-                          + "x" + std::to_string(CV_MAT_CN(img_type)) + "]");
+                          + imagepath + " [w,h,c]=[" + std::to_string(width) + "x" + std::to_string(height)
+                          + "x" + std::to_string(CV_MAT_CN(img_type)) + "] != " + std::to_string(num_channel_values));
   }
   return true;
 }
