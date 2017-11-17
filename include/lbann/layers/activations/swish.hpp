@@ -59,7 +59,7 @@ class swish_layer : public entrywise_activation_layer {
     return z*(DataType(1) / (DataType(1) + std::exp(-z)));
   }
   DataType activation_function_gradient(DataType z) override {
-    const sigz = DataType(1) / (DataType(1) + std::exp(-z));
+    const DataType sigz = DataType(1) / (DataType(1) + std::exp(-z));
     return sigz*(DataType(1) + z*(DataType(1) - sigz));    
   }
 };

@@ -39,8 +39,7 @@ template <data_layout T_layout>
 class bent_identity_layer : public entrywise_activation_layer {
  public:
 
-  bent_identity_layer(int index,
-                lbann_comm *comm) :
+  bent_identity_layer(lbann_comm *comm) :
     entrywise_activation_layer(index, comm) { 
     initialize_distributed_matrices(); 
   }
