@@ -44,6 +44,7 @@ namespace patchworks {
 
 class patch_descriptor {
  public:
+  // --- configuration variables ---
   unsigned int m_width; ///< patch width
   unsigned int m_height; ///< patch height
   unsigned int m_gap; ///< gap between patches
@@ -63,20 +64,23 @@ class patch_descriptor {
    */
   unsigned int m_mode_chrom;
 
-  ROI m_sample_area; ///< The area to sample patches from
-  ROI m_patch_center; ///< The center patch region
-  std::string m_ext; ///< The file extension name (i.e., image type)
-
-  /// The index of displacement used to generate the current patch
-  unsigned int m_cur_patch_idx;
-
-  /// The list of displacements used to generate consecutive patches
-  std::vector<displacement_type> m_displacements;
-  /// The actual patch positions
-  std::vector<ROI> m_positions;
-
   /// Whether patches are self-labeled
   bool m_self_label;
+
+  /// The file extension name (i.e., image type)
+  std::string m_ext;
+
+  // --- post-configuration variables ---
+  ROI m_sample_area; ///< The area to sample patches from
+  /// The list of displacements used to generate consecutive patches
+  std::vector<displacement_type> m_displacements;
+
+  // --- state variables ---
+  ROI m_patch_center; ///< The center patch region
+  /// The actual patch positions
+  std::vector<ROI> m_positions;
+  /// The index of displacement used to generate the current patch
+  unsigned int m_cur_patch_idx;
 
  public:
   patch_descriptor() {
@@ -84,10 +88,12 @@ class patch_descriptor {
   }
   virtual ~patch_descriptor() {}
   void init(); ///< Initializer
+  void reset(); ///< Clear state variables other than configuration variables
 
   /// Get patch size
   unsigned int get_patch_width() const { return m_width; }
   unsigned int get_patch_height() const { return m_height; }
+
   /// Set patch size
   void set_size(const int w, const int h);
   /// Set the gap between neighboring patches
@@ -95,13 +101,13 @@ class patch_descriptor {
     m_gap = g;
   }
   /// Set poisiton radomization parameter, the maximum jitter
-  void set_jitter(const unsigned int j);
-
+  void set_jitter(const unsigned int j) {
+    m_jitter = j;
+  }
   /// Set mode to place center patch
   void set_mode_centering(const unsigned int m) {
     m_mode_center = m;
   }
-
   /// Set correction mode for chromatic aberration
   void set_mode_chromatic_aberration(const unsigned int m) {
     m_mode_chrom = m;
@@ -158,6 +164,8 @@ class patch_descriptor {
   const std::vector<ROI>& access_positions() const {
     return m_positions;
   }
+  virtual std::string get_type() const { return "patch_descriptor"; }
+  virtual std::string get_description() const;
   /// Print out the content of patch descriptor
   virtual std::ostream& print(std::ostream& os) const;
 };

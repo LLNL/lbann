@@ -45,9 +45,17 @@ void patch_descriptor::init() {
   m_jitter = 0u;
   m_mode_center = 1u;
   m_mode_chrom = 0u;
-  m_ext = "";
-  m_cur_patch_idx = 0u;
   m_self_label = false;
+  m_ext = "";
+  m_sample_area = ROI();
+  m_displacements.clear();
+  reset();
+}
+
+void patch_descriptor::reset() {
+  m_patch_center = ROI();
+  m_positions.clear();
+  m_cur_patch_idx = 0u;
 }
 
 void patch_descriptor::set_size(const int width, const int height) {
@@ -82,10 +90,6 @@ void patch_descriptor::define_patch_set() {
   m_displacements.push_back(std::make_pair(-wdisp,  hdisp));
   m_displacements.push_back(std::make_pair( 0,      hdisp));
   m_displacements.push_back(std::make_pair( wdisp,  hdisp));
-}
-
-void patch_descriptor::set_jitter(const unsigned int j) {
-  m_jitter = j;
 }
 
 bool patch_descriptor::get_first_patch(ROI& patch) {
@@ -225,7 +229,8 @@ bool patch_descriptor::extract_patches(const cv::Mat& img, std::vector<cv::Mat>&
   return true;
 }
 
-std::ostream& patch_descriptor::print(std::ostream& os) const {
+std::string patch_descriptor::get_description() const {
+  std::stringstream os;
   os << "patch descriptor:" << std::endl
      << '\t' << "m_width: " << m_width << std::endl
      << '\t' << "m_height: " << m_height << std::endl
@@ -236,16 +241,20 @@ std::ostream& patch_descriptor::print(std::ostream& os) const {
      << '\t' << "m_self_label: " << m_self_label << std::endl
      << '\t' << "m_ext: " << m_ext << std::endl
      << '\t' << "m_sample_area: " << m_sample_area << std::endl
-     << '\t' << "m_cur_patch_idx: " << m_cur_patch_idx << std::endl;
-
-  os << std::endl << "patch displacements from the center: " << std::endl;
+     << '\t' << "patch displacements from the center: " << std::endl;
   for (unsigned int i=0u; i < m_displacements.size() ; ++i) {
-    os << '\t' << i+1 << ' ' << m_displacements[i].first << ' ' << m_displacements[i].second << std::endl;
+    os << "\t\t" << i+1 << ' ' << m_displacements[i].first << ' ' << m_displacements[i].second << std::endl;
   }
 
-  os << std::endl << "patch regions: " << std::endl;
+  return os.str();
+}
+
+std::ostream& patch_descriptor::print(std::ostream& os) const {
+  os << get_description()
+     << '\t' << "m_cur_patch_idx: " << m_cur_patch_idx << std::endl
+     << '\t' << "patch regions: " << std::endl;
   for (unsigned int i=0u; i < m_positions.size() ; ++i) {
-    os << '\t' << i << '\t' << m_positions[i] << std::endl;
+    os << "\t\t" << i << '\t' << m_positions[i] << std::endl;
   }
 
   return os;
