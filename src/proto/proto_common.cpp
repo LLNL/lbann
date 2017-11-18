@@ -465,6 +465,12 @@ void add_layers(
       if(l2_regularization_factor != double(0.0)) {
         ((learning *) d)->set_l2_regularization_factor(l2_regularization_factor);
       }
+
+      double group_lasso_regularization_factor = ell.group_lasso_regularization_factor();
+      if (group_lasso_regularization_factor != double(0.0)) {
+        ((learning *) d)->set_group_lasso_regularization_factor(group_lasso_regularization_factor);
+      } 
+
     }
 
     //////////////////////////////////////////////////////////////////
@@ -940,6 +946,52 @@ void add_layers(
         );
       }
     }
+
+    //#####
+
+    //////////////////////////////////////////////////////////////////
+    // LAYER: atan
+    //////////////////////////////////////////////////////////////////
+    else if (layer.has_atan()) {
+      if (layout == data_layout::MODEL_PARALLEL) {
+        d = new atan_layer<data_layout::MODEL_PARALLEL>(comm);
+      } else {
+        d = new atan_layer<data_layout::DATA_PARALLEL>(comm);
+      }
+    } 
+
+    //////////////////////////////////////////////////////////////////
+    // LAYER: bent_identity
+    //////////////////////////////////////////////////////////////////
+    else if (layer.has_bent_identity()) {
+      if (layout == data_layout::MODEL_PARALLEL) {
+        d = new bent_identity_layer<data_layout::MODEL_PARALLEL>(comm);
+      } else {
+        d = new bent_identity_layer<data_layout::DATA_PARALLEL>(comm);
+      }
+    } 
+
+    //////////////////////////////////////////////////////////////////
+    // LAYER: exponential
+    //////////////////////////////////////////////////////////////////
+    else if (layer.has_exponential()) {
+      if (layout == data_layout::MODEL_PARALLEL) {
+        d = new exponential_layer<data_layout::MODEL_PARALLEL>(comm);
+      } else {
+        d = new exponential_layer<data_layout::DATA_PARALLEL>(comm);
+      }
+    } 
+
+    //////////////////////////////////////////////////////////////////
+    // LAYER: swish
+    //////////////////////////////////////////////////////////////////
+    else if (layer.has_swish()) {
+      if (layout == data_layout::MODEL_PARALLEL) {
+        d = new swish_layer<data_layout::MODEL_PARALLEL>(comm);
+      } else {
+        d = new swish_layer<data_layout::DATA_PARALLEL>(comm);
+      }
+    } 
 
     //////////////////////////////////////////////////////////////////
     // LAYER: dropout
@@ -1593,6 +1645,8 @@ model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac, const lban
   objective_functions::objective_function *obj = 0;
   if (obj_fn_name == "cross_entropy") {
     obj = new objective_functions::cross_entropy();
+  } else if (obj_fn_name == "cross_entropy_with_uncertainty") {
+    obj = new objective_functions::cross_entropy_with_uncertainty();
   } else if (obj_fn_name == "mean_squared_error") {
     obj = new objective_functions::mean_squared_error();
   } else if (obj_fn_name == "binary_cross_entropy") {
@@ -1603,11 +1657,13 @@ model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac, const lban
     obj = new objective_functions::mean_absolute_deviation();
   } else if (obj_fn_name == "poisson_negloglike") {
     obj = new objective_functions::poisson_negloglike();
+  } else if (obj_fn_name == "polya_negloglike") {
+    obj = new objective_functions::polya_negloglike();
   } else {
     if (master) {
       err << __FILE__ << " " << __LINE__
           << " :: init_model() - unknown objective function name: " << obj_fn_name
-          << std::endl << "; should be one of: cross_entropy, mean_squared_error";
+          << std::endl << "; should be one of: binary_cross_entropy, cross_entropy, cross_entropy_with_uncertainty, geom_negloglike, mean_absolute_deviation, mean_squared_error, poisson_negloglike, polya_negloglike";
       throw lbann_exception(err.str());
     }
   }
