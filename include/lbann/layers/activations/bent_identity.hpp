@@ -40,7 +40,7 @@ class bent_identity_layer : public entrywise_activation_layer {
  public:
 
   bent_identity_layer(lbann_comm *comm) :
-    entrywise_activation_layer(index, comm) { 
+    entrywise_activation_layer(comm) { 
     initialize_distributed_matrices(); 
   }
 
