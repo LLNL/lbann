@@ -9,6 +9,6 @@ add_sources(
 
 if(LBANN_HAS_CUDA)
   add_sources(
-#    optimizer_adam_cuda.cu
+#    adam.cu
   )
 endif()

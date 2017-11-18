@@ -107,7 +107,7 @@ class weights {
   void set_optimizer(optimizer* opt);
 
   /** Get the weights matrix. */
-  const AbsDistMat& get_values() const;
+  const AbsDistMat& get_values();
   /** Set the weights matrix. */
   void set_values(const AbsDistMat& values);
   /** Set an entry in the weights matrix. */
@@ -117,7 +117,7 @@ class weights {
    *  If values_v has a different matrix distribution than the
    *  weights matrix, the matrix values are copied into values_v.
    */
-  void get_values_view(AbsDistMat& values_v) const;
+  void get_values_view(AbsDistMat& values_v);
 
 #ifdef __LIB_CUDNN
   /** Get the weights matrix on GPU. */

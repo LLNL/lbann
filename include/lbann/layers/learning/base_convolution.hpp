@@ -609,7 +609,7 @@ class base_convolution_layer : public learning {
                                                  m_bias_cudnn_desc,
                                                  m_bias_weights_gradient_d[i]));
       }
-      bias_optimizer->gpu_allreduce_and_add_to_gradient(m_bias_weights_gradient_d);
+      bias_optimizer->allreduce_and_add_to_gradient_gpu(m_bias_weights_gradient_d);
     }
 
     // Compute kernel gradient
@@ -682,7 +682,7 @@ class base_convolution_layer : public learning {
       }
 
       // Add gradient contribution
-      kernel_optimizer->gpu_allreduce_and_add_to_gradient(m_kernel_weights_gradient_d);
+      kernel_optimizer->allreduce_and_add_to_gradient_gpu(m_kernel_weights_gradient_d);
       
     }
 

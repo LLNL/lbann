@@ -478,7 +478,7 @@ class fully_connected_layer : public learning {
                                     m_mini_batch_size_per_gpu,
                                     m_bias_scaling_factor / this->m_neural_network_model->get_effective_mini_batch_size(),
                                     m_bias_weights_gradient_d);
-      bias_optimizer->gpu_allreduce_and_add_to_gradient(m_bias_weights_gradient_d);
+      bias_optimizer->allreduce_and_add_to_gradient_gpu(m_bias_weights_gradient_d);
     }
 
 #ifdef LBANN_DEBUG
@@ -637,7 +637,7 @@ fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_weights<device::CU
                                 this->m_matrix_weights_gradient_d[i],
                                 this->m_matrix_weights_gradient->Height()));
     }
-    matrix_optimizer->gpu_allreduce_and_add_to_gradient(m_matrix_weights_gradient_d);
+    matrix_optimizer->allreduce_and_add_to_gradient_gpu(m_matrix_weights_gradient_d);
   }
   
 }

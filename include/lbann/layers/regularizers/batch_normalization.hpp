@@ -479,21 +479,22 @@ class batch_normalization : public regularizer_layer {
                                               m_var_d[i],
                                               this->m_cudnn->get_stream(i));
       }
-      this->m_cudnn->allreduce(m_mean_d, num_channels, 1);
-      this->m_cudnn->allreduce(m_var_d, num_channels, 1);
 
-      // Accumulate sums and sums of squares across nodes if needed
+      // Accumulate sums and sums of squares
       int samples_per_sum;
       if (m_use_global_stats) {
-        this->m_cudnn->copy_from_gpu(0, m_mean->Matrix(), m_mean_d[0]);
-        this->m_cudnn->copy_from_gpu(0, m_var->Matrix(), m_var_d[0]);
-        this->m_cudnn->synchronize();
-        El::AllReduce(*m_mean, m_mean->RedundantComm(), El::mpi::SUM);
-        El::AllReduce(*m_var, m_var->RedundantComm(), El::mpi::SUM);
-        this->m_cudnn->broadcast_to_gpus(m_mean_d, m_mean->LockedMatrix());
-        this->m_cudnn->broadcast_to_gpus(m_var_d, m_var->LockedMatrix());
+        this->m_cudnn->global_allreduce_on_gpus(m_mean_d,
+                                                num_channels,
+                                                1,
+                                                m_mean->RedundantComm());
+        this->m_cudnn->global_allreduce_on_gpus(m_var_d,
+                                                num_channels,
+                                                1,
+                                                m_var->RedundantComm());
         samples_per_sum = channel_size * width;
       } else {
+        this->m_cudnn->allreduce_on_gpus(m_mean_d, num_channels, 1);
+        this->m_cudnn->allreduce_on_gpus(m_var_d, num_channels, 1);
         samples_per_sum = channel_size * local_width;
       }
 
@@ -584,19 +585,18 @@ class batch_normalization : public regularizer_layer {
                                                   m_var_gradient_d[i],
                                                   this->m_cudnn->get_stream(i));
     }
-    this->m_cudnn->allreduce(m_mean_gradient_d, num_channels, 1);
-    this->m_cudnn->allreduce(m_var_gradient_d, num_channels, 1);
 
     // Accumulate gradients
     if(is_training) {
       if(m_use_global_stats) {
-        this->m_cudnn->copy_from_gpu(0, m_mean_gradient->Matrix(), m_mean_gradient_d[0]);
-        this->m_cudnn->copy_from_gpu(0, m_var_gradient->Matrix(), m_var_gradient_d[0]);
-        this->m_cudnn->synchronize();
-        El::AllReduce(*m_mean_gradient, m_mean_gradient->RedundantComm(), El::mpi::SUM);
-        El::AllReduce(*m_var_gradient, m_var_gradient->RedundantComm(), El::mpi::SUM);
-        this->m_cudnn->broadcast_to_gpus(m_mean_gradient_d, m_mean_gradient->LockedMatrix());
-        this->m_cudnn->broadcast_to_gpus(m_var_gradient_d, m_var_gradient->LockedMatrix());
+        this->m_cudnn->global_allreduce_on_gpus(m_mean_gradient_d,
+                                                num_channels,
+                                                1,
+                                                m_mean_gradient->RedundantComm());
+        this->m_cudnn->global_allreduce_on_gpus(m_var_gradient_d,
+                                                num_channels,
+                                                1,
+                                                m_var_gradient->RedundantComm());
       }
     } else {
       m_cudnn->clear_on_gpus(m_mean_gradient_d, num_channels, 1);
@@ -611,7 +611,7 @@ class batch_normalization : public regularizer_layer {
                                   DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size(),
                                   m_scale_gradient_d[i], 1));
       }
-      scale_optimizer->gpu_allreduce_and_add_to_gradient(m_scale_gradient_d);
+      scale_optimizer->allreduce_and_add_to_gradient_gpu(m_scale_gradient_d);
     }
     optimizer* bias_optimizer = m_weights[1]->get_optimizer();
     if (bias_optimizer != nullptr) {
@@ -622,7 +622,7 @@ class batch_normalization : public regularizer_layer {
                                   DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size(),
                                   m_bias_gradient_d[i], 1));
       }
-      bias_optimizer->gpu_allreduce_and_add_to_gradient(m_bias_gradient_d);
+      bias_optimizer->allreduce_and_add_to_gradient_gpu(m_bias_gradient_d);
     }
 
     // Compute error signal

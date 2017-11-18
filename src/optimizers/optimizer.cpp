@@ -36,11 +36,14 @@ optimizer::optimizer(DataType learning_rate)
     m_weights(nullptr),
     m_learning_rate(learning_rate),
     m_gradient(nullptr),
-    m_gradient_allreduce_staging(nullptr)
-    #ifdef __LIB_CUDNN
-    ,
-    m_gradient_gpu_staging(nullptr)
-    #endif // __LIB_CUDNN
+    m_cpu_gradient_is_nonzero(false),
+    m_cpu_staging_is_nonzero(false),
+    m_staging(nullptr)
+#ifdef __LIB_CUDNN
+  ,
+    m_gpu_gradient_is_nonzero(false),
+    m_gpu_staging_is_nonzero(false)
+#endif // __LIB_CUDNN
 {}
 
 optimizer::optimizer(const optimizer& other)
@@ -48,31 +51,23 @@ optimizer::optimizer(const optimizer& other)
     m_weights(other.m_weights),
     m_learning_rate(other.m_learning_rate),
     m_gradient(other.m_gradient),
-    m_gradient_allreduce_staging(other.m_gradient_allreduce_staging)
+    m_cpu_gradient_is_nonzero(other.m_cpu_gradient_is_nonzero),
+    m_cpu_staging_is_nonzero(other.m_cpu_staging_is_nonzero),
+    m_staging(other.m_staging)
     #ifdef __LIB_CUDNN
     ,
-    m_gradient_gpu_staging(other.m_gradient_gpu_staging)
+    m_gpu_gradient_is_nonzero(other.m_gpu_gradient_is_nonzero),
+    m_gpu_staging_is_nonzero(other.m_gpu_staging_is_nonzero)
     #endif // __LIB_CUDNN
 {
-  if (m_gradient != nullptr)  {
-    m_gradient = m_gradient->Copy();
-  }
-  if (m_gradient_allreduce_staging != nullptr) {
-    m_gradient_allreduce_staging = m_gradient_allreduce_staging->Copy();
-  }
+  if (m_gradient != nullptr) { m_gradient = m_gradient->Copy(); }
+  if (m_staging != nullptr)  { m_staging = m_staging->Copy(); }
   #ifdef __LIB_CUDNN
-  if (!other.m_gradient_allreduce_staging_d.empty()) {
-    m_cudnn->allocate_on_gpus(m_gradient_allreduce_staging_d,
-                              other.m_weights->get_height(),
-                              other.m_weights->get_width());
-    m_cudnn->copy_on_gpus(m_gradient_allreduce_staging_d,
-                          other.m_gradient_allreduce_staging_d,
-                          other.m_weights->get_height(),
-                          other.m_weights->get_width());
-  }
-  if (m_gradient_gpu_staging != nullptr) {
-    m_gradient_gpu_staging = m_gradient_gpu_staging->Copy();
-    m_cudnn->pin_matrix(*m_gradient_gpu_staging);
+  if (m_cudnn != nullptr) {
+    const int height = other.m_weights->get_height();
+    const int width = other.m_weights->get_width();
+    m_gradient_d = m_cudnn->copy(other.m_gradient_d, height, width);
+    m_staging_d = m_cudnn->copy(other.m_staging_d, height, width);
   }
   #endif // __LIB_CUDNN
 }
@@ -97,26 +92,18 @@ optimizer& optimizer::operator=(const optimizer& other) {
       }                                         \
     } while(false)
     COPY_MATRIX(other.m_gradient, m_gradient);
-    COPY_MATRIX(other.m_gradient_allreduce_staging,
-                m_gradient_allreduce_staging);
-  #ifdef __LIB_CUDNN
-    COPY_MATRIX(other.m_gradient_gpu_staging, m_gradient_gpu_staging);
-  #endif // __LIB_CUDNN
+    COPY_MATRIX(other.m_staging, m_staging);
   #undef COPY_MATRIX
 
   // Copy GPU data
   #ifdef __LIB_CUDNN
   if (m_cudnn != nullptr) {
-    m_cudnn->deallocate_on_gpus(m_gradient_allreduce_staging_d);
-    m_gradient_allreduce_staging_d = m_cudnn->copy(other.m_gradient_allreduce_staging_d,
-                                                   other.m_weights->get_height(),
-                                                   other.m_weights->get_width());
-
-    // Pin staging matrix
-    if (m_gradient_gpu_staging) {
-      m_cudnn->pin_matrix(*m_gradient_gpu_staging);
-    }
-
+    const int height = other.m_weights->get_height();
+    const int width = other.m_weights->get_width();
+    m_cudnn->deallocate_on_gpus(m_gradient_d);
+    m_cudnn->deallocate_on_gpus(m_staging_d);
+    m_gradient_d = m_cudnn->copy(other.m_gradient_d, height, width);
+    m_staging_d = m_cudnn->copy(other.m_staging_d, height, width);
   }
   #endif // __LIB_CUDNN
 
@@ -124,18 +111,12 @@ optimizer& optimizer::operator=(const optimizer& other) {
 }
 
 optimizer::~optimizer() {
-  if (m_gradient != nullptr) {
-    delete m_gradient;
-  }
-  if (m_gradient_allreduce_staging != nullptr) {
-    delete m_gradient_allreduce_staging;
-  }
+  if (m_gradient != nullptr) { delete m_gradient; }
+  if (m_staging != nullptr)  { delete m_staging; }
   #ifdef __LIB_CUDNN
   if (m_cudnn != nullptr) {
-    m_cudnn->deallocate_on_gpus(m_gradient_allreduce_staging_d);
-  }
-  if (m_gradient_gpu_staging != nullptr) {
-    delete m_gradient_gpu_staging;
+    m_cudnn->deallocate_on_gpus(m_gradient_d);
+    m_cudnn->deallocate_on_gpus(m_staging_d);
   }
   #endif // __LIB_CUDNN
 }
@@ -172,30 +153,108 @@ AbsDistMat& optimizer::get_gradient() {
     throw lbann_exception(err.str());
   }
 
-  // Accumulate gradient with allreduce
-  #ifdef __LIB_CUDNN
-  if (m_cudnn != nullptr && !m_gradient_allreduce_staging_d.empty()) {
-    const int height = m_weights->get_height();
-    const int width = m_weights->get_width();
-    m_cudnn->allreduce(m_gradient_allreduce_staging_d, height, width);
-    m_cudnn->copy_from_gpu(0,
-                           m_gradient_gpu_staging->Matrix(),
-                           m_gradient_allreduce_staging_d[0]);
-    m_cudnn->synchronize();
-    allreduce_and_add_to_gradient(*m_gradient_gpu_staging);
-    m_cudnn->clear_on_gpus(m_gradient_allreduce_staging_d, height, width);
-  }
-  #endif // __LIB_CUDNN
-  if (m_gradient_allreduce_staging != nullptr) {
-    El::AllReduce(*m_gradient_allreduce_staging,
-                  m_gradient_allreduce_staging->RedundantComm());
-    El::Axpy(DataType(1), *m_gradient_allreduce_staging, *m_gradient);
+  // Accumulate CPU allreduce staging matrix
+  if (m_cpu_staging_is_nonzero) {
+    El::AllReduce(*m_staging,
+                  m_staging->RedundantComm());
+    add_to_gradient(*m_staging);
+    El::Zero(*m_staging);
+    m_cpu_staging_is_nonzero = false;
   }
 
-  // Return gradient
+#if __LIB_CUDNN
+
+  // Get matrix dimensions
+  const int height = m_weights->get_height();
+  const int width = m_weights->get_width();
+
+  // Accumulate GPU allreduce staging matrix
+  if (m_gpu_staging_is_nonzero) {
+    m_cudnn->global_allreduce_on_gpus(m_staging_d,
+                                      height,
+                                      width,
+                                      m_gradient->RedundantComm());
+    add_to_gradient_gpu(m_staging_d);
+    m_cudnn->clear_on_gpus(m_staging_d, height, width);
+    m_gpu_staging_is_nonzero = false;
+  }
+
+  // Accumulate gradient in CPU
+  if (m_gpu_gradient_is_nonzero) {
+    m_cudnn->copy_from_gpu(0,
+                           m_staging->Matrix(),
+                           m_gradient_d[0]);
+    m_cudnn->clear_on_gpus(m_gradient_d, height, width);
+    m_cudnn->synchronize();
+    add_to_gradient(*m_staging);
+    El::Zero(*m_staging);
+    m_gpu_gradient_is_nonzero = false;
+  }
+  
+#endif // __LIB_CUDNN
+
+  // Return full gradient
   return *m_gradient;
   
 }
+
+#if __LIB_CUDNN
+std::vector<DataType*> optimizer::get_gradient_gpu() {
+
+  // Check if gradient is initialized
+  if (!is_initialized()) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "attempted to access gradients before they are set up";
+    throw lbann_exception(err.str());
+  }
+  if (m_cudnn == nullptr) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "attempted to get GPU gradient, but GPU is not set up";
+    throw lbann_exception(err.str());
+  }
+
+  // Get matrix dimensions
+  const int height = m_weights->get_height();
+  const int width = m_weights->get_width();
+
+  // Accumulate GPU allreduce staging matrix
+  if (m_gpu_staging_is_nonzero) {
+    m_cudnn->global_allreduce_on_gpus(m_staging_d,
+                                      height,
+                                      width,
+                                      m_gradient->RedundantComm());
+    add_to_gradient_gpu(m_staging_d);
+    m_cudnn->clear_on_gpus(m_staging_d, height, width);
+    m_gpu_staging_is_nonzero = false;
+  }
+
+  // Accumulate CPU allreduce staging matrix
+  if (m_cpu_staging_is_nonzero) {
+    El::AllReduce(*m_staging,
+                  m_staging->RedundantComm());
+    add_to_gradient(*m_staging);
+    El::Zero(*m_staging);
+    m_cpu_staging_is_nonzero = false;
+  }
+
+  // Accumulate gradient in GPU
+  if (m_cpu_gradient_is_nonzero) {
+    m_cudnn->broadcast_to_gpus(m_staging_d,
+                               m_gradient->LockedMatrix());
+    m_cudnn->synchronize();
+    add_to_gradient_gpu(m_staging_d);
+    El::Zero(*m_gradient);
+    m_cudnn->clear_on_gpus(m_staging_d, height, width);
+    m_cpu_gradient_is_nonzero = false;
+  }
+  
+  // Return full gradient
+  return m_gradient_d;
+
+}
+#endif // __LIB_CUDNN
 
 void optimizer::clear_gradient() {
 
@@ -207,20 +266,28 @@ void optimizer::clear_gradient() {
     throw lbann_exception(err.str());
   }
 
+  // Zero out matrices
   El::Zero(*m_gradient);
-  if (m_gradient_allreduce_staging != nullptr) {
-    El::Zero(*m_gradient_allreduce_staging);
-  }
+  El::Zero(*m_staging);
 #if __LIB_CUDNN
-  if (!m_gradient_allreduce_staging_d.empty()) {
-    m_cudnn->clear_on_gpus(m_gradient_allreduce_staging_d,
+  if (m_cudnn != nullptr) {
+    m_cudnn->clear_on_gpus(m_gradient_d,
+                           m_weights->get_height(),
+                           m_weights->get_width());
+    m_cudnn->clear_on_gpus(m_staging_d,
                            m_weights->get_height(),
                            m_weights->get_width());
   }
-  if (m_gradient_gpu_staging != nullptr) {
-    El::Zero(*m_gradient_gpu_staging);
-  }
 #endif // __LIB_CUDNN
+
+  // Reset flags
+  m_cpu_gradient_is_nonzero = false;
+  m_cpu_staging_is_nonzero = false;
+#if __LIB_CUDNN
+  m_gpu_gradient_is_nonzero = false;
+  m_gpu_staging_is_nonzero = false;
+#endif // __LIB_CUDNN
+
 }
 
 void optimizer::add_to_gradient(const AbsDistMat& gradient) {
@@ -231,74 +298,70 @@ void optimizer::add_to_gradient(const AbsDistMat& gradient) {
     throw lbann_exception(err.str());
   }
   El::Axpy(DataType(1), gradient, *m_gradient);
+  m_cpu_gradient_is_nonzero = true;
 }
 
 void optimizer::allreduce_and_add_to_gradient(const AbsDistMat& gradient) {
-
-  // Check if gradient is initialized
   if (!is_initialized()) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
         << "attempted to access gradients before they are set up";
     throw lbann_exception(err.str());
   }
-
-  // Initialize gradient allreduce staging matrix if needed
-  if (m_gradient_allreduce_staging == nullptr) {
-    m_gradient_allreduce_staging = m_gradient->Construct(m_gradient->Grid(),
-                                                         m_gradient->Root());
-    El::Zeros(*m_gradient_allreduce_staging,
-              m_gradient->Height(),
-              m_gradient->Width());
-  }
-
-  // Add to gradient allreduce staging matrix
-  El::Axpy(DataType(1), gradient, *m_gradient_allreduce_staging);
-
+  El::Axpy(DataType(1), gradient, *m_staging);
+  m_cpu_staging_is_nonzero = true;
 }
 
 #if __LIB_CUDNN
-void optimizer::gpu_allreduce_and_add_to_gradient(std::vector<DataType*>& gradient) {
 
-  // Check if gradient is initialized
+void optimizer::add_to_gradient_gpu(std::vector<DataType*>& gradient) {
   if (!is_initialized()) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
         << "attempted to access gradients before they are set up";
     throw lbann_exception(err.str());
   }
-  
-  // Initialize staging matrices if needed
-  if (m_gradient_allreduce_staging_d.empty()) {
-
-    // Initialize GPU memory
-    m_cudnn->allocate_on_gpus(m_gradient_allreduce_staging_d,
-                              m_weights->get_height(),
-                              m_weights->get_width());
-    m_cudnn->clear_on_gpus(m_gradient_allreduce_staging_d,
-                           m_weights->get_height(),
-                           m_weights->get_width());
-
-    // Initialize staging matrix for GPU memory transfers
-    m_gradient_gpu_staging = m_gradient->Construct(m_gradient->Grid(),
-                                                   m_gradient->Root());
-    El::Zeros(*m_gradient_gpu_staging,
-              m_gradient->Height(),
-              m_gradient->Width());
-    m_cudnn->pin_matrix(*m_gradient_gpu_staging);
+  if (m_cudnn == nullptr) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "attempted to add to GPU gradient, but GPU is not set up";
+    throw lbann_exception(err.str());
   }
-
-  // Add input to staging matrix
   const int num_gpus = m_cudnn->get_num_gpus();
   for(int i=0; i<num_gpus; ++i) {
     CHECK_CUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
     CHECK_CUBLAS(cublas::axpy(m_cudnn->get_cublas_handle(i),
                               m_weights->get_height() * m_weights->get_width(),
                               DataType(1), gradient[i], 1,
-                              m_gradient_allreduce_staging_d[i], 1));
+                              m_gradient_d[i], 1));
   }
-
+  m_gpu_gradient_is_nonzero = true;
 }
+
+void optimizer::allreduce_and_add_to_gradient_gpu(std::vector<DataType*>& gradient) {
+  if (!is_initialized()) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "attempted to access gradients before they are set up";
+    throw lbann_exception(err.str());
+  }
+  if (m_cudnn == nullptr) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "attempted to add to GPU gradient, but GPU is not set up";
+    throw lbann_exception(err.str());
+  }
+  const int num_gpus = m_cudnn->get_num_gpus();
+  for(int i=0; i<num_gpus; ++i) {
+    CHECK_CUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
+    CHECK_CUBLAS(cublas::axpy(m_cudnn->get_cublas_handle(i),
+                              m_weights->get_height() * m_weights->get_width(),
+                              DataType(1), gradient[i], 1,
+                              m_staging_d[i], 1));
+  }
+  m_gpu_staging_is_nonzero = true;
+}
+
 #endif // __LIB_CUDNN
 
 void optimizer::setup(weights& w) {
@@ -310,15 +373,26 @@ void optimizer::setup(weights& w) {
   }
   set_weights(w);
 
-  // Initialize gradient matrix
+  // Initialize matrices
   const int height = m_weights->get_height();
   const int width = m_weights->get_width();
   const AbsDistMat& values = m_weights->get_values();
   m_gradient = values.Construct(values.Grid(), values.Root());
+  m_staging = values.Construct(values.Grid(), values.Root());
   El::Zeros(*m_gradient, height, width);
+  El::Zeros(*m_staging, height, width);
 
   // Initialize GPU
   m_cudnn = m_weights->m_cudnn;
+  if (m_cudnn != nullptr) {
+#ifdef __LIB_CUDNN
+    m_cudnn->allocate_on_gpus(m_gradient_d, height, width);
+    m_cudnn->allocate_on_gpus(m_staging_d, height, width);
+#endif // __LIB_CUDNN
+  }
+
+  // Initialize with zero gradient
+  clear_gradient();
 
 }
 
@@ -331,20 +405,31 @@ void optimizer::step() {
   }
 
   // Apply optimization step
-  AbsDistMat& values = *m_weights->m_values;
-  const AbsDistMat& gradient = get_gradient();
-  step_compute(values, gradient);
-  
-  #if __LIB_CUDNN
-  // Copy result to GPU if needed
   if (m_cudnn != nullptr) {
-    m_cudnn->broadcast_to_gpus(m_weights->m_values_d, values.LockedMatrix());
-  }
+  #if __LIB_CUDNN
+    std::vector<DataType*> values_d = m_weights->m_values_d;
+    std::vector<DataType*> gradient_d = get_gradient_gpu();
+    step_compute_gpu(values_d, gradient_d);
   #endif // __LIB_CUDNN
+  } else {
+    m_weights->get_values(); // Move data to CPU
+    AbsDistMat& values = *m_weights->m_values;
+    const AbsDistMat& gradient = get_gradient();
+    step_compute(values, gradient);
+  }
 
   // Clear gradients
   clear_gradient();
 
+}
+
+void optimizer::step_compute_gpu(std::vector<DataType*> values_d,
+                                 std::vector<DataType*> gradient_d) {
+  m_cudnn->copy_from_gpu(0, m_weights->m_values->Matrix(), values_d[0]);
+  m_cudnn->copy_from_gpu(0, m_gradient->Matrix(), gradient_d[0]);
+  m_cudnn->synchronize();
+  step_compute(*m_weights->m_values, *m_gradient);
+  m_cudnn->broadcast_to_gpus(values_d, m_weights->m_values->LockedMatrix());
 }
 
 }  // namespace lbann

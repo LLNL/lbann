@@ -47,9 +47,14 @@ __global__ void reduce_kernel(DataType *dst, const DataType *src,
 
 }
 
-void cudnn_manager::allreduce(const std::vector<DataType*>& gpu_data,
-                              El::Int height,
-                              El::Int width) {
+void cudnn_manager::allreduce_on_gpus(std::vector<DataType*>& gpu_data,
+                                      El::Int height,
+                                      El::Int width) {
+#ifdef __LIB_NCCL
+  // Use NCCL implementation if available
+  allreduce_on_gpus_nccl(gpu_data, height, width);
+#else
+
   if (m_num_gpus < 2) {
     return;
   }
@@ -99,7 +104,23 @@ void cudnn_manager::allreduce(const std::vector<DataType*>& gpu_data,
     }
     offset += len;
   } while (offset < total_len);
+
+#endif // __LIB_NCCL
   
+}
+
+/// @todo Efficient implementation
+void cudnn_manager::global_allreduce_on_gpus(std::vector<DataType*>& gpu_data,
+                                             El::Int height,
+                                             El::Int width,
+                                             El::mpi::Comm comm) {
+  static Mat cpu_workspace;
+  cpu_workspace.Resize(height, width);
+  allreduce_on_gpus(gpu_data, height, width);
+  copy_from_gpu(0, cpu_workspace, gpu_data[0]);
+  synchronize();
+  El::AllReduce(cpu_workspace, comm);
+  broadcast_to_gpus(gpu_data, cpu_workspace);
 }
 
 #ifdef __LIB_NCCL
@@ -119,10 +140,12 @@ ncclDataType_t nccl_datatype() {
 #endif
 
 
-void cudnn_manager::allreduce_nccl(const std::vector<DataType*>& gpu_data,
-                              El::Int height,
-                              El::Int width) {
-#ifdef __LIB_NCCL
+void cudnn_manager::allreduce_on_gpus_nccl(std::vector<DataType*>& gpu_data,
+                                           El::Int height,
+                                           El::Int width) {
+#ifndef __LIB_NCCL
+  throw lbann::lbann_exception("cudnn_wrapper: NCCL not detected");
+#else
 #define BUFF_LEN	27
 /**
   gpu_data is a vector of pointers, each of which points to a part of

@@ -223,7 +223,7 @@ void weights::set_optimizer(optimizer* opt) {
   m_optimizer = opt;
 }
 
-const AbsDistMat& weights::get_values() const {
+const AbsDistMat& weights::get_values() {
 
   // Check if weights matrix has been setup
   if (m_values == nullptr) {
@@ -285,7 +285,7 @@ void weights::set_value(int row, int col, DataType value) {
   }
 }
 
-void weights::get_values_view(AbsDistMat& values_v) const {
+void weights::get_values_view(AbsDistMat& values_v) {
   const AbsDistMat& values = get_values();
   if (values.DistData() == values_v.DistData()
       && m_cudnn == nullptr) {

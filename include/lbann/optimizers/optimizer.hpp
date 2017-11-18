@@ -74,32 +74,35 @@ class optimizer {
   };
 
   /** Get gradient matrix.
-   *  Gradient contributions in staging matrices (see the
-   *  allreduce_and_add_to_gradient and
-   *  gpu_allreduce_and_add_to_gradient functions) are allreduced and
-   *  added to the gradient contribution.
+   *  The gradient is accumulated on the CPU.
    */
   AbsDistMat& get_gradient();
+#ifdef __LIB_CUDNN
+  /** Get gradient matrix on GPU.
+   *  The gradient is accumulated on the GPU.
+   */
+  std::vector<DataType*> get_gradient_gpu();
+#endif // __LIB_CUDNN
   
   /** Clear gradient matrix. */
   void clear_gradient();
   /** Add to the gradient matrix. */
   void add_to_gradient(const AbsDistMat& gradient);
   /** Allreduce and add to gradient matrix.
-   *  The input is added to an allreduce staging matrix. When the
-   *  gradient is needed, an allreduce is applied over the redundant
-   *  communicator of the gradient matrix and the result is added to
-   *  the gradient.
+   *  The input is added to a staging matrix. When the gradient is
+   *  needed, an allreduce is applied over the redundant communicator
+   *  of the gradient matrix and the result is added to the gradient.
    */
   void allreduce_and_add_to_gradient(const AbsDistMat& gradient);
 #ifdef __LIB_CUDNN
-  /** Allreduce GPU data and add to gradient matrix.
-   *  The input is added to a GPU allreduce staging matrix. When the
-   *  gradient is needed, an allreduce is applied over the GPUs and
-   *  added to an allreduce staging matrix (see the
-   *  allreduce_and_add_to_gradient function).
+  /** Add to the gradient matrix on GPU. */
+  void add_to_gradient_gpu(std::vector<DataType*>& gradient);
+  /** Allreduce and add to gradient matrix on GPU.
+   *  The input is added to a staging matrix. When the gradient is
+   *  needed, an allreduce is applied over the redundant communicator
+   *  of the gradient matrix and the result is added to the gradient.
    */
-  void gpu_allreduce_and_add_to_gradient(std::vector<DataType*>& gradient);
+  void allreduce_and_add_to_gradient_gpu(std::vector<DataType*>& gradient);
 #endif // __LIB_CUDNN
 
   /** Setup optimizer. */
@@ -112,6 +115,12 @@ class optimizer {
    *  have the same matrix distribution.
    */
   virtual void step_compute(AbsDistMat& values, const AbsDistMat& gradient) = 0;
+  /** Perform the computation in an optimization step on GPU.
+   *  The default implementation is to transfer data to CPU and call
+   *  step_compute.
+   */
+  virtual void step_compute_gpu(std::vector<DataType*> values_d,
+                                std::vector<DataType*> gradient_d);
 
  protected:
  
@@ -126,26 +135,34 @@ class optimizer {
 
   /** Gradient matrix. */
   AbsDistMat* m_gradient;
+#ifdef __LIB_CUDNN
+  /** GPU memory for gradient matrix. */
+  std::vector<DataType*> m_gradient_d;
+#endif // __LIB_CUDNN
 
-  /** Gradient allreduce staging matrix.
+ private:
+
+  /** Whether the CPU gradient matrix is non-zero. */
+  bool m_cpu_gradient_is_nonzero;
+  /** Whether the CPU staging matrix is non-zero. */
+  bool m_cpu_staging_is_nonzero;
+  /** Allreduce staging matrix.
    *  When the gradient is needed, an allreduce is applied over the
    *  redundant communicator of the staging matrix and the result is
    *  added to the gradient matrix.
    */
-  AbsDistMat* m_gradient_allreduce_staging;
-
+  AbsDistMat* m_staging;
 #ifdef __LIB_CUDNN
-
-  /** GPU memory for gradient allreduce staging matrix.
+  /** Whether the GPU gradient matrix is non-zero. */
+  bool m_gpu_gradient_is_nonzero;
+  /** Whether the GPU staging matrix is non-zero. */
+  bool m_gpu_staging_is_nonzero;
+  /** GPU memory for gradient staging matrix.
    *  When the gradient is needed, an allreduce is applied over the
    *  GPUs and over the redundant communicator of the staging matrix
    *  and the result is added to the gradient matrix.
    */
-  std::vector<DataType*> m_gradient_allreduce_staging_d;
-
-  /** Gradient GPU staging matrix. */
-  AbsDistMat* m_gradient_gpu_staging;
-
+  std::vector<DataType*> m_staging_d;
 #endif // __LIB_CUDNN
 
 };
