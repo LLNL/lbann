@@ -336,6 +336,10 @@ class learning : public Layer {
     m_l2_regularization_factor = f;
   }
 
+  void set_group_lasso_regularization_factor(DataType f) {
+    m_group_lasso_regularization_factor = f;
+  }
+
 #if 0
   bool saveToFile(int fd, const char *dirname) override {
     Layer::loadFromFile(fd, dirname);

@@ -552,6 +552,10 @@ message Layer {
    Softplus softplus = 36;
    Selu selu = 37;
    Tanh tanh = 38;
+   Atan atan = 39;
+   BentIdentity bent_identity = 40;
+   Exponential exponential = 41;
+   Swish swish = 42;
 }
 ///////////////////////
 // MotifLayer //
@@ -589,6 +593,18 @@ message Softplus {
 }
 
 message Tanh {
+}
+
+message Atan {
+}
+
+message BentIdentity {
+}
+
+message Exponential {
+}
+
+message Swish {
 }
 
 message Selu {
@@ -700,6 +716,7 @@ message FullyConnected {
   bool has_bias = 3;                   //default: true
   double bias_initial_value = 4;       //default: 0
   double l2_regularization_factor = 5; //default: 0
+  double group_lasso_regularization_factor = 6; //default: 0 
 }
 
 message Convolution {

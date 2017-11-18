@@ -39,9 +39,8 @@ template <data_layout T_layout>
 class swish_layer : public entrywise_activation_layer {
  public:
 
-  swish_layer(int index,
-                lbann_comm *comm) :
-    entrywise_activation_layer(index, comm) { 
+  swish_layer(lbann_comm *comm) :
+    entrywise_activation_layer(comm) { 
     initialize_distributed_matrices(); 
   }
 
@@ -59,7 +58,7 @@ class swish_layer : public entrywise_activation_layer {
     return z*(DataType(1) / (DataType(1) + std::exp(-z)));
   }
   DataType activation_function_gradient(DataType z) override {
-    const sigz = DataType(1) / (DataType(1) + std::exp(-z));
+    const DataType sigz = DataType(1) / (DataType(1) + std::exp(-z));
     return sigz*(DataType(1) + z*(DataType(1) - sigz));    
   }
 };
