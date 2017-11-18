@@ -891,6 +891,7 @@ void lbann_comm::rabenseifner_allreduce(
 
 void lbann_comm::setup_node_comm() {
 
+    #if 0
   // Get string specifying compute node
   char node_name[MPI_MAX_PROCESSOR_NAME];
   int node_name_len;
@@ -929,6 +930,15 @@ void lbann_comm::setup_node_comm() {
     world_ranks_on_node.push_back(
       El::mpi::Translate(node_comm, i, El::mpi::COMM_WORLD));
   }
+    #endif
+    
+    int procs_per_node = 2;
+    int rank = get_rank_in_world();
+    int node_master = rank - rank % procs_per_node;
+    for (int i = node_master; i < node_master + procs_per_node; ++i) {
+        world_ranks_on_node.push_back(i);
+    }
+    
 }
 
 void lbann_comm::setup_threads() {
