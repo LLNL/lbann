@@ -60,13 +60,16 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus, bool nc
 
   // Assign GPUs to process
   int gpu_start, gpu_end;
+    #if 0
   const char* visible_devices = getenv("CUDA_VISIBLE_DEVICES");
   if(visible_devices != nullptr && strlen(visible_devices) > 0) {
     // Use all visible GPUs if specified with an environment variable
     gpu_start = 0;
     gpu_end = m_num_visible_gpus;
   }
-  else if(m_num_visible_gpus >= procs_per_node) {
+  else 
+    #endif
+    if(m_num_visible_gpus >= procs_per_node) {
     // Case where compute node has more GPUs than MPI ranks
     const int gpus_per_proc = m_num_visible_gpus / procs_per_node;
     const int num_leftover_gpus = m_num_visible_gpus % procs_per_node;
