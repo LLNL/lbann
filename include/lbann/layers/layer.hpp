@@ -220,6 +220,11 @@ class Layer {
   /** Add a child layer. */
   void add_child_layer(const Layer* child);
 
+  /** clear the list of parent layer pointers without deallocating them. */
+  void clear_parent_layers();
+  /** clear the list of child layer pointers without deallocating them. */
+  void clear_child_layers();
+
   /** Get list of pointers to other layers. */
   virtual std::vector<Layer*> get_layer_pointers();
   /** Set list of pointers to other layers. */

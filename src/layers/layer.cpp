@@ -830,6 +830,14 @@ void Layer::add_child_layer(const Layer* child) {
   }
 }
 
+void Layer::clear_parent_layers() {
+  m_parent_layers.clear();
+}
+
+void Layer::clear_child_layers() {
+  m_child_layers.clear();
+}
+
 std::vector<Layer*> Layer::get_layer_pointers() {
   std::vector<Layer*> layers;
   for(const Layer* parent: m_parent_layers) {
