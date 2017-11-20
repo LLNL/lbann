@@ -2409,8 +2409,6 @@ void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::Lb
   lbann_version = LBANN_MAKE_STR(LBANN_VERSION);
 #endif
 
-  int size;
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
   std::time_t r = std::time(nullptr);
   char *tm = std::ctime(&r);
   size_t fixme = strlen(tm);
@@ -2419,7 +2417,7 @@ void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::Lb
       <<  tm
       << "\n#\n#\n# Experiment was run with lbann version: "
       << lbann_version << "\n#\n#\n# To rerun the experiment: \n"
-      << "#  $ srun -n" << size << " " << argv[0]
+      << "#  $ srun -n" << comm->get_procs_in_world() << " " << argv[0]
       << " --loadme=" << opts->get_string("saveme") << "\n#\n#\n";
 
   out << "# Selected SLURM Environment Variables:\n";
