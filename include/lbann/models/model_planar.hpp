@@ -68,32 +68,31 @@ class planar_model : public model {
 
   /// Setup planar model
   void setup() override;
-  void setup_subset();
 
   /// Train model
   void train(int num_epochs) override;
 
-  /// Training step on one mini-batch
-  bool train_mini_batch() override;
-
   /// Evaluate model
   void evaluate(execution_mode mode) override;
-
-  /// Evaluation step on one mini-batch
-  bool evaluate_mini_batch() override;
 
   /** Return true if about to start a new training epoch */
   virtual bool at_epoch_start();
 
+  std::string name() const override { return "planar_model"; }
+
+ protected:
+  void setup_subset();
   /// Ensure weight matriecs in heads at each level are the same
   void equalize();
   /// Add weight matrices in heads at each level
   void sum_up_gradients();
 
   /// Check if the model has a valid data set for the execution mode
-  bool is_execution_mode_valid(execution_mode mode) override;
-
-  std::string name() const override { return "planar_model"; }
+  bool is_execution_mode_valid(execution_mode mode) const override;
+  /// Training step on one mini-batch
+  bool train_mini_batch() override;
+  /// Evaluation step on one mini-batch
+  bool evaluate_mini_batch() override;
 
  protected:
   /// the maximum number of horizontal layers in the network

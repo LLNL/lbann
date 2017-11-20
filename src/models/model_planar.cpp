@@ -520,16 +520,7 @@ void planar_model::setup_subset() {
       current_layer->check_setup();
 
       if (m_comm->am_world_master()) {
-        string description = current_layer->get_description();
-        std::cout << std::setw(12) << current_layer->get_name() << ":[" << std::setw(18)
-                  << current_layer->get_type() <<  "] Set up a layer with input " << std::setw(7)
-                  << current_layer->get_num_prev_neurons() << " and " << std::setw(7)
-                  << current_layer->get_num_neurons() << " neurons.";
-        std::string s = current_layer->get_topo_description();
-        if(s != "") {
-          std::cout << " (" << s << ")";
-        }
-        std::cout << std::endl;
+        std::cout << print_layer_description(current_layer) << std::endl;
       }
     }
   }
@@ -840,12 +831,12 @@ bool planar_model::evaluate_mini_batch() {
   return data_set_processed;
 }
 
-bool planar_model::is_execution_mode_valid(execution_mode mode) {
+bool planar_model::is_execution_mode_valid(execution_mode mode) const {
 
   for(size_t l=0; l<m_layers.size(); l++){
-    std::vector<Layer*>& current_set = m_layers[l];
+    const std::vector<Layer*>& current_set = m_layers[l];
     for(size_t k=0; k<current_set.size(); k++){
-      input_layer* input = dynamic_cast<input_layer*>(current_set[k]);
+      const input_layer* input = dynamic_cast<const input_layer*>(current_set[k]);
       if (input != nullptr && !input->is_execution_mode_valid(mode)) {
         return false;
       }

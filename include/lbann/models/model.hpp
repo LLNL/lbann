@@ -40,6 +40,7 @@
 #include "lbann/optimizers/optimizer.hpp"
 #include <vector>
 #include <string>
+#include <unordered_map>
 
 namespace lbann {
 
@@ -114,17 +115,11 @@ class model {
   inline int get_cur_testing_step() const {
     return m_current_testing_step;
   }
+  /** Set the model (and all layers') execution mode. */
+  virtual void set_execution_mode(execution_mode mode);
   /** Get the model's execution mode. */
   inline execution_mode get_execution_mode() const {
     return m_execution_mode;
-  }
-  /** Set the model (and all layers') execution mode. */
-  inline void set_execution_mode(execution_mode mode) {
-    m_execution_mode = mode;
-    std::vector<Layer *>& layers = get_layers();
-    for (auto&& l : layers) {
-      l->set_execution_mode(mode);
-    }
   }
   /** Set the model's current mini-batch size. */
   inline void set_current_mini_batch_size(int mini_batch_size) {
@@ -179,14 +174,8 @@ class model {
 
   /** Train model. */
   virtual void train(int num_epochs);
-  /** Train model on a mini-batch. */
-  virtual bool train_mini_batch();
   /** Evaluate model. */
   virtual void evaluate(execution_mode mode);
-  /** Evaluate model on a mini-batch */
-  virtual bool evaluate_mini_batch();
-
-  virtual bool is_execution_mode_valid(execution_mode mode);
 
   /** Set checkpoint values */
   inline void set_checkpoint_dir(std::string dir)   {
@@ -296,6 +285,23 @@ class model {
   std::unordered_map<Layer *,std::vector<Layer *>> m_layer_groups;
   /** Map from layers to their layer group's master. */
   std::unordered_map<Layer *,Layer *> m_layer_group_masters;
+
+  /** Check if the model (and all layers') execution mode valid. */
+  virtual bool is_execution_mode_valid(execution_mode mode) const;
+  /// Print out the description of a layer set up
+  virtual std::string print_layer_description(const Layer* layer) const;
+
+  /// Deallocate layer objects
+  virtual void delete_layers();
+  virtual void forward_prop_to_evaluate();
+  virtual bool update_io_layers();
+  virtual void forward_prop();
+  virtual void backward_prop();
+  virtual void update_optimizable_layers();
+  /** Train model on a mini-batch. */
+  virtual bool train_mini_batch();
+  /** Evaluate model on a mini-batch */
+  virtual bool evaluate_mini_batch();
 
   // Methods for calling every callback at different points.
   void setup_callbacks();

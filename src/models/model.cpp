@@ -32,6 +32,7 @@
 #include "lbann/layers/io/input/input_layer.hpp"
 #include <string>
 #include <unistd.h>
+#include <iomanip>
 
 #include "mpi.h"
 
@@ -226,9 +227,14 @@ model::~model() {
   for (lbann_callback *callback : m_callbacks) {
     delete callback;
   }
+  delete_layers();
+}
+
+void model::delete_layers() {
   for (Layer *layer : m_layers) {
     delete layer;
   }
+  m_layers.clear();
 }
 
 ////////////////////////////////////////////////////////////
@@ -305,6 +311,40 @@ void model::link_layers(Layer *layer1, Layer *layer2) {
 
 }
 
+void model::set_execution_mode(execution_mode mode) {
+  m_execution_mode = mode;
+  std::vector<Layer *>& layers = get_layers();
+  for (auto&& l : layers) {
+    l->set_execution_mode(mode);
+  }
+}
+
+bool model::is_execution_mode_valid(execution_mode mode) const {
+  for (const Layer *layer : m_layers) {
+    const input_layer *input = dynamic_cast<const input_layer*>(layer);
+    if (input != nullptr
+        && !input->is_execution_mode_valid(mode)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+std::string model::print_layer_description(const Layer* layer) const {
+  if (layer == nullptr) return std::string();
+  std::stringstream os;
+  //std::string description = layer->get_description();
+  os << std::setw(12) << layer->get_name() << ":[" << std::setw(18)
+     << layer->get_type() <<  "] Set up a layer with input " << std::setw(7)
+     << layer->get_num_prev_neurons() << " and " << std::setw(7)
+     << layer->get_num_neurons() << " neurons.";
+  std::string s = layer->get_topo_description();
+  if(s != "") {
+    os << " (" << s << ")";
+  }
+  return os.str();
+}
+
 ////////////////////////////////////////////////////////////
 // Evaluation and training
 ////////////////////////////////////////////////////////////
@@ -312,18 +352,10 @@ void model::link_layers(Layer *layer1, Layer *layer2) {
 void model::evaluate(execution_mode mode) {
 
   // Return early if execution mode is invalid
-  for (Layer* layer : m_layers) {
-    input_layer* input = dynamic_cast<input_layer*>(layer);
-    if (input != nullptr && !input->is_execution_mode_valid(mode)) {
-      return;
-    }
-  }
+  if (!is_execution_mode_valid(mode)) return;
 
   // Initialize model for beginning of evaluation
-  m_execution_mode = mode;
-  for (Layer *layer : m_layers) {
-    layer->set_execution_mode(mode);
-  }
+  set_execution_mode(mode);
   m_obj_fn->reset_statistics();
   for (auto&& m : m_metrics) {
     m->reset_metric();
@@ -355,7 +387,6 @@ void model::evaluate(execution_mode mode) {
   default:
     throw lbann_exception("Illegal execution mode in evaluate function");
   }
-
 }
 
 void model::train(int num_epochs) {
@@ -368,10 +399,7 @@ void model::train(int num_epochs) {
     }
     
     // Initialize model for beginning of training epoch
-    m_execution_mode = execution_mode::training;
-    for (Layer *layer : m_layers) {
-      layer->set_execution_mode(execution_mode::training);
-    }
+    set_execution_mode(execution_mode::training);
     m_obj_fn->reset_statistics();
     for (auto&& m : m_metrics) {
       m->reset_metric();
@@ -394,9 +422,7 @@ void model::train(int num_epochs) {
   do_train_end_cbs();
 }
 
-bool model::evaluate_mini_batch() {
-  do_batch_evaluate_begin_cbs();
-
+void model::forward_prop_to_evaluate() {
   // Forward propagation
   do_model_evaluate_forward_prop_begin_cbs();
   for (Layer *layer : m_layers) {
@@ -405,10 +431,9 @@ bool model::evaluate_mini_batch() {
     do_layer_evaluate_forward_prop_end_cbs(layer);
   }
   do_model_evaluate_forward_prop_end_cbs();
+}
 
-  // Record and reset objective function value
-  m_obj_fn->record_and_reset_value();
-
+bool model::update_io_layers() {
   // Update target and input layers
   bool finished = true;
   for (Layer* layer : m_layers) {
@@ -423,6 +448,18 @@ bool model::evaluate_mini_batch() {
       finished = input->update() && finished;
     }
   }
+  return finished;
+}
+
+bool model::evaluate_mini_batch() {
+  do_batch_evaluate_begin_cbs();
+
+  forward_prop_to_evaluate();
+
+  // Record and reset objective function value
+  m_obj_fn->record_and_reset_value();
+
+  bool finished = update_io_layers();
 
   // Finish up
   do_batch_evaluate_end_cbs();
@@ -437,12 +474,9 @@ bool model::evaluate_mini_batch() {
     throw lbann_exception("Illegal execution mode in evaluate mini-batch function");
   }
   return finished;
-
 }
 
-bool model::train_mini_batch() {
-  do_batch_begin_cbs();
-
+void model::forward_prop() {
   // Forward propagation
   do_model_forward_prop_begin_cbs();
   for (Layer *layer : m_layers) {
@@ -451,10 +485,9 @@ bool model::train_mini_batch() {
     do_layer_forward_prop_end_cbs(layer);
   }
   do_model_forward_prop_end_cbs();
+}
 
-  // Record and reset objective function value
-  m_obj_fn->record_and_reset_value();
-
+void model::backward_prop() {
   // Backward propagation
   do_model_backward_prop_begin_cbs();
   for (int l = m_layers.size() - 1; l >= 0; --l) {
@@ -464,7 +497,9 @@ bool model::train_mini_batch() {
     do_layer_backward_prop_end_cbs(layer);
   }
   do_model_backward_prop_end_cbs();
+}
 
+void model::update_optimizable_layers() {
   // Update optimizable layers
   // Note: We iterate through layer groups that are comprised of
   // optimizable layers.
@@ -473,13 +508,13 @@ bool model::train_mini_batch() {
         || dynamic_cast<optimizable_layer *>(master_layer) == nullptr) {
       continue;
     }
-    optimizable_layer *master_opt_layer = (optimizable_layer *) master_layer;
+    optimizable_layer *master_opt_layer = dynamic_cast<optimizable_layer *>(master_layer);
     std::vector<Layer *> group = m_layer_groups[master_layer];
 
     // Accumulate gradients in master layer
     for (Layer *layer : group) {
       if (layer != master_layer) {
-        optimizable_layer *opt_layer = (optimizable_layer *) layer;
+        optimizable_layer *opt_layer = dynamic_cast<optimizable_layer *>(layer);
         const AbsDistMat& gradient = opt_layer->get_parameters_gradient();
         master_opt_layer->add_to_parameters_gradient(gradient);
         opt_layer->clear_parameters_gradient();
@@ -494,44 +529,31 @@ bool model::train_mini_batch() {
     const AbsDistMat& parameters = master_opt_layer->get_parameters();
     for (Layer *layer : group) {
       if (layer != master_layer) {
-        optimizable_layer *opt_layer = (optimizable_layer *) layer;
+        optimizable_layer *opt_layer = dynamic_cast<optimizable_layer *>(layer);
         opt_layer->set_parameters(parameters);
       }
     }
+  }
+}
 
-  }
+bool model::train_mini_batch() {
+  do_batch_begin_cbs();
 
-  // Update target and input layers
-  bool finished = true;
-  for (Layer* layer : m_layers) {
-    target_layer *target = dynamic_cast<target_layer *>(layer);
-    if (target != nullptr) {
-      target->update();
-    }
-  }
-  for (Layer* layer : m_layers) {
-    input_layer *input = dynamic_cast<input_layer *>(layer);
-    if (input != nullptr) {
-      finished = input->update() && finished;
-    }
-  }
+  forward_prop();
+
+  // Record and reset objective function value
+  m_obj_fn->record_and_reset_value();
+
+  backward_prop();
+
+  update_optimizable_layers();
+
+  bool finished = update_io_layers();
 
   // Finish up
   do_batch_end_cbs();
   ++m_current_step;
   return finished;
-
-}
-
-bool model::is_execution_mode_valid(execution_mode mode) {
-  for (Layer *layer : m_layers) {
-    input_layer *input = dynamic_cast<input_layer*>(layer);
-    if (input != nullptr
-        && !input->is_execution_mode_valid(mode)) {
-      return false;
-    }
-  }
-  return true;
 }
 
 ////////////////////////////////////////////////////////////
