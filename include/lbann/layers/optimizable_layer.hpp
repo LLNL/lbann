@@ -36,6 +36,9 @@ namespace lbann {
 /** Abstract base class for layers with optimizable parameters. */
 class optimizable_layer {
  public:
+  optimizable_layer() {}
+  optimizable_layer(const optimizable_layer&) = default;
+  optimizable_layer& operator=(const optimizable_layer&) = default;
 
   /** Destructor. */
   virtual ~optimizable_layer() = default;
