@@ -68,7 +68,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
     }
   }
 
-  virtual ~input_layer() {
+  ~input_layer() override {
     // Input layer always frees data readers.
     for (auto& dr : m_data_readers) {
       delete dr.second;
@@ -386,7 +386,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
     return std::vector<int>(1, 0);
   }
 
-  virtual std::string get_topo_description() const override {
+  std::string get_topo_description() const override {
     std::stringstream s;
     for (size_t i = 0; i < this->m_neuron_dims.size(); i++) {
       s << this->m_neuron_dims[i];

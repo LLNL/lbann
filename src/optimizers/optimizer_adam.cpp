@@ -150,7 +150,7 @@ void adam::setup(AbsDistMat *parameters) {
 
 void adam::setup_gpu(AbsDistMat *parameters,
                      const std::vector<DataType *> &parameters_d) {
-#ifdef __LIB_CUDA
+#ifdef __LIB_CUDNN
   optimizer::setup_gpu(parameters, parameters_d);
   int local_height = m_parameters->LocalHeight();
   int local_width = m_parameters->LocalWidth();  

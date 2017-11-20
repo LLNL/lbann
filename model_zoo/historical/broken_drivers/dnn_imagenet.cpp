@@ -1108,8 +1108,8 @@ int main(int argc, char *argv[]) {
           char imagepath_rc[512];
           sprintf(imagepath_gt, "%s/lbann_autoencoder_imagenet_gt.png", trainParams.SaveImageDir.c_str());
           sprintf(imagepath_rc, "%s/lbann_autoencoder_imagenet_%04d.png", trainParams.SaveImageDir.c_str(), epoch);
-          CImageUtil::savePNG(imagepath_gt, g_ImageNet_Width * imagecount, g_ImageNet_Height, true, pixels_gt);
-          CImageUtil::savePNG(imagepath_rc, g_ImageNet_Width * imagecount, g_ImageNet_Height, true, pixels_rc);
+          image_utils::saveIMG(imagepath_gt, g_ImageNet_Width * imagecount, g_ImageNet_Height, true, pixels_gt);
+          image_utils::saveIMG(imagepath_rc, g_ImageNet_Width * imagecount, g_ImageNet_Height, true, pixels_rc);
         }
 
         delete [] pixels_gt;

@@ -23,38 +23,18 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_model_dnn .hpp .cpp - Deep Neural Networks models
+// init_image_data_readers .hpp .cpp - initialize image_data_reader by prototext
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_MODEL_DNN_HPP
-#define LBANN_MODEL_DNN_HPP
+#ifndef _INIT_IMAGE_DATA_READERS_HPP_
+#define _INIT_IMAGE_DATA_READERS_HPP_
+#include "lbann/proto/proto_common.hpp"
+#include "lbann/comm.hpp"
 
-#include "lbann/models/model_sequential.hpp"
-#include "lbann/layers/layer.hpp"
-#include <vector>
-#include <string>
+extern void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool master,
+                                    std::shared_ptr<lbann::cv_process>& pp, int& width, int& height);
+extern void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool master, lbann::generic_data_reader* &reader);
+extern void init_generic_preprocessor(const lbann_data::Reader& pb_readme, const bool master, lbann::generic_data_reader* reader);
+extern void init_org_image_data_reader(const lbann_data::Reader& pb_readme, const bool master, lbann::generic_data_reader* &reader);
 
-namespace lbann {
-
-class deep_neural_network : public sequential_model {
- public:
-  /// Constructor
-  deep_neural_network(int mini_batch_size,
-                      lbann_comm *comm,
-                      objective_functions::objective_function *obj_fn,
-                      optimizer_factory *_optimizer_fac);
-  deep_neural_network(const deep_neural_network&) = default;
-  deep_neural_network& operator=(const deep_neural_network&) = default;
-
-  virtual deep_neural_network* copy() const override { return new deep_neural_network(*this); }
-
-  /// Destructor
-  virtual ~deep_neural_network() = default;
-
-  virtual std::string name() const override { return "deep neural network"; }
-
-};
-
-}  // namespace lbann
-
-#endif  // LBANN_MODEL_DNN_HPP
+#endif // _INIT_IMAGE_DATA_READERS_HPP_

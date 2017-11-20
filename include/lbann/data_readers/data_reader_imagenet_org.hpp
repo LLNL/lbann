@@ -22,47 +22,38 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
+//
+// data_reader_imagenet .hpp .cpp - generic_data_reader class for ImageNet dataset
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef BENT_IDENTITY_HPP_INCLUDED
-#define BENT_IDENTITY_HPP_INCLUDED
+#ifndef LBANN_DATA_READER_IMAGENET_ORG_HPP
+#define LBANN_DATA_READER_IMAGENET_ORG_HPP
 
-#include "lbann/layers/activations/activation.hpp"
+#include "data_reader_image.hpp"
+#include "image_preprocessor.hpp"
 
 namespace lbann {
-
-/**
- * Bent Identity activation function.
- * See: https://en.wikipedia.org/wiki/Bent_Identity_function
- */
-template <data_layout T_layout>
-class bent_identity_layer : public entrywise_activation_layer {
+class imagenet_reader_org : public image_data_reader {
  public:
+  imagenet_reader_org(bool shuffle = true);
+  imagenet_reader_org(const imagenet_reader_org&) = default;
+  imagenet_reader_org& operator=(const imagenet_reader_org&) = default;
+  ~imagenet_reader_org() override {}
 
-  bent_identity_layer(int index,
-                lbann_comm *comm) :
-    entrywise_activation_layer(index, comm) { 
-    initialize_distributed_matrices(); 
-  }
+  imagenet_reader_org* copy() const override { return new imagenet_reader_org(*this); }
 
-  bent_identity_layer* copy() const { return new bent_identity_layer(*this); }
-
-  std::string get_type() const { return "bent identity"; }
-
-  virtual inline void initialize_distributed_matrices() {
-    entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
-  }
-  virtual data_layout get_data_layout() const { return T_layout; }
+  /// Set up imagenet specific input parameters
+  void set_input_params(const int width=256, const int height=256, const int num_ch=3, const int num_labels=1000) override;
 
  protected:
-  DataType activation_function(DataType z) {
-    return (std::sqrt(z*z + DataType(1)) - DataType(1))/DataType(2) + z;
-  }
-  DataType activation_function_gradient(DataType z) {
-    return z/(DataType(2)*std::sqrt(z*z + DataType(1))) + DataType(1);
-  }
+  void set_defaults() override;
+  void allocate_pixel_bufs();
+  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
+
+ protected:
+  std::vector<std::vector<unsigned char>> m_pixel_bufs;
 };
 
 }  // namespace lbann
 
-#endif  // BENT_IDENTITY_HPP_INCLUDED
+#endif  // LBANN_DATA_READER_IMAGENET_ORG_HPP

@@ -72,7 +72,7 @@ class mean_squared_error : public objective_function {
                         AbsDistMat& gradient);
 
   /** Get the name of the objective function. */
-  std::string name() const { return "mean squared error"; }
+  std::string name() const { return "mean squared error cost"; }
 
 };
 

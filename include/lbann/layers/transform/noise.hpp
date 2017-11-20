@@ -73,7 +73,7 @@ class noise_layer : public transform {
     return *this;
   }
 
-  ~noise_layer() {
+  ~noise_layer() override {
   #ifdef __LIB_CUDNN
     // GPU memory for activations is a copy of previous layer's activations
     this->m_error_signal_d.clear();

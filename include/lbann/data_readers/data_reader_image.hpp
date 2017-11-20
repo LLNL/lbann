@@ -23,35 +23,32 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_imagenet .hpp .cpp - generic_data_reader class for ImageNet dataset
+// data_reader_image .hpp .cpp - generic data reader class for image dataset
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_DATA_READER_IMAGENET_CV_HPP
-#define LBANN_DATA_READER_IMAGENET_CV_HPP
+#ifndef IMAGE_DATA_READER_HPP
+#define IMAGE_DATA_READER_HPP
 
 #include "data_reader.hpp"
 #include "image_preprocessor.hpp"
 #include "cv_process.hpp"
-#include "cv_process_patches.hpp"
 
 namespace lbann {
-class imagenet_reader_cv : public generic_data_reader {
+class image_data_reader : public generic_data_reader {
  public:
-  imagenet_reader_cv(const std::shared_ptr<cv_process>& pp, bool shuffle = true);
-  imagenet_reader_cv(const imagenet_reader_cv&);
-  imagenet_reader_cv& operator=(const imagenet_reader_cv&);
-  ~imagenet_reader_cv() override;
+  image_data_reader(bool shuffle = true);
+  image_data_reader(const image_data_reader&);
+  image_data_reader& operator=(const image_data_reader&);
 
-  imagenet_reader_cv* copy() const override { return new imagenet_reader_cv(*this); }
+  /** Set up imagenet specific input parameters
+   *  If argument is set to 0, then this method does not change the value of
+   *  the corresponding parameter. However, width and height can only be both
+   *  zero or both non-zero.
+   */
+  virtual void set_input_params(const int width=0, const int height=0, const int num_ch=0, const int num_labels=0);
 
-  /// Set up imagenet specific input parameters
-  virtual void set_input_params(const int width=256, const int height=256, const int num_ch=3, const int num_labels=1000);
-
-  // ImageNet specific functions
+  // dataset specific functions
   void load() override;
-
-  using generic_data_reader::fetch_data;
-  virtual int fetch_data(std::vector<Mat>& X); ///< to feed multiple layer stacks per sample
 
   int get_num_labels() const override {
     return m_num_labels;
@@ -81,9 +78,8 @@ class imagenet_reader_cv : public generic_data_reader {
   }
 
  protected:
-  virtual bool replicate_preprocessor(const std::shared_ptr<cv_process>& pp);
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
-  virtual bool fetch_datum(std::vector<Mat>& X, int data_id, int mb_idx, int tid);
+  /// Set the default values for the width, the height, the number of channels, and the number of labels of an image
+  virtual void set_defaults();
   bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;
 
  protected:
@@ -93,12 +89,8 @@ class imagenet_reader_cv : public generic_data_reader {
   int m_image_height; ///< image height
   int m_image_num_channels; ///< number of image channels
   int m_num_labels; ///< number of labels
-  /// preprocessor duplicated for each omp thread
-  std::vector<std::unique_ptr<cv_process> > m_pps;
-  /// preprocessor for patches duplicated for each omp thread
-  std::vector<std::unique_ptr<cv_process_patches> > m_ppps;
 };
 
 }  // namespace lbann
 
-#endif  // LBANN_DATA_READER_IMAGENET_CV_HPP
+#endif  // IMAGE_DATA_READER_HPP

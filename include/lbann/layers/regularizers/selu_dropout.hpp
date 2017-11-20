@@ -84,20 +84,20 @@ class selu_dropout : public regularizer_layer {
     return *this;
   }
 
-  ~selu_dropout() {
+  ~selu_dropout() override {
     delete m_cur_mask;
   }
 
-  selu_dropout* copy() const { return new selu_dropout(*this); }
+  selu_dropout* copy() const override { return new selu_dropout(*this); }
 
-  std::string get_type() const { return "selu dropout"; }
+  std::string get_type() const override { return "selu dropout"; }
 
   virtual inline void initialize_distributed_matrices();
-  virtual data_layout get_data_layout() const { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
  protected:
   /** Drop out units in forward propagation. */
-  void fp_compute() {
+  void fp_compute() override {
     if (this->get_execution_mode() != execution_mode::training ||
         m_keep_prob < 0.0f) {
       // Copy previous activations over.
@@ -124,7 +124,7 @@ class selu_dropout : public regularizer_layer {
   }
 
   /** Adjust gradients for dropout in backprop. */
-  void bp_compute() {
+  void bp_compute() override {
     // Terminate early when not training.
     if (this->get_execution_mode() != execution_mode::training) {
       return;

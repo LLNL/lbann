@@ -54,10 +54,10 @@ class planar_model : public model {
 
 
   /// Destructor
-  ~planar_model();
+  ~planar_model() override;
 
   /** Create copy. */
-  virtual planar_model* copy() const override { return new planar_model(*this); }
+  planar_model* copy() const override { return new planar_model(*this); }
 
   /** Following functions are used to add a set of layers at given horizontal level
    *  on a planar space. The layers are added either by duplicating a single layer
@@ -67,33 +67,32 @@ class planar_model : public model {
   void add(Layer *layer) override;
 
   /// Setup planar model
-  virtual void setup() override;
-  void setup_subset();
+  void setup() override;
 
   /// Train model
   void train(int num_epochs) override;
 
-  /// Training step on one mini-batch
-  bool train_mini_batch() override;
-
   /// Evaluate model
-  virtual void evaluate(execution_mode mode) override;
-
-  /// Evaluation step on one mini-batch
-  virtual bool evaluate_mini_batch() override;
+  void evaluate(execution_mode mode) override;
 
   /** Return true if about to start a new training epoch */
   virtual bool at_epoch_start();
 
+  std::string name() const override { return "planar_model"; }
+
+ protected:
+  void setup_subset();
   /// Ensure weight matriecs in heads at each level are the same
   void equalize();
   /// Add weight matrices in heads at each level
   void sum_up_gradients();
 
   /// Check if the model has a valid data set for the execution mode
-  bool is_execution_mode_valid(execution_mode mode) override;
-
-  virtual std::string name() const override { return "planar_model"; }
+  bool is_execution_mode_valid(execution_mode mode) const override;
+  /// Training step on one mini-batch
+  bool train_mini_batch() override;
+  /// Evaluation step on one mini-batch
+  bool evaluate_mini_batch() override;
 
  protected:
   /// the maximum number of horizontal layers in the network

@@ -1,0 +1,4 @@
+run: $viz.py
+with no arguments for usage
+
+see the "examples" directory for command lines and outputs

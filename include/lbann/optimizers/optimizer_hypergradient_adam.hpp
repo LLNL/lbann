@@ -55,13 +55,13 @@ class hypergradient_adam : public optimizer {
   hypergradient_adam(const hypergradient_adam& other);
   hypergradient_adam& operator=(const hypergradient_adam& other);
   /// Destructor
-  ~hypergradient_adam();
+  ~hypergradient_adam() override;
   
   /// Returns the optimizer's name
-  std::string get_name() const  { return "hypergradient_adam"; }
+  std::string get_name() const override { return "hypergradient_adam"; }
 
   /** Returns description of ctor params */
-  std::string get_description() const {
+  std::string get_description() const override {
     return std::string {} +
      " hypergradient_adam; init_learning_rate: " + std::to_string(m_learning_rate)  
      + " hyper_learning_rate: " + std::to_string(m_hyper_learning_rate)
@@ -70,12 +70,12 @@ class hypergradient_adam : public optimizer {
      + " eps: " + std::to_string(m_eps);
   }
 
-  hypergradient_adam* copy() const { return new hypergradient_adam(*this); }
+  hypergradient_adam* copy() const override { return new hypergradient_adam(*this); }
   /// Set parameters to optimize and initialize optimizer
-  void setup(AbsDistMat *parameters);
+  void setup(AbsDistMat *parameters) override;
   /// Update parameters using objective function gradient
-  void update(const AbsDistMat *gradient);
-  std::string name() const { return "hypergradient adam"; }
+  void update(const AbsDistMat *gradient) override;
+  std::string name() const override { return "hypergradient adam"; }
  private:
   /// Hypergradient learning rate.
   DataType m_hyper_learning_rate;
@@ -109,9 +109,9 @@ class hypergradient_adam_factory : public optimizer_factory {
    DataType beta2 = DataType(0.99),
    DataType eps = DataType(1e-8));
   /// Destructor
-  virtual ~hypergradient_adam_factory();
+  ~hypergradient_adam_factory() override;
   /// Create hypergradient Adam optimizer
-  optimizer *create_optimizer();
+  optimizer *create_optimizer() override;
  private:
   /// Initial learning rate.
   DataType m_learning_rate;

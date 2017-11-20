@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_mnist .hpp .cpp - generic_data_reader class for MNIST dataset
+// mnist_reader .hpp .cpp - data reader class for MNIST dataset
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_mnist.hpp"
@@ -36,15 +36,19 @@ inline void __swapEndianInt(unsigned int& ui) {
 namespace lbann {
 
 mnist_reader::mnist_reader(bool shuffle)
-  : generic_data_reader(shuffle) {
-  m_image_width = 28;
-  m_image_height = 28;
-  m_num_labels = 10;
+  : image_data_reader(shuffle) {
+  set_defaults();
 }
 
 mnist_reader::mnist_reader()
   : mnist_reader(true) {}
 
+void mnist_reader::set_defaults() {
+  m_image_width = 28;
+  m_image_height = 28;
+  m_image_num_channels = 1;
+  m_num_labels = 10;
+}
 
 bool mnist_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
   int pixelcount = m_image_width * m_image_height;

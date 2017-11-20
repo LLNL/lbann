@@ -46,25 +46,25 @@ class rmsprop : public optimizer {
   rmsprop(const rmsprop& other);
   rmsprop& operator=(const rmsprop& other);
   /// Destructor
-  ~rmsprop();
+  ~rmsprop() override;
   
   /// Returns the optimizer's name
-  std::string get_name() const  { return "rmsprop"; }
+  std::string get_name() const override { return "rmsprop"; }
 
   /** Returns description of ctor params */
-  std::string get_description() const {
+  std::string get_description() const override {
     return std::string {} +
      " rmsprop; learning_rate: " + std::to_string(m_learning_rate) 
      + " decay_rate: " + std::to_string(m_decay_rate)
      + " eps: " + std::to_string(m_eps);
   }
 
-  rmsprop* copy() const { return new rmsprop(*this); }
+  rmsprop* copy() const override { return new rmsprop(*this); }
   /// Set parameters to optimize and initialize optimizer
-  void setup(AbsDistMat *parameters);
+  void setup(AbsDistMat *parameters) override;
   /// Update parameters using objective function gradient
-  void update(const AbsDistMat *gradient);
-  std::string name() const { return "rmsprop"; }
+  void update(const AbsDistMat *gradient) override;
+  std::string name() const override { return "rmsprop"; }
  private:
   /// Decay rate
   DataType m_decay_rate;
@@ -84,9 +84,9 @@ class rmsprop_factory : public optimizer_factory {
    DataType decay_rate = DataType(0.9),
    DataType eps = DataType(1e-8));
   /// Destructor
-  virtual ~rmsprop_factory();
+  ~rmsprop_factory() override;
   /// Create RMSprop optimizer
-  optimizer *create_optimizer();
+  optimizer *create_optimizer() override;
  private:
   /// Learning rate
   DataType m_learning_rate;

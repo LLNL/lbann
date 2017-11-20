@@ -79,6 +79,9 @@ class cv_cropper : public cv_transform {
            const bool random_crop = false,
            const std::pair<int, int>& roi = std::make_pair(0,0));
 
+  unsigned int get_crop_width() const { return m_width; }
+  unsigned int get_crop_height() const { return m_height; }
+
   /// Clear the states of the previous transform applied
   void reset() override;
 

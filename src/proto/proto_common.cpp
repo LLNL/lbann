@@ -10,6 +10,7 @@
 
 #include <unordered_map>
 #include <sys/stat.h>
+#include "init_image_data_readers.hpp"
 
 using namespace lbann;
 
@@ -21,62 +22,107 @@ inline bool layer_is_in_model(std::string name) {
   return model_layers.find(name) != model_layers.end();
 }
 
+bool has_motifs(lbann_comm *comm, const lbann_data::LbannPB& p) {
+  bool master = comm->am_world_master();
+  if (master) cout << "starting has_motifs\n";
+  const lbann_data::Model& m = p.model();
+  const int num_layers = m.layer_size();
+  for (int j=0; j<num_layers; j++) {
+    const lbann_data::Layer& layer = m.layer(j);
+    if (layer.has_motif_layer()) {
+      return true;
+    }  
+  }
+  return false;
+}
+
+void expand_motifs(lbann_comm *comm, lbann_data::LbannPB& pb) {
+  bool master = comm->am_world_master();
+  if (master) cout << "starting expand_motifs\n";
+  const lbann_data::MotifDefinitions& m = pb.motif_definitions();
+  const int num_motifs = m.motif_size();
+  for (int j=0; j<num_motifs; j++) {
+  }
+}
+
+
 void setup_pointers(
   std::vector<lbann_data::Layer> &proto_layers,
   lbann::model *model,
   bool master)
 {
-  std::string name;
-  std::stringstream ss;
-  std::stringstream err;
   for (size_t i=0; i<proto_layers.size(); i++) {
     Layer *layer = model_layers[proto_layers[i].name()];
 
+    std::stringstream err;
+
     // Set layer parents
-    ss.clear();
-    ss.str(proto_layers[i].parents());
-    while (ss >> name) {
-      if (master and not layer_is_in_model(name)) {
+    {
+      std::string name;
+      std::stringstream ss(proto_layers[i].parents());
+      while (ss >> name) {
+        if (master and not layer_is_in_model(name)) {
+          err << __FILE__ << " " << __LINE__ << " :: "
+              << "could not find parent layer " << name;
+          throw lbann_exception(err.str());
+        }
+        Layer *parent_layer = model_layers[name];
+        layer->add_parent_layer(parent_layer);
+      }
+      if (ss.bad()) {
         err << __FILE__ << " " << __LINE__ << " :: "
-            << "could not find parent layer " << name;
+            << "could not parse " << proto_layers[i].parents();
         throw lbann_exception(err.str());
       }
-      Layer *parent_layer = model_layers[name];
-      layer->add_parent_layer(parent_layer);
     }
 
     // Set layer children
-    ss.clear();
-    ss.str(proto_layers[i].children());
-    while (ss >> name) {
-      if (master and not layer_is_in_model(name)) {
+    {
+      std::string name;
+      std::stringstream ss(proto_layers[i].children());
+      while (ss >> name) {
+        if (master and not layer_is_in_model(name)) {
+          err << __FILE__ << " " << __LINE__ << " :: "
+              << "could not find child layer " << name;
+          throw lbann_exception(err.str());
+        }
+        Layer *child_layer = model_layers[name];
+        layer->add_child_layer(child_layer);
+      }
+      if (ss.bad()) {
         err << __FILE__ << " " << __LINE__ << " :: "
-            << "could not find child layer " << name;
+            << "could not parse " << proto_layers[i].children();
         throw lbann_exception(err.str());
       }
-      Layer *child_layer = model_layers[name];
-      layer->add_child_layer(child_layer);
     }
 
     // Set linked layers
-    ss.clear();
-    ss.str(proto_layers[i].linked_layers());
-    while (ss >> name) {
-      if (master and not layer_is_in_model(name)) {
+    {
+      std::string name;
+      std::stringstream ss(proto_layers[i].linked_layers());
+      while (ss >> name) {
+        if (master and not layer_is_in_model(name)) {
+          err << __FILE__ << " " << __LINE__ << " :: "
+              << "could not find layer " << name << " to link with layer " << proto_layers[i].name();
+          throw lbann_exception(err.str());
+        }
+        Layer *other_layer = model_layers[name];
+        model->link_layers(other_layer, layer);
+      }
+      if (ss.bad()) {
         err << __FILE__ << " " << __LINE__ << " :: "
-            << "could not find layer " << name << " to link with layer " << proto_layers[i].name();
+            << "could not parse " << proto_layers[i].linked_layers();
         throw lbann_exception(err.str());
       }
-      Layer *other_layer = model_layers[name];
-      model->link_layers(other_layer, layer);
     }
 
     // Set a target layer's paired input layer
     if (dynamic_cast<target_layer*>(layer) != nullptr) {
       target_layer *target = dynamic_cast<target_layer*>(layer);
 
+      std::string name;
+
       // Get input layer name
-      name.clear();
       if (proto_layers[i].has_target_distributed_minibatch()) {
         name = proto_layers[i].target_distributed_minibatch().paired_input_layer();
       }
@@ -105,6 +151,8 @@ void setup_pointers(
 
     // Set a reconstruction layer's original layer
     if (proto_layers[i].has_reconstruction()) {
+
+      std::string name;
 
       // Get original layer name
       name = proto_layers[i].reconstruction().original_layer();
@@ -226,6 +274,7 @@ inline data_layout get_data_layout(const string& s)
     return data_layout::invalid;
   }
 }
+
 
 void get_proto_layers(
   std::vector<lbann_data::Layer> &proto_layers,
@@ -416,6 +465,12 @@ void add_layers(
       if(l2_regularization_factor != double(0.0)) {
         ((learning *) d)->set_l2_regularization_factor(l2_regularization_factor);
       }
+
+      double group_lasso_regularization_factor = ell.group_lasso_regularization_factor();
+      if (group_lasso_regularization_factor != double(0.0)) {
+        ((learning *) d)->set_group_lasso_regularization_factor(group_lasso_regularization_factor);
+      } 
+
     }
 
     //////////////////////////////////////////////////////////////////
@@ -892,6 +947,52 @@ void add_layers(
       }
     }
 
+    //#####
+
+    //////////////////////////////////////////////////////////////////
+    // LAYER: atan
+    //////////////////////////////////////////////////////////////////
+    else if (layer.has_atan()) {
+      if (layout == data_layout::MODEL_PARALLEL) {
+        d = new atan_layer<data_layout::MODEL_PARALLEL>(comm);
+      } else {
+        d = new atan_layer<data_layout::DATA_PARALLEL>(comm);
+      }
+    } 
+
+    //////////////////////////////////////////////////////////////////
+    // LAYER: bent_identity
+    //////////////////////////////////////////////////////////////////
+    else if (layer.has_bent_identity()) {
+      if (layout == data_layout::MODEL_PARALLEL) {
+        d = new bent_identity_layer<data_layout::MODEL_PARALLEL>(comm);
+      } else {
+        d = new bent_identity_layer<data_layout::DATA_PARALLEL>(comm);
+      }
+    } 
+
+    //////////////////////////////////////////////////////////////////
+    // LAYER: exponential
+    //////////////////////////////////////////////////////////////////
+    else if (layer.has_exponential()) {
+      if (layout == data_layout::MODEL_PARALLEL) {
+        d = new exponential_layer<data_layout::MODEL_PARALLEL>(comm);
+      } else {
+        d = new exponential_layer<data_layout::DATA_PARALLEL>(comm);
+      }
+    } 
+
+    //////////////////////////////////////////////////////////////////
+    // LAYER: swish
+    //////////////////////////////////////////////////////////////////
+    else if (layer.has_swish()) {
+      if (layout == data_layout::MODEL_PARALLEL) {
+        d = new swish_layer<data_layout::MODEL_PARALLEL>(comm);
+      } else {
+        d = new swish_layer<data_layout::DATA_PARALLEL>(comm);
+      }
+    } 
+
     //////////////////////////////////////////////////////////////////
     // LAYER: dropout
     //////////////////////////////////////////////////////////////////
@@ -1022,6 +1123,37 @@ lbann_summary * construct_summarizer(const lbann_data::Model &m, lbann_comm *com
     }
   }
   return summary;
+}
+
+
+void get_layers_to_add_to_imcomm_callback(lbann_comm *comm, const lbann_data::Model& m, std::unordered_set<std::string> &addme, std::unordered_set<std::string> &excludeme) {
+  bool master = comm->am_world_master();
+  const int num_layers = m.layer_size();
+  for (int j=0; j<num_layers; j++) {
+    const lbann_data::Layer& layer = m.layer(j);
+    switch (layer.imcomm()) {
+      case lbann_data::Imcomm::DEFAULT :
+        break;
+      case lbann_data::Imcomm::EXCLUDE :
+        excludeme.insert(layer.name());
+        if (master) {
+          std::cout << "EXPLICITLY EXCLUDING: " << layer.name() << std::endl;
+        }
+        break;
+      case lbann_data::Imcomm::INCLUDE :
+        addme.insert(layer.name());
+        if (master) {
+          std::cout << "EXPLICITLY INCLUDING: " << layer.name() << std::endl;
+        }
+        break;
+      //todo TODO need error checking here
+      case lbann_data::Imcomm::Imcomm_INT_MIN_SENTINEL_DO_NOT_USE_ :
+        break;
+      case lbann_data::Imcomm::Imcomm_INT_MAX_SENTINEL_DO_NOT_USE_ :
+        break;
+    }
+  }
+
 }
 
 void init_callbacks(
@@ -1194,29 +1326,35 @@ void init_callbacks(
       if (master) {
         cout << "adding imcomm callback\n";
       }
-      std::stringstream s(c.layers());
-      std::unordered_set<Layer*> which;
-      std::string a;
-      bool all_layers = false;
-      while (s >> a) {
-        if (a == "10000") {
-          all_layers = true;
-        } else {
-          if (master and not layer_is_in_model(a)) {
-            err << __FILE__ << " " << __LINE__
-                << " :: callback imcomm: could not find layer " << a;
-            throw lbann_exception(err.str());
+      std::unordered_set<std::string> addme;
+      std::unordered_set<std::string> excludeme;
+      get_layers_to_add_to_imcomm_callback(comm, m, addme, excludeme);
+
+      if (c.all_learning_layers()) {
+        for (auto it : model_layers) {
+          if (dynamic_cast<learning*>(it.second) != nullptr) {
+            if (master) {
+            }
+            if (excludeme.find(it.second->get_name()) == excludeme.end()) {
+              if (master) {
+                std::cout << "ADDING to IMCOMM: " << it.second->get_name() 
+                          << " " << it.second->get_type() << std::endl;
+              } else {
+                addme.insert(it.second->get_name());
+              }  
+            } else {
+              if (master) {
+                std::cout << "WOULD ADD TO IMCOMM, but was explicitly excluded: " 
+                          << it.second->get_name() << " "
+                          << it.second->get_type() << std::endl;
+              } 
+            }
           }
-          which.insert(model_layers[a]);
-        }
-      }
+        }  
+      }  
+      std::unordered_set<Layer*> imcomm_layers;
       lbann_callback_imcomm::comm_type c_type  = get_comm_type(c.intermodel_comm_method(), master);
-      lbann_callback_imcomm *im;
-      if (all_layers) {
-        im = new lbann_callback_imcomm(c_type, summarizer);
-      } else {
-        im = new lbann_callback_imcomm(c_type, which, summarizer);
-      }
+      lbann_callback_imcomm *im = new lbann_callback_imcomm(c_type, imcomm_layers, summarizer);
       model->add_callback(im);
     }
 
@@ -1507,6 +1645,8 @@ model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac, const lban
   objective_functions::objective_function *obj = 0;
   if (obj_fn_name == "cross_entropy") {
     obj = new objective_functions::cross_entropy();
+  } else if (obj_fn_name == "cross_entropy_with_uncertainty") {
+    obj = new objective_functions::cross_entropy_with_uncertainty();
   } else if (obj_fn_name == "mean_squared_error") {
     obj = new objective_functions::mean_squared_error();
   } else if (obj_fn_name == "binary_cross_entropy") {
@@ -1517,26 +1657,41 @@ model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac, const lban
     obj = new objective_functions::mean_absolute_deviation();
   } else if (obj_fn_name == "poisson_negloglike") {
     obj = new objective_functions::poisson_negloglike();
+  } else if (obj_fn_name == "polya_negloglike") {
+    obj = new objective_functions::polya_negloglike();
   } else {
     if (master) {
       err << __FILE__ << " " << __LINE__
           << " :: init_model() - unknown objective function name: " << obj_fn_name
-          << std::endl << "; should be one of: cross_entropy, mean_squared_error";
+          << std::endl << "; should be one of: binary_cross_entropy, cross_entropy, cross_entropy_with_uncertainty, geom_negloglike, mean_absolute_deviation, mean_squared_error, poisson_negloglike, polya_negloglike";
       throw lbann_exception(err.str());
     }
   }
 
   //instantiate the network; layers will be added in a separate function call
-  if (name == "dnn") {
-    model = new deep_neural_network(mini_batch_size, comm, obj, optimizer_fac);
-    if (master) std::cout << "instantiating deep_neural_network\n";
+  if (name == "sequential_model" || name == "dnn") {
+    if (master && name == "dnn") std::cout << "WARNING: \"dnn\" model is deprecated in favor of \"sequential_model\"\n";
+    model = new sequential_model(mini_batch_size, comm, obj, optimizer_fac);
+    if (master) std::cout << "instantiating sequential_model\n";
   } else if (name == "dag_model") {
     model = new dag_model(mini_batch_size, comm, obj, optimizer_fac);
     if (master) std::cout << "instantiating dag_model\n";
   } else if(name == "planar_model") {
-/// XXX
-/// Settting the number of heads to 3 temporarly; will be fixed as a parameter
-    model = new planar_model(mini_batch_size, comm, obj, optimizer_fac, 3);
+    if (m.has_planar()) {
+      const lbann_data::Model::Planar& planar = m.planar();
+      if (planar.has_simple()) {
+        const int num_heads = planar.simple().num_heads();
+        model = new planar_model(mini_batch_size, comm, obj, optimizer_fac, num_heads);
+      } else if (planar.has_regular()) {
+        // TODO: parse the vector and pass it to the overloaded constructor
+        // vector<int> outdegrees_fanout;
+        // vector<int> outdegrees_fanin;
+      }
+    } else {
+      err << __FILE__ << " " << __LINE__
+          << " :: init_model() - " << name << " needs definition" << endl;
+      throw lbann_exception(err.str());
+    }
     if (master) std::cout << "instantiating planar_model\n";
   } else if (name == "greedy_layerwise_autoencoder") {
     model = new greedy_layerwise_autoencoder(mini_batch_size, comm, obj, optimizer_fac);
@@ -1545,7 +1700,7 @@ model *init_model(lbann_comm *comm, optimizer_factory *optimizer_fac, const lban
     if (master) {
       err << __FILE__ << " " << __LINE__
           << " :: init_model() - unknown model name: " << name << endl
-          << "; should be one of: dnn, greedy_layerwise_autoencoder";
+          << "; should be one of: sequential_model, dag_model, greedy_layerwise_autoencoder";
       throw lbann_exception(err.str());
     }
   }
@@ -1631,6 +1786,7 @@ optimizer_factory *init_optimizer_factory(lbann_comm *comm, cudnn::cudnn_manager
   return factory;
 }
 
+
 void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execution_mode, generic_data_reader *>& data_readers)
 {
   std::stringstream err;
@@ -1640,95 +1796,22 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
 
   for (int j=0; j<size; j++) {
     const lbann_data::Reader& readme = d_reader.reader(j);
-    const lbann_data::ImagePreprocessor& preprocessor = readme.image_preprocessor();
+    // This is a temporary measure until we individually setup data reader specific preprocessors
+    bool set_up_generic_preprocessor = true;
 
     const string& name = readme.name();
 
-    bool shuffle = readme.shuffle();
+    const bool shuffle = readme.shuffle();
 
     generic_data_reader *reader = 0;
     generic_data_reader *reader_validation = 0;
 
-    if (name == "mnist") {
-      reader = new mnist_reader(shuffle);
-    } else if (name == "imagenet") {
-      reader = new imagenet_reader(shuffle);
-      const int n_labels = readme.num_labels();
-      const int width = preprocessor.raw_width();
-      const int height = preprocessor.raw_height();
-      dynamic_cast<imagenet_reader*>(reader)->set_input_params(width, height, 3, n_labels);
-    } else if (name == "imagenet_single") {
-      reader = new imagenet_readerSingle(shuffle);
-    } else if ((name == "imagenet_cv") || (name == "imagenet_single_cv")) {
-      // set up the image preprocessor
-      std::shared_ptr<cv_process> pp = std::make_shared<cv_process>();
-
-      // set up cropper as needed
-      if(preprocessor.crop_first()) {
-        std::unique_ptr<lbann::cv_cropper> cropper(new(lbann::cv_cropper));
-        cropper->set(preprocessor.crop_width(),
-                     preprocessor.crop_height(),
-                     preprocessor.crop_randomly(),
-                     std::make_pair<int,int>(preprocessor.resized_width(),
-                                             preprocessor.resized_height()));
-        pp->add_transform(std::move(cropper));
-        if (master) cout << "imagenet: cropper is set" << endl;
-      }
-
-      // set up augmenter if necessary
-      if (!preprocessor.disable_augmentation() &&
-          (preprocessor.horizontal_flip() ||
-           preprocessor.vertical_flip() ||
-           preprocessor.rotation() != 0.0 ||
-           preprocessor.horizontal_shift() != 0.0 ||
-           preprocessor.vertical_shift() != 0.0 ||
-           preprocessor.shear_range() != 0.0))
-      {
-        std::unique_ptr<lbann::cv_augmenter> augmenter(new(lbann::cv_augmenter));
-        augmenter->set(preprocessor.horizontal_flip(),
-                       preprocessor.vertical_flip(),
-                       preprocessor.rotation(),
-                       preprocessor.horizontal_shift(),
-                       preprocessor.vertical_shift(),
-                       preprocessor.shear_range());
-        pp->add_transform(std::move(augmenter));
-        if (master) cout << "imagenet: augmenter is set" << endl;
-      }
-
-      // set up a custom transform (colorizer)
-      if (!preprocessor.no_colorize()) {
-        // If every image in the dataset is a color image, this is not needed
-        std::unique_ptr<lbann::cv_colorizer> colorizer(new(lbann::cv_colorizer));
-        pp->add_transform(std::move(colorizer));
-        if (master) cout << "imagenet: colorizer is set" << endl;
-      }
-
-      // set up the normalizer
-      std::unique_ptr<lbann::cv_normalizer> normalizer(new(lbann::cv_normalizer));
-      normalizer->unit_scale(preprocessor.scale());
-      normalizer->subtract_mean(preprocessor.subtract_mean());
-      normalizer->unit_variance(preprocessor.unit_variance());
-      normalizer->z_score(preprocessor.z_score());
-      pp->add_normalizer(std::move(normalizer));
-      if (master) cout << "imagenet: normalizer is set" << endl;
-
-      if (name == "imagenet_cv") {
-        reader = new imagenet_reader_cv(pp, shuffle);
-        if (master) cout << "imagenet_reader_cv is set" << endl;
-      } else {
-        reader = new imagenet_reader_single_cv(pp, shuffle);
-        if (master) cout << "imagenet_reader_single_cv is set" << endl;
-      }
-      int width=0, height=0;
-      const int n_labels = readme.num_labels();
-      if (preprocessor.crop_first()) {
-        width = preprocessor.crop_width();
-        height = preprocessor.crop_height();
-      } else {
-        width = preprocessor.raw_width();
-        height = preprocessor.raw_height();
-      }
-      dynamic_cast<imagenet_reader_cv*>(reader)->set_input_params(width, height, 3, n_labels);
+    if ((name == "imagenet_org") || (name == "mnist") || (name == "cifar10")) {
+      init_org_image_data_reader(readme, master, reader);
+      set_up_generic_preprocessor = false;
+    } else if ((name == "imagenet") || (name == "imagenet_single") || (name == "imagenet_patches")) {
+      init_image_data_reader(readme, master, reader);
+      set_up_generic_preprocessor = false;
     } else if (name == "nci") {
       reader = new data_reader_nci(shuffle);
     } else if (name == "csv") {
@@ -1757,7 +1840,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
           reader_numpy->set_has_labels(!readme.disable_labels());
           reader_numpy->set_has_responses(!readme.disable_responses());
           npy_readers.push_back(reader_numpy);
-        }else if (readme.format() == "csv") {
+        } else if (readme.format() == "csv") {
           csv_reader* reader_csv = new csv_reader(shuffle);
           reader_csv->set_data_filename(path);
           reader_csv->set_label_col(readme.label_col());
@@ -1769,7 +1852,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
           reader_csv->set_skip_rows(readme.skip_rows());
           reader_csv->set_has_header(readme.has_header());
           npy_readers.push_back(reader_csv);
-        }else {
+        } else {
           err << __FILE__ << " " << __LINE__ << " :: unknown format for merged data reader: "
               << name;
           throw lbann_exception(err.str());
@@ -1777,8 +1860,6 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       }
       data_reader_merge_samples* merged_reader = new data_reader_merge_samples(npy_readers, shuffle);
       reader = merged_reader;
-    } else if (name == "cifar10") {
-      reader = new cifar10_reader(shuffle);
     } else if (name == "synthetic") {
       reader = new data_reader_synthetic(readme.num_samples(), readme.num_features(), shuffle);
     } else if (name == "ascii") {
@@ -1804,22 +1885,10 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
     reader->set_absolute_sample_count( readme.absolute_sample_count() );
     reader->set_use_percent( readme.percent_of_data_to_use() );
 
-    if ((name != "imagenet_cv") && (name != "imagenet_single_cv")) {
-      reader->horizontal_flip( preprocessor.horizontal_flip() );
-      reader->vertical_flip( preprocessor.vertical_flip() );
-      reader->rotation( preprocessor.rotation() );
-      reader->horizontal_shift( preprocessor.horizontal_shift() );
-      reader->vertical_shift( preprocessor.vertical_shift() );
-      reader->shear_range( preprocessor.shear_range() );
-      reader->subtract_mean( preprocessor.subtract_mean() );
-      reader->unit_variance( preprocessor.unit_variance() );
-      reader->scale( preprocessor.scale() );
-      reader->z_score( preprocessor.z_score() );
-      reader->add_noise( preprocessor.noise_factor() );
-      if (preprocessor.disable_augmentation()) {
-        reader->disable_augmentation();
-      }
+    if (set_up_generic_preprocessor) {
+      init_generic_preprocessor(readme, master, reader);
     }
+
     if (readme.role() == "train") {
       reader->set_role("train");
     } else if (readme.role() == "test") {
@@ -1845,16 +1914,15 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       if (name == "mnist") {
         reader_validation = new mnist_reader(shuffle);
         (*(mnist_reader *)reader_validation) = (*(mnist_reader *)reader);
+      } else if (name == "imagenet_org") {
+        reader_validation = new imagenet_reader_org(shuffle);
+        (*(imagenet_reader_org *)reader_validation) = (*(imagenet_reader_org *)reader);
       } else if (name == "imagenet") {
-        reader_validation = new imagenet_reader(shuffle);
-        (*(imagenet_reader *)reader_validation) = (*(imagenet_reader *)reader);
+        reader_validation = new imagenet_reader(*dynamic_cast<const imagenet_reader*>(reader));
       } else if (name == "imagenet_single") {
-        reader_validation = new imagenet_readerSingle(shuffle);
-        (*(imagenet_readerSingle *)reader_validation) = (*(imagenet_readerSingle *)reader);
-      } else if (name == "imagenet_cv") {
-        reader_validation = new imagenet_reader_cv(*dynamic_cast<const imagenet_reader_cv *>(reader));
-      } else if (name == "imagenet_single_cv") {
-        reader_validation = new imagenet_reader_single_cv(*dynamic_cast<const imagenet_reader_single_cv *>(reader));
+        reader_validation = new imagenet_reader_single(*dynamic_cast<const imagenet_reader_single*>(reader));
+      } else if (name == "imagenet_patches") {
+        reader_validation = new imagenet_reader_patches(*dynamic_cast<const imagenet_reader_patches*>(reader));
       } else if (name == "nci") {
         reader_validation = new data_reader_nci(shuffle);
         (*(data_reader_nci *)reader_validation) = (*(data_reader_nci *)reader);
@@ -1907,7 +1975,7 @@ void read_prototext_file(string fn, lbann_data::LbannPB& pb, bool master)
   }
   google::protobuf::io::FileInputStream *input = new google::protobuf::io::FileInputStream(fd);
   bool success = google::protobuf::TextFormat::Parse(input, &pb);
-  if (not success) {
+  if (!success) {
     if (master) {
       err <<  __FILE__ << " " << __LINE__ << " :: failed to read or parse prototext file: " << fn << endl;
       throw lbann_exception(err.str());
@@ -1924,7 +1992,7 @@ bool write_prototext_file(const char *fn, lbann_data::LbannPB& pb)
     return false;
   }
   google::protobuf::io::FileOutputStream *output = new google::protobuf::io::FileOutputStream(fd);
-  if (not google::protobuf::TextFormat::Print(pb, output)) {
+  if (!google::protobuf::TextFormat::Print(pb, output)) {
     close(fd);
     delete output;
     return false;
@@ -2134,7 +2202,7 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
 
 void print_parameters(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
 {
-  if (not comm->am_world_master()) {
+  if (!comm->am_world_master()) {
     return;
   }
 
@@ -2197,7 +2265,7 @@ void print_parameters(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
 
 void print_help(lbann::lbann_comm *comm)
 {
-  if (not comm->am_world_master()) {
+  if (!comm->am_world_master()) {
     return;
   }
 
@@ -2271,7 +2339,7 @@ void print_help(lbann::lbann_comm *comm)
 void copy_file(std::string fn, std::ofstream &out)
 {
   std::ifstream in(fn.c_str());
-  if (not in.is_open()) {
+  if (!in.is_open()) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__
         << " :: failed to open file for reading: " << fn;
@@ -2284,7 +2352,7 @@ void copy_file(std::string fn, std::ofstream &out)
 
 void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::LbannPB& p)
 {
-  if (not comm->am_world_master()) {
+  if (!comm->am_world_master()) {
     return;
   }
 
@@ -2298,7 +2366,7 @@ void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::Lb
 
   //get output filename
   std::string base = ".";
-  if (not opts->has_string("saveme")) {
+  if (!opts->has_string("saveme")) {
     std::cerr << "\nNOT WRITING SAVE_SESSION FILE since option --saveme=<string> is absent\n\n";
     return;
   }
@@ -2322,7 +2390,7 @@ void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::Lb
 
   //open output file
   std::ofstream out(name.c_str());
-  if (not out.is_open()) {
+  if (!out.is_open()) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__
         << " :: failed to open file for writing: " << name;

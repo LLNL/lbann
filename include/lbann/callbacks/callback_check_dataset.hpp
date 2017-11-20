@@ -27,6 +27,7 @@
 #ifndef LBANN_CALLBACKS_CALLBACK_CHECK_DATASET_HPP_INCLUDED
 #define LBANN_CALLBACKS_CALLBACK_CHECK_DATASET_HPP_INCLUDED
 
+#include <set>
 #include "lbann/callbacks/callback.hpp"
 
 namespace lbann {

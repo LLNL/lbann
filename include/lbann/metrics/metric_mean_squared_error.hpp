@@ -82,9 +82,8 @@ class mean_squared_error : public metric {
   double report_metric(execution_mode mode) {
     statistics *stats = get_statistics(mode);
     double error_per_epoch = stats->m_error_per_epoch;
-    long samples_per_epoch = stats->m_samples_per_epoch;
-
-    double mse = error_per_epoch / samples_per_epoch;
+    long iterations_per_epoch = stats->m_iterations_per_epoch;
+    double mse = error_per_epoch / iterations_per_epoch;
     string score = std::to_string(mse);
 
     return mse;
@@ -100,7 +99,7 @@ class mean_squared_error : public metric {
     return mse;
   }
 
-  std::string name() const { return "mean squared error"; }
+  std::string name() const { return "mean squared error metric"; }
 
 };
 

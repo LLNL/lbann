@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_nci .hpp .cpp - generic_data_reader class for National Cancer Institute (NCI) dataset
+// data_reader_nci .hpp .cpp - generic_data_reader class for National Cancer Institute (NCI) dataset
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_DATA_READER_NCI_HPP
@@ -41,8 +41,8 @@ class data_reader_nci : public csv_reader {
   data_reader_nci();
   data_reader_nci(const data_reader_nci& source) = default;
   data_reader_nci& operator=(const data_reader_nci& source) = default;
-  ~data_reader_nci() {}
-  data_reader_nci* copy() const { return new data_reader_nci(*this); }
+  ~data_reader_nci() override {}
+  data_reader_nci* copy() const override { return new data_reader_nci(*this); }
 
   // Todo: Support regression/get response.
 };

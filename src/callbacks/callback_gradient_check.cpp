@@ -95,7 +95,7 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
       continue;
     }
     if (comm->am_world_master()) {
-      std::cout << "Checking layer " << layer_index << std::endl;
+      std::cout << "Checking layer " << layer->get_name() << std::endl;
     }
 
     // Get weights and gradients
@@ -151,7 +151,7 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
         
           // Print warning if relative error is large
           if (error > expected_error) {
-            std::cout << "  GRADIENT ERROR: Layer " << layer_index << ", "
+            std::cout << "  GRADIENT ERROR: Layer " << layer->get_name() << ", "
                       << "entry (" << row << "," << col << ")" << std::endl;
             std::cout << "    Weight              = " << initial_weight << std::endl
                       << "    Analytical gradient = " << analytical_gradient << std::endl

@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_ascii .hpp .cpp - generic_data_reader class for ASCII text files
+// data_reader_ascii .hpp .cpp - generic_data_reader class for ASCII text files
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_DATA_READER_ASCII_HPP
@@ -39,13 +39,9 @@ class ascii_reader : public generic_data_reader {
   ascii_reader(const ascii_reader&) = default;
   ascii_reader& operator=(const ascii_reader&) = default;
   ~ascii_reader() = default;
-  ascii_reader* copy() const { return new ascii_reader(*this); }
-
- protected:
+  ascii_reader* copy() const override { return new ascii_reader(*this); }
 
   void load() override;
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
-  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;
 
   int get_linearized_data_size() const override {
     return 128 * m_sequence_length;
@@ -56,6 +52,10 @@ class ascii_reader : public generic_data_reader {
   const std::vector<int> get_data_dims() const override {
     return {128 * m_sequence_length};
   }
+
+ protected:
+  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;
 
   /** Length of text sequence. */
   int m_sequence_length;

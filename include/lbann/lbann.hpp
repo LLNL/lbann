@@ -34,13 +34,14 @@
 #define LBANN_HPP_INCLUDED
 
 /// Models
-#include "lbann/models/model_dnn.hpp"
-#include "lbann/models/model_greedy_layerwise_autoencoder.hpp"
+#include "lbann/models/model_sequential.hpp"
 #include "lbann/models/model_dag.hpp"
+#include "lbann/models/model_greedy_layerwise_autoencoder.hpp"
 #include "lbann/models/model_planar.hpp"
 
 /// Activation Layers
 #include "lbann/layers/activations/atan.hpp"
+#include "lbann/layers/activations/bent_identity.hpp"
 #include "lbann/layers/activations/elu.hpp"
 #include "lbann/layers/activations/exponential.hpp"
 #include "lbann/layers/activations/id.hpp"
@@ -51,6 +52,7 @@
 #include "lbann/layers/activations/smooth_relu.hpp"
 #include "lbann/layers/activations/softmax.hpp"
 #include "lbann/layers/activations/softplus.hpp"
+#include "lbann/layers/activations/swish.hpp"
 #include "lbann/layers/activations/tanh.hpp"
 
 /// Learning Layers
@@ -84,13 +86,12 @@
 #include "lbann/layers/io/target/reconstruction.hpp"
 
 /// Data Readers
+#include "lbann/data_readers/data_reader_imagenet_org.hpp"
 #include "lbann/data_readers/data_reader_imagenet.hpp"
 #include "lbann/data_readers/data_reader_imagenet_single.hpp"
-#include "lbann/data_readers/data_reader_imagenet_cv.hpp"
-#include "lbann/data_readers/data_reader_imagenet_single_cv.hpp"
+#include "lbann/data_readers/data_reader_imagenet_patches.hpp"
 #include "lbann/data_readers/data_reader_cifar10.hpp"
 #include "lbann/data_readers/data_reader_mnist.hpp"
-#include "lbann/data_readers/data_reader_imagenet_single_cv.hpp"
 #include "lbann/data_readers/data_reader_synthetic.hpp"
 #include "lbann/data_readers/data_reader_nci.hpp"
 #include "lbann/data_readers/data_reader_numpy.hpp"
@@ -135,11 +136,12 @@
 /// Objective functions (cost functions)
 #include "lbann/objective_functions/binary_cross_entropy.hpp"
 #include "lbann/objective_functions/cross_entropy.hpp"
+#include "lbann/objective_functions/cross_entropy_with_uncertainty.hpp"
 #include "lbann/objective_functions/geom_negloglike.hpp"
 #include "lbann/objective_functions/mean_absolute_deviation.hpp"
 #include "lbann/objective_functions/mean_squared_error.hpp"
 #include "lbann/objective_functions/poisson_negloglike.hpp"
-
+#include "lbann/objective_functions/polya_negloglike.hpp"
 
 /// Metrics
 #include "lbann/metrics/metric_categorical_accuracy.hpp"

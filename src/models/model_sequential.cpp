@@ -36,7 +36,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <iomanip>
 
 #include "mpi.h"
 
@@ -84,13 +83,7 @@ void sequential_model::setup_subset(int start_index, int end_index) {
     m_layers[l]->setup();
     m_layers[l]->check_setup();
     if (m_comm->am_world_master()) {
-      string description = m_layers[l]->get_description();
-      std::cout << std::setw(12) << m_layers[l]->get_name() << ":[" << std::setw(18) << m_layers[l]->get_type() <<  "] Set up a layer with input " << std::setw(7) << m_layers[l]->get_num_prev_neurons() << " and " << std::setw(7) << m_layers[l]->get_num_neurons() << " neurons.";
-      std::string s = m_layers[l]->get_topo_description();
-      if(s != "") {
-        std::cout << " (" << s << ")";
-      }
-      std::cout << std::endl;
+      std::cout << print_layer_description(m_layers[l]) << std::endl;
     }
   }
 

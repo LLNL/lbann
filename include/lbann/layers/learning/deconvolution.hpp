@@ -142,17 +142,17 @@ class deconvolution_layer : public base_convolution_layer {
     return *this;
   }
 
-  ~deconvolution_layer() {}
+  ~deconvolution_layer() override {}
 
   deconvolution_layer* copy() const override { return new deconvolution_layer(*this); }
 
-  virtual std::string get_type() const override { return "deconvolution"; }
+  std::string get_type() const override { return "deconvolution"; }
 
   void initialize_distributed_matrices() {
     base_convolution_layer::initialize_distributed_matrices<T_layout>();
   }
 
-  virtual data_layout get_data_layout() const override { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
   void setup_dims() override {
 

@@ -22,32 +22,46 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_model_dnn .hpp .cpp - Deep Neural Networks models
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/models/model_dnn.hpp"
+#ifndef BENT_IDENTITY_HPP_INCLUDED
+#define BENT_IDENTITY_HPP_INCLUDED
 
-#include <string>
-#include <chrono>
-#include <random>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <stdio.h>
-#include "mpi.h"
+#include "lbann/layers/activations/activation.hpp"
 
 namespace lbann {
 
-////////////////////////////////////////////////////////////////////////////////
-// deep_neural_network : main deep neural network class
-////////////////////////////////////////////////////////////////////////////////
+/**
+ * Bent Identity activation function.
+ * See: https://en.wikipedia.org/wiki/Bent_Identity_function
+ */
+template <data_layout T_layout>
+class bent_identity_layer : public entrywise_activation_layer {
+ public:
 
-deep_neural_network::deep_neural_network(int mini_batch_size,
-                                         lbann_comm *comm,
-                                         objective_functions::objective_function *obj_fn,
-                                         optimizer_factory *_optimizer_fac)
-  : sequential_model(mini_batch_size, comm, obj_fn, _optimizer_fac) {}
+  bent_identity_layer(lbann_comm *comm) :
+    entrywise_activation_layer(comm) { 
+    initialize_distributed_matrices(); 
+  }
+
+  bent_identity_layer* copy() const override { return new bent_identity_layer(*this); }
+
+  std::string get_type() const override { return "bent identity"; }
+
+  virtual inline void initialize_distributed_matrices() {
+    entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
+  }
+  data_layout get_data_layout() const override { return T_layout; }
+
+ protected:
+  DataType activation_function(DataType z) override {
+    return (std::sqrt(z*z + DataType(1)) - DataType(1))/DataType(2) + z;
+  }
+  DataType activation_function_gradient(DataType z) override {
+    return z/(DataType(2)*std::sqrt(z*z + DataType(1))) + DataType(1);
+  }
+};
 
 }  // namespace lbann
+
+#endif  // BENT_IDENTITY_HPP_INCLUDED

@@ -162,13 +162,13 @@ class Layer {
   }
 
   /// Following function tells whether a layer has weights; default is false
-  virtual bool is_learning_layer() { return false; }
+  virtual bool is_learning_layer() const { return false; }
 
   /// Following functions tell whether current layer is a fan-out layer; default is false
-  virtual bool is_fanout_layer() { return false; }
+  virtual bool is_fanout_layer() const { return false; }
 
   /// Following functions tell whether current layer is a fan-in layer; default is false
-  virtual bool is_fanin_layer() { return false; }
+  virtual bool is_fanin_layer() const { return false; }
 
   /** Return the neural network model of this layer. */
   inline model* get_neural_network_model() const {
@@ -210,11 +210,25 @@ class Layer {
   std::vector<const Layer*>& get_child_layers();
   /** Get list of child layers (const). */
   const std::vector<const Layer*>& get_child_layers() const;
+  /** Get names in a particular list of layers */
+  static std::string get_layer_names(const std::vector<const Layer*>& list);
+  std::string get_child_names(void) const { return get_layer_names(m_child_layers); }
+  std::string get_parent_names(void) const { return get_layer_names(m_parent_layers); }
 
   /** Add a parent layer. */
   void add_parent_layer(const Layer* parent);
   /** Add a child layer. */
   void add_child_layer(const Layer* child);
+
+  /** clear the list of parent layer pointers without deallocating them. */
+  void clear_parent_layers();
+  /** clear the list of child layer pointers without deallocating them. */
+  void clear_child_layers();
+
+  /** Get list of pointers to other layers. */
+  virtual std::vector<Layer*> get_layer_pointers();
+  /** Set list of pointers to other layers. */
+  virtual void set_layer_pointers(std::vector<Layer*> layers);
 
  protected:
 

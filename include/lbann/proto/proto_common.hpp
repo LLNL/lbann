@@ -5,6 +5,10 @@
 #include <lbann.pb.h>
 #include "lbann/utils/cudnn_wrapper.hpp"
 
+/// Returns true if the Model contains at least one MotifLayer
+bool has_motifs(lbann::lbann_comm *comm, const lbann_data::LbannPB& p);
+
+void expand_motifs(lbann::lbann_comm *comm, lbann_data::LbannPB& pb);
 
 /// instantiates one or more generic_data_readers and inserts them in &data_readers
 void init_data_readers(

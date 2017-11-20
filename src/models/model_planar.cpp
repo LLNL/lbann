@@ -405,8 +405,11 @@ void planar_model::setup() {
         m_multi_headed = false;
       } else{
         /// Expand current layer to m_width heads
+        const std::string layer_name = layer->get_name();
+        layer->set_name("h1_" + layer_name);
         for(int k=1; k<m_width; k++){
           Layer *layer_copy = layer->copy();
+          layer_copy->set_name("h" + std::to_string(k+1) + "_" + layer_name);
           m_layers[l].push_back(layer_copy);
         }
         //stackup_duplicate(layer, m_width);
@@ -418,6 +421,7 @@ void planar_model::setup() {
 
 void planar_model::setup_subset() {
 
+#if 0
   /// Setup each layer
   std::vector<Layer*> prev_layers;
   std::vector<Layer*> next_layers;
@@ -487,7 +491,40 @@ void planar_model::setup_subset() {
       }
     }
   }
+#else
+  for (size_t l=0u; l<m_layers.size(); ++l) {
+    std::vector<Layer *>& horizontal_layers = m_layers[l];
 
+    for(size_t k=0u; k<horizontal_layers.size(); ++k) {
+
+      Layer* current_layer = horizontal_layers[k];
+
+      // Provide a reverse point from each layer to the model
+      current_layer->set_neural_network_model(this);
+      // setup links to parent layers
+      if (l <= 0u) {
+        current_layer->add_parent_layer(nullptr);
+      } else {
+        for(size_t i=0u; i < m_layers[l-1].size(); ++i)
+          current_layer->add_parent_layer(m_layers[l-1][i]);
+      }
+      // setup links to children layers
+      if (l+1 >= m_layers.size()) {
+        current_layer->add_child_layer(nullptr);
+      } else {
+        for(size_t i=0u; i < m_layers[l+1].size(); ++i)
+          current_layer->add_child_layer(m_layers[l+1][i]);
+      }
+
+      current_layer->setup();
+      current_layer->check_setup();
+
+      if (m_comm->am_world_master()) {
+        std::cout << print_layer_description(current_layer) << std::endl;
+      }
+    }
+  }
+#endif
   /// Share the weights between Siamese heads
   equalize(); 
 
@@ -794,12 +831,12 @@ bool planar_model::evaluate_mini_batch() {
   return data_set_processed;
 }
 
-bool planar_model::is_execution_mode_valid(execution_mode mode) {
+bool planar_model::is_execution_mode_valid(execution_mode mode) const {
 
   for(size_t l=0; l<m_layers.size(); l++){
-    std::vector<Layer*>& current_set = m_layers[l];
+    const std::vector<Layer*>& current_set = m_layers[l];
     for(size_t k=0; k<current_set.size(); k++){
-      input_layer* input = dynamic_cast<input_layer*>(current_set[k]);
+      const input_layer* input = dynamic_cast<const input_layer*>(current_set[k]);
       if (input != nullptr && !input->is_execution_mode_valid(mode)) {
         return false;
       }

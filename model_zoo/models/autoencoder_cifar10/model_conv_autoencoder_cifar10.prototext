@@ -1,5 +1,5 @@
 model {
-  name: "dnn"
+  name: "sequential_model"
   objective_function: "mean_squared_error"
   data_layout: "data_parallel"
   mini_batch_size: 128

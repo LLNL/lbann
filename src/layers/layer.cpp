@@ -268,7 +268,7 @@ Layer::~Layer() {
   if(m_neurons_cudnn_desc != nullptr) {
     CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_neurons_cudnn_desc));
   }
-  if(m_cudnn) {
+  if(m_cudnn != nullptr) {
     m_cudnn->deallocate_on_gpus(m_activations_d);
     m_cudnn->deallocate_on_gpus(m_error_signal_d);
     m_cudnn->deallocate_on_gpus(m_prev_activations_d);
@@ -459,13 +459,17 @@ void Layer::setup_pointers() {
      && (int)m_parent_layers.size() > m_max_num_parent_layers) {
     throw lbann_exception(
       std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
-      "Layer: too many parent layers");
+      "Layer " + m_name + ": too many parent layers (" +
+      std::to_string(m_max_num_parent_layers) + " < " + std::to_string(m_parent_layers.size()) +
+      ") {" + get_layer_names(m_parent_layers) + " } ");
   }
   if(m_max_num_child_layers >= 0
      && (int)m_child_layers.size() > m_max_num_child_layers) {
     throw lbann_exception(
       std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
-      "Layer: too many child layers");
+      "Layer " + m_name + ": too many child layers (" +
+      std::to_string(m_max_num_child_layers) + " < " + std::to_string(m_child_layers.size()) +
+      ") {" + get_layer_names(m_child_layers) + "}");
   }
 }
 
@@ -795,11 +799,21 @@ const std::vector<const Layer*>& Layer::get_child_layers() const {
   return m_child_layers;
 }
 
+std::string Layer::get_layer_names(const std::vector<const Layer*>& list) {
+  std::string layer_names = ((list.size()==0u || !list[0])? "" : list[0]->get_name());
+
+  for (size_t i=1u; i < list.size(); ++i) {
+    if (list[i]) layer_names += ", " + list[i]->get_name();
+  }
+  return layer_names;
+}
+
 void Layer::add_parent_layer(const Layer* parent) {
   auto parent_pos = std::find(m_parent_layers.begin(),
                               m_parent_layers.end(),
                               parent);
-  if(parent != this
+  if(parent != nullptr
+     && parent != this
      && parent_pos == m_parent_layers.end()) {
     m_parent_layers.push_back(parent);
   }
@@ -809,10 +823,49 @@ void Layer::add_child_layer(const Layer* child) {
   auto child_pos = std::find(m_child_layers.begin(),
                              m_child_layers.end(),
                              child);
-  if(child != this
+  if(child != nullptr
+     && child != this
      && child_pos == m_child_layers.end()) {
     m_child_layers.push_back(child);
   }
 }
+
+void Layer::clear_parent_layers() {
+  m_parent_layers.clear();
+}
+
+void Layer::clear_child_layers() {
+  m_child_layers.clear();
+}
+
+std::vector<Layer*> Layer::get_layer_pointers() {
+  std::vector<Layer*> layers;
+  for(const Layer* parent: m_parent_layers) {
+    layers.push_back(const_cast<Layer*>(parent));
+  }
+  for(const Layer* child: m_child_layers) {
+    layers.push_back(const_cast<Layer*>(child));
+  }
+  return layers;
+}
+
+void Layer::set_layer_pointers(std::vector<Layer*> layers) {
+  if(layers.size() != m_parent_layers.size() + m_child_layers.size()) {
+    throw lbann_exception(
+      std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
+      "Layer: attempted to set layer pointers with an invalid number of pointers");
+  }
+  size_t pos = 0;
+  for(const Layer*& parent: m_parent_layers) {
+    parent = (const Layer*) layers[pos];
+    pos++;
+  }
+  for(const Layer*& child: m_child_layers) {
+    child = (const Layer*) layers[pos];
+    pos++;
+  }
+}
+
+
 
 }  // namespace lbann

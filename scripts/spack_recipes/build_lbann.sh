@@ -42,7 +42,7 @@ function HELP {
   exit 1
 }
 
-while getopts "b:c:de:ghm:st:" opt; do
+while getopts "b:c:de:ghm:st:z" opt; do
   case $opt in
     b)
       BLAS=$OPTARG
@@ -71,6 +71,9 @@ while getopts "b:c:de:ghm:st:" opt; do
       ;;
     t)
       DTYPE=$OPTARG
+      ;;
+    z)
+      SPACK_DIRTY=1
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
@@ -164,12 +167,17 @@ if [ ! -z "${Fortran_FLAGS}" ]; then
     SPACK_FFLAGS="fflags=\"${Fortran_FLAGS}\""
 fi
 
+SPACK_SETUP_FLAGS=
+if [ "${SPACK_DIRTY}" == "1" ]; then
+  SPACK_SETUP_FLAGS="--dirty"
+fi
+
 SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ^elemental@${EL_VER} blas=${BLAS} ^${MPI}"
 # Disable the extra compiler flags until spack supports propagating flags properly
 #SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ${SPACK_CFLAGS} ${SPACK_CXXFLAGS} ${SPACK_FFLAGS} ^elemental@${EL_VER} blas=${BLAS} ^${MPI}"
 
 SPEC="spack spec ${SPACK_OPTIONS}"
-CMD="spack setup ${SPACK_OPTIONS}"
+CMD="spack setup ${SPACK_SETUP_FLAGS} ${SPACK_OPTIONS}"
 
 # Create a directory for the build
 DIR="${CLUSTER}_${COMPILER}_${ARCH}_${MPI}_${BLAS}_${DIST}"

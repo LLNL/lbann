@@ -1,5 +1,5 @@
 model {
-  name: "dnn"
+  name: "sequential_model"
   objective_function: "cross_entropy"
   num_epochs: 20
   metric {
@@ -87,7 +87,7 @@ model {
   callback {
     imcomm {
       intermodel_comm_method: "normal"
-      layers: "2 5"
+      all_learning_layers: true
     }
   }
   callback {

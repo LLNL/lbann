@@ -117,7 +117,7 @@ class softmax_layer : public activation_layer {
 #endif
   }
 
-  ~softmax_layer() {
+  ~softmax_layer() override {
     delete m_workspace;
     delete m_workspace_v;
 
@@ -139,7 +139,7 @@ class softmax_layer : public activation_layer {
   }
 
   virtual inline void initialize_distributed_matrices();
-  virtual data_layout get_data_layout() const override { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
   void setup_data() override {
     activation_layer::setup_data();
@@ -170,7 +170,7 @@ class softmax_layer : public activation_layer {
     }
   }
   
-  void fp_compute_cpu() {
+  virtual void fp_compute_cpu() {
 
     // Get local matrices and parameters
     Mat& workspace_local = m_workspace_v->Matrix();
@@ -288,7 +288,7 @@ class softmax_layer : public activation_layer {
     return;
   }
 
-  void bp_compute_cpu() {    
+  virtual void bp_compute_cpu() {
     const Mat& activations_local = this->m_activations_v->LockedMatrix();
     const Mat& prev_error_signal_local = this->m_prev_error_signal->Matrix();
     Mat& error_signal_local = this->m_error_signal_v->Matrix();

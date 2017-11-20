@@ -201,10 +201,10 @@ class learning : public Layer, public optimizable_layer {
  public:
   learning(lbann_comm *comm,
            optimizer *opt)
-    : Layer(comm), m_optimizer(opt) {}
+    : Layer(comm), optimizable_layer(), m_optimizer(opt) {}
 
   learning(const learning& other) :
-    Layer(other),
+    Layer(other), optimizable_layer(other),
     m_l2_regularization_factor(other.m_l2_regularization_factor) {
     m_weights = other.m_weights->Copy();
     m_weights_gradient = other.m_weights_gradient->Copy();
@@ -213,6 +213,7 @@ class learning : public Layer, public optimizable_layer {
 
   learning& operator=(const learning& other) {
     Layer::operator=(other);
+    optimizable_layer::operator=(other);
     m_l2_regularization_factor = other.m_l2_regularization_factor;
     if (m_weights) {
       delete m_weights;
@@ -229,7 +230,7 @@ class learning : public Layer, public optimizable_layer {
     return *this;
   }
 
-  virtual ~learning() {
+  ~learning() override {
     delete m_optimizer;
     delete m_weights;
     delete m_weights_gradient;
@@ -245,7 +246,7 @@ class learning : public Layer, public optimizable_layer {
   virtual const AbsDistMat& get_weights_gradient() const { return *m_weights_gradient; }
 
   /// Following function tells this layer has weights
-  bool is_learning_layer() override { return true; }
+  bool is_learning_layer() const override { return true; }
 
   template <data_layout T_layout>
   inline void initialize_distributed_matrices();
@@ -331,6 +332,10 @@ class learning : public Layer, public optimizable_layer {
   /** Set the layer's L2 regularization factor (0 to disable). */
   void set_l2_regularization_factor(DataType f) {
     m_l2_regularization_factor = f;
+  }
+
+  void set_group_lasso_regularization_factor(DataType f) {
+    m_group_lasso_regularization_factor = f;
   }
 
 #if 0

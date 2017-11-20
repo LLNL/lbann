@@ -45,7 +45,7 @@ class lbann_callback_summary : public lbann_callback {
    */
   lbann_callback_summary(lbann_summary *summarizer, int batch_interval = 1,
     int mat_interval = 25);
-  virtual ~lbann_callback_summary();
+  ~lbann_callback_summary() override;
   lbann_callback_summary(const lbann_callback_summary&) = default;
   lbann_callback_summary& operator=(const lbann_callback_summary&) = default;
   lbann_callback_summary* copy() const override {

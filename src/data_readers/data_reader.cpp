@@ -276,7 +276,7 @@ void generic_data_reader::select_subset_of_data() {
         + "and get_absolute_sample_count() are both zero; exactly one "
         + "must be zero");
   }
-  if (not (count == 0 or use_percent == 0.0)) {
+  if (!(count == 0 or use_percent == 0.0)) {
       throw lbann_exception(
         std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
         " :: generic_data_reader::select_subset_of_data() get_use_percent() "
@@ -307,7 +307,7 @@ void generic_data_reader::select_subset_of_data() {
       m_shuffled_indices.resize(use_me);
     }
 
-  if(not m_shuffle) {
+  if(!m_shuffle) {
     std::sort(m_shuffled_indices.begin(), m_shuffled_indices.end());
     std::sort(m_unused_indices.begin(), m_unused_indices.end());
   }

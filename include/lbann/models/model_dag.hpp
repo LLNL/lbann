@@ -51,16 +51,16 @@ class dag_model : public model {
   dag_model& operator=(const dag_model& other) = default;
 
   /** Destructor. */
-  virtual ~dag_model() = default;
+  ~dag_model() override = default;
 
   /** Create copy. */
-  virtual dag_model* copy() const override { return new dag_model(*this); }
+  dag_model* copy() const override { return new dag_model(*this); }
 
   /** Setup model. */
-  virtual void setup() override;
+  void setup() override;
 
   /** Get model name. */
-  virtual std::string name() const override { return "dag_model"; }
+  std::string name() const override { return "dag_model"; }
 
  protected:
 
