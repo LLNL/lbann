@@ -12,6 +12,7 @@ model {
   num_parallel_readers: 0
   procs_per_model: 0
   use_cudnn: true
+  use_nccl : false
   num_gpus: -1
 
   ###################################################
@@ -62,7 +63,7 @@ model {
   layer {
     name: "2"
     parents: "1"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     fully_connected {
       num_neurons: 10
       weight_initialization: "glorot_uniform"

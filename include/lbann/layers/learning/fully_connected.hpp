@@ -138,6 +138,7 @@ class fully_connected_layer : public learning {
     m_bias_scaling_factor = has_bias ? DataType(1) : DataType(0);
     m_bias_initial_value = bias_initial_value;
 
+
 #if defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA)
     if (cudnn && T_layout == data_layout::DATA_PARALLEL) {
       this->m_using_gpus = true;
@@ -711,7 +712,7 @@ fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_weights<device::CU
                                         DataType(0),
                                         this->m_error_signal_d[i],
                                         this->m_error_signal_v->Height()));
-    
+
     // Compute update for activation weights
     CHECK_CUBLAS(cublas::Gemm<DataType>(this->m_cudnn->get_cublas_handle(i),
                                         CUBLAS_OP_N, CUBLAS_OP_T,
@@ -730,36 +731,43 @@ fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_weights<device::CU
 
   }
 
-#if 1
-  this->m_cudnn->allreduce(m_activation_weights_gradient_d,
-                           m_activation_weights_gradient_v->Height(),
-                           m_activation_weights_gradient_v->Width());
+  if(!this->m_cudnn->is_nccl_used()) {
 
-  // Skip the reduction if there is only one process for this model
-  if (this->m_comm->get_procs_per_model() > 1) {
+    this->m_cudnn->allreduce(m_activation_weights_gradient_d,
+                             m_activation_weights_gradient_v->Height(),
+                             m_activation_weights_gradient_v->Width());
+
+    // Skip the reduction if there is only one process for this model
+    if (this->m_comm->get_procs_per_model() > 1) {
+
+      std::vector<DataType*> t;
+      t.push_back(m_activation_weights_gradient_d[0]);
+      // Since we assume MPI allreduce only runs with CPU memory, the
+      // data must be first copied to host, and then be copied back to GPU
+      // after MPI.
+      // TODO: Use CUDA-aware MPI to remove manual host-GPU transfers
+      this->m_cudnn->gather_from_gpus(m_activation_weights_gradient_v->Matrix(),
+                                    t, m_activation_weights_gradient_v->Width());
+
+      El::AllReduce(*this->m_activation_weights_gradient_v,
+                    this->m_activation_weights_gradient_v->RedundantComm());
+
+      this->m_cudnn->broadcast_to_gpus(
+          m_activation_weights_gradient_d,
+          m_activation_weights_gradient_v->LockedMatrix());
+    }
+  }
+  else{
+    // New implementation with NCCL 2
+    this->m_cudnn->allreduce_nccl(m_activation_weights_gradient_d,
+                             m_activation_weights_gradient_v->Height(),
+                             m_activation_weights_gradient_v->Width());
 
     std::vector<DataType*> t;
     t.push_back(m_activation_weights_gradient_d[0]);
-    // Since we assume MPI allreduce only runs with CPU memory, the
-    // data must be first copied to host, and then be copied back to GPU
-    // after MPI.
-    // TODO: Use CUDA-aware MPI to remove manual host-GPU transfers
     this->m_cudnn->gather_from_gpus(m_activation_weights_gradient_v->Matrix(),
                                     t, m_activation_weights_gradient_v->Width());
-  
-    El::AllReduce(*this->m_activation_weights_gradient_v,
-                  this->m_activation_weights_gradient_v->RedundantComm());
-    this->m_cudnn->broadcast_to_gpus(
-        m_activation_weights_gradient_d,
-        m_activation_weights_gradient_v->LockedMatrix());
   }
-#else
-  // New implementation with NCCL 2
-  this->m_cudnn->allreduce_nccl(m_activation_weights_gradient_d,
-                           m_activation_weights_gradient_v->Height(),
-                           m_activation_weights_gradient_v->Width());
-#endif
-  
 }
 #endif // __LIB_CUDA
 

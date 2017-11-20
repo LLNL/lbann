@@ -88,6 +88,7 @@ message Model {
 
   //use cudnn_manager, if use_cudnn=true AND lbann was compiled with cudnn support
   bool use_cudnn = 8;
+  bool use_nccl = 107;
 
   repeated Layer layer = 10;
 

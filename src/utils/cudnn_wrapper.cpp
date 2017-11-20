@@ -39,27 +39,42 @@
 using namespace cudnn;
 using namespace lbann;
 
+/// It is assumed the number of processes and the number of GPUs on a compute node are equal
 cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus, bool nccl_used)
   : comm(_comm) {
 
   // Indicate whether NCCL is used 
   m_nccl_used = nccl_used;
 
-  // Determine number of available GPUs
-  CHECK_CUDA(cudaGetDeviceCount(&m_num_total_gpus));
-  if(max_num_gpus >= 0 && max_num_gpus < m_num_total_gpus) {
-    m_num_total_gpus = max_num_gpus;
-  }
-  if(m_num_total_gpus < 1) {
-    throw lbann::lbann_exception("cudnn_wrapper: no GPUs allocated or found for cuDNN");
+  /// Make sure max_num_gpus < 0 so that all GPUs available are used 
+  if(max_num_gpus >= 0) {
+    throw lbann::lbann_exception("cudnn_wrapper: cannot specify the number of GPUs used on a compute node; all available GPUs must be used");
   }
 
   // Determine number of MPI ranks on current compute node
   const int rank_in_node = comm->get_rank_in_node();
   const int procs_per_node = comm->get_procs_per_node();
 
+  // Determine number of available GPUs
+  CHECK_CUDA(cudaGetDeviceCount(&m_num_total_gpus));
+  if(m_num_total_gpus < 1) {
+    throw lbann::lbann_exception("cudnn_wrapper: no GPUs allocated or found for cuDNN");
+  }
+  /// It is assumed that the number of processes on this node is equal to the total number of GPUs available
+  if(procs_per_node > m_num_total_gpus){
+    throw lbann::lbann_exception("cudnn_wrapper: the number of MPI ranks is greater than the number of GPUs available on this node");
+  }
+    
+  if(max_num_gpus >= 0 && max_num_gpus < m_num_total_gpus) {
+    m_num_total_gpus = max_num_gpus;
+  }
+
+
   // Case where compute node has more GPUs than MPI ranks
   if(m_num_total_gpus >= procs_per_node) {
+    /// Ensure m_num_total_gpus is equal to procs_per_node
+    m_num_total_gpus = procs_per_node;
+
     const int min_gpus_per_proc = m_num_total_gpus / procs_per_node;
     const int num_gpus_remainder = m_num_total_gpus % procs_per_node;
     int gpu_start = rank_in_node * min_gpus_per_proc;
@@ -92,9 +107,7 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus, bool nc
 
   // Case where compute node has fewer GPUs than MPI ranks
   else {
-    if(m_nccl_used){
-      throw lbann_exception("cudnn_wrapper: the number of MPI ranks on compute node cannot exceed that of GPUs when NCCL is used");
-    }
+    throw lbann_exception("cudnn_wrapper: the number of MPI ranks on compute node cannot exceed that of GPUs when NCCL is used");
 
     const int min_procs_per_gpu = procs_per_node / m_num_total_gpus;
     const int procs_remainder = procs_per_node % m_num_total_gpus;
@@ -145,6 +158,11 @@ cudnn_manager::~cudnn_manager() {
     if(m_cublas_handles[i]) {
       FORCE_CHECK_CUBLAS(cublasDestroy(m_cublas_handles[i]));
     }
+  }
+    
+  /// NCCL clear
+  if(m_nccl_used){
+      nccl_destroy();
   }
 }
 
@@ -324,16 +342,40 @@ void cudnn_manager::cudnn_manager::scatter_to_gpus(std::vector<DataType *>& gpu_
 
 }
 
+
+//FILE *fp_debug;
+
 void cudnn_manager::cudnn_manager::gather_from_gpus(Mat& cpu_data,
                                                     const std::vector<DataType *>& gpu_data,
                                                     int width_per_gpu,
                                                     int gpu_data_leading_dim) {
+/*
+int myid = comm->get_rank_in_model();
+char line[1024];
+sprintf(line, "file.%02d", myid);
+fp_debug = fopen(line, "a");
+*/
+
+
 
   // Get matrix properties
   const int height = cpu_data.Height();
   const int width = cpu_data.Width();
   const int cpu_data_leading_dim = cpu_data.LDim();
   gpu_data_leading_dim = std::max(gpu_data_leading_dim, height);
+
+int total_size=height*width;
+/*
+if(total_size == 7840 )
+	fprintf(fp_debug, "cpu_data_leading_dim=%d gpu_data_leading_dim=%d\n", cpu_data_leading_dim, gpu_data_leading_dim);
+DataType *val = gpu_data[0];
+if(total_size == 7840){
+  DataType sum=0.0;
+  for(int i=0; i<total_size; i++)
+	sum += val[i];
+  fprintf(fp_debug, ">> sum.0=%f\n", sum);
+}
+*/
 
   // Perform memory transfer on each GPU
   for(int i=0; i<m_num_gpus; ++i) {
@@ -344,6 +386,11 @@ void cudnn_manager::cudnn_manager::gather_from_gpus(Mat& cpu_data,
     const int last_pos = std::min((i+1) * width_per_gpu, width);
     const int current_width = last_pos - first_pos;
 
+/*
+if(total_size == 7840)
+	fprintf(fp_debug, "first_pos=%d last_pos=%d current_width=%d\n", first_pos, last_pos, current_width);
+*/
+    
     // Transfer data from current GPU
     if(current_width > 0) {
       CHECK_CUDA(cudaMemcpy2DAsync(cpu_data.Buffer(0,first_pos),
@@ -355,8 +402,18 @@ void cudnn_manager::cudnn_manager::gather_from_gpus(Mat& cpu_data,
                                    cudaMemcpyDeviceToHost,
                                    m_streams[i]));
     }
+/*
+if(total_size == 7840){
+  DataType sum=0.0;
+  for(int i=0; i<total_size; i++)
+	sum += val[i];
+  fprintf(fp_debug, ">> sum.1=%f\n", sum);
+}
+*/
 
   }
+
+//fclose(fp_debug);
 
 }
 
@@ -697,7 +754,6 @@ void cudnn_manager::check_error() {
   }
 }
 
-#ifdef __LIB_NCCL
 uint64_t cudnn_manager::getHostHash(const char* string) {
   // Based on DJB2, result = result * 33 + char
   uint64_t result = 5381;
@@ -706,14 +762,12 @@ uint64_t cudnn_manager::getHostHash(const char* string) {
   }
   return result;
 }
-#endif
 
 
 void cudnn_manager::nccl_setup() {
-#ifdef __LIB_NCCL
 
   int nProcs = comm->get_procs_per_model();
-  int myid = comm->get_model_rank();
+  int myid = comm->get_rank_in_model();
   int localRank = comm->get_rank_in_node();
 
   ncclUniqueId ncclId;
@@ -743,13 +797,8 @@ void cudnn_manager::nccl_setup() {
   }
 }
 
-#endif
-}
-
 void cudnn_manager::nccl_destroy() {
-#ifdef __LIB_NCCL
   ncclCommDestroy(m_nccl_comm);
-#endif
 }
 
 void cudnn::print_version() {
