@@ -179,7 +179,7 @@ class pooling_layer : public transform {
   }
 
   /// Destructor
-  ~pooling_layer() {
+  ~pooling_layer() override {
   #ifdef __LIB_CUDNN
     // Destroy cuDNN objects
     if(m_pooling_cudnn_desc) {

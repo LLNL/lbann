@@ -71,7 +71,7 @@ class unpooling_layer : public transform {
 
   unpooling_layer(const unpooling_layer&) = default;
   unpooling_layer& operator=(const unpooling_layer&) = default;
-  ~unpooling_layer() = default;
+  ~unpooling_layer() override = default;
 
   unpooling_layer* copy() const override { return new unpooling_layer(*this); }
 
