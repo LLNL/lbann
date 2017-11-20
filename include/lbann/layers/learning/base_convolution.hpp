@@ -713,50 +713,76 @@ class base_convolution_layer : public learning {
 
     }
 
-    // Transfer gradients from GPUs to CPU and reduce
     const int kernel_weights_width = m_kernel_weights_gradient_v->Width();
     const int bias_weights_width = m_bias_weights_gradient_v->Width();
-    this->m_cudnn->gather_from_gpus(m_kernel_weights_gradient_per_gpu->Matrix(),
-                                    m_kernel_weights_gradient_d,
-                                    kernel_weights_width);
-    if(m_bias_scaling_factor != DataType(0)) {
+    if (!this->m_cudnn->is_nccl_used()) {
+      // Transfer gradients from GPUs to CPU and reduce
+      this->m_cudnn->gather_from_gpus(m_kernel_weights_gradient_per_gpu->Matrix(),
+                                      m_kernel_weights_gradient_d,
+                                      kernel_weights_width);
+      if(m_bias_scaling_factor != DataType(0)) {
+        this->m_cudnn->gather_from_gpus(m_bias_weights_gradient_per_gpu->Matrix(),
+                                        m_bias_weights_gradient_d,
+                                        bias_weights_width);
+      }
+      this->m_cudnn->synchronize();
+      Mat& local_kernel_weights_gradient = m_kernel_weights_gradient_v->Matrix();
+      for(int i=0; i<num_gpus; ++i) {
+        const Mat kernel_weights_on_current_gpu
+          = El::LockedView(m_kernel_weights_gradient_per_gpu->LockedMatrix(),
+                           El::ALL,
+                           El::IR(i * kernel_weights_width, (i+1) * kernel_weights_width));
+        if(i == 0) {
+          El::Copy(kernel_weights_on_current_gpu, local_kernel_weights_gradient);
+        }
+        else {
+          local_kernel_weights_gradient += kernel_weights_on_current_gpu;
+        }
+      }
+      if(m_bias_scaling_factor != DataType(0)) {
+        Mat& local_bias_weights_gradient = m_bias_weights_gradient_v->Matrix();
+        for(int i=0; i<num_gpus; ++i) {
+          const Mat bias_weights_on_current_gpu
+            = El::LockedView(m_bias_weights_gradient_per_gpu->LockedMatrix(),
+                             El::ALL,
+                             El::IR(i * bias_weights_width, (i+1) * bias_weights_width));
+          if(i == 0) {
+            El::Copy(bias_weights_on_current_gpu, local_bias_weights_gradient);
+          }
+          else {
+            local_bias_weights_gradient += bias_weights_on_current_gpu;
+          }
+        }
+      }
+      *this->m_weights_gradient
+        *= DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size();
+      El::AllReduce(*this->m_weights_gradient,
+                    this->m_weights_gradient->RedundantComm());
+    }
+    else {
+      /// Allreduce for weight gradients on GPU
+      this->m_cudnn->allreduce_nccl(m_kernel_weights_gradient_d,
+                                    m_kernel_weights_gradient_v->Height(),
+                                    m_kernel_weights_gradient_v->Width(),
+                                    DataType(1)/this->m_neural_network_model->get_effective_mini_batch_size());
+
+      /// Gather weight gradients
+      this->m_cudnn->gather_from_gpus(m_kernel_weights_gradient_per_gpu->Matrix(),
+                                      m_kernel_weights_gradient_d,
+                                      kernel_weights_width);
+
+      if(m_bias_scaling_factor != DataType(0)) {
+        /// Allreduce for bias gradients on GPU
+        this->m_cudnn->allreduce_nccl(m_bias_weights_gradient_d,
+                                      m_bias_weights_gradient_v->Height(),
+                                      m_bias_weights_gradient_v->Width());
+      }
+        
+      /// Gather bias gradients
       this->m_cudnn->gather_from_gpus(m_bias_weights_gradient_per_gpu->Matrix(),
                                       m_bias_weights_gradient_d,
                                       bias_weights_width);
     }
-    this->m_cudnn->synchronize();
-    Mat& local_kernel_weights_gradient = m_kernel_weights_gradient_v->Matrix();
-    for(int i=0; i<num_gpus; ++i) {
-      const Mat kernel_weights_on_current_gpu
-        = El::LockedView(m_kernel_weights_gradient_per_gpu->LockedMatrix(),
-                         El::ALL,
-                         El::IR(i * kernel_weights_width, (i+1) * kernel_weights_width));
-      if(i == 0) {
-        El::Copy(kernel_weights_on_current_gpu, local_kernel_weights_gradient);
-      }
-      else {
-        local_kernel_weights_gradient += kernel_weights_on_current_gpu;
-      }
-    }
-    if(m_bias_scaling_factor != DataType(0)) {
-      Mat& local_bias_weights_gradient = m_bias_weights_gradient_v->Matrix();
-      for(int i=0; i<num_gpus; ++i) {
-        const Mat bias_weights_on_current_gpu
-          = El::LockedView(m_bias_weights_gradient_per_gpu->LockedMatrix(),
-                           El::ALL,
-                           El::IR(i * bias_weights_width, (i+1) * bias_weights_width));
-        if(i == 0) {
-          El::Copy(bias_weights_on_current_gpu, local_bias_weights_gradient);
-        }
-        else {
-          local_bias_weights_gradient += bias_weights_on_current_gpu;
-        }
-      }
-    }
-    *this->m_weights_gradient
-      *= DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size();
-    El::AllReduce(*this->m_weights_gradient,
-                  this->m_weights_gradient->RedundantComm());
 
   #endif // __LIB_CUDNN
   }
