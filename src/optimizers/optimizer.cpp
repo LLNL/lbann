@@ -404,6 +404,13 @@ void optimizer::step() {
     throw lbann_exception(err.str());
   }
 
+  // Kludge for L2 regularization
+  /// @todo Implement L2 regularization as an objective function
+  AbsDistMat *values = m_weights->get_values()->Copy();
+  El::Scale(0.0005, *values);
+  add_to_gradient(*values);
+  delete values;
+  
   // Apply optimization step
   if (m_cudnn != nullptr) {
   #if __LIB_CUDNN
