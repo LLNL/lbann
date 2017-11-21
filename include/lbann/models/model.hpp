@@ -151,12 +151,12 @@ class model {
    * Summarize statistics (e.g. timers, counters); these should be computable
    * quickly.
    */
-  void summarize_stats(lbann_summary& summarizer);
+  virtual void summarize_stats(lbann_summary& summarizer);
   /**
    * Summarize matrices (e.g. means); these are called less frequently and can
    * be more expensive.
    */
-  void summarize_matrices(lbann_summary& summarizer);
+  virtual void summarize_matrices(lbann_summary& summarizer);
 
   /** Return true if the flag to stop training is set. */
   bool get_terminate_training() const {
@@ -304,33 +304,33 @@ class model {
   virtual bool evaluate_mini_batch();
 
   // Methods for calling every callback at different points.
-  void setup_callbacks();
-  void do_train_begin_cbs();
-  void do_train_end_cbs();
-  void do_phase_end_cbs();
-  void do_epoch_begin_cbs();
-  void do_epoch_end_cbs();
-  void do_batch_begin_cbs();
-  void do_batch_end_cbs();
-  void do_test_begin_cbs();
-  void do_test_end_cbs();
-  void do_validation_begin_cbs();
-  void do_validation_end_cbs();
-  void do_model_forward_prop_begin_cbs();
-  void do_layer_forward_prop_begin_cbs(Layer *l);
-  void do_model_forward_prop_end_cbs();
-  void do_layer_forward_prop_end_cbs(Layer *l);
-  void do_model_backward_prop_begin_cbs();
-  void do_layer_backward_prop_begin_cbs(Layer *l);
-  void do_model_backward_prop_end_cbs();
-  void do_layer_backward_prop_end_cbs(Layer *l);
+  virtual void setup_callbacks();
+  virtual void do_train_begin_cbs();
+  virtual void do_train_end_cbs();
+  virtual void do_phase_end_cbs();
+  virtual void do_epoch_begin_cbs();
+  virtual void do_epoch_end_cbs();
+  virtual void do_batch_begin_cbs();
+  virtual void do_batch_end_cbs();
+  virtual void do_test_begin_cbs();
+  virtual void do_test_end_cbs();
+  virtual void do_validation_begin_cbs();
+  virtual void do_validation_end_cbs();
+  virtual void do_model_forward_prop_begin_cbs();
+  virtual void do_layer_forward_prop_begin_cbs(Layer *l);
+  virtual void do_model_forward_prop_end_cbs();
+  virtual void do_layer_forward_prop_end_cbs(Layer *l);
+  virtual void do_model_backward_prop_begin_cbs();
+  virtual void do_layer_backward_prop_begin_cbs(Layer *l);
+  virtual void do_model_backward_prop_end_cbs();
+  virtual void do_layer_backward_prop_end_cbs(Layer *l);
   /// Evaluation phases (validation / testing)
-  void do_batch_evaluate_begin_cbs();
-  void do_batch_evaluate_end_cbs();
-  void do_model_evaluate_forward_prop_begin_cbs();
-  void do_layer_evaluate_forward_prop_begin_cbs(Layer *l);
-  void do_model_evaluate_forward_prop_end_cbs();
-  void do_layer_evaluate_forward_prop_end_cbs(Layer *l);
+  virtual void do_batch_evaluate_begin_cbs();
+  virtual void do_batch_evaluate_end_cbs();
+  virtual void do_model_evaluate_forward_prop_begin_cbs();
+  virtual void do_layer_evaluate_forward_prop_begin_cbs(Layer *l);
+  virtual void do_model_evaluate_forward_prop_end_cbs();
+  virtual void do_layer_evaluate_forward_prop_end_cbs(Layer *l);
 };
 
 }  // namespace lbann
