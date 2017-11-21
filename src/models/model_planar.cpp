@@ -48,62 +48,84 @@ planar_model::planar_model(int mini_batch_size,
                                    objective_functions::objective_function *obj_fn,
                                    optimizer_factory *optimizer_fac,
                                    int width)
-  : model(comm, mini_batch_size, obj_fn, optimizer_fac) {m_width = width; m_multi_headed = false;}
+  : model(comm, mini_batch_size, obj_fn, optimizer_fac), m_width(width)
+{}
 
-/**
-planar_model::planar_model(const planar_model& other) :
-  model(other) {
+
+planar_model::planar_model(const planar_model& other)
+  : model(other), m_width(other.m_width), m_head_counts(other.m_head_counts) {
   // First copy over the layers.
-  for (const auto& l : other.m_layers) {
-    m_layers.push_back(l->copy());
-  }
-  // Update pointers for each layer.
-  for (size_t l = 0; l < m_layers.size(); ++l) {
-    m_layers[l]->set_neural_network_model(this);
-    Layer* prev_layer = l > 0 ? m_layers[l-1] : nullptr;
-    Layer* next_layer = l < m_layers.size() - 1 ? m_layers[l+1] : nullptr;
-    m_layers[l]->setup_pointers(prev_layer, next_layer);
-  }
-  // Update target layer data readers.
-  io_layer *input = dynamic_cast<io_layer*>(m_layers[0]);
-  io_layer *target = dynamic_cast<io_layer*>(m_layers.back());
-  if (input && target) {
-    target->set_data_readers_from_layer(input);
-  }
+  copy_layers(other.m_layers);
 }
 
 planar_model& planar_model::operator=(const planar_model& other) {
   model::operator=(other);
-  m_layers.clear();
+  m_width = other.m_width;
+  m_head_counts = other.m_head_counts;
   // First copy over the layers.
-  for (const auto& l : other.m_layers) {
-    m_layers.push_back(l->copy());
-  }
-  // Update pointers for each layer.
-  for (size_t l = 0; l < m_layers.size(); ++l) {
-    m_layers[l]->set_neural_network_model(this);
-    Layer* prev_layer = l > 0 ? m_layers[l-1] : nullptr;
-    Layer* next_layer = l < m_layers.size() - 1 ? m_layers[l+1] : nullptr;
-    m_layers[l]->setup_pointers(prev_layer, next_layer);
-  }
-  // Update target layer data readers.
-  io_layer *input = dynamic_cast<io_layer*>(m_layers[0]);
-  io_layer *target = dynamic_cast<io_layer*>(m_layers.back());
-  if (input && target) {
-    target->set_data_readers_from_layer(input);
-  }
+  copy_layers(other.m_layers);
   return *this;
 }
-*/
 
 planar_model::~planar_model() {
-  // Free layers
-  for (size_t h = 0; h < m_layers.size(); ++h) {
-    std::vector<Layer*>& arow = m_layers[h];
-    for(size_t c = 0; c < arow.size(); ++c){
-      delete arow[c];
+  delete_layers();
+}
+
+void planar_model::delete_layers() {
+  for (auto& layer_peers : m_layers) {
+    for (auto layer : layer_peers) {
+      delete layer;
     }
   }
+  m_layers.clear();
+}
+
+void planar_model::copy_layers(const Layer_stack_t& src_stack) {
+  delete_layers();
+  Layer_map_t map_src_to_new;
+
+  for (const auto& src_peers : src_stack) {
+    m_layers.push_back(Layer_peers_t());
+    auto& new_peers = m_layers.back();
+    for (const auto& src_layer : src_peers) {
+      try {
+        Layer* new_layer = src_layer->copy();
+        map_src_to_new[src_layer] = new_layer;
+        new_peers.push_back(new_layer);
+      } catch (std::bad_alloc&) {
+        throw("Planar model: Failed to copy a layer");
+      }
+    }
+  }
+  renew_layer_links(src_stack, map_src_to_new);
+}
+
+void planar_model::set_layers(const Layer_stack_t& new_stack) {
+  delete_layers();
+  m_layers = new_stack;
+}
+
+void planar_model::renew_layer_links(const Layer_stack_t& src_stack,
+                                     const Layer_map_t& map_src_to_new) const {
+  for (auto&& src_peers : src_stack) {
+    for (auto&& src_layer : src_peers) {
+      Layer* new_layer = find_layer(map_src_to_new, src_layer);
+      std::vector<Layer *> src_pointers = src_layer->get_layer_pointers();
+      std::vector<Layer *> new_pointers;
+      for (const Layer* src_pointer : src_pointers) {
+        Layer* new_pointer = find_layer(map_src_to_new, src_pointer);
+        new_pointers.push_back(new_pointer);
+      }
+      new_layer->set_layer_pointers(new_pointers);
+    }
+  }
+}
+
+Layer* planar_model::find_layer(const Layer_map_t& map_src_to_new, const Layer* const src_layer) {
+  //Layer_map_t::const_iterator it = map_src_to_new.find(src_layer);
+  Layer_map_t::const_iterator it = map_src_to_new.end();
+  if (it == map_src_to_new.end()) return nullptr;
+  return it->second;
 }
 
 /**
@@ -329,13 +351,13 @@ void planar_model::add(Layer *layer){
 
 void planar_model::add(Layer *layer){
   if (layer == nullptr) {
-    throw lbann_exception("model: Attempted to add null pointer as a layer.");
+    throw lbann_exception("Planar model: Attempted to add null pointer as a layer.");
   }
 
   // Add layer to a new layer set
-  std::vector<Layer *> new_layer_set;
-  new_layer_set.push_back(layer);
-  m_layers.push_back(new_layer_set);
+  m_layers.push_back(Layer_peers_t());
+  Layer_peers_t& new_layer_peers = m_layers.back();
+  new_layer_peers.push_back(layer);
 }
 
 /***
@@ -371,6 +393,7 @@ Layer *planar_model::swap(int index, Layer *new_layer) {
 
 
 void planar_model::setup() {
+  bool multi_headed = false;
   
   /// Convert sequential layers to planar layers
   for(size_t l=0; l<m_layers.size(); l++){
@@ -378,7 +401,7 @@ void planar_model::setup() {
 
     Layer *layer = m_layers[l].at(0);
   
-    if(!m_multi_headed){
+    if(!multi_headed){
       /// Currently in single-head state
   
       if(layer->is_fanin_layer()){
@@ -387,7 +410,7 @@ void planar_model::setup() {
         throw lbann::lbann_exception("Cannot fan in from single-head state");
       } else if(layer->is_fanout_layer()) {
         /// Fanning out layers to multi-head state
-        m_multi_headed = true;
+        multi_headed = true;
         //stackup_duplicate(layer, 1);
       } else{
         /// layer is already in m_layers; no action is required
@@ -402,7 +425,7 @@ void planar_model::setup() {
       } else if(layer->is_fanin_layer()){
         /// Fanning in from multi-head state; no action is needed
         //stackup_duplicate(layer, 1);
-        m_multi_headed = false;
+        multi_headed = false;
       } else{
         /// Expand current layer to m_width heads
         const std::string layer_name = layer->get_name();
@@ -832,17 +855,14 @@ bool planar_model::evaluate_mini_batch() {
 }
 
 bool planar_model::is_execution_mode_valid(execution_mode mode) const {
-
-  for(size_t l=0; l<m_layers.size(); l++){
-    const std::vector<Layer*>& current_set = m_layers[l];
-    for(size_t k=0; k<current_set.size(); k++){
-      const input_layer* input = dynamic_cast<const input_layer*>(current_set[k]);
-      if (input != nullptr && !input->is_execution_mode_valid(mode)) {
+  for (auto&& layer_peers : m_layers) {
+    for (auto&& layer : layer_peers) {
+      const input_layer* const input = dynamic_cast<const input_layer*>(layer);
+      if (input != nullptr && !(input->is_execution_mode_valid(mode))) {
         return false;
       }
     }
   }
-
   return true;
 }
 
