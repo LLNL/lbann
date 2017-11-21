@@ -59,9 +59,11 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus, bool nc
     throw lbann::lbann_exception("cudnn_wrapper: no GPUs found");
   }
   /// It is assumed that the number of processes on this node is equal to the total number of GPUs available
+/*
   if(procs_per_node != m_num_visible_gpus){
     throw lbann::lbann_exception("cudnn_wrapper: the number of MPI ranks is different from than the number of GPUs available on this node");
   }
+*/
 
   // Assign GPUs to process
   int gpu_start, gpu_end;
