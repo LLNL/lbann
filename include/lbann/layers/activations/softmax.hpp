@@ -188,7 +188,8 @@ class softmax_layer : public activation_layer {
       }
       workspace_local(0, col) = max_entry;
     }
-    El::AllReduce(*m_workspace_v, m_workspace_v->RedundantComm(), El::mpi::MAX);
+    m_comm->allreduce(*m_workspace_v, m_workspace_v->RedundantComm(),
+                      El::mpi::MAX);
 
     // Exponentiate activations and compute column sums
     // Note: Subtracting by the column max prevents activations from
@@ -205,7 +206,7 @@ class softmax_layer : public activation_layer {
       }
       workspace_local(0, col) = sum;
     }
-    El::AllReduce(*m_workspace_v, m_workspace_v->RedundantComm(), El::mpi::SUM);
+    m_comm->allreduce(*m_workspace_v, m_workspace_v->RedundantComm());
 
     // Divide activations by column sums
     // Note: Small values are rounded to minimum output value to avoid
@@ -301,7 +302,7 @@ class softmax_layer : public activation_layer {
       workspace_local(0, c) = El::Dot(prev_error_signal_local(El::ALL,El::IR(c)),
                                       activations_local(El::ALL,El::IR(c)));
     }
-    El::AllReduce(*m_workspace_v, m_workspace_v->RedundantComm(), El::mpi::SUM);
+    m_comm->allreduce(*m_workspace_v, m_workspace_v->RedundantComm());
 
     // Update error signal
     // Note: error_signal := activations * (prev_error_signal - prev_error_signal^T activations)

@@ -566,7 +566,7 @@ class fully_connected_layer : public learning {
     for(int r = 0; r < norms.LocalHeight(); r++) {
       total_error += norms.GetLocal(r,c);
     }
-    mpi::AllReduce(total_error, norms.DistComm());
+    m_comm->allreduce(total_error, norms.DistComm());
     avg_error = total_error / norms.Height();
     return avg_error;
   }
@@ -698,8 +698,8 @@ fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_weights<device::CP
            this->m_prev_activations->LockedMatrix(),
            DataType(0),
            this->m_activation_weights_gradient_v->Matrix());
-  El::AllReduce(*this->m_activation_weights_gradient_v,
-                this->m_activation_weights_gradient_v->RedundantComm());
+  m_comm->allreduce(*this->m_activation_weights_gradient_v,
+                    this->m_activation_weights_gradient_v->RedundantComm());
 }
 
 #if defined(__LIB_CUDA) && defined(LBANN_FULLY_CONNECTED_CUDA)
@@ -757,8 +757,8 @@ fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_weights<device::CU
     this->m_cudnn->gather_from_gpus(m_activation_weights_gradient_v->Matrix(),
                                     t, m_activation_weights_gradient_v->Width());
     this->m_cudnn->synchronize();
-    El::AllReduce(*this->m_activation_weights_gradient_v,
-                  this->m_activation_weights_gradient_v->RedundantComm());
+    m_comm->allreduce(*this->m_activation_weights_gradient_v,
+                      this->m_activation_weights_gradient_v->RedundantComm());
     this->m_cudnn->broadcast_to_gpus(
         m_activation_weights_gradient_d,
         m_activation_weights_gradient_v->LockedMatrix());

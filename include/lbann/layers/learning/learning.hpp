@@ -72,7 +72,7 @@ class learning : public Layer, public optimizable_layer {
           sum += block_sum;
         }
       }
-      sum = El::mpi::AllReduce(sum, m_weights->DistComm());
+      sum = m_comm->allreduce(sum, m_weights->DistComm());
       
       // Add regularization term to objective function
       const DataType regularization_term = m_l2_regularization_factor * sum / 2;
@@ -125,12 +125,12 @@ class learning : public Layer, public optimizable_layer {
         }
         local_workspace(0, col) = sum; 
       }
-      El::AllReduce(*workspace, workspace->RedundantComm(), El::mpi::SUM);
+      m_comm->allreduce(*workspace, workspace->RedundantComm());
     
       // Add regularization term to objective function
       DataType sumColL2Norms = 0;
       for (int i = 0; i < local_width; i++) sumColL2Norms += std::sqrt(local_workspace(0, i));
-      El::mpi::AllReduce(sumColL2Norms, workspace->DistComm()); 
+      m_comm->allreduce(sumColL2Norms, workspace->DistComm()); 
       const DataType regularization_term = m_group_lasso_regularization_factor * sumColL2Norms;
       this->m_neural_network_model->m_obj_fn->add_to_value(regularization_term);
 
@@ -173,7 +173,7 @@ class learning : public Layer, public optimizable_layer {
         local_workspace(0, col) = sum;
       }
       
-      El::AllReduce(*workspace, workspace->RedundantComm(), El::mpi::SUM);      
+      m_comm->allreduce(*workspace, workspace->RedundantComm());
       El::EntrywiseMap(*workspace, std::function<DataType(const DataType&)>(
                                                                            [](const DataType& x) {
                                                                              return std::sqrt(x);

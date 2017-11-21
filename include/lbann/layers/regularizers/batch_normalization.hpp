@@ -672,9 +672,8 @@ class batch_normalization : public learning_regularizer {
         }
       }
       if (m_use_global_stats) {
-        El::AllReduce(*m_statistics_v,
-                      m_statistics_v->RedundantComm(),
-                      El::mpi::SUM);
+        m_comm->allreduce(*m_statistics_v,
+                          m_statistics_v->RedundantComm());
       }
 
       // Compute minibatch statistics and running statistics
@@ -803,9 +802,8 @@ class batch_normalization : public learning_regularizer {
     bias_gradient_local
       *= DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size();
     if (m_use_global_stats) {
-      El::AllReduce(*m_parameters_gradient,
-                    m_parameters_gradient->RedundantComm(),
-                    El::mpi::SUM);
+      m_comm->allreduce(*m_parameters_gradient,
+                        m_parameters_gradient->RedundantComm());
     }
     this->m_cudnn->broadcast_to_gpus(m_mean_gradient_d, mean_gradient_local);
     this->m_cudnn->broadcast_to_gpus(m_var_gradient_d, var_gradient_local);
@@ -875,9 +873,8 @@ class batch_normalization : public learning_regularizer {
         var_local(channel, 0) = sqsum;
       }
       if (m_use_global_stats) {
-        El::AllReduce(*m_statistics_v,
-                      m_statistics_v->RedundantComm(),
-                      El::mpi::SUM);
+        m_comm->allreduce(*m_statistics_v,
+                           m_statistics_v->RedundantComm());
       }
 
       // Compute minibatch statistics and running statistics
@@ -993,9 +990,8 @@ class batch_normalization : public learning_regularizer {
     bias_gradient_local
       *= DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size();
     if (m_use_global_stats) {
-      El::AllReduce(*m_parameters_gradient,
-                    m_parameters_gradient->RedundantComm(),
-                    El::mpi::SUM);
+      m_comm->allreduce(*m_parameters_gradient,
+                        m_parameters_gradient->RedundantComm());
     }
     
     // Compute error signal

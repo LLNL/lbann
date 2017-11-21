@@ -73,7 +73,7 @@ class mean_absolute_deviation : public metric {
       }
     }
     mad /= height * width;
-    mad = El::mpi::AllReduce(mad, predictions_v.DistComm());
+    mad = m_comm->allreduce(mad, predictions_v.DistComm());
     return mad;
 
   }
