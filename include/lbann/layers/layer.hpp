@@ -58,20 +58,12 @@ class Layer {
   template <data_layout T_layout>
   void initialize_distributed_matrices();
 
+  virtual void reset();
   virtual void forward_prop();
   virtual void back_prop();
   virtual bool update();
   virtual void summarize_stats(lbann_summary& summarizer, int step);
   virtual void summarize_matrices(lbann_summary& summarizer, int step);
-  /**
-   * Print information at the end of an epoch.
-   * This is always called on the model masters and should synchronize
-   * printing if needed.
-   */
-  virtual void epoch_print() const {}
-  virtual DataType checkGradientMB(Layer& PrevLayer, DataType Epsilon=1e-4) {
-    return 0.0;
-  };
 
   /** Setup layer dimensions and data.
    *  By default, this calls the setup_pointers, setup_dims,
@@ -197,6 +189,11 @@ class Layer {
 #endif // __LIB_CUDNN
   /** Get forward propagation output dimensions, as seen by next layer. */
   virtual const std::vector<int> fp_output_dims(const Layer* next_layer = NULL) const;
+
+  virtual void add_to_error_signal(const AbsDistMat& gradient,
+                                   DataType scale = DataType(1)) {
+    El::Axpy(scale, gradient, *m_error_signal_v);
+  }
 
   /** Get list of parent layers. */
   std::vector<const Layer*>& get_parent_layers();

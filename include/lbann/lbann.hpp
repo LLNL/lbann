@@ -139,14 +139,14 @@
 #include "lbann/optimizers/sgd.hpp"
 
 /// Objective functions (cost functions)
-#include "lbann/objective_functions/binary_cross_entropy.hpp"
-#include "lbann/objective_functions/cross_entropy.hpp"
-#include "lbann/objective_functions/cross_entropy_with_uncertainty.hpp"
-#include "lbann/objective_functions/geom_negloglike.hpp"
-#include "lbann/objective_functions/mean_absolute_deviation.hpp"
-#include "lbann/objective_functions/mean_squared_error.hpp"
-#include "lbann/objective_functions/poisson_negloglike.hpp"
-#include "lbann/objective_functions/polya_negloglike.hpp"
+#include "lbann/objective_functions/loss_functions/cross_entropy.hpp"
+#include "lbann/objective_functions/loss_functions/mean_squared_error.hpp"
+// #include "lbann/objective_functions/binary_cross_entropy.hpp"
+// #include "lbann/objective_functions/cross_entropy_with_uncertainty.hpp"
+// #include "lbann/objective_functions/geom_negloglike.hpp"
+// #include "lbann/objective_functions/mean_absolute_deviation.hpp"
+// #include "lbann/objective_functions/poisson_negloglike.hpp"
+// #include "lbann/objective_functions/polya_negloglike.hpp"
 
 /// Metrics
 #include "lbann/metrics/metric_categorical_accuracy.hpp"

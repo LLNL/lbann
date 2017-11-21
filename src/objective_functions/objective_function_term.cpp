@@ -22,41 +22,18 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_early_stopping .hpp .cpp - Callback hooks for early stopping
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/callbacks/callback_early_stopping.hpp"
+#include "lbann/objective_functions/objective_function_term.hpp"
 
 namespace lbann {
 
-lbann_callback_early_stopping::lbann_callback_early_stopping(int64_t patience) :
-  lbann_callback(), m_patience(patience) {}
+objective_function_term::objective_function_term(DataType scale_factor)
+  : m_objective_function(nullptr),
+    m_scale_factor(scale_factor) {}
 
-/// Monitor the objective function to see if the validation score
-/// continues to improve
-void lbann_callback_early_stopping::on_validation_end(model *m) {
-  double score = m->get_objective_function()->get_history_mean_value();
-  if (score < m_last_score) {
-    if (m->get_comm()->am_model_master()) {
-      std::cout << "Model " << m->get_comm()->get_model_rank() <<
-        " early stopping: score is improving " << m_last_score << " >> " <<
-        score << std::endl;
-    }
-    m_last_score = score;
-    m_wait = 0;
-  } else {
-    if (m_wait >= m_patience) {
-      m->set_terminate_training(true);
-      if (m->get_comm()->am_model_master()) {
-        std::cout << "Model " << m->get_comm()->get_model_rank() <<
-          " terminating training due to early stopping: " << score <<
-          " score and " << m_last_score << " last score" << std::endl;
-      }
-    } else {
-      ++m_wait;
-    }
-  }
+void objective_function_term::setup(objective_function& obj_fn) {
+  m_objective_function = &obj_fn;
 }
 
 }  // namespace lbann

@@ -43,9 +43,9 @@ namespace lbann {
 
 model::model(lbann_comm *comm,
              int mini_batch_size,
-             objective_functions::objective_function *obj_fn,
+             objective_function *obj_fn,
              optimizer* default_optimizer)
-  : m_obj_fn(obj_fn),
+  : m_objective_function(obj_fn),
     m_execution_mode(execution_mode::invalid),
     m_terminate_training(false),
     m_current_epoch(0),
@@ -83,12 +83,13 @@ model::model(const model& other) :
   m_checkpoint_last(other.m_checkpoint_last) {
 
   // Deep copies
+  m_objective_function = other.m_objective_function->copy();
+  m_objective_function->set_model(this);
   for (const auto& metric : other.m_metrics) {
     metrics::metric *m_copy = metric->copy();
     m_copy->m_neural_network_model = this;
     m_metrics.push_back(m_copy);
   }
-  m_obj_fn = other.m_obj_fn->copy();
   for (const auto& cb : other.m_callbacks) {
     m_callbacks.push_back(cb->copy());
   }
@@ -135,13 +136,31 @@ model::model(const model& other) :
 
   }
 
+  // Fix objective function pointers
+  {
+    std::vector<Layer *> old_layer_pointers = m_objective_function->get_layer_pointers();
+    std::vector<Layer *> new_layer_pointers;
+    for (Layer *old_layer_pointer : old_layer_pointers) {
+      Layer *new_layer_pointer = old_to_new_layer[old_layer_pointer];
+      new_layer_pointers.push_back(new_layer_pointer);
+    }
+    m_objective_function->set_layer_pointers(new_layer_pointers);
+    std::vector<weights *> old_weights_pointers = m_objective_function->get_weights_pointers();
+    std::vector<weights *> new_weights_pointers;
+    for (weights *old_weights_pointer : old_weights_pointers) {
+      weights *new_weights_pointer = old_to_new_weights[old_weights_pointer];
+      new_weights_pointers.push_back(new_weights_pointer);
+    }
+    m_objective_function->set_weights_pointers(new_weights_pointers);
+  }
+
 }
 
 model& model::operator=(const model& other) {
 
   // Delete objects
-  if (m_obj_fn) {
-    delete m_obj_fn;
+  if (m_objective_function) {
+    delete m_objective_function;
   }
   for (metrics::metric *metric : m_metrics) {
     delete metric;
@@ -175,6 +194,8 @@ model& model::operator=(const model& other) {
   m_checkpoint_last = other.m_checkpoint_last;
 
   // Deep copies
+  m_objective_function = other.m_objective_function->copy();
+  m_objective_function->set_model(this);
   for (metrics::metric *m : m_metrics) {
     delete m;
   }
@@ -183,7 +204,6 @@ model& model::operator=(const model& other) {
     m_copy->m_neural_network_model = this;
     m_metrics.push_back(m_copy);
   }
-  m_obj_fn = other.m_obj_fn->copy();
   for (const auto& cb : other.m_callbacks) {
     m_callbacks.push_back(cb->copy());
   }
@@ -230,12 +250,30 @@ model& model::operator=(const model& other) {
 
   }
 
+  // Fix objective function pointers
+  {
+    std::vector<Layer *> old_layer_pointers = m_objective_function->get_layer_pointers();
+    std::vector<Layer *> new_layer_pointers;
+    for (Layer *old_layer_pointer : old_layer_pointers) {
+      Layer *new_layer_pointer = old_to_new_layer[old_layer_pointer];
+      new_layer_pointers.push_back(new_layer_pointer);
+    }
+    m_objective_function->set_layer_pointers(new_layer_pointers);
+    std::vector<weights *> old_weights_pointers = m_objective_function->get_weights_pointers();
+    std::vector<weights *> new_weights_pointers;
+    for (weights *old_weights_pointer : old_weights_pointers) {
+      weights *new_weights_pointer = old_to_new_weights[old_weights_pointer];
+      new_weights_pointers.push_back(new_weights_pointer);
+    }
+    m_objective_function->set_weights_pointers(new_weights_pointers);
+  }
+
   return *this;
 }
 
 model::~model() {
-  if (m_obj_fn) {
-    delete m_obj_fn;
+  if (m_objective_function != nullptr) {
+    delete m_objective_function;
   }
   for (metrics::metric *metric : m_metrics) {
     delete metric;
@@ -343,7 +381,7 @@ void model::evaluate(execution_mode mode) {
   for (Layer *layer : m_layers) {
     layer->set_execution_mode(mode);
   }
-  m_obj_fn->reset_statistics();
+  m_objective_function->clear_history();
   for (auto&& m : m_metrics) {
     m->reset_metric();
   }
@@ -391,7 +429,7 @@ void model::train(int num_epochs) {
     for (Layer *layer : m_layers) {
       layer->set_execution_mode(execution_mode::training);
     }
-    m_obj_fn->reset_statistics();
+    m_objective_function->clear_history();
     for (auto&& m : m_metrics) {
       m->reset_metric();
     }
@@ -416,6 +454,11 @@ void model::train(int num_epochs) {
 bool model::evaluate_mini_batch() {
   do_batch_evaluate_begin_cbs();
 
+  // Reset matrices
+  for (Layer *layer : m_layers) {
+    layer->reset();
+  }
+
   // Forward propagation
   do_model_evaluate_forward_prop_begin_cbs();
   for (Layer *layer : m_layers) {
@@ -425,8 +468,8 @@ bool model::evaluate_mini_batch() {
   }
   do_model_evaluate_forward_prop_end_cbs();
 
-  // Record and reset objective function value
-  m_obj_fn->record_and_reset_value();
+  // Compute objective function value
+  m_objective_function->compute_value();
 
   // Update layers
   bool finished = true;
@@ -453,6 +496,11 @@ bool model::evaluate_mini_batch() {
 bool model::train_mini_batch() {
   do_batch_begin_cbs();
 
+  // Reset matrices
+  for (Layer *layer : m_layers) {
+    layer->reset();
+  }
+
   // Forward propagation
   do_model_forward_prop_begin_cbs();
   for (Layer *layer : m_layers) {
@@ -462,8 +510,9 @@ bool model::train_mini_batch() {
   }
   do_model_forward_prop_end_cbs();
 
-  // Record and reset objective function value
-  m_obj_fn->record_and_reset_value();
+  // Compute objective function value and gradient
+  m_objective_function->compute_value();
+  m_objective_function->compute_gradient();
 
   // Backward propagation
   do_model_backward_prop_begin_cbs();
@@ -699,6 +748,9 @@ void model::summarize_stats(lbann_summary& summarizer) {
   for (Layer *layer : m_layers) {
     layer->summarize_stats(summarizer, get_cur_step());
   }
+  summarizer.reduce_scalar("objective",
+                           m_objective_function->get_history_mean_value(),
+                           get_cur_step());
 }
 
 void model::summarize_matrices(lbann_summary& summarizer) {

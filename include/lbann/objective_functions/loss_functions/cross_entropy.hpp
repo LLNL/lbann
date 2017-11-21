@@ -22,56 +22,47 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// model_dag .hpp .cpp - Directed acyclic graph neural network models
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_MODEL_DAG_HPP
-#define LBANN_MODEL_DAG_HPP
+#ifndef LBANN_OBJECTIVE_FUNCTION_CROSS_ENTROPY_HPP_INCLUDED
+#define LBANN_OBJECTIVE_FUNCTION_CROSS_ENTROPY_HPP_INCLUDED
 
-#include "lbann/models/model.hpp"
-#include "lbann/layers/layer.hpp"
+#include "lbann/objective_functions/loss_functions/loss_function.hpp"
 
 namespace lbann {
 
-/** Directed acyclic graph neural network model. */
-class dag_model : public model {
+/** Cross entropy loss function. */
+class cross_entropy : public loss_function {
  public:
-
-  /** Constructor. */
-  dag_model(lbann_comm *comm,
-            int max_mini_batch_size,
-            objective_function *obj_fn,
-            optimizer *default_optimizer);
+  /** Default constructor. */
+  cross_entropy(DataType scale_factor = DataType(1)) 
+    : loss_function(scale_factor) {}
 
   /** Copy constructor. */
-  dag_model(const dag_model& other) = default;
-
+  cross_entropy(const cross_entropy& other) = default;
   /** Copy assignment operator. */
-  dag_model& operator=(const dag_model& other) = default;
-
+  cross_entropy& operator=(const cross_entropy& other) = default;
   /** Destructor. */
-  ~dag_model() override = default;
+  virtual ~cross_entropy() = default;
+  /** Copy function. */
+  virtual cross_entropy* copy() const override { return new cross_entropy(*this); }
 
-  /** Create copy. */
-  dag_model* copy() const override { return new dag_model(*this); }
+  /** Get the name of the objective function term. */
+  virtual std::string name() const override { return "cross_entropy"; }
 
-  /** Setup model. */
-  void setup() override;
+  /** Evaluate the cross entropy loss function. */
+  DataType evaluate(const AbsDistMat& prediction,
+                    const AbsDistMat& ground_truth) override;
 
-  /** Get model name. */
-  std::string name() const override { return "dag_model"; }
-
- protected:
-
-  /** Apply topological sort to list of layers.
-   *  A topologically sorted ordering allows us to traverse a directed
-   *  acyclic graph without violating dependencies.
+  /** Compute the cross entropy gradient.
+   *  The gradient is w.r.t. the prediction vector.
    */
-  void topologically_sort_layers();
+  void differentiate(const AbsDistMat& prediction,
+                     const AbsDistMat& ground_truth,
+                     AbsDistMat& gradient) override;
 
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_MODEL_DAG_HPP
+#endif // LBANN_OBJECTIVE_FUNCTION_CROSS_ENTROPY_HPP_INCLUDED

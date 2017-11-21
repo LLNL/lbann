@@ -45,7 +45,7 @@ class sequential_model : public model {
   /** Constructor. */
   sequential_model(lbann_comm *comm,
                    int max_mini_batch_size,
-                   objective_functions::objective_function *obj_fn,
+                   objective_function *obj_fn,
                    optimizer* default_optimizer = nullptr);
   
   /** Copy constructor. */

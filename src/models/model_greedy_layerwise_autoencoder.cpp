@@ -33,7 +33,7 @@ namespace lbann {
 
 greedy_layerwise_autoencoder::greedy_layerwise_autoencoder(lbann_comm *comm,
                                                            int mini_batch_size,
-                                                           objective_functions::objective_function *obj_fn,
+                                                           objective_function *obj_fn,
                                                            optimizer *default_optimizer)
   : sequential_model(comm, mini_batch_size, obj_fn, default_optimizer),
     m_phase_end(2), m_start_index(0), m_end_index(0), m_have_mirror(0) {}
@@ -160,7 +160,7 @@ void greedy_layerwise_autoencoder::train_phase(int num_epochs) {
 
     // Train on mini-batches until data set is traversed
     // Note: The data reader shuffles the data after each epoch
-    m_obj_fn->reset_statistics();
+    m_objective_function->clear_history();
     for (auto&& m : m_metrics) {
       m->reset_metric();
     }
@@ -171,8 +171,20 @@ void greedy_layerwise_autoencoder::train_phase(int num_epochs) {
     if (m_comm->am_world_master()) {
       std::cout << "Layer-wise training ";
     }
-    m_layers[m_end_index]->epoch_print();
-
+    if (m_comm->am_world_master()) {
+      double obj_cost = m_objective_function->get_history_mean_value();
+      std::vector<double> avg_obj_fn_costs(m_comm->get_num_models());
+      this->m_comm->intermodel_gather(obj_cost,
+                                      avg_obj_fn_costs);
+      for (size_t i = 0; i < avg_obj_fn_costs.size(); ++i) {
+        std::cout << "Model " << i << " average objective : "
+                  << avg_obj_fn_costs[i] << std::endl;
+      }
+    } else {
+      double obj_cost = m_objective_function->get_history_mean_value();
+      this->m_comm->intermodel_gather(obj_cost,
+                                      m_comm->get_world_master());
+    }
 
     do_epoch_end_cbs(); //needed for selected callback e.g., dump matrices
 
@@ -182,7 +194,20 @@ void greedy_layerwise_autoencoder::train_phase(int num_epochs) {
     if (m_comm->am_world_master()) {
       std::cout << "Layer-wise validation ";
     }
-    m_layers[m_end_index]->epoch_print();
+    if (m_comm->am_world_master()) {
+      double obj_cost = m_objective_function->get_history_mean_value();
+      std::vector<double> avg_obj_fn_costs(m_comm->get_num_models());
+      this->m_comm->intermodel_gather(obj_cost,
+                                      avg_obj_fn_costs);
+      for (size_t i = 0; i < avg_obj_fn_costs.size(); ++i) {
+        std::cout << "Model " << i << " average objective : "
+                  << avg_obj_fn_costs[i] << std::endl;
+      }
+    } else {
+      double obj_cost = m_objective_function->get_history_mean_value();
+      this->m_comm->intermodel_gather(obj_cost,
+                                      m_comm->get_world_master());
+    }
 
     // Reset execution mode back to training
     m_execution_mode = execution_mode::training;
@@ -212,7 +237,7 @@ bool greedy_layerwise_autoencoder::train_mini_batch() {
   do_model_forward_prop_end_cbs();
 
   // Record and reset objective function value
-  m_obj_fn->record_and_reset_value();
+  m_objective_function->compute_value();
 
   ++m_current_step;
 
@@ -248,7 +273,7 @@ void greedy_layerwise_autoencoder::evaluate_phase(execution_mode mode) {
 
   // Evaluate on mini-batches until data set is traversed
   // Note: The data reader shuffles the data after each epoch
-  m_obj_fn->reset_statistics();
+  m_objective_function->clear_history();
   for (auto&& m : m_metrics) {
     m->reset_metric();
   }
@@ -268,7 +293,7 @@ bool greedy_layerwise_autoencoder::evaluate_mini_batch() {
   }
 
   // Record and reset objective function value
-  m_obj_fn->record_and_reset_value();
+  m_objective_function->compute_value();
   
   //done processing a minibatch?  
   const bool data_set_processed = m_layers[0]->update();
@@ -289,7 +314,20 @@ void greedy_layerwise_autoencoder::evaluate(execution_mode mode) {
   if (m_comm->am_world_master()) {
     std::cout << "Global (rel. to all (in + hidden) layers) testing ";
   }
-  m_layers[m_end_index]->epoch_print();
+  if (m_comm->am_world_master()) {
+    double obj_cost = m_objective_function->get_history_mean_value();
+    std::vector<double> avg_obj_fn_costs(m_comm->get_num_models());
+    this->m_comm->intermodel_gather(obj_cost,
+                                    avg_obj_fn_costs);
+    for (size_t i = 0; i < avg_obj_fn_costs.size(); ++i) {
+      std::cout << "Model " << i << " average objective : "
+                << avg_obj_fn_costs[i] << std::endl;
+    }
+  } else {
+    double obj_cost = m_objective_function->get_history_mean_value();
+    this->m_comm->intermodel_gather(obj_cost,
+                                    m_comm->get_world_master());
+  }
 
   //@todo: finetune only up to the true layers skipping the reconstruction layers
   //m_layers.resize(m_layers.size()-m_reconstruction_layers.size());

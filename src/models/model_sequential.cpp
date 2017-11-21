@@ -44,7 +44,7 @@ namespace lbann {
 
 sequential_model::sequential_model(lbann_comm *comm,
                                    int mini_batch_size,
-                                   objective_functions::objective_function *obj_fn,
+                                   objective_function *obj_fn,
                                    optimizer* default_optimizer)
   : model(comm, mini_batch_size, obj_fn, default_optimizer) {}
 
@@ -92,6 +92,9 @@ void sequential_model::setup_subset(int start_index, int end_index) {
       std::cout << std::endl;
     }
   }
+
+  // Setup objective function
+  m_objective_function->setup(*this);
 
   // Set up callbacks
   setup_callbacks();

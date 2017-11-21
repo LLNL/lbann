@@ -40,7 +40,7 @@ class greedy_layerwise_autoencoder : public sequential_model {
   /** Constructor. */
   greedy_layerwise_autoencoder(lbann_comm *comm,
                                int mini_batch_size,
-                               objective_functions::objective_function *obj_fn,
+                               objective_function *obj_fn,
                                optimizer *default_optimizer);
 
   /** Copy constructor.

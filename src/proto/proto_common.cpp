@@ -1614,24 +1614,26 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
   const string obj_fn_name = m.objective_function();
   uint mini_batch_size = m.mini_batch_size();
 
+  objective_function *obj_fn = new objective_function();
+
   //instantiate the objective function
-  objective_functions::objective_function *obj = 0;
+  objective_function_term *term = 0;
   if (obj_fn_name == "cross_entropy") {
-    obj = new objective_functions::cross_entropy();
+    term = new cross_entropy();
   } else if (obj_fn_name == "cross_entropy_with_uncertainty") {
-    obj = new objective_functions::cross_entropy_with_uncertainty();
+    // obj = new objective_functions::cross_entropy_with_uncertainty();
   } else if (obj_fn_name == "mean_squared_error") {
-    obj = new objective_functions::mean_squared_error();
+    term = new mean_squared_error();
   } else if (obj_fn_name == "binary_cross_entropy") {
-    obj = new objective_functions::binary_cross_entropy();
+    // obj = new objective_functions::binary_cross_entropy();
   } else if (obj_fn_name == "geom_negloglike") {
-    obj = new objective_functions::geom_negloglike();
+    // obj = new objective_functions::geom_negloglike();
   } else if (obj_fn_name == "mean_absolute_deviation") {
-    obj = new objective_functions::mean_absolute_deviation();
+    // obj = new objective_functions::mean_absolute_deviation();
   } else if (obj_fn_name == "poisson_negloglike") {
-    obj = new objective_functions::poisson_negloglike();
+    // obj = new objective_functions::poisson_negloglike();
   } else if (obj_fn_name == "polya_negloglike") {
-    obj = new objective_functions::polya_negloglike();
+    // obj = new objective_functions::polya_negloglike();
   } else {
     if (master) {
       err << __FILE__ << " " << __LINE__
@@ -1640,14 +1642,15 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
       throw lbann_exception(err.str());
     }
   }
+  obj_fn->add_term(term);
 
   //instantiate the network; layers will be added in a separate function call
   if (name == "sequential_model") {
-    model = new sequential_model(comm, mini_batch_size, obj, default_optimizer);
+    model = new sequential_model(comm, mini_batch_size, obj_fn, default_optimizer);
     if (master) std::cout << "instantiating sequential_model\n";
   } 
   else if (name == "dag_model") {
-    model = new dag_model(comm, mini_batch_size, obj, default_optimizer);
+    model = new dag_model(comm, mini_batch_size, obj_fn, default_optimizer);
     if (master) std::cout << "instantiating dag_model\n";
   } else if(name == "planar_model") {
 #if 0
@@ -1655,7 +1658,7 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
       const lbann_data::Model::Planar& planar = m.planar();
       if (planar.has_simple()) {
         const int num_heads = planar.simple().num_heads();
-        model = new planar_model(mini_batch_size, comm, obj, optimizer_fac, num_heads);
+        model = new planar_model(mini_batch_size, comm, obj_fn, optimizer_fac, num_heads);
       } else if (planar.has_regular()) {
         // TODO: parse the vector and pass it to the overloaded constructor
         // vector<int> outdegrees_fanout;
@@ -1675,7 +1678,7 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
     }
 #endif // 0      
   } else if (name == "greedy_layerwise_autoencoder") {
-    model = new greedy_layerwise_autoencoder(comm, mini_batch_size, obj, default_optimizer);
+    model = new greedy_layerwise_autoencoder(comm, mini_batch_size, obj_fn, default_optimizer);
     if (master) std::cout << "instantiating greedy_layerwise_autoencoder\n";
   } 
   else {

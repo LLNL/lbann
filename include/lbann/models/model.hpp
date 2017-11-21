@@ -47,14 +47,12 @@ namespace lbann {
 // Forward-declare this.
 class lbann_callback;
 
-/**
- * Base class for LBANN models.
- */
+/** Base class for LBANN models. */
 class model {
  public:
   model(lbann_comm *comm,
         int mini_batch_size,
-        objective_functions::objective_function *obj_fn,
+        objective_function *obj_fn,
         optimizer* default_optimizer = nullptr);
   model(const model& other);
   model& operator=(const model& other);
@@ -84,6 +82,11 @@ class model {
    *  If there is no default optimizer, a null pointer is returned.
    */
   optimizer* create_optimizer() const;
+
+  /** Return the model's objective function. */
+  objective_function* get_objective_function() {
+    return m_objective_function;
+  }
 
   /** Return the model's metrics. */
   virtual std::vector<metrics::metric *>& get_metrics() {
@@ -231,14 +234,11 @@ class model {
 
 #endif // 0
 
-  /**
-   * Objective functions are used to judge the performance of the model during
-   * training and can be used to adapt training via either early termination or
-   * adaptive learning rates.
-   */
-  objective_functions::objective_function *m_obj_fn;
-
  protected:
+
+  /** The objective function used to train the model. */
+  objective_function *m_objective_function;
+
   /** The model's current execution mode. */
   execution_mode m_execution_mode;
   /** Flag telling the model to terminate training. */
