@@ -774,6 +774,7 @@ class base_convolution_layer : public learning {
       this->m_cudnn->gather_from_gpus(m_kernel_weights_gradient_per_gpu->Matrix(),
                                       m_kernel_weights_gradient_d,
                                       kernel_weights_width);
+      this->m_cudnn->synchronize();
 
       if(m_bias_scaling_factor != DataType(0)) {
         /// Allreduce for bias gradients on GPU
@@ -786,6 +787,7 @@ class base_convolution_layer : public learning {
       this->m_cudnn->gather_from_gpus(m_bias_weights_gradient_per_gpu->Matrix(),
                                       m_bias_weights_gradient_d,
                                       bias_weights_width);
+      this->m_cudnn->synchronize();
     }
 
   #endif // __LIB_CUDNN
