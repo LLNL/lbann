@@ -13,7 +13,7 @@ model {
   data_layout: "data_parallel"
   mini_batch_size: 256
   block_size: 256
-  num_epochs: 20
+  num_epochs: 72
   num_parallel_readers: 0
   procs_per_model: 0
   use_cudnn: true
@@ -22,12 +22,12 @@ model {
   ###################################################
   # Callbacks 
   ###################################################
-  callback {
-    imcomm {
-      intermodel_comm_method: "normal"
-      all_learning_layers: true
-    }  
-  }
+  #callback {
+  #  imcomm {
+  #    intermodel_comm_method: "normal"
+  #    all_learning_layers: true
+  #  }
+  #}
   callback {
     print {
       interval: 1
@@ -42,6 +42,14 @@ model {
       dir: "."
       batch_interval: 1
       mat_interval: 25
+    }
+  }
+  callback {
+    drop_fixed_learning_rate {
+      drop_epoch: 20
+      drop_epoch: 40
+      drop_epoch: 60
+      amt: 0.1
     }
   }
   # callback {

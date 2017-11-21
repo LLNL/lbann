@@ -3,23 +3,19 @@ data_reader {
     name: "imagenet"
     role: "train"
     shuffle: true
-    data_filedir: "/p/lscratchf/brainusr/datasets/ILSVRC2012/resized_256x256/train/"
-    data_filename: "/p/lscratchf/brainusr/datasets/ILSVRC2012/labels/train_c0-9.txt"
+    data_filedir: "/p/lscratche/brainusr/datasets/ILSVRC2012/original/train/"
+    data_filename: "/p/lscratche/brainusr/datasets/ILSVRC2012/original/labels/train.txt"
     label_filename: ""
-    validation_percent: 0.1
+    validation_percent: 0.01
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
     num_labels: 1000
 
     image_preprocessor {
-      # assume fixed size of input images if cropper is not used
-      raw_width: 256
-      raw_height: 256
-
       cropper {
-        disable: true
-        crop_width: 224
-        crop_height: 224
+        disable: false
+        crop_width: 227
+        crop_height: 227
         crop_randomly: true
         resized_width: 256
         resized_height: 256
@@ -30,8 +26,8 @@ data_reader {
       }
 
       augmenter {
-        disable: true
-        horizontal_flip: false
+        disable: false
+        horizontal_flip: true
         vertical_flip: false
         rotation: 0
         horizontal_shift: 0
@@ -40,10 +36,10 @@ data_reader {
       }
 
       normalizer {
-        scale: true
-        subtract_mean: true
-        unit_variance: true
-        z_score: false
+        scale: false
+        subtract_mean: false
+        unit_variance: false
+        z_score: true
       }
     }
   }
@@ -52,8 +48,8 @@ data_reader {
     name: "imagenet"
     role: "test"
     shuffle: true
-    data_filedir: "/p/lscratchf/brainusr/datasets/ILSVRC2012/resized_256x256/val/"
-    data_filename: "/p/lscratchf/brainusr/datasets/ILSVRC2012/labels/val_c0-9.txt"
+    data_filedir: "/p/lscratche/brainusr/datasets/ILSVRC2012/original/val/"
+    data_filename: "/p/lscratche/brainusr/datasets/ILSVRC2012/original/labels/val.txt"
     label_filename: ""
     validation_percent: 1.0
     absolute_sample_count: 0
@@ -61,14 +57,10 @@ data_reader {
     num_labels: 1000
 
     image_preprocessor {
-      # assume fixed size of input images if cropper is not used
-      raw_width: 256
-      raw_height: 256
-
       cropper {
-        disable: true
-        crop_width: 224
-        crop_height: 224
+        disable: false
+        crop_width: 227
+        crop_height: 227
         crop_randomly: false
         resized_width: 256
         resized_height: 256
@@ -89,10 +81,10 @@ data_reader {
       }
 
       normalizer {
-        scale: true
-        subtract_mean: true
-        unit_variance: true
-        z_score: false
+        scale: false
+        subtract_mean: false
+        unit_variance: false
+        z_score: true
       }
     }
   }
