@@ -337,6 +337,7 @@ void cudnn_manager::cudnn_manager::gather_from_gpus(Mat& cpu_data,
   gpu_data_leading_dim = std::max(gpu_data_leading_dim, height);
 
 int total_size=height*width;
+(void) total_size; // This line is to avoid warning that halts compilation. remove this when total_size actaully gets used
   // Perform memory transfer on each GPU
   for(int i=0; i<m_num_gpus; ++i) {
     CHECK_CUDA(cudaSetDevice(m_gpus[i]));
