@@ -182,7 +182,7 @@ class lbann_comm {
    * (for non-root processes).
    */
   template <typename T>
-  T broadcast(int root, El::mpi::Comm c) {
+  T broadcast(int root, const El::mpi::Comm c) {
     T val = {};
     El::mpi::Broadcast(&val, 1, root, c);
     bytes_received += sizeof(T);
@@ -193,7 +193,7 @@ class lbann_comm {
    * (for root processes).
    */
   template <typename T>
-  T broadcast(int root, T val, El::mpi::Comm c) {
+  T broadcast(int root, T val, const El::mpi::Comm c) {
     El::mpi::Broadcast(&val, 1, root, c);
     bytes_sent += sizeof(T);
     return val;
@@ -265,31 +265,31 @@ class lbann_comm {
   }
   /** Scalar gather (for non-root processes). */
   template <typename T>
-  void gather(T snd, int root, El::mpi::Comm c) {
+  void gather(T snd, int root, const El::mpi::Comm c) {
     bytes_sent += sizeof(T);
     El::mpi::Gather(&snd, 1, (T*) NULL, 0, root, c);
   }
   /** Scalar gather (for root processes). */
   template <typename T>
-  void gather(T snd, std::vector<T>& rcv, El::mpi::Comm c) {
+  void gather(T snd, std::vector<T>& rcv, const El::mpi::Comm c) {
     El::mpi::Gather(&snd, 1, rcv.data(), 1, El::mpi::Rank(c), c);
     bytes_received += sizeof(T) * (El::mpi::Size(c) - 1);
   }
   /** Scalar-array gather (for non-root processes). */
   template <typename T>
-  void gather(T *snd, int count, int root, El::mpi::Comm c) {
+  void gather(T *snd, int count, int root, const El::mpi::Comm c) {
     bytes_sent += sizeof(T) * count;
     El::mpi::Gather(snd, count, (T*) NULL, 0, root, c);
   }
   /** Scalar-array gather (for root processes). */
   template <typename T>
-  void gather(T *snd, int count, T *rcv, El::mpi::Comm c) {
+  void gather(T *snd, int count, T *rcv, const El::mpi::Comm c) {
     El::mpi::Gather(snd, count, rcv, count, El::mpi::Rank(c), c);
     bytes_received += sizeof(T) * count * (El::mpi::Size(c) - 1);
   }
   /** Scalar scatter (for non-root processes). */
   template <typename T>
-  T scatter(int root, El::mpi::Comm c) {
+  T scatter(int root, const El::mpi::Comm c) {
     T val = {};
     El::mpi::Scatter((T*) nullptr, 0, &val, 1, root, c);
     bytes_received += sizeof(T);
@@ -297,7 +297,7 @@ class lbann_comm {
   }
   /** Scalar scatter (for root processes). */
   template <typename T>
-  T scatter(T *snd, El::mpi::Comm c) {
+  T scatter(T *snd, const El::mpi::Comm c) {
     bytes_sent += sizeof(T) * (El::mpi::Size(c) - 1);
     T val = {};
     El::mpi::Scatter(snd, 1, &val, 1, El::mpi::Rank(c), c);
@@ -346,26 +346,26 @@ class lbann_comm {
   }
   /** Scalar reduce (for non-root processes). */
   template <typename T>
-  void reduce(T snd, int root, El::mpi::Comm c, El::mpi::Op op = El::mpi::SUM) {
+  void reduce(T snd, int root, const El::mpi::Comm c, El::mpi::Op op = El::mpi::SUM) {
     bytes_sent += sizeof(T);
     El::mpi::Reduce(&snd, (T*) NULL, 1, op, root, c);
   }
   /** Scalar reduce (for root processes). */
   template <typename T>
-  T reduce(T snd, El::mpi::Comm c, El::mpi::Op op = El::mpi::SUM) {
+  T reduce(T snd, const El::mpi::Comm c, El::mpi::Op op = El::mpi::SUM) {
     T val = {};
     El::mpi::Reduce(&snd, &val, 1, op, El::mpi::Rank(c), c);
     bytes_received += sizeof(T) * (El::mpi::Size(c) - 1);
   }
   /** Scalar-array reduce (for non-root processes). */
   template <typename T>
-  void reduce(T *snd, int count, int root, El::mpi::Comm c, El::mpi::Op op = El::mpi::SUM) {
+  void reduce(T *snd, int count, int root, const El::mpi::Comm c, El::mpi::Op op = El::mpi::SUM) {
     bytes_sent += sizeof(T) * count;
     El::mpi::Reduce(snd, (T*) NULL, count, op, root, c);
   }
   /** Scalar-array reduce (for root processes). */
   template <typename T>
-  T reduce(T *snd, int count, T *rcv, El::mpi::Comm c, El::mpi::Op op = El::mpi::SUM) {
+  T reduce(T *snd, int count, T *rcv, const El::mpi::Comm c, El::mpi::Op op = El::mpi::SUM) {
     El::mpi::Reduce(snd, rcv, count, op, El::mpi::Rank(c), c);
     bytes_received += sizeof(T) * count * (El::mpi::Size(c) - 1);
   }
@@ -396,7 +396,7 @@ class lbann_comm {
   }
   /** Scalar allreduce. */
   template <typename T>
-  T allreduce(T snd, El::mpi::Comm c, El::mpi::Op op = El::mpi::SUM) {
+  T allreduce(T snd, const El::mpi::Comm c, El::mpi::Op op = El::mpi::SUM) {
     T val = {};
     bytes_sent += sizeof(T);
     El::mpi::AllReduce(&snd, &val, 1, op, c);
@@ -405,13 +405,13 @@ class lbann_comm {
   }
   /** Scalar-array allreduce. */
   template <typename T>
-  void allreduce(T *snd, int count, T *rcv, El::mpi::Comm c, El::mpi::Op op = El::mpi::SUM) {
+  void allreduce(T *snd, int count, T *rcv, const El::mpi::Comm c, El::mpi::Op op = El::mpi::SUM) {
     bytes_sent += count * sizeof(T);
     El::mpi::AllReduce(snd, rcv, count, op, c);
     bytes_received += count * sizeof(T) * (El::mpi::Size(c) - 1);
   }
   /** Matrix allreduce. */
-  void allreduce(AbsDistMat& m, El::mpi::Comm c, El::mpi::Op op = El::mpi::SUM) {
+  void allreduce(AbsDistMat& m, const El::mpi::Comm c, El::mpi::Op op = El::mpi::SUM) {
     El::AllReduce(m, c, op);
   }
 
