@@ -77,15 +77,13 @@ class planar_model : public model {
   /// Setup planar model
   void setup() override;
 
-  /// Train model
-  void train(int num_epochs) override;
-  /// Evaluate model
-  void evaluate(execution_mode mode) override;
-
-  /** Return true if about to start a new training epoch */
-  virtual bool at_epoch_start();
-
   std::string name() const override { return "planar_model"; }
+
+  /// Set the model (and all layers') execution mode.
+  void set_execution_mode(execution_mode mode) override;
+
+  void summarize_stats(lbann_summary& summarizer) override;
+  void summarize_matrices(lbann_summary& summarizer) override;
 
  protected:
   typedef std::unordered_map<Layer*, Layer*> Layer_map_t;
@@ -102,21 +100,53 @@ class planar_model : public model {
   /** Following functions are used to add a set of layers at given horizontal level
    *  on a planar space. The layers are added either by duplicating a single layer
    *  or placing individual layers. */
-  void stackup_duplicate(Layer *new_layer, int num_heads);
+  virtual void stackup_duplicate(Layer_peers_t& new_layer, int num_heads);
 
   void setup_subset();
+
+  virtual bool check_layer_type_consistency(const Layer_peers_t& layer_peers) const;
+
   /// Ensure weight matriecs in heads at each level are the same
-  void equalize();
-  /// Add weight matrices in heads at each level
-  void sum_up_gradients();
+  virtual void equalize();
+
+  void forward_prop_to_evaluate() override;
+  bool update_io_layers() override;
+  void forward_prop() override;
+  void backward_prop() override;
+  void update_optimizable_layers() override;
 
   /// Check if the model has a valid data set for the execution mode
   bool is_execution_mode_valid(execution_mode mode) const override;
 
-  /// Training step on one mini-batch
-  bool train_mini_batch() override;
-  /// Evaluation step on one mini-batch
-  bool evaluate_mini_batch() override;
+  // Methods for calling every callback at different points.
+  // These are currently dummy methods
+  void setup_callbacks() override {};
+  void do_train_begin_cbs() override {};
+  void do_train_end_cbs() override {};
+  void do_phase_end_cbs() override {};
+  void do_epoch_begin_cbs() override {};
+  void do_epoch_end_cbs() override {};
+  void do_batch_begin_cbs() override {};
+  void do_batch_end_cbs() override {};
+  void do_test_begin_cbs() override {};
+  void do_test_end_cbs() override {};
+  void do_validation_begin_cbs() override {};
+  void do_validation_end_cbs() override {};
+  void do_model_forward_prop_begin_cbs() override {};
+  void do_layer_forward_prop_begin_cbs(Layer *l) override {};
+  void do_model_forward_prop_end_cbs() override {};
+  void do_layer_forward_prop_end_cbs(Layer *l) override {};
+  void do_model_backward_prop_begin_cbs() override {};
+  void do_layer_backward_prop_begin_cbs(Layer *l) override {};
+  void do_model_backward_prop_end_cbs() override {};
+  void do_layer_backward_prop_end_cbs(Layer *l) override {};
+  /// Evaluation phases (validation / testing)
+  void do_batch_evaluate_begin_cbs() override {};
+  void do_batch_evaluate_end_cbs() override {};
+  void do_model_evaluate_forward_prop_begin_cbs() override {};
+  void do_layer_evaluate_forward_prop_begin_cbs(Layer *l) override {};
+  void do_model_evaluate_forward_prop_end_cbs() override {};
+  void do_layer_evaluate_forward_prop_end_cbs(Layer *l) override {};
 
  protected:
   /// the maximum number of horizontal layers in the network
