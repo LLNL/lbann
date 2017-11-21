@@ -104,10 +104,10 @@ void loss_function::setup(objective_function& obj_fn) {
 
   // Initialize gradient matrix
   target_layer *target = (target_layer*) m_layers[0];
-  const AbsDistMat& predictions = target->get_prediction();
-  m_gradient = predictions.Construct(predictions.Grid(),
-                                     predictions.Root());
-  El::Zeros(*m_gradient, predictions.Height(), predictions.Width());
+  const AbsDistMat& ground_truth = target->get_activations();
+  m_gradient = ground_truth.Construct(ground_truth.Grid(),
+                                      ground_truth.Root());
+  El::Zeros(*m_gradient, ground_truth.Height(), ground_truth.Width());
 
 }
 
@@ -125,7 +125,7 @@ void loss_function::compute_gradient() {
   target_layer *target = (target_layer*) m_layers[0];
   const AbsDistMat& prediction = target->get_prediction();
   const AbsDistMat& ground_truth = target->get_ground_truth();
-  El::Zero(*m_gradient);
+  El::Zeros(*m_gradient, prediction.Height(), prediction.Width());
   differentiate(prediction, ground_truth, *m_gradient);
   target->add_to_error_signal(*m_gradient, m_scale_factor);
 }

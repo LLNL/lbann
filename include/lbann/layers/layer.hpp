@@ -192,6 +192,7 @@ class Layer {
 
   virtual void add_to_error_signal(const AbsDistMat& gradient,
                                    DataType scale = DataType(1)) {
+    bp_set_std_matrix_view();    
     El::Axpy(scale, gradient, *m_error_signal_v);
   }
 
