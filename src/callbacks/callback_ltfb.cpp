@@ -123,10 +123,9 @@ int lbann_callback_ltfb::select_partner() {
       std::fill_n(partners.begin() + last_rank*m_comm->get_procs_per_model(),
                   m_comm->get_procs_per_model(), last_rank);
     }
-    El::mpi::Scatter(partners.data(), 1, &my_partner, 1, 0,
-                     El::mpi::COMM_WORLD);
+    my_partner = m_comm->scatter(partners.data(), El::mpi::COMM_WORLD);
   } else {
-    El::mpi::Scatter((int *) nullptr, 0, &my_partner, 1, 0, El::mpi::COMM_WORLD);
+    my_partner = m_comm->scatter<int>(0, El::mpi::COMM_WORLD);
   }
   return my_partner;
 }
