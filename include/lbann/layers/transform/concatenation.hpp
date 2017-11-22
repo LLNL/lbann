@@ -119,7 +119,7 @@ class concatenation_layer : public transform {
   std::string get_type() const override { return "concatenation"; }
 
   virtual inline void initialize_distributed_matrices();
-  virtual data_layout get_data_layout() const override { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
   void setup_dims() override {
 

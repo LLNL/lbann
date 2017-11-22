@@ -72,7 +72,7 @@ class image_data_reader : public generic_data_reader {
     return {m_image_num_channels, m_image_height, m_image_width};
   }
 
-  virtual void save_image(Mat& pixels, const std::string filename, bool do_scale = true) override {
+  void save_image(Mat& pixels, const std::string filename, bool do_scale = true) override {
     internal_save_image(pixels, filename, m_image_height, m_image_width,
                         m_image_num_channels, do_scale);
   }

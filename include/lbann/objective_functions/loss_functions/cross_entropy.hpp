@@ -43,12 +43,12 @@ class cross_entropy : public loss_function {
   /** Copy assignment operator. */
   cross_entropy& operator=(const cross_entropy& other) = default;
   /** Destructor. */
-  virtual ~cross_entropy() = default;
+  ~cross_entropy() override = default;
   /** Copy function. */
-  virtual cross_entropy* copy() const override { return new cross_entropy(*this); }
+  cross_entropy* copy() const override { return new cross_entropy(*this); }
 
   /** Get the name of the objective function term. */
-  virtual std::string name() const override { return "cross_entropy"; }
+  std::string name() const override { return "cross_entropy"; }
 
   /** Evaluate the cross entropy loss function. */
   DataType evaluate(const AbsDistMat& prediction,

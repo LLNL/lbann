@@ -43,12 +43,12 @@ class mean_squared_error : public loss_function {
   /** Copy assignment operator. */
   mean_squared_error& operator=(const mean_squared_error& other) = default;
   /** Destructor. */
-  virtual ~mean_squared_error() = default;
+  ~mean_squared_error() override = default;
   /** Copy function. */
-  virtual mean_squared_error* copy() const override { return new mean_squared_error(*this); }
+  mean_squared_error* copy() const override { return new mean_squared_error(*this); }
 
   /** Get the name of the objective function term. */
-  virtual std::string name() const override { return "mean_squared_error"; }
+  std::string name() const override { return "mean_squared_error"; }
 
   /** Evaluate the cross entropy loss function. */
   DataType evaluate(const AbsDistMat& prediction,

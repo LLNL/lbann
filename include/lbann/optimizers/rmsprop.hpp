@@ -48,7 +48,7 @@ class rmsprop : public optimizer {
   /** Copy assignment operator. */
   rmsprop& operator=(const rmsprop& other);
   /** Destructor. */
-  virtual ~rmsprop() override;
+  ~rmsprop() override;
   /** Create a copy. */
   rmsprop* copy() const override { return new rmsprop(*this); }
   

@@ -50,7 +50,7 @@ class sgd : public optimizer {
   /** Copy assignment operator. */
   sgd& operator=(const sgd& other);
   /** Destructor. */
-  virtual ~sgd();
+  ~sgd() override;
   /** Create a copy. */
   sgd* copy() const override { return new sgd(*this); }
 

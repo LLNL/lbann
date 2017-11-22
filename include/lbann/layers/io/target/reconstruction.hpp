@@ -66,13 +66,13 @@ class reconstruction_layer : public target_layer {
     return nullptr;
   }
 
-  virtual std::string get_type() const override { return "reconstruction"; }
+  std::string get_type() const override { return "reconstruction"; }
 
   //virtual inline void initialize_distributed_matrices();
   virtual inline void initialize_distributed_matrices() {
     target_layer::initialize_distributed_matrices<T_layout>();
   }
-  virtual data_layout get_data_layout() const override { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
   /** Set original layer. */
   void set_original_layer(Layer *original_layer) {
@@ -133,13 +133,13 @@ class reconstruction_layer : public target_layer {
     io_layer::summarize_stats(summarizer, step);
   }
 
-  virtual std::vector<Layer*> get_layer_pointers() override {
+  std::vector<Layer*> get_layer_pointers() override {
     std::vector<Layer*> layers = target_layer::get_layer_pointers();
     layers.push_back(m_original_layer);
     return layers;
   }
 
-  virtual void set_layer_pointers(std::vector<Layer*> layers) override {
+  void set_layer_pointers(std::vector<Layer*> layers) override {
     m_original_layer = layers.back();
     layers.pop_back();
     target_layer::set_layer_pointers(layers);

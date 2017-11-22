@@ -75,7 +75,7 @@ class constant_initializer : public weights_initializer {
   constant_initializer(lbann_comm* comm, DataType value) 
     : weights_initializer(comm), m_value(value) {}
   /** Destructor. */
-  virtual ~constant_initializer() = default;
+  ~constant_initializer() override = default;
 
   /** Create a copy. */
   constant_initializer* copy() const override {
@@ -104,7 +104,7 @@ class uniform_initializer : public weights_initializer {
       m_min_value(min_value),
       m_max_value(max_value) {}
   /** Destructor. */
-  virtual ~uniform_initializer() = default;
+  ~uniform_initializer() override = default;
 
   /** Create a copy. */
   uniform_initializer* copy() const override {
@@ -135,7 +135,7 @@ class normal_initializer : public weights_initializer {
       m_mean(mean),
       m_standard_deviation(standard_deviation) {}
   /** Destructor. */
-  virtual ~normal_initializer() = default;
+  ~normal_initializer() override = default;
 
   /** Create a copy. */
   normal_initializer* copy() const override {

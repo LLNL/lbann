@@ -69,9 +69,9 @@ class target_layer_partitioned_minibatch : public target_layer, public partition
   virtual inline void initialize_distributed_matrices() {
     target_layer::initialize_distributed_matrices<T_layout>();
   }
-  virtual data_layout get_data_layout() const override { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
-  virtual void setup_data() override {
+  void setup_data() override {
     target_layer::setup_data();
 
     m_local_data_valid = false;

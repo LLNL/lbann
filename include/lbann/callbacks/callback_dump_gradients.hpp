@@ -55,11 +55,11 @@ class lbann_callback_dump_gradients : public lbann_callback {
     const lbann_callback_dump_gradients&) = default;
   lbann_callback_dump_gradients& operator=(
     const lbann_callback_dump_gradients&) = default;
-  lbann_callback_dump_gradients* copy() const {
+  lbann_callback_dump_gradients* copy() const override {
     return new lbann_callback_dump_gradients(*this);
   }
-  void on_backward_prop_end(model *m);
-  std::string name() const { return "dump gradients"; }
+  void on_backward_prop_end(model *m) override;
+  std::string name() const override { return "dump gradients"; }
  private:
   /** Basename for writing files. */
   std::string m_basename;

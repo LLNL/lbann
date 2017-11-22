@@ -100,12 +100,12 @@ class lbann_callback_step_learning_rate : public lbann_callback_learning_rate {
     const lbann_callback_step_learning_rate&) = default;
   lbann_callback_step_learning_rate& operator=(
     const lbann_callback_step_learning_rate&) = default;
-  lbann_callback_step_learning_rate* copy() const {
+  lbann_callback_step_learning_rate* copy() const override {
     return new lbann_callback_step_learning_rate(*this);
   }
-  std::string name() const { return "step learning rate"; }
+  std::string name() const override { return "step learning rate"; }
  protected:
-  float global_schedule(model *m);
+  float global_schedule(model *m) override;
  private:
   /** Number of epochs between each learning rate decrease. */
   int m_step;
@@ -130,12 +130,12 @@ class lbann_callback_adaptive_learning_rate : public lbann_callback_learning_rat
     const lbann_callback_adaptive_learning_rate&) = default;
   lbann_callback_adaptive_learning_rate& operator=(
     const lbann_callback_adaptive_learning_rate&) = default;
-  lbann_callback_adaptive_learning_rate* copy() const {
+  lbann_callback_adaptive_learning_rate* copy() const override {
     return new lbann_callback_adaptive_learning_rate(*this);
   }
-  std::string name() const { return "adaptive learning rate"; }
+  std::string name() const override { return "adaptive learning rate"; }
  protected:
-  float global_schedule(model *m);
+  float global_schedule(model *m) override;
  private:
   /** Number of epochs to wait for improvements. */
   int64_t m_patience;
@@ -170,12 +170,12 @@ class lbann_callback_drop_fixed_learning_rate :
     const lbann_callback_drop_fixed_learning_rate&) = default;
   lbann_callback_drop_fixed_learning_rate& operator=(
     const lbann_callback_drop_fixed_learning_rate&) = default;
-  lbann_callback_drop_fixed_learning_rate* copy() const {
+  lbann_callback_drop_fixed_learning_rate* copy() const override {
     return new lbann_callback_drop_fixed_learning_rate(*this);
   }
-  std::string name() const { return "drop fixed learning rate"; }
+  std::string name() const override { return "drop fixed learning rate"; }
  protected:
-  float global_schedule(model *m);
+  float global_schedule(model *m) override;
  private:
   /// Amount to decrease the learning rate by.
   float m_amt;

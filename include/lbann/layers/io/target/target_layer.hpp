@@ -214,13 +214,13 @@ class target_layer : public io_layer {
   AbsDistMat& get_prediction() { return *this->m_prev_activations; }
   AbsDistMat& get_ground_truth() { return *this->m_activations_v; }
 
-  virtual std::vector<Layer*> get_layer_pointers() override {
+  std::vector<Layer*> get_layer_pointers() override {
     std::vector<Layer*> layers = io_layer::get_layer_pointers();
     layers.push_back((Layer*) paired_input_layer);
     return layers;
   }
 
-  virtual void set_layer_pointers(std::vector<Layer*> layers) override {
+  void set_layer_pointers(std::vector<Layer*> layers) override {
     paired_input_layer = dynamic_cast<input_layer*>(layers.back());
     if (paired_input_layer == nullptr) {
       std::stringstream err;

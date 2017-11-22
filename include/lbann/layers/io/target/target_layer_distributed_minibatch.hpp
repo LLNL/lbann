@@ -81,9 +81,9 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
   virtual inline void initialize_distributed_matrices() {
     target_layer::initialize_distributed_matrices<T_layout>();
   }
-  virtual data_layout get_data_layout() const override { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
-  virtual void setup_data() override {
+  void setup_data() override {
     target_layer::setup_data();
 
     int max_mb_size = this->m_neural_network_model->get_max_mini_batch_size();

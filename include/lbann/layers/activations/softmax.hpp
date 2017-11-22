@@ -146,7 +146,7 @@ class softmax_layer : public activation_layer {
       1, this->m_neural_network_model->get_max_mini_batch_size());
   }
 
-  virtual void setup_gpu() override {
+  void setup_gpu() override {
     activation_layer::setup_gpu();
 #if !(defined(__LIB_CUDA) && defined(LBANN_SOFTMAX_CUDA))
     throw lbann_exception("softmax: CUDA not detected");

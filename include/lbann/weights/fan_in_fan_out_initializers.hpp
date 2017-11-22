@@ -44,7 +44,7 @@ class fan_in_fan_out_initializer : public weights_initializer {
   fan_in_fan_out_initializer(lbann_comm* comm)
     : weights_initializer(comm), m_fan_in(0), m_fan_out(0) {}
   /** Destructor. */
-  virtual ~fan_in_fan_out_initializer() = default;
+  ~fan_in_fan_out_initializer() override = default;
 
   /** Set fan-in dimension. */
   void set_fan_in(int fan_in) { m_fan_in = fan_in; }
@@ -70,7 +70,7 @@ class glorot_normal_initializer : public fan_in_fan_out_initializer {
   glorot_normal_initializer(lbann_comm* comm) 
     : fan_in_fan_out_initializer(comm) {}
   /** Destructor. */
-  virtual ~glorot_normal_initializer() = default;
+  ~glorot_normal_initializer() override = default;
   
   /** Create a copy. */
   glorot_normal_initializer* copy() const override {
@@ -92,7 +92,7 @@ class glorot_uniform_initializer : public fan_in_fan_out_initializer {
   glorot_uniform_initializer(lbann_comm* comm) 
     : fan_in_fan_out_initializer(comm) {}
   /** Destructor. */
-  virtual ~glorot_uniform_initializer() = default;
+  ~glorot_uniform_initializer() override = default;
 
   /** Create a copy. */
   glorot_uniform_initializer* copy() const override {
@@ -112,7 +112,7 @@ class he_normal_initializer : public fan_in_fan_out_initializer {
   he_normal_initializer(lbann_comm* comm) 
     : fan_in_fan_out_initializer(comm) {}
   /** Destructor. */
-  virtual ~he_normal_initializer() = default;
+  ~he_normal_initializer() override = default;
 
   /** Create a copy. */
   he_normal_initializer* copy() const override {
@@ -133,7 +133,7 @@ class he_uniform_initializer : public fan_in_fan_out_initializer {
   he_uniform_initializer(lbann_comm* comm) 
     : fan_in_fan_out_initializer(comm) {}
   /** Destructor. */
-  virtual ~he_uniform_initializer() = default;
+  ~he_uniform_initializer() override = default;
 
   /** Create a copy. */
   he_uniform_initializer* copy() const override {

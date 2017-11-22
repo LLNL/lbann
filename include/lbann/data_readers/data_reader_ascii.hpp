@@ -38,7 +38,7 @@ class ascii_reader : public generic_data_reader {
   ascii_reader(int sequence_length = 1, bool shuffle = true);
   ascii_reader(const ascii_reader&) = default;
   ascii_reader& operator=(const ascii_reader&) = default;
-  ~ascii_reader() = default;
+  ~ascii_reader() override = default;
   ascii_reader* copy() const override { return new ascii_reader(*this); }
 
   void load() override;

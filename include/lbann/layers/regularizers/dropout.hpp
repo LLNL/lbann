@@ -86,7 +86,7 @@ class dropout : public regularizer_layer {
   }
 
   virtual inline void initialize_distributed_matrices();
-  virtual data_layout get_data_layout() const override { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
  protected:
   /** Drop out units in forward propagation. */

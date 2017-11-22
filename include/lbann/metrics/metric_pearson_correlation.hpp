@@ -44,17 +44,17 @@ class pearson_correlation : public metric {
     const pearson_correlation<T_layout>& other) = default;
 
   /// Destructor
-  ~pearson_correlation() {}
+  ~pearson_correlation() override {}
 
-  pearson_correlation* copy() const { return new pearson_correlation(*this); }
+  pearson_correlation* copy() const override { return new pearson_correlation(*this); }
 
-  void setup(int num_neurons, int mini_batch_size) {
+  void setup(int num_neurons, int mini_batch_size) override {
     metric::setup(num_neurons, mini_batch_size);
   }
-  void fp_set_std_matrix_view(int cur_mini_batch_size) {}
+  void fp_set_std_matrix_view(int cur_mini_batch_size) override {}
 
   /// corr(X1,X2) = covariance(X1,X2)/(stdev(X1)*stdev(X2))
-  double compute_metric(AbsDistMat& predictions_v, AbsDistMat& groundtruth_v) {
+  double compute_metric(AbsDistMat& predictions_v, AbsDistMat& groundtruth_v) override {
     
     double corr = 0.0;
 
@@ -97,7 +97,7 @@ class pearson_correlation : public metric {
 
   }
 
-  double report_metric(execution_mode mode) {
+  double report_metric(execution_mode mode) override {
     statistics *stats = get_statistics(mode);
     double error_per_epoch = stats->m_error_per_epoch;
     long iterations_per_epoch = stats->m_iterations_per_epoch;
@@ -106,7 +106,7 @@ class pearson_correlation : public metric {
 
     return corr;
   }
-  double report_lifetime_metric(execution_mode mode) {
+  double report_lifetime_metric(execution_mode mode) override {
     statistics *stats = get_statistics(mode);
     double total_error = stats->m_total_error;
     long total_num_samples = stats->m_total_num_samples;
@@ -116,7 +116,7 @@ class pearson_correlation : public metric {
     return corr;
   }
 
-  std::string name() const { return "pearson correlation metric"; }
+  std::string name() const override { return "pearson correlation metric"; }
 
 };
 

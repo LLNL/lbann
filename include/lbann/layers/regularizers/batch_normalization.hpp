@@ -271,7 +271,7 @@ class batch_normalization : public regularizer_layer {
     return ss.str();
   }
 
-  ~batch_normalization() {
+  ~batch_normalization() override {
   #ifdef __LIB_CUDNN
     // Deallocate GPU memory
     if (m_cudnn != nullptr) {

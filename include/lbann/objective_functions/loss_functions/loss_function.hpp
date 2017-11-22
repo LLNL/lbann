@@ -43,21 +43,21 @@ class loss_function : public objective_function_term {
   /** Copy assignment operator. */
   loss_function& operator=(const loss_function& other);
   /** Destructor. */
-  virtual ~loss_function();
+  ~loss_function() override;
 
   void set_target_layer(target_layer* layer);
 
   /** Setup objective function term. */
-  virtual void setup(objective_function& obj_fn);
+  void setup(objective_function& obj_fn) override;
   
   /** Get the value of the objective function term. */
-  DataType compute_value();
+  DataType compute_value() override;
 
   /** Compute the gradient of the objective function term.
    *  The gradient is computed w.r.t. the objective function term
    *  inputs.
    */
-  virtual void compute_gradient();
+  void compute_gradient() override;
 
   /** Evaluate the loss function.
    *  This should not include the scale factor.
