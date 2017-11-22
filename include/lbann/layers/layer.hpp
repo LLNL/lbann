@@ -206,8 +206,8 @@ class Layer {
   const std::vector<const Layer*>& get_child_layers() const;
   /** Get names in a particular list of layers */
   static std::string get_layer_names(const std::vector<const Layer*>& list);
-  std::string get_child_names(void) const { return get_layer_names(m_child_layers); }
-  std::string get_parent_names(void) const { return get_layer_names(m_parent_layers); }
+  std::string get_child_names() const { return get_layer_names(m_child_layers); }
+  std::string get_parent_names() const { return get_layer_names(m_parent_layers); }
 
   /** Add a parent layer. */
   void add_parent_layer(const Layer* parent);

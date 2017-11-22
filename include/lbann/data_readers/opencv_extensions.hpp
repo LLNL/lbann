@@ -80,7 +80,7 @@ struct cv_image_type {
    *  OpenCV channel type.
    *  The depth value returned ranges from 0 to (CV_DEPTH_MAX-1) which is 7
    */
-  static int T(void) {
+  static int T() {
     return cv::DataType<_T_>::depth;
   }
 };
