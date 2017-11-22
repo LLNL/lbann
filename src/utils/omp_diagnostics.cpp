@@ -155,6 +155,7 @@ void __attribute__((used)) display_omp_setup() {
   MPI_Get_processor_name(hostname, &len); 
 
   secs = get_sleep_sec(); 
+  (void) secs;
   mpi_only = get_env_var("MPI_ONLY"); 
   mpi_subset = get_env_var("MPI_SUBSET"); 
   
