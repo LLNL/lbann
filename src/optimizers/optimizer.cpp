@@ -435,6 +435,7 @@ void optimizer::step() {
 
 }
 
+#ifdef __LIB_CUDNN
 void optimizer::step_compute_gpu(std::vector<DataType*> values_d,
                                  std::vector<DataType*> gradient_d) {
   m_cudnn->copy_from_gpu(0, m_weights->m_values->Matrix(), values_d[0]);
@@ -443,5 +444,6 @@ void optimizer::step_compute_gpu(std::vector<DataType*> values_d,
   step_compute(*m_weights->m_values, *m_gradient);
   m_cudnn->broadcast_to_gpus(values_d, m_weights->m_values->LockedMatrix());
 }
+#endif // __LIB_CUDNN
 
 }  // namespace lbann

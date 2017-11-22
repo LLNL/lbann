@@ -119,12 +119,14 @@ class optimizer {
    *  have the same matrix distribution.
    */
   virtual void step_compute(AbsDistMat& values, const AbsDistMat& gradient) = 0;
+#ifdef __LIB_CUDNN
   /** Perform the computation in an optimization step on GPU.
    *  The default implementation is to transfer data to CPU and call
    *  step_compute.
    */
   virtual void step_compute_gpu(std::vector<DataType*> values_d,
                                 std::vector<DataType*> gradient_d);
+#endif // __LIB_CUDNN
 
  protected:
  
