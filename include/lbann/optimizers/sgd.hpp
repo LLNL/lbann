@@ -71,13 +71,18 @@ class sgd : public optimizer {
                         std::vector<DataType*> gradient_d) override;
 #endif // __LIB_CUDNN
   bool saveToCheckpointShared(persist& p, std::string m_name) override {
-    optimizer::saveToCheckpointShared(p, m_name);
+    //optimizer::saveToCheckpointShared(p, m_name);
     char l_name[512];
     if (p.get_rank() == 0) {
       sprintf(l_name, "%s_learning_rate", m_name.c_str());
       p.write_float(persist_type::train, l_name, m_learning_rate);
+
+      sprintf(l_name, "%s_momentum", m_name.c_str());
+      p.write_float(persist_type::train, l_name, m_momentum);    
+
     }
-    
+    //sprintf(l_name, "gradient_sgd_%s", m_name.c_str());
+    //p.write_distmat(persist_type::train, l_name, (DistMat *)m_gradient);
     sprintf(l_name, "velocity_sgd_%s", m_name.c_str());
     p.write_distmat(persist_type::train, l_name, (DistMat *)m_velocity);
     return true;
@@ -85,13 +90,20 @@ class sgd : public optimizer {
   }
 
   bool loadFromCheckpointShared(persist& p, std::string m_name) override  {
-    optimizer::loadFromCheckpointShared(p, m_name);
+    //optimizer::loadFromCheckpointShared(p, m_name);
     char l_name[512];
     if (p.get_rank() == 0) {
       sprintf(l_name, "%s_learning_rate", m_name.c_str());
       p.read_float(persist_type::train, l_name, &m_learning_rate);
+
+      sprintf(l_name, "%s_momentum", m_name.c_str());
+      p.read_float(persist_type::train, l_name, &m_momentum);
+
     }
     MPI_Bcast(&m_learning_rate, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&m_momentum, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    //sprintf(l_name, "gradient_sgd_%s.bin", m_name.c_str());
+    //p.read_distmat(persist_type::train, l_name, (DistMat *)m_gradient);
     sprintf(l_name, "velocity_sgd_%s.bin", m_name.c_str()); 
     p.read_distmat(persist_type::train, l_name, (DistMat *)m_velocity);
     return true;

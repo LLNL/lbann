@@ -453,7 +453,7 @@ void optimizer::step_compute_gpu(std::vector<DataType*> values_d,
 }
 #endif // __LIB_CUDNN
 bool optimizer::saveToCheckpointShared(persist& p, std::string m_name) {
-  return true;
+    return true;
 }
 
 bool optimizer::loadFromCheckpointShared(persist& p, std::string m_name) {
