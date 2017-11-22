@@ -6,6 +6,7 @@ add_sources(
   im2col.cpp
   cudnn_wrapper.cpp
   options.cpp
+  omp_diagnostics.cpp
 )
 
 if(LBANN_HAS_CUDA)
