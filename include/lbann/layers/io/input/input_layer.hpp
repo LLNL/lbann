@@ -586,8 +586,6 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
     m_validation_dataset.num_samples_processed() = (long) header.validate_proc;
     m_validation_dataset.total_samples()         = (long) header.validate_total;
 
-    io_layer::loadFromCheckpointShared(p);
-
     return true;
   }
 

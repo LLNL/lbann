@@ -191,11 +191,10 @@ int main(int argc, char *argv[]) {
     add_layers(model, data_readers, cudnn, pb);
     init_callbacks(comm, model, data_readers, pb);
     model->setup();
-
     // restart model from checkpoint if we have one
     //@todo
     model->restartShared();
-
+    int epochs = pb_model->num_epochs() - model->get_cur_epoch();
     if (comm->am_world_master()) {
       std::cout << std::endl;
       if (default_optimizer != nullptr) {
@@ -231,7 +230,7 @@ int main(int argc, char *argv[]) {
 #endif
 
       // Train model
-      model->train(pb_model->num_epochs());
+      model->train(epochs);
 
       // Evaluate model on test set
       model->evaluate(execution_mode::testing);

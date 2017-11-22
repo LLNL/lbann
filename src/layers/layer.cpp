@@ -658,7 +658,6 @@ bool Layer::loadFromCheckpoint(int fd, const char *filename, size_t *bytes) {
 }
 
 bool Layer::saveToCheckpointShared(persist& p) const {
-  //char l_name[512];
   return true;
 }
 

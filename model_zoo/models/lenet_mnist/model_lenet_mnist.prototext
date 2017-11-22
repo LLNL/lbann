@@ -9,7 +9,7 @@ model {
   use_cudnn: false
   num_gpus: -1
   checkpoint_dir: "test"
-  checkpoint_epochs: 5 
+  checkpoint_epochs: 1 
 
   ###################################################
   # Objective function

@@ -64,10 +64,10 @@ class adagrad : public optimizer {
   void step_compute(AbsDistMat& values, const AbsDistMat& gradient) override;
 
   /// Set parameters to optimize and initialize optimizer
-  void setup(AbsDistMat *parameters) override;
+  void setup(AbsDistMat *parameters) ;
   /// Update parameters using objective function gradient
-  void update(const AbsDistMat *gradient) override;
-  std::string name() const override { return "adagrad"; }
+  void update(const AbsDistMat *gradient) ;
+  std::string name() const { return "adagrad"; }
 
   bool saveToCheckpointShared(persist& p, std::string m_name) override {
     char l_name[512];

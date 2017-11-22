@@ -1152,10 +1152,9 @@ bool model::save_to_checkpoint_shared(persist& p) {
     p.write_uint64(persist_type::train, "current_step",       (uint64_t) m_current_step);
     p.write_uint32(persist_type::train, "current_phase",      (uint32_t) m_current_phase);
   }
-
-  for (weights *w : m_weights) {
-    w->saveToCheckpointShared(p); 
-  }
+  //for (weights *w : m_weights) {
+  //  w->saveToCheckpointShared(p);
+  //}
   return true;
 }
 
@@ -1181,9 +1180,9 @@ bool model::load_from_checkpoint_shared(persist& p) {
   m_current_epoch      = (int)            header.current_epoch;
   m_current_step       = (int)            header.current_step;
   m_current_phase      =                  header.current_phase;
-  for (weights *w : m_weights) {
-    w->loadFromCheckpointShared(p);
-  }
+  //for (weights *w : m_weights) {
+  //  w->loadFromCheckpointShared(p);
+  //}
   return true;
 }
 

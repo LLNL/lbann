@@ -185,10 +185,10 @@ bool sequential_model::save_to_checkpoint(int fd, const char *filename, size_t *
   *bytes += write_rc;
 
   // write out details for each layer
-  for (size_t l = 1; l < m_layers.size(); l++)
+  /*for (size_t l = 1; l < m_layers.size(); l++)
     if (!m_layers[l]->saveToCheckpoint(fd, filename, bytes)) {
       return false;
-    }
+    }*/
 
   return true;
 }
@@ -209,11 +209,11 @@ bool sequential_model::load_from_checkpoint(int fd, const char *filename, size_t
     // error!
   }
 
-  for (size_t l = 1; l < m_layers.size(); l++) {
+  /*for (size_t l = 1; l < m_layers.size(); l++) {
     if (! m_layers[l]->loadFromCheckpoint(fd, filename, bytes)) {
       return false;
     }
-  }
+  }*/
 
   return true;
 }
@@ -236,11 +236,16 @@ bool sequential_model::save_to_checkpoint_shared(persist& p) {
     // TODO: record each layer type and size (to be checked when read back)
   }
   // write out details for each layer
-  /*for (size_t l = 0; l < m_layers.size(); l++) {
+  
+  for (weights *w : m_weights) {
+    w->saveToCheckpointShared(p);
+  }
+
+  for (size_t l = 0; l < m_layers.size(); l++) {
     if (! m_layers[l]->saveToCheckpointShared(p)) {
       return false;
     }
-  }*/
+  }
 
   return true;
 }
@@ -267,13 +272,15 @@ bool sequential_model::load_from_checkpoint_shared(persist& p) {
   }
 
   // TODO: check that each layer type matches what we'd expect
-
+  for (weights *w : m_weights) {
+    w->loadFromCheckpointShared(p);
+  }
   // read in each layer
-  /*for (size_t l = 0; l < m_layers.size(); l++) {
+  for (size_t l = 0; l < m_layers.size(); l++) {
     if (! m_layers[l]->loadFromCheckpointShared(p)) {
       return false;
     }
-  }*/
+  }
 
   return true;
 }

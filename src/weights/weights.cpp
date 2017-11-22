@@ -312,21 +312,34 @@ std::vector<DataType*> weights::get_values_gpu() {
   return m_values_d;
 }
 #endif // __LIB_CUDN
-bool weights::saveToCheckpointShared(persist& p) {
+
+bool weights::saveToCheckpointShared(lbann::persist& p)
+{
+  // define name to store our parameters
   char l_name[512];
   sprintf(l_name, "weights_%s_%lldx%lld", m_name.c_str(), m_values->Height(), m_values->Width());
+  
   // write out our weights to the model file
-  p.write_distmat(persist_type::model, l_name, (DistMat *)m_values);
-  //if saving training state, also write out state of optimizer
+  p.write_distmat(persist_type::model, l_name, (DistMat*)m_values);
+  //
+  // if saving training state, also write out state of optimizer
   m_optimizer->saveToCheckpointShared(p, m_name);
+  
   return true;
 }
-bool weights::loadFromCheckpointShared(persist& p){
+
+bool weights::loadFromCheckpointShared(lbann::persist& p)
+{
+  // define name to store our parameters
   char l_name[512];
   sprintf(l_name, "weights_%s_%lldx%lld.bin", m_name.c_str(), m_values->Height(), m_values->Width());
+  
   // read our weights from model file
-  p.read_distmat(persist_type::model, l_name, (DistMat *)m_values);  
+  p.read_distmat(persist_type::model, l_name, (DistMat*)m_values);
+  
+  // if loading training state, read in state of optimizer
   m_optimizer->loadFromCheckpointShared(p, m_name);
+  
   return true;
 }
 
