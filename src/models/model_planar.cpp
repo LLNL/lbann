@@ -73,9 +73,15 @@ planar_model::~planar_model() {
 std::vector<Layer*> planar_model::get_layers() const {
   std::vector<Layer*> ret;
   for (auto&& peers : get_stack()) {
+  #if 1
+    if (peers.size() > 0u) { // only adding a master
+      ret.push_back(peers[0]);
+    }
+  #else
     for (auto&& layer : peers) {
        ret.push_back(layer);
     }
+  #endif
   }
   return ret;
 }
