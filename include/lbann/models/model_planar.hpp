@@ -47,9 +47,10 @@ class planar_model : public model {
   /// Constructor
   planar_model(lbann_comm *comm,
                int mini_batch_size,
-               objective_functions::objective_function *obj_fn,
-               optimizer *default_optimizer,
+               objective_function *obj_fn,
+               optimizer* default_optimizer,
                int width);
+
   /** Copy constructor. */
   planar_model(const planar_model& other);
 
@@ -63,10 +64,14 @@ class planar_model : public model {
   /** Create copy. */
   planar_model* copy() const override { return new planar_model(*this); }
 
-  /// Allow access to the model's layers.
-  Layer_stack_t& get_layers() { return m_layers; }
+  /// return read-only pointers to the model's layers in a flat vector.
+  std::vector<Layer*> get_layers() const;
+
+  /// Allow access to the model's layer stack.
+  Layer_stack_t& get_stack() { return m_layers; }
   /// Allow the read-only access to the model's layers.
-  const Layer_stack_t& get_layers() const { return m_layers; }
+  const Layer_stack_t& get_stack() const { return m_layers; }
+
   /// Deep-copy layers
   void copy_layers(const Layer_stack_t& src_stack);
   /// shallow-copy layers
@@ -89,7 +94,7 @@ class planar_model : public model {
   typedef std::unordered_map<Layer*, Layer*> Layer_map_t;
 
   /// Deallocate layer objects
-  void delete_layers();
+  void delete_layers() override;
 
   static Layer* find_layer(const Layer_map_t& map_src_to_new, const Layer* const src_layer);
 
@@ -104,20 +109,21 @@ class planar_model : public model {
 
   void setup_subset();
 
-  virtual bool check_layer_type_consistency(const Layer_peers_t& layer_peers) const;
+  //virtual bool check_layer_type_consistency(const Layer_peers_t& layer_peers) const;
 
   /// Ensure weight matriecs in heads at each level are the same
-  virtual void equalize();
+  //virtual void equalize();
 
+  void reset_layers() override;
+  bool update_layers() override;
   void forward_prop_to_evaluate() override;
-  bool update_io_layers() override;
   void forward_prop() override;
   void backward_prop() override;
-  void update_optimizable_layers() override;
 
   /// Check if the model has a valid data set for the execution mode
   bool is_execution_mode_valid(execution_mode mode) const override;
 
+#if 0
   // Methods for calling every callback at different points.
   // These are currently dummy methods
   void setup_callbacks() override {};
@@ -147,6 +153,7 @@ class planar_model : public model {
   void do_layer_evaluate_forward_prop_begin_cbs(Layer *l) override {};
   void do_model_evaluate_forward_prop_end_cbs() override {};
   void do_layer_evaluate_forward_prop_end_cbs(Layer *l) override {};
+#endif
 
  protected:
   /// the maximum number of horizontal layers in the network

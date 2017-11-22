@@ -48,7 +48,7 @@ planar_model::planar_model(lbann_comm *comm,
                            objective_function *obj_fn,
                            optimizer *default_optimizer,
                            int width)
-  : model(comm, mini_batch_size, obj_fn, optimizer_fac), m_width(width)
+  : model(comm, mini_batch_size, obj_fn, default_optimizer), m_width(width)
 {}
 
 planar_model::planar_model(const planar_model& other)
@@ -70,8 +70,18 @@ planar_model::~planar_model() {
   delete_layers();
 }
 
+std::vector<Layer*> planar_model::get_layers() const {
+  std::vector<Layer*> ret;
+  for (auto&& peers : get_stack()) {
+    for (auto&& layer : peers) {
+       ret.push_back(layer);
+    }
+  }
+  return ret;
+}
+
 void planar_model::delete_layers() {
-  for (auto& layer_peers : m_layers) {
+  for (auto& layer_peers : get_stack()) {
     for (auto layer : layer_peers) {
       delete layer;
     }
@@ -127,7 +137,7 @@ Layer* planar_model::find_layer(const Layer_map_t& map_src_to_new, const Layer* 
   return it->second;
 }
 
-void planar_model::add(Layer *layer){
+void planar_model::add_layer(Layer *layer) {
   if (layer == nullptr) {
     throw lbann_exception("Planar model: Attempted to add null pointer as a layer.");
   }
@@ -174,7 +184,7 @@ void planar_model::setup() {
   bool multi_headed = false;
 
   /// Convert sequential layers to planar layers
-  for (auto& layer_peers : m_layers) {
+  for (auto& layer_peers : get_stack()) {
     assert((layer_peers.size() == 1u) && (layer_peers.at(0) != nullptr));
     const auto master_layer = layer_peers[0];
 
@@ -213,47 +223,48 @@ void planar_model::setup() {
 }
 
 void planar_model::setup_subset() {
+  Layer_stack_t& stack = get_stack();
 
-  for (size_t l=0u; l < m_layers.size(); l++) {
+  for (size_t l=0u; l < stack.size(); l++) {
 
-    for(size_t k=0u; k < m_layers[l].size(); k++) {
-      Layer* current_layer = m_layers[l][k];
+    for(size_t k=0u; k < stack[l].size(); k++) {
+      Layer* current_layer = stack[l][k];
 
       /// Determine the previous layer
       if(l <= 0){
         //current_layer->add_parent_layer(nullptr);
       }
       else{
-        if(m_layers[l-1].size() < m_layers[l].size()){/// Fan-out structure
-          assert(m_layers[l-1].size() == 1u);
-          current_layer->add_parent_layer(m_layers[l-1][0]);
+        if(stack[l-1].size() < stack[l].size()){/// Fan-out structure
+          assert(stack[l-1].size() == 1u);
+          current_layer->add_parent_layer(stack[l-1][0]);
         }
-        else if(m_layers[l-1].size() > m_layers[l].size()){/// Fan-in structure
-          assert(m_layers[l].size() == 1u);
-          for(size_t j=0u; j < m_layers[l-1].size(); j++)
-            current_layer->add_parent_layer(m_layers[l-1][j]);
+        else if(stack[l-1].size() > stack[l].size()){/// Fan-in structure
+          assert(stack[l].size() == 1u);
+          for(size_t j=0u; j < stack[l-1].size(); j++)
+            current_layer->add_parent_layer(stack[l-1][j]);
         }
         else{/// Current and previous layers have the same number of layers
-          current_layer->add_parent_layer(m_layers[l-1].at(k));
+          current_layer->add_parent_layer(stack[l-1].at(k));
         }
       }
 
       /// Determine the next layer
-      if(l >= m_layers.size()-1){
+      if(l >= stack.size()-1){
        // current_layer->add_child_layer(nullptr);
       }
       else{
-        if(m_layers[l+1].size() < m_layers[l].size()){/// Fain-in structure
-          assert(m_layers[l+1].size() == 1u);
-          current_layer->add_child_layer(m_layers[l+1][0]);
+        if(stack[l+1].size() < stack[l].size()){/// Fain-in structure
+          assert(stack[l+1].size() == 1u);
+          current_layer->add_child_layer(stack[l+1][0]);
         }
-        else if(m_layers[l+1].size() > m_layers[l].size()){/// Fan-out structure
-          assert(m_layers[l].size() == 1u);
-          for(size_t j=0u; j < m_layers[l+1].size(); j++)
-            current_layer->add_child_layer(m_layers[l+1][j]);
+        else if(stack[l+1].size() > stack[l].size()){/// Fan-out structure
+          assert(stack[l].size() == 1u);
+          for(size_t j=0u; j < stack[l+1].size(); j++)
+            current_layer->add_child_layer(stack[l+1][j]);
         }
         else{// Current and the next layer has the same number of layers
-          current_layer->add_child_layer(m_layers[l+1].at(k));
+          current_layer->add_child_layer(stack[l+1].at(k));
         }
       }
 
@@ -266,13 +277,13 @@ void planar_model::setup_subset() {
         std::cout << print_layer_description(current_layer) << std::endl;
       }
     }
-    if (!check_layer_type_consistency(m_layers[l])) {
-      throw("Planar model: layer type consistency failed");
-    }
+    //if (!check_layer_type_consistency(stack[l])) {
+    //  throw("Planar model: layer type consistency failed");
+    //}
   }
 
   /// Share the weights between Siamese heads
-  equalize();
+  //equalize();
 
   // Set up callbacks
   /// XXXXXXXXXXXX
@@ -283,6 +294,7 @@ void planar_model::setup_subset() {
 /** Make sure all layers at current level are not a mix of learning and
  *  non-learning layers nor of optimizable and non-optimizable layers
  */
+/*
 bool planar_model::check_layer_type_consistency(const Layer_peers_t& layer_peers) const {
   /// No need to check for single-head level
   if (layer_peers.size() <= 1u)
@@ -309,6 +321,7 @@ bool planar_model::check_layer_type_consistency(const Layer_peers_t& layer_peers
   }
   return true;
 }
+*/
 
 
 ////////////////////////////////////////////////////////////
@@ -317,9 +330,8 @@ bool planar_model::check_layer_type_consistency(const Layer_peers_t& layer_peers
 
 /// Forward propagation in planar model with callbacks for layer evaluation
 void planar_model::forward_prop_to_evaluate() {
-  // Forward propagation
   do_model_evaluate_forward_prop_begin_cbs();
-  for (const auto& layer_peers : m_layers) {
+  for (const auto& layer_peers : get_stack()) {
     for (auto const layer : layer_peers) {
       do_layer_evaluate_forward_prop_begin_cbs(layer);
       layer->forward_prop();
@@ -329,23 +341,20 @@ void planar_model::forward_prop_to_evaluate() {
   do_model_evaluate_forward_prop_end_cbs();
 }
 
-/// Update target and input layers
-bool planar_model::update_io_layers() {
-  bool finished = true;
-  for (const auto& layer_peers : m_layers) {
+void planar_model::reset_layers() {
+  for (const auto& layer_peers : get_stack()) {
     for (auto const layer : layer_peers) {
-      target_layer* const target = dynamic_cast<target_layer *>(layer);
-      if (target != nullptr) {
-        target->update();
-      }
+      layer->reset();
     }
   }
-  for (const auto& layer_peers : m_layers) {
-    for (auto const layer : layer_peers) {
-      input_layer* const input = dynamic_cast<input_layer *>(layer);
-      if (input != nullptr) {
-        finished = input->update() && finished;
-      }
+}
+
+bool planar_model::update_layers() {
+  bool finished = true;
+  const Layer_stack_t& stack = get_stack();
+  for (size_t p = stack.size(); p-- > 0u;) {
+    for (size_t l = stack[p].size(); l-- > 0u; ) {
+      finished = stack[p][l]->update() && finished;
     }
   }
   return finished;
@@ -354,7 +363,7 @@ bool planar_model::update_io_layers() {
 /// Forward propagation in planar model
 void planar_model::forward_prop() {
   do_model_forward_prop_begin_cbs();
-  for (const auto& layer_peers : m_layers) {
+  for (const auto& layer_peers : get_stack()) {
     for (auto const layer : layer_peers) {
       do_layer_forward_prop_begin_cbs(layer);
       layer->forward_prop();
@@ -367,9 +376,10 @@ void planar_model::forward_prop() {
 /// Backward propagation in planar model
 void planar_model::backward_prop() {
   do_model_backward_prop_begin_cbs();
-  for (size_t p = m_layers.size(); p-- > 0u;) {
-    for (size_t l = m_layers[p].size(); l-- > 0u; ) {
-      Layer* const layer = m_layers[p][l];
+  const Layer_stack_t& stack = get_stack();
+  for (size_t p = stack.size(); p-- > 0u;) {
+    for (size_t l = stack[p].size(); l-- > 0u; ) {
+      Layer* const layer = stack[p][l];
       do_layer_backward_prop_begin_cbs(layer);
       layer->back_prop();
       do_layer_backward_prop_end_cbs(layer);
@@ -379,8 +389,9 @@ void planar_model::backward_prop() {
 }
 
 /// equalize non-master layers' weights with master layer's parameters
+/*
 void planar_model::equalize() {
-  for (const auto& layer_peers : m_layers) {
+  for (const auto& layer_peers : get_stack()) {
     if (layer_peers.size() < 2u) continue;
     Layer* const master_layer = layer_peers[0];
     optimizable_layer* const master_opt_layer
@@ -397,55 +408,19 @@ void planar_model::equalize() {
     }
   }
 }
-
-void planar_model::update_optimizable_layers() {
-  // Update optimizable layers
-  // Note: We iterate through layer groups that are comprised of
-  // optimizable layers which is flaged to share weights.
-  for (const auto& layer_peers : m_layers) {
-    Layer* const master_layer = layer_peers[0];
-    optimizable_layer* const master_opt_layer
-      = dynamic_cast<optimizable_layer*>(master_layer);
-    if (master_opt_layer == nullptr) continue;
-
-    // Accumulate gradients in master layer
-    for (Layer* const layer : layer_peers) {
-      if (layer == master_layer) continue;
-      optimizable_layer* const opt_layer
-        = dynamic_cast<optimizable_layer*>(layer);
-      const AbsDistMat& gradient = opt_layer->get_parameters_gradient();
-      master_opt_layer->add_to_parameters_gradient(gradient);
-      opt_layer->clear_parameters_gradient();
-    }
-
-    // Update parameters in master layer
-    master_layer->update();
-    master_opt_layer->clear_parameters_gradient();
-
-    // Update non-master layers with master layer's parameters
-    const AbsDistMat& parameters = master_opt_layer->get_parameters();
-    for (Layer* const layer : layer_peers) {
-      if (layer == master_layer) continue;
-      optimizable_layer* const opt_layer
-        = dynamic_cast<optimizable_layer*>(layer);
-      opt_layer->set_parameters(parameters);
-    }
-  }
-}
+*/
 
 void planar_model::set_execution_mode(execution_mode mode) {
   m_execution_mode = mode;
-  const Layer_stack_t& layer_stack = get_layers();
-  for (auto&& layer_peers : layer_stack) {
-    for (auto&& layer : layer_peers) {
+  for (const auto& layer_peers : get_stack()) {
+    for (auto const layer : layer_peers) {
       layer->set_execution_mode(mode);
     }
   }
 }
 
 bool planar_model::is_execution_mode_valid(execution_mode mode) const {
-  const Layer_stack_t& layer_stack = get_layers();
-  for (auto&& layer_peers : layer_stack) {
+  for (const auto& layer_peers : get_stack()) {
     for (auto&& layer : layer_peers) {
       const input_layer* const input = dynamic_cast<const input_layer*>(layer);
       if (input != nullptr && !(input->is_execution_mode_valid(mode))) {
@@ -461,18 +436,19 @@ bool planar_model::is_execution_mode_valid(execution_mode mode) const {
 ////////////////////////////////////////////////////////////
 
 void planar_model::summarize_stats(lbann_summary& summarizer) {
-  const Layer_stack_t& layer_stack = get_layers();
-  for (auto&& layer_peers : layer_stack) {
-    for (auto&& layer : layer_peers) {
+  for (const auto& layer_peers : get_stack()) {
+    for (auto const layer : layer_peers) {
       layer->summarize_stats(summarizer, get_cur_step());
     }
   }
+  summarizer.reduce_scalar("objective",
+                           m_objective_function->get_history_mean_value(),
+                           get_cur_step());
 }
 
 void planar_model::summarize_matrices(lbann_summary& summarizer) {
-  const Layer_stack_t& layer_stack = get_layers();
-  for (auto&& layer_peers : layer_stack) {
-    for (auto&& layer : layer_peers) {
+  for (const auto& layer_peers : get_stack()) {
+    for (auto const layer : layer_peers) {
       layer->summarize_matrices(summarizer, get_cur_step());
     }
   }

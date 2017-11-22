@@ -1636,12 +1636,11 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
     model = new dag_model(comm, mini_batch_size, obj_fn, default_optimizer);
     if (master) std::cout << "instantiating dag_model\n";
   } else if(name == "planar_model") {
-#if 0
     if (m.has_planar()) {
       const lbann_data::Model::Planar& planar = m.planar();
       if (planar.has_simple()) {
         const int num_heads = planar.simple().num_heads();
-        model = new planar_model(mini_batch_size, comm, obj_fn, optimizer_fac, num_heads);
+        model = new planar_model(comm, mini_batch_size, obj_fn, default_optimizer, num_heads);
       } else if (planar.has_regular()) {
         // TODO: parse the vector and pass it to the overloaded constructor
         // vector<int> outdegrees_fanout;
@@ -1653,13 +1652,6 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
       throw lbann_exception(err.str());
     }
     if (master) std::cout << "instantiating planar_model\n";
-#else
-    if (master) {
-      err << __FILE__ << " " << __LINE__
-          << " :: planar model is currently not supported";
-      throw lbann_exception(err.str());
-    }
-#endif // 0      
   } else if (name == "greedy_layerwise_autoencoder") {
     model = new greedy_layerwise_autoencoder(comm, mini_batch_size, obj_fn, default_optimizer);
     if (master) std::cout << "instantiating greedy_layerwise_autoencoder\n";

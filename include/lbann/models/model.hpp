@@ -292,6 +292,9 @@ class model {
   virtual std::string print_layer_description(const Layer* layer) const;
 
   /// Deallocate layer objects
+  virtual void delete_layers();
+  virtual void reset_layers();
+  virtual bool update_layers();
   virtual void forward_prop_to_evaluate();
   virtual void forward_prop();
   virtual void backward_prop();

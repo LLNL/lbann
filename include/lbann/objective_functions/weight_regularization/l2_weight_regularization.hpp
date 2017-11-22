@@ -43,23 +43,23 @@ class l2_weight_regularization : public objective_function_term {
   /** Copy assignment operator. */
   l2_weight_regularization& operator=(const l2_weight_regularization& other) = default;
   /** Destructor. */
-  virtual ~l2_weight_regularization() = default;
+  ~l2_weight_regularization() override = default;
   /** Copy function. */
   l2_weight_regularization* copy() const override { return new l2_weight_regularization(*this); }
 
   /** Get the name of the objective function term. */
-  virtual std::string name() const override { return "l2_weight_regularization"; }
+  std::string name() const override { return "l2_weight_regularization"; }
 
   /** Setup L2 regularization term. */
-  virtual void setup(objective_function& obj_fn);
+  void setup(objective_function& obj_fn) override;
   
   /** Get the value of the L2 regularization term. */
-  DataType compute_value();
+  DataType compute_value() override;
 
   /** Compute the gradient of the L2 regularization term.
    *  The gradient is computed w.r.t. the weights.
    */
-  virtual void compute_gradient();
+  void compute_gradient() override;
 
 };
 

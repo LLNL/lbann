@@ -169,12 +169,9 @@ model& model::operator=(const model& other) {
   for (lbann_callback *callback : m_callbacks) {
     delete callback;
   }
-  for (Layer *layer : m_layers) {
-    delete layer;
-  }
   m_metrics.clear();
   m_callbacks.clear();
-  m_layers.clear();
+  delete_layers();
 
   // Shallow copies
   m_execution_mode = other.m_execution_mode;
@@ -282,15 +279,20 @@ model::~model() {
   for (lbann_callback *callback : m_callbacks) {
     delete callback;
   }
-  for (Layer *layer : m_layers) {
-    delete layer;
-  }
+  delete_layers();
   for (weights *w : m_weights) {
     delete w;
   }
   if (m_default_optimizer != nullptr) {
     delete m_default_optimizer;
   }
+}
+
+void model::delete_layers() {
+  for (Layer *layer : m_layers) {
+    delete layer;
+  }
+  m_layers.clear();
 }
 
 ////////////////////////////////////////////////////////////
@@ -487,24 +489,31 @@ void model::forward_prop_to_evaluate() {
 
 }
 
-bool model::evaluate_mini_batch() {
-  do_batch_evaluate_begin_cbs();
-
-  // Reset matrices
+void model::reset_layers() {
   for (Layer *layer : m_layers) {
     layer->reset();
   }
+}
+
+bool model::update_layers() {
+  bool finished = true;
+  for (int l = m_layers.size() - 1; l >= 0; --l) {
+    finished = m_layers[l]->update() && finished;
+  }
+  return finished;
+}
+
+bool model::evaluate_mini_batch() {
+  do_batch_evaluate_begin_cbs();
+
+  reset_layers();
 
   forward_prop_to_evaluate();
 
   // Compute objective function value
   m_objective_function->compute_value();
 
-  // Update layers
-  bool finished = true;
-  for (int l = m_layers.size() - 1; l >= 0; --l) {
-    finished = m_layers[l]->update() && finished;
-  }
+  const bool finished = update_layers();
 
   // Finish up
   do_batch_evaluate_end_cbs();
@@ -546,12 +555,11 @@ bool model::train_mini_batch() {
   do_batch_begin_cbs();
 
   // Reset matrices
-  for (Layer *layer : m_layers) {
-    layer->reset();
-  }
+  reset_layers();
+
+  forward_prop();
 
   // Compute objective function value
-  forward_prop();
   m_objective_function->compute_value();
 
   // Compute gradients
@@ -566,11 +574,7 @@ bool model::train_mini_batch() {
     }
   }
 
-  // Update layers
-  bool finished = true;
-  for (int l = m_layers.size() - 1; l >= 0; --l) {
-    finished = m_layers[l]->update() && finished;
-  }
+  const bool finished = update_layers();
 
   // Finish up
   do_batch_end_cbs();
