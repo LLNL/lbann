@@ -302,8 +302,8 @@ class pooling_layer : public transform {
   #else
 
     // Useful constants
-    const DataType one = 1;
-    const DataType zero = 0;
+    const DataType one = DataType(1);
+    const DataType zero = DataType(0);
 
     // Get number of GPUs
     const int num_gpus = this->m_cudnn->get_num_gpus();

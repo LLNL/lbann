@@ -125,9 +125,7 @@ std::string optimizer::get_description() const {
   std::stringstream ss;
   ss << get_type();
   if (m_weights != nullptr) {
-    ss << " is optimizing " << m_weights->get_name();
-  } else {
-    ss << " is not optimizing anything";
+    ss << " (optimizing " << m_weights->get_name() << ")";
   }
   ss << "; learning_rate=" << m_learning_rate;
   return ss.str();

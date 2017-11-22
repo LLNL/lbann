@@ -125,6 +125,7 @@ Layer::Layer(const Layer& other) :
   m_num_prev_neurons(other.m_num_prev_neurons),
   m_num_prev_neuron_dims(other.m_num_prev_neuron_dims),
   m_prev_neuron_dims(other.m_prev_neuron_dims),
+  m_weights(other.m_weights),
   m_parent_layers(other.m_parent_layers),
   m_child_layers(other.m_child_layers),
   m_max_num_parent_layers(other.m_max_num_parent_layers),
@@ -187,6 +188,7 @@ Layer& Layer::operator=(const Layer& other) {
   m_num_prev_neurons = other.m_num_prev_neurons;
   m_num_prev_neuron_dims = other.m_num_prev_neuron_dims;
   m_prev_neuron_dims = other.m_prev_neuron_dims;
+  m_weights = other.m_weights;
   m_parent_layers = other.m_parent_layers;
   m_child_layers = other.m_child_layers;
   m_max_num_parent_layers = other.m_max_num_parent_layers;
