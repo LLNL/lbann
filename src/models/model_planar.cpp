@@ -43,11 +43,11 @@
 
 namespace lbann {
 
-planar_model::planar_model(int mini_batch_size,
-                                   lbann_comm *comm,
-                                   objective_functions::objective_function *obj_fn,
-                                   optimizer_factory *optimizer_fac,
-                                   int width)
+planar_model::planar_model(lbann_comm *comm,
+                           int mini_batch_size,
+                           objective_function *obj_fn,
+                           optimizer *default_optimizer,
+                           int width)
   : model(comm, mini_batch_size, obj_fn, optimizer_fac), m_width(width)
 {}
 
@@ -668,6 +668,5 @@ bool planar_model::load_from_checkpoint_shared(persist& p) {
   return true;
 }
 */
-
 
 }  // namespace lbann

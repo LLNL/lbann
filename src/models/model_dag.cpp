@@ -37,11 +37,11 @@
 
 namespace lbann {
 
-dag_model::dag_model(int mini_batch_size,
-                     lbann_comm *comm,
-                     objective_functions::objective_function *obj_fn,
-                     optimizer_factory *optimizer_fac)
-  : model(comm, mini_batch_size, obj_fn, optimizer_fac) {}
+dag_model::dag_model(lbann_comm *comm,
+                     int mini_batch_size,
+                     objective_function *obj_fn,
+                     optimizer* default_optimizer)
+  : model(comm, mini_batch_size, obj_fn, default_optimizer) {}
 
 void dag_model::setup() {
 
@@ -67,6 +67,9 @@ void dag_model::setup() {
       std::cout << "[" << std::setw(18) << layer->get_type() <<  "] Set up a layer with input " << std::setw(7) << layer->get_num_prev_neurons() << " and " << std::setw(7) << layer->get_num_neurons() << " neurons."  << std::endl;
     }
   }
+
+  // Setup objective function
+  m_objective_function->setup(*this);
 
   // Set up callbacks
   setup_callbacks();

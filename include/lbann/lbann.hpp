@@ -37,7 +37,7 @@
 #include "lbann/models/model_sequential.hpp"
 #include "lbann/models/model_dag.hpp"
 #include "lbann/models/model_greedy_layerwise_autoencoder.hpp"
-#include "lbann/models/model_planar.hpp"
+// #include "lbann/models/model_planar.hpp"
 
 /// Activation Layers
 #include "lbann/layers/activations/atan.hpp"
@@ -126,22 +126,28 @@
 #include "lbann/callbacks/callback_variable_minibatch.hpp"
 #include "lbann/callbacks/callback_gradient_check.hpp"
 
+/// Weights and weight initializers
+#include "lbann/weights/weights.hpp"
+#include "lbann/weights/initializer.hpp"
+#include "lbann/weights/fan_in_fan_out_initializers.hpp"
+
 /// Optimizers
-#include "lbann/optimizers/optimizer_adagrad.hpp"
-#include "lbann/optimizers/optimizer_adam.hpp"
-#include "lbann/optimizers/optimizer_hypergradient_adam.hpp"
-#include "lbann/optimizers/optimizer_rmsprop.hpp"
-#include "lbann/optimizers/optimizer_sgd.hpp"
+#include "lbann/optimizers/adagrad.hpp"
+#include "lbann/optimizers/adam.hpp"
+#include "lbann/optimizers/hypergradient_adam.hpp"
+#include "lbann/optimizers/rmsprop.hpp"
+#include "lbann/optimizers/sgd.hpp"
 
 /// Objective functions (cost functions)
-#include "lbann/objective_functions/binary_cross_entropy.hpp"
-#include "lbann/objective_functions/cross_entropy.hpp"
-#include "lbann/objective_functions/cross_entropy_with_uncertainty.hpp"
-#include "lbann/objective_functions/geom_negloglike.hpp"
-#include "lbann/objective_functions/mean_absolute_deviation.hpp"
-#include "lbann/objective_functions/mean_squared_error.hpp"
-#include "lbann/objective_functions/poisson_negloglike.hpp"
-#include "lbann/objective_functions/polya_negloglike.hpp"
+#include "lbann/objective_functions/loss_functions/cross_entropy.hpp"
+#include "lbann/objective_functions/loss_functions/mean_squared_error.hpp"
+// #include "lbann/objective_functions/binary_cross_entropy.hpp"
+// #include "lbann/objective_functions/cross_entropy_with_uncertainty.hpp"
+// #include "lbann/objective_functions/geom_negloglike.hpp"
+// #include "lbann/objective_functions/mean_absolute_deviation.hpp"
+// #include "lbann/objective_functions/poisson_negloglike.hpp"
+// #include "lbann/objective_functions/polya_negloglike.hpp"
+#include "lbann/objective_functions/weight_regularization/l2_weight_regularization.hpp"
 
 /// Metrics
 #include "lbann/metrics/metric_categorical_accuracy.hpp"

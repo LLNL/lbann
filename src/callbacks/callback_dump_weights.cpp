@@ -40,18 +40,14 @@ void lbann_callback_dump_weights::on_epoch_end(model *m) {
 }
 
 void lbann_callback_dump_weights::dump_weights(model *m) {
-  // Print weights of learning layers
-  for (Layer* layer : m->get_layers()) {
-    learning *learning_layer = dynamic_cast<learning*>(layer);
-    if (learning_layer != nullptr) {
-      const std::string file
-        = (m_basename
-           + "model" + std::to_string(m->get_comm()->get_model_rank())
-           + "-epoch" + std::to_string(m->get_cur_epoch())
-           + "-" + learning_layer->get_name()
-           + "-Weights");
-      El::Write(learning_layer->get_weights(), file, El::ASCII);
-    }
+  for (weights *w : m->get_weights()) {
+    const std::string file
+      = (m_basename
+         + "model" + std::to_string(m->get_comm()->get_model_rank())
+         + "-epoch" + std::to_string(m->get_cur_epoch())
+         + "-" + w->get_name()
+         + "-Weights");
+    El::Write(w->get_values(), file, El::ASCII);
   }
 }
 

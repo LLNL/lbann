@@ -198,14 +198,14 @@ int main(int argc, char *argv[]) {
     init_data_readers(master, pb, data_readers);
 
     // Construct optimizer
-    optimizer_factory *optimizer_fac = init_optimizer_factory(comm, cudnn, pb);
+    optimizer *default_optimizer = init_default_optimizer(comm, cudnn, pb);
 
     // User feedback
     print_parameters(comm, pb);
 
     // Initalize model
     // @todo: not all callbacks code is in place
-    model *model = init_model(comm, optimizer_fac, pb);
+    model *model = init_model(comm, default_optimizer, pb);
     add_layers(model, data_readers, cudnn, pb);
     init_callbacks(comm, model, data_readers, pb);
     model->setup();
@@ -215,9 +215,13 @@ int main(int argc, char *argv[]) {
     //model->restartShared();
 
     if (comm->am_world_master()) {
-      optimizer *o = optimizer_fac->create_optimizer();
-      cout << "\nOptimizer:\n" << o->get_description() << endl << endl;
-      delete o;
+      std::cout << std::endl;
+      if (default_optimizer != nullptr) {
+        std::cout << "Default optimizer: " << default_optimizer->get_description();
+      } else {
+        std::cout << "No optimizer";
+      }
+      std::cout << std::endl << std::endl;
       std::vector<Layer *>& layers = model->get_layers();
       for (size_t h=0; h<layers.size(); h++) {
         std::cout << h << " " << layers[h]->get_description() << endl;
@@ -258,7 +262,6 @@ int main(int argc, char *argv[]) {
     // @todo: figure out and implement coherent strategy
     // for freeing dynamically allocated memory
     delete model;
-    delete optimizer_fac;
 
   } catch (lbann_exception& e) {
     lbann_report_exception(e, comm);

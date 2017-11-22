@@ -37,6 +37,7 @@
 #include "lbann/io/persist.hpp"
 #include "lbann/objective_functions/objective_function.hpp"
 #include "lbann/metrics/metric.hpp"
+#include "lbann/weights/weights.hpp"
 #include "lbann/optimizers/optimizer.hpp"
 #include <vector>
 #include <string>
@@ -47,14 +48,13 @@ namespace lbann {
 // Forward-declare this.
 class lbann_callback;
 
-/**
- * Base class for LBANN models.
- */
+/** Base class for LBANN models. */
 class model {
  public:
-  model(lbann_comm *comm, int mini_batch_size,
-        objective_functions::objective_function *obj_fn,
-        optimizer_factory *optimizer_fac);
+  model(lbann_comm *comm,
+        int mini_batch_size,
+        objective_function *obj_fn,
+        optimizer* default_optimizer = nullptr);
   model(const model& other);
   model& operator=(const model& other);
   virtual ~model();
@@ -68,13 +68,26 @@ class model {
   virtual void setup() {}
 
   /** Add layer to model. */
-  virtual void add(Layer *layer);
+  virtual void add_layer(Layer *layer);
+
+  /** Add weights to model. */
+  void add_weights(weights *w);
 
   /** Register a new callback for the model. */
-  virtual void add_callback(lbann_callback *cb);
+  void add_callback(lbann_callback *cb);
 
   /** Register a new metric for the model. */
-  virtual void add_metric(metrics::metric *m);
+  void add_metric(metrics::metric *m);
+
+  /** Construct an instance of the default optimizer.
+   *  If there is no default optimizer, a null pointer is returned.
+   */
+  optimizer* create_optimizer() const;
+
+  /** Return the model's objective function. */
+  objective_function* get_objective_function() {
+    return m_objective_function;
+  }
 
   /** Return the model's metrics. */
   virtual std::vector<metrics::metric *>& get_metrics() {
@@ -85,15 +98,14 @@ class model {
   void set_layers(std::vector<Layer *>& layers);
 
   /** Return the model's layers. */
-  std::vector<Layer *>& get_layers() {
-    return m_layers;
-  }
+  std::vector<Layer *>& get_layers() { return m_layers; }
 
-  /** Link two layers in model.
-   *  If the layers are optimizable, they will share weights.
-   */
-  virtual void link_layers(Layer *layer1, Layer *layer2);
-  
+  /** Set the model's weights. */
+  void set_weights(std::vector<weights *>& w);
+
+  /** Return the model's weights. */
+  std::vector<weights *>& get_weights() { return m_weights; }
+
   /** Get the model's comm. */
   inline lbann_comm *get_comm() const {
     return m_comm;
@@ -167,11 +179,6 @@ class model {
     m_terminate_training = f;
   }
 
-  /** Create a new optimizer. */
-  inline optimizer *create_optimizer() {
-    return m_optimizer_fac->create_optimizer();
-  }
-
   /** Train model. */
   virtual void train(int num_epochs);
   /** Evaluate model. */
@@ -216,14 +223,11 @@ class model {
 
 #endif // 0
 
-  /**
-   * Objective functions are used to judge the performance of the model during
-   * training and can be used to adapt training via either early termination or
-   * adaptive learning rates.
-   */
-  objective_functions::objective_function *m_obj_fn;
-
  protected:
+
+  /** The objective function used to train the model. */
+  objective_function *m_objective_function;
+
   /** The model's current execution mode. */
   execution_mode m_execution_mode;
   /** Flag telling the model to terminate training. */
@@ -266,8 +270,7 @@ class model {
   /** Timestamp of last checkpoint */
   double m_checkpoint_last;
 
-  /** Factory to create optimizers. */
-  optimizer_factory *m_optimizer_fac;
+  optimizer *m_default_optimizer;
 
   /**
    * A metric is a function that is used to judge the performance of your model.
@@ -281,10 +284,7 @@ class model {
    */
   std::vector<Layer *> m_layers;
 
-  /** Map from master layers to their layer group. */
-  std::unordered_map<Layer *,std::vector<Layer *>> m_layer_groups;
-  /** Map from layers to their layer group's master. */
-  std::unordered_map<Layer *,Layer *> m_layer_group_masters;
+  std::vector<weights *> m_weights;
 
   /** Check if the model (and all layers') execution mode valid. */
   virtual bool is_execution_mode_valid(execution_mode mode) const;
@@ -292,12 +292,9 @@ class model {
   virtual std::string print_layer_description(const Layer* layer) const;
 
   /// Deallocate layer objects
-  virtual void delete_layers();
   virtual void forward_prop_to_evaluate();
-  virtual bool update_io_layers();
   virtual void forward_prop();
   virtual void backward_prop();
-  virtual void update_optimizable_layers();
   /** Train model on a mini-batch. */
   virtual bool train_mini_batch();
   /** Evaluate model on a mini-batch */

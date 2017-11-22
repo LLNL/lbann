@@ -287,6 +287,11 @@ Layer::~Layer() {
   if(m_error_signal_v    != nullptr) delete m_error_signal_v;
 }
 
+void Layer::reset() {
+  El::Zero(*m_activations);
+  El::Zero(*m_error_signal);
+}
+
 void Layer::forward_prop() {
   double fp_start = get_time();
 

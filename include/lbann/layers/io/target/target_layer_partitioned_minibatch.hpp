@@ -86,11 +86,6 @@ class target_layer_partitioned_minibatch : public target_layer, public partition
 
     int curr_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
 
-    /// Compute and record the objective function score
-    objective_functions::objective_function *obj_fn = this->m_neural_network_model->m_obj_fn;
-    obj_fn->compute_value(*this->m_prev_activations,
-                          *this->m_activations_v);
-
     for (auto&& m : this->m_neural_network_model->get_metrics()) {
       double num_errors = m->compute_metric(*this->m_prev_activations, *this->m_activations_v);
       m->record_error(num_errors, curr_mini_batch_size);
@@ -100,13 +95,7 @@ class target_layer_partitioned_minibatch : public target_layer, public partition
   }
 
 
-  void bp_compute() override {
-
-    // Compute initial error signal
-    this->m_neural_network_model->m_obj_fn->compute_gradient(*this->m_prev_activations,
-                                                             *this->m_activations_v,
-                                                             *this->m_error_signal_v);
-  }
+  void bp_compute() override {}
 
   /**
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary

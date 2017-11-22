@@ -10,6 +10,6 @@ add_sources(
 
 if(LBANN_HAS_CUDA)
   add_sources(
-    cudnn_wrapper_cuda.cu
+    cudnn_wrapper.cu
     )
 endif()

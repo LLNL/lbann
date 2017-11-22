@@ -132,25 +132,22 @@ int lbann_callback_ltfb::select_partner() {
 }
 
 void lbann_callback_ltfb::exchange(model *m, int partner) {
-  std::vector<Layer *>& layers = m->get_layers();
-  std::vector<Layer *>& remote_layers = m_remote_model->get_layers();
-  for (size_t i = 0; i < layers.size(); ++i) {
-    // Only exchange learning layers.
-    learning *layer = dynamic_cast<learning*>(layers[i]);
-    if (layer) {
-      learning *remote_layer = dynamic_cast<learning*>(remote_layers[i]);
-      // TODO: Support sending optimizer state.
-      AbsDistMat& weights = layer->get_weights();
-      AbsDistMat& remote_weights = remote_layer->get_weights();
-      if (weights.Height() > 0) {
-        m_comm->sendrecv(weights.LockedBuffer(),
-                         weights.LocalHeight()*weights.LocalWidth(),
-                         partner,
-                         remote_weights.Buffer(),
-                         weights.LocalHeight()*weights.LocalWidth(),
-                         partner);
-      }
+  std::vector<weights *> local_weights = m->get_weights();
+  std::vector<weights *> remote_weights = m_remote_model->get_weights();
+  for (size_t i = 0; i < local_weights.size(); ++i) {
+    // TODO: Support sending optimizer state
+    const AbsDistMat& local_matrix = local_weights[i]->get_values();
+    AbsDistMat *remote_matrix = local_matrix.Copy();
+    if (local_matrix.Height() > 0) {
+      m_comm->sendrecv(local_matrix.LockedBuffer(),
+                       local_matrix.LocalHeight()*local_matrix.LocalWidth(),
+                       partner,
+                       remote_matrix->Buffer(),
+                       local_matrix.LocalHeight()*local_matrix.LocalWidth(),
+                       partner);
+      remote_weights[i]->set_values(*remote_matrix);
     }
+    delete remote_matrix;
   }
 }
 
@@ -174,16 +171,11 @@ double lbann_callback_ltfb::evaluate(model *m) {
 }
 
 void lbann_callback_ltfb::replace_with_remote(model *m) {
-  std::vector<Layer *>& layers = m->get_layers();
-  std::vector<Layer *>& remote_layers = m_remote_model->get_layers();
-  for (size_t i = 0; i < layers.size(); ++i) {
-    learning *layer = dynamic_cast<learning*>(layers[i]);
-    if (layer) {
-      learning *remote_layer = dynamic_cast<learning*>(remote_layers[i]);
-      // TODO: Update optimizers.
-      layer->get_weights().Matrix() =
-        remote_layer->get_weights().Matrix();
-    }
+  std::vector<weights *> local_weights = m->get_weights();
+  std::vector<weights *> remote_weights = m_remote_model->get_weights();
+  for (size_t i = 0; i < local_weights.size(); ++i) {
+    // TODO: Update optimizers.
+    local_weights[i]->set_values(remote_weights[i]->get_values());
   }
 }
 

@@ -45,11 +45,11 @@ class planar_model : public model {
   // typedef std::vector<Layer_stack_t> Layer_groups_t;
 
   /// Constructor
-  planar_model(int mini_batch_size,
-                   lbann_comm *comm,
-                   objective_functions::objective_function *obj_fn,
-                   optimizer_factory *optimizer_fac,
-                   int width);
+  planar_model(lbann_comm *comm,
+               int mini_batch_size,
+               objective_functions::objective_function *obj_fn,
+               optimizer *default_optimizer,
+               int width);
   /** Copy constructor. */
   planar_model(const planar_model& other);
 
@@ -72,7 +72,7 @@ class planar_model : public model {
   /// shallow-copy layers
   void set_layers(const Layer_stack_t& new_stack);
 
-  void add(Layer *layer) override;
+  void add_layer(Layer *layer) override;
 
   /// Setup planar model
   void setup() override;
@@ -89,7 +89,7 @@ class planar_model : public model {
   typedef std::unordered_map<Layer*, Layer*> Layer_map_t;
 
   /// Deallocate layer objects
-  void delete_layers() override;
+  void delete_layers();
 
   static Layer* find_layer(const Layer_map_t& map_src_to_new, const Layer* const src_layer);
 

@@ -161,15 +161,34 @@ class cudnn_manager {
   /** Deallocate memory on GPUs. */
   void deallocate_on_gpus(std::vector<DataType*>& gpu_data);
 
+  /** Zero out memory on ith GPU. */
+  void clear_on_gpu(int i,
+                    DataType* gpu_data,
+                    int height,
+                    int width,
+                    int leading_dim = 0);
+  /** Copy data from CPU to ith GPU. */
+  void copy_to_gpu(int i,
+                   DataType* gpu_data,
+                   const Mat& cpu_data,
+                   int gpu_data_leading_dim = 0);
+  /** Copy data from ith GPU to CPU. */
+  void copy_from_gpu(int i,
+                     Mat& cpu_data,
+                     const DataType* gpu_data,
+                     int gpu_data_leading_dim = 0);
+
   /** Zero out memory on GPUs. */
   void clear_on_gpus(std::vector<DataType*>& gpu_data,
                      int height,
-                     int width_per_gpu);
+                     int width_per_gpu,
+                     int leading_dim = 0);
   /** Zero out memory corresponding to unused columns on GPUs. */
   void clear_unused_columns_on_gpus(std::vector<DataType*>& gpu_data,
                                     int height,
                                     int width,
-                                    int width_per_gpu);
+                                    int width_per_gpu,
+                                    int leading_dim = 0);
 
   /** Copy data on GPUs. */
   void copy_on_gpus(std::vector<DataType*>& gpu_dst_data,
@@ -198,20 +217,23 @@ class cudnn_manager {
   void broadcast_to_gpus(std::vector<DataType*>& gpu_data,
                          const Mat& cpu_data,
                          int gpu_data_leading_dim = 0);
-  /** Copy data from GPUs to CPU and reduce.
-   */
+  /** Copy data from GPUs to CPU and reduce. */
   void reduce_from_gpus(Mat& cpu_data,
                         const std::vector<DataType*>& gpu_data,
                         int gpu_data_leading_dim = 0);
-  /** Allreduce within local multiple GPUs
-   */
-  void allreduce(const std::vector<DataType*>& gpu_data,
-                 El::Int height,
-                 El::Int width);
+  /** Allreduce within local GPUs. */
+  void allreduce_on_gpus(std::vector<DataType*>& gpu_data,
+                         El::Int height,
+                         El::Int width);
 
-  /** Allreduce within local multiple GPUs when NCCL is used for collectives
-   */
-  void allreduce_nccl(const std::vector<DataType*>& gpu_data,
+  /** Allreduce within all GPUs in MPI communicator. */
+  void global_allreduce_on_gpus(std::vector<DataType*>& gpu_data,
+                                El::Int height,
+                                El::Int width,
+                                El::mpi::Comm comm);
+
+  /** Allreduce within local GPUs using NCCL. */
+  void allreduce_on_gpus_nccl(std::vector<DataType*>& gpu_data,
                  El::Int height,
                  El::Int width,
                  DataType scale = DataType(1));

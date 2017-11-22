@@ -1,11 +1,7 @@
+add_subdirectory(loss_functions)
+add_subdirectory(weight_regularization)
+
 add_sources(
-  binary_cross_entropy.cpp
   objective_function.cpp
-  cross_entropy.cpp
-  cross_entropy_with_uncertainty.cpp
-  geom_negloglike.cpp
-  mean_absolute_deviation.cpp
-  mean_squared_error.cpp
-  poisson_negloglike.cpp
-  polya_negloglike.cpp
+  objective_function_term.cpp
 )

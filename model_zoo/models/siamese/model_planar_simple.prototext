@@ -1,18 +1,8 @@
 model {
   name: "planar_model"
-  objective_function: "cross_entropy"
   planar {
     simple {
       num_heads: 2
-    }
-  }
-  metric {
-    categorical_accuracy {
-    }
-  }
-  metric {
-    top_k_categorical_accuracy {
-       top_k: 5
     }
   }
   data_layout: "data_parallel"
@@ -23,6 +13,28 @@ model {
   procs_per_model: 0
   use_cudnn: true
   num_gpus: -1
+
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    cross_entropy {}
+    l2_weight_regularization {
+      scale_factor: 0.0005
+    }
+  }
+
+  ###################################################
+  # Metrics
+  ###################################################
+
+  metric { categorical_accuracy {} }
+  metric {
+    top_k_categorical_accuracy {
+       top_k: 5
+    }
+  }
 
   ###################################################
   # Callbacks 
@@ -130,10 +142,8 @@ model {
       conv_dims: "11 11"
       conv_pads: "0 0"
       conv_strides: "4 4"
-      weight_initialization: "he_normal"
       has_bias: true
       has_vectors: true
-      l2_regularization_factor: 0.0005
     }
   }
 
@@ -185,11 +195,9 @@ model {
       conv_dims: "5 5"
       conv_pads: "2 2"
       conv_strides: "1 1"
-      weight_initialization: "he_normal"
       has_bias: true
       bias_initial_value: 0.1
       has_vectors: true
-      l2_regularization_factor: 0.0005
     }
   }
 
@@ -241,10 +249,8 @@ model {
       conv_dims: "3 3"
       conv_pads: "1 1"
       conv_strides: "1 1"
-      weight_initialization: "he_normal"
       has_bias: true
       has_vectors: true
-      l2_regularization_factor: 0.0005
     }
   }
 
@@ -268,11 +274,9 @@ model {
       conv_dims: "3 3"
       conv_pads: "1 1"
       conv_strides: "1 1"
-      weight_initialization: "he_normal"
       has_bias: true
       bias_initial_value: 0.1
       has_vectors: true
-      l2_regularization_factor: 0.0005
     }
   }
 
@@ -296,11 +300,9 @@ model {
       conv_dims: "3 3"
       conv_pads: "1 1"
       conv_strides: "1 1"
-      weight_initialization: "he_normal"
       has_bias: true
       bias_initial_value: 0.1
       has_vectors: true
-      l2_regularization_factor: 0.0005
     }
   }
 
@@ -335,10 +337,8 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 4096
-      weight_initialization: "he_normal"
       has_bias: true
       bias_initial_value: 0.1
-      l2_regularization_factor: 0.0005
     }
   }
 
@@ -378,10 +378,8 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 4096
-      weight_initialization: "he_normal"
       has_bias: true
       bias_initial_value: 0.1
-      l2_regularization_factor: 0.0005
     }
   }
 
@@ -411,9 +409,7 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 1000
-      weight_initialization: "he_normal"
       has_bias: false
-      l2_regularization_factor: 0.0005
     }
   }
 
