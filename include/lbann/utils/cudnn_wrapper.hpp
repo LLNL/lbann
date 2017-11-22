@@ -39,10 +39,9 @@
 #include <cudnn.h>
 #include <cublas_v2.h>
 
-#ifdef __LIB_NCCL
 #include "nccl.h"
 #include "nccl1_compat.h"
-#endif
+#include "common.h"
 
 #endif // #ifdef __LIB_CUDNN
 
@@ -236,7 +235,8 @@ class cudnn_manager {
   /** Allreduce within local GPUs using NCCL. */
   void allreduce_on_gpus_nccl(std::vector<DataType*>& gpu_data,
                  El::Int height,
-                 El::Int width);
+                 El::Int width,
+                 DataType scale = DataType(1));
 
   /** Synchronize the default stream. */
   void synchronize();
@@ -268,6 +268,8 @@ class cudnn_manager {
 
   void check_error();
 
+  bool is_nccl_used() { return m_nccl_used; }
+
  private:
 
   /** LBANN communicator. */
@@ -297,13 +299,11 @@ class cudnn_manager {
   void nccl_setup();
   void nccl_destroy();
 
-#ifdef __LIB_NCCL
   // One GPU per single thread of one MPI rank is assumed
   ncclComm_t m_nccl_comm;
 
   uint64_t getHostHash(const char* string);
   ncclDataType_t nccl_datatype();
-#endif
 
 
 #endif // #ifdef __LIB_CUDNN

@@ -39,11 +39,16 @@
 using namespace cudnn;
 using namespace lbann;
 
+/// It is assumed the number of processes and the number of GPUs on a compute node are equal
 cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus, bool nccl_used)
   : comm(_comm) {
 
   // Indicate whether NCCL is used 
   m_nccl_used = nccl_used;
+
+  // Determine number of MPI ranks on current compute node
+  const int rank_in_node = comm->get_rank_in_node();
+  const int procs_per_node = comm->get_procs_per_node();
 
   // Determine number of visible GPUs
   CHECK_CUDA(cudaGetDeviceCount(&m_num_visible_gpus));
@@ -53,10 +58,12 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus, bool nc
   if(m_num_visible_gpus < 1) {
     throw lbann::lbann_exception("cudnn_wrapper: no GPUs found");
   }
-
-  // Determine number of MPI ranks on current compute node
-  const int rank_in_node = comm->get_rank_in_node();
-  const int procs_per_node = comm->get_procs_per_node();
+  /// It is assumed that the number of processes on this node is equal to the total number of GPUs available
+/*
+  if(procs_per_node != m_num_visible_gpus){
+    throw lbann::lbann_exception("cudnn_wrapper: the number of MPI ranks is different from than the number of GPUs available on this node");
+  }
+*/
 
   // Assign GPUs to process
   int gpu_start, gpu_end;
@@ -135,6 +142,11 @@ cudnn_manager::~cudnn_manager() {
     if(m_cublas_handles[i]) {
       FORCE_CHECK_CUBLAS(cublasDestroy(m_cublas_handles[i]));
     }
+  }
+    
+  /// NCCL clear
+  if(m_nccl_used){
+      nccl_destroy();
   }
 }
 
@@ -363,6 +375,7 @@ void cudnn_manager::cudnn_manager::scatter_to_gpus(std::vector<DataType *>& gpu_
                                gpu_data_leading_dim);
 
 }
+
 
 void cudnn_manager::cudnn_manager::gather_from_gpus(Mat& cpu_data,
                                                     const std::vector<DataType *>& gpu_data,
@@ -697,7 +710,6 @@ void cudnn_manager::check_error() {
   }
 }
 
-#ifdef __LIB_NCCL
 uint64_t cudnn_manager::getHostHash(const char* string) {
   // Based on DJB2, result = result * 33 + char
   uint64_t result = 5381;
@@ -706,14 +718,12 @@ uint64_t cudnn_manager::getHostHash(const char* string) {
   }
   return result;
 }
-#endif
 
 
 void cudnn_manager::nccl_setup() {
-#ifdef __LIB_NCCL
 
   int nProcs = comm->get_procs_per_model();
-  int myid = comm->get_model_rank();
+  int myid = comm->get_rank_in_model();
   int localRank = comm->get_rank_in_node();
 
   ncclUniqueId ncclId;
@@ -743,13 +753,8 @@ void cudnn_manager::nccl_setup() {
   }
 }
 
-#endif
-}
-
 void cudnn_manager::nccl_destroy() {
-#ifdef __LIB_NCCL
   ncclCommDestroy(m_nccl_comm);
-#endif
 }
 
 void cudnn::print_version() {

@@ -162,7 +162,12 @@ int main(int argc, char *argv[]) {
       if (master) {
         cerr << "code was compiled with __LIB_CUDNN, and we are using cudnn\n";
       }
-      cudnn = new cudnn::cudnn_manager(comm);
+      if(pb_model->use_nccl()) {
+        cudnn = new cudnn::cudnn_manager(comm, pb_model->num_gpus(), true);
+      }
+      else{
+        cudnn = new cudnn::cudnn_manager(comm, pb_model->num_gpus(), false);
+      }
     } else {
       if (master) {
         cerr << "code was compiled with __LIB_CUDNN, but we are NOT USING cudnn\n";

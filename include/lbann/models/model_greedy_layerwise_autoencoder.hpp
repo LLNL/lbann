@@ -55,33 +55,19 @@ class greedy_layerwise_autoencoder : public sequential_model {
     const greedy_layerwise_autoencoder&) = delete;
 
   /** Destructor. */
-  ~greedy_layerwise_autoencoder() = default;
+  ~greedy_layerwise_autoencoder() override = default;
 
-  virtual greedy_layerwise_autoencoder* copy() const override {
+  greedy_layerwise_autoencoder* copy() const override {
     throw lbann_exception("greedy_layerwise_autoencoder doesn't support copying");
   }
 
-  virtual std::string name() const override { return "greedy layerwise autoencoder"; }
+  std::string name() const override { return "greedy layerwise autoencoder"; }
 
   /// Train neural network
-  virtual void train(int num_epochs) override;
-
-  // Train each phase ( a set of (original) input, hidden and mirror layers (output))
-  void train_phase(int num_epochs);
-
-  /// Training step on one mini-batch
-  virtual bool train_mini_batch() override;
+  void train(int num_epochs) override;
 
   ///Global evaluation (testing), provide overall cost relative to original input
-  virtual void evaluate(execution_mode mode=execution_mode::testing) override;
-  /// Evaluate (validation) per phase
-  void evaluate_phase(execution_mode mode=execution_mode::validation);
-  /// Evaluation step on one mini-batch
-  virtual bool evaluate_mini_batch() override;
-
-  void reset_phase();
-  /// Set end index of layer wise training (typically at reconstruction layer)
-  void set_end_index(); 
+  void evaluate(execution_mode mode=execution_mode::testing) override;
 
 #if 0
   /// Save model to shared checkpoint
@@ -108,6 +94,23 @@ class greedy_layerwise_autoencoder : public sequential_model {
 
   /// Removes mirror for specified layer index
   void remove_mirror(uint32_t layer_index);
+
+  // Train each phase ( a set of (original) input, hidden and mirror layers (output))
+  void train_phase(int num_epochs);
+
+  /// Training step on one mini-batch
+  bool train_mini_batch() override;
+
+  /// Evaluate (validation) per phase
+  void evaluate_phase(execution_mode mode=execution_mode::validation);
+
+  /// Evaluation step on one mini-batch
+  bool evaluate_mini_batch() override;
+
+  void reset_phase();
+
+  /// Set end index of layer wise training (typically at reconstruction layer)
+  void set_end_index();
 };
 
 }  // namespace lbann

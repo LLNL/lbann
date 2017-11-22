@@ -204,10 +204,10 @@ class learning : public Layer {
  public:
   learning(lbann_comm *comm,
            optimizer *opt)
-    : Layer(comm), m_optimizer(opt) {}
+    : Layer(comm), optimizable_layer(), m_optimizer(opt) {}
 
   learning(const learning& other) :
-    Layer(other),
+    Layer(other), optimizable_layer(other),
     m_l2_regularization_factor(other.m_l2_regularization_factor) {
     m_weights = other.m_weights->Copy();
     m_weights_gradient = other.m_weights_gradient->Copy();
@@ -216,6 +216,7 @@ class learning : public Layer {
 
   learning& operator=(const learning& other) {
     Layer::operator=(other);
+    optimizable_layer::operator=(other);
     m_l2_regularization_factor = other.m_l2_regularization_factor;
     if (m_weights) {
       delete m_weights;

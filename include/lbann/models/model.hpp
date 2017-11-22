@@ -41,6 +41,7 @@
 #include "lbann/optimizers/optimizer.hpp"
 #include <vector>
 #include <string>
+#include <unordered_map>
 
 namespace lbann {
 
@@ -126,17 +127,11 @@ class model {
   inline int get_cur_testing_step() const {
     return m_current_testing_step;
   }
+  /** Set the model (and all layers') execution mode. */
+  virtual void set_execution_mode(execution_mode mode);
   /** Get the model's execution mode. */
   inline execution_mode get_execution_mode() const {
     return m_execution_mode;
-  }
-  /** Set the model (and all layers') execution mode. */
-  inline void set_execution_mode(execution_mode mode) {
-    m_execution_mode = mode;
-    std::vector<Layer *>& layers = get_layers();
-    for (auto&& l : layers) {
-      l->set_execution_mode(mode);
-    }
   }
   /** Set the model's current mini-batch size. */
   inline void set_current_mini_batch_size(int mini_batch_size) {
@@ -168,12 +163,12 @@ class model {
    * Summarize statistics (e.g. timers, counters); these should be computable
    * quickly.
    */
-  void summarize_stats(lbann_summary& summarizer);
+  virtual void summarize_stats(lbann_summary& summarizer);
   /**
    * Summarize matrices (e.g. means); these are called less frequently and can
    * be more expensive.
    */
-  void summarize_matrices(lbann_summary& summarizer);
+  virtual void summarize_matrices(lbann_summary& summarizer);
 
   /** Return true if the flag to stop training is set. */
   bool get_terminate_training() const {
@@ -186,14 +181,8 @@ class model {
 
   /** Train model. */
   virtual void train(int num_epochs);
-  /** Train model on a mini-batch. */
-  virtual bool train_mini_batch();
   /** Evaluate model. */
   virtual void evaluate(execution_mode mode);
-  /** Evaluate model on a mini-batch */
-  virtual bool evaluate_mini_batch();
-
-  virtual bool is_execution_mode_valid(execution_mode mode);
 
   /** Set checkpoint values */
   inline void set_checkpoint_dir(std::string dir)   {
@@ -297,34 +286,48 @@ class model {
 
   std::vector<weights *> m_weights;
 
+  /** Check if the model (and all layers') execution mode valid. */
+  virtual bool is_execution_mode_valid(execution_mode mode) const;
+  /// Print out the description of a layer set up
+  virtual std::string print_layer_description(const Layer* layer) const;
+
+  /// Deallocate layer objects
+  virtual void forward_prop_to_evaluate();
+  virtual void forward_prop();
+  virtual void backward_prop();
+  /** Train model on a mini-batch. */
+  virtual bool train_mini_batch();
+  /** Evaluate model on a mini-batch */
+  virtual bool evaluate_mini_batch();
+
   // Methods for calling every callback at different points.
-  void setup_callbacks();
-  void do_train_begin_cbs();
-  void do_train_end_cbs();
-  void do_phase_end_cbs();
-  void do_epoch_begin_cbs();
-  void do_epoch_end_cbs();
-  void do_batch_begin_cbs();
-  void do_batch_end_cbs();
-  void do_test_begin_cbs();
-  void do_test_end_cbs();
-  void do_validation_begin_cbs();
-  void do_validation_end_cbs();
-  void do_model_forward_prop_begin_cbs();
-  void do_layer_forward_prop_begin_cbs(Layer *l);
-  void do_model_forward_prop_end_cbs();
-  void do_layer_forward_prop_end_cbs(Layer *l);
-  void do_model_backward_prop_begin_cbs();
-  void do_layer_backward_prop_begin_cbs(Layer *l);
-  void do_model_backward_prop_end_cbs();
-  void do_layer_backward_prop_end_cbs(Layer *l);
+  virtual void setup_callbacks();
+  virtual void do_train_begin_cbs();
+  virtual void do_train_end_cbs();
+  virtual void do_phase_end_cbs();
+  virtual void do_epoch_begin_cbs();
+  virtual void do_epoch_end_cbs();
+  virtual void do_batch_begin_cbs();
+  virtual void do_batch_end_cbs();
+  virtual void do_test_begin_cbs();
+  virtual void do_test_end_cbs();
+  virtual void do_validation_begin_cbs();
+  virtual void do_validation_end_cbs();
+  virtual void do_model_forward_prop_begin_cbs();
+  virtual void do_layer_forward_prop_begin_cbs(Layer *l);
+  virtual void do_model_forward_prop_end_cbs();
+  virtual void do_layer_forward_prop_end_cbs(Layer *l);
+  virtual void do_model_backward_prop_begin_cbs();
+  virtual void do_layer_backward_prop_begin_cbs(Layer *l);
+  virtual void do_model_backward_prop_end_cbs();
+  virtual void do_layer_backward_prop_end_cbs(Layer *l);
   /// Evaluation phases (validation / testing)
-  void do_batch_evaluate_begin_cbs();
-  void do_batch_evaluate_end_cbs();
-  void do_model_evaluate_forward_prop_begin_cbs();
-  void do_layer_evaluate_forward_prop_begin_cbs(Layer *l);
-  void do_model_evaluate_forward_prop_end_cbs();
-  void do_layer_evaluate_forward_prop_end_cbs(Layer *l);
+  virtual void do_batch_evaluate_begin_cbs();
+  virtual void do_batch_evaluate_end_cbs();
+  virtual void do_model_evaluate_forward_prop_begin_cbs();
+  virtual void do_layer_evaluate_forward_prop_begin_cbs(Layer *l);
+  virtual void do_model_evaluate_forward_prop_end_cbs();
+  virtual void do_layer_evaluate_forward_prop_end_cbs(Layer *l);
 };
 
 }  // namespace lbann
