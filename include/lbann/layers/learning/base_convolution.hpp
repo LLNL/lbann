@@ -339,8 +339,20 @@ class base_convolution_layer : public learning {
 
   void setup_views() override {
     learning::setup_views();
+    if ((m_weights.size() < 1u) || (this->m_weights[0] == nullptr)) {
+      std::stringstream err;
+      err << __FILE__ << ' ' << __LINE__ << " :: " << m_name
+          << " base_convolution_layer::setup_views() uninitialized kernel weights";
+      throw lbann_exception(err.str());
+    }
     this->m_weights[0]->get_values_view(*m_kernel_weights_v);
     if (m_bias_scaling_factor != DataType(0)) {
+      if ((m_weights.size() < 2u) || (this->m_weights[1] == nullptr)) {
+        std::stringstream err;
+        err << __FILE__ << ' ' << __LINE__ << " :: " << m_name
+            << " base_convolution_layer::setup_views() uninitialized bias weights";
+        throw lbann_exception(err.str());
+      }
       this->m_weights[1]->get_values_view(*m_bias_weights_v);
     }
   }
