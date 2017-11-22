@@ -105,6 +105,7 @@ void planar_model::copy_layers(const Layer_stack_t& src_stack) {
     for (const auto& src_layer : src_peers) {
       try {
         Layer* new_layer = src_layer->copy();
+        new_layer->set_neural_network_model(this);
         map_src_to_new[src_layer] = new_layer;
         new_peers.push_back(new_layer);
       } catch (std::bad_alloc&) {
