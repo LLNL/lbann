@@ -1176,13 +1176,11 @@ void init_callbacks(
     //////////////////////////////////////////////////////////////////
     if (callback.has_print()) {
       const lbann_data::CallbackPrint& c = callback.print();
-      if (c.interval() > 0) {
-        if (master) {
-          cout << "adding print callback with interval: " << c.interval() << endl;
-        }
-        lbann_callback_print *print_cb = new lbann_callback_print(c.interval());
-        model->add_callback(print_cb);
+      if (master) {
+        std::cout << "adding print callback" << std::endl;
       }
+      lbann_callback_print *print_cb = new lbann_callback_print(c.interval());
+      model->add_callback(print_cb);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -1611,38 +1609,23 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
 
   const lbann_data::Model& m = p.model();
   const string name = m.name();
-  const string obj_fn_name = m.objective_function();
   uint mini_batch_size = m.mini_batch_size();
 
-  objective_function *obj_fn = new objective_function();
-
   //instantiate the objective function
-  objective_function_term *term = 0;
-  if (obj_fn_name == "cross_entropy") {
-    term = new cross_entropy();
-  } else if (obj_fn_name == "cross_entropy_with_uncertainty") {
-    // obj = new objective_functions::cross_entropy_with_uncertainty();
-  } else if (obj_fn_name == "mean_squared_error") {
-    term = new mean_squared_error();
-  } else if (obj_fn_name == "binary_cross_entropy") {
-    // obj = new objective_functions::binary_cross_entropy();
-  } else if (obj_fn_name == "geom_negloglike") {
-    // obj = new objective_functions::geom_negloglike();
-  } else if (obj_fn_name == "mean_absolute_deviation") {
-    // obj = new objective_functions::mean_absolute_deviation();
-  } else if (obj_fn_name == "poisson_negloglike") {
-    // obj = new objective_functions::poisson_negloglike();
-  } else if (obj_fn_name == "polya_negloglike") {
-    // obj = new objective_functions::polya_negloglike();
-  } else {
-    if (master) {
-      err << __FILE__ << " " << __LINE__
-          << " :: init_model() - unknown objective function name: " << obj_fn_name
-          << std::endl << "; should be one of: binary_cross_entropy, cross_entropy, cross_entropy_with_uncertainty, geom_negloglike, mean_absolute_deviation, mean_squared_error, poisson_negloglike, polya_negloglike";
-      throw lbann_exception(err.str());
-    }
+  objective_function *obj_fn = new objective_function();
+  const lbann_data::ObjectiveFunction &obj_fn_params = m.objective_function();
+  for (int j=0; j<obj_fn_params.cross_entropy_size(); j++) {
+    const lbann_data::CrossEntropy &params = obj_fn_params.cross_entropy(j);
+    obj_fn->add_term(new cross_entropy(params.scale_factor()));
   }
-  obj_fn->add_term(term);
+  for (int j=0; j<obj_fn_params.mean_squared_error_size(); j++) {
+    const lbann_data::MeanSquaredError &params = obj_fn_params.mean_squared_error(j);
+    obj_fn->add_term(new mean_squared_error(params.scale_factor()));
+  }
+  for (int j=0; j<obj_fn_params.l2_weight_regularization_size(); j++) {
+    const lbann_data::L2WeightRegularization &params = obj_fn_params.l2_weight_regularization(j);
+    obj_fn->add_term(new l2_weight_regularization(params.scale_factor()));
+  }
 
   //instantiate the network; layers will be added in a separate function call
   if (name == "sequential_model") {
@@ -2214,7 +2197,6 @@ void print_parameters(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
        << "  num_parallel_readers: " << m.num_parallel_readers()  << endl
        << "  use_cudnn:            " << m.use_cudnn()  << endl
        << "  random_seed:          " << m.random_seed() << endl
-       << "  objective_function:   " << m.objective_function()  << endl
        << "  data_layout:          " << m.data_layout()  << endl
        << "     (only used for metrics)\n"
        << "\n"

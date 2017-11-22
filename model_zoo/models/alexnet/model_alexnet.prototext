@@ -1,15 +1,5 @@
 model {
   name: "sequential_model"
-  objective_function: "cross_entropy"
-  metric {
-    categorical_accuracy {
-    }
-  }
-  metric {
-    top_k_categorical_accuracy {
-       top_k: 5
-    }
-  }
   data_layout: "data_parallel"
   mini_batch_size: 256
   block_size: 256
@@ -20,27 +10,42 @@ model {
   num_gpus: -1
 
   ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    cross_entropy {}
+    l2_weight_regularization {
+      scale_factor: 0.0005
+    }
+  }
+
+  ###################################################
+  # Metrics
+  ###################################################
+
+  metric { categorical_accuracy {} }
+  metric {
+    top_k_categorical_accuracy {
+       top_k: 5
+    }
+  }
+
+  ###################################################
   # Callbacks 
   ###################################################
+
   callback {
     imcomm {
       intermodel_comm_method: "normal"
       all_optimizers: true
     }  
   }
-  callback {
-    print {
-      interval: 1
-    }
-  }
-  callback {
-    timer {
-    }
-  }
+  callback { print {} }
+  callback { timer {} }
   callback {
     summary {
       dir: "."
-      batch_interval: 1
       mat_interval: 25
     }
   }
@@ -53,12 +58,6 @@ model {
   # callback {
   #   dump_mb_indices {
   #     basename: "debug_alexnet/"
-  #     interval: 1
-  #   }
-  # }
-  # callback {
-  #   disp_io_stats {
-  #     layers: "1"
   #   }
   # }
   # callback {
@@ -74,7 +73,6 @@ model {
   # }
   # callback {
   #   gradient_check {
-  #     step_size: 0
   #     verbose: false
   #   }
   # }
@@ -86,8 +84,7 @@ model {
   layer {
     name: "data"
     data_layout: "data_parallel"
-    input_partitioned_minibatch {
-    }
+    input_partitioned_minibatch {}
   }
 
   layer {
@@ -99,17 +96,14 @@ model {
       conv_dims: "11 11"
       conv_pads: "0 0"
       conv_strides: "4 4"
-      weight_initialization: "he_normal"
       has_bias: true
       has_vectors: true
-      l2_regularization_factor: 0.0005
     }
   }
   layer {
     name: "relu1"
     data_layout: "data_parallel"
-    relu {
-    }
+    relu {}
   }
   layer {
     name: "norm1"
@@ -143,17 +137,14 @@ model {
       conv_dims: "5 5"
       conv_pads: "2 2"
       conv_strides: "1 1"
-      weight_initialization: "he_normal"
       has_bias: true
       has_vectors: true
-      l2_regularization_factor: 0.0005
     }
   }
   layer {
     name: "relu2"
     data_layout: "data_parallel"
-    relu {
-    }
+    relu {}
   }
   layer {
     name: "norm2"
@@ -187,17 +178,14 @@ model {
       conv_dims: "3 3"
       conv_pads: "1 1"
       conv_strides: "1 1"
-      weight_initialization: "he_normal"
       has_bias: true
       has_vectors: true
-      l2_regularization_factor: 0.0005
     }
   }
   layer {
     name: "relu3"
     data_layout: "data_parallel"
-    relu {
-    }
+    relu {}
   }
 
   layer {
@@ -209,17 +197,14 @@ model {
       conv_dims: "3 3"
       conv_pads: "1 1"
       conv_strides: "1 1"
-      weight_initialization: "he_normal"
       has_bias: true
       has_vectors: true
-      l2_regularization_factor: 0.0005
     }
   }
   layer {
     name: "relu4"
     data_layout: "data_parallel"
-    relu {
-    }
+    relu {}
   }
 
   layer {
@@ -231,17 +216,14 @@ model {
       conv_dims: "3 3"
       conv_pads: "1 1"
       conv_strides: "1 1"
-      weight_initialization: "he_normal"
       has_bias: true
       has_vectors: true
-      l2_regularization_factor: 0.0005
     }
   }
   layer {
     name: "relu5"
     data_layout: "data_parallel"
-    relu {
-    }
+    relu {}
   }
   layer {
     name: "pool5"
@@ -261,16 +243,13 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 4096
-      weight_initialization: "he_normal"
       has_bias: true
-      l2_regularization_factor: 0.0005
     }
   }
   layer {
     name: "relu6"
     data_layout: "model_parallel"
-    relu {
-    }
+    relu {}
   }
   layer {
     name: "drop6"
@@ -285,16 +264,13 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 4096
-      weight_initialization: "he_normal"
       has_bias: true
-      l2_regularization_factor: 0.0005
     }
   }
   layer {
     name: "relu7"
     data_layout: "model_parallel"
-    relu {
-    }
+    relu {}
   }
   layer {
     name: "drop7"
@@ -309,17 +285,14 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 1000
-      weight_initialization: "he_normal"
       has_bias: false
-      l2_regularization_factor: 0.0005
     }
   }
 
   layer {
     name: "prob"
     data_layout: "model_parallel"
-    softmax {
-    }
+    softmax {}
   }
 
   layer {

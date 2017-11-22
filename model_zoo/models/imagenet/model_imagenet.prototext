@@ -1,18 +1,31 @@
 model {
   name: "sequential_model"
-  objective_function: "cross_entropy"
   num_epochs: 20
-  metric {
-    categorical_accuracy {
-    }
-  }
-  metric {
-    top_k_categorical_accuracy {
-      top_k: 5
-    }
-  }
   data_layout: "data_parallel"
   use_cudnn: false
+
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    cross_entropy {}
+    l2_weight_regularization {
+      scale_factor: 0.0005
+    }
+  }
+
+  ###################################################
+  # Metrics
+  ###################################################
+
+  metric { categorical_accuracy {} }
+  metric {
+    top_k_categorical_accuracy {
+       top_k: 5
+    }
+  }
+
   layer {
     input_partitioned_minibatch {
     }
@@ -25,10 +38,7 @@ model {
   layer {
     fully_connected {
       num_neurons: 4096
-  #    weight_initialization: "he_normal"
-      weight_initialization: "glorot_uniform"
       has_bias: true
-  #    l2_regularization_factor: 0.0005
     }
     name: "2"
     parents: "1"
@@ -56,8 +66,6 @@ model {
   layer {
     fully_connected {
       num_neurons: 1000
-      weight_initialization: "he_normal"
-      l2_regularization_factor: 0.0005
     }
     name: "5"
     parents: "4"

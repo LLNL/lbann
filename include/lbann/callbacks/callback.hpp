@@ -55,7 +55,7 @@ class lbann_callback {
   /** Initialize a callback with an optional batch interval and summarizer. */
   lbann_callback(int batch_interval = 1,
                  lbann_summary *summarizer = nullptr) :
-    m_batch_interval(batch_interval), m_summarizer(summarizer) {}
+    m_batch_interval(std::max(batch_interval, 1)), m_summarizer(summarizer) {}
   lbann_callback(const lbann_callback&) = default;
   lbann_callback& operator=(const lbann_callback&) = default;
   virtual ~lbann_callback() {}

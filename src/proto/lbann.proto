@@ -154,7 +154,7 @@ message GenericPreprocessor {
 
 message Model {
   string name = 1; //sequential_model, dag_model, greedy_layerwise_autoencoder, planar
-  string objective_function = 2; // cross_entropy, mean_squared_error
+  ObjectiveFunction objective_function = 2;
   repeated Metric metric = 5; 
   string data_layout = 6;
 
@@ -207,23 +207,25 @@ message Model {
 }
 
 //========================================================================
-// Objective function terms
+// Objective function
 //========================================================================
 
 message ObjectiveFunction {
-  double scale_factor = 1;
-  CrossEntropy cross_entropy = 11;
-  MeanSquaredError mean_squared_error = 12;
-  L2WeightRegularization l2_weight_regularization = 21;
+  repeated CrossEntropy cross_entropy = 11;
+  repeated MeanSquaredError mean_squared_error = 12;
+  repeated L2WeightRegularization l2_weight_regularization = 21;
 }
 
 message CrossEntropy {
+  double scale_factor = 1;
 }
 
 message MeanSquaredError {
+  double scale_factor = 1;
 }
 
 message L2WeightRegularization {
+  double scale_factor = 1;
 }
 
 //========================================================================

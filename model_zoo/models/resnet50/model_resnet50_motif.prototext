@@ -48,9 +48,7 @@ motif_definitions {
         conv_dims_i: 1
         conv_pads_i: 0
         conv_strides_i: 2
-        weight_initialization: "he_normal"
         has_bias: false
-        l2_regularization_factor: 1e-4
       }
     }
     layer {
@@ -82,9 +80,7 @@ motif_definitions {
         conv_dims_i: 1
         conv_pads_i: 0
         conv_strides_i: 1
-        weight_initialization: "he_normal"
         has_bias: false
-        l2_regularization_factor: 1e-4
       }
     }
     layer {
@@ -118,9 +114,7 @@ motif_definitions {
         conv_dims_i: 3
         conv_pads_i: 1
         conv_strides_i: 1
-        weight_initialization: "he_normal"
         has_bias: false
-        l2_regularization_factor: 1e-4
       }
     }
     layer {
@@ -153,9 +147,7 @@ motif_definitions {
         conv_dims_i: 1
         conv_pads_i: 0
         conv_strides_i: 1
-        weight_initialization: "he_normal"
         has_bias: false
-        l2_regularization_factor: 1e-4
       }
     }
     layer {
@@ -178,15 +170,6 @@ motif_definitions {
 
 model {
   name: "dag_model"
-  objective_function: "cross_entropy"
-  metric {
-    categorical_accuracy { }
-  }
-  metric {
-    top_k_categorical_accuracy {
-      top_k: 5
-    }
-  }
   data_layout: "data_parallel"
   mini_batch_size: 256
   block_size: 256
@@ -195,6 +178,28 @@ model {
   procs_per_model: 0
   use_cudnn: true
   num_gpus: -1
+
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    cross_entropy {}
+    l2_weight_regularization {
+      scale_factor: 1e-4
+    }
+  }
+
+  ###################################################
+  # Metrics
+  ###################################################
+
+  metric { categorical_accuracy {} }
+  metric {
+    top_k_categorical_accuracy {
+       top_k: 5
+    }
+  }
 
   ###################################################
   # Layers
@@ -220,9 +225,7 @@ model {
       conv_dims_i: 7
       conv_pads_i: 3
       conv_strides_i: 2
-      weight_initialization: "he_normal"
       has_bias: false
-      l2_regularization_factor: 1e-4
     }
   }
   layer {
@@ -525,9 +528,7 @@ model {
     data_layout: "model_parallel"
     fully_connected {
     num_neurons: 1000
-    weight_initialization: "he_normal"
     has_bias: false
-    l2_regularization_factor: 1e-4
     }
   }
   layer {
