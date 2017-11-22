@@ -125,6 +125,7 @@ Layer::Layer(const Layer& other) :
   m_num_prev_neurons(other.m_num_prev_neurons),
   m_num_prev_neuron_dims(other.m_num_prev_neuron_dims),
   m_prev_neuron_dims(other.m_prev_neuron_dims),
+  m_weights(other.m_weights),
   m_parent_layers(other.m_parent_layers),
   m_child_layers(other.m_child_layers),
   m_max_num_parent_layers(other.m_max_num_parent_layers),
@@ -187,6 +188,7 @@ Layer& Layer::operator=(const Layer& other) {
   m_num_prev_neurons = other.m_num_prev_neurons;
   m_num_prev_neuron_dims = other.m_num_prev_neuron_dims;
   m_prev_neuron_dims = other.m_prev_neuron_dims;
+  m_weights = other.m_weights;
   m_parent_layers = other.m_parent_layers;
   m_child_layers = other.m_child_layers;
   m_max_num_parent_layers = other.m_max_num_parent_layers;
@@ -285,6 +287,11 @@ Layer::~Layer() {
   if(m_error_signal      != nullptr) delete m_error_signal;
   if(m_activations_v     != nullptr) delete m_activations_v;
   if(m_error_signal_v    != nullptr) delete m_error_signal_v;
+}
+
+void Layer::reset() {
+  El::Zero(*m_activations);
+  El::Zero(*m_error_signal);
 }
 
 void Layer::forward_prop() {

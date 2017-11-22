@@ -28,7 +28,6 @@
 #define LBANN_METRIC_MEAN_ABSOLUTE_DEVIATION_HPP
 
 #include "lbann/metrics/metric.hpp"
-#include "lbann/objective_functions/mean_absolute_deviation.hpp"
 
 namespace lbann {
 

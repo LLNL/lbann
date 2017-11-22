@@ -1,6 +1,5 @@
 model {
   name: "sequential_model"
-  objective_function: "mean_squared_error"
   data_layout: "data_parallel"
   mini_batch_size: 128
   block_size: 256
@@ -9,6 +8,16 @@ model {
   procs_per_model: 0
   use_cudnn: false
   num_gpus: -1
+
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    mean_squared_error {}
+      scale_factor: 0.0005
+    }
+  }
 
   ###################################################
   # Callbacks
@@ -58,7 +67,6 @@ model {
       weight_initialization: "he_normal"
       has_bias: true
       has_vectors: true
-      l2_regularization_factor: 0.0005
     }
   }
 
@@ -86,10 +94,8 @@ model {
       conv_dims: "12 20"
       conv_pads: "0 0"
       conv_strides: "12 20"
-      weight_initialization: "he_normal"
       has_bias: true
       has_vectors: true
-      l2_regularization_factor: 0.0005
     }
   }
 

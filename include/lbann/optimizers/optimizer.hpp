@@ -33,121 +33,144 @@
 #include "lbann/comm.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
+#include "lbann/weights/weights.hpp"
 #include <string>
 
 namespace lbann {
 
-/// Optimizer base class
+/** Abstract optimizer. */
 class optimizer {
-
  public:
 
-  /// Constructor
-  optimizer(lbann_comm *comm,
-            DataType learning_rate = DataType(0),
-            cudnn::cudnn_manager *cudnn=nullptr);
-  optimizer(const optimizer&) = default;
-  optimizer& operator=(const optimizer&) = default;
+  /** Constructor. */
+  optimizer(DataType learning_rate = DataType(0));
 
-  /// Destructor
+  /** Copy constructor. */
+  optimizer(const optimizer& other);
+  /** Copy assignment operator. */
+  optimizer& operator=(const optimizer& other);
+  /** Destructor. */
   virtual ~optimizer();
-
-  /**
-   * Virtual copy operator. Returns a copy of the true class.
-   */
+  /** Create a copy of the optimizer. */
   virtual optimizer* copy() const = 0;
 
-  /// Set parameters to optimize and initialize optimizer
-  virtual void setup(AbsDistMat *parameters);
-  virtual void setup_gpu(AbsDistMat *parameters,
-                         const std::vector<DataType *> &parameters_d);
+  /** Get the optimizer name. */
+  virtual std::string get_type() const = 0;
+  /** Get a human-readable description of the optimizer. */
+  virtual std::string get_description() const;
 
-  /// Returns the optimizer's name
-  virtual std::string get_name() const = 0;
+  /** Whether the optimizer has been set up. */
+  inline bool is_initialized() const { return m_weights != nullptr; }
 
-  virtual std::string get_description() const = 0;
-
-  /// Update parameters using objective function gradient
-  virtual void update(const AbsDistMat *gradient) = 0;
-  
-  virtual void update_gpu(const std::vector<DataType *> &gradient_d) {
-    throw new lbann_exception("update_gpu not supported");
-  }
-
-  /// Get learning rate
-  virtual DataType get_learning_rate() const {
-    return m_learning_rate;
-  }
-
-  /// Set learning rate
-  virtual void set_learning_rate(DataType learning_rate) {
+  /** Get weights being optimized. */
+  weights& get_weights();
+  /** Set weights being optimized. */
+  void set_weights(weights& w) { m_weights = &w; }
+  /** Get learning rate. */
+  DataType get_learning_rate() const { return m_learning_rate; }
+  /** Set learning rate. */
+  void set_learning_rate(DataType learning_rate) {
     m_learning_rate = learning_rate;
   };
 
-  /// Get parameters
-  AbsDistMat *get_parameters() const {
-    return m_parameters;
-  }
-
-  /**
-   * Set parameters to optimize.
-   * Undefined if parameters is different dimensions or distribution than what
-   * was originally set!
+  /** Get gradient matrix.
+   *  The gradient is accumulated on the CPU.
    */
-  void set_parameters(AbsDistMat *parameters) {
-    m_parameters = parameters;
-  }
+  AbsDistMat& get_gradient();
+#ifdef __LIB_CUDNN
+  /** Get gradient matrix on GPU.
+   *  The gradient is accumulated on the GPU.
+   */
+  std::vector<DataType*> get_gradient_gpu();
+#endif // __LIB_CUDNN
   
-  void set_parameters_gpu(AbsDistMat *parameters,
-                          const std::vector<DataType *> &parameters_d) {
-    set_parameters(parameters);
-    m_parameters_d = parameters_d;
-  }
+  /** Clear gradient matrix. */
+  void clear_gradient();
+  /** Add to the gradient matrix. */
+  void add_to_gradient(const AbsDistMat& gradient,
+                       DataType scale = DataType(1));
+  /** Allreduce and add to gradient matrix.
+   *  The input is added to a staging matrix. When the gradient is
+   *  needed, an allreduce is applied over the redundant communicator
+   *  of the gradient matrix and the result is added to the gradient.
+   */
+  void allreduce_and_add_to_gradient(const AbsDistMat& gradient,
+                                     DataType scale = DataType(1));
+#ifdef __LIB_CUDNN
+  /** Add to the gradient matrix on GPU. */
+  void add_to_gradient_gpu(std::vector<DataType*>& gradient,
+                           DataType scale = DataType(1));
+  /** Allreduce and add to gradient matrix on GPU.
+   *  The input is added to a staging matrix. When the gradient is
+   *  needed, an allreduce is applied over the redundant communicator
+   *  of the gradient matrix and the result is added to the gradient.
+   */
+  void allreduce_and_add_to_gradient_gpu(std::vector<DataType*>& gradient,
+                                         DataType scale = DataType(1));
+#endif // __LIB_CUDNN
 
-  /// Get optimizer name
-  virtual std::string name() const = 0;
+  /** Setup optimizer. */
+  virtual void setup(weights& w);
+
+  /** Apply an optimization step. */
+  void step();
+  /** Perform the computation in an optimization step.
+   *  It can be assumed that values and gradient are the same size and
+   *  have the same matrix distribution.
+   */
+  virtual void step_compute(AbsDistMat& values, const AbsDistMat& gradient) = 0;
+#ifdef __LIB_CUDNN
+  /** Perform the computation in an optimization step on GPU.
+   *  The default implementation is to transfer data to CPU and call
+   *  step_compute.
+   */
+  virtual void step_compute_gpu(std::vector<DataType*> values_d,
+                                std::vector<DataType*> gradient_d);
+#endif // __LIB_CUDNN
 
  protected:
-  /// LBANN communicator
-  lbann_comm *m_comm;
-  /// cuDNN manager
-  cudnn::cudnn_manager *m_cudnn;
-  /// Parameters to optimize
-  AbsDistMat *m_parameters;
-  /// m_parameters on GPU memory
-  std::vector<DataType *> m_parameters_d;
-  
-  /// Parameter matrix height
-  int m_height;
-  /// Parameter matrix width
-  int m_width;
-  /// Parameter matrix format
-  matrix_format m_matrix_format;
-  /// Learning rate
+ 
+  /** cuDNN manager. */
+  cudnn::cudnn_manager* m_cudnn;
+
+  /** Weights being optimized. */
+  weights* m_weights;
+
+  /** Learning rate. */
   DataType m_learning_rate;
-};
 
-/// Optimizer factory base class
-class optimizer_factory {
- public:
-  /// Constructor
-  optimizer_factory
-  (lbann_comm *comm,
-   const std::string name);
-  /// Destructor
-  virtual ~optimizer_factory();
-  /// Create optimizer; caller is responsible for freeing memory.
-  virtual optimizer *create_optimizer() = 0;
-  /// Get optimizer name
-  virtual const std::string name() const {
-    return m_name;
-  };
- protected:
-  /// LBANN communicator
-  lbann_comm *m_comm;
+  /** Gradient matrix. */
+  AbsDistMat* m_gradient;
+#ifdef __LIB_CUDNN
+  /** GPU memory for gradient matrix. */
+  std::vector<DataType*> m_gradient_d;
+#endif // __LIB_CUDNN
+
  private:
-  /// Optimizer name
-  const std::string m_name;
+
+  /** Whether the CPU gradient matrix is non-zero. */
+  bool m_cpu_gradient_is_nonzero;
+  /** Whether the CPU staging matrix is non-zero. */
+  bool m_cpu_staging_is_nonzero;
+  /** Allreduce staging matrix.
+   *  When the gradient is needed, an allreduce is applied over the
+   *  redundant communicator of the staging matrix and the result is
+   *  added to the gradient matrix.
+   */
+  AbsDistMat* m_staging;
+#ifdef __LIB_CUDNN
+  /** Whether the GPU gradient matrix is non-zero. */
+  bool m_gpu_gradient_is_nonzero;
+  /** Whether the GPU staging matrix is non-zero. */
+  bool m_gpu_staging_is_nonzero;
+  /** GPU memory for gradient staging matrix.
+   *  When the gradient is needed, an allreduce is applied over the
+   *  GPUs and over the redundant communicator of the staging matrix
+   *  and the result is added to the gradient matrix.
+   */
+  std::vector<DataType*> m_staging_d;
+#endif // __LIB_CUDNN
+
 };
 
 } // namespace lbann

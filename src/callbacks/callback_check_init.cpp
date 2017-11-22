@@ -44,34 +44,28 @@ void lbann_callback_check_init::on_train_begin(model *m) {
     return;
   }
 
-  std::vector<Layer *>& layers = m->get_layers();
-  // Skip the input/output layers.
-  for (size_t l = 1; l < layers.size() - 1; ++l) {
+  for (const auto w : m->get_weights()) {
     if (comm->am_world_master()) {
-      std::cout << "Checking layer " << l << std::endl;
-    }
-    // Skip non-learning layers.
-    learning *learning_layer = (learning *) dynamic_cast<learning *> (layers[l]);
-    if(learning_layer == NULL) {
-      continue;
+      std::cout << "Checking " << w->get_name() << std::endl;
     }
     // Model 0 holds the master copy, it gathers the values from other models
     // and compares them.
-    const AbsDistMat& weights = learning_layer->get_weights();
-    const Mat& local_weights = weights.LockedMatrix();
+    const Mat& local_matrix = w->get_values().LockedMatrix();
+    Mat remote_matrix(local_matrix.Height(), local_matrix.Width());
     for (int model = 1; model < comm->get_num_models(); ++model) {
       comm->global_barrier();
       if (comm->get_model_rank() == 0) {
-        Mat remote_weights(local_weights.Height(), local_weights.Width());
-        comm->recv(remote_weights, model);
-        if (!check_equal(local_weights, remote_weights)) {
-          throw lbann_exception(
-            "check_init: model " + std::to_string(model) + " rank in model " +
-            std::to_string(comm->get_rank_in_model()) +
-            " does not match model 0");
+        comm->recv(remote_matrix, model);
+        if (!check_equal(local_matrix, remote_matrix)) {
+          std::stringstream ss;
+          ss << "check_init: "
+             << "model " << model << " "
+             << "rank in model " << comm->get_rank_in_model() << " "
+             << "does not match model 0";
+          throw lbann_exception(ss.str());
         }
       } else if (comm->get_model_rank() == model) {
-        comm->send(local_weights, 0);
+        comm->send(local_matrix, 0);
       }
     }
   }

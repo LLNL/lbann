@@ -43,10 +43,10 @@ class sequential_model : public model {
  public:
 
   /** Constructor. */
-  sequential_model(int max_mini_batch_size,
-                   lbann_comm *comm,
-                   objective_functions::objective_function *obj_fn,
-                   optimizer_factory *optimizer_fac);
+  sequential_model(lbann_comm *comm,
+                   int max_mini_batch_size,
+                   objective_function *obj_fn,
+                   optimizer* default_optimizer = nullptr);
   
   /** Copy constructor. */
   sequential_model(const sequential_model& other) = default;

@@ -40,9 +40,6 @@
 
 namespace lbann {
 
-// Forward declaration.
-class lbann_callback_imcomm;
-
 /// Convolution layer
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
 class convolution_layer : public base_convolution_layer {
@@ -72,9 +69,7 @@ class convolution_layer : public base_convolution_layer {
       s << this->m_conv_strides[h] << " ";
     }
     s << " num_output_channels: " << this->m_neuron_dims[0]
-      << " weight_init: " + get_weight_initialization_name(this->m_weight_initialization) 
       << " has_bias: " << this->m_bias_scaling_factor
-      << " bias_initial_value: " << this->m_bias_initial_value
       << " dataLayout: " << this->get_data_layout_string(get_data_layout());
     return s.str();
   }
@@ -106,33 +101,24 @@ class convolution_layer : public base_convolution_layer {
                     int conv_dim,
                     int conv_pad,
                     int conv_stride,
-                    weight_initialization init,
-                    optimizer *opt,
                     bool has_bias = true,
-                    DataType bias_initial_value = DataType(0),
                     cudnn::cudnn_manager *cudnn = NULL)
     : convolution_layer(comm,
                         num_data_dims,
                         num_output_channels,
-                        std::vector<int>(num_data_dims, conv_dim).data(),
-                        std::vector<int>(num_data_dims, conv_pad).data(),
-                        std::vector<int>(num_data_dims, conv_stride).data(),
-                        init,
-                        opt,
+                        std::vector<int>(num_data_dims, conv_dim),
+                        std::vector<int>(num_data_dims, conv_pad),
+                        std::vector<int>(num_data_dims, conv_stride),
                         has_bias,
-                        bias_initial_value,
                         cudnn) {}
 
   convolution_layer(lbann_comm *comm,
                     int num_data_dims,
                     int num_output_channels,
-                    const int *conv_dims,
-                    const int *conv_pads,
-                    const int *conv_strides,
-                    weight_initialization init,
-                    optimizer *opt,
+                    std::vector<int> conv_dims,
+                    std::vector<int> conv_pads,
+                    std::vector<int> conv_strides,
                     bool has_bias = true,
-                    DataType bias_initial_value = DataType(0),
                     cudnn::cudnn_manager *cudnn = NULL)
     : base_convolution_layer(comm,
                              num_data_dims,
@@ -140,10 +126,7 @@ class convolution_layer : public base_convolution_layer {
                              conv_dims,
                              conv_pads,
                              conv_strides,
-                             init,
-                             opt,
                              has_bias,
-                             bias_initial_value,
                              cudnn) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "convolution only supports DATA_PARALLEL");
@@ -217,37 +200,13 @@ class convolution_layer : public base_convolution_layer {
   }
 
   void setup_data() override {
-    if(m_bias_scaling_factor == DataType(0)) {
-      El::Zeros(*this->m_weights,
-                m_kernel_size / this->m_neuron_dims[0],
-                this->m_neuron_dims[0]);
-    }
-    else {
-      El::Zeros(*this->m_weights,
-                m_kernel_size / this->m_neuron_dims[0] + 1,
-                this->m_neuron_dims[0]);
-    }
-    El::Zeros(*this->m_weights_gradient,
-              this->m_weights->Height(),
-              this->m_weights->Width());
     base_convolution_layer::setup_data();
-  }
-
-  void setup_views() override {
-    base_convolution_layer::setup_views();
-    const El::Int kernel_size_per_channel
-      = m_kernel_size / this->m_neuron_dims[0];
-    El::View(*m_kernel_weights_v, *this->m_weights,
-             El::IR(El::Int(0), kernel_size_per_channel), El::ALL);
-    El::View(*m_kernel_weights_gradient_v, *this->m_weights_gradient,
-             El::IR(El::Int(0), kernel_size_per_channel), El::ALL);
-
-    if(m_bias_scaling_factor != DataType(0)) {
-      El::View(*m_bias_weights_v, *this->m_weights,
-               El::IR(kernel_size_per_channel), El::ALL);
-      El::View(*m_bias_weights_gradient_v, *this->m_weights_gradient,
-               El::IR(kernel_size_per_channel), El::ALL);
-    }
+    this->m_weights[0]->setup(m_kernel_size / this->m_neuron_dims[0],
+                              this->m_neuron_dims[0],
+                              El::STAR, El::STAR);
+    El::Zeros(*this->m_kernel_weights_gradient,
+              this->m_weights[0]->get_height(),
+              this->m_weights[0]->get_width());
   }
 
  protected:
@@ -260,7 +219,6 @@ class convolution_layer : public base_convolution_layer {
       apply_convolution_im2col(true);
       apply_bias_cpu();
     }
-    l2_regularize_objective_function();
   }
 
   void bp_compute() override {
@@ -271,7 +229,6 @@ class convolution_layer : public base_convolution_layer {
       apply_transposed_convolution_im2col(false);
       compute_gradients_im2col(false);
     }
-    l2_regularize_gradient();
   }
 
 };

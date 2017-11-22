@@ -37,7 +37,9 @@ typedef double DataType;
 #elif LBANN_DATATYPE == 4
 typedef float DataType;
 #else
-typedef float DataType; // Default to floats
+// Default to floats
+#define LBANN_DATATYPE 4
+typedef float DataType; 
 #endif
 
 typedef El::Grid EGrid;

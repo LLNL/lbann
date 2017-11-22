@@ -31,18 +31,19 @@
 
 namespace lbann {
 
-void lbann_callback_dump_gradients::on_backward_prop_end(model *m, Layer *l) {
-  // Print gradients of learning layers
-  learning *learning_layer = dynamic_cast<learning*>(l);
-  if (learning_layer != nullptr) {
-    const std::string file
-      = (m_basename
-         + "model" + std::to_string(m->get_comm()->get_model_rank())
-         + "-epoch" + std::to_string(m->get_cur_epoch())
-         + "-step" + std::to_string(m->get_cur_step())
-         + "-" + l->get_name()
-         + "-Gradients");
-    El::Write(learning_layer->get_weights_gradient(), file, El::ASCII);
+void lbann_callback_dump_gradients::on_backward_prop_end(model *m) {
+  for (weights *w : m->get_weights()) {
+    optimizer *opt = w->get_optimizer();
+    if (opt != nullptr) {
+      const std::string file
+        = (m_basename
+           + "model" + std::to_string(m->get_comm()->get_model_rank())
+           + "-epoch" + std::to_string(m->get_cur_epoch())
+           + "-step" + std::to_string(m->get_cur_step())
+           + "-" + w->get_name()
+           + "-Gradient");
+      El::Write(opt->get_gradient(), file, El::ASCII);
+    }
   }
 }
 

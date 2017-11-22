@@ -30,13 +30,16 @@
 #define LBANN_LAYER_LEARNING_HPP_INCLUDED
 
 #include "lbann/layers/layer.hpp"
-#include "lbann/layers/optimizable_layer.hpp"
 #include <string>
 #include <vector>
 
 namespace lbann {
 
-class learning : public Layer, public optimizable_layer {
+class learning : public Layer {
+ public:
+  learning(lbann_comm *comm) : Layer(comm) {}
+
+#if 0
  protected:
   optimizer  *m_optimizer;
 
@@ -387,22 +390,8 @@ class learning : public Layer, public optimizable_layer {
     return true;
   }
 #endif
-
+#endif
 };
-
-/// Matrices should be in MC,MR distributions
-template<> inline void learning::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>() {
-  Layer::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>();
-  m_weights          = new DistMat(m_comm->get_model_grid());
-  m_weights_gradient = new DistMat(m_comm->get_model_grid());
-}
-
-/// Weight matrices should be in Star,Star and data matrices Star,VC distributions
-template<> inline void learning::initialize_distributed_matrices<data_layout::DATA_PARALLEL>() {
-  Layer::initialize_distributed_matrices<data_layout::DATA_PARALLEL>();
-  m_weights          = new StarMat(m_comm->get_model_grid());
-  m_weights_gradient = new StarMat(m_comm->get_model_grid());
-}
 
 }  // namespace lbann
 

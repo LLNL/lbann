@@ -56,7 +56,7 @@ class lbann_callback_imcomm : public lbann_callback {
   };
 
   /**
-   * Initialize with ct being used for every layer.
+   * Initialize with ct being used for all weights.
    */
   lbann_callback_imcomm(comm_type ct = NORMAL,
                         lbann_summary *summarizer = nullptr);
@@ -66,19 +66,20 @@ class lbann_callback_imcomm : public lbann_callback {
     return new lbann_callback_imcomm(*this);
   }
   /**
-   * Convenience initialization to do one update type for a set of layers.
-   * Implies no inter-model updates for other layers.
+   * Convenience initialization to do one update type for specific weights.
+   * Implies no inter-model updates for other weights.
    */
-  lbann_callback_imcomm(comm_type ct, std::unordered_set<Layer *> layers,
+  lbann_callback_imcomm(comm_type ct, std::unordered_set<weights *> weights_list,
                         lbann_summary *summarizer = nullptr);
 
-  /** Choose comm type ct for layer. */
-  void set_layer_comm(Layer *layer, comm_type ct);
-  /** Set a layer to use adaptive quantization with proportion. */
-  void set_layer_adaptive(Layer *layer, int proportion);
-  /** Set a layer to use threshold quantization with given thresholds. */
-  void set_layer_threshold(Layer *layer, DataType pos_thresh,
-                           DataType neg_thresh);
+  /** Choose comm type ct for weights. */
+  void set_weights_comm(weights *w, comm_type ct);
+  /** Set weights to use adaptive quantization with proportion. */
+  void set_weights_adaptive(weights *w, int proportion);
+  /** Set weights to use threshold quantization with given thresholds. */
+  void set_weights_threshold(weights *w,
+                             DataType pos_thresh,
+                             DataType neg_thresh);
 
   /** Do initialization for this model. */
   void setup(model *m) override;
@@ -90,13 +91,13 @@ class lbann_callback_imcomm : public lbann_callback {
   std::string name() const override { return "imcomm"; }
 
  private:
-  /** Parameters for a given layer. */
+  /** Parameters for a given set of weights. */
   struct imcomm_params {
     /** Type of communication done. */
     comm_type ct = NONE;
     /** Accumulated error (e.g. from quantization). */
     Mat error;
-    /** If >0, reshape (local) layer gradients to these dimensions. */
+    /** If >0, reshape (local) gradients to these dimensions. */
     Int reshape_height = 0;
     Int reshape_width = 0;
     /** Adaptive quantization proportion. */
@@ -107,8 +108,8 @@ class lbann_callback_imcomm : public lbann_callback {
   };
   /** Default communication type. */
   comm_type m_default_ct;
-  /** Per-layer parameters. */
-  std::unordered_map<Layer *, imcomm_params> m_layer_params;
+  /** Per-weights parameters. */
+  std::unordered_map<weights *, imcomm_params> m_weights_params;
   /** Quantizer for quantization of updates, if needed. */
   lbann_quantizer m_quantizer;
 
@@ -133,7 +134,7 @@ class lbann_callback_imcomm : public lbann_callback {
   }
 
   /** Summarize relevant statistics. */
-  void do_summary(model *m, learning *layer, double im_time);
+  void do_summary(model *m, weights *w, double im_time);
 };
 
 

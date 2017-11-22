@@ -38,10 +38,10 @@ namespace lbann {
 class greedy_layerwise_autoencoder : public sequential_model {
  public:
   /** Constructor. */
-  greedy_layerwise_autoencoder(int mini_batch_size,
-                               lbann_comm *comm,
-                               objective_functions::objective_function *obj_fn,
-                               optimizer_factory *_optimizer_fac);
+  greedy_layerwise_autoencoder(lbann_comm *comm,
+                               int mini_batch_size,
+                               objective_function *obj_fn,
+                               optimizer *default_optimizer);
 
   /** Copy constructor.
    *  @todo Not yet supported.

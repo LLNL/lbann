@@ -1,6 +1,5 @@
 model {
   name: "dag_model"
-  objective_function: "cross_entropy"
   data_layout: "data_parallel"
   mini_batch_size: 256
   block_size: 256
@@ -10,6 +9,16 @@ model {
   use_cudnn: true
   num_gpus: -1
 
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    cross_entropy {}
+    l2_weight_regularization {
+      scale_factor: 0.0005
+    }
+  }
 
   ###################################################
   # Callbacks

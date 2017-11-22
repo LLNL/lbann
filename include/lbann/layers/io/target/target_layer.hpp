@@ -92,19 +92,11 @@ class target_layer : public io_layer {
       throw lbann_exception(err.str());
     }
 
-    if(this->m_neural_network_model->m_obj_fn == NULL) {
-      err << __FILE__ << " " << __LINE__ 
-          << " :: lbann_target_layer: target layer has invalid objective function pointer";
-      throw lbann_exception(err.str());
-    }
     for (auto&& m : this->m_neural_network_model->get_metrics()) {
       m->setup(this->m_num_neurons,
                this->m_neural_network_model->get_max_mini_batch_size());
       m->m_neural_network_model = this->m_neural_network_model;
     }
-    
-    // Initialize objective function
-    this->m_neural_network_model->m_obj_fn->setup(*this->m_parent_layers[0]);
 
   }
 
@@ -219,6 +211,9 @@ class target_layer : public io_layer {
     return paired_input_layer->is_execution_mode_valid(mode);
   }
 
+  AbsDistMat& get_prediction() { return *this->m_prev_activations; }
+  AbsDistMat& get_ground_truth() { return *this->m_activations_v; }
+
   virtual std::vector<Layer*> get_layer_pointers() override {
     std::vector<Layer*> layers = io_layer::get_layer_pointers();
     layers.push_back((Layer*) paired_input_layer);
@@ -240,34 +235,6 @@ class target_layer : public io_layer {
   //************************************************************************
   //
   //************************************************************************
-
-  void summarize_stats(lbann_summary& summarizer, int step) override {
-    std::string obj_name = this->m_neural_network_model->m_obj_fn->name();
-    // Replace spaces with _ for consistency.
-    std::transform(obj_name.begin(), obj_name.end(), obj_name.begin(),
-                   [] (char c) { return c == ' ' ? '_' : c; });
-    std::string tag = this->m_name + "/objective_" + obj_name;
-    summarizer.reduce_scalar(
-      tag,
-      this->m_neural_network_model->m_obj_fn->get_mean_value(),
-      step);
-    io_layer::summarize_stats(summarizer, step);
-  }
-
-  void epoch_print() const override {
-    double obj_cost = this->m_neural_network_model->m_obj_fn->get_mean_value();
-    if (this->m_comm->am_world_master()) {
-      std::vector<double> avg_obj_fn_costs(this->m_comm->get_num_models());
-      this->m_comm->intermodel_gather(obj_cost, avg_obj_fn_costs);
-      for (size_t i = 0; i < avg_obj_fn_costs.size(); ++i) {
-        std::cout << "Model " << i << " average " <<
-          this->m_neural_network_model->m_obj_fn->name() << ": " <<
-          avg_obj_fn_costs[i] << std::endl;
-      }
-    } else {
-      this->m_comm->intermodel_gather(obj_cost, this->m_comm->get_world_master());
-    }
-  }
 
   bool saveToCheckpoint(int fd, const char *filename, size_t *bytes) const override {
     /// @todo should probably save m_shared_data_reader

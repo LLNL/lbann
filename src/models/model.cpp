@@ -42,26 +42,28 @@ namespace lbann {
 // Constructors and destructor
 ////////////////////////////////////////////////////////////
 
-model::model(lbann_comm *comm, int mini_batch_size,
-             objective_functions::objective_function *obj_fn,
-             optimizer_factory *optimizer_fac) :
-  m_obj_fn(obj_fn),
-  m_execution_mode(execution_mode::invalid),
-  m_terminate_training(false),
-  m_current_epoch(0), m_current_step(0),
-  m_current_validation_step(0),
-  m_current_testing_step(0),
-  m_max_mini_batch_size(mini_batch_size),
-  m_current_mini_batch_size(mini_batch_size),
-  m_effective_mini_batch_size(mini_batch_size),
-  m_current_phase(0),
-  m_comm(comm),
-  m_checkpoint_dir(""),
-  m_checkpoint_epochs(0),
-  m_checkpoint_steps(0),
-  m_checkpoint_secs(0.0),
-  m_checkpoint_last(MPI_Wtime()),
-  m_optimizer_fac(optimizer_fac) {}
+model::model(lbann_comm *comm,
+             int mini_batch_size,
+             objective_function *obj_fn,
+             optimizer* default_optimizer)
+  : m_objective_function(obj_fn),
+    m_execution_mode(execution_mode::invalid),
+    m_terminate_training(false),
+    m_current_epoch(0),
+    m_current_step(0),
+    m_current_validation_step(0),
+    m_current_testing_step(0),
+    m_max_mini_batch_size(mini_batch_size),
+    m_current_mini_batch_size(mini_batch_size),
+    m_effective_mini_batch_size(mini_batch_size),
+    m_current_phase(0),
+    m_comm(comm),
+    m_checkpoint_dir(""),
+    m_checkpoint_epochs(0),
+    m_checkpoint_steps(0),
+    m_checkpoint_secs(0.0),
+    m_checkpoint_last(MPI_Wtime()),
+    m_default_optimizer(default_optimizer) {}
 
 model::model(const model& other) :
   m_execution_mode(other.m_execution_mode),
@@ -79,16 +81,16 @@ model::model(const model& other) :
   m_checkpoint_epochs(other.m_checkpoint_epochs),
   m_checkpoint_steps(other.m_checkpoint_steps),
   m_checkpoint_secs(other.m_checkpoint_secs),
-  m_checkpoint_last(other.m_checkpoint_last),
-  m_optimizer_fac(other.m_optimizer_fac) {
+  m_checkpoint_last(other.m_checkpoint_last) {
 
   // Deep copies
+  m_objective_function = other.m_objective_function->copy();
+  m_objective_function->set_model(this);
   for (const auto& metric : other.m_metrics) {
     metrics::metric *m_copy = metric->copy();
     m_copy->m_neural_network_model = this;
     m_metrics.push_back(m_copy);
   }
-  m_obj_fn = other.m_obj_fn->copy();
   for (const auto& cb : other.m_callbacks) {
     m_callbacks.push_back(cb->copy());
   }
@@ -99,31 +101,58 @@ model::model(const model& other) :
     old_to_new_layer[old_layer] = new_layer;
     m_layers.push_back(new_layer);
   }
-
-  // Fix layer groups
-  for (auto& old_master_and_group : other.m_layer_groups) {
-    Layer *old_master = old_master_and_group.first;
-    std::vector<Layer *> old_group = old_master_and_group.second;
-    Layer *new_master = old_to_new_layer[old_master];
-    std::vector<Layer *> new_group;
-    for (Layer *old_layer : old_group) {
-      Layer *new_layer = old_to_new_layer[old_layer];
-      new_group.push_back(new_layer);
-      m_layer_group_masters[new_layer] = new_master;
-    }
-    m_layer_groups[new_master] = new_group;
+  std::unordered_map<weights *,weights *> old_to_new_weights;
+  for (weights *old_weights : other.m_weights) {
+    weights *new_weights = old_weights->copy();
+    old_to_new_weights[old_weights] = new_weights;
+    m_weights.push_back(new_weights);
+  }
+  if (other.m_default_optimizer != nullptr) {
+    m_default_optimizer = other.m_default_optimizer->copy();
+  } else {
+    m_default_optimizer = nullptr;
   }
 
-  // Fix layer pointers
+  // Fix pointers
   for (Layer *old_layer : other.m_layers) {
     Layer *new_layer = old_to_new_layer[old_layer];
-    std::vector<Layer *> old_pointers = old_layer->get_layer_pointers();
-    std::vector<Layer *> new_pointers;
-    for (Layer *old_pointer : old_pointers) {
-      Layer *new_pointer = old_to_new_layer[old_pointer];
-      new_pointers.push_back(new_pointer);
+
+    // Fix layer pointers
+    std::vector<Layer *> old_layer_pointers = old_layer->get_layer_pointers();
+    std::vector<Layer *> new_layer_pointers;
+    for (Layer *old_layer_pointer : old_layer_pointers) {
+      Layer *new_layer_pointer = old_to_new_layer[old_layer_pointer];
+      new_layer_pointers.push_back(new_layer_pointer);
     }
-    new_layer->set_layer_pointers(new_pointers);
+    new_layer->set_layer_pointers(new_layer_pointers);
+
+    // Fix weights pointers
+    std::vector<weights *> old_weights = old_layer->get_weights();
+    std::vector<weights *> new_weights;
+    for (weights *old_weights_pointer : old_weights) {
+      weights *new_weights_pointer = old_to_new_weights[old_weights_pointer];
+      new_weights.push_back(new_weights_pointer);
+    }
+    new_layer->set_weights(new_weights);
+
+  }
+
+  // Fix objective function pointers
+  {
+    std::vector<Layer *> old_layer_pointers = m_objective_function->get_layer_pointers();
+    std::vector<Layer *> new_layer_pointers;
+    for (Layer *old_layer_pointer : old_layer_pointers) {
+      Layer *new_layer_pointer = old_to_new_layer[old_layer_pointer];
+      new_layer_pointers.push_back(new_layer_pointer);
+    }
+    m_objective_function->set_layer_pointers(new_layer_pointers);
+    std::vector<weights *> old_weights_pointers = m_objective_function->get_weights_pointers();
+    std::vector<weights *> new_weights_pointers;
+    for (weights *old_weights_pointer : old_weights_pointers) {
+      weights *new_weights_pointer = old_to_new_weights[old_weights_pointer];
+      new_weights_pointers.push_back(new_weights_pointer);
+    }
+    m_objective_function->set_weights_pointers(new_weights_pointers);
   }
 
 }
@@ -131,8 +160,8 @@ model::model(const model& other) :
 model& model::operator=(const model& other) {
 
   // Delete objects
-  if (m_obj_fn) {
-    delete m_obj_fn;
+  if (m_objective_function) {
+    delete m_objective_function;
   }
   for (metrics::metric *metric : m_metrics) {
     delete metric;
@@ -140,14 +169,9 @@ model& model::operator=(const model& other) {
   for (lbann_callback *callback : m_callbacks) {
     delete callback;
   }
-  for (Layer *layer : m_layers) {
-    delete layer;
-  }
   m_metrics.clear();
   m_callbacks.clear();
-  m_layers.clear();
-  m_layer_groups.clear();
-  m_layer_group_masters.clear();
+  delete_layers();
 
   // Shallow copies
   m_execution_mode = other.m_execution_mode;
@@ -166,9 +190,10 @@ model& model::operator=(const model& other) {
   m_checkpoint_steps = other.m_checkpoint_steps;
   m_checkpoint_secs = other.m_checkpoint_secs;
   m_checkpoint_last = other.m_checkpoint_last;
-  m_optimizer_fac = other.m_optimizer_fac;
 
   // Deep copies
+  m_objective_function = other.m_objective_function->copy();
+  m_objective_function->set_model(this);
   for (metrics::metric *m : m_metrics) {
     delete m;
   }
@@ -177,49 +202,76 @@ model& model::operator=(const model& other) {
     m_copy->m_neural_network_model = this;
     m_metrics.push_back(m_copy);
   }
-  m_obj_fn = other.m_obj_fn->copy();
   for (const auto& cb : other.m_callbacks) {
     m_callbacks.push_back(cb->copy());
   }
   std::unordered_map<Layer *,Layer *> old_to_new_layer;
   for (Layer* old_layer : other.m_layers) {
     Layer* new_layer = old_layer->copy();
+    new_layer->set_neural_network_model(this);
     old_to_new_layer[old_layer] = new_layer;
     m_layers.push_back(new_layer);
   }
-
-  // Fix layer groups
-  for (auto& old_master_and_group : other.m_layer_groups) {
-    Layer *old_master = old_master_and_group.first;
-    std::vector<Layer *> old_group = old_master_and_group.second;
-    Layer *new_master = old_to_new_layer[old_master];
-    std::vector<Layer *> new_group;
-    for (Layer *old_layer : old_group) {
-      Layer *new_layer = old_to_new_layer[old_layer];
-      new_group.push_back(new_layer);
-      m_layer_group_masters[new_layer] = new_master;
-    }
-    m_layer_groups[new_master] = new_group;
+  std::unordered_map<weights *,weights *> old_to_new_weights;
+  for (weights *old_weights : other.m_weights) {
+    weights *new_weights = old_weights->copy();
+    old_to_new_weights[old_weights] = new_weights;
+    m_weights.push_back(new_weights);
+  }
+  if (other.m_default_optimizer != nullptr) {
+    m_default_optimizer = other.m_default_optimizer->copy();
+  } else {
+    m_default_optimizer = nullptr;
   }
 
-  // Fix layer pointers
+  // Fix pointers
   for (Layer *old_layer : other.m_layers) {
     Layer *new_layer = old_to_new_layer[old_layer];
-    std::vector<Layer *> old_pointers = old_layer->get_layer_pointers();
-    std::vector<Layer *> new_pointers;
-    for (Layer *old_pointer : old_pointers) {
-      Layer *new_pointer = old_to_new_layer[old_pointer];
-      new_pointers.push_back(new_pointer);
+
+    // Fix layer pointers
+    std::vector<Layer *> old_layer_pointers = old_layer->get_layer_pointers();
+    std::vector<Layer *> new_layer_pointers;
+    for (Layer *old_layer_pointer : old_layer_pointers) {
+      Layer *new_layer_pointer = old_to_new_layer[old_layer_pointer];
+      new_layer_pointers.push_back(new_layer_pointer);
     }
-    new_layer->set_layer_pointers(new_pointers);
+    new_layer->set_layer_pointers(new_layer_pointers);
+
+    // Fix weights pointers
+    std::vector<weights *> old_weights = old_layer->get_weights();
+    std::vector<weights *> new_weights;
+    for (weights *old_weights_pointer : old_weights) {
+      weights *new_weights_pointer = old_to_new_weights[old_weights_pointer];
+      new_weights.push_back(new_weights_pointer);
+    }
+    new_layer->set_weights(new_weights);
+
+  }
+
+  // Fix objective function pointers
+  {
+    std::vector<Layer *> old_layer_pointers = m_objective_function->get_layer_pointers();
+    std::vector<Layer *> new_layer_pointers;
+    for (Layer *old_layer_pointer : old_layer_pointers) {
+      Layer *new_layer_pointer = old_to_new_layer[old_layer_pointer];
+      new_layer_pointers.push_back(new_layer_pointer);
+    }
+    m_objective_function->set_layer_pointers(new_layer_pointers);
+    std::vector<weights *> old_weights_pointers = m_objective_function->get_weights_pointers();
+    std::vector<weights *> new_weights_pointers;
+    for (weights *old_weights_pointer : old_weights_pointers) {
+      weights *new_weights_pointer = old_to_new_weights[old_weights_pointer];
+      new_weights_pointers.push_back(new_weights_pointer);
+    }
+    m_objective_function->set_weights_pointers(new_weights_pointers);
   }
 
   return *this;
 }
 
 model::~model() {
-  if (m_obj_fn) {
-    delete m_obj_fn;
+  if (m_objective_function != nullptr) {
+    delete m_objective_function;
   }
   for (metrics::metric *metric : m_metrics) {
     delete metric;
@@ -228,6 +280,12 @@ model::~model() {
     delete callback;
   }
   delete_layers();
+  for (weights *w : m_weights) {
+    delete w;
+  }
+  if (m_default_optimizer != nullptr) {
+    delete m_default_optimizer;
+  }
 }
 
 void model::delete_layers() {
@@ -241,18 +299,18 @@ void model::delete_layers() {
 // Initialization
 ////////////////////////////////////////////////////////////
 
-void model::add(Layer *layer) {
+void model::add_layer(Layer *layer) {
   if (layer == nullptr) {
     throw lbann_exception("model: Attempted to add null pointer as a layer.");
   }
-
-  // Add layer
   m_layers.push_back(layer);
+}
 
-  // Add layer group
-  m_layer_groups[layer] = std::vector<Layer*>(1, layer);
-  m_layer_group_masters[layer] = layer;
-
+void model::add_weights(weights *w) {
+  if (w == nullptr) {
+    throw lbann_exception("model: Attempted to add null pointer as a set of weights.");
+  }
+  m_weights.push_back(w);
 }
 
 void model::add_callback(lbann_callback *cb) {
@@ -276,39 +334,35 @@ void model::set_layers(std::vector<Layer*>& layers) {
     delete layer;
   }
   m_layers.clear();
-  m_layer_groups.clear();
-  m_layer_group_masters.clear();
 
   // Add new layers
   for (Layer* layer : layers) {
-    add(layer);
+    add_layer(layer);
   }
 
 }
 
-void model::link_layers(Layer *layer1, Layer *layer2) {
+void model::set_weights(std::vector<weights*>& w) {
 
-  // Check that layers are valid and are in different groups
-  Layer *master1 = m_layer_group_masters[layer1];
-  Layer *master2 = m_layer_group_masters[layer2];
-  if (master1 == nullptr
-      || master2 == nullptr
-      || typeid(*layer1).hash_code() != typeid(*layer2).hash_code()) {
-    throw lbann_exception("model: Attempted to link invalid layers");
+  // Delete old weights
+  for (weights *old_weights : m_weights) {
+    delete old_weights;
   }
-  if (master1 == master2) {
-    return;
+  m_weights.clear();
+
+  // Add new weights
+  for (weights* new_weights : w) {
+    add_weights(new_weights);
   }
 
-  // Move layers from layer2's group to layer1's
-  std::vector<Layer *>& group1 = m_layer_groups[master1];
-  std::vector<Layer *>& group2 = m_layer_groups[master2];
-  for (auto& layer : group2) {
-    m_layer_group_masters[layer] = master1;
-  }
-  group1.insert(group1.end(), group2.begin(), group2.end());
-  m_layer_groups.erase(master2);
+}
 
+optimizer* model::create_optimizer() const {
+  if (m_default_optimizer != nullptr) {
+    return m_default_optimizer->copy();
+  } else {
+    return nullptr;
+  }
 }
 
 void model::set_execution_mode(execution_mode mode) {
@@ -356,7 +410,7 @@ void model::evaluate(execution_mode mode) {
 
   // Initialize model for beginning of evaluation
   set_execution_mode(mode);
-  m_obj_fn->reset_statistics();
+  m_objective_function->clear_history();
   for (auto&& m : m_metrics) {
     m->reset_metric();
   }
@@ -400,7 +454,7 @@ void model::train(int num_epochs) {
     
     // Initialize model for beginning of training epoch
     set_execution_mode(execution_mode::training);
-    m_obj_fn->reset_statistics();
+    m_objective_function->clear_history();
     for (auto&& m : m_metrics) {
       m->reset_metric();
     }
@@ -423,6 +477,7 @@ void model::train(int num_epochs) {
 }
 
 void model::forward_prop_to_evaluate() {
+
   // Forward propagation
   do_model_evaluate_forward_prop_begin_cbs();
   for (Layer *layer : m_layers) {
@@ -431,22 +486,19 @@ void model::forward_prop_to_evaluate() {
     do_layer_evaluate_forward_prop_end_cbs(layer);
   }
   do_model_evaluate_forward_prop_end_cbs();
+
 }
 
-bool model::update_io_layers() {
-  // Update target and input layers
-  bool finished = true;
-  for (Layer* layer : m_layers) {
-    target_layer *target = dynamic_cast<target_layer *>(layer);
-    if (target != nullptr) {
-      target->update();
-    }
+void model::reset_layers() {
+  for (Layer *layer : m_layers) {
+    layer->reset();
   }
-  for (Layer* layer : m_layers) {
-    input_layer *input = dynamic_cast<input_layer *>(layer);
-    if (input != nullptr) {
-      finished = input->update() && finished;
-    }
+}
+
+bool model::update_layers() {
+  bool finished = true;
+  for (int l = m_layers.size() - 1; l >= 0; --l) {
+    finished = m_layers[l]->update() && finished;
   }
   return finished;
 }
@@ -454,12 +506,14 @@ bool model::update_io_layers() {
 bool model::evaluate_mini_batch() {
   do_batch_evaluate_begin_cbs();
 
+  reset_layers();
+
   forward_prop_to_evaluate();
 
-  // Record and reset objective function value
-  m_obj_fn->record_and_reset_value();
+  // Compute objective function value
+  m_objective_function->compute_value();
 
-  bool finished = update_io_layers();
+  const bool finished = update_layers();
 
   // Finish up
   do_batch_evaluate_end_cbs();
@@ -477,7 +531,6 @@ bool model::evaluate_mini_batch() {
 }
 
 void model::forward_prop() {
-  // Forward propagation
   do_model_forward_prop_begin_cbs();
   for (Layer *layer : m_layers) {
     do_layer_forward_prop_begin_cbs(layer);
@@ -488,7 +541,6 @@ void model::forward_prop() {
 }
 
 void model::backward_prop() {
-  // Backward propagation
   do_model_backward_prop_begin_cbs();
   for (int l = m_layers.size() - 1; l >= 0; --l) {
     Layer *layer = m_layers[l];
@@ -499,56 +551,30 @@ void model::backward_prop() {
   do_model_backward_prop_end_cbs();
 }
 
-void model::update_optimizable_layers() {
-  // Update optimizable layers
-  // Note: We iterate through layer groups that are comprised of
-  // optimizable layers.
-  for (Layer* master_layer : m_layers) {
-    if (master_layer != m_layer_group_masters[master_layer]
-        || dynamic_cast<optimizable_layer *>(master_layer) == nullptr) {
-      continue;
-    }
-    optimizable_layer *master_opt_layer = dynamic_cast<optimizable_layer *>(master_layer);
-    std::vector<Layer *> group = m_layer_groups[master_layer];
-
-    // Accumulate gradients in master layer
-    for (Layer *layer : group) {
-      if (layer != master_layer) {
-        optimizable_layer *opt_layer = dynamic_cast<optimizable_layer *>(layer);
-        const AbsDistMat& gradient = opt_layer->get_parameters_gradient();
-        master_opt_layer->add_to_parameters_gradient(gradient);
-        opt_layer->clear_parameters_gradient();
-      }
-    }
-
-    // Update parameters in master layer
-    master_layer->update();
-    master_opt_layer->clear_parameters_gradient();
-
-    // Update non-master layers with master layer's parameters
-    const AbsDistMat& parameters = master_opt_layer->get_parameters();
-    for (Layer *layer : group) {
-      if (layer != master_layer) {
-        optimizable_layer *opt_layer = dynamic_cast<optimizable_layer *>(layer);
-        opt_layer->set_parameters(parameters);
-      }
-    }
-  }
-}
-
 bool model::train_mini_batch() {
   do_batch_begin_cbs();
 
+  // Reset matrices
+  reset_layers();
+
   forward_prop();
 
-  // Record and reset objective function value
-  m_obj_fn->record_and_reset_value();
+  // Compute objective function value
+  m_objective_function->compute_value();
 
+  // Compute gradients
+  m_objective_function->compute_gradient();
   backward_prop();
 
-  update_optimizable_layers();
+  // Update weights
+  for (weights* w : m_weights) {
+    optimizer* opt = w->get_optimizer();
+    if (opt != nullptr) {
+      opt->step();
+    }
+  }
 
-  bool finished = update_io_layers();
+  const bool finished = update_layers();
 
   // Finish up
   do_batch_end_cbs();
@@ -748,6 +774,9 @@ void model::summarize_stats(lbann_summary& summarizer) {
   for (Layer *layer : m_layers) {
     layer->summarize_stats(summarizer, get_cur_step());
   }
+  summarizer.reduce_scalar("objective",
+                           m_objective_function->get_history_mean_value(),
+                           get_cur_step());
 }
 
 void model::summarize_matrices(lbann_summary& summarizer) {

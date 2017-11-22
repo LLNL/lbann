@@ -26,12 +26,9 @@ function(add_mpi_ctest TEST_NAME)
 endfunction()
 
 # Parallel Tests
-add_mpi_ctest( cnn_mnist )
-add_mpi_ctest( dnn_imagenet )
-#add_mpi_ctest( resnet50 )
-add_mpi_ctest( greedy_layerwise_autoencoder_mnist)
-#add_mpi_ctest( greedy_layerwise_autoencoder_nci)
-#add_mpi_ctest( greedy_layerwise_autoencoder_imagenet)
-add_mpi_ctest( autoencoder_mnist )
-add_mpi_ctest( autoencoder_cifar10 )
+# add_mpi_ctest( cnn_mnist )
+# add_mpi_ctest( dnn_imagenet )
+# add_mpi_ctest( greedy_layerwise_autoencoder_mnist)
+# add_mpi_ctest( autoencoder_mnist )
+# add_mpi_ctest( autoencoder_cifar10 )
 
