@@ -37,6 +37,7 @@
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/utils/random.hpp"
+#include "lbann/utils/omp_diagnostics.hpp"
 
 namespace lbann {
 

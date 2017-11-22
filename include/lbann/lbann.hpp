@@ -165,6 +165,7 @@
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/utils/compiler_control.hpp"
+#include "lbann/utils/omp_diagnostics.hpp"
 
 
 #endif // LBANN_HPP_INCLUDED
