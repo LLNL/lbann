@@ -290,31 +290,38 @@ void optimizer::clear_gradient() {
 
 }
 
-void optimizer::add_to_gradient(const AbsDistMat& gradient) {
+void optimizer::add_to_gradient(const AbsDistMat& gradient,
+                                DataType scale) {
   if (!is_initialized()) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
         << "attempted to access gradients before they are set up";
     throw lbann_exception(err.str());
   }
-  El::Axpy(DataType(1), gradient, *m_gradient);
-  m_cpu_gradient_is_nonzero = true;
+  if (scale != DataType(0)) {
+    El::Axpy(scale, gradient, *m_gradient);
+    m_cpu_gradient_is_nonzero = true;
+  }
 }
 
-void optimizer::allreduce_and_add_to_gradient(const AbsDistMat& gradient) {
+void optimizer::allreduce_and_add_to_gradient(const AbsDistMat& gradient,
+                                              DataType scale) {
   if (!is_initialized()) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
         << "attempted to access gradients before they are set up";
     throw lbann_exception(err.str());
   }
-  El::Axpy(DataType(1), gradient, *m_staging);
-  m_cpu_staging_is_nonzero = true;
+  if (scale != DataType(0)) {
+    El::Axpy(scale, gradient, *m_staging);
+    m_cpu_staging_is_nonzero = true;
+  }
 }
 
 #if __LIB_CUDNN
 
-void optimizer::add_to_gradient_gpu(std::vector<DataType*>& gradient) {
+void optimizer::add_to_gradient_gpu(std::vector<DataType*>& gradient,
+                                    DataType scale) {
   if (!is_initialized()) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
@@ -327,18 +334,21 @@ void optimizer::add_to_gradient_gpu(std::vector<DataType*>& gradient) {
         << "attempted to add to GPU gradient, but GPU is not set up";
     throw lbann_exception(err.str());
   }
-  const int num_gpus = m_cudnn->get_num_gpus();
-  for(int i=0; i<num_gpus; ++i) {
-    CHECK_CUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
-    CHECK_CUBLAS(cublas::axpy(m_cudnn->get_cublas_handle(i),
-                              m_weights->get_height() * m_weights->get_width(),
-                              DataType(1), gradient[i], 1,
-                              m_gradient_d[i], 1));
+  if (scale != DataType(0)) {
+    const int num_gpus = m_cudnn->get_num_gpus();
+    for(int i=0; i<num_gpus; ++i) {
+      CHECK_CUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
+      CHECK_CUBLAS(cublas::axpy(m_cudnn->get_cublas_handle(i),
+                                m_weights->get_height() * m_weights->get_width(),
+                                scale, gradient[i], 1,
+                                m_gradient_d[i], 1));
+    }
+    m_gpu_gradient_is_nonzero = true;
   }
-  m_gpu_gradient_is_nonzero = true;
 }
 
-void optimizer::allreduce_and_add_to_gradient_gpu(std::vector<DataType*>& gradient) {
+void optimizer::allreduce_and_add_to_gradient_gpu(std::vector<DataType*>& gradient,
+                                                  DataType scale) {
   if (!is_initialized()) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
@@ -351,15 +361,17 @@ void optimizer::allreduce_and_add_to_gradient_gpu(std::vector<DataType*>& gradie
         << "attempted to add to GPU gradient, but GPU is not set up";
     throw lbann_exception(err.str());
   }
-  const int num_gpus = m_cudnn->get_num_gpus();
-  for(int i=0; i<num_gpus; ++i) {
-    CHECK_CUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
-    CHECK_CUBLAS(cublas::axpy(m_cudnn->get_cublas_handle(i),
-                              m_weights->get_height() * m_weights->get_width(),
-                              DataType(1), gradient[i], 1,
-                              m_staging_d[i], 1));
+  if (scale != DataType(0)) {
+    const int num_gpus = m_cudnn->get_num_gpus();
+    for(int i=0; i<num_gpus; ++i) {
+      CHECK_CUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
+      CHECK_CUBLAS(cublas::axpy(m_cudnn->get_cublas_handle(i),
+                                m_weights->get_height() * m_weights->get_width(),
+                                scale, gradient[i], 1,
+                                m_staging_d[i], 1));
+    }
+    m_gpu_staging_is_nonzero = true;
   }
-  m_gpu_staging_is_nonzero = true;
 }
 
 #endif // __LIB_CUDNN
@@ -402,15 +414,6 @@ void optimizer::step() {
     err << __FILE__ << " " << __LINE__ << " :: "
         << "optimizer must be set up before performing optimization step";
     throw lbann_exception(err.str());
-  }
-
-  // Kludge for L2 regularization
-  /// @todo Implement L2 regularization as an objective function
-  {
-    AbsDistMat *values = m_weights->get_values().Copy();
-    El::Scale(0.0005, *values);
-    add_to_gradient(*values);
-    delete values;
   }
   
   // Apply optimization step

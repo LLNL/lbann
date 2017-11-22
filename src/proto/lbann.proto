@@ -207,6 +207,26 @@ message Model {
 }
 
 //========================================================================
+// Objective function terms
+//========================================================================
+
+message ObjectiveFunction {
+  double scale_factor = 1;
+  CrossEntropy cross_entropy = 11;
+  MeanSquaredError mean_squared_error = 12;
+  L2WeightRegularization l2_weight_regularization = 21;
+}
+
+message CrossEntropy {
+}
+
+message MeanSquaredError {
+}
+
+message L2WeightRegularization {
+}
+
+//========================================================================
 // Metrics
 //========================================================================
 
@@ -221,15 +241,16 @@ message Metric {
 message CategoricalAccuracy {
 }
 
-message MeanSquaredError {
-}
+// Already defined as an objective function
+// message MeanSquaredError {}
 
 message TopKCategoricalAccuracy {
   int64 top_k = 2; //only applicable for top_k_categorical_accuracy
 }
 
 message PearsonCorrelation {
-} 
+}
+
 //========================================================================
 // Optimizers
 //========================================================================

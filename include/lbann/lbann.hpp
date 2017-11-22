@@ -147,6 +147,7 @@
 // #include "lbann/objective_functions/mean_absolute_deviation.hpp"
 // #include "lbann/objective_functions/poisson_negloglike.hpp"
 // #include "lbann/objective_functions/polya_negloglike.hpp"
+#include "lbann/objective_functions/weight_regularization/l2_weight_regularization.hpp"
 
 /// Metrics
 #include "lbann/metrics/metric_categorical_accuracy.hpp"

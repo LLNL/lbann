@@ -25,6 +25,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/objective_functions/loss_functions/loss_function.hpp"
+#include "lbann/objective_functions/objective_function.hpp"
+#include "lbann/models/model.hpp"
 
 namespace lbann {
 
