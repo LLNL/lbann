@@ -170,49 +170,42 @@ void planar_model::stackup_duplicate(Layer_peers_t& layer_peers, int num_heads) 
 }
 
 void planar_model::setup() {
+
   bool multi_headed = false;
 
   /// Convert sequential layers to planar layers
-  for(size_t l=0; l<m_layers.size(); l++){
-    assert(m_layers[l].size() == 1);
+  for (auto& layer_peers : m_layers) {
+    assert((layer_peers.size() == 1u) && (layer_peers.at(0) != nullptr));
+    const auto master_layer = layer_peers[0];
 
-    Layer *layer = m_layers[l].at(0);
+    // Clear the manually set layer links before copying,
+    // and re-link after populating peers.
+    master_layer->clear_parent_layers();
+    master_layer->clear_child_layers();
 
     if(!multi_headed){
       /// Currently in single-head state
 
-      if(layer->is_fanin_layer()){
+      if(master_layer->is_fanin_layer()){
         /// Cannot fan in from single-head state
-        std::cerr << "Cannot fan in from single-head state" << "\n";
-        throw lbann::lbann_exception("Cannot fan in from single-head state");
-      } else if(layer->is_fanout_layer()) {
+        throw lbann::lbann_exception("Planar model: Cannot fan in from single-head state");
+      } else if(master_layer->is_fanout_layer()) {
         /// Fanning out layers to multi-head state
         multi_headed = true;
-        //stackup_duplicate(layer, 1);
       } else{
         /// layer is already in m_layers; no action is required
-        //stackup_duplicate(layer, 1);
       }
     } else{
       /// Currently in multi head state
-      if(layer->is_fanout_layer()){
+      if(master_layer->is_fanout_layer()){
         /// Cannot fan out from multi-head state
-        std::cerr << "Cannot fan out from multi-head state" << "\n";
-        throw lbann::lbann_exception("Cannot fan out from multi-head state");
-      } else if(layer->is_fanin_layer()){
+        throw lbann::lbann_exception("Planar model: Cannot fan out from multi-head state");
+      } else if(master_layer->is_fanin_layer()){
         /// Fanning in from multi-head state; no action is needed
-        //stackup_duplicate(layer, 1);
         multi_headed = false;
       } else{
         /// Expand current layer to m_width heads
-        const std::string layer_name = layer->get_name();
-        layer->set_name("h1_" + layer_name);
-        for(int k=1; k<m_width; k++){
-          Layer *layer_copy = layer->copy();
-          layer_copy->set_name("h" + std::to_string(k+1) + "_" + layer_name);
-          m_layers[l].push_back(layer_copy);
-        }
-        //stackup_duplicate(layer, m_width);
+        stackup_duplicate(layer_peers, m_width);
       }
     }
   }
@@ -221,29 +214,50 @@ void planar_model::setup() {
 
 void planar_model::setup_subset() {
 
-  for (size_t l=0u; l<m_layers.size(); ++l) {
-    std::vector<Layer *>& horizontal_layers = m_layers[l];
+  for (size_t l=0u; l < m_layers.size(); l++) {
 
-    for(size_t k=0u; k<horizontal_layers.size(); ++k) {
+    for(size_t k=0u; k < m_layers[l].size(); k++) {
+      Layer* current_layer = m_layers[l][k];
 
-      Layer* current_layer = horizontal_layers[k];
-
-      // Provide a reverse point from each layer to the model
-      current_layer->set_neural_network_model(this);
-      // setup links to parent layers
-      if (l <= 0u) {
-        current_layer->add_parent_layer(nullptr);
-      } else {
-        for(size_t i=0u; i < m_layers[l-1].size(); ++i)
-          current_layer->add_parent_layer(m_layers[l-1][i]);
+      /// Determine the previous layer
+      if(l <= 0){
+        //current_layer->add_parent_layer(nullptr);
       }
-      // setup links to children layers
-      if (l+1 >= m_layers.size()) {
-        current_layer->add_child_layer(nullptr);
-      } else {
-        for(size_t i=0u; i < m_layers[l+1].size(); ++i)
-          current_layer->add_child_layer(m_layers[l+1][i]);
+      else{
+        if(m_layers[l-1].size() < m_layers[l].size()){/// Fan-out structure
+          assert(m_layers[l-1].size() == 1u);
+          current_layer->add_parent_layer(m_layers[l-1][0]);
+        }
+        else if(m_layers[l-1].size() > m_layers[l].size()){/// Fan-in structure
+          assert(m_layers[l].size() == 1u);
+          for(size_t j=0u; j < m_layers[l-1].size(); j++)
+            current_layer->add_parent_layer(m_layers[l-1][j]);
+        }
+        else{/// Current and previous layers have the same number of layers
+          current_layer->add_parent_layer(m_layers[l-1].at(k));
+        }
       }
+
+      /// Determine the next layer
+      if(l >= m_layers.size()-1){
+       // current_layer->add_child_layer(nullptr);
+      }
+      else{
+        if(m_layers[l+1].size() < m_layers[l].size()){/// Fain-in structure
+          assert(m_layers[l+1].size() == 1u);
+          current_layer->add_child_layer(m_layers[l+1][0]);
+        }
+        else if(m_layers[l+1].size() > m_layers[l].size()){/// Fan-out structure
+          assert(m_layers[l].size() == 1u);
+          for(size_t j=0u; j < m_layers[l+1].size(); j++)
+            current_layer->add_child_layer(m_layers[l+1][j]);
+        }
+        else{// Current and the next layer has the same number of layers
+          current_layer->add_child_layer(m_layers[l+1].at(k));
+        }
+      }
+
+      current_layer->set_neural_network_model(this); /// Provide a reverse point from each layer to the model
 
       current_layer->setup();
       current_layer->check_setup();
@@ -252,10 +266,11 @@ void planar_model::setup_subset() {
         std::cout << print_layer_description(current_layer) << std::endl;
       }
     }
-    if (!check_layer_type_consistency(horizontal_layers)) {
+    if (!check_layer_type_consistency(m_layers[l])) {
       throw("Planar model: layer type consistency failed");
     }
   }
+
   /// Share the weights between Siamese heads
   equalize();
 
