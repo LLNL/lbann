@@ -42,7 +42,7 @@
 #include <typeinfo>
 #include <typeindex>
 
-#include <assert.h>
+#include <cassert>
 
 #define LBANN_ENABLE_SOFTMAX_CUTOFF
 

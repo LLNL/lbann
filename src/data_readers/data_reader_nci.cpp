@@ -27,7 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_nci.hpp"
-#include <stdio.h>
+#include <cstdio>
 #include <string>
 #include <omp.h>
 

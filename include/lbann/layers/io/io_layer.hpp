@@ -38,7 +38,7 @@
 #include <unistd.h>
 
 // snprintf
-#include <stdio.h>
+#include <cstdio>
 
 namespace lbann {
 class io_layer : public Layer {
