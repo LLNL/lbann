@@ -53,7 +53,7 @@ class id_layer : public entrywise_activation_layer {
     return DataType(0);
   }
 
-  virtual inline void initialize_distributed_matrices() {
+  inline void initialize_distributed_matrices() override {
     activation_layer::initialize_distributed_matrices<T_layout>();
   }
   data_layout get_data_layout() const override { return T_layout; }

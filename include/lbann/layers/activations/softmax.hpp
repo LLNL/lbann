@@ -137,7 +137,7 @@ class softmax_layer : public activation_layer {
            + this->get_data_layout_string(get_data_layout());
   }
 
-  virtual inline void initialize_distributed_matrices();
+  inline void initialize_distributed_matrices() override;
   data_layout get_data_layout() const override { return T_layout; }
 
   void setup_data() override {
