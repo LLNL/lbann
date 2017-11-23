@@ -3,6 +3,7 @@
 #include "lbann/lbann.hpp"
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
+#include "lbann/proto/init_image_data_readers.hpp"
 
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
@@ -11,7 +12,6 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <sys/stat.h>
-#include "init_image_data_readers.hpp"
 
 using namespace lbann;
 
