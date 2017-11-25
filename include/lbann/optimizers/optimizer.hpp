@@ -43,7 +43,7 @@ class optimizer {
  public:
 
   /** Constructor. */
-  optimizer(DataType learning_rate = DataType(0));
+  optimizer(lbann_comm* comm, DataType learning_rate = DataType(0));
 
   /** Copy constructor. */
   optimizer(const optimizer& other);
@@ -129,6 +129,8 @@ class optimizer {
 #endif // __LIB_CUDNN
 
  protected:
+
+  lbann_comm *m_comm;
  
   /** cuDNN manager. */
   cudnn::cudnn_manager* m_cudnn;

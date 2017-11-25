@@ -31,10 +31,11 @@
 
 namespace lbann {
 
-sgd::sgd(DataType learning_rate,
+sgd::sgd(lbann_comm *comm,
+         DataType learning_rate,
          DataType momentum,
          bool nesterov)
-  : optimizer(learning_rate),
+  : optimizer(comm, learning_rate),
     m_momentum(momentum),
     m_nesterov(nesterov),
     m_velocity(nullptr) {}

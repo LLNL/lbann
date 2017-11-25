@@ -1721,31 +1721,36 @@ optimizer *init_default_optimizer(lbann_comm *comm,
   const lbann_data::Optimizer &opt_params = params.optimizer();
   if (opt_params.has_sgd()) {
     const lbann_data::Sgd &sgd_params = opt_params.sgd();
-    opt = new sgd(sgd_params.learn_rate(),
+    opt = new sgd(comm,
+                  sgd_params.learn_rate(),
                   sgd_params.momentum(),
                   sgd_params.nesterov());
   }
   if (opt_params.has_adagrad()) {
     const lbann_data::Adagrad &adagrad_params = opt_params.adagrad();
-    opt = new adagrad(adagrad_params.learn_rate(),
+    opt = new adagrad(comm,
+                      adagrad_params.learn_rate(),
                       adagrad_params.eps());
   }
   if (opt_params.has_rmsprop()) {
     const lbann_data::Rmsprop &rmsprop_params = opt_params.rmsprop();
-    opt = new rmsprop(rmsprop_params.learn_rate(),
+    opt = new rmsprop(comm,
+                      rmsprop_params.learn_rate(),
                       rmsprop_params.decay_rate(),
                       rmsprop_params.eps());
   }
   if (opt_params.has_adam()) {
     const lbann_data::Adam &adam_params = opt_params.adam();
-    opt = new adam(adam_params.learn_rate(),
+    opt = new adam(comm,
+                   adam_params.learn_rate(),
                    adam_params.beta1(),
                    adam_params.beta2(),
                    adam_params.eps());
   }
   if (opt_params.has_hypergradient_adam()) {
     const lbann_data::HypergradientAdam &hypergradient_adam_params = opt_params.hypergradient_adam();
-    opt = new hypergradient_adam(hypergradient_adam_params.init_learning_rate(),
+    opt = new hypergradient_adam(comm,
+                                 hypergradient_adam_params.init_learning_rate(),
                                  hypergradient_adam_params.hyper_learning_rate(),
                                  hypergradient_adam_params.beta1(),
                                  hypergradient_adam_params.beta2(),

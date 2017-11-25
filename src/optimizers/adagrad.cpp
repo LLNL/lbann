@@ -31,8 +31,8 @@
 
 namespace lbann {
 
-adagrad::adagrad(DataType learning_rate, DataType eps)
-  : optimizer(learning_rate), m_eps(eps), m_cache(nullptr) {}
+adagrad::adagrad(lbann_comm *comm, DataType learning_rate, DataType eps)
+  : optimizer(comm, learning_rate), m_eps(eps), m_cache(nullptr) {}
 
 adagrad::adagrad(const adagrad& other)
   : optimizer(other), m_eps(other.m_eps), m_cache(other.m_cache) {
