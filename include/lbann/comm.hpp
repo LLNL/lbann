@@ -50,7 +50,8 @@ class lbann_comm {
    * Init communicators for models each with procs_per_model processes,
    * defaulting to every process in one model.
    */
-  lbann_comm(int procs_per_model = 0);
+  lbann_comm(int procs_per_model = 0,
+             const El::mpi::Comm world = El::mpi::COMM_WORLD);
   /** Don't allow copying; it doesn't make sense for the communicator. */
   lbann_comm(const lbann_comm&) = delete;
   /** Don't allow assignment; it doesn't make sense for the communicator. */
@@ -74,7 +75,7 @@ class lbann_comm {
   }
   /** Get my rank in COMM_WORLD. */
   inline int get_rank_in_world() const {
-    return El::mpi::Rank(El::mpi::COMM_WORLD);
+    return El::mpi::Rank(get_world_comm());
   }
   /** Return the COMM_WORLD rank of the rank'th processor in model. */
   inline int get_world_rank(int model, int rank) const {
@@ -118,7 +119,7 @@ class lbann_comm {
   }
   /** Return the total number of ranks. */
   inline int get_procs_in_world() const {
-    return El::mpi::Size(El::mpi::COMM_WORLD);
+    return El::mpi::Size(get_world_comm());
   }
   /** Return the rank of this process within its compute node. */
   inline int get_rank_in_node() const {
@@ -412,7 +413,7 @@ class lbann_comm {
   template <typename T>
   void send(const T *data, int count, int model, int rank) {
     bytes_sent += sizeof(T) * count;
-    El::mpi::Send(data, count, get_world_rank(model, rank), El::mpi::COMM_WORLD);
+    El::mpi::Send(data, count, get_world_rank(model, rank), get_world_comm());
   }
   template <typename T> void send(const T *data, int count, int model) {
     send(data, count, model, rank_in_model);
@@ -431,7 +432,7 @@ class lbann_comm {
   void nb_send(const T *data, int count, int model, int rank,
                El::mpi::Request<T>& req) {
     bytes_sent += sizeof(T) * count;
-    El::mpi::ISend(data, count, get_world_rank(model, rank), El::mpi::COMM_WORLD, req);
+    El::mpi::ISend(data, count, get_world_rank(model, rank), get_world_comm(), req);
   }
   template <typename T> void nb_send(const T *data, int count, int model,
                                      El::mpi::Request<T>& req) {
@@ -450,7 +451,7 @@ class lbann_comm {
 
   /** Corresponding receive to send. */
   template <typename T> void recv(T *data, int count, int model, int rank) {
-    El::mpi::Recv(data, count, get_world_rank(model, rank), El::mpi::COMM_WORLD);
+    El::mpi::Recv(data, count, get_world_rank(model, rank), get_world_comm());
     bytes_received += sizeof(T) * count;
   }
   template <typename T> void recv(T *data, int count, int model) {
@@ -466,7 +467,7 @@ class lbann_comm {
   }
   /** As above, but receive from anyone. */
   template <typename T> void recv(T *data, int count) {
-    El::mpi::Recv(data, count, El::mpi::ANY_SOURCE, El::mpi::COMM_WORLD);
+    El::mpi::Recv(data, count, El::mpi::ANY_SOURCE, get_world_comm());
     bytes_received += sizeof(T) * count;
   }
   void recv(Mat& mat);
@@ -475,7 +476,7 @@ class lbann_comm {
   /** Corresponding non-blocking receives. */
   template <typename T> void nb_recv(T *data, int count, int model, int rank,
                                      El::mpi::Request<T>& req) {
-    El::mpi::IRecv(data, count, get_world_rank(model, rank), El::mpi::COMM_WORLD,
+    El::mpi::IRecv(data, count, get_world_rank(model, rank), get_world_comm(),
                req);
     bytes_received += sizeof(T) * count;
   }
@@ -492,7 +493,7 @@ class lbann_comm {
     nb_recv(mat, model, rank_in_model, req);
   }
   template <typename T> void nb_recv(T *data, int count, El::mpi::Request<T>& req) {
-    El::mpi::IRecv(data, count, El::mpi::ANY_SOURCE, El::mpi::COMM_WORLD, req);
+    El::mpi::IRecv(data, count, El::mpi::ANY_SOURCE, get_world_comm(), req);
     bytes_received += sizeof(T) * count;
   }
   void nb_recv(Mat& mat, El::mpi::Request<DataType>& req);
@@ -506,7 +507,7 @@ class lbann_comm {
     bytes_received += sizeof(T) * recv_count;
     El::mpi::SendRecv(snd, send_count, get_world_rank(send_model, send_rank),
                   rcv, recv_count, get_world_rank(recv_model, recv_rank),
-                  El::mpi::COMM_WORLD);
+                  get_world_comm());
   }
   template <typename T>
   void sendrecv(const T *snd, int send_count, int send_model,
@@ -786,14 +787,21 @@ class lbann_comm {
     return model_comm;
   }
 
+  /** Return the world communicator. */
+  const El::mpi::Comm get_world_comm() const {
+    return world_comm;
+  }
+
   /** Return true if rank (in comm) is on the local node. */
   bool is_rank_node_local(int rank, const El::mpi::Comm comm) const {
     // Translating to COMM_WORLD is typically constant time.
-    int world_rank = El::mpi::Translate(comm, rank, El::mpi::COMM_WORLD);
+    int world_rank = El::mpi::Translate(comm, rank, get_world_comm());
     return is_world_rank_on_node(world_rank);
   }
 
  private:
+  /** World communicator. */
+  const El::mpi::Comm world_comm;
   /** Communicator for every process in this model. */
   El::mpi::Comm model_comm;
   /** Communicator for every process with the same model rank. */

@@ -53,8 +53,8 @@ namespace lbann {
 #define checkMPI(status) status
 #endif // #ifdef LBANN_DEBUG
 
-lbann_comm::lbann_comm(int ppm) :
-  grid(nullptr), procs_per_model(ppm), num_model_barriers(0),
+lbann_comm::lbann_comm(int ppm, const El::mpi::Comm world) :
+  world_comm(world), grid(nullptr), procs_per_model(ppm), num_model_barriers(0),
   num_intermodel_barriers(0), num_global_barriers(0), bytes_sent(0),
   bytes_received(0) {
 
@@ -84,7 +84,7 @@ lbann_comm::~lbann_comm() {
 }
 
 void lbann_comm::split_models(int ppm) {
-  int world_size = El::mpi::Size(El::mpi::COMM_WORLD);
+  int world_size = El::mpi::Size(get_world_comm());
   procs_per_model = ppm;
   if (ppm == 0) {
     procs_per_model = world_size;
@@ -106,12 +106,12 @@ void lbann_comm::split_models(int ppm) {
   }
 
   num_models = world_size / procs_per_model;
-  model_rank = El::mpi::Rank(El::mpi::COMM_WORLD) / procs_per_model;
-  rank_in_model = El::mpi::Rank(El::mpi::COMM_WORLD) % procs_per_model;
+  model_rank = El::mpi::Rank(get_world_comm()) / procs_per_model;
+  rank_in_model = El::mpi::Rank(get_world_comm()) % procs_per_model;
 
   // Initialize model and intermodel communicators
-  El::mpi::Split(El::mpi::COMM_WORLD, model_rank, rank_in_model, model_comm);
-  El::mpi::Split(El::mpi::COMM_WORLD, rank_in_model, model_rank,
+  El::mpi::Split(get_world_comm(), model_rank, rank_in_model, model_comm);
+  El::mpi::Split(get_world_comm(), rank_in_model, model_rank,
                  intermodel_comm);
 
   // Initialize Elemental grid
@@ -151,7 +151,7 @@ void lbann_comm::model_barrier() {
 
 void lbann_comm::global_barrier() {
   ++num_global_barriers;
-  barrier(El::mpi::COMM_WORLD);
+  barrier(get_world_comm());
 }
 
 void lbann_comm::barrier(const El::mpi::Comm c) {
@@ -903,8 +903,8 @@ void lbann_comm::setup_node_comm() {
   int hash = std::hash<std::string>()(node_string);
   hash = hash >= 0 ? hash : -hash;  // Make sure hash is non-negative
   El::mpi::Comm hash_comm;
-  El::mpi::Split(El::mpi::COMM_WORLD, hash,
-                 El::mpi::Rank(El::mpi::COMM_WORLD), hash_comm);
+  El::mpi::Split(get_world_comm(), hash,
+                 El::mpi::Rank(get_world_comm()), hash_comm);
   const int hash_comm_size = El::mpi::Size(hash_comm);
 
   // Compare node names and split MPI processes
@@ -921,7 +921,7 @@ void lbann_comm::setup_node_comm() {
     }
   }
   delete[] node_name_list;
-  El::mpi::Split(hash_comm, node_num, El::mpi::Rank(El::mpi::COMM_WORLD),
+  El::mpi::Split(hash_comm, node_num, El::mpi::Rank(get_world_comm()),
                  node_comm);
   El::mpi::Free(hash_comm);
 
@@ -929,7 +929,7 @@ void lbann_comm::setup_node_comm() {
   int node_comm_size = El::mpi::Size(node_comm);
   for (int i = 0; i < node_comm_size; ++i) {
     world_ranks_on_node.push_back(
-      El::mpi::Translate(node_comm, i, El::mpi::COMM_WORLD));
+      El::mpi::Translate(node_comm, i, get_world_comm()));
   }
 }
 
