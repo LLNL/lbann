@@ -263,7 +263,7 @@ void lbann_comm::intermodel_allreduce(
 }
 
 void lbann_comm::recursive_doubling_allreduce_pow2(
-  El::mpi::Comm comm, Mat& mat, int max_recv_count,
+  const El::mpi::Comm comm, Mat& mat, int max_recv_count,
   std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)> send_transform,
   std::function<int(uint8_t *, Mat&, bool)> recv_apply_transform,
   const lbann_comm::allreduce_options opts) {
@@ -320,7 +320,7 @@ void lbann_comm::recursive_doubling_allreduce_pow2(
 }
 
 void lbann_comm::pe_ring_allreduce(
-  El::mpi::Comm comm, Mat& mat, int max_recv_count,
+  const El::mpi::Comm comm, Mat& mat, int max_recv_count,
   std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)> send_transform,
   std::function<int(uint8_t *, Mat&)> recv_transform,
   std::function<int(uint8_t *, Mat&, bool)> recv_apply_transform,
@@ -540,7 +540,7 @@ void lbann_comm::pe_ring_allreduce(
 }
 
 void lbann_comm::ring_allreduce(
-  El::mpi::Comm comm, Mat& mat, int max_recv_count,
+  const El::mpi::Comm comm, Mat& mat, int max_recv_count,
   std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)> send_transform,
   std::function<int(uint8_t *, Mat&)> recv_transform,
   std::function<int(uint8_t *, Mat&, bool)> recv_apply_transform,
@@ -713,7 +713,7 @@ void lbann_comm::ring_allreduce(
 }
 
 void lbann_comm::rabenseifner_allreduce(
-  El::mpi::Comm comm, Mat& mat, int max_recv_count,
+  const El::mpi::Comm comm, Mat& mat, int max_recv_count,
   std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)> send_transform,
   std::function<int(uint8_t *, Mat&)> recv_transform,
   std::function<int(uint8_t *, Mat&, bool)> recv_apply_transform,

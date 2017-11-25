@@ -737,7 +737,7 @@ class lbann_comm {
    * This implementation only works for a power-of-2 number of processes.
    */
   void recursive_doubling_allreduce_pow2(
-    El::mpi::Comm comm, Mat& mat, int max_recv_count,
+    const El::mpi::Comm comm, Mat& mat, int max_recv_count,
     std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)> send_transform,
     std::function<int(uint8_t *, Mat&, bool)> recv_apply_transform,
     const allreduce_options opts);
@@ -749,7 +749,7 @@ class lbann_comm {
    * in the reduce-scatter phase.
    */
   void pe_ring_allreduce(
-    El::mpi::Comm comm, Mat& mat, int max_recv_count,
+    const El::mpi::Comm comm, Mat& mat, int max_recv_count,
     std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)> send_transform,
     std::function<int(uint8_t *, Mat&)> recv_transform,
     std::function<int(uint8_t *, Mat&, bool)> recv_apply_transform,
@@ -759,7 +759,7 @@ class lbann_comm {
    * An allreduce using ring-based reduce-scatter and allgather.
    */
   void ring_allreduce(
-    El::mpi::Comm comm, Mat& mat, int max_recv_count,
+    const El::mpi::Comm comm, Mat& mat, int max_recv_count,
     std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)> send_transform,
     std::function<int(uint8_t *, Mat&)> recv_transform,
     std::function<int(uint8_t *, Mat&, bool)> recv_apply_transform,
@@ -770,7 +770,7 @@ class lbann_comm {
    * recursive-doubling allgather.
    */
   void rabenseifner_allreduce(
-    El::mpi::Comm comm, Mat& mat, int max_recv_count,
+    const El::mpi::Comm comm, Mat& mat, int max_recv_count,
     std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)> send_transform,
     std::function<int(uint8_t *, Mat&)> recv_transform,
     std::function<int(uint8_t *, Mat&, bool)> recv_apply_transform,
@@ -787,7 +787,7 @@ class lbann_comm {
   }
 
   /** Return true if rank (in comm) is on the local node. */
-  bool is_rank_node_local(int rank, El::mpi::Comm comm) const {
+  bool is_rank_node_local(int rank, const El::mpi::Comm comm) const {
     // Translating to COMM_WORLD is typically constant time.
     int world_rank = El::mpi::Translate(comm, rank, El::mpi::COMM_WORLD);
     return is_world_rank_on_node(world_rank);
