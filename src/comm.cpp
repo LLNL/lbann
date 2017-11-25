@@ -123,37 +123,39 @@ void lbann_comm::split_models(int ppm) {
 
 void lbann_comm::intermodel_sum_matrix(Mat& mat) {
   bytes_sent += sizeof(DataType) * mat.Height() * mat.Width();
-  AllReduce(mat, intermodel_comm, El::mpi::SUM);
+  El::AllReduce(mat, intermodel_comm, El::mpi::SUM);
   bytes_received += sizeof(DataType) * mat.Height() * mat.Width();
 }
 
-void lbann_comm::intermodel_sum_matrix(DistMat& mat) {
-  bytes_sent += sizeof(DataType) * mat.LocalHeight() * mat.LocalWidth();
-  AllReduce(mat, intermodel_comm, El::mpi::SUM);
-  bytes_received += sizeof(DataType) * mat.LocalHeight() * mat.LocalWidth();
+void lbann_comm::intermodel_sum_matrix(AbsDistMat& mat) {
+  allreduce(mat, intermodel_comm, El::mpi::SUM);
 }
 
 void lbann_comm::intermodel_broadcast_matrix(Mat& mat, int root) {
-  Broadcast(mat, intermodel_comm, root);
+  El::Broadcast(mat, intermodel_comm, root);
 }
 
-void lbann_comm::intermodel_broadcast_matrix(DistMat& mat, int root) {
-  Broadcast(mat, intermodel_comm, root);
+void lbann_comm::intermodel_broadcast_matrix(AbsDistMat& mat, int root) {
+  El::Broadcast(mat, intermodel_comm, root);
 }
 
 void lbann_comm::intermodel_barrier() {
   ++num_intermodel_barriers;
-  El::mpi::Barrier(intermodel_comm);
+  barrier(intermodel_comm);
 }
 
 void lbann_comm::model_barrier() {
   ++num_model_barriers;
-  El::mpi::Barrier(model_comm);
+  barrier(model_comm);
 }
 
 void lbann_comm::global_barrier() {
   ++num_global_barriers;
-  El::mpi::Barrier(El::mpi::COMM_WORLD);
+  barrier(El::mpi::COMM_WORLD);
+}
+
+void lbann_comm::barrier(const El::mpi::Comm c) {
+  El::mpi::Barrier(c);
 }
 
 void lbann_comm::send(const Mat& mat, int model, int rank) {
