@@ -27,7 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_numpy.hpp"
-#include <stdio.h>
+#include <cstdio>
 #include <string>
 #include <unordered_set>
 #include <cnpy.h>

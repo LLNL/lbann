@@ -1,10 +1,5 @@
 model {
   name: "sequential_model"
-  objective_function: "cross_entropy"
-  metric {
-    categorical_accuracy {
-    }
-  }
   data_layout: "data_parallel"
   mini_batch_size: 64
   block_size: 256
@@ -14,23 +9,34 @@ model {
   use_cudnn: false
   num_gpus: -1
 
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    cross_entropy {}
+    l2_weight_regularization {
+      scale_factor: 1e-4
+    }
+  }
+
+  ###################################################
+  # Metrics
+  ###################################################
+
+  metric {
+    categorical_accuracy {}
+  }
 
   ###################################################
   # Callbacks
   ###################################################
-  callback {
-    print {
-      interval: 1
-    }
-  }
-  callback {
-    timer {
-    }
-  }
+
+  callback { print {} }
+  callback { timer {} }
   callback {
     summary {
       dir: "."
-      batch_interval: 1
       mat_interval: 25
     }
   }
@@ -49,13 +55,12 @@ model {
     adaptive_learning_rate {
       patience: 4
       amt: 0.1
-      layers: ""
     }
   }
   # callback {
   #   imcomm {
   #     intermodel_comm_method: "normal"
-  #     all_learning_layers: true
+  #     all_optimizers: true
   #   }
   # }
   # callback {
@@ -69,115 +74,110 @@ model {
   #     layers: "data"
   #   }
   # }
-
+  # callback {
+  #   gradient_check {
+  #     verbose: false
+  #     fail_on_error: false
+  #   }
+  # }
 
   ###################################################
   # Layers
   ###################################################
 
-layer {
-  name: "data"
-  data_layout: "model_parallel"
-  input_distributed_minibatch {
+  layer {
+    name: "data"
+    data_layout: "data_parallel"
+    input_partitioned_minibatch {}
   }
-}
 
-layer {
-  name: "conv1"
-  data_layout: "data_parallel"
-  convolution {
-    num_dims: 2
-    num_output_channels: 20
-    conv_dims_i: 5
-    conv_pads_i: 0
-    conv_strides_i: 1
-    weight_initialization: "glorot_uniform"
-    has_bias: true
-    l2_regularization_factor: 1e-4
+  layer {
+    name: "conv1"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 20
+      conv_dims_i: 5
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: true
+    }
   }
-}
 
-layer {
-  name: "pool1"
-  data_layout: "data_parallel"
-  pooling {
-    num_dims: 2
-    pool_dims_i: 2
-    pool_pads_i: 0
-    pool_strides_i: 2
-    pool_mode: "max"
+  layer {
+    name: "pool1"
+    data_layout: "data_parallel"
+    pooling {
+      num_dims: 2
+      pool_dims_i: 2
+      pool_pads_i: 0
+      pool_strides_i: 2
+      pool_mode: "max"
+    }
   }
-}
 
-layer {
-  name: "conv2"
-  data_layout: "data_parallel"
-  convolution {
-    num_dims: 2
-    num_output_channels: 50
-    conv_dims_i: 5
-    conv_pads_i: 0
-    conv_strides_i: 1
-    weight_initialization: "glorot_uniform"
-    has_bias: true
-    l2_regularization_factor: 1e-4
+  layer {
+    name: "conv2"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 50
+      conv_dims_i: 5
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: true
+    }
   }
-}
 
-layer {
-  name: "pool2"
-  data_layout: "data_parallel"
-  pooling {
-    num_dims: 2
-    pool_dims_i: 2
-    pool_pads_i: 0
-    pool_strides_i: 2
-    pool_mode: "max"
+  layer {
+    name: "pool2"
+    data_layout: "data_parallel"
+    pooling {
+      num_dims: 2
+      pool_dims_i: 2
+      pool_pads_i: 0
+      pool_strides_i: 2
+      pool_mode: "max"
+    } 
   } 
-} 
 
-layer {
-  name: "ip1"
-  data_layout: "data_parallel"
-  fully_connected {
-    num_neurons: 500
-    weight_initialization: "glorot_uniform"
-    has_bias: true
-    l2_regularization_factor: 1e-4    
+  layer {
+    name: "ip1"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 500
+      has_bias: true
+    }
   }
-}
 
-layer {
-  name: "relu1"
-  data_layout: "data_parallel"
-  relu {
+  layer {
+    name: "relu1"
+    data_layout: "model_parallel"
+    relu {}
   }
-}
 
-layer {
-  name: "ip2"
-  data_layout: "data_parallel"
-  fully_connected {
-    num_neurons: 10
-    weight_initialization: "glorot_uniform"
-    has_bias: true
-    l2_regularization_factor: 1e-4
+  layer {
+    name: "ip2"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 10
+      has_bias: true
+    }
   }
-}
 
-layer {
-  name: "prob"
-  data_layout: "model_parallel"
-  softmax {
+  layer {
+    name: "prob"
+    data_layout: "model_parallel"
+    softmax {}
   }
-}
 
-layer {
-  name: "target"
-  data_layout: "data_parallel"
-  target_distributed_minibatch {
-    shared_data_reader: true
+  layer {
+    name: "target"
+    data_layout: "data_parallel"
+    target_partitioned_minibatch {
+      shared_data_reader: true
+    }
   }
-}
+
 }
 

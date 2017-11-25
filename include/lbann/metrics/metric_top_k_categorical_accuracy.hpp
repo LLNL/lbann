@@ -49,17 +49,17 @@ class top_k_categorical_accuracy : public metric {
   top_k_categorical_accuracy& operator=(
     const top_k_categorical_accuracy<T_layout>& other) = default;
 
-  ~top_k_categorical_accuracy() {}
+  ~top_k_categorical_accuracy() override {}
 
-  top_k_categorical_accuracy* copy() const {
+  top_k_categorical_accuracy* copy() const override {
     return new top_k_categorical_accuracy(*this);
   }
 
-  void setup(int num_neurons, int mini_batch_size) {
+  void setup(int num_neurons, int mini_batch_size) override {
     metric::setup(num_neurons, mini_batch_size);
   }
-  void fp_set_std_matrix_view(int cur_mini_batch_size) {}
-  double compute_metric(AbsDistMat& predictions_v, AbsDistMat& ground_truth_v) {
+  void fp_set_std_matrix_view(int cur_mini_batch_size) override {}
+  double compute_metric(AbsDistMat& predictions_v, AbsDistMat& ground_truth_v) override {
     // This first computes the top k predictions within each column locally,
     // then each column master gathers these, computes the global top k, and
     // determines if an error was made.
@@ -138,7 +138,7 @@ class top_k_categorical_accuracy : public metric {
     return this->m_comm->model_allreduce(num_errors);
   }
 
-  double report_metric(execution_mode mode) {
+  double report_metric(execution_mode mode) override {
     statistics *stats = get_statistics(mode);
     double errors_per_epoch = stats->m_error_per_epoch;
     long samples_per_epoch = stats->m_samples_per_epoch;
@@ -149,7 +149,7 @@ class top_k_categorical_accuracy : public metric {
 
     return accuracy;
   }
-  double report_lifetime_metric(execution_mode mode) {
+  double report_lifetime_metric(execution_mode mode) override {
     statistics *stats = get_statistics(mode);
     double total_error = stats->m_total_error;
     long total_num_samples = stats->m_total_num_samples;
@@ -160,10 +160,10 @@ class top_k_categorical_accuracy : public metric {
     return accuracy;
   }
 
-  std::string name() const {
+  std::string name() const override {
     return "top-" + std::to_string(m_top_k) + " categorical accuracy";
   }
-  std::string display_unit() const { return "%"; }
+  std::string display_unit() const override { return "%"; }
 
  protected:
   /** Number of top classes to check for correct prediction. */

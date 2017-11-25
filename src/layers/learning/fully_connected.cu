@@ -104,7 +104,7 @@ void row_sum(cudnn::cudnn_manager &cudnn,
   cudnn.synchronize();
   cudnn.check_error();
 #endif
-  cudnn.allreduce(dest, h, 1);
+  // cudnn.allreduce(dest, h, 1);
 }
 
 __global__ void add_tensor_kernel(DataType factor,

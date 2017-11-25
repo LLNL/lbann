@@ -36,7 +36,7 @@ lbann_callback_early_stopping::lbann_callback_early_stopping(int64_t patience) :
 /// Monitor the objective function to see if the validation score
 /// continues to improve
 void lbann_callback_early_stopping::on_validation_end(model *m) {
-  double score = m->m_obj_fn->get_mean_value();
+  double score = m->get_objective_function()->get_history_mean_value();
   if (score < m_last_score) {
     if (m->get_comm()->am_model_master()) {
       std::cout << "Model " << m->get_comm()->get_model_rank() <<

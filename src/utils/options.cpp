@@ -6,7 +6,7 @@
 #include <string>
 #include <sstream>
 #include <fstream>
-#include <string.h>
+#include <cstring>
 #include <cstdlib>
 #include <stdexcept>
 

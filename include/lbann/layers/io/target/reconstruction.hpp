@@ -66,13 +66,13 @@ class reconstruction_layer : public target_layer {
     return nullptr;
   }
 
-  virtual std::string get_type() const override { return "reconstruction"; }
+  std::string get_type() const override { return "reconstruction"; }
 
   //virtual inline void initialize_distributed_matrices();
   virtual inline void initialize_distributed_matrices() {
     target_layer::initialize_distributed_matrices<T_layout>();
   }
-  virtual data_layout get_data_layout() const override { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
   /** Set original layer. */
   void set_original_layer(Layer *original_layer) {
@@ -104,12 +104,7 @@ class reconstruction_layer : public target_layer {
   void fp_compute() override {
 
     //Copy prev (decoder) activations for greedy layer wise training
-    El::Copy(*this->m_prev_activations,*this->m_activations_v);
-
-    // Compute and record the objective function score
-    objective_functions::objective_function *obj_fn = this->m_neural_network_model->m_obj_fn;
-    obj_fn->compute_value(*this->m_prev_activations,
-                          *original_layer_act_v);
+    El::Copy(*original_layer_act_v,*this->m_activations_v);
 
     // Compute metrics
     const int curr_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
@@ -120,11 +115,7 @@ class reconstruction_layer : public target_layer {
 
   }
 
-  void bp_compute() override {
-    this->m_neural_network_model->m_obj_fn->compute_gradient(*this->m_prev_activations,
-                                                             *original_layer_act_v,
-                                                             *this->m_error_signal_v);
-  }
+  void bp_compute() override {}
 
  public:
   bool update_compute() override {
@@ -137,18 +128,18 @@ class reconstruction_layer : public target_layer {
 
   void summarize_stats(lbann_summary& summarizer, int step) override {
     std::string tag = this->m_name + "/ReconstructionCost";
-    summarizer.reduce_scalar(tag, this->m_neural_network_model->m_obj_fn->get_mean_value(), step);
+    summarizer.reduce_scalar(tag, this->m_neural_network_model->get_objective_function()->get_history_mean_value(), step);
     // Skip target layer (for now).
     io_layer::summarize_stats(summarizer, step);
   }
 
-  virtual std::vector<Layer*> get_layer_pointers() override {
+  std::vector<Layer*> get_layer_pointers() override {
     std::vector<Layer*> layers = target_layer::get_layer_pointers();
     layers.push_back(m_original_layer);
     return layers;
   }
 
-  virtual void set_layer_pointers(std::vector<Layer*> layers) override {
+  void set_layer_pointers(std::vector<Layer*> layers) override {
     m_original_layer = layers.back();
     layers.pop_back();
     target_layer::set_layer_pointers(layers);

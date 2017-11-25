@@ -24,18 +24,18 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/objective_functions/mean_squared_error.hpp"
+#include "lbann/objective_functions/loss_functions/mean_squared_error.hpp"
 
 namespace lbann {
 
-namespace objective_functions {
+DataType mean_squared_error::evaluate(const AbsDistMat& predictions,
+                                      const AbsDistMat& ground_truth) {
 
-void mean_squared_error::compute_value(const AbsDistMat& predictions,
-                                       const AbsDistMat& ground_truth) {
-  
-  // Get local matrices and matrix parameters
+  // Local matrices
   const Mat& predictions_local = predictions.LockedMatrix();
   const Mat& ground_truth_local = ground_truth.LockedMatrix();
+
+  // Matrix parameters
   const El::Int height = predictions.Height();
   const El::Int width = predictions.Width();
   const El::Int local_height = predictions_local.Height();
@@ -62,35 +62,35 @@ void mean_squared_error::compute_value(const AbsDistMat& predictions,
   // Compute mean squared error
   double mse = sum / (height * width);
   mse = El::mpi::AllReduce(mse, predictions.DistComm());
-
-  // Update objective function value
-  add_to_value(mse);
+  return mse;
 
 }
 
-/// Compute derivative of mean squared error objective function
-void mean_squared_error::compute_gradient(const AbsDistMat& predictions,
-                                          const AbsDistMat& ground_truth,
-                                          AbsDistMat& gradient) {
+void mean_squared_error::differentiate(const AbsDistMat& predictions,
+                                       const AbsDistMat& ground_truth,
+                                       AbsDistMat& gradient) {
 
-  // Get local matrices and matrix parameters
+  // Local matrices
   const Mat& predictions_local = predictions.LockedMatrix();
   const Mat& ground_truth_local = ground_truth.LockedMatrix();
   Mat& gradient_local = gradient.Matrix();
-  const int height = predictions.Height();
+
+  // Matrix parameters
+  const int height = gradient.Height();
+  const El::Int local_height = gradient_local.Height();
+  const El::Int local_width = gradient_local.Width();
 
   // Compute gradient
-  El::IndexDependentFill(gradient_local,
-                         (std::function<DataType(El::Int,El::Int)>)
-                         ([&predictions_local, &ground_truth_local, height]
-                          (El::Int r, El::Int c) -> DataType {
-                           const DataType pred_val = predictions_local(r,c);
-                           const DataType true_val = ground_truth_local(r,c);
-                           return 2 * (pred_val - true_val) / height;
-                         }));
+  const DataType scale = DataType(2) / height;
+  #pragma omp parallel for collapse(2)
+  for (El::Int col = 0; col < local_width; ++col) {
+    for (El::Int row = 0; row < local_height; ++row) {
+      const DataType true_val = ground_truth_local(row, col);
+      const DataType pred_val = predictions_local(row, col);
+      gradient_local(row, col) = (pred_val - true_val) * scale;
+    }
+  }
 
 }
-
-}  // namespace objective_functions
 
 }  // namespace lbann

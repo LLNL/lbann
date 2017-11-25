@@ -47,6 +47,8 @@ class activation_layer : public Layer {
     Layer::initialize_distributed_matrices<T_layout>();
   }
 
+  virtual void initialize_distributed_matrices() = 0;
+
 };
 
 class entrywise_activation_layer : public activation_layer {

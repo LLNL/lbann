@@ -96,6 +96,7 @@ class concatenation_layer : public transform {
     m_bp_output = other.m_bp_output->Copy();
     m_input_slice_v = other.m_input_slice_v->Copy();
     m_output_slice_v = other.m_output_slice_v->Copy();
+    return (*this);
   }
 
   ~concatenation_layer() override {
@@ -118,7 +119,7 @@ class concatenation_layer : public transform {
   std::string get_type() const override { return "concatenation"; }
 
   virtual inline void initialize_distributed_matrices();
-  virtual data_layout get_data_layout() const override { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
   void setup_dims() override {
 

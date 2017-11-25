@@ -49,7 +49,7 @@ cv_cropper *cv_cropper::clone() const {
 }
 
 /// Make sure to clear the roi flag as well when clearing roi size
-void cv_cropper::unset_roi(void) {
+void cv_cropper::unset_roi() {
   m_is_roi_set = false;
   m_roi_size = std::pair<int, int>(0, 0);
 }

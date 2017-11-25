@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_optimizer_rmsprop .hpp .cpp - SGD with RMSprop
+// rmsprop .hpp .cpp - SGD with RMSprop
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_OPTIMIZER_RMSPROP_HPP
@@ -34,66 +34,44 @@
 
 namespace lbann {
 
-/// RMSprop optimizer
+/** RMSprop optimizer. */
 class rmsprop : public optimizer {
  public:
-  /// Constructor
-  rmsprop
-  (lbann_comm *comm,
-   DataType learning_rate,
-   DataType decay_rate,
-   DataType eps = DataType(1e-8));
+
+  /** Constructor. */
+  rmsprop(DataType learning_rate,
+          DataType decay_rate,
+          DataType eps = DataType(1e-8));
+
+  /** Copy constructor. */
   rmsprop(const rmsprop& other);
+  /** Copy assignment operator. */
   rmsprop& operator=(const rmsprop& other);
-  /// Destructor
+  /** Destructor. */
   ~rmsprop() override;
-  
-  /// Returns the optimizer's name
-  std::string get_name() const override { return "rmsprop"; }
-
-  /** Returns description of ctor params */
-  std::string get_description() const override {
-    return std::string {} +
-     " rmsprop; learning_rate: " + std::to_string(m_learning_rate) 
-     + " decay_rate: " + std::to_string(m_decay_rate)
-     + " eps: " + std::to_string(m_eps);
-  }
-
+  /** Create a copy. */
   rmsprop* copy() const override { return new rmsprop(*this); }
-  /// Set parameters to optimize and initialize optimizer
-  void setup(AbsDistMat *parameters) override;
-  /// Update parameters using objective function gradient
-  void update(const AbsDistMat *gradient) override;
-  std::string name() const override { return "rmsprop"; }
- private:
-  /// Decay rate
-  DataType m_decay_rate;
-  /// Small factor to avoid division by zero
-  DataType m_eps;
-  /// RMSprop cache
-  AbsDistMat *m_cache;
-};
+  
+  /** Get the optimizer name. */
+  std::string get_type() const override { return "rmsprop"; }
+  /** Get a human-readable description of the optimizer. */
+  std::string get_description() const override;
 
-/// Factory for RMSprop optimizer
-class rmsprop_factory : public optimizer_factory {
- public:
-  /// Constructor
-  rmsprop_factory
-  (lbann_comm *comm,
-   DataType learning_rate,
-   DataType decay_rate = DataType(0.9),
-   DataType eps = DataType(1e-8));
-  /// Destructor
-  ~rmsprop_factory() override;
-  /// Create RMSprop optimizer
-  optimizer *create_optimizer() override;
+  /** Setup optimizer. */
+  void setup(weights& w) override;
+
+  /** Perform the computation in an optimization step. */
+  void step_compute(AbsDistMat& values, const AbsDistMat& gradient) override;
+
  private:
-  /// Learning rate
-  DataType m_learning_rate;
-  /// Decay rate
+
+  /** Decay rate. */
   DataType m_decay_rate;
-  /// Small factor to avoid division by zero
+  /** Small factor to avoid division by zero. */
   DataType m_eps;
+  /** RMSprop cache. */
+  AbsDistMat *m_cache;
+
 };
 
 } // namespace lbann

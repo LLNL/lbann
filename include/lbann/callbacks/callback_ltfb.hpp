@@ -58,7 +58,7 @@ class lbann_callback_ltfb : public lbann_callback {
                       lbann_summary *summarizer = nullptr);
   lbann_callback_ltfb(const lbann_callback_ltfb& other);
   lbann_callback_ltfb& operator=(const lbann_callback_ltfb& other);
-  ~lbann_callback_ltfb();
+  ~lbann_callback_ltfb() override;
   lbann_callback_ltfb* copy() const override { return new lbann_callback_ltfb(*this); }
   /** Set up LTFB. */
   void setup(model *m) override;

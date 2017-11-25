@@ -39,14 +39,14 @@ def test_accuracy_mnist(log,exe):
     run_lbann(exe)
     general_assert('mnist') 
     
-    if log == 0:
-        os.system("rm res_mnist*")
+    #if log == 0:
+    #    os.system("rm res_mnist*")
 
 def test_accuracy_alexnet(log,exe):
     run_lbann(exe, model='alexnet')
     general_assert('alexnet')
-    if log == 0:
-        os.system("rm res_alexnet*")
+    #if log == 0:
+    #    os.system("rm res_alexnet*")
 
 #    run_lbann(iterative=1,model='resnet')
 #    general_assert('resnet')
@@ -64,6 +64,7 @@ def general_assert(model):
             epochs = numbers[1]
 
             actual_acc = data_format(filename)
+            os.system('rm res_' + model + '*' )
             expected_acc = fetch_expected(lbann_dir + '/bamboo/integration_tests/accuracy_tests/masters.txt',model,model_num,epochs)
             for expected, actual in zip(expected_acc, actual_acc):
                 assert expected <= actual

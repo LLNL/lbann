@@ -56,11 +56,11 @@ class categorical_accuracy : public metric {
     const categorical_accuracy<T_layout>& other) = default;
 
   /// Destructor
-  ~categorical_accuracy() {}
+  ~categorical_accuracy() override {}
 
-  categorical_accuracy* copy() const { return new categorical_accuracy(*this); }
+  categorical_accuracy* copy() const override { return new categorical_accuracy(*this); }
 
-  void setup(int num_neurons, int mini_batch_size) {
+  void setup(int num_neurons, int mini_batch_size) override {
     metric::setup(num_neurons, mini_batch_size);
     // Clear the contents of the intermediate matrices
     El::Zeros(m_prediction_col_maxes, mini_batch_size, 1);
@@ -70,7 +70,7 @@ class categorical_accuracy : public metric {
     m_max_mini_batch_size = mini_batch_size;
   }
 
-  void fp_set_std_matrix_view(int cur_mini_batch_size) {
+  void fp_set_std_matrix_view(int cur_mini_batch_size) override {
     // Set the view based on the size of the current mini-batch
     // Note that these matrices are transposed (column max matrices) and thus
     // the mini-batch size effects the number of rows, not columns
@@ -85,7 +85,7 @@ class categorical_accuracy : public metric {
              El::IR(0, cur_mini_batch_size), El::IR(0, m_reduced_max_indices.Width()));
   }
 
-  double compute_metric(AbsDistMat& predictions_v, AbsDistMat& groundtruth_v) {
+  double compute_metric(AbsDistMat& predictions_v, AbsDistMat& groundtruth_v) override {
     // Clear the contents of the intermediate matrices
     El::Zeros(m_prediction_col_maxes, m_max_mini_batch_size, 1);
     El::Zeros(m_replicated_prediction_col_maxes, m_max_mini_batch_size, 1);
@@ -147,7 +147,7 @@ class categorical_accuracy : public metric {
     return num_errors;
   }
 
-  double report_metric(execution_mode mode) {
+  double report_metric(execution_mode mode) override {
     statistics *stats = get_statistics(mode);
     double errors_per_epoch = stats->m_error_per_epoch;
     long samples_per_epoch = stats->m_samples_per_epoch;
@@ -157,7 +157,7 @@ class categorical_accuracy : public metric {
 
     return accuracy;
   }
-  double report_lifetime_metric(execution_mode mode) {
+  double report_lifetime_metric(execution_mode mode) override {
     statistics *stats = get_statistics(mode);
     double total_error = stats->m_total_error;
     long total_num_samples = stats->m_total_num_samples;
@@ -168,8 +168,8 @@ class categorical_accuracy : public metric {
     return accuracy;
   }
 
-  std::string name() const { return "categorical accuracy"; }
-  std::string display_unit() const { return "%"; }
+  std::string name() const override { return "categorical accuracy"; }
+  std::string display_unit() const override { return "%"; }
 
  protected:
   /// The maximum value within each minibatch (column).

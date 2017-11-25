@@ -133,7 +133,7 @@ class local_response_normalization_layer : public regularizer_layer {
   virtual inline void initialize_distributed_matrices() {
     regularizer_layer::initialize_distributed_matrices<T_layout>();
   }
-  virtual data_layout get_data_layout() const override { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
   /// Initialize GPU objects
   void setup_gpu() override {

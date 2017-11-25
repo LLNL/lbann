@@ -27,57 +27,42 @@
 #ifndef LBANN_OBJECTIVE_FUNCTION_MEAN_SQUARED_ERROR_HPP_INCLUDED
 #define LBANN_OBJECTIVE_FUNCTION_MEAN_SQUARED_ERROR_HPP_INCLUDED
 
-#include "lbann/objective_functions/objective_function.hpp"
+#include "lbann/objective_functions/loss_functions/loss_function.hpp"
 
 namespace lbann {
 
-namespace objective_functions {
-
-/** Mean squared error objective function. */
-class mean_squared_error : public objective_function {
-
+/** Mean squared error loss function. */
+class mean_squared_error : public loss_function {
  public:
   /** Default constructor. */
-  mean_squared_error() = default;
+  mean_squared_error(DataType scale_factor = DataType(1)) 
+    : loss_function(scale_factor) {}
+
   /** Copy constructor. */
   mean_squared_error(const mean_squared_error& other) = default;
   /** Copy assignment operator. */
   mean_squared_error& operator=(const mean_squared_error& other) = default;
   /** Destructor. */
-  ~mean_squared_error() = default;
+  ~mean_squared_error() override = default;
   /** Copy function. */
-  mean_squared_error* copy() const { return new mean_squared_error(*this); }
+  mean_squared_error* copy() const override { return new mean_squared_error(*this); }
 
-  /** Compute the mean squared error objective function.
-   *  Given a prediction \f$y\f$ and ground truth \f$\hat{y}\f$, the
-   *  mean squared error is
-   *    \f[
-   *    MSE(y,\hat{y}) = \frac{1}{n} \lVert y - \hat{y} \rVert^2_2
-   *    \f]
-   *  This function updates the objective function value with the mean
-   *  value of the mean squared error across the mini-batch.
+  /** Get the name of the objective function term. */
+  std::string name() const override { return "mean_squared_error"; }
+
+  /** Evaluate the cross entropy loss function. */
+  DataType evaluate(const AbsDistMat& prediction,
+                    const AbsDistMat& ground_truth) override;
+
+  /** Compute the cross entropy gradient.
+   *  The gradient is w.r.t. the prediction vector.
    */
-  void compute_value(const AbsDistMat& predictions,
-                     const AbsDistMat& ground_truth);
-
-  /** Compute the gradient of the mean squared error objective function.
-   *  Given a prediction \f$y\f$ and ground truth \f$\hat{y}\f$, the
-   *  gradient of the mean squared error is
-   *    \f[
-   *    \nabla_y MSE (y,\hat{y}) = \frac{2}{n} (y - \hat{y})
-   *    \f]
-   */
-  void compute_gradient(const AbsDistMat& predictions,
-                        const AbsDistMat& ground_truth,
-                        AbsDistMat& gradient);
-
-  /** Get the name of the objective function. */
-  std::string name() const { return "mean squared error cost"; }
+  void differentiate(const AbsDistMat& prediction,
+                     const AbsDistMat& ground_truth,
+                     AbsDistMat& gradient) override;
 
 };
 
-}  // namespace objective_functions
+} // namespace lbann
 
-}  // namespace lbann
-
-#endif  // LBANN_OBJECTIVE_FUNCTION_MEAN_SQUARED_ERROR_HPP_INCLUDED
+#endif // LBANN_OBJECTIVE_FUNCTION_MEAN_SQUARED_ERROR_HPP_INCLUDED

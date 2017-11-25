@@ -26,7 +26,7 @@
 // collective_test.cpp - Tests custom LBANN collective implementations
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <stdlib.h>
+#include <cstdlib>
 #include "lbann/comm.hpp"
 #include "lbann/utils/timer.hpp"
 #include "test_utils.hpp"

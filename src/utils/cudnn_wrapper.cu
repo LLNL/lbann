@@ -45,11 +45,26 @@ __global__ void reduce_kernel(DataType *dst, const DataType *src,
   dst[offset] += src[offset];
 }
 
+__global__ void scale_kernel(DataType *data, 
+                             const DataType scale,
+                             El::Int len) {
+
+  int offset = blockIdx.x * blockDim.x + threadIdx.x;
+  if (offset >= len) return;
+  data[offset] *= scale;
 }
 
-void cudnn_manager::allreduce(const std::vector<DataType*>& gpu_data,
-                              El::Int height,
-                              El::Int width) {
+}
+
+void cudnn_manager::allreduce_on_gpus(std::vector<DataType*>& gpu_data,
+                                      El::Int height,
+                                      El::Int width) {
+#ifdef __LIB_NCCL
+  // Use NCCL implementation if available
+  allreduce_on_gpus_nccl(gpu_data, height, width);
+  return;
+#else
+
   if (m_num_gpus < 2) {
     return;
   }
@@ -99,13 +114,29 @@ void cudnn_manager::allreduce(const std::vector<DataType*>& gpu_data,
     }
     offset += len;
   } while (offset < total_len);
+
+#endif // __LIB_NCCL
   
+}
+
+/// @todo Efficient implementation
+void cudnn_manager::global_allreduce_on_gpus(std::vector<DataType*>& gpu_data,
+                                             El::Int height,
+                                             El::Int width,
+                                             El::mpi::Comm comm) {
+  static Mat cpu_workspace;
+  cpu_workspace.Resize(height, width);
+  allreduce_on_gpus(gpu_data, height, width);
+  copy_from_gpu(0, cpu_workspace, gpu_data[0]);
+  synchronize();
+  El::AllReduce(cpu_workspace, comm);
+  broadcast_to_gpus(gpu_data, cpu_workspace);
 }
 
 #ifdef __LIB_NCCL
 /// Convert DataType to NCCL data type. DataType is either double or float (default).
-ncclDataType_t nccl_datatype() {
-  switch(sizeof(DataTpe) ) {
+ncclDataType_t cudnn_manager::nccl_datatype() {
+  switch(sizeof(DataType) ) {
     case 8:
       return ncclDouble;
     case 4:
@@ -113,62 +144,52 @@ ncclDataType_t nccl_datatype() {
     case 2:
       return ncclHalf;
     default:
-      throw lbann::lbann_exception("cudnn_wrapper: invalid data type for NCCL");
+      throw lbann::lbann_exception("cudnn_wrapper_cuda: invalid data type for NCCL");
   }
 }
-#endif
 
-
-void cudnn_manager::allreduce_nccl(const std::vector<DataType*>& gpu_data,
-                              El::Int height,
-                              El::Int width) {
-#ifdef __LIB_NCCL
-#define BUFF_LEN	27
+void cudnn_manager::allreduce_on_gpus_nccl(std::vector<DataType*>& gpu_data,
+                                           El::Int height,
+                                           El::Int width) {
 /**
   gpu_data is a vector of pointers, each of which points to a part of
   matrix allocated to GPU memory. Since we assume that one MPI rank is
   assigned to one GPU, the number of element in gpu_data is 1. */
 
-  if (m_num_gpus < 2) {
-    return;
+  /// It is assumed each MPI rank is assigned to one GPU (that is, m_num_gpus==1)
+
+  if(m_num_gpus != 1){
+    throw lbann::lbann_exception("cudnn_wrapper_cuda: the number of GPUs assigned to process is not 1");
+
   }
 
-  /// It is assumed each MPI rank is assigned to one GPU (that is, m_num_gpus==1)
+int global_rank = comm-> get_rank_in_world();
+
   int local_rank = comm->get_rank_in_node();
   ncclDataType_t type = nccl_datatype();
   El::Int total_len = height * width;
 
   DataType *target_buffer;
-  CHECK_CUDA(cudaSetDevice(local_rank));
+  //CHECK_CUDA(cudaSetDevice(local_rank));
 
-#if 0
+  for(int i = 0; i < m_num_gpus; ++i) {
 
-  const El::Int buf_len = 1 << BUFF_LEN;
-  El::Int offset = 0;
+    CHECK_CUDA(cudaSetDevice(m_gpus[i]));
+    //CHECK_CUDA(cudaMalloc((void **) &target_buffer, total_len*sizeof(DataType)));
+    //NCCLCHECK(ncclAllReduce(gpu_data[0], target_buffer, total_len, type, ncclSum, m_nccl_comm, get_stream(local_rank)));
+    NCCLCHECK(ncclAllReduce(gpu_data[0], gpu_data[0], total_len, type, ncclSum, m_nccl_comm, get_stream(local_rank)));
+    //CHECK_CUDA(cudaMemcpy(gpu_data[0], target_buffer, total_len*sizeof(type),  cudaMemcpyDeviceToDevice));
+    //CHECK_CUDA(cudaFree ((void **) &target_buffer));
 
-  FORCE_CHECK_CUDA(cudaMalloc((void **) &target_buffer, buf_len*sizeof(DataType)));
+    /// Apply scaling, if scale != 1
+    if(scale != DataType(1)) {
+      int tb_dim = 256;
+      int grid_dim = total_len/tb_dim + (total_len % tb_dim ? 1 : 0);
+      scale_kernel<<<grid_dim, tb_dim>>>(gpu_data[0], scale, total_len);
+    }
+  }
 
-  do {
-    El::Int len = std::min(total_len - offset, buf_len);
-
-    NCCLCHECK(ncclAllReduce((gpu_data[0]+offset), target_buffer, buf_len, type, ncclSum, m_nccl_comm, get_stream(local_rank)));
-
-    /// Reduction result is stored in target_buffer. Now need to copy the result back to gpu_data.
-    FORCE_CHECK_CUDA(cudaMemcpy((gpu_data[0]+offset), target_buffer, buf_len*sizeof(DataType),  cudaMemcpyDeviceToDevice));
-    offset += len;
-  } while (offset < total_len);
-
-  FORCE_CHECK_CUDA(cudaFree ((void **) &target_buffer));
-#else
-  /// FORCE_CHECK_CUDA(cudaMalloc((void **) &target_buffer, total_len*sizeof(DataType)));
-  /// Perform in-place NCCL allreduce here
-  NCCLCHECK(ncclAllReduce(gpu_data[0], gpu_data[0], total_len, type, ncclSum, m_nccl_comm, get_stream(local_rank)));
-  /// FORCE_CHECK_CUDA(cudaMemcpy(gpu_data[0], target_buffer, total_len*sizeof(DataType),  cudaMemcpyDeviceToDevice));
-  /// FORCE_CHECK_CUDA(cudaFree ((void **) &target_buffer));
-#endif
-
-#endif
 }
-
+#endif // __LIB_NCCL
 
 } // namespace cudnn

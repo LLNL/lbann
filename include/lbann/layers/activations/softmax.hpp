@@ -34,7 +34,6 @@
 #include "lbann/io/file_io.hpp"
 #include "lbann/utils/random.hpp"
 #include "lbann/models/model.hpp"
-#include "lbann/objective_functions/cross_entropy.hpp"
 #if defined(__LIB_CUDA) && defined(LBANN_SOFTMAX_CUDA)
 #include "lbann/layers/activations/softmax_cuda.hpp"
 #endif
@@ -43,7 +42,7 @@
 #include <typeinfo>
 #include <typeindex>
 
-#include <assert.h>
+#include <cassert>
 
 #define LBANN_ENABLE_SOFTMAX_CUTOFF
 
@@ -138,7 +137,7 @@ class softmax_layer : public activation_layer {
            + this->get_data_layout_string(get_data_layout());
   }
 
-  virtual inline void initialize_distributed_matrices();
+  inline void initialize_distributed_matrices() override;
   data_layout get_data_layout() const override { return T_layout; }
 
   void setup_data() override {
@@ -147,7 +146,7 @@ class softmax_layer : public activation_layer {
       1, this->m_neural_network_model->get_max_mini_batch_size());
   }
 
-  virtual void setup_gpu() override {
+  void setup_gpu() override {
     activation_layer::setup_gpu();
 #if !(defined(__LIB_CUDA) && defined(LBANN_SOFTMAX_CUDA))
     throw lbann_exception("softmax: CUDA not detected");
@@ -229,13 +228,6 @@ class softmax_layer : public activation_layer {
   void fp_compute_cuda();
 
   void bp_compute() override {
-    objective_functions::cross_entropy* obj
-        = dynamic_cast<objective_functions::cross_entropy*>(this->m_neural_network_model->m_obj_fn);
-    if(obj != nullptr && obj->get_shortcut_softmax_layer() == this) {
-      bp_compute_cross_entropy_shortcut();
-      return;
-    }
-    
     if(this->m_using_gpus) {
       bp_compute_cuda();
     } else {
@@ -243,6 +235,7 @@ class softmax_layer : public activation_layer {
     }
   }
   
+#if 0
   void bp_compute_cross_entropy_shortcut() {
     if(this->m_using_gpus) {
 #if defined(__LIB_CUDA) && defined(LBANN_SOFTMAX_CUDA)
@@ -288,6 +281,7 @@ class softmax_layer : public activation_layer {
                            }));
     return;
   }
+#endif
 
   virtual void bp_compute_cpu() {
     const Mat& activations_local = this->m_activations_v->LockedMatrix();

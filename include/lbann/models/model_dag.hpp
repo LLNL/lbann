@@ -39,10 +39,10 @@ class dag_model : public model {
  public:
 
   /** Constructor. */
-  dag_model(int max_mini_batch_size,
-            lbann_comm *comm,
-            objective_functions::objective_function *obj_fn,
-            optimizer_factory *optimizer_fac);
+  dag_model(lbann_comm *comm,
+            int max_mini_batch_size,
+            objective_function *obj_fn,
+            optimizer *default_optimizer);
 
   /** Copy constructor. */
   dag_model(const dag_model& other) = default;

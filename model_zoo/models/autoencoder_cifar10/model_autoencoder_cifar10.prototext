@@ -1,10 +1,5 @@
 model {
   name: "sequential_model"
-  objective_function: "mean_squared_error"
-  metric {
-    mean_squared_error {
-    }
-  }
   data_layout: "model_parallel"
   mini_batch_size: 32
   block_size: 256
@@ -13,6 +8,22 @@ model {
   procs_per_model: 0
   use_cudnn: true
   num_gpus: -1
+
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    mean_squared_error {}
+  }
+
+  ###################################################
+  # Metrics
+  ###################################################
+
+  metric {
+    mean_squared_error {}
+  }
 
   ###################################################
   # Callbacks

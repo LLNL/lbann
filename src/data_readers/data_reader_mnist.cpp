@@ -27,7 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_mnist.hpp"
-#include <stdio.h>
+#include <cstdio>
 
 inline void __swapEndianInt(unsigned int& ui) {
   ui = ((ui >> 24) | ((ui<<8) & 0x00FF0000) | ((ui>>8) & 0x0000FF00) | (ui << 24));
