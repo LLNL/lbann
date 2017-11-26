@@ -96,7 +96,7 @@ int lbann::generic_data_reader::fetch_data(Mat& X) {
       m_indices_fetched_per_mb.Set(s, 0, index);
     } catch (lbann_exception& e) {
       lbann_report_exception(e);
-    } catch (exception& e) {
+    } catch (std::exception& e) {
       El::ReportException(e);
     }
   }
@@ -141,7 +141,7 @@ int lbann::generic_data_reader::fetch_labels(Mat& Y) {
       }
     } catch (lbann_exception& e) {
       lbann_report_exception(e);
-    } catch (exception& e) {
+    } catch (std::exception& e) {
       El::ReportException(e);
     }
   }
@@ -178,7 +178,7 @@ int lbann::generic_data_reader::fetch_responses(Mat& Y) {
       }
     } catch (lbann_exception& e) {
       lbann_report_exception(e);
-    } catch (exception& e) {
+    } catch (std::exception& e) {
       El::ReportException(e);
     }
   }
@@ -426,7 +426,7 @@ void generic_data_reader::set_label_filename(std::string s) {
   m_label_fn = s;
 }
 
-string generic_data_reader::get_label_filename() const {
+std::string generic_data_reader::get_label_filename() const {
   if (m_label_fn == "") {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +

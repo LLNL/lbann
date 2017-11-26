@@ -72,14 +72,14 @@ void lbann_callback_check_init::on_train_begin(model *m) {
 }
 
 bool lbann_callback_check_init::check_equal(const Mat& x, const Mat& y) const {
-  const Int height = x.Height();
-  const Int width = x.Width();
+  const El::Int height = x.Height();
+  const El::Int width = x.Width();
   if (height != y.Height() || width != y.Width() || x.LDim() != y.LDim()) {
     return false;
   }
   const DataType *x_buf = x.LockedBuffer();
   const DataType *y_buf = y.LockedBuffer();
-  for (Int i = 0; i < height * width; ++i) {
+  for (El::Int i = 0; i < height * width; ++i) {
     if (x_buf[i] != y_buf[i]) {
       return false;
     }

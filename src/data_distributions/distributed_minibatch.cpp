@@ -122,9 +122,9 @@ int lbann::distributed_minibatch::compute_max_num_parallel_readers(long data_set
   /// number of parallel readers
   if(m_comm->get_model_grid().Size() < num_parallel_readers) {
     if (m_comm->am_model_master()) {
-      cout << "Warning the grid size "<<m_comm->get_model_grid().Size()
-           <<"is smaller than the number of requested parallel readers "
-           <<num_parallel_readers<<"." << endl;
+      std::cout << "Warning the grid size " << m_comm->get_model_grid().Size()
+                << "is smaller than the number of requested parallel readers "
+                << num_parallel_readers << "." << std::endl;
     }
     num_parallel_readers = m_comm->get_model_grid().Size();
   }

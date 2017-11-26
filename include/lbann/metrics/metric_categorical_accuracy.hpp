@@ -115,7 +115,7 @@ class categorical_accuracy : public metric {
     /// Note that this has to operate on the raw buffer, not the view
     m_comm->model_allreduce(m_max_index.Buffer(),
                             m_max_index.Height() * m_max_index.Width(),
-                            m_reduced_max_indices.Buffer(), mpi::MAX);
+                            m_reduced_max_indices.Buffer(), El::mpi::MAX);
 
     /// Check to see if the predicted results match the target results
     int num_errors = 0;
@@ -153,7 +153,6 @@ class categorical_accuracy : public metric {
     long samples_per_epoch = stats->m_samples_per_epoch;
 
     double accuracy = (double)(samples_per_epoch - errors_per_epoch) / samples_per_epoch * 100;
-    string score = std::to_string(accuracy);
 
     return accuracy;
   }
@@ -163,7 +162,6 @@ class categorical_accuracy : public metric {
     long total_num_samples = stats->m_total_num_samples;
 
     double accuracy = (double)(total_num_samples - total_error) / total_num_samples * 100;
-    string score = std::to_string(accuracy);
 
     return accuracy;
   }

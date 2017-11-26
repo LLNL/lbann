@@ -492,9 +492,9 @@ class fully_connected_layer : public learning {
 template<> inline void fully_connected_layer<data_layout::MODEL_PARALLEL>::initialize_distributed_matrices() {
   learning::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>();
   m_matrix_weights_gradient = new DistMat(this->m_comm->get_model_grid());
-  m_bias_weights_gradient = new El::DistMatrix<DataType,MC,STAR>(this->m_comm->get_model_grid());
+  m_bias_weights_gradient = new El::DistMatrix<DataType,El::MC,El::STAR>(this->m_comm->get_model_grid());
   m_matrix_weights_v = new DistMat(this->m_comm->get_model_grid());
-  m_bias_weights_v = new El::DistMatrix<DataType,MC,STAR>(this->m_comm->get_model_grid());
+  m_bias_weights_v = new El::DistMatrix<DataType,El::MC,El::STAR>(this->m_comm->get_model_grid());
 }
 
 template<> inline void fully_connected_layer<data_layout::DATA_PARALLEL>::initialize_distributed_matrices() {
@@ -507,7 +507,7 @@ template<> inline void fully_connected_layer<data_layout::DATA_PARALLEL>::initia
 
 template<> template<device Dev> inline void
 fully_connected_layer<data_layout::MODEL_PARALLEL>::fp_compute_weights() {
-  El::Gemm(NORMAL, NORMAL, DataType(1),
+  El::Gemm(El::NORMAL, El::NORMAL, DataType(1),
            *this->m_matrix_weights_v,
            *this->m_prev_activations,
            DataType(0),
@@ -516,7 +516,7 @@ fully_connected_layer<data_layout::MODEL_PARALLEL>::fp_compute_weights() {
 
 template<> template<> inline void
 fully_connected_layer<data_layout::DATA_PARALLEL>::fp_compute_weights<device::CPU>() {
-  El::Gemm(NORMAL, NORMAL, DataType(1),
+  El::Gemm(El::NORMAL, El::NORMAL, DataType(1),
            this->m_matrix_weights_v->LockedMatrix(),
            this->m_prev_activations->LockedMatrix(),
            DataType(0),

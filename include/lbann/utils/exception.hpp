@@ -34,8 +34,6 @@
 #include <iostream>
 #include <exception>
 
-using namespace El;
-
 namespace lbann {
 class lbann_exception : public std::exception {
  public:
