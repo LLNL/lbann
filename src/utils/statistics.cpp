@@ -27,8 +27,6 @@
 #include "lbann/utils/statistics.hpp"
 #include "lbann/utils/exception.hpp"
 
-using namespace El;
-
 namespace lbann {
 
 void entrywise_mean_and_stdev(const Mat& data,

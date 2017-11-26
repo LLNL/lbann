@@ -30,10 +30,6 @@
 #include "lbann/utils/lbann_random.hpp"
 #include <stdio.h>
 
-using namespace std;
-using namespace El;
-
-
 lbann::DataGenerator::DataGenerator(Int num_samples, Int width, Int height, Int batchSize)
   : DataReader(batchSize, true)
 {
