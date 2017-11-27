@@ -40,7 +40,8 @@ class adam : public optimizer {
  public:
 
   /** Constructor. */
-  adam(DataType learning_rate,
+  adam(lbann_comm *comm,
+       DataType learning_rate,
        DataType beta1 = DataType(0.9),
        DataType beta2 = DataType(0.99),
        DataType eps = DataType(1e-8),

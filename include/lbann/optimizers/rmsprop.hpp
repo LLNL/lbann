@@ -39,7 +39,8 @@ class rmsprop : public optimizer {
  public:
 
   /** Constructor. */
-  rmsprop(DataType learning_rate,
+  rmsprop(lbann_comm *comm,
+          DataType learning_rate,
           DataType decay_rate,
           DataType eps = DataType(1e-8));
 

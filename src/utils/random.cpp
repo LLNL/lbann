@@ -76,8 +76,8 @@ void init_random(int seed, lbann_comm *comm) {
 #ifdef _OPENMP
     #pragma omp parallel
     {
-      get_generator().seed((seed << 8) | (omp_get_thread_num() & 0xff));
-      get_fast_generator().seed((seed << 8) | (omp_get_thread_num() & 0xff));
+      get_generator().seed((seed << 8) | omp_get_thread_num());
+      get_fast_generator().seed((seed << 8) | omp_get_thread_num());
     }
 #else
     get_generator().seed(seed);
@@ -97,8 +97,8 @@ void init_random(int seed, lbann_comm *comm) {
 #ifdef _OPENMP
     #pragma omp parallel
     {
-      get_generator().seed((rand_val << 8) | (omp_get_thread_num() & 0xff));
-      get_fast_generator().seed((rand_val << 8) | (omp_get_thread_num() & 0xff));
+      get_generator().seed((rand_val << 8) | omp_get_thread_num());
+      get_fast_generator().seed((rand_val << 8) | omp_get_thread_num());
     }
 #else
     get_generator().seed(rand_val);

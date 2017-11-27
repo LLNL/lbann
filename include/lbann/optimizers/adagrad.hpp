@@ -38,7 +38,8 @@ class adagrad : public optimizer {
  public:
 
   /** Constructor. */
-  adagrad(DataType learning_rate,
+  adagrad(lbann_comm *comm,
+          DataType learning_rate,
           DataType eps = DataType(1e-8));
 
   /** Copy constructor. */

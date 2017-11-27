@@ -46,7 +46,8 @@ class hypergradient_adam : public optimizer {
    *  @param beta2 Decay rate for the second moment moving average.
    *  @param eps A small value.
    */
-  hypergradient_adam(DataType init_learning_rate,
+  hypergradient_adam(lbann_comm *comm,
+                     DataType init_learning_rate,
                      DataType hyper_learning_rate = DataType(1e-7),
                      DataType beta1 = DataType(0.9),
                      DataType beta2 = DataType(0.99),

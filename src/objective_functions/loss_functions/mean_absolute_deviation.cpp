@@ -60,7 +60,8 @@ void mean_absolute_deviation::compute_value(const AbsDistMat& predictions,
   
   // Compute mean absolute deviation
   double mad = sum / (height * width);
-  mad = El::mpi::AllReduce(mad, predictions.DistComm());
+  mad = m_objective_function->get_model()->get_comm()->allreduce(
+    mad, predictions.DistComm());
 
   // Update objective function value
   add_to_value(mad);

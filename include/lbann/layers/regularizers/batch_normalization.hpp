@@ -696,8 +696,8 @@ class batch_normalization : public regularizer_layer {
       }
       DataType num_samples;
       if (m_use_global_stats) {
-        El::AllReduce(*m_mean, m_mean->RedundantComm(), El::mpi::SUM);
-        El::AllReduce(*m_var, m_var->RedundantComm(), El::mpi::SUM);
+        m_comm->allreduce(*m_mean, m_mean->RedundantComm(), El::mpi::SUM);
+        m_comm->allreduce(*m_var, m_var->RedundantComm(), El::mpi::SUM);
         num_samples = channel_size * width;
       } else {
         num_samples = channel_size * local_width;
@@ -821,12 +821,12 @@ class batch_normalization : public regularizer_layer {
     // Accumulate gradients
     if (is_training) {
       if (m_use_global_stats) {
-        El::AllReduce(*m_mean_gradient,
-                      m_mean_gradient->RedundantComm(),
-                      El::mpi::SUM);
-        El::AllReduce(*m_var_gradient,
-                      m_var_gradient->RedundantComm(),
-                      El::mpi::SUM);
+        m_comm->allreduce(*m_mean_gradient,
+                          m_mean_gradient->RedundantComm(),
+                          El::mpi::SUM);
+        m_comm->allreduce(*m_var_gradient,
+                          m_var_gradient->RedundantComm(),
+                          El::mpi::SUM);
       }
     } else {
       El::Zero(*m_mean_gradient);

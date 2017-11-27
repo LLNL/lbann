@@ -31,10 +31,11 @@
 
 namespace lbann {
 
-rmsprop::rmsprop(DataType learning_rate,
+rmsprop::rmsprop(lbann_comm *comm,
+                 DataType learning_rate,
                  DataType decay_rate,
                  DataType eps)
-  : optimizer(learning_rate),
+  : optimizer(comm, learning_rate),
     m_decay_rate(decay_rate),
     m_eps(eps),
     m_cache(nullptr) {}

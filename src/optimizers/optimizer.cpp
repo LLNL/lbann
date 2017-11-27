@@ -31,8 +31,9 @@
 
 namespace lbann {
 
-optimizer::optimizer(DataType learning_rate)
-  : m_cudnn(nullptr),
+optimizer::optimizer(lbann_comm *comm, DataType learning_rate)
+  : m_comm(comm),
+    m_cudnn(nullptr),
     m_weights(nullptr),
     m_learning_rate(learning_rate),
     m_gradient(nullptr),
@@ -47,7 +48,8 @@ optimizer::optimizer(DataType learning_rate)
 {}
 
 optimizer::optimizer(const optimizer& other)
-  : m_cudnn(other.m_cudnn),
+  : m_comm(other.m_comm),
+    m_cudnn(other.m_cudnn),
     m_weights(other.m_weights),
     m_learning_rate(other.m_learning_rate),
     m_gradient(other.m_gradient),
@@ -73,6 +75,7 @@ optimizer::optimizer(const optimizer& other)
 }
 
 optimizer& optimizer::operator=(const optimizer& other) {
+  m_comm = other.m_comm;
   m_cudnn = other.m_cudnn;
   m_weights = other.m_weights;
   m_learning_rate = other.m_learning_rate;
@@ -153,8 +156,8 @@ AbsDistMat& optimizer::get_gradient() {
 
   // Accumulate CPU allreduce staging matrix
   if (m_cpu_staging_is_nonzero) {
-    El::AllReduce(*m_staging,
-                  m_staging->RedundantComm());
+    m_comm->allreduce(*m_staging,
+                      m_staging->RedundantComm());
     add_to_gradient(*m_staging);
     El::Zero(*m_staging);
     m_cpu_staging_is_nonzero = false;
@@ -230,8 +233,8 @@ std::vector<DataType*> optimizer::get_gradient_gpu() {
 
   // Accumulate CPU allreduce staging matrix
   if (m_cpu_staging_is_nonzero) {
-    El::AllReduce(*m_staging,
-                  m_staging->RedundantComm());
+    m_comm->allreduce(*m_staging,
+                      m_staging->RedundantComm());
     add_to_gradient(*m_staging);
     El::Zero(*m_staging);
     m_cpu_staging_is_nonzero = false;

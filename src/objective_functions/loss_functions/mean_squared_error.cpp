@@ -61,7 +61,8 @@ DataType mean_squared_error::evaluate(const AbsDistMat& predictions,
   
   // Compute mean squared error
   double mse = sum / (height * width);
-  mse = El::mpi::AllReduce(mse, predictions.DistComm());
+  mse = m_objective_function->get_model()->get_comm()->allreduce(
+    mse, predictions.DistComm());
   return mse;
 
 }

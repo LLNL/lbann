@@ -73,7 +73,7 @@ class mean_squared_error : public metric {
       }
     }
     mse /= height * width;
-    mse = El::mpi::AllReduce(mse, predictions_v.DistComm());
+    mse = m_comm->allreduce(mse, predictions_v.DistComm());
     return mse;
 
   }
