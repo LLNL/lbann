@@ -451,9 +451,9 @@ class batch_normalization : public regularizer_layer {
 
     // Matrix parameters
     const int num_gpus = this->m_cudnn->get_num_gpus();
-    const int height = this->m_prev_activations->Height();
-    const int width = this->m_prev_activations->Width();
-    const int local_width = this->m_prev_activations->LocalWidth();
+    const int height = this->m_prev_activations_v->Height();
+    const int width = this->m_prev_activations_v->Width();
+    const int local_width = this->m_prev_activations_v->LocalWidth();
     const int num_channels = this->m_neuron_dims[0];
     const int channel_size = this->m_num_neurons / num_channels;
 
@@ -558,9 +558,9 @@ class batch_normalization : public regularizer_layer {
     std::vector<DataType*> var_d = is_training ? m_var_d : m_weights[3]->get_values_gpu();
 
     // Matrix parameters
-    const int height = this->m_prev_activations->Height();
-    const int width = this->m_prev_activations->Width();
-    const int local_width = this->m_prev_activations->LocalWidth();
+    const int height = this->m_prev_activations_v->Height();
+    const int width = this->m_prev_activations_v->Width();
+    const int local_width = this->m_prev_activations_v->LocalWidth();
     const int num_channels = this->m_neuron_dims[0];
 
     // Compute local gradient contributions
@@ -657,12 +657,12 @@ class batch_normalization : public regularizer_layer {
     const bool is_training = this->get_execution_mode() == execution_mode::training;
 
     // Local matrices
-    const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
+    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
     Mat& activations_local = this->m_activations_v->Matrix();
 
     // Matrix parameters
-    const int width = this->m_prev_activations->Width();
-    const El::Int local_width = this->m_prev_activations->LocalWidth();
+    const int width = this->m_prev_activations_v->Width();
+    const El::Int local_width = this->m_prev_activations_v->LocalWidth();
     const int num_channels = this->m_neuron_dims[0];
     const int channel_size = this->m_num_neurons / num_channels;
 
@@ -764,8 +764,8 @@ class batch_normalization : public regularizer_layer {
     const bool is_training = this->get_execution_mode() == execution_mode::training;
 
     // Local matrices
-    const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
-    const Mat& prev_error_signal_local = this->m_prev_error_signal->LockedMatrix();
+    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
+    const Mat& prev_error_signal_local = this->m_prev_error_signal_v->LockedMatrix();
     Mat& error_signal_local = this->m_error_signal_v->Matrix();
     const Mat& mean_local = is_training ? m_mean->LockedMatrix() : m_running_mean_v->LockedMatrix();
     const Mat& var_local = is_training ? m_var->LockedMatrix() : m_running_var_v->LockedMatrix();
@@ -776,8 +776,8 @@ class batch_normalization : public regularizer_layer {
     Mat& bias_gradient_local = m_bias_gradient->Matrix();
     
     // Matrix parameters
-    const int width = this->m_prev_activations->Width();
-    const El::Int local_width = this->m_prev_activations->LocalWidth();
+    const int width = this->m_prev_activations_v->Width();
+    const El::Int local_width = this->m_prev_activations_v->LocalWidth();
     const int num_channels = this->m_neuron_dims[0];
     const int channel_size = this->m_num_neurons / num_channels;
 

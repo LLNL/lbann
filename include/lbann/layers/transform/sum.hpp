@@ -134,7 +134,7 @@ class sum_layer : public transform {
   #endif // __LIB_CUDNN
     }
     else {
-      El::LockedView(*this->m_error_signal_v, *this->m_prev_error_signal);
+      El::LockedView(*this->m_error_signal_v, *this->m_prev_error_signal_v);
     }
   }
 
@@ -164,9 +164,9 @@ class sum_layer : public transform {
         parent->get_gpu_fp_output(this->m_prev_activations_d, this);
       }
       else {
-        parent->get_fp_output(*this->m_prev_activations, this);
+        parent->get_fp_output(*this->m_prev_activations_v, this);
         this->m_cudnn->scatter_to_gpus(this->m_prev_activations_d,
-                                       this->m_prev_activations->LockedMatrix(),
+                                       this->m_prev_activations_v->LockedMatrix(),
                                        this->m_mini_batch_size_per_gpu);
       }
 
@@ -190,11 +190,11 @@ class sum_layer : public transform {
   }
 
   void fp_compute_cpu() {
-    El::Copy(*this->m_prev_activations, *this->m_activations_v);
+    El::Copy(*this->m_prev_activations_v, *this->m_activations_v);
     for(size_t i=1; i<this->m_parent_layers.size(); ++i) {
-      this->m_parent_layers[i]->get_fp_output(*this->m_prev_activations, this);
+      this->m_parent_layers[i]->get_fp_output(*this->m_prev_activations_v, this);
       El::Axpy(DataType(1),
-               *this->m_prev_activations,
+               *this->m_prev_activations_v,
                *this->m_activations_v);
     }
   }

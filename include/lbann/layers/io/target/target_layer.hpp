@@ -211,7 +211,7 @@ class target_layer : public io_layer {
     return paired_input_layer->is_execution_mode_valid(mode);
   }
 
-  AbsDistMat& get_prediction() { return *this->m_prev_activations; }
+  AbsDistMat& get_prediction() { return *this->m_prev_activations_v; }
   AbsDistMat& get_ground_truth() { return *this->m_activations_v; }
 
   std::vector<Layer*> get_layer_pointers() override {

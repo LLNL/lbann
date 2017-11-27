@@ -125,7 +125,7 @@ class unpooling_layer : public transform {
   void fp_compute_im2col() {
 
     // Get local matrices
-    const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
+    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
     Mat& activations_local = this->m_activations_v->Matrix();
 
     // Get parameters
@@ -180,7 +180,7 @@ class unpooling_layer : public transform {
   void bp_compute_im2col() {
 
     // Get local matrices
-    const Mat& prev_error_signal_local = this->m_prev_error_signal->LockedMatrix();
+    const Mat& prev_error_signal_local = this->m_prev_error_signal_v->LockedMatrix();
     Mat& error_signal_local = this->m_error_signal_v->Matrix();
 
     // Get parameters

@@ -240,12 +240,38 @@ class Layer {
   int m_num_prev_neuron_dims;           ///< Number of dimensions in previous layer's neuron tensor
   std::vector<int> m_prev_neuron_dims;  ///< Neuron tensor dimensions in previous layer
 
-  AbsDistMat *m_prev_activations;   ///< Local view or copy of the activations from the "previous" layer ((# previous layer's neurons) x mini-batch size)
-  AbsDistMat *m_activations;        ///< Activations - non-linearity applied to weighted sum ((# neurons) x mini-batch size)
-  AbsDistMat *m_activations_v;      ///< View of active columns in activations matrix
-  AbsDistMat *m_prev_error_signal;  ///< Local copy of the error signal from "previous" layer ((# neurons) x mini-batch size)
-  AbsDistMat *m_error_signal;       ///< Error signal to "next" layer (i.e. deltas) ((# neurons) x mini-batch size)
-  AbsDistMat *m_error_signal_v;     ///< View of active columns in error signal matrix
+  /** Activations matrix from the "previous" layer.
+   *  This matrix is the forward propagation input. This is typically
+   *  a matrix view with dimensions m_num_prev_neurons x mini-batch
+   *  size.
+   */
+  AbsDistMat* m_prev_activations_v;
+  /** Memory for activations matrix.
+   *  This matrix has dimensions m_num_neurons x max mini-batch size.
+   */
+  AbsDistMat* m_activations;
+  /** Activations matrix.
+   *  This matrix is the forward propagation output. This is typically
+   *  a matrix view into m_activations with dimensions m_num_neurons x
+   *  mini-batch size.
+   */
+  AbsDistMat* m_activations_v;
+  /** Error signal matrix from the "next" layer.
+   *  This matrix is the backward propagation input. This is typically
+   *  a matrix view with dimensions m_num_neurons x mini-batch size.
+   */
+  AbsDistMat* m_prev_error_signal_v;
+  /** Memory for error signal matrix.
+   *  This matrix has dimensions m_num_prev_neurons x max mini-batch
+   *  size.
+   */
+  AbsDistMat* m_error_signal;
+  /** Error signal matrix.
+   *  This matrix is the backward propagation output. This is
+   *  typically a matrix view into m_error_signal with dimensions
+   *  m_num_prev_neurons x mini-batch size.
+   */
+  AbsDistMat *m_error_signal_v;
 
   /** List of layer weights. */
   std::vector<weights*> m_weights;

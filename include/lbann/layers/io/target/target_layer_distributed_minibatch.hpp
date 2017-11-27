@@ -120,7 +120,7 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
     Copy(Ys, *this->m_activations);
 
     for (auto&& m : this->m_neural_network_model->get_metrics()) {
-      double num_errors = m->compute_metric(*this->m_prev_activations, *this->m_activations_v);
+      double num_errors = m->compute_metric(*this->m_prev_activations_v, *this->m_activations_v);
       m->record_error(num_errors, curr_mini_batch_size);
     }
 

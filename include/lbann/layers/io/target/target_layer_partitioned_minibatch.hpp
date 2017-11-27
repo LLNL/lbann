@@ -87,7 +87,7 @@ class target_layer_partitioned_minibatch : public target_layer, public partition
     int curr_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
 
     for (auto&& m : this->m_neural_network_model->get_metrics()) {
-      double num_errors = m->compute_metric(*this->m_prev_activations, *this->m_activations_v);
+      double num_errors = m->compute_metric(*this->m_prev_activations_v, *this->m_activations_v);
       m->record_error(num_errors, curr_mini_batch_size);
     }
 

@@ -109,7 +109,7 @@ class reconstruction_layer : public target_layer {
     // Compute metrics
     const int curr_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
     for (auto&& m : this->m_neural_network_model->get_metrics()) {
-      double num_errors = m->compute_metric(*this->m_prev_activations, *original_layer_act_v);
+      double num_errors = m->compute_metric(*this->m_prev_activations_v, *original_layer_act_v);
       m->record_error(num_errors, curr_mini_batch_size);
     }
 
