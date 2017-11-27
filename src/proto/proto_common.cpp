@@ -228,36 +228,6 @@ pool_mode get_pool_mode(const string& s, bool master)
   }
 }
 
-weight_initialization get_weight_initialization(const string& s, bool master)
-{
-  if (s == "zero") {
-    return weight_initialization::zero;
-  } else if (s == "uniform") {
-    return weight_initialization::uniform;
-  } else if (s == "normal") {
-    return weight_initialization::normal;
-  } else if (s == "glorot_normal") {
-    return weight_initialization::glorot_normal;
-  } else if (s == "glorot_uniform") {
-    return weight_initialization::glorot_uniform;
-  } else if (s == "he_normal") {
-    return weight_initialization::he_normal;
-  } else if (s == "he_uniform") {
-    return weight_initialization::he_uniform;
-  } else {
-    if (master) {
-      std::stringstream err;
-      err << __FILE__ << " " <<__LINE__
-          << " :: unkown weight_initialization: " << s
-          << " should be one of: zero uniform normal glorot_normal glorot_uniform he_normal he_uniform";
-      throw lbann_exception(err.str());
-    } else {
-      return weight_initialization::zero;  //keep compiler happy, and have only one proc throw exception
-
-    }
-  }
-}
-
 inline data_layout get_data_layout(const string& s)
 {
   if (s == "model_parallel") {
