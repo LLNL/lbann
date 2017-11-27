@@ -126,7 +126,7 @@ class split_layer : public transform {
   #endif // __LIB_CUDNN
     }
     else {
-      El::LockedView(*this->m_activations_v, *this->m_prev_activations);
+      El::LockedView(*this->m_activations_v, *this->m_prev_activations_v);
     }
   }
 
@@ -164,9 +164,9 @@ class split_layer : public transform {
         child->get_gpu_bp_output(this->m_prev_error_signal_d, this);
       }
       else {
-        child->get_bp_output(*this->m_prev_error_signal, this);
+        child->get_bp_output(*this->m_prev_error_signal_v, this);
         this->m_cudnn->scatter_to_gpus(this->m_prev_error_signal_d,
-                                       this->m_prev_error_signal->LockedMatrix(),
+                                       this->m_prev_error_signal_v->LockedMatrix(),
                                        this->m_mini_batch_size_per_gpu);
       }
 
@@ -190,11 +190,11 @@ class split_layer : public transform {
   }
 
   void bp_compute_cpu() {
-    El::Copy(*this->m_prev_error_signal, *this->m_error_signal_v);
+    El::Copy(*this->m_prev_error_signal_v, *this->m_error_signal_v);
     for(size_t i=1; i<this->m_child_layers.size(); ++i) {
-      this->m_child_layers[i]->get_bp_output(*this->m_prev_error_signal, this);
+      this->m_child_layers[i]->get_bp_output(*this->m_prev_error_signal_v, this);
       El::Axpy(DataType(1),
-               *this->m_prev_error_signal,
+               *this->m_prev_error_signal_v,
                *this->m_error_signal_v);
     }
   }

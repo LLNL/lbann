@@ -97,12 +97,6 @@ static const char *__attribute__((used)) _to_string(execution_mode m) {
   }
 }
 
-/** Weight matrix initialization scheme */
-enum class weight_initialization {zero, uniform, normal, glorot_normal, glorot_uniform, he_normal, he_uniform};
-
-/** returns a string representation of the weight_initialization */
-std::string get_weight_initialization_name(weight_initialization m); 
-
 /** Pooling layer mode */
 enum class pool_mode {max, average, average_no_pad};
 

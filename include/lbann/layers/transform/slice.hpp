@@ -227,7 +227,7 @@ class slice_layer : public transform {
   #endif // __LIB_CUDNN
     }
     else {
-      El::LockedView(*this->m_activations_v, *this->m_prev_activations);
+      El::LockedView(*this->m_activations_v, *this->m_prev_activations_v);
     }
   }
 
@@ -280,9 +280,9 @@ class slice_layer : public transform {
           child->get_gpu_bp_output(input, this);
         }
         else {
-          child->get_bp_output(*this->m_prev_error_signal, this);
+          child->get_bp_output(*this->m_prev_error_signal_v, this);
           this->m_cudnn->scatter_to_gpus(input,
-                                         this->m_prev_error_signal->LockedMatrix(),
+                                         this->m_prev_error_signal_v->LockedMatrix(),
                                          this->m_mini_batch_size_per_gpu);
         }
       }
@@ -340,7 +340,7 @@ class slice_layer : public transform {
     for(size_t i = 0; i < this->m_child_layers.size(); ++i) {
 
       // Split previous error signal tensor into slices
-      this->m_child_layers[i]->get_bp_output(*this->m_prev_error_signal, this);
+      this->m_child_layers[i]->get_bp_output(*this->m_prev_error_signal_v, this);
       const int input_slice_dim = m_slice_points[i+1] - m_slice_points[i];
       const int input_slice_size = input_slice_dim * slice_unit_size;
       const int slice_offset_start = m_slice_points[i] * slice_unit_size;
@@ -349,7 +349,7 @@ class slice_layer : public transform {
       // Copy slices from previous error signal tensor into error signal tensor
       for(int slice = 0; slice < num_slices; ++slice) {
         El::LockedView(*m_input_slice_v,
-                       *this->m_prev_error_signal,
+                       *this->m_prev_error_signal_v,
                        El::IR(slice * input_slice_size,
                               (slice+1) * input_slice_size),
                        El::ALL);

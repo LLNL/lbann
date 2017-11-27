@@ -173,7 +173,7 @@ class softmax_layer : public activation_layer {
 
     // Get local matrices and parameters
     Mat& workspace_local = m_workspace_v->Matrix();
-    const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
+    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
     Mat& activations_local = this->m_activations_v->Matrix();
     const El::Int local_height = activations_local.Height();
     const El::Int local_width = activations_local.Width();
@@ -259,7 +259,7 @@ class softmax_layer : public activation_layer {
   void bp_compute_cross_entropy_shortcut_cpu() {  
     // Get local matrices and parameters
     const Mat& activations_local = this->m_activations_v->LockedMatrix();
-    const Mat& prev_error_signal_local = this->m_prev_error_signal->Matrix();
+    const Mat& prev_error_signal_local = this->m_prev_error_signal_v->Matrix();
     Mat& error_signal_local = this->m_error_signal_v->Matrix();
 
     El::IndexDependentFill(error_signal_local,
@@ -285,7 +285,7 @@ class softmax_layer : public activation_layer {
 
   virtual void bp_compute_cpu() {
     const Mat& activations_local = this->m_activations_v->LockedMatrix();
-    const Mat& prev_error_signal_local = this->m_prev_error_signal->Matrix();
+    const Mat& prev_error_signal_local = this->m_prev_error_signal_v->Matrix();
     Mat& error_signal_local = this->m_error_signal_v->Matrix();
     Mat& workspace_local = m_workspace_v->Matrix();
     const El::Int local_width = activations_local.Width();

@@ -99,7 +99,7 @@ class entrywise_activation_layer : public activation_layer {
   virtual void fp_compute_cpu() {
     
     // Get local matrices
-    const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
+    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
     Mat& activations_local = this->m_activations_v->Matrix();
 
     // Local matrix parameters
@@ -140,8 +140,8 @@ class entrywise_activation_layer : public activation_layer {
   virtual void bp_compute_cpu() {
     
     // Get local matrices
-    const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
-    const Mat& prev_error_signal_local = this->m_prev_error_signal->LockedMatrix();
+    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
+    const Mat& prev_error_signal_local = this->m_prev_error_signal_v->LockedMatrix();
     Mat& error_signal_local = this->m_error_signal_v->Matrix();
 
     // Local matrix parameters
