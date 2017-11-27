@@ -65,7 +65,7 @@ class sum_layer : public transform {
 
   sum_layer(const sum_layer&) = default;
   sum_layer& operator=(const sum_layer&) = default;
-  ~sum_layer() {
+  ~sum_layer() override {
   #ifdef __LIB_CUDNN
     // GPU memory for activations is a copy of previous layer's activations
     this->m_error_signal_d.clear();
@@ -73,7 +73,7 @@ class sum_layer : public transform {
   }
 
   /// Following function tells this layer is is a fan-in layer
-  bool is_fanin_layer() override { return true; }
+  bool is_fanin_layer() const override { return true; }
 
   /** Returns description of ctor params */
   std::string get_description() const override {
@@ -93,7 +93,7 @@ class sum_layer : public transform {
   virtual inline void initialize_distributed_matrices() {
     transform::initialize_distributed_matrices<T_layout>();
   }
-  virtual data_layout get_data_layout() const override { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
   void setup_gpu() override {
     transform::setup_gpu();

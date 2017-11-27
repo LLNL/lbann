@@ -96,9 +96,10 @@ class concatenation_layer : public transform {
     m_bp_output = other.m_bp_output->Copy();
     m_input_slice_v = other.m_input_slice_v->Copy();
     m_output_slice_v = other.m_output_slice_v->Copy();
+    return (*this);
   }
 
-  ~concatenation_layer() {
+  ~concatenation_layer() override {
     delete m_bp_output;
     delete m_input_slice_v;
     delete m_output_slice_v;
@@ -113,12 +114,12 @@ class concatenation_layer : public transform {
   concatenation_layer* copy() const override { return new concatenation_layer(*this); }
 
   /// Following function tells this layer is is a fan-in layer
-  bool is_fanin_layer() override { return true; }
+  bool is_fanin_layer() const override { return true; }
 
   std::string get_type() const override { return "concatenation"; }
 
   virtual inline void initialize_distributed_matrices();
-  virtual data_layout get_data_layout() const override { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
   void setup_dims() override {
 
@@ -417,7 +418,7 @@ class concatenation_layer : public transform {
   }
 
   #ifdef __LIB_CUDNN
-  void get_gpu_bp_output(std::vector<DataType*>& bp_output, const Layer* prev_layer) const {
+  void get_gpu_bp_output(std::vector<DataType*>& bp_output, const Layer* prev_layer) const override {
 
     // Check if input is in the list of child layers
     const int parent_index = (std::find(this->m_parent_layers.begin(),

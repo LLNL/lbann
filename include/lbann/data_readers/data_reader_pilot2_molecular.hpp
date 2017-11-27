@@ -43,23 +43,23 @@ class pilot2_molecular_reader : public generic_data_reader {
                           bool shuffle = true);
   pilot2_molecular_reader(const pilot2_molecular_reader&);
   pilot2_molecular_reader& operator=(const pilot2_molecular_reader&);
-  ~pilot2_molecular_reader() {}
-  pilot2_molecular_reader* copy() const {
+  ~pilot2_molecular_reader() override {}
+  pilot2_molecular_reader* copy() const override {
     return new pilot2_molecular_reader(*this);
   }
 
-  void load();
+  void load() override;
 
-  int get_linearized_data_size() const {
+  int get_linearized_data_size() const override {
     return m_num_features * (m_num_neighbors + 1);
   }
-  const std::vector<int> get_data_dims() const {
+  const std::vector<int> get_data_dims() const override {
     return {m_num_neighbors, (int) m_features.shape[2],
         (int) m_features.shape[3]};
   }
  protected:
   /// Fetch a molecule and its neighbors.
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
+  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
   /// Fetch molecule data_id into X at molecule offset idx.
   void fetch_molecule(Mat& X, int data_id, int idx, int mb_idx);
 

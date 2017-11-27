@@ -28,6 +28,7 @@
 
 #include "math.h"
 #include <iostream>
+#include "lbann/layers/regularizers/batch_normalization_cuda.hpp"
 #include "lbann/utils/exception.hpp"
 
 // Macros to check CUDA calls
@@ -184,6 +185,55 @@ void channel_sums_and_sqsums(int height,
     <<<grid_dims, block_dims, 0, stream>>>
     (height, width, channel_size, data_d, sums_d, sqsums_d);
 
+}
+
+template <typename DataType>
+__global__ void sums_to_statistics_kernel(
+  int num_entries,
+  DataType samples_per_sum,
+  DataType decay,
+  DataType * __restrict__ global_mean,
+  DataType * __restrict__ global_var,
+  DataType * __restrict__ global_running_mean,
+  DataType * __restrict__ global_running_var) {
+  int gid = threadIdx.x + blockIdx.x * blockDim.x;
+  while(gid < num_entries) {
+
+    // Compute statistics
+    const DataType mean = global_mean[gid] / samples_per_sum;
+    const DataType sqmean = global_var[gid] / samples_per_sum;
+    DataType var = sqmean - mean * mean;
+    var = var > DataType(0) ? var : DataType(0);
+    var *= samples_per_sum / (samples_per_sum - DataType(1));
+    global_mean[gid] = mean;
+    global_var[gid] = var;
+
+    // Compute running statistics
+    DataType& running_mean = global_running_mean[gid];
+    DataType& running_var = global_running_var[gid];
+    running_mean = decay * running_mean + (DataType(1) - decay) * mean;
+    running_var = decay * running_var + (DataType(1) - decay) * var;
+    
+    gid += blockDim.x * gridDim.x;
+  }
+}
+
+template <typename DataType>
+void sums_to_statistics(int num_entries,
+                        int samples_per_sum,
+                        DataType decay,
+                        DataType *mean_d,
+                        DataType *var_d,
+                        DataType *running_mean_d,
+                        DataType *running_var_d,
+                        cudaStream_t stream) {
+  dim3 block_dims, grid_dims;
+  block_dims.x = 256;
+  grid_dims.x = (num_entries + block_dims.x - 1) / block_dims.x;
+  sums_to_statistics_kernel<DataType>
+    <<<grid_dims, block_dims, 0, stream>>>
+    (num_entries, (DataType)samples_per_sum, decay,
+     mean_d, var_d, running_mean_d, running_var_d);
 }
 
 template <typename DataType, int block_size>
@@ -479,6 +529,15 @@ void channel_sums_and_sqsums<float>(int height,
                                     float *sqsums_d,
                                     cudaStream_t stream);
 template
+void sums_to_statistics<float>(int num_entries,
+                               int entries_per_sum,
+                               float decay,
+                               float *mean_d,
+                               float *var_d,
+                               float *running_mean_d,
+                               float *running_var_d,
+                               cudaStream_t stream);
+template
 void batch_normalization<float>(int height,
                                 int width,
                                 int num_channels,
@@ -528,6 +587,15 @@ void channel_sums_and_sqsums<double>(int height,
                                      double *sums_d,
                                      double *sqsums_d,
                                      cudaStream_t stream);
+template
+void sums_to_statistics<double>(int num_entries,
+                                int entries_per_sum,
+                                double decay,
+                                double *mean_d,
+                                double *var_d,
+                                double *running_mean_d,
+                                double *running_var_d,
+                                cudaStream_t stream);
 template
 void batch_normalization<double>(int height,
                                  int width,

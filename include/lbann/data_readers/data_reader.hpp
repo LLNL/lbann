@@ -36,7 +36,7 @@
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/data_readers/image_preprocessor.hpp"
-#include <assert.h>
+#include <cassert>
 #include <algorithm>
 #include <string>
 #include <vector>
@@ -74,14 +74,14 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_global_last_mini_batch_size(0),
     m_num_parallel_readers(0), m_model_rank(0),
     m_file_dir(""), m_data_fn(""), m_label_fn(""),
-    m_shuffle(shuffle), m_absolute_sample_count(0), m_validation_percent(0.1),
+    m_shuffle(shuffle), m_absolute_sample_count(0), m_validation_percent(0.0),
     m_use_percent(1.0),
     m_master(false)
   {}
   generic_data_reader(const generic_data_reader&) = default;
   generic_data_reader& operator=(const generic_data_reader&) = default;
 
-  virtual ~generic_data_reader() {}
+  ~generic_data_reader() override {}
   virtual generic_data_reader* copy() const = 0;
 
   // These non-virtual methods are used to specify where data is, how much to
@@ -252,8 +252,8 @@ class generic_data_reader : public lbann_image_preprocessor {
    * handling format detection, conversion, etc.
    */
   // TODO: This function needs to go away from here
-  virtual void save_image(Mat& pixels, const std::string filename,
-                          bool do_scale = true) {
+  void save_image(Mat& pixels, const std::string filename,
+                          bool do_scale = true) override {
     NOT_IMPLEMENTED("save_image");
   }
   bool is_data_reader_done(bool is_active_reader);

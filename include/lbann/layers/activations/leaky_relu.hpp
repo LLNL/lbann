@@ -49,20 +49,20 @@ class leaky_relu_layer : public entrywise_activation_layer {
     initialize_distributed_matrices(); 
   }
 
-  leaky_relu_layer* copy() const { return new leaky_relu_layer(*this); }
+  leaky_relu_layer* copy() const override { return new leaky_relu_layer(*this); }
 
-  std::string get_type() const { return "leaky relu"; }
+  std::string get_type() const override { return "leaky relu"; }
 
-  virtual inline void initialize_distributed_matrices() {
+  inline void initialize_distributed_matrices() override {
     entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
   }
-  virtual data_layout get_data_layout() const { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
  protected:
-  DataType activation_function(DataType z) {
+  DataType activation_function(DataType z) override {
     return std::max(m_leak * z, z);
   }
-  DataType activation_function_gradient(DataType z) {
+  DataType activation_function_gradient(DataType z) override {
     return (z > DataType(0)) ? DataType(1) : m_leak;
   }
  private:

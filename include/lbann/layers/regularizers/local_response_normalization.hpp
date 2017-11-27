@@ -108,7 +108,7 @@ class local_response_normalization_layer : public regularizer_layer {
   #endif // __LIB_CUDNN
   }
 
-  ~local_response_normalization_layer() {
+  ~local_response_normalization_layer() override {
   #ifdef __LIB_CUDNN
     // Destroy cuDNN objects
     if(m_lrn_cudnn_desc) {
@@ -117,13 +117,13 @@ class local_response_normalization_layer : public regularizer_layer {
   #endif // __LIB_CUDNN
   }
 
-  local_response_normalization_layer* copy() const {
+  local_response_normalization_layer* copy() const override {
     return new local_response_normalization_layer(*this);
   }
 
-  std::string get_type() const { return "local response normalization"; }
+  std::string get_type() const override { return "local response normalization"; }
 
-  std::string get_description() const {
+  std::string get_description() const override {
     return " LRN window width: " + std::to_string(m_window_width) + " alpha: " +
       std::to_string(m_lrn_alpha) + " beta: " + std::to_string(m_lrn_beta) 
       + " k: " + std::to_string(m_lrn_k)
@@ -133,10 +133,10 @@ class local_response_normalization_layer : public regularizer_layer {
   virtual inline void initialize_distributed_matrices() {
     regularizer_layer::initialize_distributed_matrices<T_layout>();
   }
-  virtual data_layout get_data_layout() const { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
   /// Initialize GPU objects
-  void setup_gpu() {
+  void setup_gpu() override {
     regularizer_layer::setup_gpu();
   #ifndef __LIB_CUDNN
     throw lbann_exception("lbann_layer_local_response_normalization: cuDNN not detected");
@@ -153,7 +153,7 @@ class local_response_normalization_layer : public regularizer_layer {
   #endif // #ifndef __LIB_CUDNN
   }
 
-  void fp_compute() {
+  void fp_compute() override {
     if(this->m_using_gpus) {
       fp_compute_cudnn();
     } else {
@@ -161,7 +161,7 @@ class local_response_normalization_layer : public regularizer_layer {
     }
   }
 
-  void bp_compute() {
+  void bp_compute() override {
     if(this->m_using_gpus) {
       bp_compute_cudnn();
     } else {

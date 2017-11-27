@@ -1,10 +1,5 @@
 model {
-  name: "dnn"
-  objective_function: "cross_entropy"
-  metric {
-    categorical_accuracy {
-    }
-  }
+  name: "sequential_model"
   data_layout: "data_parallel"
   mini_batch_size: 32
   block_size: 256
@@ -13,6 +8,23 @@ model {
   procs_per_model: 0
   use_cudnn: true
   num_gpus: -1
+
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    cross_entropy {}
+    l2_weight_regularization {
+      scale_factor: 0.01
+    }
+  }
+
+  ###################################################
+  # Metrics
+  ###################################################
+
+  metric { categorical_accuracy {} }
 
   ###################################################
   # Callbacks
@@ -35,7 +47,6 @@ model {
   }
   callback {
     gradient_check {
-      step_size: 0
       verbose: false
       fail_on_error: true
     }
@@ -49,19 +60,14 @@ model {
   # INPUT
   #######
   layer {
-    name: "1"
-    parents: "1"
     data_layout: "data_parallel"
-    input_partitioned_minibatch {
-    }
+    input_partitioned_minibatch {}
   }
 
   #################
   # FULLY_CONNECTED
   #################
   layer {
-    name: "2"
-    parents: "1"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 10
@@ -74,19 +80,14 @@ model {
   # SOFTMAX
   #########
   layer {
-    name: "3"
-    parents: "2"
     data_layout: "model_parallel"
-    softmax {
-    }
+    softmax {}
   }
 
   ########
   # TARGET
   ########
   layer {
-    name: "4"
-    parents: "3"
     data_layout: "data_parallel"
     target_partitioned_minibatch {
       shared_data_reader: true

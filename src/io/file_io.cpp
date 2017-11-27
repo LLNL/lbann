@@ -27,9 +27,9 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include <errno.h>
-#include <string.h>
-#include <stdio.h>
+#include <cerrno>
+#include <cstring>
+#include <cstdio>
 
 #include "lbann/io/file_io.hpp"
 

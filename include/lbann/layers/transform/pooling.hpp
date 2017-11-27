@@ -179,7 +179,7 @@ class pooling_layer : public transform {
   }
 
   /// Destructor
-  ~pooling_layer() {
+  ~pooling_layer() override {
   #ifdef __LIB_CUDNN
     // Destroy cuDNN objects
     if(m_pooling_cudnn_desc) {
@@ -194,7 +194,7 @@ class pooling_layer : public transform {
   
   virtual inline void initialize_distributed_matrices();
 
-  virtual data_layout get_data_layout() const override { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
   void setup_dims() override {
 
@@ -302,8 +302,8 @@ class pooling_layer : public transform {
   #else
 
     // Useful constants
-    const DataType one = 1;
-    const DataType zero = 0;
+    const DataType one = DataType(1);
+    const DataType zero = DataType(0);
 
     // Get number of GPUs
     const int num_gpus = this->m_cudnn->get_num_gpus();

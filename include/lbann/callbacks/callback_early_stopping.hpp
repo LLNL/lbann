@@ -47,12 +47,12 @@ class lbann_callback_early_stopping : public lbann_callback {
   lbann_callback_early_stopping(const lbann_callback_early_stopping&) = default;
   lbann_callback_early_stopping& operator=(
     const lbann_callback_early_stopping&) = default;
-  lbann_callback_early_stopping* copy() const {
+  lbann_callback_early_stopping* copy() const override {
     return new lbann_callback_early_stopping(*this);
   }
   /** Update validation score and check for early stopping. */
-  void on_validation_end(model *m);
-  std::string name() const { return "early stopping"; }
+  void on_validation_end(model *m) override;
+  std::string name() const override { return "early stopping"; }
  private:
   /** Number of epochs to wait for improvements. */
   int64_t m_patience;

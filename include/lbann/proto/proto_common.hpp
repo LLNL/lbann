@@ -5,6 +5,10 @@
 #include <lbann.pb.h>
 #include "lbann/utils/cudnn_wrapper.hpp"
 
+/// Returns true if the Model contains at least one MotifLayer
+bool has_motifs(lbann::lbann_comm *comm, const lbann_data::LbannPB& p);
+
+void expand_motifs(lbann::lbann_comm *comm, lbann_data::LbannPB& pb);
 
 /// instantiates one or more generic_data_readers and inserts them in &data_readers
 void init_data_readers(
@@ -30,7 +34,7 @@ void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::Lb
 ///returns a model that is on of: dnn, stacked_autoencoder, greedy_layerwise_autoencoder
 lbann::model *init_model(
   lbann::lbann_comm *comm,
-  lbann::optimizer_factory *optimizer_fac,
+  lbann::optimizer *default_optimizer,
   const lbann_data::LbannPB& p);
 
 void add_layers(
@@ -40,7 +44,7 @@ void add_layers(
   const lbann_data::LbannPB& p);
 
 /// returns a optimizer factory that is one of: adagrad, rmsprop, adam, sgd
-lbann::optimizer_factory *init_optimizer_factory(
+lbann::optimizer *init_default_optimizer(
   lbann::lbann_comm *comm,
   cudnn::cudnn_manager *cudnn,  
   const lbann_data::LbannPB& p);

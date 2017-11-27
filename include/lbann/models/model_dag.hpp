@@ -39,10 +39,10 @@ class dag_model : public model {
  public:
 
   /** Constructor. */
-  dag_model(int max_mini_batch_size,
-            lbann_comm *comm,
-            objective_functions::objective_function *obj_fn,
-            optimizer_factory *optimizer_fac);
+  dag_model(lbann_comm *comm,
+            int max_mini_batch_size,
+            objective_function *obj_fn,
+            optimizer *default_optimizer);
 
   /** Copy constructor. */
   dag_model(const dag_model& other) = default;
@@ -51,16 +51,16 @@ class dag_model : public model {
   dag_model& operator=(const dag_model& other) = default;
 
   /** Destructor. */
-  virtual ~dag_model() = default;
+  ~dag_model() override = default;
 
   /** Create copy. */
-  virtual dag_model* copy() const override { return new dag_model(*this); }
+  dag_model* copy() const override { return new dag_model(*this); }
 
   /** Setup model. */
-  virtual void setup() override;
+  void setup() override;
 
   /** Get model name. */
-  virtual std::string name() const override { return "dag_model"; }
+  std::string name() const override { return "dag_model"; }
 
  protected:
 

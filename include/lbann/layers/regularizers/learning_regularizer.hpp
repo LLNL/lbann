@@ -42,13 +42,14 @@ class learning_regularizer : public regularizer_layer, public optimizable_layer 
   optimizer *m_optimizer;
  public:
   learning_regularizer(lbann_comm *comm, optimizer *opt) :
-    regularizer_layer(comm), m_optimizer(opt) {}
+    regularizer_layer(comm), optimizable_layer(), m_optimizer(opt) {}
   learning_regularizer(const learning_regularizer& other) :
-    regularizer_layer(other) {
+    regularizer_layer(other), optimizable_layer(other) {
     m_optimizer = other.m_optimizer->copy();
   }
   learning_regularizer& operator=(const learning_regularizer& other) {
     regularizer_layer::operator=(other);
+    optimizable_layer::operator=(other);
     if (m_optimizer) {
       delete m_optimizer;
     }
@@ -57,7 +58,7 @@ class learning_regularizer : public regularizer_layer, public optimizable_layer 
     }
     return *this;
   }
-  ~learning_regularizer() {
+  ~learning_regularizer() override {
     delete m_optimizer;
   }
 

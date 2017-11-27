@@ -27,78 +27,79 @@
 #ifndef LBANN_OBJECTIVE_FUNCTION_HPP_INCLUDED
 #define LBANN_OBJECTIVE_FUNCTION_HPP_INCLUDED
 
-#include "lbann/base.hpp"
-#include "lbann/layers/layer.hpp"
+#include "lbann/objective_functions/objective_function_term.hpp"
 
 namespace lbann {
 
-namespace objective_functions {
-
-/** Abstract class for objective functions. */
+/** Objective function class. */
 class objective_function {
  public:
+
   /** Default constructor. */
   objective_function();
-  /** Copy constructor. */
-  objective_function(const objective_function& other) = default;
-  /** Copy assignment operator. */
-  objective_function& operator=(const objective_function& other) = default;
-  /** Destructor. */
-  virtual ~objective_function() {}
-  /** Copy function. */
-  virtual objective_function* copy() const = 0;
 
-  virtual void setup(const Layer& prev_layer) {}
+  /** Copy constructor. */
+  objective_function(const objective_function& other);
+  /** Copy assignment operator. */
+  objective_function& operator=(const objective_function& other);
+  /** Destructor. */
+  ~objective_function();
+  /** Copy function. */
+  objective_function* copy() const { return new objective_function(*this); }
+
+  /** Add a term to the objective function.
+   *  The objective function takes ownership of the objective function
+   *  term and deallocates it during destruction.
+   */
+  void add_term(objective_function_term* term) { m_terms.push_back(term); }
   
-  /** Compute the objective function value. */
-  virtual void compute_value(const AbsDistMat& predictions,
-                             const AbsDistMat& ground_truth) = 0;
+  /** Setup objective function. */
+  void setup(model& m);
+  
+  /** Compute the objective function value.
+   *  The result is stored in history.
+   */
+  DataType compute_value();
   
   /** Compute the objective function gradient.
-   *  The gradient is with respect to the predictions.
+   *  The gradient is with respect to the objective function inputs
    */
-  virtual void compute_gradient(const AbsDistMat& predictions,
-                                const AbsDistMat& ground_truth,
-                                AbsDistMat& gradient) = 0;
-  
-  /** Add to objective function value.
-   *  Primarily used to add regularization terms.
-   */
-  void add_to_value(double value);
+  void compute_gradient();
 
-  /** Record and reset objective function value.
-   *  Recorded values are used to compute statistics.
-   */
-  void record_and_reset_value();
+  /** Get history of objective function values. */
+  std::vector<DataType> get_history() const { return m_history; }
+  /** Clear history of objective function values. */
+  void clear_history() { m_history.clear(); }
 
-  /** Get objective function value. */
-  double get_value() const;
+  /** Get mean objective function value in history. */
+  DataType get_history_mean_value() const;
 
-  /** Get mean objective function value.
-   *  The mean is out of recorded objective function values.
-   */ 
-  double get_mean_value() const;
-  
-  /** Reset objective function statistics.
-   *  The objective function value is also reset.
-   */
-  void reset_statistics();
+  /** Get model that owns this objective function. */
+  model* get_model() { return m_model; }
+  /** Set model that owns this objective function. */
+  void set_model(model* m) { m_model = m; }
 
-  /** Get the name of the objective function. */
-  virtual std::string name() const = 0;
+  /** Get list of pointers to layers. */
+  std::vector<Layer*> get_layer_pointers();
+  /** Set list of pointers to layers. */
+  void set_layer_pointers(std::vector<Layer*> layers);
+  /** Get list of pointers to weights. */
+  std::vector<weights*> get_weights_pointers();
+  /** Set list of pointers to weights. */
+  void set_weights_pointers(std::vector<weights*> w);
 
- protected:
+ private:
 
-  /** Objective function value. */
-  double m_value;
-  /** Sum of recorded objective function values. */
-  double m_recorded_values;
-  /** Number of recorded objective function values. */
-  int m_recorded_iterations;
+  /** Pointer to model that owns this objective function. */
+  model* m_model;
+
+  /** List of objective function terms. */
+  std::vector<objective_function_term*> m_terms;
+
+  /** History of objective function values. */
+  std::vector<DataType> m_history;
 
 };
-
-}  // namespace objective_functions
 
 } // namespace lbann
 

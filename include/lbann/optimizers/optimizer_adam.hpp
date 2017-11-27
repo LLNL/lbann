@@ -49,13 +49,13 @@ class adam : public optimizer {
   adam(const adam& other);
   adam& operator=(const adam& other);
   /// Destructor
-  ~adam();
+  ~adam() override;
   
   /// Returns the optimizer's name
-  std::string get_name() const  { return "adam"; }
+  std::string get_name() const override { return "adam"; }
 
   /** Returns description of ctor params */
-  std::string get_description() const {
+  std::string get_description() const override {
     return std::string {} +
      " adam; learning_rate: "
      + std::to_string(m_learning_rate) 
@@ -64,17 +64,17 @@ class adam : public optimizer {
      + " eps: " + std::to_string(m_eps);
   }
 
-  adam* copy() const { return new adam(*this); }
+  adam* copy() const override { return new adam(*this); }
   /// Set parameters to optimize and initialize optimizer
-  void setup(AbsDistMat *parameters);
+  void setup(AbsDistMat *parameters) override;
   void setup_gpu(AbsDistMat *parameters,
-                 const std::vector<DataType *> &parameters_d);
+                 const std::vector<DataType *> &parameters_d) override;
   /// Update parameters using objective function gradient
-  void update(const AbsDistMat *gradient);
+  void update(const AbsDistMat *gradient) override;
 #ifdef __LIB_CUDA
-  void update_gpu(const std::vector<DataType *> &gradient_d);
+  void update_gpu(const std::vector<DataType *> &gradient_d) override;
 #endif  
-  std::string name() const { return "adam"; }
+  std::string name() const override { return "adam"; }
  private:
   /// Update factor for first moment estimate
   DataType m_beta1;
@@ -108,9 +108,9 @@ class adam_factory : public optimizer_factory {
    DataType eps = DataType(1e-8),
    cudnn::cudnn_manager *cudnn=nullptr);
   /// Destructor
-  virtual ~adam_factory();
+  ~adam_factory() override;
   /// Create Adam optimizer
-  optimizer *create_optimizer();
+  optimizer *create_optimizer() override;
  private:
   /// Learning rate
   DataType m_learning_rate;

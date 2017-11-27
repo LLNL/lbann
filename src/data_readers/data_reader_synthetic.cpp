@@ -27,7 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_synthetic.hpp"
-#include <stdio.h>
+#include <cstdio>
 #include <string>
 
 namespace lbann {

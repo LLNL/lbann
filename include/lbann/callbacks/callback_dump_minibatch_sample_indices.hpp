@@ -55,15 +55,15 @@ class lbann_callback_dump_minibatch_sample_indices : public lbann_callback {
     const lbann_callback_dump_minibatch_sample_indices&) = default;
   lbann_callback_dump_minibatch_sample_indices& operator=(
     const lbann_callback_dump_minibatch_sample_indices&) = default;
-  lbann_callback_dump_minibatch_sample_indices* copy() const {
+  lbann_callback_dump_minibatch_sample_indices* copy() const override {
     return new lbann_callback_dump_minibatch_sample_indices(*this);
   }
-  void on_forward_prop_end(model *m, Layer *l);
-  void on_evaluate_forward_prop_end(model *m, Layer *l);
+  void on_forward_prop_end(model *m, Layer *l) override;
+  void on_evaluate_forward_prop_end(model *m, Layer *l) override;
 
   void dump_to_file(model *m, Layer *l, int64_t step);
 
-  std::string name() const { return "dump minibatch sample indices"; }
+  std::string name() const override { return "dump minibatch sample indices"; }
  private:
   /** Basename for writing files. */
   std::string m_basename;

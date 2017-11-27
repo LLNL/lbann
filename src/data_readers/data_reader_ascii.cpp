@@ -27,7 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_ascii.hpp"
-#include <stdio.h>
+#include <cstdio>
 namespace lbann {
 
 ascii_reader::ascii_reader(int sequence_length, bool shuffle)

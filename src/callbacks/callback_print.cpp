@@ -128,9 +128,20 @@ void lbann_callback_print::on_epoch_end(model *m) {
         comm->intermodel_gather(validate_score, comm->get_intermodel_master());
       }
     }
-    for (Layer *layer : m->get_layers()) {
-      layer->epoch_print();
+
+    // Print objective function value
+    double obj_cost = m->get_objective_function()->get_history_mean_value();
+    if (comm->am_world_master()) {
+      std::vector<double> avg_obj_fn_costs(comm->get_num_models());
+      comm->intermodel_gather(obj_cost, avg_obj_fn_costs);
+      for (size_t i = 0; i < avg_obj_fn_costs.size(); ++i) {
+        std::cout << "Model " << i << " average objective : "
+                  << avg_obj_fn_costs[i] << std::endl;
+      }
+    } else {
+      comm->intermodel_gather(obj_cost, comm->get_world_master());
     }
+
   }
 }
 

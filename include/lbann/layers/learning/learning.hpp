@@ -30,13 +30,16 @@
 #define LBANN_LAYER_LEARNING_HPP_INCLUDED
 
 #include "lbann/layers/layer.hpp"
-#include "lbann/layers/optimizable_layer.hpp"
 #include <string>
 #include <vector>
 
 namespace lbann {
 
-class learning : public Layer, public optimizable_layer {
+class learning : public Layer {
+ public:
+  learning(lbann_comm *comm) : Layer(comm) {}
+
+#if 0
  protected:
   optimizer  *m_optimizer;
 
@@ -201,10 +204,10 @@ class learning : public Layer, public optimizable_layer {
  public:
   learning(lbann_comm *comm,
            optimizer *opt)
-    : Layer(comm), m_optimizer(opt) {}
+    : Layer(comm), optimizable_layer(), m_optimizer(opt) {}
 
   learning(const learning& other) :
-    Layer(other),
+    Layer(other), optimizable_layer(other),
     m_l2_regularization_factor(other.m_l2_regularization_factor) {
     m_weights = other.m_weights->Copy();
     m_weights_gradient = other.m_weights_gradient->Copy();
@@ -213,6 +216,7 @@ class learning : public Layer, public optimizable_layer {
 
   learning& operator=(const learning& other) {
     Layer::operator=(other);
+    optimizable_layer::operator=(other);
     m_l2_regularization_factor = other.m_l2_regularization_factor;
     if (m_weights) {
       delete m_weights;
@@ -229,7 +233,7 @@ class learning : public Layer, public optimizable_layer {
     return *this;
   }
 
-  virtual ~learning() {
+  ~learning() override {
     delete m_optimizer;
     delete m_weights;
     delete m_weights_gradient;
@@ -245,7 +249,7 @@ class learning : public Layer, public optimizable_layer {
   virtual const AbsDistMat& get_weights_gradient() const { return *m_weights_gradient; }
 
   /// Following function tells this layer has weights
-  bool is_learning_layer() override { return true; }
+  bool is_learning_layer() const override { return true; }
 
   template <data_layout T_layout>
   inline void initialize_distributed_matrices();
@@ -333,6 +337,10 @@ class learning : public Layer, public optimizable_layer {
     m_l2_regularization_factor = f;
   }
 
+  void set_group_lasso_regularization_factor(DataType f) {
+    m_group_lasso_regularization_factor = f;
+  }
+
 #if 0
   bool saveToFile(int fd, const char *dirname) override {
     Layer::loadFromFile(fd, dirname);
@@ -382,22 +390,8 @@ class learning : public Layer, public optimizable_layer {
     return true;
   }
 #endif
-
+#endif
 };
-
-/// Matrices should be in MC,MR distributions
-template<> inline void learning::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>() {
-  Layer::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>();
-  m_weights          = new DistMat(m_comm->get_model_grid());
-  m_weights_gradient = new DistMat(m_comm->get_model_grid());
-}
-
-/// Weight matrices should be in Star,Star and data matrices Star,VC distributions
-template<> inline void learning::initialize_distributed_matrices<data_layout::DATA_PARALLEL>() {
-  Layer::initialize_distributed_matrices<data_layout::DATA_PARALLEL>();
-  m_weights          = new StarMat(m_comm->get_model_grid());
-  m_weights_gradient = new StarMat(m_comm->get_model_grid());
-}
 
 }  // namespace lbann
 

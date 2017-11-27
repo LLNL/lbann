@@ -37,48 +37,38 @@ void lbann_callback_checksmall::on_forward_prop_end(model *m, Layer *l) {
   }
   const AbsDistMat& acts = l->get_activations();
   if (!is_good(acts)) {
-    lbann_comm *comm = m->get_comm();
-    throw lbann_exception(std::string()
-      + "checksmall: "
-      + "[" + std::to_string(comm->get_rank_in_world()) + "]: "
-      + "error in layer " + l->get_name() + " "
-      + "activations (step=" + std::to_string(m->get_cur_step()) + ")");
+    std::stringstream ss;
+    ss << name() << ": "
+       << "[" << std::to_string(m->get_comm()->get_rank_in_world()) << "]: "
+       << "error in activations of " << l->get_name() << " "
+       << "(step=" << std::to_string(m->get_cur_step()) << ")";
+    throw lbann_exception(ss.str());
   }
 }
 
-void lbann_callback_checksmall::on_backward_prop_end(model *m, Layer *l) {
-  learning *learning_layer = dynamic_cast<learning *> (l);
-  if(learning_layer == nullptr) {
-    return;
-  }
-  const AbsDistMat& grad = learning_layer->get_weights_gradient();
-  if (!is_good(grad)) {
-    lbann_comm *comm = m->get_comm();
-    throw lbann_exception(std::string()
-      + "checksmall: "
-      + "[" + std::to_string(comm->get_rank_in_world()) + "]: "
-      + "error in layer " + l->get_name() + " "
-      + "gradients ("
-      + "shape=" + std::to_string(grad.Height()) + "x" + std::to_string(grad.Width()) + " "
-      + "step=" + std::to_string(m->get_cur_step()) + ")");
+void lbann_callback_checksmall::on_backward_prop_end(model *m) {
+  for (weights *w : m->get_weights()) {
+    optimizer *opt = w->get_optimizer();
+    if (opt != nullptr && !is_good(opt->get_gradient())) {
+      std::stringstream ss;
+      ss << name() << ": "
+         << "[" << std::to_string(m->get_comm()->get_rank_in_world()) << "]: "
+         << "error in weights gradient of " << w->get_name() << " "
+         << "(step=" << std::to_string(m->get_cur_step()) << ")";
+      throw lbann_exception(ss.str());
+    }
   }
 }
 
 void lbann_callback_checksmall::on_batch_end(model *m) {
-  for (Layer *layer : m->get_layers()) {
-    // Skip non-learning layers.
-    learning *learning_layer = dynamic_cast<learning *>(layer);
-    if(learning_layer == nullptr) {
-      continue;
-    }
-    const AbsDistMat& weights = learning_layer->get_weights();
-    if (!is_good(weights)) {
-      lbann_comm *comm = m->get_comm();
-      throw lbann_exception(std::string()
-        + "checksmall: "
-        + "[" + std::to_string(comm->get_rank_in_world()) + "]: "
-        + "error in layer " + layer->get_name() + " "
-        + "weights (step=" + std::to_string(m->get_cur_step()) + ")");
+  for (weights *w : m->get_weights()) {
+    if (!is_good(w->get_values())) {
+      std::stringstream ss;
+      ss << name() << ": "
+         << "[" << std::to_string(m->get_comm()->get_rank_in_world()) << "]: "
+         << "error in weights of " << w->get_name() << " "
+         << "(step=" << std::to_string(m->get_cur_step()) << ")";
+      throw lbann_exception(ss.str());
     }
   }
 }
@@ -91,8 +81,8 @@ bool lbann_callback_checksmall::is_good(const AbsDistMat& m) {
     for (Int row = 0; row < height; ++row) {
       const DataType val = Abs(local_mat(row, col));
       if (val > 0 && val <= m_threshold) {
-        std::cout << "Found small value " << val << " at (" << row << "," <<
-                  col << ")!" << std::endl;
+        std::cout << "Found small value " << val << " "
+                  << "at (" << row << "," << col << ")!" << std::endl;
         return false;
       }
     }

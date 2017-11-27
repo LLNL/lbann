@@ -28,7 +28,6 @@
 #define LBANN_METRIC_MEAN_ABSOLUTE_DEVIATION_HPP
 
 #include "lbann/metrics/metric.hpp"
-#include "lbann/objective_functions/mean_absolute_deviation.hpp"
 
 namespace lbann {
 
@@ -45,15 +44,15 @@ class mean_absolute_deviation : public metric {
     const mean_absolute_deviation<T_layout>& other) = default;
 
   /// Destructor
-  ~mean_absolute_deviation() {}
+  ~mean_absolute_deviation() override {}
 
-  mean_absolute_deviation* copy() const { return new mean_absolute_deviation(*this); }
+  mean_absolute_deviation* copy() const override { return new mean_absolute_deviation(*this); }
 
-  void setup(int num_neurons, int mini_batch_size) {
+  void setup(int num_neurons, int mini_batch_size) override {
     metric::setup(num_neurons, mini_batch_size);
   }
-  void fp_set_std_matrix_view(int cur_mini_batch_size) {}
-  double compute_metric(AbsDistMat& predictions_v, AbsDistMat& groundtruth_v) {
+  void fp_set_std_matrix_view(int cur_mini_batch_size) override {}
+  double compute_metric(AbsDistMat& predictions_v, AbsDistMat& groundtruth_v) override {
     
     // Get local matrices and matrix parameters
     const Mat& predictions_local = predictions_v.LockedMatrix();
@@ -78,7 +77,7 @@ class mean_absolute_deviation : public metric {
 
   }
 
-  double report_metric(execution_mode mode) {
+  double report_metric(execution_mode mode) override {
     statistics *stats = get_statistics(mode);
     double error_per_epoch = stats->m_error_per_epoch;
     long samples_per_epoch = stats->m_samples_per_epoch;
@@ -88,7 +87,7 @@ class mean_absolute_deviation : public metric {
 
     return mad;
   }
-  double report_lifetime_metric(execution_mode mode) {
+  double report_lifetime_metric(execution_mode mode) override {
     statistics *stats = get_statistics(mode);
     double total_error = stats->m_total_error;
     long total_num_samples = stats->m_total_num_samples;
@@ -99,7 +98,7 @@ class mean_absolute_deviation : public metric {
     return mad;
   }
 
-  std::string name() const { return "mean absolute deviation"; }
+  std::string name() const override { return "mean absolute deviation"; }
 
 };
 

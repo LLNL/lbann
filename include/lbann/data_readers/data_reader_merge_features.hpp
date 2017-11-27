@@ -47,27 +47,27 @@ class data_reader_merge_features : public generic_compound_data_reader {
                              bool shuffle = true);
   data_reader_merge_features(const data_reader_merge_features&);
   data_reader_merge_features& operator=(const data_reader_merge_features&);
-  ~data_reader_merge_features();
-  data_reader_merge_features* copy() const {
+  ~data_reader_merge_features() override;
+  data_reader_merge_features* copy() const override {
     return new data_reader_merge_features(*this);
   }
 
   /// Call load on the subsidiary data readers.
-  void load();
+  void load() override;
 
-  int get_num_labels() const { return m_label_reader->get_num_labels(); }
-  int get_linearized_data_size() const { return m_data_size; }
-  int get_linearized_label_size() const {
+  int get_num_labels() const override { return m_label_reader->get_num_labels(); }
+  int get_linearized_data_size() const override { return m_data_size; }
+  int get_linearized_label_size() const override {
     return m_label_reader->get_linearized_label_size();
   }
-  const std::vector<int> get_data_dims() const {
+  const std::vector<int> get_data_dims() const override {
     // Todo: Can we merge the dimensions of each reader sensibly?
     return {get_linearized_data_size()};
   }
  protected:
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
-  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid);
-  bool fetch_response(Mat& Y, int data_id, int mb_idx, int tid);
+  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;
+  bool fetch_response(Mat& Y, int data_id, int mb_idx, int tid) override;
 
   /// Reader providing label data.
   generic_data_reader *m_label_reader;

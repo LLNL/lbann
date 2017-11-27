@@ -37,23 +37,24 @@
 #include "lbann/io/persist.hpp"
 #include "lbann/objective_functions/objective_function.hpp"
 #include "lbann/metrics/metric.hpp"
+#include "lbann/weights/weights.hpp"
 #include "lbann/optimizers/optimizer.hpp"
 #include <vector>
 #include <string>
+#include <unordered_map>
 
 namespace lbann {
 
 // Forward-declare this.
 class lbann_callback;
 
-/**
- * Base class for LBANN models.
- */
+/** Base class for LBANN models. */
 class model {
  public:
-  model(lbann_comm *comm, int mini_batch_size,
-        objective_functions::objective_function *obj_fn,
-        optimizer_factory *optimizer_fac);
+  model(lbann_comm *comm,
+        int mini_batch_size,
+        objective_function *obj_fn,
+        optimizer* default_optimizer = nullptr);
   model(const model& other);
   model& operator=(const model& other);
   virtual ~model();
@@ -67,13 +68,26 @@ class model {
   virtual void setup() {}
 
   /** Add layer to model. */
-  virtual void add(Layer *layer);
+  virtual void add_layer(Layer *layer);
+
+  /** Add weights to model. */
+  void add_weights(weights *w);
 
   /** Register a new callback for the model. */
-  virtual void add_callback(lbann_callback *cb);
+  void add_callback(lbann_callback *cb);
 
   /** Register a new metric for the model. */
-  virtual void add_metric(metrics::metric *m);
+  void add_metric(metrics::metric *m);
+
+  /** Construct an instance of the default optimizer.
+   *  If there is no default optimizer, a null pointer is returned.
+   */
+  optimizer* create_optimizer() const;
+
+  /** Return the model's objective function. */
+  objective_function* get_objective_function() {
+    return m_objective_function;
+  }
 
   /** Return the model's metrics. */
   virtual std::vector<metrics::metric *>& get_metrics() {
@@ -84,15 +98,14 @@ class model {
   void set_layers(std::vector<Layer *>& layers);
 
   /** Return the model's layers. */
-  std::vector<Layer *>& get_layers() {
-    return m_layers;
-  }
+  std::vector<Layer *>& get_layers() { return m_layers; }
 
-  /** Link two layers in model.
-   *  If the layers are optimizable, they will share weights.
-   */
-  virtual void link_layers(Layer *layer1, Layer *layer2);
-  
+  /** Set the model's weights. */
+  void set_weights(std::vector<weights *>& w);
+
+  /** Return the model's weights. */
+  std::vector<weights *>& get_weights() { return m_weights; }
+
   /** Get the model's comm. */
   inline lbann_comm *get_comm() const {
     return m_comm;
@@ -114,17 +127,11 @@ class model {
   inline int get_cur_testing_step() const {
     return m_current_testing_step;
   }
+  /** Set the model (and all layers') execution mode. */
+  virtual void set_execution_mode(execution_mode mode);
   /** Get the model's execution mode. */
   inline execution_mode get_execution_mode() const {
     return m_execution_mode;
-  }
-  /** Set the model (and all layers') execution mode. */
-  inline void set_execution_mode(execution_mode mode) {
-    m_execution_mode = mode;
-    std::vector<Layer *>& layers = get_layers();
-    for (auto&& l : layers) {
-      l->set_execution_mode(mode);
-    }
   }
   /** Set the model's current mini-batch size. */
   inline void set_current_mini_batch_size(int mini_batch_size) {
@@ -156,12 +163,12 @@ class model {
    * Summarize statistics (e.g. timers, counters); these should be computable
    * quickly.
    */
-  void summarize_stats(lbann_summary& summarizer);
+  virtual void summarize_stats(lbann_summary& summarizer);
   /**
    * Summarize matrices (e.g. means); these are called less frequently and can
    * be more expensive.
    */
-  void summarize_matrices(lbann_summary& summarizer);
+  virtual void summarize_matrices(lbann_summary& summarizer);
 
   /** Return true if the flag to stop training is set. */
   bool get_terminate_training() const {
@@ -172,21 +179,10 @@ class model {
     m_terminate_training = f;
   }
 
-  /** Create a new optimizer. */
-  inline optimizer *create_optimizer() {
-    return m_optimizer_fac->create_optimizer();
-  }
-
   /** Train model. */
   virtual void train(int num_epochs);
-  /** Train model on a mini-batch. */
-  virtual bool train_mini_batch();
   /** Evaluate model. */
   virtual void evaluate(execution_mode mode);
-  /** Evaluate model on a mini-batch */
-  virtual bool evaluate_mini_batch();
-
-  virtual bool is_execution_mode_valid(execution_mode mode);
 
   /** Set checkpoint values */
   inline void set_checkpoint_dir(std::string dir)   {
@@ -227,14 +223,11 @@ class model {
 
 #endif // 0
 
-  /**
-   * Objective functions are used to judge the performance of the model during
-   * training and can be used to adapt training via either early termination or
-   * adaptive learning rates.
-   */
-  objective_functions::objective_function *m_obj_fn;
-
  protected:
+
+  /** The objective function used to train the model. */
+  objective_function *m_objective_function;
+
   /** The model's current execution mode. */
   execution_mode m_execution_mode;
   /** Flag telling the model to terminate training. */
@@ -277,8 +270,7 @@ class model {
   /** Timestamp of last checkpoint */
   double m_checkpoint_last;
 
-  /** Factory to create optimizers. */
-  optimizer_factory *m_optimizer_fac;
+  optimizer *m_default_optimizer;
 
   /**
    * A metric is a function that is used to judge the performance of your model.
@@ -292,39 +284,53 @@ class model {
    */
   std::vector<Layer *> m_layers;
 
-  /** Map from master layers to their layer group. */
-  std::unordered_map<Layer *,std::vector<Layer *>> m_layer_groups;
-  /** Map from layers to their layer group's master. */
-  std::unordered_map<Layer *,Layer *> m_layer_group_masters;
+  std::vector<weights *> m_weights;
+
+  /** Check if the model (and all layers') execution mode valid. */
+  virtual bool is_execution_mode_valid(execution_mode mode) const;
+  /// Print out the description of a layer set up
+  virtual std::string print_layer_description(const Layer* layer) const;
+
+  /// Deallocate layer objects
+  virtual void delete_layers();
+  virtual void reset_layers();
+  virtual bool update_layers();
+  virtual void forward_prop_to_evaluate();
+  virtual void forward_prop();
+  virtual void backward_prop();
+  /** Train model on a mini-batch. */
+  virtual bool train_mini_batch();
+  /** Evaluate model on a mini-batch */
+  virtual bool evaluate_mini_batch();
 
   // Methods for calling every callback at different points.
-  void setup_callbacks();
-  void do_train_begin_cbs();
-  void do_train_end_cbs();
-  void do_phase_end_cbs();
-  void do_epoch_begin_cbs();
-  void do_epoch_end_cbs();
-  void do_batch_begin_cbs();
-  void do_batch_end_cbs();
-  void do_test_begin_cbs();
-  void do_test_end_cbs();
-  void do_validation_begin_cbs();
-  void do_validation_end_cbs();
-  void do_model_forward_prop_begin_cbs();
-  void do_layer_forward_prop_begin_cbs(Layer *l);
-  void do_model_forward_prop_end_cbs();
-  void do_layer_forward_prop_end_cbs(Layer *l);
-  void do_model_backward_prop_begin_cbs();
-  void do_layer_backward_prop_begin_cbs(Layer *l);
-  void do_model_backward_prop_end_cbs();
-  void do_layer_backward_prop_end_cbs(Layer *l);
+  virtual void setup_callbacks();
+  virtual void do_train_begin_cbs();
+  virtual void do_train_end_cbs();
+  virtual void do_phase_end_cbs();
+  virtual void do_epoch_begin_cbs();
+  virtual void do_epoch_end_cbs();
+  virtual void do_batch_begin_cbs();
+  virtual void do_batch_end_cbs();
+  virtual void do_test_begin_cbs();
+  virtual void do_test_end_cbs();
+  virtual void do_validation_begin_cbs();
+  virtual void do_validation_end_cbs();
+  virtual void do_model_forward_prop_begin_cbs();
+  virtual void do_layer_forward_prop_begin_cbs(Layer *l);
+  virtual void do_model_forward_prop_end_cbs();
+  virtual void do_layer_forward_prop_end_cbs(Layer *l);
+  virtual void do_model_backward_prop_begin_cbs();
+  virtual void do_layer_backward_prop_begin_cbs(Layer *l);
+  virtual void do_model_backward_prop_end_cbs();
+  virtual void do_layer_backward_prop_end_cbs(Layer *l);
   /// Evaluation phases (validation / testing)
-  void do_batch_evaluate_begin_cbs();
-  void do_batch_evaluate_end_cbs();
-  void do_model_evaluate_forward_prop_begin_cbs();
-  void do_layer_evaluate_forward_prop_begin_cbs(Layer *l);
-  void do_model_evaluate_forward_prop_end_cbs();
-  void do_layer_evaluate_forward_prop_end_cbs(Layer *l);
+  virtual void do_batch_evaluate_begin_cbs();
+  virtual void do_batch_evaluate_end_cbs();
+  virtual void do_model_evaluate_forward_prop_begin_cbs();
+  virtual void do_layer_evaluate_forward_prop_begin_cbs(Layer *l);
+  virtual void do_model_evaluate_forward_prop_end_cbs();
+  virtual void do_layer_evaluate_forward_prop_end_cbs(Layer *l);
 };
 
 }  // namespace lbann

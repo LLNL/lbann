@@ -2,8 +2,7 @@ model {
   ### Model description and network architecture taken from:
   ### https://lc.llnl.gov/bitbucket/projects/BIOM/repos/molresp/browse/tf_model.py?at=TensorFlow_chemClass
   ### This network description is anologous to AutoEncoder_Chem_ECFP 
-  name: "dnn"
-  objective_function: "mean_squared_error"
+  name: "sequential_model"
   data_layout: "model_parallel"
   mini_batch_size: 128
   block_size: 256
@@ -12,6 +11,14 @@ model {
   procs_per_model: 0
   use_cudnn: true
   num_gpus: -1
+
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    mean_squared_error {}
+  }
 
   ###################################################
   # Callbacks

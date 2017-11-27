@@ -59,7 +59,7 @@ class cv_cropper : public cv_transform {
   double m_zoom; ///< zoom factor to prepare the initial region for a given image
   int m_interpolation; ///< channel value interpolation method
 
-  void unset_roi(void);
+  void unset_roi();
 
  public:
   cv_cropper();
@@ -78,6 +78,9 @@ class cv_cropper : public cv_transform {
   void set(const unsigned int width, const unsigned int height,
            const bool random_crop = false,
            const std::pair<int, int>& roi = std::make_pair(0,0));
+
+  unsigned int get_crop_width() const { return m_width; }
+  unsigned int get_crop_height() const { return m_height; }
 
   /// Clear the states of the previous transform applied
   void reset() override;

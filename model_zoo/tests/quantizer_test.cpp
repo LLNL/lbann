@@ -26,7 +26,7 @@
 // quantizer_test.cpp - Tests lbann_quantizer
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <stdlib.h>
+#include <cstdlib>
 #include "lbann/comm.hpp"
 #include "lbann/utils/quantizer.hpp"
 #include "test_utils.hpp"

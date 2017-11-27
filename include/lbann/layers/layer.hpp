@@ -33,10 +33,6 @@
 #include "lbann/comm.hpp"
 #include "lbann/utils/summary.hpp"
 #include "lbann/optimizers/optimizer.hpp"
-#include "lbann/optimizers/optimizer_sgd.hpp"
-#include "lbann/optimizers/optimizer_adagrad.hpp"
-#include "lbann/optimizers/optimizer_rmsprop.hpp"
-#include "lbann/optimizers/optimizer_adam.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/utils/timer.hpp"
@@ -62,20 +58,12 @@ class Layer {
   template <data_layout T_layout>
   void initialize_distributed_matrices();
 
+  virtual void reset();
   virtual void forward_prop();
   virtual void back_prop();
   virtual bool update();
   virtual void summarize_stats(lbann_summary& summarizer, int step);
   virtual void summarize_matrices(lbann_summary& summarizer, int step);
-  /**
-   * Print information at the end of an epoch.
-   * This is always called on the model masters and should synchronize
-   * printing if needed.
-   */
-  virtual void epoch_print() const {}
-  virtual DataType checkGradientMB(Layer& PrevLayer, DataType Epsilon=1e-4) {
-    return 0.0;
-  };
 
   /** Setup layer dimensions and data.
    *  By default, this calls the setup_pointers, setup_dims,
@@ -162,13 +150,13 @@ class Layer {
   }
 
   /// Following function tells whether a layer has weights; default is false
-  virtual bool is_learning_layer() { return false; }
+  virtual bool is_learning_layer() const { return false; }
 
   /// Following functions tell whether current layer is a fan-out layer; default is false
-  virtual bool is_fanout_layer() { return false; }
+  virtual bool is_fanout_layer() const { return false; }
 
   /// Following functions tell whether current layer is a fan-in layer; default is false
-  virtual bool is_fanin_layer() { return false; }
+  virtual bool is_fanin_layer() const { return false; }
 
   /** Return the neural network model of this layer. */
   inline model* get_neural_network_model() const {
@@ -202,6 +190,12 @@ class Layer {
   /** Get forward propagation output dimensions, as seen by next layer. */
   virtual const std::vector<int> fp_output_dims(const Layer* next_layer = NULL) const;
 
+  virtual void add_to_error_signal(const AbsDistMat& gradient,
+                                   DataType scale = DataType(1)) {
+    bp_set_std_matrix_view();    
+    El::Axpy(scale, gradient, *m_error_signal_v);
+  }
+
   /** Get list of parent layers. */
   std::vector<const Layer*>& get_parent_layers();
   /** Get list of parent layers (const). */
@@ -210,11 +204,30 @@ class Layer {
   std::vector<const Layer*>& get_child_layers();
   /** Get list of child layers (const). */
   const std::vector<const Layer*>& get_child_layers() const;
+  /** Get names in a particular list of layers */
+  static std::string get_layer_names(const std::vector<const Layer*>& list);
+  std::string get_child_names() const { return get_layer_names(m_child_layers); }
+  std::string get_parent_names() const { return get_layer_names(m_parent_layers); }
 
   /** Add a parent layer. */
   void add_parent_layer(const Layer* parent);
   /** Add a child layer. */
   void add_child_layer(const Layer* child);
+
+  /** clear the list of parent layer pointers without deallocating them. */
+  void clear_parent_layers();
+  /** clear the list of child layer pointers without deallocating them. */
+  void clear_child_layers();
+
+  /** Get list of pointers to other layers. */
+  virtual std::vector<Layer*> get_layer_pointers();
+  /** Set list of pointers to other layers. */
+  virtual void set_layer_pointers(std::vector<Layer*> layers);
+
+  /** Get list of pointers to weights. */
+  std::vector<weights*> get_weights() { return m_weights; }
+  /** Set list of pointers to weights. */
+  void set_weights(std::vector<weights*> w) { m_weights = w; }
 
  protected:
 
@@ -233,6 +246,9 @@ class Layer {
   AbsDistMat *m_prev_error_signal;  ///< Local copy of the error signal from "previous" layer ((# neurons) x mini-batch size)
   AbsDistMat *m_error_signal;       ///< Error signal to "next" layer (i.e. deltas) ((# neurons) x mini-batch size)
   AbsDistMat *m_error_signal_v;     ///< View of active columns in error signal matrix
+
+  /** List of layer weights. */
+  std::vector<weights*> m_weights;
 
   /** List of parent layers. */
   std::vector<const Layer*> m_parent_layers;

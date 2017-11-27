@@ -67,6 +67,6 @@ endif()
 
 # LBANN has access to Protocol Buffers
 if(PROTOBUF_FOUND OR LBANN_BUILT_PROTOBUF)
-  include_directories(BEFORE ${PROTOBUF_INCLUDE_DIRS}) # Need to get ahead of system protobuf
+  include_directories(SYSTEM BEFORE ${PROTOBUF_INCLUDE_DIRS}) # Need to get ahead of system protobuf
   set(LBANN_HAS_PROTOBUF TRUE)
 endif()

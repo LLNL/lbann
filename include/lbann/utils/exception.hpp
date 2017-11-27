@@ -40,8 +40,8 @@ namespace lbann {
 class lbann_exception : public std::exception {
  public:
   lbann_exception(const std::string m="my custom exception"):msg(m) {}
-  ~lbann_exception() {}
-  const char *what() const noexcept {
+  ~lbann_exception() override {}
+  const char *what() const noexcept override {
     return msg.c_str();
   }
 

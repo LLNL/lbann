@@ -41,7 +41,7 @@ class distributed_minibatch : public virtual generic_data_distribution {
     const distributed_minibatch&) = default;
   distributed_minibatch& operator=(
     const distributed_minibatch&) = default;
-  virtual ~distributed_minibatch() {}
+  ~distributed_minibatch() override {}
 
   int fetch_to_local_matrix(Mat& M_local, generic_data_reader *data_reader) override;
   void distribute_from_local_matrix(Mat& M_local, CircMat& Ms, generic_data_reader *data_reader) override;

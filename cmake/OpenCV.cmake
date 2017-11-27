@@ -439,7 +439,7 @@ else()
 endif()
 
 # Include header files
-include_directories(${OpenCV_INCLUDE_DIRS})
+include_directories(SYSTEM ${OpenCV_INCLUDE_DIRS})
 
 # Add preprocessor flag for OpenCV
 add_definitions(-D__LIB_OPENCV)

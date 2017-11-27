@@ -38,7 +38,7 @@
 #include <unistd.h>
 
 // snprintf
-#include <stdio.h>
+#include <cstdio>
 
 namespace lbann {
 class io_layer : public Layer {
@@ -92,14 +92,14 @@ class io_layer : public Layer {
   /**
    * Return the sample indices fetched in the current mini-batch.
    */
-  virtual El::Matrix<El::Int>* get_sample_indices_per_mb() = 0;
+  El::Matrix<El::Int>* get_sample_indices_per_mb() override = 0;
 
   /**
    * Get the dimensions of the underlying data.
    */
   virtual const std::vector<int> get_data_dims() const = 0;
 
-  virtual std::string get_topo_description() const = 0;
+  std::string get_topo_description() const override = 0;
 
   /**
    * Get the linearized size of the underlying data.
