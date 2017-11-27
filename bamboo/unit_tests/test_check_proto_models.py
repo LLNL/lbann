@@ -13,17 +13,17 @@ def test_models():
                 model_path = subdir + '/' + file_name
                 print('Attempting model setup for: ' + file_name )
                 if 'mnist' in file_name:
-                    cmd = exe + ' --model=' + model_path + ' --reader='+ lbann_dir + '/model_zoo/data_readers/data_reader_mnist.prototext' + ' --optimizer=' + opt + ' --exit_after_setup'
+                    cmd = 'salloc -N1 -ppdebug -t 1 srun ' exe + ' --model=' + model_path + ' --reader='+ lbann_dir + '/model_zoo/data_readers/data_reader_mnist.prototext' + ' --optimizer=' + opt + ' --exit_after_setup'
                     if os.system(cmd) != 0:
                         print("Error detected in " + model_path)
                         defective_models.append(file_name)
                 elif 'net' in file_name:
-                    cmd = exe + ' --model=' + model_path + ' --reader='+ lbann_dir + '/model_zoo/data_readers/data_reader_imagenet.prototext' + ' --optimizer=' + opt + ' --exit_after_setup'
+                    cmd = 'salloc -N1 -ppdebug -t 1 srun ' exe + ' --model=' + model_path + ' --reader='+ lbann_dir + '/model_zoo/data_readers/data_reader_imagenet.prototext' + ' --optimizer=' + opt + ' --exit_after_setup'
                     if os.system(cmd) != 0:
                         print("Error detected in " + model_path)
                         defective_models.append(file_name)       
                 elif 'cifar' in file_name:
-                    cmd = exe + ' --model=' + model_path + ' --reader='+ lbann_dir + '/model_zoo/data_readers/data_reader_cifar10.prototext' + ' --optimizer=' + opt + ' --exit_after_setup'
+                    cmd = 'salloc -N1 -ppdebug -t 1 srun ' exe + ' --model=' + model_path + ' --reader='+ lbann_dir + '/model_zoo/data_readers/data_reader_cifar10.prototext' + ' --optimizer=' + opt + ' --exit_after_setup'
                     if os.system(cmd) != 0:
                         print("Error detected in " + model_path)
                         defective_models.append(file_name)
