@@ -39,9 +39,11 @@
 #include <cudnn.h>
 #include <cublas_v2.h>
 
+#ifdef __LIB_NCCL
 #include "nccl.h"
 #include "nccl1_compat.h"
 #include "common.h"
+#endif // #ifdef __LIB_NCCL
 
 #endif // #ifdef __LIB_CUDNN
 
@@ -294,17 +296,16 @@ class cudnn_manager {
   /** List of GPU work space sizes. */
   std::vector<size_t> m_work_space_sizes;
 
-  /** List of NCCL 2 related variables. */
   bool m_nccl_used;
   void nccl_setup();
   void nccl_destroy();
 
+  /** List of NCCL 2 related variables. */
+#ifdef __LIB_NCCL
   // One GPU per single thread of one MPI rank is assumed
   ncclComm_t m_nccl_comm;
-
-  uint64_t getHostHash(const char* string);
   ncclDataType_t nccl_datatype();
-
+#endif // #ifdef __LIB_NCCL
 
 #endif // #ifdef __LIB_CUDNN
 };

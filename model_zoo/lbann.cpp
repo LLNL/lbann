@@ -224,6 +224,11 @@ int main(int argc, char *argv[]) {
         std::cout << "No optimizer";
       }
       std::cout << std::endl << std::endl;
+      std::cout << "Callbacks:" << std::endl;
+      for (lbann_callback *cb : model->get_callbacks()) {
+        std::cout << cb->name() << std::endl;
+      }
+      std::cout << std::endl;
       std::vector<Layer *>& layers = model->get_layers();
       for (size_t h=0; h<layers.size(); h++) {
         std::cout << h << " " << layers[h]->get_description() << std::endl;
