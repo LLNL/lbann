@@ -113,10 +113,11 @@ void polya_negloglike::compute_value(const AbsDistMat& predictions,
     local_lgammaAlphaSums(0, col) = lgammaAlphaSum;
     local_lgammaAlphaLevelCountSums(0, col) = lgammaAlphaLevelCountSum;
   }
-  El::AllReduce(*counts, counts->RedundantComm(), El::mpi::SUM); 
-  El::AllReduce(*alphaSums, alphaSums->RedundantComm(), El::mpi::SUM);
-  El::AllReduce(*lgammaAlphaSums, lgammaAlphaSums->RedundantComm(), El::mpi::SUM); 
-  El::AllReduce(*lgammaAlphaLevelCountSums, lgammaAlphaLevelCountSums->RedundantComm(), El::mpi::SUM); 
+  lbann_comm *comm = m_objective_function->get_model()->get_comm();
+  comm->allreduce(*counts, counts->RedundantComm(), El::mpi::SUM); 
+  comm->allreduce(*alphaSums, alphaSums->RedundantComm(), El::mpi::SUM);
+  comm->allreduce(*lgammaAlphaSums, lgammaAlphaSums->RedundantComm(), El::mpi::SUM); 
+  comm->allreduce(*lgammaAlphaLevelCountSums, lgammaAlphaLevelCountSums->RedundantComm(), El::mpi::SUM); 
  
   // Compute total negative log-likelihood of Polya distribution across mini-batch.
   double sum_polya_negloglike = 0;
@@ -126,7 +127,7 @@ void polya_negloglike::compute_value(const AbsDistMat& predictions,
   }
 
   double mean_polya_negloglike = sum_polya_negloglike / width;
-  mean_polya_negloglike = El::mpi::AllReduce(mean_polya_negloglike,
+  mean_polya_negloglike = comm->allreduce(mean_polya_negloglike,
                                           predictions.DistComm());
 
   // Update objective function value
@@ -198,8 +199,9 @@ void polya_negloglike::compute_gradient(const AbsDistMat& predictions,
     local_counts(0, col) = count; 
     local_alphaSums(0, col) = alphaSum;
   }
-  El::AllReduce(*counts, counts->RedundantComm(), El::mpi::SUM); 
-  El::AllReduce(*alphaSums, alphaSums->RedundantComm(), El::mpi::SUM);
+  lbann_comm *comm = m_objective_function->get_model()->get_comm();
+  comm->allreduce(*counts, counts->RedundantComm(), El::mpi::SUM); 
+  comm->allreduce(*alphaSums, alphaSums->RedundantComm(), El::mpi::SUM);
 
   // Compute gradient
   El::IndexDependentFill(gradient_local,

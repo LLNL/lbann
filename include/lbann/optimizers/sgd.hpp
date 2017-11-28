@@ -41,7 +41,8 @@ class sgd : public optimizer {
  public:
 
   /** Constructor. */
-  sgd(DataType learning_rate,
+  sgd(lbann_comm *comm,
+      DataType learning_rate,
       DataType momentum = DataType(0),
       bool nesterov = false);
 

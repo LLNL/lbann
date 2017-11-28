@@ -933,7 +933,7 @@ class base_convolution_layer : public learning {
                m_conv_pads.data(),
                &m_kernel_dims[2],
                m_conv_strides.data());
-        El::Gemm(NORMAL, NORMAL,
+        El::Gemm(El::NORMAL, El::NORMAL,
                  DataType(1), im2col_matrix, prev_activations_col,
                  DataType(1), kernel_weights_gradient_local);
       }
@@ -949,7 +949,7 @@ class base_convolution_layer : public learning {
                m_conv_pads.data(),
                &m_kernel_dims[2],
                m_conv_strides.data());
-        El::Gemm(NORMAL, NORMAL,
+        El::Gemm(El::NORMAL, El::NORMAL,
                  DataType(1), im2col_matrix, prev_error_signal_col,
                  DataType(1), kernel_weights_gradient_local);
       }

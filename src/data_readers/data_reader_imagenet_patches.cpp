@@ -244,7 +244,7 @@ int imagenet_reader_patches::fetch_data(std::vector<::Mat>& X) {
       m_indices_fetched_per_mb.Set(s, 0, index);
     } catch (lbann_exception& e) {
       lbann_report_exception(e);
-    } catch (exception& e) {
+    } catch (std::exception& e) {
       El::ReportException(e);
     }
   }

@@ -33,21 +33,22 @@
 
 namespace lbann {
 
-hypergradient_adam::hypergradient_adam(DataType init_learning_rate,
+hypergradient_adam::hypergradient_adam(lbann_comm *comm,
+                                       DataType init_learning_rate,
                                        DataType hyper_learning_rate,
                                        DataType beta1,
                                        DataType beta2,
                                        DataType eps)
- : optimizer(init_learning_rate),
-   m_hyper_learning_rate(hyper_learning_rate),
-   m_beta1(beta1),
-   m_beta2(beta2),
-   m_eps(eps),
-   m_current_beta1(1),
-   m_current_beta2(1),
-   m_moment1(nullptr),
-   m_moment2(nullptr),
-   m_old_gradient(nullptr) {}
+  : optimizer(comm, init_learning_rate),
+    m_hyper_learning_rate(hyper_learning_rate),
+    m_beta1(beta1),
+    m_beta2(beta2),
+    m_eps(eps),
+    m_current_beta1(1),
+    m_current_beta2(1),
+    m_moment1(nullptr),
+    m_moment2(nullptr),
+    m_old_gradient(nullptr) {}
 
 hypergradient_adam::hypergradient_adam(const hypergradient_adam& other)
   : optimizer(other),

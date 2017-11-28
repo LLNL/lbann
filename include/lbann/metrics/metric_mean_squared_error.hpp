@@ -73,7 +73,7 @@ class mean_squared_error : public metric {
       }
     }
     mse /= height * width;
-    mse = El::mpi::AllReduce(mse, predictions_v.DistComm());
+    mse = m_comm->allreduce(mse, predictions_v.DistComm());
     return mse;
 
   }
@@ -83,7 +83,6 @@ class mean_squared_error : public metric {
     double error_per_epoch = stats->m_error_per_epoch;
     long iterations_per_epoch = stats->m_iterations_per_epoch;
     double mse = error_per_epoch / iterations_per_epoch;
-    string score = std::to_string(mse);
 
     return mse;
   }
@@ -93,7 +92,6 @@ class mean_squared_error : public metric {
     long total_num_samples = stats->m_total_num_samples;
 
     double mse = total_error / total_num_samples;
-    string score = std::to_string(mse);
 
     return mse;
   }
