@@ -59,6 +59,14 @@ adam::adam(const adam& other)
     m_moment2(other.m_moment2) {
   if (m_moment1 != nullptr) { m_moment1 = m_moment1->Copy(); }
   if (m_moment2 != nullptr) { m_moment2 = m_moment2->Copy(); }
+  #ifdef __LIB_CUDNN
+  if (m_cudnn != nullptr && other.m_weights != nullptr) {
+    const int height = other.m_weights->get_height();
+    const int width = other.m_weights->get_width();
+    m_moment1_d = m_cudnn->copy(other.m_moment1_d, height, width);
+    m_moment2_d = m_cudnn->copy(other.m_moment2_d, height, width);
+  }
+  #endif // __LIB_CUDNN
 }
 
 adam& adam::operator=(const adam& other) {
@@ -89,12 +97,30 @@ adam& adam::operator=(const adam& other) {
     if (m_moment2 != nullptr) { m_moment2 = m_moment2->Copy(); }
   }
 
+  // Copy GPU data
+  #ifdef __LIB_CUDNN
+  if (m_cudnn != nullptr && other.m_weights != nullptr) {
+    const int height = other.m_weights->get_height();
+    const int width = other.m_weights->get_width();
+    m_cudnn->deallocate_on_gpus(m_moment1_d);
+    m_cudnn->deallocate_on_gpus(m_moment2_d);
+    m_moment1_d = m_cudnn->copy(other.m_moment1_d, height, width);
+    m_moment2_d = m_cudnn->copy(other.m_moment2_d, height, width);
+  }
+  #endif // __LIB_CUDNN
+
   return *this;
 }
 
 adam::~adam() {
   if(m_moment1 != nullptr) { delete m_moment1; }
   if(m_moment2 != nullptr) { delete m_moment2; }
+  #ifdef __LIB_CUDNN
+  if (m_cudnn != nullptr) {
+    m_cudnn->deallocate_on_gpus(m_moment1_d);
+    m_cudnn->deallocate_on_gpus(m_moment2_d);
+  }
+  #endif // __LIB_CUDNN
 }
 
 std::string adam::get_description() const {
@@ -108,12 +134,24 @@ std::string adam::get_description() const {
 
 void adam::setup(weights& w) {
   optimizer::setup(w);
+
+  const int height = m_gradient->Height();
+  const int width = m_gradient->Width();
+
   m_moment1 = m_gradient->Construct(m_gradient->Grid(),
                                     m_gradient->Root());
   m_moment2 = m_gradient->Construct(m_gradient->Grid(),
                                     m_gradient->Root());
-  El::Zeros(*m_moment1, m_gradient->Height(), m_gradient->Width());
-  El::Zeros(*m_moment2, m_gradient->Height(), m_gradient->Width());
+  El::Zeros(*m_moment1, height, width);
+  El::Zeros(*m_moment2, height, width);
+  
+  if (m_cudnn != nullptr) {
+#ifdef __LIB_CUDNN
+    m_cudnn->allocate_on_gpus(m_moment1_d, height, width);
+    m_cudnn->allocate_on_gpus(m_moment2_d, height, width);
+#endif // __LIB_CUDNN
+  }
+
 }
 
 void adam::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {

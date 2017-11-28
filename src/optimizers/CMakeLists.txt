@@ -9,6 +9,6 @@ add_sources(
 
 if(LBANN_HAS_CUDA)
   add_sources(
-#    adam.cu
+    adam.cu
   )
 endif()
