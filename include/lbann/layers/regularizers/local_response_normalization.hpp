@@ -191,7 +191,7 @@ class local_response_normalization_layer : public regularizer_layer {
                                               CUDNN_LRN_CROSS_CHANNEL_DIM1,
                                               &one,
                                               this->m_prev_neurons_cudnn_desc,
-                                              this->m_prev_activations_d[i],
+                                              this->m_prev_activations_dv[i],
                                               &zero,
                                               this->m_neurons_cudnn_desc,
                                               this->m_activations_d[i]));
@@ -225,9 +225,9 @@ class local_response_normalization_layer : public regularizer_layer {
                                                this->m_neurons_cudnn_desc,
                                                this->m_activations_d[i],
                                                this->m_neurons_cudnn_desc,
-                                               this->m_prev_error_signal_d[i],
+                                               this->m_prev_error_signal_dv[i],
                                                this->m_prev_neurons_cudnn_desc,
-                                               this->m_prev_activations_d[i],
+                                               this->m_prev_activations_dv[i],
                                                &zero,
                                                this->m_prev_neurons_cudnn_desc,
                                                this->m_error_signal_d[i]));
@@ -240,7 +240,7 @@ class local_response_normalization_layer : public regularizer_layer {
   void fp_compute_cpu() {
 
     // Get local matrices
-    const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
+    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
     Mat& activations_local = this->m_activations_v->Matrix();
 
     // Get matrix buffers
@@ -325,9 +325,9 @@ class local_response_normalization_layer : public regularizer_layer {
   void bp_compute_cpu() {
 
     // Get local matrices
-    const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
+    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
     const Mat& activations_local = this->m_activations_v->LockedMatrix();
-    const Mat& prev_error_signal_local = this->m_prev_error_signal->LockedMatrix();
+    const Mat& prev_error_signal_local = this->m_prev_error_signal_v->LockedMatrix();
     Mat& error_signal_local = this->m_error_signal_v->Matrix();
 
     // Get matrix buffers

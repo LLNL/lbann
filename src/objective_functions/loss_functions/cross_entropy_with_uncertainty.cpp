@@ -88,11 +88,13 @@ void cross_entropy_with_uncertainty::compute_value(const AbsDistMat& predictions
     } 
     local_workspace(0, col) = pred_sum;  
   }
-  El::AllReduce(*workspace, workspace->RedundantComm(), El::mpi::SUM);
+  m_objective_function->get_model()->get_comm()->allreduce(
+    *workspace, workspace->RedundantComm());
 
   double sum_cross_entropy = 0.0;
   for (int i = 0; i < local_width; i++) sum_cross_entropy -= std::log(local_workspace(0, i));
-  sum_cross_entropy = El::mpi::AllReduce(sum_cross_entropy, workspace->DistComm());
+  sum_cross_entropy = m_objective_function->get_model()->get_comm()->allreduce(
+    sum_cross_entropy, workspace->DistComm());
 
   // Update objective function value
   add_to_value(sum_cross_entropy/width);
@@ -138,7 +140,8 @@ void cross_entropy_with_uncertainty::compute_gradient(const AbsDistMat& predicti
     } 
     local_workspace(0, col) = pred_sum;  
   }
-  El::AllReduce(*workspace, workspace->RedundantComm(), El::mpi::SUM);
+  m_objective_function->get_model()->get_comm()->allreduce(
+    *workspace, workspace->RedundantComm());
 
   Mat& gradient_local = gradient.Matrix();
 

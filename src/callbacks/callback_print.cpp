@@ -37,7 +37,7 @@ void lbann_callback_print::setup(model *m) {
   lbann_comm *comm = m->get_comm();
   if (comm->am_world_master()) {
     std::cout << "Training with LLNL LBANN version "
-              << LBANN_MAKE_STR(LBANN_VERSION) << endl;
+              << LBANN_MAKE_STR(LBANN_VERSION) << std::endl;
   }
 #endif
 }

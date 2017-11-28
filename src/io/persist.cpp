@@ -43,9 +43,6 @@
 #include "El.h"
 #include "mpi.h"
 
-using namespace std;
-using namespace El;
-
 /****************************************************
  * These functions will save a libElemental matrix
  * using a file-per-process
@@ -86,14 +83,14 @@ bool lbann::writeDist(int fd, const char *filename, const DistMat& M, uint64_t *
   *bytes += write_rc;
 
   // now write the data for our part of the distributed matrix
-  const Int localHeight = M.LocalHeight();
-  const Int localWidth = M.LocalWidth();
-  const Int lDim = M.LDim();
+  const El::Int localHeight = M.LocalHeight();
+  const El::Int localWidth = M.LocalWidth();
+  const El::Int lDim = M.LDim();
   if(localHeight == lDim) {
     // the local dimension in memory matches the local height,
     // so we can write our data in a single shot
     void *buf = (void *) M.LockedBuffer();
-    Int bufsize = localHeight * localWidth * sizeof(DataType);
+    El::Int bufsize = localHeight * localWidth * sizeof(DataType);
     write_rc = write(fd, buf, bufsize);
     if (write_rc != bufsize) {
       // error!
@@ -103,9 +100,9 @@ bool lbann::writeDist(int fd, const char *filename, const DistMat& M, uint64_t *
     // TODO: if this padding is small, may not be a big deal to write it out anyway
     // we've got some padding along the first dimension
     // while storing the matrix in memory, avoid writing the padding
-    for(Int j = 0; j < localWidth; ++j) {
+    for(El::Int j = 0; j < localWidth; ++j) {
       void *buf = (void *) M.LockedBuffer(0, j);
-      Int bufsize = localHeight * sizeof(DataType);
+      El::Int bufsize = localHeight * sizeof(DataType);
       write_rc = write(fd, buf, bufsize);
       if (write_rc != bufsize) {
         // error!
@@ -130,8 +127,8 @@ bool lbann::readDist(int fd, const char *filename, DistMat& M, uint64_t *bytes) 
   *bytes += read_rc;
 
   // resize our global matrix
-  Int height = header.height;
-  Int width  = header.width;
+  El::Int height = header.height;
+  El::Int width  = header.width;
   M.Resize(height, width);
 
   // TODO: check that header values match up
@@ -139,7 +136,7 @@ bool lbann::readDist(int fd, const char *filename, DistMat& M, uint64_t *bytes) 
   if(M.ColStride() == 1 && M.RowStride() == 1) {
     if(M.Height() == M.LDim()) {
       void *buf = (void *) M.Buffer();
-      Int bufsize = height * width * sizeof(DataType);
+      El::Int bufsize = height * width * sizeof(DataType);
       read_rc = read(fd, buf, bufsize);
       if (read_rc != bufsize) {
         // error!
@@ -147,9 +144,9 @@ bool lbann::readDist(int fd, const char *filename, DistMat& M, uint64_t *bytes) 
       }
       *bytes += read_rc;
     } else {
-      for(Int j = 0; j < width; ++j) {
+      for(El::Int j = 0; j < width; ++j) {
         void *buf = (void *) M.Buffer(0, j);
-        Int bufsize = height * sizeof(DataType);
+        El::Int bufsize = height * sizeof(DataType);
         read_rc = read(fd, buf, bufsize);
         if (read_rc != bufsize) {
           // error!
@@ -159,12 +156,12 @@ bool lbann::readDist(int fd, const char *filename, DistMat& M, uint64_t *bytes) 
       }
     }
   } else {
-    const Int localHeight = M.LocalHeight();
-    const Int localWidth = M.LocalWidth();
-    const Int lDim = M.LDim();
+    const El::Int localHeight = M.LocalHeight();
+    const El::Int localWidth = M.LocalWidth();
+    const El::Int lDim = M.LDim();
     if(localHeight == lDim) {
       void *buf = (void *) M.Buffer();
-      Int bufsize = localHeight * localWidth * sizeof(DataType);
+      El::Int bufsize = localHeight * localWidth * sizeof(DataType);
       read_rc = read(fd, buf, bufsize);
       if (read_rc != bufsize) {
         // error!
@@ -172,9 +169,9 @@ bool lbann::readDist(int fd, const char *filename, DistMat& M, uint64_t *bytes) 
       }
       *bytes += read_rc;
     } else {
-      for(Int jLoc = 0; jLoc < localWidth; ++jLoc) {
+      for(El::Int jLoc = 0; jLoc < localWidth; ++jLoc) {
         void *buf = (void *) M.Buffer(0, jLoc);
-        Int bufsize = localHeight * sizeof(DataType);
+        El::Int bufsize = localHeight * sizeof(DataType);
         read_rc = read(fd, buf, bufsize);
         if (read_rc != bufsize) {
           // error!
@@ -295,7 +292,7 @@ bool lbann::persist::write_distmat(persist_type type, const char *name, DistMat 
     throw lbann_exception("persist: invalid persist_type");
   }
 
-  Write(*M, filename, BINARY, "");
+  Write(*M, filename, El::BINARY, "");
   //Write_MPI(M, filename, BINARY, "");
 
   uint64_t bytes = 2 * sizeof(int) + M->Height() * M->Width() * sizeof(DataType);
@@ -322,7 +319,7 @@ bool lbann::persist::read_distmat(persist_type type, const char *name, DistMat *
     return false;
   }
 
-  Read(*M, filename, BINARY, 1);
+  Read(*M, filename, El::BINARY, 1);
   //Read_MPI(M, filename, BINARY, 1);
 
   uint64_t bytes = 2 * sizeof(int) + M->Height() * M->Width() * sizeof(DataType);
@@ -414,7 +411,7 @@ int lbann::persist::get_fd(persist_type type) const {
  ****************************************************/
 
 bool lbann::write_distmat(int fd, const char *name, DistMat *M, uint64_t *bytes) {
-  Write(*M, name, BINARY, "");
+  Write(*M, name, El::BINARY, "");
   //Write_MPI(M, name, BINARY, "");
 
   uint64_t bytes_written = 2 * sizeof(int) + M->Height() * M->Width() * sizeof(DataType);
@@ -431,7 +428,7 @@ bool lbann::read_distmat(int fd, const char *name, DistMat *M, uint64_t *bytes) 
     return false;
   }
 
-  Read(*M, name, BINARY, 1);
+  Read(*M, name, El::BINARY, 1);
   //Read_MPI(M, name, BINARY, 1);
 
   uint64_t bytes_read = 2 * sizeof(int) + M->Height() * M->Width() * sizeof(DataType);

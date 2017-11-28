@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
     }
    
     lbann_data::LbannPB pb;
-    string prototext_model_fn;
+    std::string prototext_model_fn;
     if (opts->has_string("model")) {
       prototext_model_fn = opts->get_string("model");
     } else if (opts->has_string("loadme")) {
@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (opts->has_string("optimizer")) {
-      string prototext_opt_fn;
+      std::string prototext_opt_fn;
       lbann_data::LbannPB pb_optimizer;
       read_prototext_file(opts->get_string("optimizer").c_str(), pb_optimizer, master);
       pb.MergeFrom(pb_optimizer);
@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
       err << __FILE__ << " " << __LINE__ << " :: model does not provide a valid block size: " << pb_model->block_size();
       throw lbann_exception(err.str());
     }
-    SetBlocksize(pb_model->block_size());
+    El::SetBlocksize(pb_model->block_size());
 
     // Change random seed if needed.
     if (pb_model->random_seed() > 0) {
@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
 #if __LIB_CUDNN
     if (pb_model->use_cudnn()) {
       if (master) {
-        cerr << "code was compiled with __LIB_CUDNN, and we are using cudnn\n";
+        std::cerr << "code was compiled with __LIB_CUDNN, and we are using cudnn\n";
       }
       if(pb_model->use_nccl()) {
         cudnn = new cudnn::cudnn_manager(comm, pb_model->num_gpus(), true);
@@ -170,12 +170,12 @@ int main(int argc, char *argv[]) {
       }
     } else {
       if (master) {
-        cerr << "code was compiled with __LIB_CUDNN, but we are NOT USING cudnn\n";
+        std::cerr << "code was compiled with __LIB_CUDNN, but we are NOT USING cudnn\n";
       }
     }
 #else
     if (master) {
-      cerr << "code was NOT compiled with __LIB_CUDNN\n";
+      std::cerr << "code was NOT compiled with __LIB_CUDNN\n";
     }
 #endif
 
@@ -224,9 +224,14 @@ int main(int argc, char *argv[]) {
         std::cout << "No optimizer";
       }
       std::cout << std::endl << std::endl;
+      std::cout << "Callbacks:" << std::endl;
+      for (lbann_callback *cb : model->get_callbacks()) {
+        std::cout << cb->name() << std::endl;
+      }
+      std::cout << std::endl;
       std::vector<Layer *>& layers = model->get_layers();
       for (size_t h=0; h<layers.size(); h++) {
-        std::cout << h << " " << layers[h]->get_description() << endl;
+        std::cout << h << " " << layers[h]->get_description() << std::endl;
       }
     }
 
@@ -267,8 +272,8 @@ int main(int argc, char *argv[]) {
 
   } catch (lbann_exception& e) {
     lbann_report_exception(e, comm);
-  } catch (exception& e) {
-    ReportException(e);  /// Elemental exceptions
+  } catch (std::exception& e) {
+    El::ReportException(e);  // Elemental exceptions
   }
 
   // free all resources by El and MPI

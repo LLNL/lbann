@@ -57,7 +57,8 @@ void geom_negloglike::compute_value(const AbsDistMat& predictions,
   
   // Compute Geometric negative log-likelihood error
   double geom_nll = sum / width;
-  geom_nll = El::mpi::AllReduce(geom_nll, predictions.DistComm());
+  geom_nll = m_objective_function->get_model()->get_comm()->allreduce(
+    geom_nll, predictions.DistComm());
 
   // Update objective function value
   add_to_value(geom_nll);

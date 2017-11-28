@@ -75,11 +75,11 @@ void lbann_callback_checksmall::on_batch_end(model *m) {
 
 bool lbann_callback_checksmall::is_good(const AbsDistMat& m) {
   const Mat& local_mat = m.LockedMatrix();
-  const Int height = local_mat.Height();
-  const Int width = local_mat.Width();
-  for (Int col = 0; col < width; ++col) {
-    for (Int row = 0; row < height; ++row) {
-      const DataType val = Abs(local_mat(row, col));
+  const El::Int height = local_mat.Height();
+  const El::Int width = local_mat.Width();
+  for (El::Int col = 0; col < width; ++col) {
+    for (El::Int row = 0; row < height; ++row) {
+      const DataType val = std::abs(local_mat(row, col));
       if (val > 0 && val <= m_threshold) {
         std::cout << "Found small value " << val << " "
                   << "at (" << row << "," << col << ")!" << std::endl;

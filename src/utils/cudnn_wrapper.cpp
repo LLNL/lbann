@@ -176,8 +176,24 @@ void cudnn_manager::cudnn_manager::allocate_on_gpus(std::vector<DataType *>& gpu
   for(int i=0; i<m_num_gpus; ++i) {
     if(height*width_per_gpu > 0) {
       FORCE_CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-      FORCE_CHECK_CUDA(cudaMalloc((void **) &gpu_data[i],
-                                  height*width_per_gpu*sizeof(DataType)));
+      size_t size = height*width_per_gpu*sizeof(DataType);
+      cudaError_t status = cudaMalloc((void **) &gpu_data[i], size);
+
+      // Check that allocation is successful
+      if(status == cudaErrorMemoryAllocation) {
+        size_t free_memory, total_memory;
+        CHECK_CUDA(cudaMemGetInfo(&free_memory, &total_memory));
+        std::stringstream err;
+        err << __FILE__ << " " << __LINE__ << " :: "
+            << "could not allocate GPU memory on GPU " << m_gpus[i] << " "
+            << "(" << size << " bytes requested, "
+            << free_memory << " bytes available, "
+            << total_memory << " bytes total)";
+        throw lbann_exception(err.str());
+      } else {
+        FORCE_CHECK_CUDA(status);
+      }
+
     }
 
   }
@@ -302,8 +318,10 @@ void cudnn_manager::cudnn_manager::clear_on_gpus(std::vector<DataType *>& gpu_da
                                                  int height,
                                                  int width_per_gpu,
                                                  int leading_dim) {
-  for(int i=0; i<m_num_gpus; ++i) {
-    clear_on_gpu(i, gpu_data[i], height, width_per_gpu, leading_dim);
+  if(!gpu_data.empty()) {
+    for(int i=0; i<m_num_gpus; ++i) {
+      clear_on_gpu(i, gpu_data[i], height, width_per_gpu, leading_dim);
+    }
   }
 }
 
@@ -312,16 +330,18 @@ void cudnn_manager::cudnn_manager::clear_unused_columns_on_gpus(std::vector<Data
                                                                 int width,
                                                                 int width_per_gpu,
                                                                 int leading_dim) {
-  leading_dim = std::max(leading_dim, height);
-  for(int i=0; i<m_num_gpus; ++i) {
-    const int first_pos = std::min(i * width_per_gpu, width);
-    const int last_pos = std::min((i+1) * width_per_gpu, width);
-    const int current_width = last_pos - first_pos;
-    clear_on_gpu(i,
-                 gpu_data[i] + leading_dim * current_width,
-                 height,
-                 width_per_gpu - current_width,
-                 leading_dim);
+  if(!gpu_data.empty()) {
+    leading_dim = std::max(leading_dim, height);
+    for(int i=0; i<m_num_gpus; ++i) {
+      const int first_pos = std::min(i * width_per_gpu, width);
+      const int last_pos = std::min((i+1) * width_per_gpu, width);
+      const int current_width = last_pos - first_pos;
+      clear_on_gpu(i,
+                   gpu_data[i] + leading_dim * current_width,
+                   height,
+                   width_per_gpu - current_width,
+                   leading_dim);
+    }
   }
 }
 
@@ -331,6 +351,11 @@ void cudnn_manager::cudnn_manager::copy_on_gpus(std::vector<DataType *>& gpu_dst
                                                 int width_per_gpu,
                                                 int src_leading_dim,
                                                 int dst_leading_dim) {
+
+  // Check inputs
+  if (gpu_dst_data.empty() || gpu_src_data.empty()) {
+    throw lbann_exception("cudnn_wrapper: attempted to copy on GPUs before allocating GPU memory");
+  }
 
   // Default leading dimension
   src_leading_dim = std::max(src_leading_dim, height);
@@ -355,6 +380,11 @@ void cudnn_manager::cudnn_manager::scatter_to_gpus(std::vector<DataType *>& gpu_
                                                    const Mat& cpu_data,
                                                    int width_per_gpu,
                                                    int gpu_data_leading_dim) {
+
+  // Check inputs
+  if (gpu_data.empty()) {
+    throw lbann_exception("cudnn_wrapper: attempted to scatter to GPUs before allocating GPU memory");
+  }
 
   // Get matrix properties
   const int height = cpu_data.Height();
@@ -382,6 +412,12 @@ void cudnn_manager::cudnn_manager::gather_from_gpus(Mat& cpu_data,
                                                     const std::vector<DataType *>& gpu_data,
                                                     int width_per_gpu,
                                                     int gpu_data_leading_dim) {
+
+  // Check inputs
+  if (gpu_data.empty()) {
+    throw lbann_exception("cudnn_wrapper: attempted to gather from GPUs before allocating GPU memory");
+  }
+
   const int width = cpu_data.Width();
   for(int i=0; i<m_num_gpus; ++i) {
     const int first_pos = std::min(i * width_per_gpu, width);
@@ -394,6 +430,9 @@ void cudnn_manager::cudnn_manager::gather_from_gpus(Mat& cpu_data,
 void cudnn_manager::cudnn_manager::broadcast_to_gpus(std::vector<DataType *>& gpu_data,
                                                      const Mat& cpu_data,
                                                      int gpu_data_leading_dim) {
+  if (gpu_data.empty()) {
+    throw lbann_exception("cudnn_wrapper: attempted to broadcast to GPUs before allocating GPU memory");
+  }
   for(int i=0; i<m_num_gpus; ++i) {
     copy_to_gpu(i, gpu_data[i], cpu_data, gpu_data_leading_dim);
   }

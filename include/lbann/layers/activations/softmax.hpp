@@ -156,7 +156,7 @@ class softmax_layer : public activation_layer {
   }  
 
   void fp_set_std_matrix_view() override {
-    Int cur_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
+    El::Int cur_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
     Layer::fp_set_std_matrix_view();
     El::View(*m_workspace_v, *m_workspace, El::ALL, El::IR(0, cur_mini_batch_size));
   }
@@ -173,10 +173,10 @@ class softmax_layer : public activation_layer {
 
     // Get local matrices and parameters
     Mat& workspace_local = m_workspace_v->Matrix();
-    const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
+    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
     Mat& activations_local = this->m_activations_v->Matrix();
-    const Int local_height = activations_local.Height();
-    const Int local_width = activations_local.Width();
+    const El::Int local_height = activations_local.Height();
+    const El::Int local_width = activations_local.Width();
 
     // Find maximum entry in each column
     #pragma omp parallel for
@@ -187,7 +187,8 @@ class softmax_layer : public activation_layer {
       }
       workspace_local(0, col) = max_entry;
     }
-    El::AllReduce(*m_workspace_v, m_workspace_v->RedundantComm(), El::mpi::MAX);
+    m_comm->allreduce(*m_workspace_v, m_workspace_v->RedundantComm(),
+                      El::mpi::MAX);
 
     // Exponentiate activations and compute column sums
     // Note: Subtracting by the column max prevents activations from
@@ -204,7 +205,7 @@ class softmax_layer : public activation_layer {
       }
       workspace_local(0, col) = sum;
     }
-    El::AllReduce(*m_workspace_v, m_workspace_v->RedundantComm(), El::mpi::SUM);
+    m_comm->allreduce(*m_workspace_v, m_workspace_v->RedundantComm());
 
     // Divide activations by column sums
     // Note: Small values are rounded to minimum output value to avoid
@@ -243,7 +244,7 @@ class softmax_layer : public activation_layer {
       int width = this->m_mini_batch_size_per_gpu;
       softmax_cuda::bp_compute_cross_entropy_shortcut(*this->m_cudnn,
                                                       this->m_activations_d,
-                                                      this->m_prev_error_signal_d,
+                                                      this->m_prev_error_signal_dv,
                                                       this->m_error_signal_d,
                                                       height, width,
                                                       m_min_output);
@@ -258,7 +259,7 @@ class softmax_layer : public activation_layer {
   void bp_compute_cross_entropy_shortcut_cpu() {  
     // Get local matrices and parameters
     const Mat& activations_local = this->m_activations_v->LockedMatrix();
-    const Mat& prev_error_signal_local = this->m_prev_error_signal->Matrix();
+    const Mat& prev_error_signal_local = this->m_prev_error_signal_v->Matrix();
     Mat& error_signal_local = this->m_error_signal_v->Matrix();
 
     El::IndexDependentFill(error_signal_local,
@@ -284,7 +285,7 @@ class softmax_layer : public activation_layer {
 
   virtual void bp_compute_cpu() {
     const Mat& activations_local = this->m_activations_v->LockedMatrix();
-    const Mat& prev_error_signal_local = this->m_prev_error_signal->Matrix();
+    const Mat& prev_error_signal_local = this->m_prev_error_signal_v->Matrix();
     Mat& error_signal_local = this->m_error_signal_v->Matrix();
     Mat& workspace_local = m_workspace_v->Matrix();
     const El::Int local_width = activations_local.Width();
@@ -295,7 +296,7 @@ class softmax_layer : public activation_layer {
       workspace_local(0, c) = El::Dot(prev_error_signal_local(El::ALL,El::IR(c)),
                                       activations_local(El::ALL,El::IR(c)));
     }
-    El::AllReduce(*m_workspace_v, m_workspace_v->RedundantComm(), El::mpi::SUM);
+    m_comm->allreduce(*m_workspace_v, m_workspace_v->RedundantComm());
 
     // Update error signal
     // Note: error_signal := activations * (prev_error_signal - prev_error_signal^T activations)
@@ -305,7 +306,7 @@ class softmax_layer : public activation_layer {
                             (El::Int r, El::Int c)->DataType {
                              const DataType activations_entry = activations_local(r,c);
                              const DataType prev_error_signal_entry = prev_error_signal_local(r,c);
-                             const DataType dot_product_entry = workspace_local(Int(0),c);
+                             const DataType dot_product_entry = workspace_local(El::Int(0),c);
 #ifdef LBANN_ENABLE_SOFTMAX_CUTOFF                            
                              if(activations_entry > m_min_output) {
                                return activations_entry * (prev_error_signal_entry
@@ -363,7 +364,7 @@ template<> inline void softmax_layer<data_layout::DATA_PARALLEL>::fp_compute_cud
     const DataType zero = 0;
 
     Mat& activations_local = this->m_activations_v->Matrix();
-    const Int local_height = activations_local.Height();
+    const El::Int local_height = activations_local.Height();
     CHECK_CUDNN(cudnnSetTensor4dDescriptor(m_cudnn_desc,
                                            CUDNN_TENSOR_NCHW,
                                            cudnn::get_cudnn_data_type(),                                           
@@ -380,7 +381,7 @@ template<> inline void softmax_layer<data_layout::DATA_PARALLEL>::fp_compute_cud
                                             CUDNN_SOFTMAX_MODE_CHANNEL,
                                             &one,
                                             m_cudnn_desc,
-                                            this->m_prev_activations_d[i],
+                                            this->m_prev_activations_dv[i],
                                             &zero,
                                             m_cudnn_desc,
                                             this->m_activations_d[i]));
@@ -418,7 +419,7 @@ template<> inline void softmax_layer<data_layout::DATA_PARALLEL>::bp_compute_cud
                                              m_cudnn_desc,
                                              this->m_activations_d[i],
                                              m_cudnn_desc,
-                                             this->m_prev_error_signal_d[i],
+                                             this->m_prev_error_signal_dv[i],
                                              &zero,
                                              m_cudnn_desc,
                                              this->m_error_signal_d[i]));

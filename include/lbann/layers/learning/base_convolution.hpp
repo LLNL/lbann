@@ -420,13 +420,13 @@ class base_convolution_layer : public learning {
     if(during_forward_prop) {
       input_cudnn_desc = this->m_prev_neurons_cudnn_desc;
       output_cudnn_desc = this->m_neurons_cudnn_desc;
-      input_d = this->m_prev_activations_d;
+      input_d = this->m_prev_activations_dv;
       output_d = this->m_activations_d;
     }
     else {
       input_cudnn_desc = this->m_neurons_cudnn_desc;
       output_cudnn_desc = this->m_prev_neurons_cudnn_desc;
-      input_d = this->m_prev_error_signal_d;
+      input_d = this->m_prev_error_signal_dv;
       output_d = this->m_error_signal_d;
     }
 
@@ -496,13 +496,13 @@ class base_convolution_layer : public learning {
     if(during_forward_prop) {
       input_cudnn_desc = this->m_prev_neurons_cudnn_desc;
       output_cudnn_desc = this->m_neurons_cudnn_desc;
-      input_d = this->m_prev_activations_d;
+      input_d = this->m_prev_activations_dv;
       output_d = this->m_activations_d;
     }
     else {
       input_cudnn_desc = this->m_neurons_cudnn_desc;
       output_cudnn_desc = this->m_prev_neurons_cudnn_desc;
-      input_d = this->m_prev_error_signal_d;
+      input_d = this->m_prev_error_signal_dv;
       output_d = this->m_error_signal_d;
     }
 
@@ -599,9 +599,9 @@ class base_convolution_layer : public learning {
     const int effective_mini_batch_size = this->m_neural_network_model->get_effective_mini_batch_size();
 
     // Clear unused columns in previous error signal matrix
-    this->m_cudnn->clear_unused_columns_on_gpus(this->m_prev_error_signal_d,
+    this->m_cudnn->clear_unused_columns_on_gpus(this->m_prev_error_signal_dv,
                                                 this->m_num_neurons,
-                                                this->m_prev_error_signal->LocalWidth(),
+                                                this->m_prev_error_signal_v->LocalWidth(),
                                                 this->m_mini_batch_size_per_gpu);
 
 
@@ -616,7 +616,7 @@ class base_convolution_layer : public learning {
         CHECK_CUDNN(cudnnConvolutionBackwardBias(this->m_cudnn->get_handle(i),
                                                  &bias_scale,
                                                  this->m_neurons_cudnn_desc,
-                                                 this->m_prev_error_signal_d[i],
+                                                 this->m_prev_error_signal_dv[i],
                                                  &zero,
                                                  m_bias_cudnn_desc,
                                                  m_bias_weights_gradient_d[i]));
@@ -656,9 +656,9 @@ class base_convolution_layer : public learning {
           CHECK_CUDNN(cudnnConvolutionBackwardFilter(this->m_cudnn->get_handle(i),
                                                      &kernel_scale,
                                                      this->m_neurons_cudnn_desc,
-                                                     this->m_prev_error_signal_d[i],
+                                                     this->m_prev_error_signal_dv[i],
                                                      this->m_prev_neurons_cudnn_desc,
-                                                     this->m_prev_activations_d[i],
+                                                     this->m_prev_activations_dv[i],
                                                      m_convolution_cudnn_desc,
                                                      kernel_gradient_cudnn_algorithm,
                                                      work_space,
@@ -679,9 +679,9 @@ class base_convolution_layer : public learning {
           CHECK_CUDNN(cudnnConvolutionBackwardFilter(this->m_cudnn->get_handle(i),
                                                      &kernel_scale,
                                                      this->m_prev_neurons_cudnn_desc,
-                                                     this->m_prev_activations_d[i],
+                                                     this->m_prev_activations_dv[i],
                                                      this->m_neurons_cudnn_desc,
-                                                     this->m_prev_error_signal_d[i],
+                                                     this->m_prev_error_signal_dv[i],
                                                      m_convolution_cudnn_desc,
                                                      kernel_gradient_cudnn_algorithm,
                                                      work_space,
@@ -709,14 +709,14 @@ class base_convolution_layer : public learning {
     std::vector<int> input_dims, output_dims;
     int output_size;
     if(during_forward_prop) {
-      input = this->m_prev_activations;
+      input = this->m_prev_activations_v;
       output = this->m_activations_v;
       input_dims = this->m_prev_neuron_dims;
       output_dims = this->m_neuron_dims;
       output_size = this->m_num_neurons;
     }
     else {
-      input = this->m_prev_error_signal;
+      input = this->m_prev_error_signal_v;
       output = this->m_error_signal_v;      
       input_dims = this->m_neuron_dims;
       output_dims = this->m_prev_neuron_dims;
@@ -771,14 +771,14 @@ class base_convolution_layer : public learning {
     std::vector<int> input_dims, output_dims;
     int input_size;
     if(during_forward_prop) {
-      input = this->m_prev_activations;
+      input = this->m_prev_activations_v;
       output = this->m_activations_v;
       input_dims = this->m_prev_neuron_dims;
       input_size = this->m_num_prev_neurons;
       output_dims = this->m_neuron_dims;
     }
     else {
-      input = this->m_prev_error_signal;
+      input = this->m_prev_error_signal_v;
       output = this->m_error_signal_v;
       input_dims = this->m_neuron_dims;
       input_size = this->m_num_neurons;
@@ -862,8 +862,8 @@ class base_convolution_layer : public learning {
   void compute_gradients_im2col(bool using_transposed_convolution) {
 
     // Get local matrices
-    const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
-    const Mat& prev_error_signal_local = this->m_prev_error_signal->LockedMatrix();
+    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
+    const Mat& prev_error_signal_local = this->m_prev_error_signal_v->LockedMatrix();
     Mat& kernel_weights_gradient_local = m_kernel_weights_gradient->Matrix();
     Mat& bias_weights_gradient_local = m_bias_weights_gradient->Matrix();
 
@@ -933,7 +933,7 @@ class base_convolution_layer : public learning {
                m_conv_pads.data(),
                &m_kernel_dims[2],
                m_conv_strides.data());
-        El::Gemm(NORMAL, NORMAL,
+        El::Gemm(El::NORMAL, El::NORMAL,
                  DataType(1), im2col_matrix, prev_activations_col,
                  DataType(1), kernel_weights_gradient_local);
       }
@@ -949,7 +949,7 @@ class base_convolution_layer : public learning {
                m_conv_pads.data(),
                &m_kernel_dims[2],
                m_conv_strides.data());
-        El::Gemm(NORMAL, NORMAL,
+        El::Gemm(El::NORMAL, El::NORMAL,
                  DataType(1), im2col_matrix, prev_error_signal_col,
                  DataType(1), kernel_weights_gradient_local);
       }

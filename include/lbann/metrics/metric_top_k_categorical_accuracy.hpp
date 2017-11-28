@@ -99,9 +99,8 @@ class top_k_categorical_accuracy : public metric {
       // appropriate strides.
       std::vector<top_k_ele> global_top_k(
         m_top_k * local_width * col_comm_size);
-      El::mpi::Gather((DataType*) local_top_k.data(), 2*local_top_k.size(),
-                      (DataType*) global_top_k.data(), 2*local_top_k.size(),
-                      0, col_comm);
+      m_comm->gather((DataType*) local_top_k.data(), 2*local_top_k.size(),
+                     (DataType*) global_top_k.data(), col_comm);
       // Compute the global top k elements in each column.
       std::vector<El::Int> global_indices(m_top_k * col_comm_size);
       std::iota(global_indices.begin(), global_indices.end(), 0);
@@ -133,8 +132,8 @@ class top_k_categorical_accuracy : public metric {
         }
       }
     } else {
-      El::mpi::Gather((DataType*) local_top_k.data(), 2*local_top_k.size(),
-                      (DataType*) NULL, 0, 0, col_comm);
+      m_comm->gather((DataType*) local_top_k.data(), 2*local_top_k.size(), 0,
+                     col_comm);
     }
     return this->m_comm->model_allreduce(num_errors);
   }
@@ -146,7 +145,6 @@ class top_k_categorical_accuracy : public metric {
 
     double accuracy = (double)(samples_per_epoch - errors_per_epoch) /
       samples_per_epoch * 100;
-    string score = std::to_string(accuracy);
 
     return accuracy;
   }
@@ -156,7 +154,6 @@ class top_k_categorical_accuracy : public metric {
     long total_num_samples = stats->m_total_num_samples;
 
     double accuracy = (double)(total_num_samples - total_error) / total_num_samples * 100;
-    string score = std::to_string(accuracy);
 
     return accuracy;
   }

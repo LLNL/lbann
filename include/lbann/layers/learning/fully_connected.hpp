@@ -452,7 +452,7 @@ class fully_connected_layer : public learning {
     // Compute bias update if needed
     optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
     if(m_bias_scaling_factor != DataType(0) && bias_optimizer != nullptr) {
-      El::RowSum(this->m_prev_error_signal->LockedMatrix(),
+      El::RowSum(this->m_prev_error_signal_v->LockedMatrix(),
                  m_bias_weights_gradient->Matrix());
       El::Scale(m_bias_scaling_factor /
                 this->m_neural_network_model->get_effective_mini_batch_size(),
@@ -473,8 +473,8 @@ class fully_connected_layer : public learning {
     optimizer* bias_optimizer = m_weights[1]->get_optimizer();
     if(bias_optimizer != nullptr && m_bias_scaling_factor != DataType(0)) {
       fully_connected_cuda::row_sum(*this->m_cudnn,
-                                    m_prev_error_signal_d,
-                                    m_prev_error_signal->Height(),
+                                    m_prev_error_signal_dv,
+                                    m_prev_error_signal_v->Height(),
                                     m_mini_batch_size_per_gpu,
                                     m_bias_scaling_factor / this->m_neural_network_model->get_effective_mini_batch_size(),
                                     m_bias_weights_gradient_d);
@@ -492,9 +492,9 @@ class fully_connected_layer : public learning {
 template<> inline void fully_connected_layer<data_layout::MODEL_PARALLEL>::initialize_distributed_matrices() {
   learning::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>();
   m_matrix_weights_gradient = new DistMat(this->m_comm->get_model_grid());
-  m_bias_weights_gradient = new El::DistMatrix<DataType,MC,STAR>(this->m_comm->get_model_grid());
+  m_bias_weights_gradient = new El::DistMatrix<DataType,El::MC,El::STAR>(this->m_comm->get_model_grid());
   m_matrix_weights_v = new DistMat(this->m_comm->get_model_grid());
-  m_bias_weights_v = new El::DistMatrix<DataType,MC,STAR>(this->m_comm->get_model_grid());
+  m_bias_weights_v = new El::DistMatrix<DataType,El::MC,El::STAR>(this->m_comm->get_model_grid());
 }
 
 template<> inline void fully_connected_layer<data_layout::DATA_PARALLEL>::initialize_distributed_matrices() {
@@ -507,18 +507,18 @@ template<> inline void fully_connected_layer<data_layout::DATA_PARALLEL>::initia
 
 template<> template<device Dev> inline void
 fully_connected_layer<data_layout::MODEL_PARALLEL>::fp_compute_weights() {
-  El::Gemm(NORMAL, NORMAL, DataType(1),
+  El::Gemm(El::NORMAL, El::NORMAL, DataType(1),
            *this->m_matrix_weights_v,
-           *this->m_prev_activations,
+           *this->m_prev_activations_v,
            DataType(0),
            *this->m_activations_v);
 }
 
 template<> template<> inline void
 fully_connected_layer<data_layout::DATA_PARALLEL>::fp_compute_weights<device::CPU>() {
-  El::Gemm(NORMAL, NORMAL, DataType(1),
+  El::Gemm(El::NORMAL, El::NORMAL, DataType(1),
            this->m_matrix_weights_v->LockedMatrix(),
-           this->m_prev_activations->LockedMatrix(),
+           this->m_prev_activations_v->LockedMatrix(),
            DataType(0),
            this->m_activations_v->Matrix());
 }
@@ -539,8 +539,8 @@ fully_connected_layer<data_layout::DATA_PARALLEL>::fp_compute_weights<device::CU
                               DataType(1),
                               matrix_weights_d[i],
                               m_weights[0]->get_height(),
-                              this->m_prev_activations_d[i],
-                              this->m_prev_activations->Height(),
+                              this->m_prev_activations_dv[i],
+                              this->m_prev_activations_v->Height(),
                               DataType(0),
                               this->m_activations_d[i],
                               this->m_activations_v->Height()));
@@ -553,7 +553,7 @@ fully_connected_layer<data_layout::MODEL_PARALLEL>::bp_compute_weights() {
   // Compute the partial delta update for the next lower layer
   El::Gemm(El::TRANSPOSE, El::NORMAL, DataType(1),
            *this->m_matrix_weights_v,
-           *this->m_prev_error_signal,
+           *this->m_prev_error_signal_v,
            DataType(0),
            *this->m_error_signal_v);
 
@@ -562,8 +562,8 @@ fully_connected_layer<data_layout::MODEL_PARALLEL>::bp_compute_weights() {
   if (matrix_optimizer != nullptr) {
     El::Gemm(El::NORMAL, El::TRANSPOSE, DataType(1)/
              this->m_neural_network_model->get_effective_mini_batch_size(),
-             *this->m_prev_error_signal,
-             *this->m_prev_activations,
+             *this->m_prev_error_signal_v,
+             *this->m_prev_activations_v,
              DataType(0),
              *m_matrix_weights_gradient);
     matrix_optimizer->add_to_gradient(*m_matrix_weights_gradient);
@@ -574,7 +574,7 @@ template<> template<> inline void
 fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_weights<device::CPU>() {
   El::Gemm(El::TRANSPOSE, El::NORMAL, DataType(1),
            this->m_matrix_weights_v->LockedMatrix(),
-           this->m_prev_error_signal->LockedMatrix(),
+           this->m_prev_error_signal_v->LockedMatrix(),
            DataType(0),
            this->m_error_signal_v->Matrix());
 
@@ -583,8 +583,8 @@ fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_weights<device::CP
   if (matrix_optimizer != nullptr) {
     El::Gemm(El::NORMAL, El::TRANSPOSE, DataType(1)/
              this->m_neural_network_model->get_effective_mini_batch_size(),
-             this->m_prev_error_signal->LockedMatrix(),
-             this->m_prev_activations->LockedMatrix(),
+             this->m_prev_error_signal_v->LockedMatrix(),
+             this->m_prev_activations_v->LockedMatrix(),
              DataType(0),
              m_matrix_weights_gradient->Matrix());
     matrix_optimizer->allreduce_and_add_to_gradient(*m_matrix_weights_gradient);
@@ -609,8 +609,8 @@ fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_weights<device::CU
                               DataType(1),
                               matrix_weights_d[i],
                               m_weights[0]->get_height(),
-                              this->m_prev_error_signal_d[i],
-                              this->m_prev_error_signal->Height(),
+                              this->m_prev_error_signal_dv[i],
+                              this->m_prev_error_signal_v->Height(),
                               DataType(0),
                               this->m_error_signal_d[i],
                               this->m_error_signal_v->Height()));
@@ -629,10 +629,10 @@ fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_weights<device::CU
                                 m_mini_batch_size_per_gpu,
                                 DataType(1)/
                                 this->m_neural_network_model->get_effective_mini_batch_size(),
-                                this->m_prev_error_signal_d[i],
-                                this->m_prev_error_signal->Height(),
-                                this->m_prev_activations_d[i],
-                                this->m_prev_activations->Height(),
+                                this->m_prev_error_signal_dv[i],
+                                this->m_prev_error_signal_v->Height(),
+                                this->m_prev_activations_dv[i],
+                                this->m_prev_activations_v->Height(),
                                 DataType(0),
                                 this->m_matrix_weights_gradient_d[i],
                                 this->m_matrix_weights_gradient->Height()));

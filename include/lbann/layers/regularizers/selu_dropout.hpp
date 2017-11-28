@@ -101,10 +101,10 @@ class selu_dropout : public regularizer_layer {
     if (this->get_execution_mode() != execution_mode::training ||
         m_keep_prob < 0.0f) {
       // Copy previous activations over.
-      El::Copy(*(this->m_prev_activations), *(this->m_activations_v));
+      El::Copy(*(this->m_prev_activations_v), *(this->m_activations_v));
       return;
     }
-    AbsDistMat *input_acts = this->m_prev_activations;
+    AbsDistMat *input_acts = this->m_prev_activations_v;
     const El::Int local_height = input_acts->LocalHeight();
     const El::Int local_width = input_acts->LocalWidth();
 
@@ -131,11 +131,11 @@ class selu_dropout : public regularizer_layer {
     }
     if (m_keep_prob < 0.0f) {
       // Copy error signal through.
-      El::Copy(*(this->m_prev_error_signal), *(this->m_error_signal_v));
+      El::Copy(*(this->m_prev_error_signal_v), *(this->m_error_signal_v));
       return;
     }
 
-    Mat& local_prev_error_signal = this->m_prev_error_signal->Matrix();
+    Mat& local_prev_error_signal = this->m_prev_error_signal_v->Matrix();
     Mat& local_error_signal = this->m_error_signal_v->Matrix();
     const El::Int local_height = local_prev_error_signal.Height();
     const El::Int local_width = local_prev_error_signal.Width();

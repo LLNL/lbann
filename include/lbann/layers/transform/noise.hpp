@@ -124,7 +124,7 @@ class noise_layer : public transform {
     if(this->m_using_gpus) {
       throw lbann_exception("noise_layer: cuDNN not implemented");
     } else {
-      El::LockedView(*this->m_error_signal_v, *this->m_prev_error_signal);
+      El::LockedView(*this->m_error_signal_v, *this->m_prev_error_signal_v);
     }
   }
 
@@ -133,7 +133,7 @@ class noise_layer : public transform {
   }
 
   void fp_compute_cpu() {
-    El::Copy(*this->m_prev_activations, *this->m_activations_v);
+    El::Copy(*this->m_prev_activations_v, *this->m_activations_v);
     AbsDistMat* noise_mat = this->m_activations_v->Construct(this->m_activations_v->Grid(),
                                                              this->m_activations_v->Root());
     El::Gaussian(*noise_mat, this->m_activations_v->Height(), 
