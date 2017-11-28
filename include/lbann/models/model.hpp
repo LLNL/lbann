@@ -76,6 +76,11 @@ class model {
   /** Register a new callback for the model. */
   void add_callback(lbann_callback *cb);
 
+  /** Get the list of callbacks for the model. */
+  virtual std::vector<lbann_callback*>& get_callbacks() {
+    return m_callbacks;
+  }
+
   /** Register a new metric for the model. */
   void add_metric(metrics::metric *m);
 
