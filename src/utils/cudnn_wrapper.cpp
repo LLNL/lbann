@@ -175,8 +175,24 @@ void cudnn_manager::cudnn_manager::allocate_on_gpus(std::vector<DataType *>& gpu
   for(int i=0; i<m_num_gpus; ++i) {
     if(height*width_per_gpu > 0) {
       FORCE_CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-      FORCE_CHECK_CUDA(cudaMalloc((void **) &gpu_data[i],
-                                  height*width_per_gpu*sizeof(DataType)));
+      size_t size = height*width_per_gpu*sizeof(DataType);
+      cudaError_t status = cudaMalloc((void **) &gpu_data[i], size);
+
+      // Check that allocation is successful
+      if(status == cudaErrorMemoryAllocation) {
+        size_t free_memory, total_memory;
+        CHECK_CUDA(cudaMemGetInfo(&free_memory, &total_memory));
+        std::stringstream err;
+        err << __FILE__ << " " << __LINE__ << " :: "
+            << "could not allocate GPU memory on GPU " << m_gpus[i] << " "
+            << "(" << size << " bytes requested, "
+            << free_memory << " bytes available, "
+            << total_memory << " bytes total)";
+        throw lbann_exception(err.str());
+      } else {
+        FORCE_CHECK_CUDA(status);
+      }
+
     }
 
   }
