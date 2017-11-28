@@ -27,6 +27,10 @@
 #include "lbann/objective_functions/weight_regularization/l2_weight_regularization.hpp"
 #include "lbann/objective_functions/objective_function.hpp"
 #include "lbann/models/model.hpp"
+#ifdef __LIB_CUDNN
+#include "lbann/utils/cublas_wrapper.hpp"
+#endif // __LIB_CUDNN
+
 
 namespace lbann {
 
@@ -56,7 +60,18 @@ DataType l2_weight_regularization::compute_value() {
   if (m_scale_factor == DataType(0)) { return DataType(0); }
   DataType value = DataType(0);
   for (weights* w : m_weights) {
-    DataType norm = El::FrobeniusNorm(w->get_values());
+    DataType norm = 0;
+    cudnn::cudnn_manager* cudnn = w->get_cudnn_manager();
+    if (cudnn != nullptr) {
+#ifdef __LIB_CUDNN
+      CHECK_CUDA(cudaSetDevice(cudnn->get_gpu(0)));
+      norm = cublas::nrm2(cudnn->get_cublas_handle(0),
+                          w->get_height() * w->get_width(),
+                          w->get_values_gpu()[0], 1);
+#endif // __LIB_CUDNN
+    } else {
+      norm = El::FrobeniusNorm(w->get_values());
+    }
     value += norm * norm;
   }
   return m_scale_factor * value;
@@ -66,7 +81,14 @@ void l2_weight_regularization::compute_gradient() {
   if (m_scale_factor == DataType(0)) { return; }
   for (weights* w : m_weights) {
     optimizer* opt = w->get_optimizer();
-    opt->add_to_gradient(w->get_values(), 2 * m_scale_factor);
+    if (w->get_cudnn_manager() != nullptr) {
+#ifdef __LIB_CUDNN
+      std::vector<DataType*> values_d = w->get_values_gpu();
+      opt->add_to_gradient_gpu(values_d, 2 * m_scale_factor);
+#endif // __LIB_CUDNN
+    } else {
+      opt->add_to_gradient(w->get_values(), 2 * m_scale_factor);
+    }
   }
 }
 
