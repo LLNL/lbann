@@ -420,13 +420,13 @@ class base_convolution_layer : public learning {
     if(during_forward_prop) {
       input_cudnn_desc = this->m_prev_neurons_cudnn_desc;
       output_cudnn_desc = this->m_neurons_cudnn_desc;
-      input_d = this->m_prev_activations_d;
+      input_d = this->m_prev_activations_dv;
       output_d = this->m_activations_d;
     }
     else {
       input_cudnn_desc = this->m_neurons_cudnn_desc;
       output_cudnn_desc = this->m_prev_neurons_cudnn_desc;
-      input_d = this->m_prev_error_signal_d;
+      input_d = this->m_prev_error_signal_dv;
       output_d = this->m_error_signal_d;
     }
 
@@ -496,13 +496,13 @@ class base_convolution_layer : public learning {
     if(during_forward_prop) {
       input_cudnn_desc = this->m_prev_neurons_cudnn_desc;
       output_cudnn_desc = this->m_neurons_cudnn_desc;
-      input_d = this->m_prev_activations_d;
+      input_d = this->m_prev_activations_dv;
       output_d = this->m_activations_d;
     }
     else {
       input_cudnn_desc = this->m_neurons_cudnn_desc;
       output_cudnn_desc = this->m_prev_neurons_cudnn_desc;
-      input_d = this->m_prev_error_signal_d;
+      input_d = this->m_prev_error_signal_dv;
       output_d = this->m_error_signal_d;
     }
 
@@ -599,7 +599,7 @@ class base_convolution_layer : public learning {
     const int effective_mini_batch_size = this->m_neural_network_model->get_effective_mini_batch_size();
 
     // Clear unused columns in previous error signal matrix
-    this->m_cudnn->clear_unused_columns_on_gpus(this->m_prev_error_signal_d,
+    this->m_cudnn->clear_unused_columns_on_gpus(this->m_prev_error_signal_dv,
                                                 this->m_num_neurons,
                                                 this->m_prev_error_signal_v->LocalWidth(),
                                                 this->m_mini_batch_size_per_gpu);
@@ -616,7 +616,7 @@ class base_convolution_layer : public learning {
         CHECK_CUDNN(cudnnConvolutionBackwardBias(this->m_cudnn->get_handle(i),
                                                  &bias_scale,
                                                  this->m_neurons_cudnn_desc,
-                                                 this->m_prev_error_signal_d[i],
+                                                 this->m_prev_error_signal_dv[i],
                                                  &zero,
                                                  m_bias_cudnn_desc,
                                                  m_bias_weights_gradient_d[i]));
@@ -656,9 +656,9 @@ class base_convolution_layer : public learning {
           CHECK_CUDNN(cudnnConvolutionBackwardFilter(this->m_cudnn->get_handle(i),
                                                      &kernel_scale,
                                                      this->m_neurons_cudnn_desc,
-                                                     this->m_prev_error_signal_d[i],
+                                                     this->m_prev_error_signal_dv[i],
                                                      this->m_prev_neurons_cudnn_desc,
-                                                     this->m_prev_activations_d[i],
+                                                     this->m_prev_activations_dv[i],
                                                      m_convolution_cudnn_desc,
                                                      kernel_gradient_cudnn_algorithm,
                                                      work_space,
@@ -679,9 +679,9 @@ class base_convolution_layer : public learning {
           CHECK_CUDNN(cudnnConvolutionBackwardFilter(this->m_cudnn->get_handle(i),
                                                      &kernel_scale,
                                                      this->m_prev_neurons_cudnn_desc,
-                                                     this->m_prev_activations_d[i],
+                                                     this->m_prev_activations_dv[i],
                                                      this->m_neurons_cudnn_desc,
-                                                     this->m_prev_error_signal_d[i],
+                                                     this->m_prev_error_signal_dv[i],
                                                      m_convolution_cudnn_desc,
                                                      kernel_gradient_cudnn_algorithm,
                                                      work_space,

@@ -2019,7 +2019,7 @@ model {
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
-      pool_dims_i: 8
+      pool_dims_i: 7
       pool_pads_i: 0
       pool_strides_i: 1
       pool_mode: "average"

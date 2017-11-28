@@ -182,10 +182,22 @@ class Layer {
   /** Get backward propagation output, as seen by previous layer. */
   virtual void get_bp_output(AbsDistMat& fp_output, const Layer* prev_layer = NULL) const;
 #ifdef __LIB_CUDNN
-  /** Get forward propagation output on GPUs, as seen by next layer. */
-  virtual void get_gpu_fp_output(std::vector<DataType*>& fp_output, const Layer* next_layer = NULL) const;
-  /** Get backward propagation output on GPUs, as seen by previous layer. */
-  virtual void get_gpu_bp_output(std::vector<DataType*>& bp_output, const Layer* prev_layer = NULL) const;
+  /** Get forward propagation output on GPUs, as seen by next layer.
+   *  output_dv is a view into GPU memory for the output. If the
+   *  output cannot be represented as a view, the data is copied into
+   *  output_d and output_dv is set as a view into it.
+   */
+  virtual void get_gpu_fp_output(std::vector<DataType*>& output_dv,
+                                 std::vector<DataType*>& output_d,
+                                 const Layer* next_layer = NULL) const;
+  /** Get backward propagation output on GPUs, as seen by previous layer.
+   *  output_dv is a view into GPU memory for the output. If the
+   *  output cannot be represented as a view, the data is copied into
+   *  output_d and output_dv is set as a view into it.
+   */
+  virtual void get_gpu_bp_output(std::vector<DataType*>& output_dv,
+                                 std::vector<DataType*>& output_d,
+                                 const Layer* prev_layer = NULL) const;
 #endif // __LIB_CUDNN
   /** Get forward propagation output dimensions, as seen by next layer. */
   virtual const std::vector<int> fp_output_dims(const Layer* next_layer = NULL) const;
@@ -351,10 +363,14 @@ class Layer {
 
   /** GPU memory for activations from "previous" layer. */
   std::vector<DataType*> m_prev_activations_d;
+  /** View into GPU memory for activations from "previous" layer. */
+  std::vector<DataType*> m_prev_activations_dv;
   /** GPU memory for activations. */
   std::vector<DataType*> m_activations_d;
   /** GPU memory for error signal from "next" layer. */
   std::vector<DataType*> m_prev_error_signal_d;
+  /** View into GPU memory for error signal from "next" layer. */
+  std::vector<DataType*> m_prev_error_signal_dv;
   /** GPU memory for error signal. */
   std::vector<DataType*> m_error_signal_d;
 

@@ -243,7 +243,7 @@ class softmax_layer : public activation_layer {
       int width = this->m_mini_batch_size_per_gpu;
       softmax_cuda::bp_compute_cross_entropy_shortcut(*this->m_cudnn,
                                                       this->m_activations_d,
-                                                      this->m_prev_error_signal_d,
+                                                      this->m_prev_error_signal_dv,
                                                       this->m_error_signal_d,
                                                       height, width,
                                                       m_min_output);
@@ -380,7 +380,7 @@ template<> inline void softmax_layer<data_layout::DATA_PARALLEL>::fp_compute_cud
                                             CUDNN_SOFTMAX_MODE_CHANNEL,
                                             &one,
                                             m_cudnn_desc,
-                                            this->m_prev_activations_d[i],
+                                            this->m_prev_activations_dv[i],
                                             &zero,
                                             m_cudnn_desc,
                                             this->m_activations_d[i]));
@@ -418,7 +418,7 @@ template<> inline void softmax_layer<data_layout::DATA_PARALLEL>::bp_compute_cud
                                              m_cudnn_desc,
                                              this->m_activations_d[i],
                                              m_cudnn_desc,
-                                             this->m_prev_error_signal_d[i],
+                                             this->m_prev_error_signal_dv[i],
                                              &zero,
                                              m_cudnn_desc,
                                              this->m_error_signal_d[i]));

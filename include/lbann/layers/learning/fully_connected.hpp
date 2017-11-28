@@ -473,7 +473,7 @@ class fully_connected_layer : public learning {
     optimizer* bias_optimizer = m_weights[1]->get_optimizer();
     if(bias_optimizer != nullptr && m_bias_scaling_factor != DataType(0)) {
       fully_connected_cuda::row_sum(*this->m_cudnn,
-                                    m_prev_error_signal_d,
+                                    m_prev_error_signal_dv,
                                     m_prev_error_signal_v->Height(),
                                     m_mini_batch_size_per_gpu,
                                     m_bias_scaling_factor / this->m_neural_network_model->get_effective_mini_batch_size(),
@@ -539,7 +539,7 @@ fully_connected_layer<data_layout::DATA_PARALLEL>::fp_compute_weights<device::CU
                               DataType(1),
                               matrix_weights_d[i],
                               m_weights[0]->get_height(),
-                              this->m_prev_activations_d[i],
+                              this->m_prev_activations_dv[i],
                               this->m_prev_activations_v->Height(),
                               DataType(0),
                               this->m_activations_d[i],
@@ -609,7 +609,7 @@ fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_weights<device::CU
                               DataType(1),
                               matrix_weights_d[i],
                               m_weights[0]->get_height(),
-                              this->m_prev_error_signal_d[i],
+                              this->m_prev_error_signal_dv[i],
                               this->m_prev_error_signal_v->Height(),
                               DataType(0),
                               this->m_error_signal_d[i],
@@ -629,9 +629,9 @@ fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_weights<device::CU
                                 m_mini_batch_size_per_gpu,
                                 DataType(1)/
                                 this->m_neural_network_model->get_effective_mini_batch_size(),
-                                this->m_prev_error_signal_d[i],
+                                this->m_prev_error_signal_dv[i],
                                 this->m_prev_error_signal_v->Height(),
-                                this->m_prev_activations_d[i],
+                                this->m_prev_activations_dv[i],
                                 this->m_prev_activations_v->Height(),
                                 DataType(0),
                                 this->m_matrix_weights_gradient_d[i],

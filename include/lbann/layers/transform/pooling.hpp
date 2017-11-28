@@ -286,7 +286,7 @@ class pooling_layer : public transform {
                                       m_pooling_cudnn_desc,
                                       &one,
                                       this->m_prev_neurons_cudnn_desc,
-                                      this->m_prev_activations_d[i],
+                                      this->m_prev_activations_dv[i],
                                       &zero,
                                       this->m_neurons_cudnn_desc,
                                       this->m_activations_d[i]));
@@ -319,9 +319,9 @@ class pooling_layer : public transform {
                                        this->m_neurons_cudnn_desc,
                                        this->m_activations_d[i],
                                        this->m_neurons_cudnn_desc,
-                                       this->m_prev_error_signal_d[i],
+                                       this->m_prev_error_signal_dv[i],
                                        this->m_prev_neurons_cudnn_desc,
-                                       this->m_prev_activations_d[i],
+                                       this->m_prev_activations_dv[i],
                                        &zero,
                                        this->m_prev_neurons_cudnn_desc,
                                        this->m_error_signal_d[i]));

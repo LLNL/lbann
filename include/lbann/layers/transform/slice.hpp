@@ -113,9 +113,6 @@ class slice_layer : public transform {
 
   }
 
-  /// Following function tells this layer is is a fan-out layer
-  bool is_fanout_layer() const override { return true; }
-  
   /** Returns description of ctor params */
   std::string get_description() const override {
     std::stringstream s;
@@ -221,7 +218,7 @@ class slice_layer : public transform {
     throw lbann_exception(err.str());
   #else
     this->m_cudnn->copy_on_gpus(this->m_activations_d,
-                                this->m_prev_activations_d,
+                                this->m_prev_activations_dv,
                                 this->m_num_prev_neurons,
                                 this->m_mini_batch_size_per_gpu);
   #endif // __LIB_CUDNN
@@ -269,21 +266,22 @@ class slice_layer : public transform {
       // Get child error signal on GPUs
       std::vector<DataType*> input;
       if(child_index == 0) {
-        input = this->m_prev_error_signal_d;
+        input = this->m_prev_error_signal_dv;
       }
       else {
-        std::vector<void*> work_spaces = this->m_cudnn->get_work_spaces();
+        std::vector<DataType*> work_spaces;
         for(int i=0; i<num_gpus; ++i) {
-          input.push_back((DataType*) work_spaces[i]);
+          work_spaces.push_back((DataType*)this->m_cudnn->get_work_space(i));
         }
         if(child->using_gpus()) {
-          child->get_gpu_bp_output(input, this);
+          child->get_gpu_bp_output(input, work_spaces, this);
         }
         else {
           child->get_bp_output(*this->m_prev_error_signal_v, this);
-          this->m_cudnn->scatter_to_gpus(input,
+          this->m_cudnn->scatter_to_gpus(work_spaces,
                                          this->m_prev_error_signal_v->LockedMatrix(),
                                          this->m_mini_batch_size_per_gpu);
+          input = work_spaces;
         }
       }
 
@@ -428,7 +426,9 @@ class slice_layer : public transform {
   }
 
   #ifdef __LIB_CUDNN
-  void get_gpu_fp_output(std::vector<DataType*>& fp_output, const Layer* next_layer) const override {
+  void get_gpu_fp_output(std::vector<DataType*>& output_dv,
+                         std::vector<DataType*>& output_d,
+                         const Layer* next_layer) const override {
 
     // Check if input is in the list of child layers
     const int child_index = (std::find(this->m_child_layers.begin(),
@@ -436,7 +436,7 @@ class slice_layer : public transform {
                                        next_layer)
                              - this->m_child_layers.begin());
     if(child_index >= (int) this->m_child_layers.size()) {
-      transform::get_gpu_fp_output(fp_output, next_layer);
+      transform::get_gpu_fp_output(output_dv, output_d, next_layer);
     }
 
     // Split the activations tensor into slices of width 1 along the
@@ -457,6 +457,14 @@ class slice_layer : public transform {
     const int output_slice_size = output_slice_dim * slice_unit_size;
     const int output_size = num_slices * output_slice_size;
     const int slice_offset = m_slice_points[child_index] * slice_unit_size;
+
+    // Allocate GPU memory if needed and set data view
+    if(output_d.empty()) {
+      m_cudnn->allocate_on_gpus(output_d,
+                                output_size,
+                                m_max_mini_batch_size_per_gpu);
+    }
+    output_dv = output_d;
     
     // Copy slices from previous activations tensor into output
     const int num_gpus = this->m_cudnn->get_num_gpus();
@@ -464,7 +472,7 @@ class slice_layer : public transform {
       std::vector<DataType*> input_slice(num_gpus), output_slice(num_gpus);
       for(int i = 0; i < num_gpus; ++i) {
         input_slice[i] = this->m_activations_d[i] + slice * input_slice_size + slice_offset;
-        output_slice[i] = fp_output[i] + slice * output_slice_size;
+        output_slice[i] = output_d[i] + slice * output_slice_size;
       }
       this->m_cudnn->copy_on_gpus(output_slice,
                                   input_slice,

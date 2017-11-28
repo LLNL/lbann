@@ -72,9 +72,6 @@ class sum_layer : public transform {
   #endif // __LIB_CUDNN
   }
 
-  /// Following function tells this layer is is a fan-in layer
-  bool is_fanin_layer() const override { return true; }
-
   /** Returns description of ctor params */
   std::string get_description() const override {
     std::stringstream s;
@@ -128,7 +125,7 @@ class sum_layer : public transform {
       throw lbann_exception("sum_layer: cuDNN not detected");
   #else
       this->m_cudnn->copy_on_gpus(this->m_error_signal_d,
-                                  this->m_prev_error_signal_d,
+                                  this->m_prev_error_signal_dv,
                                   this->m_num_neurons,
                                   this->m_mini_batch_size_per_gpu);
   #endif // __LIB_CUDNN
@@ -148,7 +145,7 @@ class sum_layer : public transform {
 
     // Copy error signal from first child layer
     this->m_cudnn->copy_on_gpus(this->m_activations_d,
-                                this->m_prev_activations_d,
+                                this->m_prev_activations_dv,
                                 this->m_num_prev_neurons,
                                 this->m_mini_batch_size_per_gpu);
 
@@ -161,13 +158,21 @@ class sum_layer : public transform {
 
       // Get child error signal on GPUs
       if(parent->using_gpus()) {
-        parent->get_gpu_fp_output(this->m_prev_activations_d, this);
+        parent->get_gpu_fp_output(this->m_prev_activations_dv,
+                                  this->m_prev_activations_d,
+                                  this);
       }
       else {
         parent->get_fp_output(*this->m_prev_activations_v, this);
+        if(m_prev_activations_d.empty()) {
+          m_cudnn->allocate_on_gpus(m_prev_activations_d,
+                                    m_num_prev_neurons,
+                                    m_max_mini_batch_size_per_gpu);
+        }
         this->m_cudnn->scatter_to_gpus(this->m_prev_activations_d,
                                        this->m_prev_activations_v->LockedMatrix(),
                                        this->m_mini_batch_size_per_gpu);
+        m_prev_activations_dv = m_prev_activations_d;
       }
 
       // Add child error signal to this layer's error signal
@@ -178,7 +183,7 @@ class sum_layer : public transform {
         CHECK_CUDNN(cudnnAddTensor(this->m_cudnn->get_handle(i),
                                    &one,
                                    this->m_prev_neurons_cudnn_desc,
-                                   this->m_prev_activations_d[i],
+                                   this->m_prev_activations_dv[i],
                                    &one,
                                    this->m_neurons_cudnn_desc,
                                    this->m_activations_d[i]));

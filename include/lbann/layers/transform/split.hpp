@@ -72,9 +72,6 @@ class split_layer : public transform {
   #endif // __LIB_CUDNN
   }
 
-  /// Following function tells this layer is is a fan-out layer
-  bool is_fanout_layer() const override { return true; }
-
   /** Returns description of ctor params */
   std::string get_description() const override {
     std::stringstream s;
@@ -120,7 +117,7 @@ class split_layer : public transform {
       throw lbann_exception("split_layer: cuDNN not detected");
   #else
       this->m_cudnn->copy_on_gpus(this->m_activations_d,
-                                  this->m_prev_activations_d,
+                                  this->m_prev_activations_dv,
                                   this->m_num_prev_neurons,
                                   this->m_mini_batch_size_per_gpu);
   #endif // __LIB_CUDNN
@@ -148,7 +145,7 @@ class split_layer : public transform {
 
     // Copy error signal from first child layer
     this->m_cudnn->copy_on_gpus(this->m_error_signal_d,
-                                this->m_prev_error_signal_d,
+                                this->m_prev_error_signal_dv,
                                 this->m_num_neurons,
                                 this->m_mini_batch_size_per_gpu);
 
@@ -161,13 +158,21 @@ class split_layer : public transform {
 
       // Get child error signal on GPUs
       if(child->using_gpus()) {
-        child->get_gpu_bp_output(this->m_prev_error_signal_d, this);
+        child->get_gpu_bp_output(this->m_prev_error_signal_dv,
+                                 this->m_prev_error_signal_d,
+                                 this);
       }
       else {
         child->get_bp_output(*this->m_prev_error_signal_v, this);
+        if(m_prev_error_signal_d.empty()) {
+          m_cudnn->allocate_on_gpus(m_prev_error_signal_d,
+                                    m_num_neurons,
+                                    m_max_mini_batch_size_per_gpu);
+        }
         this->m_cudnn->scatter_to_gpus(this->m_prev_error_signal_d,
                                        this->m_prev_error_signal_v->LockedMatrix(),
                                        this->m_mini_batch_size_per_gpu);
+        m_prev_error_signal_dv = m_prev_error_signal_d;
       }
 
       // Add child error signal to this layer's error signal
@@ -178,7 +183,7 @@ class split_layer : public transform {
         CHECK_CUDNN(cudnnAddTensor(this->m_cudnn->get_handle(i),
                                    &one,
                                    this->m_neurons_cudnn_desc,
-                                   this->m_prev_error_signal_d[i],
+                                   this->m_prev_error_signal_dv[i],
                                    &one,
                                    this->m_prev_neurons_cudnn_desc,
                                    this->m_error_signal_d[i]));

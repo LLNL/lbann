@@ -191,7 +191,7 @@ class local_response_normalization_layer : public regularizer_layer {
                                               CUDNN_LRN_CROSS_CHANNEL_DIM1,
                                               &one,
                                               this->m_prev_neurons_cudnn_desc,
-                                              this->m_prev_activations_d[i],
+                                              this->m_prev_activations_dv[i],
                                               &zero,
                                               this->m_neurons_cudnn_desc,
                                               this->m_activations_d[i]));
@@ -225,9 +225,9 @@ class local_response_normalization_layer : public regularizer_layer {
                                                this->m_neurons_cudnn_desc,
                                                this->m_activations_d[i],
                                                this->m_neurons_cudnn_desc,
-                                               this->m_prev_error_signal_d[i],
+                                               this->m_prev_error_signal_dv[i],
                                                this->m_prev_neurons_cudnn_desc,
-                                               this->m_prev_activations_d[i],
+                                               this->m_prev_activations_dv[i],
                                                &zero,
                                                this->m_prev_neurons_cudnn_desc,
                                                this->m_error_signal_d[i]));
