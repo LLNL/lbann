@@ -223,7 +223,7 @@ void lbann_comm::intermodel_allreduce(
     algo = get_default_allreduce_algorithm();
   }
   const int nprocs = get_num_models();
-  const Int small_message_threshold = 64*64;
+  const El::Int small_message_threshold = 64*64;
   if (algo == allreduce_algorithm::DYNAMIC) {
     // For small messages and power-of-2 number of processes, use RD.
     if (!(nprocs & (nprocs - 1)) &&
@@ -333,14 +333,14 @@ void lbann_comm::pe_ring_allreduce(
   }
   // Compute the number of columns each processor sends.
   // If it doesn't divide evenly, give one extra to the earlier ranks.
-  const Int cols_per_proc = mat.Width() / nprocs;
-  const Int cols_remainder = mat.Width() % nprocs;
+  const El::Int cols_per_proc = mat.Width() / nprocs;
+  const El::Int cols_remainder = mat.Width() % nprocs;
   // Compute the lengths/ends of the slices.
-  std::vector<Int> slice_lengths(nprocs, cols_per_proc);
+  std::vector<El::Int> slice_lengths(nprocs, cols_per_proc);
   for (int i = 0; i < cols_remainder; ++i) {
     slice_lengths[i] += 1;
   }
-  std::vector<Int> slice_ends(nprocs);
+  std::vector<El::Int> slice_ends(nprocs);
   std::partial_sum(slice_lengths.begin(), slice_lengths.end(),
                    slice_ends.begin());
   std::vector<uint8_t *> max_recv_buffers(opts.max_reduces, nullptr);
@@ -552,14 +552,14 @@ void lbann_comm::ring_allreduce(
     return;  // Nothing to do.
   }
   // Compute the number of columns each processor sends.
-  const Int cols_per_proc = mat.Width() / nprocs;
-  const Int cols_remainder = mat.Width() % nprocs;
+  const El::Int cols_per_proc = mat.Width() / nprocs;
+  const El::Int cols_remainder = mat.Width() % nprocs;
   // Compute the lengths/ends of the slices.
-  std::vector<Int> slice_lengths(nprocs, cols_per_proc);
+  std::vector<El::Int> slice_lengths(nprocs, cols_per_proc);
   for (int i = 0; i < cols_remainder; ++i) {
     slice_lengths[i] += 1;
   }
-  std::vector<Int> slice_ends(nprocs);
+  std::vector<El::Int> slice_ends(nprocs);
   std::partial_sum(slice_lengths.begin(), slice_lengths.end(),
                    slice_ends.begin());
   uint8_t *max_recv_buf = get_collective_buffer(max_recv_count);
@@ -730,14 +730,14 @@ void lbann_comm::rabenseifner_allreduce(
                           " a power-of-2 number of participating processes");
   }
   // Compute the slices on each processor.
-  const Int cols_per_proc = mat.Width() / nprocs;
-  const Int cols_remainder = mat.Width() % nprocs;
+  const El::Int cols_per_proc = mat.Width() / nprocs;
+  const El::Int cols_remainder = mat.Width() % nprocs;
   // Compute the lengths/ends of the slices.
-  std::vector<Int> slice_lengths(nprocs, cols_per_proc);
+  std::vector<El::Int> slice_lengths(nprocs, cols_per_proc);
   for (int i = 0; i < cols_remainder; ++i) {
     slice_lengths[i] += 1;
   }
-  std::vector<Int> slice_ends(nprocs);
+  std::vector<El::Int> slice_ends(nprocs);
   std::partial_sum(slice_lengths.begin(), slice_lengths.end(),
                    slice_ends.begin());
   // Do a recursive-halving reduce-scatter.

@@ -52,7 +52,7 @@ void mnist_reader::set_defaults() {
 
 bool mnist_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
   int pixelcount = m_image_width * m_image_height;
-  vector<unsigned char>& tmp = m_image_data[data_id];
+  std::vector<unsigned char>& tmp = m_image_data[data_id];
   
   for (int p = 0; p < pixelcount; p++) {
     X.Set(p, mb_idx, tmp[p+1]);

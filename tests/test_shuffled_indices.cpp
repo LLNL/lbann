@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
       throw lbann_exception(err.str());
     }
     lbann_data::LbannPB pb;
-    string reader_fn(opts->get_string("fn").c_str());
+    std::string reader_fn(opts->get_string("fn").c_str());
     read_prototext_file(reader_fn.c_str(), pb, master);
     const lbann_data::DataReader & d_reader = pb.data_reader();
 

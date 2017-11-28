@@ -98,8 +98,8 @@ class lbann_callback_imcomm : public lbann_callback {
     /** Accumulated error (e.g. from quantization). */
     Mat error;
     /** If >0, reshape (local) gradients to these dimensions. */
-    Int reshape_height = 0;
-    Int reshape_width = 0;
+    El::Int reshape_height = 0;
+    El::Int reshape_width = 0;
     /** Adaptive quantization proportion. */
     int proportion = 32;
     /** Threshold quantization thresholds. */
@@ -129,7 +129,7 @@ class lbann_callback_imcomm : public lbann_callback {
    * Get a matrix that reinterprets mat as being height x width.
    * Assumes that mat.Height()*mat.Width() == height*width.
    */
-  void reshape_mat(Mat& mat, Mat& reshaped, Int height, Int width) {
+  void reshape_mat(Mat& mat, Mat& reshaped, El::Int height, El::Int width) {
     reshaped.Attach(height, width, mat.Buffer(), height);
   }
 

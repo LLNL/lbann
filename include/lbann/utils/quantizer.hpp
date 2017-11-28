@@ -224,7 +224,7 @@ class lbann_quantizer {
    * @return Adaptive reconstruction values.
    */
   adaptive_reconstructions col_reconstruction(
-    const Mat& mat, const Mat& qerror, Int col,
+    const Mat& mat, const Mat& qerror, El::Int col,
     const adaptive_thresholds threshes, bool sample = true);
 
   double get_proportion_time() const {
@@ -244,11 +244,11 @@ class lbann_quantizer {
   /** Number of bits per quantized word. */
   static const size_t NUM_BITS = sizeof(qtype) * 8;
   /** Number of samples to use in proportion_threshold. */
-  static const Int NUM_THRESHOLD_SAMPLES = 1024;
+  static const El::Int NUM_THRESHOLD_SAMPLES = 1024;
   /** Number of samples to use in col_reconstruction. */
-  static const Int NUM_RECON_SAMPLES = 128;
+  static const El::Int NUM_RECON_SAMPLES = 128;
   /** Samples to use to approximate column averages in onebit quantization. */
-  static const Int NUM_ONEBIT_SAMPLES = 128;
+  static const El::Int NUM_ONEBIT_SAMPLES = 128;
   /** Factor used when computing header lengths in adaptive quantization. */
 #if LBANN_QUANTIZER_TERNARY
   static const int HEADER_FACTOR = 4;
@@ -256,7 +256,7 @@ class lbann_quantizer {
   static const int HEADER_FACTOR = 3;
 #endif
   /** Max factor by which adaptive quantization can exceed optimal amount. */
-  static const Int MAX_QUANTIZED_EXCESS = 4;
+  static const El::Int MAX_QUANTIZED_EXCESS = 4;
 
   /** Time spent in proportion_threshold. */
   double proportion_time;
@@ -264,7 +264,7 @@ class lbann_quantizer {
   size_t quantized_count;
 
   /** Return the height of mat after quantization with onebit_quantize(). */
-  inline Int get_onebit_quantized_matrix_height(const Mat& mat) const {
+  inline El::Int get_onebit_quantized_matrix_height(const Mat& mat) const {
     return (mat.Height() + (NUM_BITS-1)) / NUM_BITS + 2;
   }
 
@@ -278,7 +278,7 @@ class lbann_quantizer {
    */
   void threshold_unquantize_apply(const ThreshQuantized& q, Mat& mat,
                                   DataType pos_thresh, DataType neg_thresh,
-                                  std::vector<Unsigned>& positions,
+                                  std::vector<El::Unsigned>& positions,
                                   bool delta = false);
   /**
    * Quantize only the locations in mat in positions; the companion of
@@ -286,7 +286,7 @@ class lbann_quantizer {
    */
   void threshold_quantize_apply(const Mat& mat, ThreshQuantized& q, Mat& qerror,
                                 DataType pos_thresh, DataType neg_thresh,
-                                std::vector<Unsigned>& positions,
+                                std::vector<El::Unsigned>& positions,
                                 bool delta = false);
 
   /**

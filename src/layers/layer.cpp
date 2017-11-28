@@ -36,8 +36,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-using namespace El;
-
 namespace lbann {
 
 template <>
@@ -796,7 +794,7 @@ std::string Layer::get_data_layout_string(data_layout d) const {
   }
 }
 
-const vector<int> Layer::fp_output_dims(const Layer* next_layer) const {
+const std::vector<int> Layer::fp_output_dims(const Layer* next_layer) const {
   return m_neuron_dims;
 }
 

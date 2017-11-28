@@ -145,7 +145,6 @@ class top_k_categorical_accuracy : public metric {
 
     double accuracy = (double)(samples_per_epoch - errors_per_epoch) /
       samples_per_epoch * 100;
-    string score = std::to_string(accuracy);
 
     return accuracy;
   }
@@ -155,7 +154,6 @@ class top_k_categorical_accuracy : public metric {
     long total_num_samples = stats->m_total_num_samples;
 
     double accuracy = (double)(total_num_samples - total_error) / total_num_samples * 100;
-    string score = std::to_string(accuracy);
 
     return accuracy;
   }
