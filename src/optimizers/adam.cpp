@@ -135,16 +135,17 @@ std::string adam::get_description() const {
 void adam::setup(weights& w) {
   optimizer::setup(w);
 
+  // Allocate matrices
   const int height = m_gradient->Height();
   const int width = m_gradient->Width();
-
   m_moment1 = m_gradient->Construct(m_gradient->Grid(),
                                     m_gradient->Root());
   m_moment2 = m_gradient->Construct(m_gradient->Grid(),
                                     m_gradient->Root());
   El::Zeros(*m_moment1, height, width);
   El::Zeros(*m_moment2, height, width);
-  
+
+  // Allocate GPU objects
   if (m_cudnn != nullptr) {
 #ifdef __LIB_CUDNN
     m_cudnn->allocate_on_gpus(m_moment1_d, height, width);
