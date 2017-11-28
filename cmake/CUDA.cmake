@@ -8,11 +8,13 @@ if(CUDA_FOUND)
 
   # Include CUDA header files
   include_directories(${CUDA_INCLUDE_DIRS})
-  include_directories(/usr/workspace/wsb/brain/nccl2/include/)
+  if(WITH_NCCL)
+    include_directories(/usr/workspace/wsb/brain/nccl2/include/)
+    set(nccl2_LIBRARIES /usr/workspace/wsb/brain/nccl2/lib/${CMAKE_SHARED_LIBRARY_PREFIX}nccl${CMAKE_SHARED_LIBRARY_SUFFIX})
+  endif()
 
   set(cuBLAS_LIBRARIES ${CUDA_TOOLKIT_ROOT_DIR}/lib64/${CMAKE_SHARED_LIBRARY_PREFIX}cublas${CMAKE_SHARED_LIBRARY_SUFFIX})
   set(NVTX_LIBRARIES ${CUDA_TOOLKIT_ROOT_DIR}/lib64/${CMAKE_SHARED_LIBRARY_PREFIX}nvToolsExt${CMAKE_SHARED_LIBRARY_SUFFIX})  
-  set(nccl2_LIBRARIES /usr/workspace/wsb/brain/nccl2/lib/${CMAKE_SHARED_LIBRARY_PREFIX}nccl${CMAKE_SHARED_LIBRARY_SUFFIX})
 
   # Add preprocessor flag for CUDA
   add_definitions(-D__LIB_CUDA)
