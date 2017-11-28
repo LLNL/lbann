@@ -128,6 +128,13 @@ class optimizer {
                                 std::vector<DataType*> gradient_d);
 #endif // __LIB_CUDNN
 
+  /** Get the time spent in step(). */
+  double get_step_time() const { return m_step_time; }
+  /** Reset stats counters. */
+  virtual void reset_counters() {
+    m_step_time = 0.0;
+  }
+
  protected:
 
   lbann_comm *m_comm;
@@ -172,6 +179,9 @@ class optimizer {
    */
   std::vector<DataType*> m_staging_d;
 #endif // __LIB_CUDNN
+
+  /** Running count of the time spent in step(). */
+  double m_step_time = 0.0;
 
 };
 

@@ -28,6 +28,7 @@
 
 #include "lbann/optimizers/optimizer.hpp"
 #include "lbann/utils/cublas_wrapper.hpp"
+#include "lbann/utils/timer.hpp"
 
 namespace lbann {
 
@@ -61,6 +62,7 @@ optimizer::optimizer(const optimizer& other)
     m_gpu_gradient_is_nonzero(other.m_gpu_gradient_is_nonzero),
     m_gpu_staging_is_nonzero(other.m_gpu_staging_is_nonzero)
     #endif // __LIB_CUDNN
+    , m_step_time(other.m_step_time)
 {
   if (m_gradient != nullptr) { m_gradient = m_gradient->Copy(); }
   if (m_staging != nullptr)  { m_staging = m_staging->Copy(); }
@@ -79,6 +81,7 @@ optimizer& optimizer::operator=(const optimizer& other) {
   m_cudnn = other.m_cudnn;
   m_weights = other.m_weights;
   m_learning_rate = other.m_learning_rate;
+  m_step_time = other.m_step_time;
 
   // Copy matrices
   #define COPY_MATRIX(src, dst)                 \
@@ -416,7 +419,8 @@ void optimizer::step() {
         << "optimizer must be set up before performing optimization step";
     throw lbann_exception(err.str());
   }
-  
+
+  double step_start = get_time();
   // Apply optimization step
   if (m_cudnn != nullptr) {
   #if __LIB_CUDNN
@@ -433,6 +437,8 @@ void optimizer::step() {
 
   // Clear gradients
   clear_gradient();
+
+  m_step_time += get_time() - step_start;
 
 }
 

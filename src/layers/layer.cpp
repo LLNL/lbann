@@ -433,6 +433,16 @@ void Layer::summarize_stats(lbann_summary& summarizer, int step) {
   summarizer.reduce_scalar(prefix + "bp_time", bp_time, step);
   summarizer.reduce_scalar(prefix + "update_time", update_time, step);
   reset_counters();
+  // Combine the optimizer step time from all the weights.
+  double step_time = 0.0;
+  for (weights *w : get_weights()) {
+    optimizer *opt = w->get_optimizer();
+    if (opt) {
+      step_time += opt->get_step_time();
+      opt->reset_counters();
+    }
+  }
+  summarizer.reduce_scalar(prefix + "opt_time", step_time, step);
 }
 
 void Layer::summarize_matrices(lbann_summary& summarizer, int step) {
