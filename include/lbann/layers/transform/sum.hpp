@@ -72,9 +72,6 @@ class sum_layer : public transform {
   #endif // __LIB_CUDNN
   }
 
-  /// Following function tells this layer is is a fan-in layer
-  bool is_fanin_layer() const override { return true; }
-
   /** Returns description of ctor params */
   std::string get_description() const override {
     std::stringstream s;

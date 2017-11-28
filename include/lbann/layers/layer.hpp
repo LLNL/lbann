@@ -149,14 +149,15 @@ class Layer {
     return m_using_gpus;
   }
 
-  /// Following function tells whether a layer has weights; default is false
-  virtual bool is_learning_layer() const { return false; }
-
   /// Following functions tell whether current layer is a fan-out layer; default is false
-  virtual bool is_fanout_layer() const { return false; }
+  virtual bool is_fan_out_layer() const {
+    return m_max_num_child_layers != 1 && m_max_num_child_layers != 0;
+  }
 
   /// Following functions tell whether current layer is a fan-in layer; default is false
-  virtual bool is_fanin_layer() const { return false; }
+  virtual bool is_fan_in_layer() const {
+    return m_max_num_parent_layers != 1 && m_max_num_parent_layers != 0;
+  }
 
   /** Return the neural network model of this layer. */
   inline model* get_neural_network_model() const {
