@@ -46,6 +46,7 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus, bool nc
   // Indicate whether NCCL is used 
   m_nccl_used = nccl_used;
 
+
   // Determine number of MPI ranks on current compute node
   const int rank_in_node = comm->get_rank_in_node();
   const int procs_per_node = comm->get_procs_per_node();
@@ -196,6 +197,9 @@ void cudnn_manager::cudnn_manager::allocate_on_gpus(std::vector<DataType *>& gpu
     }
 
   }
+
+  // Set entries to zero
+  clear_on_gpus(gpu_data, height, width_per_gpu);
 
 }
 
@@ -749,18 +753,9 @@ void cudnn_manager::check_error() {
   }
 }
 
-uint64_t cudnn_manager::getHostHash(const char* string) {
-  // Based on DJB2, result = result * 33 + char
-  uint64_t result = 5381;
-  for (int c = 0; string[c] != '\0'; c++){
-    result = ((result << 5) + result) + string[c];
-  }
-  return result;
-}
-
-
 void cudnn_manager::nccl_setup() {
 
+#ifdef __LIB_NCCL
   int nProcs = comm->get_procs_per_model();
   int myid = comm->get_rank_in_model();
   int localRank = comm->get_rank_in_node();
@@ -790,10 +785,13 @@ void cudnn_manager::nccl_setup() {
     NCCLCHECK(ncclCommInitRank(&m_nccl_comm, nProcs, ncclId, myid)); 
     NCCLCHECK(ncclGroupEnd());
   }
+#endif // #ifdef __LIB_NCCL
 }
 
 void cudnn_manager::nccl_destroy() {
+#ifdef __LIB_NCCL
   ncclCommDestroy(m_nccl_comm);
+#endif // #ifdef __LIB_NCCL
 }
 
 void cudnn::print_version() {
