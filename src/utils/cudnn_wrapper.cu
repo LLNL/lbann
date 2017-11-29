@@ -162,7 +162,6 @@ void cudnn_manager::allreduce_on_gpus_nccl(std::vector<DataType*>& gpu_data,
   assigned to one GPU, the number of element in gpu_data is 1. */
 
   /// It is assumed each MPI rank is assigned to one GPU (that is, m_num_gpus==1)
-
   if(m_num_gpus != 1){
     char line[1024];
     sprintf(line, "cudnn_wrapper_cuda: the number of GPUs assigned to process is %d; should be 1", m_num_gpus);
