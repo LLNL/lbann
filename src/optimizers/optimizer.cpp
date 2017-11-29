@@ -452,5 +452,11 @@ void optimizer::step_compute_gpu(std::vector<DataType*> values_d,
   m_cudnn->broadcast_to_gpus(values_d, m_weights->m_values->LockedMatrix());
 }
 #endif // __LIB_CUDNN
+bool optimizer::saveToCheckpointShared(persist& p, std::string m_name) {
+  return true;
+}
 
+bool optimizer::loadFromCheckpointShared(persist& p, std::string m_name) {
+  return true;
+}
 }  // namespace lbann

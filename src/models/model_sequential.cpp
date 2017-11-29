@@ -23,11 +23,21 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// sequential .hpp .cpp - Sequential neural network models
+// lbann_model_sequential .hpp .cpp - Sequential neural network models
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/models/sequential.hpp"
-#include <unordered_set>
+#include "lbann/models/model_sequential.hpp"
+#include "lbann/layers/io/io_layer.hpp"
+#include "lbann/layers/io/input/input_layer.hpp"
+#include "lbann/layers/io/target/target_layer.hpp"
+#include "lbann/io/persist.hpp"
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+#include "mpi.h"
 
 namespace lbann {
 
@@ -37,27 +47,131 @@ sequential_model::sequential_model(lbann_comm *comm,
                                    optimizer* default_optimizer)
   : model(comm, mini_batch_size, obj_fn, default_optimizer) {}
 
-void sequential_model::setup_layer_topology() {
-  model::setup_layer_topology();
-
-  // Set up parent/child relationships between adjacent layers
-  for (size_t i = 1; i < m_layers.size(); ++i) {
-    m_layers[i]->add_parent_layer(m_layers[i-1]);
+void sequential_model::remove(int index) {
+  if (m_layers[index]) {
+    delete m_layers[index];
   }
-  for (size_t i = 0; i < m_layers.size() - 1; ++i) {
-    m_layers[i]->add_child_layer(m_layers[i+1]);
-  }
-
-  // Make sure that execution order is valid
-  if (!is_topologically_sorted()) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "layer execution order is not topologically sorted";
-    throw lbann_exception(err.str());
-  }
-
+  m_layers.erase(m_layers.begin() + index);
 }
 
+void sequential_model::insert(int index, Layer *layer) {
+  m_layers.insert(m_layers.begin() + index, layer);
+}
+
+Layer *sequential_model::swap(int index, Layer *layer) {
+  Layer *tmp = m_layers[index];
+  m_layers[index] = layer;
+  return tmp;
+}
+
+void sequential_model::setup() {
+  setup_subset(0, m_layers.size());
+}
+
+void sequential_model::setup_subset(int start_index, int end_index) {
+
+  // Setup each layer
+  for (int l=start_index; l<end_index; ++l) {
+    m_layers[l]->set_neural_network_model(this); /// Provide a reverse point from each layer to the model
+    if (l > 0) {
+      m_layers[l]->add_parent_layer(m_layers[l-1]);
+    }
+    if (l < end_index - 1) {
+      m_layers[l]->add_child_layer(m_layers[l+1]);
+    }
+    m_layers[l]->setup();
+    m_layers[l]->check_setup();
+    if (m_comm->am_world_master()) {
+      std::cout << print_layer_description(m_layers[l]) << std::endl;
+    }
+  }
+
+  // Setup objective function
+  m_objective_function->setup(*this);
+
+  // Set up callbacks
+  setup_callbacks();
+}
+
+int sequential_model::num_previous_neurons() {
+  if (m_layers.size() == 0) {
+    return -1;
+  }
+  Layer *prev_layer = m_layers.back();
+  return prev_layer->get_num_neurons();
+}
+
+#if 0
+
+bool sequential_model::save_to_file(const string file_dir) {
+  // get our directory name
+  const char *dir = file_dir.c_str();
+
+  // report how long this takes
+  Timer timer;
+
+  // start timer
+  MPI_Barrier(MPI_COMM_WORLD);
+  if (m_comm->am_world_master()) {
+    timer.Start();
+    printf("Saving parameters to %s ...\n", dir);
+    fflush(stdout);
+  }
+
+  // create directory to hold files
+  int mkdir_success = makedir(dir);
+  if (! mkdir_success) {
+    // failed to create the directory
+    return false;
+  }
+
+  // write out details for each layer
+  for (size_t l = 1; l < m_layers.size(); l++)
+    if (!m_layers[l]->saveToFile(-1, dir)) {
+      return false;
+    }
+
+  // stop timer
+  MPI_Barrier(MPI_COMM_WORLD);
+  if (m_comm->am_world_master()) {
+    double secs = timer.Stop();
+    printf("Saved parameters to %s (%f secs)\n", dir, secs);
+    fflush(stdout);
+  }
+
+  return true;
+}
+
+bool sequential_model::load_from_file(const string file_dir) {
+  // get our directory name
+  const char *dir = file_dir.c_str();
+
+  // report how long this takes
+  Timer timer;
+
+  // start timer
+  MPI_Barrier(MPI_COMM_WORLD);
+  if (m_comm->am_world_master()) {
+    timer.Start();
+    printf("Loading parameters from %s ...\n", dir);
+    fflush(stdout);
+  }
+
+  for (size_t l = 1; l < m_layers.size(); l++)
+    if (!m_layers[l]->loadFromFile(-1, dir)) {
+      return false;
+    }
+
+  // stop timer
+  MPI_Barrier(MPI_COMM_WORLD);
+  if (m_comm->am_world_master()) {
+    double secs = timer.Stop();
+    printf("Loaded parameters from %s (%f secs)\n", dir, secs);
+    fflush(stdout);
+  }
+  return true;
+}
+#endif
 bool sequential_model::save_to_checkpoint(int fd, const char *filename, size_t *bytes) {
   // write number of layers (we'll check this on read)
   int layers = m_layers.size();
@@ -71,10 +185,10 @@ bool sequential_model::save_to_checkpoint(int fd, const char *filename, size_t *
   *bytes += write_rc;
 
   // write out details for each layer
-  /*for (size_t l = 1; l < m_layers.size(); l++)
+  for (size_t l = 1; l < m_layers.size(); l++)
     if (!m_layers[l]->saveToCheckpoint(fd, filename, bytes)) {
       return false;
-    }*/
+    }
 
   return true;
 }
@@ -95,11 +209,11 @@ bool sequential_model::load_from_checkpoint(int fd, const char *filename, size_t
     // error!
   }
 
-  /*for (size_t l = 1; l < m_layers.size(); l++) {
+  for (size_t l = 1; l < m_layers.size(); l++) {
     if (! m_layers[l]->loadFromCheckpoint(fd, filename, bytes)) {
       return false;
     }
-  }*/
+  }
 
   return true;
 }
@@ -122,17 +236,12 @@ bool sequential_model::save_to_checkpoint_shared(persist& p) {
     // TODO: record each layer type and size (to be checked when read back)
   }
   // write out details for each layer
-
-  for (weights *w : m_weights) {
-    w->save_to_checkpoint_shared(p);
-  }
-
-  for (size_t l = 0; l < m_layers.size(); l++) {
-    if (! m_layers[l]->save_to_checkpoint_shared(p)) {
+  /*for (size_t l = 0; l < m_layers.size(); l++) {
+    if (! m_layers[l]->saveToCheckpointShared(p)) {
       return false;
     }
-  }
-  //m_objective_function->save_to_checkpoint_shared(p);
+  }*/
+
   return true;
 }
 
@@ -158,16 +267,14 @@ bool sequential_model::load_from_checkpoint_shared(persist& p) {
   }
 
   // TODO: check that each layer type matches what we'd expect
-  for (weights *w : m_weights) {
-    w->load_from_checkpoint_shared(p);
-  }
+
   // read in each layer
-  for (size_t l = 0; l < m_layers.size(); l++) {
-    if (! m_layers[l]->load_from_checkpoint_shared(p)) {
+  /*for (size_t l = 0; l < m_layers.size(); l++) {
+    if (! m_layers[l]->loadFromCheckpointShared(p)) {
       return false;
     }
-  }
-  //m_objective_function->load_from_checkpoint_shared(p);
+  }*/
+
   return true;
 }
 

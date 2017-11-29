@@ -135,6 +135,8 @@ class optimizer {
     m_step_time = 0.0;
   }
 
+  virtual bool saveToCheckpointShared(persist& p, std::string m_name);
+  virtual bool loadFromCheckpointShared(persist& p, std::string m_name);
  protected:
 
   lbann_comm *m_comm;

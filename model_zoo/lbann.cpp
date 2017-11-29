@@ -194,7 +194,7 @@ int main(int argc, char *argv[]) {
 
     // restart model from checkpoint if we have one
     //@todo
-    //model->restartShared();
+    model->restartShared();
 
     if (comm->am_world_master()) {
       std::cout << std::endl;

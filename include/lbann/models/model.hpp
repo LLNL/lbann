@@ -212,13 +212,11 @@ class model {
     m_checkpoint_secs   = secs;
   }
 
-#if 0
   /** Return true if about to start a new training epoch
    */
   virtual bool at_epoch_start() {
     return true;
   }
-
   /** Returns true if a checkpoint should be taken, false otherwise */
   bool need_checkpoint();
 
@@ -235,7 +233,7 @@ class model {
    *  and then calls the model's load_from_checkpoint_shared() virtual function */
   bool restartShared();
 
-#endif // 0
+//#endif // 0
 
  protected:
 

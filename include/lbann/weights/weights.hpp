@@ -36,7 +36,7 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/weights/initializer.hpp"
-
+#include "lbann/io/persist.hpp"
 namespace lbann {
 
 // Forward declaration
@@ -127,6 +127,8 @@ class weights {
   std::vector<DataType*> get_values_gpu();
 #endif // __LIB_CUDNN
 
+  bool saveToCheckpointShared(persist& p);
+  bool loadFromCheckpointShared(persist& p);
  protected:
 
   /** Weights name.

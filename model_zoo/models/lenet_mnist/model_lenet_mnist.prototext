@@ -8,6 +8,8 @@ model {
   procs_per_model: 0
   use_cudnn: false
   num_gpus: -1
+  checkpoint_dir: "test"
+  checkpoint_epochs: 5 
 
   ###################################################
   # Objective function

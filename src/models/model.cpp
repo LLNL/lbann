@@ -892,7 +892,6 @@ void model::summarize_matrices(lbann_summary& summarizer) {
 // Checkpointing
 ////////////////////////////////////////////////////////////
 
-#if 0
 
 /** \brief Returns true if a checkpoint should be taken, false otherwise */
 bool model::need_checkpoint() {
@@ -1135,7 +1134,6 @@ bool model::restartShared() {
 
   return true;
 }
-
 /* struct used to serialize mode fields in file and MPI transfer */
 struct lbann_model_header {
   uint32_t execution_mode;
@@ -1155,6 +1153,9 @@ bool model::save_to_checkpoint_shared(persist& p) {
     p.write_uint32(persist_type::train, "current_phase",      (uint32_t) m_current_phase);
   }
 
+  for (weights *w : m_weights) {
+    w->saveToCheckpointShared(p); 
+  }
   return true;
 }
 
@@ -1180,10 +1181,12 @@ bool model::load_from_checkpoint_shared(persist& p) {
   m_current_epoch      = (int)            header.current_epoch;
   m_current_step       = (int)            header.current_step;
   m_current_phase      =                  header.current_phase;
-
+  for (weights *w : m_weights) {
+    w->loadFromCheckpointShared(p);
+  }
   return true;
 }
 
-#endif // 0
+ // 0
 
 }  // namespace lbann
