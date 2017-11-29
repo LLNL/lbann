@@ -319,7 +319,7 @@ bool lbann::persist::read_distmat(persist_type type, const char *name, DistMat *
     return false;
   }
 
-  Read(*M, filename, El::BINARY, 1);
+  Read(*M, filename, El::BINARY, true);
   //Read_MPI(M, filename, BINARY, 1);
 
   uint64_t bytes = 2 * sizeof(int) + M->Height() * M->Width() * sizeof(DataType);
@@ -428,7 +428,7 @@ bool lbann::read_distmat(int fd, const char *name, DistMat *M, uint64_t *bytes) 
     return false;
   }
 
-  Read(*M, name, El::BINARY, 1);
+  Read(*M, name, El::BINARY, true);
   //Read_MPI(M, name, BINARY, 1);
 
   uint64_t bytes_read = 2 * sizeof(int) + M->Height() * M->Width() * sizeof(DataType);
