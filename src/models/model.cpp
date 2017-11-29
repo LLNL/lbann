@@ -778,8 +778,11 @@ void model::summarize_stats(lbann_summary& summarizer) {
                            m_objective_function->get_history_mean_value(),
                            get_cur_step());
   summarizer.reduce_scalar(
-    "objective_time",
-    m_objective_function->get_value_time() +
+    "objective_value_time",
+    m_objective_function->get_value_time(),
+    get_cur_step());
+  summarizer.reduce_scalar(
+    "objective_gradient_time",
     m_objective_function->get_gradient_time(),
     get_cur_step());
   m_objective_function->reset_counters();
