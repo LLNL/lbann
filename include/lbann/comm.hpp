@@ -374,17 +374,23 @@ class lbann_comm {
   /** Scalar allreduce. */
   template <typename T>
   T allreduce(T snd, const El::mpi::Comm c, El::mpi::Op op = El::mpi::SUM) {
-    T val = {};
     bytes_sent += sizeof(T);
-    El::mpi::AllReduce(&snd, &val, 1, op, c);
+    El::mpi::AllReduce(&snd, 1, op, c);
     bytes_received += sizeof(T) * (El::mpi::Size(c) - 1);
-    return val;
+    return snd;
   }
   /** Scalar-array allreduce. */
   template <typename T>
   void allreduce(T *snd, int count, T *rcv, const El::mpi::Comm c, El::mpi::Op op = El::mpi::SUM) {
     bytes_sent += count * sizeof(T);
     El::mpi::AllReduce(snd, rcv, count, op, c);
+    bytes_received += count * sizeof(T) * (El::mpi::Size(c) - 1);
+  }
+  /** In-place scalar-array allreduce. */
+  template <typename T>
+  void allreduce(T *data, int count, const El::mpi::Comm c, El::mpi::Op op = El::mpi::SUM) {
+    bytes_sent += count * sizeof(T);
+    El::mpi::AllReduce(data, count, op, c);
     bytes_received += count * sizeof(T) * (El::mpi::Size(c) - 1);
   }
   /** Matrix allreduce. */
