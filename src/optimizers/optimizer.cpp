@@ -67,7 +67,7 @@ optimizer::optimizer(const optimizer& other)
   if (m_gradient != nullptr) { m_gradient = m_gradient->Copy(); }
   if (m_staging != nullptr)  { m_staging = m_staging->Copy(); }
   #ifdef __LIB_CUDNN
-  if (m_cudnn != nullptr) {
+  if (m_cudnn != nullptr && other.m_weights != nullptr) {
     const int height = other.m_weights->get_height();
     const int width = other.m_weights->get_width();
     m_gradient_d = m_cudnn->copy(other.m_gradient_d, height, width);
@@ -103,7 +103,7 @@ optimizer& optimizer::operator=(const optimizer& other) {
 
   // Copy GPU data
   #ifdef __LIB_CUDNN
-  if (m_cudnn != nullptr) {
+  if (m_cudnn != nullptr && other.m_weights != nullptr) {
     const int height = other.m_weights->get_height();
     const int width = other.m_weights->get_width();
     m_cudnn->deallocate_on_gpus(m_gradient_d);

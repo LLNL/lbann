@@ -86,6 +86,9 @@ class weights {
   /** Get width of weights matrix. */
   int get_width() const { return m_width; }
 
+  /** Get cuDNN manager. */
+  cudnn::cudnn_manager* get_cudnn_manager() { return m_cudnn; }
+
   /** Get weights initializer. */
   weights_initializer& get_initializer() { return *m_initializer; }
   /** Get weights initializer (const). */

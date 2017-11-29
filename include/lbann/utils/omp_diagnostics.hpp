@@ -26,10 +26,10 @@
 #ifndef LBANN_OMP_DIAGNOSTICS_HPP
 #define LBANN_OMP_DIAGNOSTICS_HPP
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <unistd.h>           // sysconf
-#include <stdint.h>
+#include <cstdint>
 #include <omp.h>
 
 /* __USE_GNU is needed for CPU_ISSET definition */ 

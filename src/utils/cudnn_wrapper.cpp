@@ -197,6 +197,9 @@ void cudnn_manager::cudnn_manager::allocate_on_gpus(std::vector<DataType *>& gpu
 
   }
 
+  // Set entries to zero
+  clear_on_gpus(gpu_data, height, width_per_gpu);
+
 }
 
 void cudnn_manager::cudnn_manager::deallocate_on_gpus(std::vector<DataType *>& gpu_data) {

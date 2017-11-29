@@ -28,51 +28,60 @@
 // Kingma, D. and Ba, J. 2014. Adam: A Method for Stochastic Optimization.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/utils/exception.hpp"
+#include "lbann/optimizers/adam.hpp"
 
 namespace lbann {
 
 namespace {
 
-__global__ void update_kernel(DataType *values, const DataType *gradient,
-                              DataType *moment1, DataType *moment2,
-                              El::Int height, El::Int width,
-                              DataType correction, DataType eps,
-                              DataType m_beta1, DataType m_beta2) {
+__global__ void adam_kernel(DataType * __restrict__ values,
+                            const DataType * __restrict__ gradient,
+                            DataType * __restrict__ moment1,
+                            DataType * __restrict__ moment2,
+                            int num_entries,
+                            DataType correction,
+                            DataType eps,
+                            DataType beta1,
+                            DataType beta2) {
   int offset = blockIdx.x * blockDim.x + threadIdx.x;
-  if (offset >= height * width) return;
-  DataType g = gradient[offset] + eps;
+  if (offset >= num_entries) return;
+  const DataType g = gradient[offset] + eps;
   DataType &m1 = moment1[offset];
   DataType &m2 = moment2[offset];
-  m1 = m_beta1 * m1 + (DataType(1) - m_beta1) * g;
-  m2 = m_beta2 * m2 + (DataType(1) - m_beta2) * g * g;
+  m1 = beta1 * m1 + (DataType(1) - beta1) * g;
+  m2 = beta2 * m2 + (DataType(1) - beta2) * g * g;
   values[offset] -= correction * m1 / (sqrt(m2) + eps);
 }
 
 }
 
-void adam::update_gpu(const std::vector<DataType *> &gradient_d) {
+void adam::step_compute_gpu(std::vector<DataType*> values_d,
+                            std::vector<DataType*> gradient_d) {
+
+  // Precompute the bias correction and learning rate.
   m_current_beta1 *= m_beta1;
   m_current_beta2 *= m_beta2;
-  // Precompute the bias correction and learning rate.
   const DataType correction = m_learning_rate *
                               (std::sqrt(DataType(1) - m_current_beta2)
                                / (DataType(1) - m_current_beta1));
 
-  const int local_height = m_values->LocalHeight();
-  const int local_width = m_values->LocalWidth();
-      
-  int tb_dim = 256;
-  int grid_dim = local_height * local_width / tb_dim
-      + ((local_height * local_width) % tb_dim ? 1 : 0);
+  // Get matrix dimensions
+  const int num_entries = m_weights->get_height() * m_weights->get_width();
+  if (num_entries == 0) return;
+
+  // Launch CUDA kernels
+  const int block_size = 256;
+  dim3 block_dims, grid_dims;
+  block_dims.x = block_size;
+  grid_dims.x = (num_entries + block_size - 1) / block_size;
   for (int i = 0; i < m_cudnn->get_num_gpus(); ++i) {
-    FORCE_CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-    update_kernel<<<grid_dim, tb_dim>>>(m_values_d[i], gradient_d[i],
-                                        m_moment1_d[i], m_moment2_d[i],
-                                        local_height, local_width,
-                                        correction, m_eps,
-                                        m_beta1, m_beta2);
+    CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
+    cudaStream_t stream = this->m_cudnn->get_stream(i);
+    adam_kernel<<<grid_dims, block_dims, 0, stream>>>
+      (values_d[i], gradient_d[i], m_moment1_d[i], m_moment2_d[i],
+       num_entries, correction, m_eps, m_beta1, m_beta2);
   }
+
 }
 
 }  // namespace lbann
