@@ -53,8 +53,8 @@ namespace lbann {
 #define checkMPI(status) status
 #endif // #ifdef LBANN_DEBUG
 
-lbann_comm::lbann_comm(int ppm) :
-  grid(nullptr), procs_per_model(ppm), num_model_barriers(0),
+lbann_comm::lbann_comm(int ppm, const El::mpi::Comm world) :
+  world_comm(world), grid(nullptr), procs_per_model(ppm), num_model_barriers(0),
   num_intermodel_barriers(0), num_global_barriers(0), bytes_sent(0),
   bytes_received(0) {
 
@@ -84,7 +84,7 @@ lbann_comm::~lbann_comm() {
 }
 
 void lbann_comm::split_models(int ppm) {
-  int world_size = El::mpi::Size(El::mpi::COMM_WORLD);
+  int world_size = El::mpi::Size(get_world_comm());
   procs_per_model = ppm;
   if (ppm == 0) {
     procs_per_model = world_size;
@@ -106,12 +106,12 @@ void lbann_comm::split_models(int ppm) {
   }
 
   num_models = world_size / procs_per_model;
-  model_rank = El::mpi::Rank(El::mpi::COMM_WORLD) / procs_per_model;
-  rank_in_model = El::mpi::Rank(El::mpi::COMM_WORLD) % procs_per_model;
+  model_rank = El::mpi::Rank(get_world_comm()) / procs_per_model;
+  rank_in_model = El::mpi::Rank(get_world_comm()) % procs_per_model;
 
   // Initialize model and intermodel communicators
-  El::mpi::Split(El::mpi::COMM_WORLD, model_rank, rank_in_model, model_comm);
-  El::mpi::Split(El::mpi::COMM_WORLD, rank_in_model, model_rank,
+  El::mpi::Split(get_world_comm(), model_rank, rank_in_model, model_comm);
+  El::mpi::Split(get_world_comm(), rank_in_model, model_rank,
                  intermodel_comm);
 
   // Initialize Elemental grid
@@ -123,37 +123,39 @@ void lbann_comm::split_models(int ppm) {
 
 void lbann_comm::intermodel_sum_matrix(Mat& mat) {
   bytes_sent += sizeof(DataType) * mat.Height() * mat.Width();
-  AllReduce(mat, intermodel_comm, El::mpi::SUM);
+  El::AllReduce(mat, intermodel_comm, El::mpi::SUM);
   bytes_received += sizeof(DataType) * mat.Height() * mat.Width();
 }
 
-void lbann_comm::intermodel_sum_matrix(DistMat& mat) {
-  bytes_sent += sizeof(DataType) * mat.LocalHeight() * mat.LocalWidth();
-  AllReduce(mat, intermodel_comm, El::mpi::SUM);
-  bytes_received += sizeof(DataType) * mat.LocalHeight() * mat.LocalWidth();
+void lbann_comm::intermodel_sum_matrix(AbsDistMat& mat) {
+  allreduce(mat, intermodel_comm, El::mpi::SUM);
 }
 
 void lbann_comm::intermodel_broadcast_matrix(Mat& mat, int root) {
-  Broadcast(mat, intermodel_comm, root);
+  El::Broadcast(mat, intermodel_comm, root);
 }
 
-void lbann_comm::intermodel_broadcast_matrix(DistMat& mat, int root) {
-  Broadcast(mat, intermodel_comm, root);
+void lbann_comm::intermodel_broadcast_matrix(AbsDistMat& mat, int root) {
+  El::Broadcast(mat, intermodel_comm, root);
 }
 
 void lbann_comm::intermodel_barrier() {
   ++num_intermodel_barriers;
-  El::mpi::Barrier(intermodel_comm);
+  barrier(intermodel_comm);
 }
 
 void lbann_comm::model_barrier() {
   ++num_model_barriers;
-  El::mpi::Barrier(model_comm);
+  barrier(model_comm);
 }
 
 void lbann_comm::global_barrier() {
   ++num_global_barriers;
-  El::mpi::Barrier(El::mpi::COMM_WORLD);
+  barrier(get_world_comm());
+}
+
+void lbann_comm::barrier(const El::mpi::Comm c) {
+  El::mpi::Barrier(c);
 }
 
 void lbann_comm::send(const Mat& mat, int model, int rank) {
@@ -221,7 +223,7 @@ void lbann_comm::intermodel_allreduce(
     algo = get_default_allreduce_algorithm();
   }
   const int nprocs = get_num_models();
-  const Int small_message_threshold = 64*64;
+  const El::Int small_message_threshold = 64*64;
   if (algo == allreduce_algorithm::DYNAMIC) {
     // For small messages and power-of-2 number of processes, use RD.
     if (!(nprocs & (nprocs - 1)) &&
@@ -261,7 +263,7 @@ void lbann_comm::intermodel_allreduce(
 }
 
 void lbann_comm::recursive_doubling_allreduce_pow2(
-  El::mpi::Comm comm, Mat& mat, int max_recv_count,
+  const El::mpi::Comm comm, Mat& mat, int max_recv_count,
   std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)> send_transform,
   std::function<int(uint8_t *, Mat&, bool)> recv_apply_transform,
   const lbann_comm::allreduce_options opts) {
@@ -318,7 +320,7 @@ void lbann_comm::recursive_doubling_allreduce_pow2(
 }
 
 void lbann_comm::pe_ring_allreduce(
-  El::mpi::Comm comm, Mat& mat, int max_recv_count,
+  const El::mpi::Comm comm, Mat& mat, int max_recv_count,
   std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)> send_transform,
   std::function<int(uint8_t *, Mat&)> recv_transform,
   std::function<int(uint8_t *, Mat&, bool)> recv_apply_transform,
@@ -331,14 +333,14 @@ void lbann_comm::pe_ring_allreduce(
   }
   // Compute the number of columns each processor sends.
   // If it doesn't divide evenly, give one extra to the earlier ranks.
-  const Int cols_per_proc = mat.Width() / nprocs;
-  const Int cols_remainder = mat.Width() % nprocs;
+  const El::Int cols_per_proc = mat.Width() / nprocs;
+  const El::Int cols_remainder = mat.Width() % nprocs;
   // Compute the lengths/ends of the slices.
-  std::vector<Int> slice_lengths(nprocs, cols_per_proc);
+  std::vector<El::Int> slice_lengths(nprocs, cols_per_proc);
   for (int i = 0; i < cols_remainder; ++i) {
     slice_lengths[i] += 1;
   }
-  std::vector<Int> slice_ends(nprocs);
+  std::vector<El::Int> slice_ends(nprocs);
   std::partial_sum(slice_lengths.begin(), slice_lengths.end(),
                    slice_ends.begin());
   std::vector<uint8_t *> max_recv_buffers(opts.max_reduces, nullptr);
@@ -538,7 +540,7 @@ void lbann_comm::pe_ring_allreduce(
 }
 
 void lbann_comm::ring_allreduce(
-  El::mpi::Comm comm, Mat& mat, int max_recv_count,
+  const El::mpi::Comm comm, Mat& mat, int max_recv_count,
   std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)> send_transform,
   std::function<int(uint8_t *, Mat&)> recv_transform,
   std::function<int(uint8_t *, Mat&, bool)> recv_apply_transform,
@@ -550,14 +552,14 @@ void lbann_comm::ring_allreduce(
     return;  // Nothing to do.
   }
   // Compute the number of columns each processor sends.
-  const Int cols_per_proc = mat.Width() / nprocs;
-  const Int cols_remainder = mat.Width() % nprocs;
+  const El::Int cols_per_proc = mat.Width() / nprocs;
+  const El::Int cols_remainder = mat.Width() % nprocs;
   // Compute the lengths/ends of the slices.
-  std::vector<Int> slice_lengths(nprocs, cols_per_proc);
+  std::vector<El::Int> slice_lengths(nprocs, cols_per_proc);
   for (int i = 0; i < cols_remainder; ++i) {
     slice_lengths[i] += 1;
   }
-  std::vector<Int> slice_ends(nprocs);
+  std::vector<El::Int> slice_ends(nprocs);
   std::partial_sum(slice_lengths.begin(), slice_lengths.end(),
                    slice_ends.begin());
   uint8_t *max_recv_buf = get_collective_buffer(max_recv_count);
@@ -711,7 +713,7 @@ void lbann_comm::ring_allreduce(
 }
 
 void lbann_comm::rabenseifner_allreduce(
-  El::mpi::Comm comm, Mat& mat, int max_recv_count,
+  const El::mpi::Comm comm, Mat& mat, int max_recv_count,
   std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)> send_transform,
   std::function<int(uint8_t *, Mat&)> recv_transform,
   std::function<int(uint8_t *, Mat&, bool)> recv_apply_transform,
@@ -728,14 +730,14 @@ void lbann_comm::rabenseifner_allreduce(
                           " a power-of-2 number of participating processes");
   }
   // Compute the slices on each processor.
-  const Int cols_per_proc = mat.Width() / nprocs;
-  const Int cols_remainder = mat.Width() % nprocs;
+  const El::Int cols_per_proc = mat.Width() / nprocs;
+  const El::Int cols_remainder = mat.Width() % nprocs;
   // Compute the lengths/ends of the slices.
-  std::vector<Int> slice_lengths(nprocs, cols_per_proc);
+  std::vector<El::Int> slice_lengths(nprocs, cols_per_proc);
   for (int i = 0; i < cols_remainder; ++i) {
     slice_lengths[i] += 1;
   }
-  std::vector<Int> slice_ends(nprocs);
+  std::vector<El::Int> slice_ends(nprocs);
   std::partial_sum(slice_lengths.begin(), slice_lengths.end(),
                    slice_ends.begin());
   // Do a recursive-halving reduce-scatter.
@@ -901,8 +903,8 @@ void lbann_comm::setup_node_comm() {
   int hash = std::hash<std::string>()(node_string);
   hash = hash >= 0 ? hash : -hash;  // Make sure hash is non-negative
   El::mpi::Comm hash_comm;
-  El::mpi::Split(El::mpi::COMM_WORLD, hash,
-                 El::mpi::Rank(El::mpi::COMM_WORLD), hash_comm);
+  El::mpi::Split(get_world_comm(), hash,
+                 El::mpi::Rank(get_world_comm()), hash_comm);
   const int hash_comm_size = El::mpi::Size(hash_comm);
 
   // Compare node names and split MPI processes
@@ -919,7 +921,7 @@ void lbann_comm::setup_node_comm() {
     }
   }
   delete[] node_name_list;
-  El::mpi::Split(hash_comm, node_num, El::mpi::Rank(El::mpi::COMM_WORLD),
+  El::mpi::Split(hash_comm, node_num, El::mpi::Rank(get_world_comm()),
                  node_comm);
   El::mpi::Free(hash_comm);
 
@@ -927,7 +929,7 @@ void lbann_comm::setup_node_comm() {
   int node_comm_size = El::mpi::Size(node_comm);
   for (int i = 0; i < node_comm_size; ++i) {
     world_ranks_on_node.push_back(
-      El::mpi::Translate(node_comm, i, El::mpi::COMM_WORLD));
+      El::mpi::Translate(node_comm, i, get_world_comm()));
   }
 }
 

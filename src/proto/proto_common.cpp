@@ -37,7 +37,7 @@ inline bool weights_are_in_model(std::string name) {
 
 bool has_motifs(lbann_comm *comm, const lbann_data::LbannPB& p) {
   bool master = comm->am_world_master();
-  if (master) cout << "starting has_motifs\n";
+  if (master) std::cout << "starting has_motifs\n";
   const lbann_data::Model& m = p.model();
   const int num_layers = m.layer_size();
   for (int j=0; j<num_layers; j++) {
@@ -51,7 +51,7 @@ bool has_motifs(lbann_comm *comm, const lbann_data::LbannPB& p) {
 
 void expand_motifs(lbann_comm *comm, lbann_data::LbannPB& pb) {
   bool master = comm->am_world_master();
-  if (master) cout << "starting expand_motifs\n";
+  if (master) std::cout << "starting expand_motifs\n";
   const lbann_data::MotifDefinitions& m = pb.motif_definitions();
   const int num_motifs = m.motif_size();
   for (int j=0; j<num_motifs; j++) {
@@ -182,7 +182,7 @@ void setup_pointers(
   }
 }
 
-lbann_callback_imcomm::comm_type get_comm_type(const string &s, bool master)
+lbann_callback_imcomm::comm_type get_comm_type(const std::string &s, bool master)
 {
   if (s == "none") {
     return lbann_callback_imcomm::comm_type::NONE;
@@ -207,7 +207,7 @@ lbann_callback_imcomm::comm_type get_comm_type(const string &s, bool master)
   }
 }
 
-pool_mode get_pool_mode(const string& s, bool master)
+pool_mode get_pool_mode(const std::string& s, bool master)
 {
   if (s == "max") {
     return pool_mode::max;
@@ -228,37 +228,7 @@ pool_mode get_pool_mode(const string& s, bool master)
   }
 }
 
-weight_initialization get_weight_initialization(const string& s, bool master)
-{
-  if (s == "zero") {
-    return weight_initialization::zero;
-  } else if (s == "uniform") {
-    return weight_initialization::uniform;
-  } else if (s == "normal") {
-    return weight_initialization::normal;
-  } else if (s == "glorot_normal") {
-    return weight_initialization::glorot_normal;
-  } else if (s == "glorot_uniform") {
-    return weight_initialization::glorot_uniform;
-  } else if (s == "he_normal") {
-    return weight_initialization::he_normal;
-  } else if (s == "he_uniform") {
-    return weight_initialization::he_uniform;
-  } else {
-    if (master) {
-      std::stringstream err;
-      err << __FILE__ << " " <<__LINE__
-          << " :: unkown weight_initialization: " << s
-          << " should be one of: zero uniform normal glorot_normal glorot_uniform he_normal he_uniform";
-      throw lbann_exception(err.str());
-    } else {
-      return weight_initialization::zero;  //keep compiler happy, and have only one proc throw exception
-
-    }
-  }
-}
-
-inline data_layout get_data_layout(const string& s)
+inline data_layout get_data_layout(const std::string& s)
 {
   if (s == "model_parallel") {
     return data_layout::MODEL_PARALLEL;
@@ -471,7 +441,7 @@ void add_layers(
       const lbann_data::Reshape &ell = layer.reshape();
       int i;
       std::stringstream s(ell.dims());
-      vector<int> dims;
+      std::vector<int> dims;
       while (s >> i) {
         dims.push_back(i);
       }
@@ -496,7 +466,7 @@ void add_layers(
     else if (layer.has_slice()) {
       const lbann_data::Slice &ell = layer.slice();
       std::stringstream s(ell.slice_points());
-      vector<int> slice_points;
+      std::vector<int> slice_points;
       int i;
       while (s >> i) {
         slice_points.push_back(i);
@@ -537,19 +507,19 @@ void add_layers(
 
         int i;
         std::stringstream ss(ell.pool_dims());
-        vector<int> pool_dims;
+        std::vector<int> pool_dims;
         while (ss >> i) {
           pool_dims.push_back(i);
         }
 
-        vector<int> pool_pads;
+        std::vector<int> pool_pads;
         ss.clear();
         ss.str(ell.pool_pads());
         while (ss >> i) {
           pool_pads.push_back(i);
         }
 
-        vector<int> pool_strides;
+        std::vector<int> pool_strides;
         ss.clear();
         ss.str(ell.pool_strides());
         while (ss >> i) {
@@ -615,7 +585,7 @@ void add_layers(
       bool has_vectors = ell.has_vectors();
 
       if (has_vectors) {
-        vector<int> conv_dims;
+        std::vector<int> conv_dims;
         std::stringstream ss;
         int i;
         ss.str(ell.conv_dims());
@@ -623,14 +593,14 @@ void add_layers(
           conv_dims.push_back(i);
         }
 
-        vector<int> conv_pads;
+        std::vector<int> conv_pads;
         ss.clear();
         ss.str(ell.conv_pads());
         while (ss >> i) {
           conv_pads.push_back(i);
         }
 
-        vector<int> conv_strides;
+        std::vector<int> conv_strides;
         ss.clear();
         ss.str(ell.conv_strides());
         while (ss >> i) {
@@ -683,7 +653,7 @@ void add_layers(
       bool has_vectors = ell.has_vectors();
 
       if (has_vectors) {
-        vector<int> conv_dims;
+        std::vector<int> conv_dims;
         std::stringstream ss;
         int i;
         ss.str(ell.conv_dims());
@@ -691,14 +661,14 @@ void add_layers(
           conv_dims.push_back(i);
         }
 
-        vector<int> conv_pads;
+        std::vector<int> conv_pads;
         ss.clear();
         ss.str(ell.conv_pads());
         while (ss >> i) {
           conv_pads.push_back(i);
         }
 
-        vector<int> conv_strides;
+        std::vector<int> conv_strides;
         ss.clear();
         ss.str(ell.conv_strides());
         while (ss >> i) {
@@ -1075,7 +1045,7 @@ lbann_summary * construct_summarizer(const lbann_data::Model &m, lbann_comm *com
     if (callback.has_summary()) {
       const lbann_data::CallbackSummary& c = callback.summary();
       if (master) {
-        cout << "constructing summarizer with dir: " << c.dir() << endl;
+        std::cout << "constructing summarizer with dir: " << c.dir() << std::endl;
       }
 
       //check to see if directory exists
@@ -1137,7 +1107,7 @@ void init_callbacks(
   bool master = comm->am_world_master();
 
   const lbann_data::Model& m = p.model();
-  if (master) cerr << endl << "starting init_callbacks; size: " << m.callback_size() << endl;
+  if (master) std::cerr << std::endl << "starting init_callbacks; size: " << m.callback_size() << std::endl;
 
   
   //the same summarizer is passed to all call backs that take a summarizer;
@@ -1164,8 +1134,8 @@ void init_callbacks(
     //////////////////////////////////////////////////////////////////
     if (callback.has_save_images()) {
       const lbann_data::CallbackSaveImages& c = callback.save_images();
-      string image_dir = c.image_dir();
-      string extension = c.extension();
+      std::string image_dir = c.image_dir();
+      std::string extension = c.extension();
       generic_data_reader *reader = data_readers[execution_mode::training];
       lbann_callback_save_images *image_cb = new lbann_callback_save_images(reader, image_dir, extension);
       model->add_callback(image_cb);
@@ -1206,8 +1176,8 @@ void init_callbacks(
     if (callback.has_dump_weights()) {
       const lbann_data::CallbackDumpWeights& c = callback.dump_weights();
       if (master) {
-        cout << "adding dump weights callback with basename: " << c.basename()
-             << " and interval: " << c.interval() << endl;
+        std::cout << "adding dump weights callback with basename: " << c.basename()
+                  << " and interval: " << c.interval() << std::endl;
       }
       lbann_callback_dump_weights *weights_cb = new lbann_callback_dump_weights(c.basename(), c.interval());
       model->add_callback(weights_cb);
@@ -1219,8 +1189,8 @@ void init_callbacks(
     if (callback.has_dump_activations()) {
       const lbann_data::CallbackDumpActivations& c = callback.dump_activations();
       if (master) {
-        cout << "adding dump activations callback with basename: " << c.basename()
-             << " and interval: " << c.interval() << endl;
+        std::cout << "adding dump activations callback with basename: " << c.basename()
+                  << " and interval: " << c.interval() << std::endl;
       }
       lbann_callback_dump_activations *activations_cb = new lbann_callback_dump_activations(c.basename(), c.interval());
       model->add_callback(activations_cb);
@@ -1232,8 +1202,8 @@ void init_callbacks(
     if (callback.has_dump_gradients()) {
       const lbann_data::CallbackDumpGradients& c = callback.dump_gradients();
       if (master) {
-        cout << "adding dump gradients callback with basename: " << c.basename()
-             << " and interval: " << c.interval() << endl;
+        std::cout << "adding dump gradients callback with basename: " << c.basename()
+                  << " and interval: " << c.interval() << std::endl;
       }
       lbann_callback_dump_gradients *gradients_cb = new lbann_callback_dump_gradients(c.basename(), c.interval());
       model->add_callback(gradients_cb);
@@ -1245,8 +1215,8 @@ void init_callbacks(
     if (callback.has_dump_mb_indices()) {
       const lbann_data::CallbackDumpMBIndices& c = callback.dump_mb_indices();
       if (master) {
-        cout << "adding dump I/O callback with basename: " << c.basename()
-             << " and interval: " << c.interval() << endl;
+        std::cout << "adding dump I/O callback with basename: " << c.basename()
+                  << " and interval: " << c.interval() << std::endl;
       }
       lbann_callback_dump_minibatch_sample_indices *mb_indices_cb = new lbann_callback_dump_minibatch_sample_indices(c.basename(), c.interval());
       model->add_callback(mb_indices_cb);
@@ -1258,7 +1228,7 @@ void init_callbacks(
     if (callback.has_check_dataset()) {
       //const lbann_data::CallbackCheckDataset& c = callback.check_dataset();
       if (master) {
-        cout << "adding callback to check the dataset" << endl;
+        std::cout << "adding callback to check the dataset" << std::endl;
       }
       lbann_callback_check_dataset *check_dataset_cb = new lbann_callback_check_dataset();
       model->add_callback(check_dataset_cb);
@@ -1280,7 +1250,7 @@ void init_callbacks(
         }
         which.insert(model_layers[a]);
         if (master) {
-          cout << "adding display I/O stats callback for layer " << a;
+          std::cout << "adding display I/O stats callback for layer " << a;
         }
       }
       lbann_callback_io *io_cb = new lbann_callback_io(which);
@@ -1293,7 +1263,7 @@ void init_callbacks(
     if (callback.has_imcomm()) {
       const lbann_data::CallbackImComm& c = callback.imcomm();
       if (master) {
-        cout << "adding imcomm callback\n";
+        std::cout << "adding imcomm callback\n";
       }
       std::unordered_set<std::string> include_list, exclude_list;
       choose_imcomm_callback_weights(comm, m, include_list, exclude_list);
@@ -1375,7 +1345,7 @@ void init_callbacks(
     if (callback.has_debug()) {
       const lbann_data::CallbackDebug& c = callback.debug();
       if (master) {
-        cout << "adding debugging callback for phase: " << c.phase() << endl;
+        std::cout << "adding debugging callback for phase: " << c.phase() << std::endl;
       }
       lbann_callback_debug *debug_cb = nullptr;
       if(c.phase() == "train" || c.phase() == "training") {
@@ -1396,7 +1366,7 @@ void init_callbacks(
     if (callback.has_debug_io()) {
       const lbann_data::CallbackDebugIO& c = callback.debug_io();
       if (master) {
-        cout << "adding debugging I/O callback for phase: " << c.phase() << endl;
+        std::cout << "adding debugging I/O callback for phase: " << c.phase() << std::endl;
       }
       lbann_callback_debug_io *debug_cb = nullptr;
       if(c.phase() == "train" || c.phase() == "training") {
@@ -1514,7 +1484,7 @@ void init_callbacks(
     if (callback.has_profiler()) {
       //const lbann_data::CallbackProfiler& c = callback.profiler();
       if (master) {
-        cout << "adding profiler callback" << endl;
+        std::cout << "adding profiler callback" << std::endl;
       }
       lbann_callback_profiler *profiler_cb = new lbann_callback_profiler();
       model->add_callback(profiler_cb);
@@ -1608,7 +1578,7 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
   model *model = 0;
 
   const lbann_data::Model& m = p.model();
-  const string name = m.name();
+  const std::string name = m.name();
   uint mini_batch_size = m.mini_batch_size();
 
   //instantiate the objective function
@@ -1648,7 +1618,7 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
       }
     } else {
       err << __FILE__ << " " << __LINE__
-          << " :: init_model() - " << name << " needs definition" << endl;
+          << " :: init_model() - " << name << " needs definition" << std::endl;
       throw lbann_exception(err.str());
     }
     if (master) std::cout << "instantiating planar_model\n";
@@ -1659,7 +1629,7 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
   else {
     if (master) {
       err << __FILE__ << " " << __LINE__
-          << " :: init_model() - unknown model name: " << name << endl
+          << " :: init_model() - unknown model name: " << name << std::endl
           << "; should be one of: sequential_model, dag_model, greedy_layerwise_autoencoder";
       throw lbann_exception(err.str());
     }
@@ -1721,31 +1691,36 @@ optimizer *init_default_optimizer(lbann_comm *comm,
   const lbann_data::Optimizer &opt_params = params.optimizer();
   if (opt_params.has_sgd()) {
     const lbann_data::Sgd &sgd_params = opt_params.sgd();
-    opt = new sgd(sgd_params.learn_rate(),
+    opt = new sgd(comm,
+                  sgd_params.learn_rate(),
                   sgd_params.momentum(),
                   sgd_params.nesterov());
   }
   if (opt_params.has_adagrad()) {
     const lbann_data::Adagrad &adagrad_params = opt_params.adagrad();
-    opt = new adagrad(adagrad_params.learn_rate(),
+    opt = new adagrad(comm,
+                      adagrad_params.learn_rate(),
                       adagrad_params.eps());
   }
   if (opt_params.has_rmsprop()) {
     const lbann_data::Rmsprop &rmsprop_params = opt_params.rmsprop();
-    opt = new rmsprop(rmsprop_params.learn_rate(),
+    opt = new rmsprop(comm,
+                      rmsprop_params.learn_rate(),
                       rmsprop_params.decay_rate(),
                       rmsprop_params.eps());
   }
   if (opt_params.has_adam()) {
     const lbann_data::Adam &adam_params = opt_params.adam();
-    opt = new adam(adam_params.learn_rate(),
+    opt = new adam(comm,
+                   adam_params.learn_rate(),
                    adam_params.beta1(),
                    adam_params.beta2(),
                    adam_params.eps());
   }
   if (opt_params.has_hypergradient_adam()) {
     const lbann_data::HypergradientAdam &hypergradient_adam_params = opt_params.hypergradient_adam();
-    opt = new hypergradient_adam(hypergradient_adam_params.init_learning_rate(),
+    opt = new hypergradient_adam(comm,
+                                 hypergradient_adam_params.init_learning_rate(),
                                  hypergradient_adam_params.hyper_learning_rate(),
                                  hypergradient_adam_params.beta1(),
                                  hypergradient_adam_params.beta2(),
@@ -1768,7 +1743,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
     // This is a temporary measure until we individually setup data reader specific preprocessors
     bool set_up_generic_preprocessor = true;
 
-    const string& name = readme.name();
+    const std::string& name = readme.name();
 
     const bool shuffle = readme.shuffle();
 
@@ -1923,8 +1898,8 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
         size_t num_validate = reader_validation->get_num_data();
         double validate_percent = ((double) num_validate / (double) (num_train+num_validate))*100.0;
         double train_percent = ((double) num_train / (double) (num_train+num_validate))*100.0;
-        cout << "Training using " << train_percent << "% of the training data set, which is " << reader->get_num_data() << " samples." << endl
-             << "Validating training using " << validate_percent << "% of the training data set, which is " << reader_validation->get_num_data() << " samples." << endl;
+        std::cout << "Training using " << train_percent << "% of the training data set, which is " << reader->get_num_data() << " samples." << std::endl
+                  << "Validating training using " << validate_percent << "% of the training data set, which is " << reader_validation->get_num_data() << " samples." << std::endl;
       }
 
       data_readers[execution_mode::validation] = reader_validation;
@@ -1932,7 +1907,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
   }
 }
 
-void read_prototext_file(string fn, lbann_data::LbannPB& pb, bool master)
+void read_prototext_file(std::string fn, lbann_data::LbannPB& pb, bool master)
 {
   std::stringstream err;
   int fd = open(fn.c_str(), O_RDONLY);
@@ -1946,7 +1921,7 @@ void read_prototext_file(string fn, lbann_data::LbannPB& pb, bool master)
   bool success = google::protobuf::TextFormat::Parse(input, &pb);
   if (!success) {
     if (master) {
-      err <<  __FILE__ << " " << __LINE__ << " :: failed to read or parse prototext file: " << fn << endl;
+      err <<  __FILE__ << " " << __LINE__ << " :: failed to read or parse prototext file: " << fn << std::endl;
       throw lbann_exception(err.str());
     }
   }
@@ -1980,14 +1955,14 @@ void set_num_parallel_readers(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
   int parallel_io = model->num_parallel_readers();
   if (parallel_io == 0) {
     if (master) {
-      cout << "\tMax Parallel I/O Fetch: " << comm->get_procs_per_model() <<
-           " (Limited to # Processes)" << endl;
+      std::cout << "\tMax Parallel I/O Fetch: " << comm->get_procs_per_model() <<
+        " (Limited to # Processes)" << std::endl;
     }
     parallel_io = comm->get_procs_per_model();
     model->set_num_parallel_readers(parallel_io); //adjust the prototext
   } else {
     if (master) {
-      cout << "\tMax Parallel I/O Fetch: " << parallel_io << endl;
+      std::cout << "\tMax Parallel I/O Fetch: " << parallel_io << std::endl;
     }
   }
 }
@@ -2177,57 +2152,57 @@ void print_parameters(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
 
   const lbann_data::Model &m = p.model();
 
-  cout << endl
-       << "Running with these parameters:\n"
-       << " General:\n"
-       << "  datatype size:        " << sizeof(DataType) << endl
-       << "  mini_batch_size:      " << m.mini_batch_size() << endl
-       << "  num_epochs:           " << m.num_epochs()  << endl
-       << "  block_size:           " << m.block_size()  << endl
-       << "  procs_per_model:      " << m.procs_per_model()  << endl
-       << "  num_gpus:             " << m.num_gpus()  << endl
-       << "  num_parallel_readers: " << m.num_parallel_readers()  << endl
-       << "  use_cudnn:            " << m.use_cudnn()  << endl
-       << "  random_seed:          " << m.random_seed() << endl
-       << "  data_layout:          " << m.data_layout()  << endl
-       << "     (only used for metrics)\n"
-       << "\n"
-       << " Optimizer:  ";
+  std::cout << std::endl
+            << "Running with these parameters:\n"
+            << " General:\n"
+            << "  datatype size:        " << sizeof(DataType) << std::endl
+            << "  mini_batch_size:      " << m.mini_batch_size() << std::endl
+            << "  num_epochs:           " << m.num_epochs()  << std::endl
+            << "  block_size:           " << m.block_size()  << std::endl
+            << "  procs_per_model:      " << m.procs_per_model()  << std::endl
+            << "  num_gpus:             " << m.num_gpus()  << std::endl
+            << "  num_parallel_readers: " << m.num_parallel_readers()  << std::endl
+            << "  use_cudnn:            " << m.use_cudnn()  << std::endl
+            << "  random_seed:          " << m.random_seed() << std::endl
+            << "  data_layout:          " << m.data_layout()  << std::endl
+            << "     (only used for metrics)\n"
+            << "\n"
+            << " Optimizer:  ";
 
   const lbann_data::Optimizer &o = p.optimizer();
   if (o.has_adagrad()) {
     const lbann_data::Adagrad &a = o.adagrad();
-    cout << "  Adagrad\n"
-         << "  learn_rate: " << a.learn_rate()  << endl
-         << "  eps:        " << a.eps()  << endl;
+    std::cout << "  Adagrad\n"
+              << "  learn_rate: " << a.learn_rate()  << std::endl
+              << "  eps:        " << a.eps()  << std::endl;
   } else if (o.has_rmsprop()) {
     const lbann_data::Rmsprop &a = o.rmsprop();
-    cout <<  "  Rmsprop\n"
-         << "  learn_rate: " << a.learn_rate()  << endl
-         << "  decay_rate: " << a.decay_rate()  << endl
-         << "  eps:        " << a.eps()  << endl;
+    std::cout <<  "  Rmsprop\n"
+              << "  learn_rate: " << a.learn_rate()  << std::endl
+              << "  decay_rate: " << a.decay_rate()  << std::endl
+              << "  eps:        " << a.eps()  << std::endl;
   } else if (o.has_adam()) {
     const lbann_data::Adam &a = o.adam();
-    cout << "  Adam\n"
-         << "  learn_rate: " << a.learn_rate()  << endl
-         << "  beta1:      " << a.beta1()  << endl
-         << "  beta2:      " << a.beta2()  << endl
-         << "  eps:        " << a.eps()  << endl;
+    std::cout << "  Adam\n"
+              << "  learn_rate: " << a.learn_rate()  << std::endl
+              << "  beta1:      " << a.beta1()  << std::endl
+              << "  beta2:      " << a.beta2()  << std::endl
+              << "  eps:        " << a.eps()  << std::endl;
   } else if (o.has_hypergradient_adam()) {
     const lbann_data::HypergradientAdam &a = o.hypergradient_adam();
-    cout << "  HypergradientAdam\n"
-         << "  init_learning_rate:  " << a.init_learning_rate()  << endl
-         << "  hyper_learning_rate: " << a.hyper_learning_rate()  << endl
-         << "  beta1:               " << a.beta1()  << endl
-         << "  beta2:               " << a.beta2()  << endl
-         << "  eps:                 " << a.eps()  << endl;
+    std::cout << "  HypergradientAdam\n"
+              << "  init_learning_rate:  " << a.init_learning_rate()  << std::endl
+              << "  hyper_learning_rate: " << a.hyper_learning_rate()  << std::endl
+              << "  beta1:               " << a.beta1()  << std::endl
+              << "  beta2:               " << a.beta2()  << std::endl
+              << "  eps:                 " << a.eps()  << std::endl;
   } else if (o.has_sgd()) {
     const lbann_data::Sgd &a = o.sgd();
-    cout << "  Sgd\n"
-         << "  learn_rate: " << a.learn_rate()  << endl
-         << "  momentum:   " << a.momentum()  << endl
-         << "  decay_rate: " << a.decay_rate()  << endl
-         << "  nesterov:   " << a.nesterov()  << endl;
+    std::cout << "  Sgd\n"
+              << "  learn_rate: " << a.learn_rate()  << std::endl
+              << "  momentum:   " << a.momentum()  << std::endl
+              << "  decay_rate: " << a.decay_rate()  << std::endl
+              << "  nesterov:   " << a.nesterov()  << std::endl;
   }
 }
 
@@ -2237,7 +2212,7 @@ void print_help(lbann::lbann_comm *comm)
     return;
   }
 
-  cerr <<
+  std::cerr <<
        "General usage: you need to specify three prototext files, e.g:\n"
        "  srun -n# proto --model=<string> --optimizer=<string> --reader=<string>\n"
        "\n"
@@ -2346,7 +2321,7 @@ void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::Lb
 
   //check if "name" exists; if yes, append "_1"
   bool exists = false;
-  ifstream in(name.c_str());
+  std::ifstream in(name.c_str());
   if (in) {
     exists = true;
     in.close();
@@ -2377,8 +2352,6 @@ void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::Lb
   lbann_version = LBANN_MAKE_STR(LBANN_VERSION);
 #endif
 
-  int size;
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
   std::time_t r = std::time(nullptr);
   char *tm = std::ctime(&r);
   size_t fixme = strlen(tm);
@@ -2387,7 +2360,7 @@ void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::Lb
       <<  tm
       << "\n#\n#\n# Experiment was run with lbann version: "
       << lbann_version << "\n#\n#\n# To rerun the experiment: \n"
-      << "#  $ srun -n" << size << " " << argv[0]
+      << "#  $ srun -n" << comm->get_procs_in_world() << " " << argv[0]
       << " --loadme=" << opts->get_string("saveme") << "\n#\n#\n";
 
   out << "# Selected SLURM Environment Variables:\n";

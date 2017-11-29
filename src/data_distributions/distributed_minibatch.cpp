@@ -27,8 +27,6 @@
 #include "lbann/data_distributions/distributed_minibatch.hpp"
 #include "lbann/utils/exception.hpp"
 
-using namespace std;
-
 lbann::distributed_minibatch::distributed_minibatch(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
   : generic_data_distribution(comm, num_parallel_readers, data_readers) {}
 
@@ -63,7 +61,7 @@ void lbann::distributed_minibatch::distribute_from_local_matrix(Mat& M_local, Ci
 
   if (m_comm->get_rank_in_model() == m_root) {
     if(!m_local_data_valid) {
-      stringstream err;
+      std::stringstream err;
       err << __FILE__ << " " << __LINE__
           << " :: lbann_distributed_minibatch: No valid data for this step -- local data was invalid";
       lbann_exception(err.str());
@@ -93,7 +91,7 @@ bool lbann::distributed_minibatch::is_data_set_processed(generic_data_reader *da
 
   if(is_active_reader) {
       if(m_local_data_valid) { /// Make sure that all local data has been processed
-        stringstream err;
+        std::stringstream err;
         err << __FILE__ << " "<<  __LINE__
             << " :: lbann_input_layer_distributed_minibatch: all valid data was not processed.";
         throw lbann_exception(err.str());
@@ -124,9 +122,9 @@ int lbann::distributed_minibatch::compute_max_num_parallel_readers(long data_set
   /// number of parallel readers
   if(m_comm->get_model_grid().Size() < num_parallel_readers) {
     if (m_comm->am_model_master()) {
-      cout << "Warning the grid size "<<m_comm->get_model_grid().Size()
-           <<"is smaller than the number of requested parallel readers "
-           <<num_parallel_readers<<"." << endl;
+      std::cout << "Warning the grid size " << m_comm->get_model_grid().Size()
+                << "is smaller than the number of requested parallel readers "
+                << num_parallel_readers << "." << std::endl;
     }
     num_parallel_readers = m_comm->get_model_grid().Size();
   }
@@ -236,7 +234,7 @@ void lbann::distributed_minibatch::calculate_num_iterations_per_epoch(int num_mo
   /// By default the last stride of each reader is part of a regular (full) round
   data_reader->set_stride_to_last_mini_batch(data_reader->get_stride_to_next_mini_batch());
 
-  int last_mini_batch_offset = max(0, num_whole_mini_batches_per_reader - 1) * data_reader->get_stride_to_next_mini_batch();
+  int last_mini_batch_offset = std::max(0, num_whole_mini_batches_per_reader - 1) * data_reader->get_stride_to_next_mini_batch();
 
   /// BVE FIXME I don't think that the last mb stride is correct
   ///  The last mini-batch may be partial and thus may have a smaller stride

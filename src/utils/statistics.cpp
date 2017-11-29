@@ -27,8 +27,6 @@
 #include "lbann/utils/statistics.hpp"
 #include "lbann/utils/exception.hpp"
 
-using namespace El;
-
 namespace lbann {
 
 void entrywise_mean_and_stdev(const Mat& data,
@@ -179,8 +177,8 @@ void columnwise_mean_and_stdev(const AbsDistMat& data,
   }
 
   // Allreduce sums and sums of squares
-  AllReduce(means, means.RedundantComm(), mpi::SUM);
-  AllReduce(stdevs, stdevs.RedundantComm(), mpi::SUM);
+  AllReduce(means, means.RedundantComm(), El::mpi::SUM);
+  AllReduce(stdevs, stdevs.RedundantComm(), El::mpi::SUM);
 
   // Compute mean and standard deviation of each matrix column
   #pragma omp parallel for
@@ -272,10 +270,10 @@ void rowwise_mean_and_stdev(const AbsDistMat& data,
 #endif // #ifdef LBANN_DEBUG
 
   // Matrix dimensions
-  const Int height = data.Height();
-  const Int width = data.Width();
-  const Int local_height = data.LocalHeight();
-  const Int local_width = data.LocalWidth();
+  const El::Int height = data.Height();
+  const El::Int width = data.Width();
+  const El::Int local_height = data.LocalHeight();
+  const El::Int local_width = data.LocalWidth();
 
   // Initialize outputs
   means.Resize(height, 1);
@@ -287,18 +285,18 @@ void rowwise_mean_and_stdev(const AbsDistMat& data,
   Mat& local_stdevs = stdevs.Matrix();
 
   // Iterate through row blocks
-  const Int block_size = 16;
+  const El::Int block_size = 16;
   #pragma omp parallel for
-  for(Int row_start = 0; row_start < local_height; row_start += block_size) {
-    const Int row_end = std::min(row_start + block_size, local_height);
+  for(El::Int row_start = 0; row_start < local_height; row_start += block_size) {
+    const El::Int row_end = std::min(row_start + block_size, local_height);
 
     // Iterate through blocks in row block
-    for(Int col_start = 0; col_start < local_width; col_start += block_size) {
-      const Int col_end = std::min(col_start + block_size, local_width);
+    for(El::Int col_start = 0; col_start < local_width; col_start += block_size) {
+      const El::Int col_end = std::min(col_start + block_size, local_width);
 
       // Compute sums by iterating through block entries
-      for(Int col = col_start; col < col_end; ++col) {
-        for(Int row = row_start; row < row_end; ++row) {
+      for(El::Int col = col_start; col < col_end; ++col) {
+        for(El::Int row = row_start; row < row_end; ++row) {
           const DataType val = local_data(row, col);
           local_means(row, 0) += val;
           local_stdevs(row, 0) += val * val;
@@ -310,12 +308,12 @@ void rowwise_mean_and_stdev(const AbsDistMat& data,
   }
 
   // Allreduce sums and sums of squares
-  AllReduce(means, means.RedundantComm(), mpi::SUM);
-  AllReduce(stdevs, stdevs.RedundantComm(), mpi::SUM);
+  AllReduce(means, means.RedundantComm(), El::mpi::SUM);
+  AllReduce(stdevs, stdevs.RedundantComm(), El::mpi::SUM);
 
   // Compute mean and standard deviation of each matrix row
   #pragma omp parallel for
-  for(Int row = 0; row < local_height; ++row) {
+  for(El::Int row = 0; row < local_height; ++row) {
     const DataType mean = local_means(row, 0) / width;
     const DataType sqmean = local_stdevs(row, 0) / width;
     const DataType var = std::max(sqmean - mean * mean, DataType(0));

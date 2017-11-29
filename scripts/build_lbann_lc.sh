@@ -105,6 +105,7 @@ Options:
   ${C}--install-lbann${N}         Install LBANN headers and dynamic library into the build directory.
   ${C}--build${N}                 Specify alternative build directory; default is <lbann_home>/build.
   ${C}--suffix${N}                Specify suffix for build directory. If you are, e.g, building on surface, your build will be <someplace>/surface.llnl.gov, regardless of your choice of compiler or other flags. This option enables you to specify, e.g: --suffix gnu_debug, in which case your build will be in the directory <someplace>/surface.llnl.gov.gnu_debug
+  ${C}--use-nccl${N}              Use NCCL library
   ${C}--disable-cuda${N}          Disable CUDA
   ${C}--disable-topo-aware${N}    Disable topological-aware configuration (no HWLOC)
 EOF
@@ -214,6 +215,9 @@ while :; do
             ;;
         --disable-cuda)
             WITH_CUDA=OFF
+            ;;
+        --use-nccl)
+            WITH_NCCL=ON
             ;;
         --disable-topo-aware)
             WITH_TOPO_AWARE=OFF
@@ -623,6 +627,7 @@ cmake \
 -D LIBJPEG_TURBO_DIR=${LIBJPEG_TURBO_DIR} \
 -D PATCH_OPENBLAS=${PATCH_OPENBLAS} \
 -D ELEMENTAL_USE_CUBLAS=${ELEMENTAL_USE_CUBLAS} \
+-D WITH_NCCL=${WITH_NCCL} \
 -D WITH_TOPO_AWARE=${WITH_TOPO_AWARE} \
 -D IPPROOT=${IPPROOT} \
 ${ROOT_DIR}

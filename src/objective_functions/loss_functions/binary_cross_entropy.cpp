@@ -62,7 +62,8 @@ void binary_cross_entropy::compute_value(const AbsDistMat& predictions,
   
   // Compute binary cross entropy
   double binary_ce = sum / width;  
-  binary_ce = El::mpi::AllReduce(binary_ce, predictions.DistComm());
+  binary_ce = m_objective_function->get_model()->get_comm()->allreduce(
+    binary_ce, predictions.DistComm());
 
   // Update objective function value
   add_to_value(binary_ce);

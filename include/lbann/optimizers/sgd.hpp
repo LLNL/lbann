@@ -41,7 +41,8 @@ class sgd : public optimizer {
  public:
 
   /** Constructor. */
-  sgd(DataType learning_rate,
+  sgd(lbann_comm *comm,
+      DataType learning_rate,
       DataType momentum = DataType(0),
       bool nesterov = false);
 
@@ -64,6 +65,11 @@ class sgd : public optimizer {
 
   /** Perform the computation in an optimization step. */
   void step_compute(AbsDistMat& values, const AbsDistMat& gradient) override;
+#ifdef __LIB_CUDNN
+  /** Perform the computation in an optimization step on GPU. */
+  void step_compute_gpu(std::vector<DataType*> values_d,
+                        std::vector<DataType*> gradient_d) override;
+#endif // __LIB_CUDNN
 
  private:
 
@@ -73,6 +79,11 @@ class sgd : public optimizer {
   bool m_nesterov;
   /** Velocity term for momentum SGD. */
   AbsDistMat* m_velocity;
+
+#ifdef __LIB_CUDNN
+  /** GPU memory for velocity. */
+  std::vector<DataType*> m_velocity_d;  
+#endif // __LIB_CUDNN
 
 };
 

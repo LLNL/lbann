@@ -76,8 +76,8 @@ void init_random(int seed, lbann_comm *comm) {
 #ifdef _OPENMP
     #pragma omp parallel
     {
-      get_generator().seed((seed << 8) | (omp_get_thread_num() & 0xff));
-      get_fast_generator().seed((seed << 8) | (omp_get_thread_num() & 0xff));
+      get_generator().seed((seed << 8) | omp_get_thread_num());
+      get_fast_generator().seed((seed << 8) | omp_get_thread_num());
     }
 #else
     get_generator().seed(seed);
@@ -97,8 +97,8 @@ void init_random(int seed, lbann_comm *comm) {
 #ifdef _OPENMP
     #pragma omp parallel
     {
-      get_generator().seed((rand_val << 8) | (omp_get_thread_num() & 0xff));
-      get_fast_generator().seed((rand_val << 8) | (omp_get_thread_num() & 0xff));
+      get_generator().seed((rand_val << 8) | omp_get_thread_num());
+      get_fast_generator().seed((rand_val << 8) | omp_get_thread_num());
     }
 #else
     get_generator().seed(rand_val);
@@ -201,48 +201,6 @@ void uniform_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n, DataType center
     }
   }
   mat.ProcessQueues();
-}
-
-
-void initialize_matrix(AbsDistMat& matrix_v, weight_initialization initialization, El::Int fan_in, El::Int fan_out) {
-  switch(initialization) {
-  case weight_initialization::uniform:
-    uniform_fill(matrix_v, matrix_v.Height(), matrix_v.Width(),
-                 DataType(0), DataType(1));
-    break;
-  case weight_initialization::normal:
-    gaussian_fill(matrix_v, matrix_v.Height(), matrix_v.Width(),
-                  DataType(0), DataType(1));
-    break;
-  case weight_initialization::glorot_normal: {
-    const DataType var = DataType(2) / (fan_in + fan_out);
-    gaussian_fill(matrix_v, matrix_v.Height(), matrix_v.Width(),
-                  DataType(0), std::sqrt(var));
-    break;
-  }
-  case weight_initialization::glorot_uniform: {
-    const DataType var = DataType(2) / (fan_in + fan_out);
-    uniform_fill(matrix_v, matrix_v.Height(), matrix_v.Width(),
-                 DataType(0), std::sqrt(3*var));
-    break;
-  }
-  case weight_initialization::he_normal: {
-    const DataType var = DataType(1) / fan_in;
-    gaussian_fill(matrix_v, matrix_v.Height(), matrix_v.Width(),
-                  DataType(0), std::sqrt(var));
-    break;
-  }
-  case weight_initialization::he_uniform: {
-    const DataType var = DataType(1) / fan_in;
-    uniform_fill(matrix_v, matrix_v.Height(), matrix_v.Width(),
-                 DataType(0), std::sqrt(3*var));
-    break;
-  }
-  case weight_initialization::zero: // Zero initialization is default
-  default:
-    El::Zero(matrix_v);
-    break;
-  }
 }
 
 }  // namespace lbann

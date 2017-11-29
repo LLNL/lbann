@@ -50,6 +50,13 @@ cublasStatus_t axpy(const cublasHandle_t &handle,
   return cublasSaxpy(handle, n, &alpha, x, incx, y, incy);
 }
 inline
+float nrm2(const cublasHandle_t &handle,
+           int n, const float *x, int incx) {
+  float result;
+  CHECK_CUBLAS(cublasSnrm2(handle, n, x, incx, &result));
+  return result;
+}
+inline
 cublasStatus_t scal(const cublasHandle_t &handle,
                     int n,
                     float alpha,
@@ -79,6 +86,13 @@ cublasStatus_t axpy(const cublasHandle_t &handle,
                     const double *x, int incx,
                     double *y, int incy) {
   return cublasDaxpy(handle, n, &alpha, x, incx, y, incy);
+}
+inline
+double nrm2(const cublasHandle_t &handle,
+            int n, const double *x, int incx) {
+  double result;
+  CHECK_CUBLAS(cublasDnrm2(handle, n, x, incx, &result));
+  return result;
 }
 inline
 cublasStatus_t scal(const cublasHandle_t &handle,

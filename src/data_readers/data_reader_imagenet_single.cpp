@@ -76,7 +76,7 @@ void imagenet_reader_single::load() {
   if (is_master()) {
     std::cout << "opening: " << b.str() << " " << std::endl;
   }
-  ifstream in(b.str().c_str());
+  std::ifstream in(b.str().c_str());
   if (not in.is_open() and in.good()) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__

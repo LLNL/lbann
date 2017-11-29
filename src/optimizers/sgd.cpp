@@ -31,10 +31,11 @@
 
 namespace lbann {
 
-sgd::sgd(DataType learning_rate,
+sgd::sgd(lbann_comm *comm,
+         DataType learning_rate,
          DataType momentum,
          bool nesterov)
-  : optimizer(learning_rate),
+  : optimizer(comm, learning_rate),
     m_momentum(momentum),
     m_nesterov(nesterov),
     m_velocity(nullptr) {}
@@ -45,6 +46,13 @@ sgd::sgd(const sgd& other)
     m_nesterov(other.m_nesterov),
     m_velocity(other.m_velocity) {
   if (m_velocity != nullptr) { m_velocity = m_velocity->Copy(); }
+  #ifdef __LIB_CUDNN
+  if (m_cudnn != nullptr && other.m_weights != nullptr) {
+    const int height = other.m_weights->get_height();
+    const int width = other.m_weights->get_width();
+    m_velocity_d = m_cudnn->copy(other.m_velocity_d, height, width);
+  }
+  #endif // __LIB_CUDNN
 }
 
 sgd& sgd::operator=(const sgd& other) {
@@ -63,11 +71,26 @@ sgd& sgd::operator=(const sgd& other) {
     if (m_velocity != nullptr) { m_velocity = m_velocity->Copy(); }
   }
 
+  // Copy GPU data
+  #ifdef __LIB_CUDNN
+  if (m_cudnn != nullptr && other.m_weights != nullptr) {
+    const int height = other.m_weights->get_height();
+    const int width = other.m_weights->get_width();
+    m_cudnn->deallocate_on_gpus(m_velocity_d);
+    m_velocity_d = m_cudnn->copy(other.m_velocity_d, height, width);
+  }
+  #endif // __LIB_CUDNN
+
   return *this;
 }
 
 sgd::~sgd() {
   if (m_velocity != nullptr) { delete m_velocity; }
+  #ifdef __LIB_CUDNN
+  if (m_cudnn != nullptr) {
+    m_cudnn->deallocate_on_gpus(m_velocity_d);
+  }
+  #endif // __LIB_CUDNN
 }
 
 std::string sgd::get_description() const {
@@ -80,9 +103,21 @@ std::string sgd::get_description() const {
 
 void sgd::setup(weights& w) {
   optimizer::setup(w);
+
+  // Allocate matrices
+  const int height = m_gradient->Height();
+  const int width = m_gradient->Width();
   m_velocity = m_gradient->Construct(m_gradient->Grid(),
                                      m_gradient->Root());
-  El::Zeros(*m_velocity, m_gradient->Height(), m_gradient->Width());
+  El::Zeros(*m_velocity, height, width);
+
+  // Allocate GPU objects
+  if (m_cudnn != nullptr) {
+#ifdef __LIB_CUDNN
+    m_cudnn->allocate_on_gpus(m_velocity_d, height, width);
+#endif // __LIB_CUDNN
+  }
+  
 }
 
 void sgd::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {

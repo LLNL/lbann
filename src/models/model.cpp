@@ -62,7 +62,7 @@ model::model(lbann_comm *comm,
     m_checkpoint_epochs(0),
     m_checkpoint_steps(0),
     m_checkpoint_secs(0.0),
-    m_checkpoint_last(MPI_Wtime()),
+    m_checkpoint_last(get_time()),
     m_default_optimizer(default_optimizer) {}
 
 model::model(const model& other) :

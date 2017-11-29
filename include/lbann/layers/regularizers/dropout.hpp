@@ -95,7 +95,7 @@ class dropout : public regularizer_layer {
     // Copy previous activations if dropout is disabled
     if (this->get_execution_mode() != execution_mode::training
         || m_keep_prob < 0.0f) {
-      El::Copy(*this->m_prev_activations, *this->m_activations_v);
+      El::Copy(*this->m_prev_activations_v, *this->m_activations_v);
       return;
     }
 
@@ -118,7 +118,7 @@ class dropout : public regularizer_layer {
 #endif // LBANN_PROCDET_DROPOUT
 
     // Apply mask matrix to get activations
-    El::Hadamard(*this->m_prev_activations, *m_mask, *this->m_activations_v);
+    El::Hadamard(*this->m_prev_activations_v, *m_mask, *this->m_activations_v);
 
   }
 
@@ -128,12 +128,12 @@ class dropout : public regularizer_layer {
     // Copy previous error signal if dropout is disabled
     if (this->get_execution_mode() != execution_mode::training
         || m_keep_prob < 0.0f) {
-      El::Copy(*this->m_prev_error_signal, *this->m_error_signal_v);
+      El::Copy(*this->m_prev_error_signal_v, *this->m_error_signal_v);
       return;
     }
 
     // Apply mask matrix to error signal
-    El::Hadamard(*this->m_prev_error_signal, *m_mask, *this->m_error_signal_v);
+    El::Hadamard(*this->m_prev_error_signal_v, *m_mask, *this->m_error_signal_v);
 
   }
 

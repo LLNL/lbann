@@ -78,10 +78,10 @@ void lbann_callback_checknan::on_batch_end(model *m) {
 
 bool lbann_callback_checknan::is_good(const AbsDistMat& m) {
   const Mat& lm = m.LockedMatrix();
-  const Int height = lm.Height();
-  const Int width = lm.Width();
-  for (Int col = 0; col < width; ++col) {
-    for (Int row = 0; row < height; ++row) {
+  const El::Int height = lm.Height();
+  const El::Int width = lm.Width();
+  for (El::Int col = 0; col < width; ++col) {
+    for (El::Int row = 0; row < height; ++row) {
       const DataType val = lm(row, col);
       if (std::isnan(val)) {
         std::cout << "Found NaN at (" << row << ", " << col << ")!" << std::endl;

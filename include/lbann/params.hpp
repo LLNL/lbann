@@ -89,9 +89,6 @@ class TrainingParams {
   float DropOut;
   /// Lambda for L2 regularization
   DataType Lambda;
-  /// Weight initialization method
-  /** 0 - zero, 1 - uniform, 2 - normal, 3 - glorot_normal, 4 - glorot_uniform, 5 - he_normal, 6 - he_uniform */
-  weight_initialization WeightInitType;
 
   /// Location of training and test data
   std::string DatasetRootDir;

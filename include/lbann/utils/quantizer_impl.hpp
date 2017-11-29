@@ -513,14 +513,14 @@ void lbann_quantizer::intermodel_sum_adaptive_quantized_impl(
   const colT row_header_factor = sizeof(rowT) == 2 ? 2 : 1;
   const colT header_len = row_header_factor * HEADER_FACTOR * mat.Width() +
                           row_header_factor;
-  const Int max_size = (header_len +
-                        MAX_QUANTIZED_EXCESS * mat.Width() * mat.Height() / proportion) *
-                       sizeof(rowT);
+  const colT max_size = (header_len +
+                         MAX_QUANTIZED_EXCESS * mat.Width() * mat.Height() / proportion) *
+                         sizeof(rowT);
   std::vector<rowT> quant;
   std::vector<std::vector<rowT>> quant_slices(4);
   auto send_transform =
     [&qerror, &quant, &quant_slices, proportion, this]
-  (Mat& to_trans, IR h, IR w, int& count, bool const_data, int call_idx) {
+  (Mat& to_trans, El::IR h, El::IR w, int& count, bool const_data, int call_idx) {
     auto to_send = to_trans(h, w);
     auto to_send_qerr = qerror(h, w);
     if (const_data) {
@@ -567,7 +567,7 @@ void lbann_quantizer::intermodel_sum_adaptive_quantized_impl(
   opts.max_reduces = 4;
   comm->intermodel_allreduce(
     mat, max_size,
-    std::function<uint8_t *(Mat&, IR, IR, int&, bool, int)>(send_transform),
+    std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)>(send_transform),
     std::function<int(uint8_t *, Mat&)>(recv_transform),
     std::function<int(uint8_t *, Mat&, bool)>(recv_apply_transform),
     opts);
