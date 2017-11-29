@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/objective_functions/objective_function.hpp"
+#include "lbann/utils/timer.hpp"
 #include <numeric>
 
 namespace lbann {
@@ -34,7 +35,9 @@ objective_function::objective_function()
 
 objective_function::objective_function(const objective_function& other)
   : m_model(other.m_model),
-    m_history(other.m_history) {
+    m_history(other.m_history),
+    m_value_time(other.m_value_time),
+    m_gradient_time(other.m_gradient_time) {
   for (objective_function_term *term : other.m_terms) {
     m_terms.push_back(term->copy());
     m_terms.back()->set_objective_function(this);
@@ -52,6 +55,8 @@ objective_function& objective_function::operator=(const objective_function& othe
     m_terms.back()->set_objective_function(this);
   }
   m_history = other.m_history;
+  m_value_time = other.m_value_time;
+  m_gradient_time = other.m_gradient_time;
   return *this;
 }
 
@@ -75,18 +80,22 @@ void objective_function::setup(model& m) {
 }
 
 DataType objective_function::compute_value() {
+  double value_start = get_time();
   DataType value = DataType(0);
   for (objective_function_term *term : m_terms) {
     value += term->compute_value();
   }
   m_history.push_back(value);
+  m_value_time += get_time() - value_start;
   return value;
 }
 
 void objective_function::compute_gradient() {
+  double gradient_start = get_time();
   for (objective_function_term *term : m_terms) {
     term->compute_gradient();
   }
+  m_gradient_time += get_time() - gradient_start;
 }
 
 DataType objective_function::get_history_mean_value() const {

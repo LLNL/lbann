@@ -88,6 +88,16 @@ class objective_function {
   /** Set list of pointers to weights. */
   void set_weights_pointers(std::vector<weights*> w);
 
+  /** Get the time spent computing the value. */
+  double get_value_time() const { return m_value_time; }
+  /** Get the itme spent computing the gradient. */
+  double get_gradient_time() const { return m_gradient_time; }
+  /** Reset time counters. */
+  void reset_counters() {
+    m_value_time = 0.0;
+    m_gradient_time = 0.0;
+  }
+
  private:
 
   /** Pointer to model that owns this objective function. */
@@ -98,6 +108,11 @@ class objective_function {
 
   /** History of objective function values. */
   std::vector<DataType> m_history;
+
+  /** Time spent computing the value. */
+  double m_value_time = 0.0;
+  /** Time spent computing the gradient. */
+  double m_gradient_time = 0.0;
 
 };
 

@@ -777,6 +777,12 @@ void model::summarize_stats(lbann_summary& summarizer) {
   summarizer.reduce_scalar("objective",
                            m_objective_function->get_history_mean_value(),
                            get_cur_step());
+  summarizer.reduce_scalar(
+    "objective_time",
+    m_objective_function->get_value_time() +
+    m_objective_function->get_gradient_time(),
+    get_cur_step());
+  m_objective_function->reset_counters();
 }
 
 void model::summarize_matrices(lbann_summary& summarizer) {
