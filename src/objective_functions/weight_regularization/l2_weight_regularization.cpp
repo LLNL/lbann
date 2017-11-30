@@ -56,23 +56,52 @@ void l2_weight_regularization::setup(objective_function& obj_fn) {
 
 }
 
+DataType l2_weight_regularization::local_squared_l2_norm(const Mat& mat) const {
+  const El::Int height = mat.Height();
+  const El::Int width = mat.Width();
+  const El::Int ldim = mat.LDim();
+  const DataType* __restrict__ buf = mat.LockedBuffer();
+  DataType sqsum = DataType(0);
+  // Check if data is contiguous.
+  if (ldim == height) {
+    const El::Int size = height*width;
+    #pragma omp parallel for reduction(+:sqsum)
+    for (El::Int i = 0; i < size; ++i) {
+      const DataType val = buf[i];
+      sqsum += val * val;
+    }
+  } else {
+    #pragma omp parallel for reduction(+:sqsum) collapse(2)
+    for (El::Int j = 0; j < width; ++j) {
+      for (El::Int i = 0; i < height; ++i) {
+        const DataType val = buf[i + j*ldim];
+        sqsum += val * val;
+      }
+    }
+  }
+  return sqsum;
+}
+
 DataType l2_weight_regularization::compute_value() {
   if (m_scale_factor == DataType(0)) { return DataType(0); }
   DataType value = DataType(0);
   for (weights* w : m_weights) {
-    DataType norm = 0;
     cudnn::cudnn_manager* cudnn = w->get_cudnn_manager();
     if (cudnn != nullptr) {
 #ifdef __LIB_CUDNN
       CHECK_CUDA(cudaSetDevice(cudnn->get_gpu(0)));
-      norm = cublas::nrm2(cudnn->get_cublas_handle(0),
-                          w->get_height() * w->get_width(),
-                          w->get_values_gpu()[0], 1);
+      DataType norm = cublas::nrm2(cudnn->get_cublas_handle(0),
+                                   w->get_height() * w->get_width(),
+                                   w->get_values_gpu()[0], 1);
+      value += norm * norm;
 #endif // __LIB_CUDNN
     } else {
-      norm = El::FrobeniusNorm(w->get_values());
+      // Further optimization: Can batch allreduces on the same communicator.
+      DataType local_norm =
+        local_squared_l2_norm(w->get_values().LockedMatrix());
+      value += m_objective_function->get_model()->get_comm()->allreduce(
+        local_norm, w->get_values().DistComm());
     }
-    value += norm * norm;
   }
   return m_scale_factor * value;
 }

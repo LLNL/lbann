@@ -61,6 +61,10 @@ class l2_weight_regularization : public objective_function_term {
    */
   void compute_gradient() override;
 
+ private:
+  /** Compute the squared L2 norm of mat. */
+  DataType local_squared_l2_norm(const Mat& mat) const;
+
 };
 
 } // namespace lbann

@@ -64,7 +64,7 @@ class geom_negloglike : public objective_function {
    *  Given a prediction \f$y\f$ and ground truth \f$\hat{y}\f$, the
    *  gradient of the Geometric negative log-likelihood is
    *    \f[
-   *    \nabla_\hat{y} Geom_nll (\hat{y},y) = y/(1-\hat{y}) + 1/\hat{y}
+   *    \nabla_{\hat{y}} \text{Geom}_{\text{nll}} (\hat{y},y) = y/(1-\hat{y}) + 1/\hat{y}
    *    \f]
    */
   void compute_gradient(const AbsDistMat& predictions,
