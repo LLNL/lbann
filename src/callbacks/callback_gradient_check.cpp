@@ -41,7 +41,7 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
 
   // Get model members
   lbann_comm *comm = m->get_comm();
-  std::vector<Layer*>& layers = m->get_layers();
+  const std::vector<Layer*>& layers = m->get_layers();
 
   // Initialize network for testing
   m->set_execution_mode(execution_mode::testing);
@@ -176,7 +176,7 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
 }
 
 DataType lbann_callback_gradient_check::compute_objective_function(model *m) {
-  std::vector<Layer*>& layers = m->get_layers();
+  const std::vector<Layer*>& layers = m->get_layers();
   objective_function* obj_fn = m->get_objective_function();
   for (size_t l = 1; l < layers.size(); l++) {
     layers[l]->forward_prop();
