@@ -454,10 +454,10 @@ class fully_connected_layer : public learning {
     if(m_bias_scaling_factor != DataType(0) && bias_optimizer != nullptr) {
       El::RowSum(this->m_prev_error_signal_v->LockedMatrix(),
                  m_bias_weights_gradient->Matrix());
-      El::Scale(m_bias_scaling_factor /
-                this->m_neural_network_model->get_effective_mini_batch_size(),
-                *m_bias_weights_gradient);
-      bias_optimizer->allreduce_and_add_to_gradient(*m_bias_weights_gradient);
+      bias_optimizer->allreduce_and_add_to_gradient(
+        *m_bias_weights_gradient,
+        m_bias_scaling_factor /
+        this->m_neural_network_model->get_effective_mini_batch_size());
     }
 
   }
