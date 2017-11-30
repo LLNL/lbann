@@ -1605,23 +1605,16 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
   else if (name == "dag_model") {
     model = new dag_model(comm, mini_batch_size, obj_fn, default_optimizer);
     if (master) std::cout << "instantiating dag_model\n";
-  } else if(name == "planar_model") {
-    if (m.has_planar()) {
-      const lbann_data::Model::Planar& planar = m.planar();
-      if (planar.has_simple()) {
-        const int num_heads = planar.simple().num_heads();
-        model = new planar_model(comm, mini_batch_size, obj_fn, default_optimizer, num_heads);
-      } else if (planar.has_regular()) {
-        // TODO: parse the vector and pass it to the overloaded constructor
-        // vector<int> outdegrees_fanout;
-        // vector<int> outdegrees_fanin;
-      }
+  } else if(name == "siamese_model") {
+    if (m.has_siamese()) {
+      const lbann_data::Model::Siamese& siamese = m.siamese();
+      model = new siamese_model(comm, mini_batch_size, obj_fn, default_optimizer, siamese.num_heads());
     } else {
       err << __FILE__ << " " << __LINE__
           << " :: init_model() - " << name << " needs definition" << std::endl;
       throw lbann_exception(err.str());
     }
-    if (master) std::cout << "instantiating planar_model\n";
+    if (master) std::cout << "instantiating siamese_model\n";
   } else if (name == "greedy_layerwise_autoencoder") {
     model = new greedy_layerwise_autoencoder(comm, mini_batch_size, obj_fn, default_optimizer);
     if (master) std::cout << "instantiating greedy_layerwise_autoencoder\n";
