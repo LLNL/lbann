@@ -46,7 +46,7 @@ model {
   callback {
     checkpoint {
       checkpoint_dir: "test"
-      checkpoint_epochs: 1
+      checkpoint_steps: 400 
     }
   }
   # callback {

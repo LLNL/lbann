@@ -193,7 +193,7 @@ int main(int argc, char *argv[]) {
     model->setup();
     // restart model from checkpoint if we have one
     //@todo
-    model->restartShared();
+    
     int epochs = pb_model->num_epochs() - model->get_cur_epoch();
     if (comm->am_world_master()) {
       std::cout << std::endl;
