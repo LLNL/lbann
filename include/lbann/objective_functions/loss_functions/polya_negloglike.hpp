@@ -85,7 +85,7 @@ class polya_negloglike : public objective_function {
   /** Get softmax layer for softmax-cross-entropy shortcut. 
    *  See description for m_shortcut_softmax_layer.
    */
-  const Layer* get_shortcut_softmax_layer() {
+  const Layer* get_shortcut_softmax_layer() const {
     return m_shortcut_softmax_layer;
   }
 
