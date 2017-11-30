@@ -235,7 +235,7 @@ class cudnn_manager {
                                 El::mpi::Comm comm);
 
   /** Allreduce within local GPUs using NCCL. */
-  void allreduce_on_gpus_nccl(std::vector<DataType*>& gpu_data,
+  void global_allreduce_on_gpus_nccl(std::vector<DataType*>& gpu_data,
                  El::Int height,
                  El::Int width,
                  DataType scale = DataType(1));

@@ -88,7 +88,7 @@ void lbann::lbann_callback_debug_io::print_fp_start(model *m, input_layer *input
 
 //  179i @ 300s (=5m*60s) + 1i @ 100s (=5m*45s):offset <- num models
 void lbann::lbann_callback_debug_io::print_phase_start(model *m, execution_mode mode) {
-  std::vector<Layer *>layers = m->get_layers();
+  const std::vector<Layer *>layers = m->get_layers();
   input_layer *input = dynamic_cast<input_layer*>(layers[0]);
   generic_data_reader *data_reader=input->get_data_reader(mode);
 

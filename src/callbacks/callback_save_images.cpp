@@ -34,7 +34,7 @@ namespace lbann {
 
 
 void lbann_callback_save_images::on_epoch_end(model *m) {
-  auto layers = m->get_layers();
+  const auto layers = m->get_layers();
   auto tag = "epoch" + std::to_string(m->get_cur_epoch());
   //@todo: generalize to two matching layers
   //@todo: use view so we can save arbitrary number of valid images
@@ -47,8 +47,8 @@ void lbann_callback_save_images::on_epoch_end(model *m) {
 
 
 void lbann_callback_save_images::on_phase_end(model *m) {
-  auto layers = m->get_layers();
-  auto phase = m->get_current_phase();
+  const auto layers = m->get_layers();
+  const auto phase = m->get_current_phase();
   auto tag = "phase" + std::to_string(phase);
   save_image(*m,
              layers[phase]->get_activations(),
