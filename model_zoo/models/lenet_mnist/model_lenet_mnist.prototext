@@ -8,8 +8,6 @@ model {
   procs_per_model: 0
   use_cudnn: false
   num_gpus: -1
-  #checkpoint_dir: "test"
-  #checkpoint_epochs: 1 
 
   ###################################################
   # Objective function
@@ -46,7 +44,9 @@ model {
   callback {
     checkpoint {
       checkpoint_dir: "test"
-      checkpoint_steps: 400 
+      checkpoint_epochs: 1
+      checkpoint_steps: 500 
+      #checkpoint_secs: 7  
     }
   }
   # callback {

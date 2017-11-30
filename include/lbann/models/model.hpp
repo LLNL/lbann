@@ -198,43 +198,11 @@ class model {
   /** Evaluate model. */
   virtual void evaluate(execution_mode mode);
 
-  /** Set checkpoint values */
-  inline void set_checkpoint_dir(std::string dir)   {
-    m_checkpoint_dir    = dir;
-  }
-  inline void set_checkpoint_epochs(int epochs) {
-    m_checkpoint_epochs = epochs;
-  }
-  inline void set_checkpoint_steps(int steps)   {
-    m_checkpoint_steps  = steps;
-  }
-  inline void set_checkpoint_secs(double secs)      {
-    m_checkpoint_secs   = secs;
-  }
-
-  /** Return true if about to start a new training epoch
-   */
-  virtual bool at_epoch_start() {
-    return true;
-  }
-  /** Returns true if a checkpoint should be taken, false otherwise */
-
- // bool need_checkpoint();
-
   /** Checkpoint model to given file descriptor, return number of bytes written */
   virtual bool save_to_checkpoint_shared(persist& p);
   /** Restore model by reading checkpoint from given file descriptor, return number of bytes read */
   virtual bool load_from_checkpoint_shared(persist& p);
 
-  /*! Top-level call to start checkpoint.  This creates the persist object
-   *  and then calls the model's save_to_checkpoint_shared() virtual function */
-  //bool checkpointShared();
-
-  /*! Top-level call to restart.  This creates the persist object
-   *  and then calls the model's load_from_checkpoint_shared() virtual function */
-  //bool restartShared();
-
-//#endif // 0
 
  protected:
 
@@ -271,17 +239,6 @@ class model {
   lbann_comm *m_comm;
   /** Current callbacks to process. */
   std::vector<lbann_callback *> m_callbacks;
-
-  /** Directory where we should save checkpoints */
-  std::string m_checkpoint_dir;
-  /** Number of training steps to elapse between checkpoints */
-  int m_checkpoint_epochs;
-  /** Number of training steps to elapse between checkpoints */
-  int m_checkpoint_steps;
-  /** Number of seconds to elapse between checkpoints (checkpoint interval) */
-  double m_checkpoint_secs;
-  /** Timestamp of last checkpoint */
-  double m_checkpoint_last;
 
   /** Default optimizer. 
    *  If a layer needs to construct an optimizer during setup, it will

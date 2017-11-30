@@ -40,4 +40,12 @@ void objective_function_term::setup(model& m) {
   m_comm = m.get_comm();
 }
 
+bool objective_function_term::saveToCheckpointShared(lbann::persist& p) {
+  return true;
+}
+
+bool objective_function_term::loadFromCheckpointShared(lbann::persist& p) {
+  return true;
+}
+
 }  // namespace lbann

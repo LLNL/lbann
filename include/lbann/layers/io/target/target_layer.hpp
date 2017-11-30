@@ -242,7 +242,7 @@ class target_layer : public io_layer {
       // p.write_uint64(persist_type::train, "num backprop steps", (uint64_t) num_backprop_steps);
     }
 
-    return true;
+    return Layer::saveToCheckpointShared(p);
   }
 
   bool loadFromCheckpointShared(persist& p) override {
@@ -261,8 +261,8 @@ class target_layer : public io_layer {
     // MPI_Bcast(&aggregate_cost, 1, DataTypeMPI, 0, MPI_COMM_WORLD);
     // MPI_Bcast(&num_backprop_steps, 1, MPI_LONG, 0, MPI_COMM_WORLD);
 
-    //return Layer::loadFromCheckpointShared(dir, bytes);
-    return true;
+    return Layer::loadFromCheckpointShared(p);
+    //return true;
   }
 };
 

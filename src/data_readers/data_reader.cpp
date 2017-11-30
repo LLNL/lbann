@@ -368,7 +368,6 @@ bool generic_data_reader::saveToCheckpointShared(persist& p, const char *name) c
     snprintf(fieldname, sizeof(fieldname), "%s_reset_mini_batch_index", name);
     p.write_uint64(persist_type::train, fieldname, (uint64_t) m_reset_mini_batch_index);
     //printf("%d\n", m_current_mini_batch_idx);
-    printf("My current position is %d\n", m_current_pos);
     //printf("%d\n", m_shuffled_indices[0]);
     //printf("%d\n", m_model_offset);
   }
@@ -397,7 +396,6 @@ bool lbann::generic_data_reader::loadFromCheckpointShared(persist& p, const char
     snprintf(fieldname, sizeof(fieldname), "%s_data_position", name);
     p.read_uint64(persist_type::train, fieldname, &val);
     m_current_pos = (int) val;
-
     //resize shuffled index array to hold values
     m_shuffled_indices.resize(size);
 
@@ -463,10 +461,11 @@ bool lbann::generic_data_reader::loadFromCheckpointShared(persist& p, const char
   // TODO: with multiple readers, make this a scatter
   // broadcast current position
   MPI_Bcast(&m_current_pos, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  printf("%d\n", m_current_pos);
+  //printf("%d\n", m_current_pos);
   // broadcast values from rank 0
   int size = m_shuffled_indices.size();
   MPI_Bcast(&size, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
 
     // resize shuffled index array to hold values
   if (p.get_rank() != 0) {

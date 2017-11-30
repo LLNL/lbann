@@ -36,16 +36,15 @@ void lbann_callback_checkpoint::setup(model *m) {
 }
 
 void lbann_callback_checkpoint::on_epoch_end(model *m) {
+  m_epoch_end = true; 
   if(need_checkpoint(m)){
     checkpointShared(m);
   }
 }
 
 void lbann_callback_checkpoint::on_batch_end(model *m) {
-  if(m_checkpoint_epochs == 0){
-    if(need_checkpoint(m)){
-      checkpointShared(m);
-    }
+  if(need_checkpoint(m)){
+    checkpointShared(m);
   }
 }
 bool lbann_callback_checkpoint::need_checkpoint(model *m) {

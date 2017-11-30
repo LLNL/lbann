@@ -70,10 +70,6 @@ class lbann_callback_checkpoint : public lbann_callback {
     m_checkpoint_secs= secs;
   }
   
-  virtual bool at_epoch_start() {
-    return true;
-  }
-  
   bool need_checkpoint(model *m);
   bool checkpointShared(model *m);
   bool restartShared(model *m);
@@ -85,7 +81,7 @@ class lbann_callback_checkpoint : public lbann_callback {
   int m_checkpoint_steps;
   double m_checkpoint_secs;
   double m_checkpoint_last;
- 
+  bool m_epoch_end; 
 };
 
 }  // namespace lbann

@@ -129,5 +129,20 @@ void loss_function::differentiate() {
   target->add_to_error_signal(*m_gradient, m_scale_factor);
 }
 
+  bool loss_function::saveToCheckpointShared(persist& p)  {
+    char l_name[512];
+    sprintf(l_name, "objfunc_gradient");
+    p.write_distmat(persist_type::train, l_name, (DistMat *)m_gradient);
+    return true;
+  
+  }
+
+  bool loss_function::loadFromCheckpointShared(persist& p) {
+    char l_name[512];
+    sprintf(l_name, "objfunc_gradient.bin");
+    p.read_distmat(persist_type::train, l_name, (DistMat *)m_gradient);
+    return true;
+   }
+
 
 }  // namespace lbann

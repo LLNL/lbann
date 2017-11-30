@@ -236,7 +236,7 @@ bool sequential_model::save_to_checkpoint_shared(persist& p) {
     // TODO: record each layer type and size (to be checked when read back)
   }
   // write out details for each layer
-  
+
   for (weights *w : m_weights) {
     w->saveToCheckpointShared(p);
   }
@@ -246,7 +246,7 @@ bool sequential_model::save_to_checkpoint_shared(persist& p) {
       return false;
     }
   }
-
+  //m_objective_function->saveToCheckpointShared(p);
   return true;
 }
 
@@ -281,7 +281,7 @@ bool sequential_model::load_from_checkpoint_shared(persist& p) {
       return false;
     }
   }
-
+  //m_objective_function->loadFromCheckpointShared(p);
   return true;
 }
 

@@ -1580,7 +1580,8 @@ void init_callbacks(
     if (callback.has_checkpoint()) {
       const lbann_data::CallbackCheckpoint& c = callback.checkpoint();
       if (master) {
-        std::cout << "adding checkpoint callback" << std::endl;
+        std::cout << "checkpoint saving on interval <epoch:" << c.checkpoint_epochs() << " steps:" << c.checkpoint_steps() << " secs:" << c.checkpoint_secs()  
+	          << "> to dir: " << c.checkpoint_dir() << std::endl;
       }
       lbann_callback_checkpoint *checkpoint_cb = new
         lbann_callback_checkpoint(c.checkpoint_dir(), c.checkpoint_epochs(), c.checkpoint_steps(), c.checkpoint_secs());
@@ -1715,10 +1716,10 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
   }
 
   //set checkpoint values
-  model->set_checkpoint_dir(m.checkpoint_dir());
-  model->set_checkpoint_epochs(m.checkpoint_epochs());
-  model->set_checkpoint_steps(m.checkpoint_steps());
-  model->set_checkpoint_secs(m.checkpoint_secs());
+  //model->set_checkpoint_dir(m.checkpoint_dir());
+  //model->set_checkpoint_epochs(m.checkpoint_epochs());
+  //model->set_checkpoint_steps(m.checkpoint_steps());
+  //model->set_checkpoint_secs(m.checkpoint_secs());
 
   return model;
 }

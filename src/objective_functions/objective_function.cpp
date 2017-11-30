@@ -158,4 +158,19 @@ void objective_function::set_weights_pointers(std::vector<weights*> w) {
   }
 }
 
+bool objective_function::saveToCheckpointShared(lbann::persist& p) {
+  for (objective_function_term *term : m_terms) {
+    term->saveToCheckpointShared(p);
+  }
+  return true;
+}
+
+bool objective_function::loadFromCheckpointShared(lbann::persist& p) {
+  for (objective_function_term *term : m_terms) {
+    term->loadFromCheckpointShared(p);
+  }
+  return true;
+}
+
+
 }  // namespace lbann
