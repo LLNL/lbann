@@ -64,6 +64,7 @@ void cudnn_manager::allreduce_on_gpus(std::vector<DataType*>& gpu_data,
     return;
   }
 
+/*
   if(is_nccl_used()){
 #ifndef __LIB_NCCL
     throw lbann::lbann_exception("cudnn_wrapper_cuda: NCCL is not used");
@@ -73,6 +74,7 @@ void cudnn_manager::allreduce_on_gpus(std::vector<DataType*>& gpu_data,
     return;
 #endif // __LIB_NCCL
   } else{
+*/
 
 
     const El::Int buf_len = 1 << 27;
@@ -120,7 +122,7 @@ void cudnn_manager::allreduce_on_gpus(std::vector<DataType*>& gpu_data,
       }
       offset += len;
     } while (offset < total_len);
-  }
+ // }
 }
 
 /// @todo Efficient implementation
@@ -128,13 +130,38 @@ void cudnn_manager::global_allreduce_on_gpus(std::vector<DataType*>& gpu_data,
                                              El::Int height,
                                              El::Int width,
                                              El::mpi::Comm comm) {
-  static Mat cpu_workspace;
-  cpu_workspace.Resize(height, width);
-  allreduce_on_gpus(gpu_data, height, width);
-  copy_from_gpu(0, cpu_workspace, gpu_data[0]);
-  synchronize();
-  El::AllReduce(cpu_workspace, comm);
-  broadcast_to_gpus(gpu_data, cpu_workspace);
+  if(!is_nccl_used()){
+    static Mat cpu_workspace;
+    cpu_workspace.Resize(height, width);
+    allreduce_on_gpus(gpu_data, height, width);
+    copy_from_gpu(0, cpu_workspace, gpu_data[0]);
+    synchronize();
+    El::AllReduce(cpu_workspace, comm);
+    broadcast_to_gpus(gpu_data, cpu_workspace);
+  } else{
+#ifdef __LIB_NCCL
+    static Mat cpu_workspace;
+FILE *fp_debug;
+char line[132];
+sprintf(line, "file.%02d", comm.Rank() );
+fp_debug = fopen(line, "a");
+fprintf(fp_debug, "Here 1\n");
+fflush(fp_debug);
+    // New implementation with NCCL 2
+    global_allreduce_on_gpus_nccl (gpu_data, height, width);
+fprintf(fp_debug, "Here 2\n");
+fflush(fp_debug);
+fclose(fp_debug);
+
+/*
+    copy_from_gpu(0, cpu_workspace, gpu_data[0]);
+    synchronize();
+    El::AllReduce(cpu_workspace, comm);
+    broadcast_to_gpus(gpu_data, cpu_workspace);
+*/
+    //copy_from_gpu(0, cpu_workspace, gpu_data[0]);
+#endif // #ifdef __LIB_NCCL
+  }
 }
 
 #ifdef __LIB_NCCL
@@ -152,10 +179,10 @@ ncclDataType_t cudnn_manager::nccl_datatype() {
   }
 }
 
-void cudnn_manager::allreduce_on_gpus_nccl(std::vector<DataType*>& gpu_data,
-                                           El::Int height,
-                                           El::Int width,
-                                           DataType scale) {
+void cudnn_manager::global_allreduce_on_gpus_nccl(std::vector<DataType*>& gpu_data,
+                                                  El::Int height,
+                                                  El::Int width,
+                                                  DataType scale) {
 /**
   gpu_data is a vector of pointers, each of which points to a part of
   matrix allocated to GPU memory. Since we assume that one MPI rank is
