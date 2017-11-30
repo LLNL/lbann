@@ -375,6 +375,7 @@ message Callback {
    CallbackDebugIO debug_io = 25;
    CallbackMinibatchSchedule minibatch_schedule = 26;
    CallbackOptimizerwiseAdaptiveLearningRate optimizerwise_adaptive_learning_rate = 27;
+   CallbackCheckpoint checkpoint = 28;
 }
 
 message CallbackLTFB {
@@ -509,6 +510,14 @@ message CallbackGradientCheck {
   double step_size = 1;
   bool verbose = 2;
   bool fail_on_error = 3;
+}
+
+
+message CallbackCheckpoint {
+  string checkpoint_dir = 1;
+  int64 checkpoint_epochs = 2;
+  int64 checkpoint_steps = 3;
+  double checkpoint_secs = 4;
 }
 
 //========================================================================

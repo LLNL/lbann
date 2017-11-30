@@ -1006,7 +1006,7 @@ bool model::checkpointShared() {
   }
 
   // time how long this takes
-  Timer timer;
+  El::Timer timer;
 
   // get checkpoint directory
   const char *dir = m_checkpoint_dir.c_str();
@@ -1092,7 +1092,7 @@ bool model::restartShared() {
   }
 
   // time how long this takes
-  Timer timer;
+  El::Timer timer;
 
   // let user know we're restarting from a checkpoint
   MPI_Barrier(MPI_COMM_WORLD);

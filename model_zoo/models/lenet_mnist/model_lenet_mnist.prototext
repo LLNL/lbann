@@ -8,8 +8,8 @@ model {
   procs_per_model: 0
   use_cudnn: false
   num_gpus: -1
-  checkpoint_dir: "test"
-  checkpoint_epochs: 1 
+  #checkpoint_dir: "test"
+  #checkpoint_epochs: 1 
 
   ###################################################
   # Objective function
@@ -40,6 +40,13 @@ model {
     summary {
       dir: "."
       mat_interval: 25
+    }
+  }
+
+  callback {
+    checkpoint {
+      checkpoint_dir: "test"
+      checkpoint_epochs: 1
     }
   }
   # callback {

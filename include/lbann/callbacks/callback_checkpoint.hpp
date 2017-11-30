@@ -35,7 +35,7 @@ namespace lbann {
 /**
  *  * Checkpoint at given interval in given directory
  *   */
-class lbann_callback_print : public lbann_callback {
+class lbann_callback_checkpoint : public lbann_callback {
  public:
 
   /**
@@ -49,10 +49,16 @@ class lbann_callback_print : public lbann_callback {
   lbann_callback_checkpoint(const lbann_callback_checkpoint&) = default;
   lbann_callback_checkpoint& operator=(const lbann_callback_checkpoint&) = default;
   lbann_callback_checkpoint* copy() const override { return new lbann_callback_checkpoint(*this); }
-  void setup(model *m) override;
+  //void setup(model *m) override;
   void on_epoch_end(model *m) override;
   void on_batch_end(model *m) override;
   std::string name() const override { return "checkpoint"; }
+ protected:
+  std::string m_checkpoint_dir;
+  int m_checkpoint_epochs;
+  int m_checkpoint_steps;
+  int m_checkpoint_secs;
+ 
 };
 
 }  // namespace lbann

@@ -327,8 +327,8 @@ bool generic_data_reader::saveToCheckpointShared(persist& p, const char *name) c
     
     // Closest to non checkpoint run only saves m_current_pos
 
-    //snprintf(fieldname, sizeof(fieldname), "%s_current_mini_batch_idx", name);
-    //p.write_uint64(persist_type::train, fieldname, (uint64_t) m_current_mini_batch_idx);
+    snprintf(fieldname, sizeof(fieldname), "%s_current_mini_batch_idx", name);
+    p.write_uint64(persist_type::train, fieldname, (uint64_t) m_current_mini_batch_idx);
     int size = m_shuffled_indices.size();
 
     // record size of ShuffleIndices
@@ -337,8 +337,8 @@ bool generic_data_reader::saveToCheckpointShared(persist& p, const char *name) c
     
     // TODO: each model may have a different position, need to gather and write these
     // record current position within training data
-    //snprintf(fieldname, sizeof(fieldname), "%s_data_position", name);
-    //p.write_uint64(persist_type::train, fieldname, (uint64_t) m_current_pos);
+    snprintf(fieldname, sizeof(fieldname), "%s_data_position", name);
+    p.write_uint64(persist_type::train, fieldname, (uint64_t) m_current_pos);
     
     // write list of indices
     snprintf(fieldname, sizeof(fieldname), "%s_data_indices", name);
@@ -388,18 +388,18 @@ bool lbann::generic_data_reader::loadFromCheckpointShared(persist& p, const char
 
     // record minibatch index
     uint64_t val;
-    //snprintf(fieldname, sizeof(fieldname), "%s_current_mini_batch_idx", name);
-    //p.read_uint64(persist_type::train, fieldname, &val);
-    //m_current_mini_batch_idx = (int) val;
+    snprintf(fieldname, sizeof(fieldname), "%s_current_mini_batch_idx", name);
+    p.read_uint64(persist_type::train, fieldname, &val);
+    m_current_mini_batch_idx = (int) val;
    
     snprintf(fieldname, sizeof(fieldname), "%s_data_size", name);
     p.read_uint64(persist_type::train, fieldname, &val);
     auto size = (int) val;
     
     // get current position within data
-    //snprintf(fieldname, sizeof(fieldname), "%s_data_position", name);
-    //p.read_uint64(persist_type::train, fieldname, &val);
-    //m_current_pos = (int) val;
+    snprintf(fieldname, sizeof(fieldname), "%s_data_position", name);
+    p.read_uint64(persist_type::train, fieldname, &val);
+    m_current_pos = (int) val;
     
     //resize shuffled index array to hold values
     m_shuffled_indices.resize(size);
@@ -450,7 +450,7 @@ bool lbann::generic_data_reader::loadFromCheckpointShared(persist& p, const char
   }
 
   // broadcast minibatch index
-  //MPI_Bcast(&m_current_mini_batch_idx, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&m_current_mini_batch_idx, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
   /*MPI_Bcast(&m_stride_to_last_mini_batch, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&m_stride_to_next_mini_batch, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -467,7 +467,7 @@ bool lbann::generic_data_reader::loadFromCheckpointShared(persist& p, const char
 
   // TODO: with multiple readers, make this a scatter
   // broadcast current position
-  //MPI_Bcast(&m_current_pos, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&m_current_pos, 1, MPI_INT, 0, MPI_COMM_WORLD);
   printf("%d\n", m_current_pos);
   // broadcast values from rank 0
   int size = m_shuffled_indices.size();

@@ -1572,6 +1572,20 @@ void init_callbacks(
         lbann_callback_optimizerwise_adaptive_learning_rate(c.scale(), weights_list);
       model->add_callback(owalr_cb);
     }
+
+
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: checkpoint
+    //////////////////////////////////////////////////////////////////
+    if (callback.has_checkpoint()) {
+      const lbann_data::CallbackCheckpoint& c = callback.checkpoint();
+      if (master) {
+        std::cout << "adding checkpoint callback" << std::endl;
+      }
+      lbann_callback_checkpoint *checkpoint_cb = new
+        lbann_callback_checkpoint(c.checkpoint_dir(), c.checkpoint_epochs(), c.checkpoint_steps(), c.checkpoint_secs());
+      model->add_callback(checkpoint_cb);
+    }
   }
 
 }
