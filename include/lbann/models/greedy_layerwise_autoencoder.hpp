@@ -23,51 +23,44 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_model_dnn .hpp .cpp - Deep Neural Networks models
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_MODEL_GREEDY_LAYERWISE_AUTOENCODER_HPP
 #define LBANN_MODEL_GREEDY_LAYERWISE_AUTOENCODER_HPP
 
 #include "lbann/models/model_sequential.hpp"
-#include "lbann/layers/layer.hpp"
-#include <vector>
-#include <string>
+
 namespace lbann {
 
+/** Greedy layerwise autoencoder. */
 class greedy_layerwise_autoencoder : public sequential_model {
  public:
+
   /** Constructor. */
   greedy_layerwise_autoencoder(lbann_comm *comm,
                                int mini_batch_size,
                                objective_function *obj_fn,
                                optimizer *default_optimizer);
 
-  /** Copy constructor.
-   *  @todo Not yet supported.
-   */
-  greedy_layerwise_autoencoder(const greedy_layerwise_autoencoder&) = delete;
-
-  /** Copy assignment operator.
-   *  @todo Not yet supported.
-   */
-  greedy_layerwise_autoencoder& operator=(
-    const greedy_layerwise_autoencoder&) = delete;
-
+  /** Copy constructor. */
+  greedy_layerwise_autoencoder(const greedy_layerwise_autoencoder&);
+  /** Copy assignment operator. */
+  greedy_layerwise_autoencoder& operator=(const greedy_layerwise_autoencoder&);
   /** Destructor. */
-  ~greedy_layerwise_autoencoder() override = default;
-
+  ~greedy_layerwise_autoencoder();
+  /** Create copy. */
   greedy_layerwise_autoencoder* copy() const override {
-    throw lbann_exception("greedy_layerwise_autoencoder doesn't support copying");
+    return new greedy_layerwise_autoencoder(*this);
   }
 
+  /** Get model name. */
   std::string name() const override { return "greedy layerwise autoencoder"; }
 
-  /// Train neural network
-  void train(int num_epochs) override;
+  /** Setup greedy layerwise autoencoder. */
+  void setup() override;
 
-  ///Global evaluation (testing), provide overall cost relative to original input
-  void evaluate(execution_mode mode=execution_mode::testing) override;
+  /** Train greedy layerwise autoencoder. */
+  void train(int num_epochs) override;
 
 #if 0
   /// Save model to shared checkpoint
@@ -78,41 +71,40 @@ class greedy_layerwise_autoencoder : public sequential_model {
 #endif // 0
 
  protected:
-  /// index of last layer in a phase
-  size_t m_phase_end;
-  /// containers for  mirror layers
-  std::vector<Layer *> m_reconstruction_layers;
-  /// index of first layer in a phase
-  size_t m_start_index;
-  /// index of last layer in a phase
-  size_t m_end_index;
-  /// Flag recording whether we have a mirror layer inserted in model for training
-  uint32_t m_have_mirror;
 
-  /// Inserts a mirror layer for specified layer index
-  void insert_mirror(uint32_t layer_index);
+  /** Current training phase.
+   *  If negative, the model is sequential.
+   */
+  int m_phase;
+  /** Number of training phases. */
+  int m_num_phases;
+  /** Layer indices for the boundaries of model sections.
+   *  The first half sections are considered as encoders and the
+   *  second half as decoders. Each training phase consists of
+   *  training an encoder and decoder while keeping the rest of the
+   *  model frozen.
+   */
+  std::vector<int> m_sections;
+  /** Reconstruction layer for training phases. */
+  Layer* m_reconstruction;
 
-  /// Removes mirror for specified layer index
-  void remove_mirror(uint32_t layer_index);
+  /** Set the greedy layerwise autoencoder to a training phase.
+   *  During a phase, an encoder and decoder section of the model are
+   *  trained while the rest of the model is frozen.
+   */
+  void set_phase(int phase);
+  /** Set the greedy layerwise autoencover to a sequential model. */
+  void restore_sequential_model();
 
-  // Train each phase ( a set of (original) input, hidden and mirror layers (output))
-  void train_phase(int num_epochs);
+  /** Reset layers. */
+  void reset_layers() override;
+  /** Forward prop step. */
+  void forward_prop(execution_mode mode) override;
+  /** Backward prop step. */
+  void backward_prop() override;
 
-  /// Training step on one mini-batch
-  bool train_mini_batch() override;
-
-  /// Evaluate (validation) per phase
-  void evaluate_phase(execution_mode mode=execution_mode::validation);
-
-  /// Evaluation step on one mini-batch
-  bool evaluate_mini_batch() override;
-
-  void reset_phase();
-
-  /// Set end index of layer wise training (typically at reconstruction layer)
-  void set_end_index();
 };
 
 }  // namespace lbann
 
-#endif  // LBANN_MODEL_DNN_HPP
+#endif  // LBANN_MODEL_GREEDY_LAYERWISE_AUTOENCODER_HPP

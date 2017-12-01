@@ -51,14 +51,20 @@ class lbann_callback;
 /** Base class for LBANN models. */
 class model {
  public:
+
+  /** Constructor. */
   model(lbann_comm *comm,
         int mini_batch_size,
         objective_function *obj_fn,
         optimizer* default_optimizer = nullptr);
+  
+  /** Copy constructor. */
   model(const model& other);
+  /** Copy assignment operator. */
   model& operator=(const model& other);
+  /** Destructor. */
   virtual ~model();
-
+  /** Copy model. */
   virtual model* copy() const = 0;
 
   /** Return the model's name. */
@@ -115,6 +121,10 @@ class model {
   inline lbann_comm *get_comm() const {
     return m_comm;
   }
+
+  /** Get the model's current execution mode. */
+  inline execution_mode get_execution_mode() { return m_execution_mode; }
+
   /** Get the current epoch for the model. */
   inline int get_cur_epoch() const {
     return m_current_epoch;
@@ -275,12 +285,16 @@ class model {
   /** Timestamp of last checkpoint */
   double m_checkpoint_last;
 
+  /** Default optimizer. 
+   *  If a layer needs to construct an optimizer during setup, it will
+   *  make a copy of the default optimizer.
+   */
   optimizer *m_default_optimizer;
 
-  /**
-   * A metric is a function that is used to judge the performance of your model.
-   * A metric function is similar to an objective function, except that the
-   * results from evaluating a metric are not used when training the model.
+  /** List of model metrics.
+   *  A metric is a function that is used to judge the performance of your model.
+   *  A metric function is similar to an objective function, except that the
+   *  results from evaluating a metric are not used when training the model.
    */
   std::vector<metrics::metric *> m_metrics;
 
@@ -288,54 +302,71 @@ class model {
    *  The list is in execution order for forward propagation.
    */
   std::vector<Layer *> m_layers;
-
+  /** List of weights in model. */
   std::vector<weights *> m_weights;
 
   /** Check if the model (and all layers') execution mode valid. */
   virtual bool is_execution_mode_valid(execution_mode mode) const;
-  /// Print out the description of a layer set up
+  /** Print out the description of a layer set up. */
   virtual std::string print_layer_description(const Layer* layer) const;
 
-  /// Deallocate layer objects
-  virtual void delete_layers();
-  virtual void reset_layers();
-  virtual bool update_layers();
-  virtual void forward_prop_to_evaluate();
-  virtual void forward_prop();
-  virtual void backward_prop();
+  /** Setup model for an epoch. */
+  virtual void setup_epoch(execution_mode mode);
+  /** Evaluate model on a mini-batch */
+  virtual bool evaluate_mini_batch(execution_mode mode);
   /** Train model on a mini-batch. */
   virtual bool train_mini_batch();
-  /** Evaluate model on a mini-batch */
-  virtual bool evaluate_mini_batch();
 
-  // Methods for calling every callback at different points.
+  /** Reset layers. */
+  virtual void reset_layers();
+  /** Forward propagation step. */
+  virtual void forward_prop(execution_mode mode);
+  /** Backward propagation step. */
+  virtual void backward_prop();
+  /** Update weights step. */
+  virtual void update_weights();
+  /** Update layers step. */
+  virtual bool update_layers();
+
+  ////////////////////////////////////////////////////////////
+  // Callbacks
+  ////////////////////////////////////////////////////////////
+
+  /** Setup callbacks. */
   virtual void setup_callbacks();
+  /** Execute callbacks at start of training. */
   virtual void do_train_begin_cbs();
+  /** Execute callbacks at end of training. */
   virtual void do_train_end_cbs();
-  virtual void do_phase_end_cbs();
+  /** Execute callbacks at start of evaluation. */
+  virtual void do_evaluate_begin_cbs(execution_mode mode);
+  /** Execute callbacks at end of evaluation. */
+  virtual void do_evaluate_end_cbs(execution_mode mode);
+  /** Execute callbacks at start of epoch. */
   virtual void do_epoch_begin_cbs();
+  /** Execute callbacks at end of epoch. */
   virtual void do_epoch_end_cbs();
-  virtual void do_batch_begin_cbs();
-  virtual void do_batch_end_cbs();
-  virtual void do_test_begin_cbs();
-  virtual void do_test_end_cbs();
-  virtual void do_validation_begin_cbs();
-  virtual void do_validation_end_cbs();
-  virtual void do_model_forward_prop_begin_cbs();
-  virtual void do_layer_forward_prop_begin_cbs(Layer *l);
-  virtual void do_model_forward_prop_end_cbs();
-  virtual void do_layer_forward_prop_end_cbs(Layer *l);
+  /** Execute callbacks at start of mini-batch. */
+  virtual void do_batch_begin_cbs(execution_mode mode);
+  /** Execute callbacks at end of mini-batch. */
+  virtual void do_batch_end_cbs(execution_mode mode);
+  /** Execute callbacks at start of model forward propagation. */
+  virtual void do_model_forward_prop_begin_cbs(execution_mode mode);
+  /** Execute callbacks at end of model forward propagation. */
+  virtual void do_model_forward_prop_end_cbs(execution_mode mode);
+  /** Execute callbacks at start of layer forward propagation. */
+  virtual void do_layer_forward_prop_begin_cbs(execution_mode mode, Layer *l);
+  /** Execute callbacks at end of layer forward propagation. */
+  virtual void do_layer_forward_prop_end_cbs(execution_mode mode, Layer *l);
+  /** Execute callbacks at start of model backward propagation. */
   virtual void do_model_backward_prop_begin_cbs();
-  virtual void do_layer_backward_prop_begin_cbs(Layer *l);
+  /** Execute callbacks at end of model backward propagation. */
   virtual void do_model_backward_prop_end_cbs();
+  /** Execute callbacks at start of layer backward propagation. */
+  virtual void do_layer_backward_prop_begin_cbs(Layer *l);
+  /** Execute callbacks at end of layer backward propagation. */
   virtual void do_layer_backward_prop_end_cbs(Layer *l);
-  /// Evaluation phases (validation / testing)
-  virtual void do_batch_evaluate_begin_cbs();
-  virtual void do_batch_evaluate_end_cbs();
-  virtual void do_model_evaluate_forward_prop_begin_cbs();
-  virtual void do_layer_evaluate_forward_prop_begin_cbs(Layer *l);
-  virtual void do_model_evaluate_forward_prop_end_cbs();
-  virtual void do_layer_evaluate_forward_prop_end_cbs(Layer *l);
+
 };
 
 }  // namespace lbann

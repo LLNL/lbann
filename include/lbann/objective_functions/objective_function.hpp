@@ -52,7 +52,9 @@ class objective_function {
    *  term and deallocates it during destruction.
    */
   void add_term(objective_function_term* term) { m_terms.push_back(term); }
-  
+  /** Get list of objective function terms. */
+  std::vector<objective_function_term*> get_terms() { return m_terms; }
+
   /** Setup objective function. */
   void setup(model& m);
   

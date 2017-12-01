@@ -50,37 +50,18 @@ class sequential_model : public model {
   
   /** Copy constructor. */
   sequential_model(const sequential_model& other) = default;
-
   /** Copy assignment operator. */
   sequential_model& operator=(const sequential_model& other) = default;
-
   /** Destructor. */
-  ~sequential_model() override = default;
-
+  virtual ~sequential_model() override = default;
   /** Create copy. */
   sequential_model* copy() const override { return new sequential_model(*this); }
-
-  /** Remove layer from sequential model. */
-  void remove(int index);
-
-  /** Insert layer in sequential model. */
-  void insert(int index, Layer *new_layer);
-
-  /** Replace layer in sequential model. */
-  Layer *swap(int index, Layer *new_layer);
-
-  /** Setup sequential model. */
-  void setup() override;
 
   /** Get model name. */
   std::string name() const override { return "sequential_model"; }
 
-  /** Setup subset of sequential model. */
-  virtual void setup_subset(int start_index, int end_index);  
-
-  /// returns the number of neurons in the most recently added layer, or -1
-  /// if there is none
-  int num_previous_neurons();
+  /** Setup sequential model. */
+  void setup() override;
 
 #if 0
   /// Save model to file
