@@ -84,22 +84,25 @@ class pooling_layer : public transform {
                 cudnn::cudnn_manager *cudnn = nullptr)
     : pooling_layer(comm,
                     num_data_dims,
-                    std::vector<int>(num_data_dims, pool_dim).data(),
-                    std::vector<int>(num_data_dims, pool_pad).data(),
-                    std::vector<int>(num_data_dims, pool_stride).data(),
+                    std::vector<int>(num_data_dims, pool_dim),
+                    std::vector<int>(num_data_dims, pool_pad),
+                    std::vector<int>(num_data_dims, pool_stride),
                     pool_mode,
                     cudnn) {}
 
   /// Constructor
   pooling_layer(lbann_comm *comm,
                 int num_data_dims,
-                const int *pool_dims,
-                const int *pool_pads,
-                const int *pool_strides,
+                std::vector<int> pool_dims,
+                std::vector<int> pool_pads,
+                std::vector<int> pool_strides,
                 pool_mode pool_mode,
                 cudnn::cudnn_manager *cudnn = nullptr)
     : transform(comm),
-      m_pool_mode(pool_mode) {
+      m_pool_mode(pool_mode),
+      m_pool_dims(pool_dims),
+      m_pool_pads(pool_pads),
+      m_pool_strides(pool_strides)  {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "pooling only supports DATA_PARALLEL");
 
@@ -107,13 +110,10 @@ class pooling_layer : public transform {
     initialize_distributed_matrices();
 
     // Initialize input dimensions and pooling parameters
-    m_pool_dims.assign(pool_dims, pool_dims+num_data_dims);
     m_pool_size = std::accumulate(m_pool_dims.begin(),
                                   m_pool_dims.end(),
                                   1,
                                   std::multiplies<int>());
-    m_pool_pads.assign(pool_pads, pool_pads+num_data_dims);
-    m_pool_strides.assign(pool_strides, pool_strides+num_data_dims);
 
   #ifdef __LIB_CUDNN
 

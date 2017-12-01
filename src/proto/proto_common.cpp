@@ -533,9 +533,9 @@ void add_layers(
           d = new pooling_layer<data_layout::DATA_PARALLEL>(
             comm,
             ell.num_dims(),
-            &pool_dims[0],
-            &pool_pads[0],
-            &pool_strides[0],
+            pool_dims,
+            pool_pads,
+            pool_strides,
             get_pool_mode(ell.pool_mode(), master),
             cudnn
           );

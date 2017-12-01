@@ -103,7 +103,7 @@ class fully_connected_layer : public learning {
 
   fully_connected_layer(lbann_comm *comm,
                         int num_neurons,  // TODO: accept a vector for neuron dims
-                        weights* weight,
+                        weights* weight = nullptr,
                         bool has_bias = true,
                         cudnn::cudnn_manager *cudnn = nullptr)
     : learning(comm) {
