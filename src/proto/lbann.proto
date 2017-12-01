@@ -58,6 +58,7 @@ message ImagePreprocessor {
     uint32 crop_height = 5;
     int32 resized_width = 6;
     int32 resized_height = 7;
+    bool adaptive_interpolation = 8;
   }
 
   message Augmenter {
@@ -129,6 +130,7 @@ message ImagePreprocessor {
   bool crop_randomly = 28;
   int32 resized_width = 29;
   int32 resized_height = 30;
+  bool adaptive_interpolation = 31;
 }
 
 // TODO: wrap El::Mat based normalization into a generic preprocessor
