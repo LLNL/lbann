@@ -229,7 +229,7 @@ int main(int argc, char *argv[]) {
         std::cout << cb->name() << std::endl;
       }
       std::cout << std::endl;
-      std::vector<Layer *>& layers = model->get_layers();
+      const std::vector<Layer *>& layers = model->get_layers();
       for (size_t h=0; h<layers.size(); h++) {
         std::cout << h << " " << layers[h]->get_description() << std::endl;
       }

@@ -46,7 +46,6 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus, bool nc
   // Indicate whether NCCL is used 
   m_nccl_used = nccl_used;
 
-
   // Determine number of MPI ranks on current compute node
   const int rank_in_node = comm->get_rank_in_node();
   const int procs_per_node = comm->get_procs_per_node();

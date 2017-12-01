@@ -63,7 +63,8 @@ void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool mas
                    pb_cropper.crop_height(),
                    pb_cropper.crop_randomly(),
                    std::make_pair<int,int>(pb_cropper.resized_width(),
-                                           pb_cropper.resized_height()));
+                                           pb_cropper.resized_height()),
+                   pb_cropper.adaptive_interpolation());
       pp->add_transform(std::move(cropper));
       width = pb_cropper.crop_width();
       height = pb_cropper.crop_height();
@@ -76,7 +77,8 @@ void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool mas
                    pb_preprocessor.crop_height(),
                    pb_preprocessor.crop_randomly(),
                    std::make_pair<int,int>(pb_preprocessor.resized_width(),
-                                           pb_preprocessor.resized_height()));
+                                           pb_preprocessor.resized_height()),
+                   pb_preprocessor.adaptive_interpolation());
       pp->add_transform(std::move(cropper));
       if (master) std::cout << "image processor: cropper is set (deprecated syntax)" << std::endl;
     }

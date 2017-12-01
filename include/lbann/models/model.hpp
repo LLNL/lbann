@@ -96,12 +96,12 @@ class model {
   optimizer* create_optimizer() const;
 
   /** Return the model's objective function. */
-  objective_function* get_objective_function() {
+  objective_function* get_objective_function() const {
     return m_objective_function;
   }
 
   /** Return the model's metrics. */
-  virtual std::vector<metrics::metric *>& get_metrics() {
+  virtual const std::vector<metrics::metric *>& get_metrics() const {
     return m_metrics;
   }
 
@@ -109,21 +109,18 @@ class model {
   void set_layers(std::vector<Layer *>& layers);
 
   /** Return the model's layers. */
-  std::vector<Layer *>& get_layers() { return m_layers; }
+  virtual const std::vector<Layer *>& get_layers() const { return m_layers; }
 
   /** Set the model's weights. */
   void set_weights(std::vector<weights *>& w);
 
   /** Return the model's weights. */
-  std::vector<weights *>& get_weights() { return m_weights; }
+  const std::vector<weights *>& get_weights() const { return m_weights; }
 
   /** Get the model's comm. */
   inline lbann_comm *get_comm() const {
     return m_comm;
   }
-
-  /** Get the model's current execution mode. */
-  inline execution_mode get_execution_mode() { return m_execution_mode; }
 
   /** Get the current epoch for the model. */
   inline int get_cur_epoch() const {
@@ -170,7 +167,7 @@ class model {
   }
 
   /** Get the current phase (multiple epochs) in layer-wise model training. */
-  inline int get_current_phase() {
+  inline int get_current_phase() const {
     return m_current_phase;
   }
 

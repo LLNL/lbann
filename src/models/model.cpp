@@ -127,7 +127,7 @@ model::model(const model& other) :
     new_layer->set_layer_pointers(new_layer_pointers);
 
     // Fix weights pointers
-    std::vector<weights *> old_weights = old_layer->get_weights();
+    const std::vector<weights *> old_weights = old_layer->get_weights();
     std::vector<weights *> new_weights;
     for (weights *old_weights_pointer : old_weights) {
       weights *new_weights_pointer = old_to_new_weights[old_weights_pointer];
@@ -146,7 +146,7 @@ model::model(const model& other) :
       new_layer_pointers.push_back(new_layer_pointer);
     }
     m_objective_function->set_layer_pointers(new_layer_pointers);
-    std::vector<weights *> old_weights_pointers = m_objective_function->get_weights_pointers();
+    const std::vector<weights *> old_weights_pointers = m_objective_function->get_weights_pointers();
     std::vector<weights *> new_weights_pointers;
     for (weights *old_weights_pointer : old_weights_pointers) {
       weights *new_weights_pointer = old_to_new_weights[old_weights_pointer];
@@ -245,7 +245,7 @@ model& model::operator=(const model& other) {
     new_layer->set_layer_pointers(new_layer_pointers);
 
     // Fix weights pointers
-    std::vector<weights *> old_weights = old_layer->get_weights();
+    const std::vector<weights *> old_weights = old_layer->get_weights();
     std::vector<weights *> new_weights;
     for (weights *old_weights_pointer : old_weights) {
       weights *new_weights_pointer = old_to_new_weights[old_weights_pointer];
@@ -264,7 +264,7 @@ model& model::operator=(const model& other) {
       new_layer_pointers.push_back(new_layer_pointer);
     }
     m_objective_function->set_layer_pointers(new_layer_pointers);
-    std::vector<weights *> old_weights_pointers = m_objective_function->get_weights_pointers();
+    const std::vector<weights *> old_weights_pointers = m_objective_function->get_weights_pointers();
     std::vector<weights *> new_weights_pointers;
     for (weights *old_weights_pointer : old_weights_pointers) {
       weights *new_weights_pointer = old_to_new_weights[old_weights_pointer];
@@ -369,7 +369,7 @@ optimizer* model::create_optimizer() const {
 
 void model::set_execution_mode(execution_mode mode) {
   m_execution_mode = mode;
-  for (auto&& l : m_layers) {
+  for (auto&& l : get_layers()) {
     l->set_execution_mode(mode);
   }
 }
@@ -455,6 +455,7 @@ void model::setup_epoch(execution_mode mode) {
 
 bool model::evaluate_mini_batch(execution_mode mode) {
   do_batch_begin_cbs(mode);
+  reset_layers();
   forward_prop(mode);
   m_objective_function->compute_value();
   const bool finished = update_layers();
@@ -539,13 +540,13 @@ void model::setup_callbacks() {
 
 void model::do_train_begin_cbs() {
   for (auto&& cb : m_callbacks) {
-    cb->on_train_begin(this); break;
+    cb->on_train_begin(this);
   }
 }
 
 void model::do_train_end_cbs() {
   for (auto&& cb : m_callbacks) {
-    cb->on_train_end(this); break;
+    cb->on_train_end(this);
   }
 }
 

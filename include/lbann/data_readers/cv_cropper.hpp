@@ -57,7 +57,13 @@ class cv_cropper : public cv_transform {
 
   // --- state variables ---
   double m_zoom; ///< zoom factor to prepare the initial region for a given image
-  int m_interpolation; ///< channel value interpolation method
+  /** Three modes of pixel interpolation: INTER_LINEAR, INTER_AREA, and INTER_LINEAR
+   *  The first choice is the default when not adaptive. The other two are used when
+   *  interpolatng  adaptively. The second is when shrinking, and the third is when enlarging
+   */
+  static const int m_interpolation_choices[3];
+  int m_interpolation; ///< id of the channel value interpolation method used
+  bool m_adaptive_interpolation; ///< whether to use adaptive interpolation
 
   void unset_roi();
 
@@ -74,10 +80,12 @@ class cv_cropper : public cv_transform {
    * @param height desired height of the crop
    * @param random_crop whether to crop randomly from the initial region of interest or at the center
    * @param roi the size of the initial region of interest to crop from. Set (0,0) to use the full image.
+   * @param adaptive_interpolation whether to apply a different interpolation method depending on how an image is resized
    */
   void set(const unsigned int width, const unsigned int height,
            const bool random_crop = false,
-           const std::pair<int, int>& roi = std::make_pair(0,0));
+           const std::pair<int, int>& roi = std::make_pair(0,0),
+           const bool adaptive_interpolation = false);
 
   unsigned int get_crop_width() const { return m_width; }
   unsigned int get_crop_height() const { return m_height; }

@@ -69,15 +69,15 @@ class objective_function_term {
    */
   virtual void compute_gradient() = 0;
 
-  objective_function* get_objective_function() { return m_objective_function; }
+  objective_function* get_objective_function() const { return m_objective_function; }
   void set_objective_function(objective_function* obj_fn) { m_objective_function = obj_fn; }
 
   /** Get list of pointers to layers. */
-  std::vector<Layer*> get_layer_pointers() { return m_layers; }
+  std::vector<Layer*> get_layer_pointers() const { return m_layers; }
   /** Set list of pointers to layers. */
   void set_layer_pointers(std::vector<Layer*> layers) { m_layers = layers; }
   /** Get list of pointers to weights. */
-  std::vector<weights*> get_weights_pointers() { return m_weights; }
+  std::vector<weights*> get_weights_pointers() const { return m_weights; }
   /** Set list of pointers to weights. */
   void set_weights_pointers(std::vector<weights*> w) { m_weights = w; }
 
