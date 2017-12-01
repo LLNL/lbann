@@ -455,7 +455,6 @@ void model::setup_epoch(execution_mode mode) {
 
 bool model::evaluate_mini_batch(execution_mode mode) {
   do_batch_begin_cbs(mode);
-  reset_layers();
   forward_prop(mode);
   m_objective_function->compute_value();
   const bool finished = update_layers();
@@ -467,11 +466,11 @@ bool model::train_mini_batch() {
   do_batch_begin_cbs(execution_mode::training);
 
   // Forward prop step
-  reset_layers();
   forward_prop(execution_mode::training);
   m_objective_function->compute_value();
 
   // Backward prop step
+  clear_error_signals();
   m_objective_function->compute_gradient();
   backward_prop();
 
@@ -484,9 +483,9 @@ bool model::train_mini_batch() {
   return finished;
 }
 
-void model::reset_layers() {
+void model::clear_error_signals() {
   for (Layer *layer : m_layers) {
-    layer->reset();
+    layer->clear_error_signal();
   }
 }
 

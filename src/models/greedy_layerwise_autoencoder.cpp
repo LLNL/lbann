@@ -242,10 +242,10 @@ void greedy_layerwise_autoencoder::restore_sequential_model() {
   
 }
 
-void greedy_layerwise_autoencoder::reset_layers() {
-  sequential_model::reset_layers();
+void greedy_layerwise_autoencoder::clear_error_signals() {
+  sequential_model::clear_error_signals();
   if (m_reconstruction != nullptr) {
-    m_reconstruction->reset();
+    m_reconstruction->clear_error_signal();
   }
 }
 

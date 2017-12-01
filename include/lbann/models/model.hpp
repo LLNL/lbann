@@ -314,12 +314,12 @@ class model {
   /** Train model on a mini-batch. */
   virtual bool train_mini_batch();
 
-  /** Reset layers. */
-  virtual void reset_layers();
   /** Forward propagation step. */
   virtual void forward_prop(execution_mode mode);
   /** Backward propagation step. */
   virtual void backward_prop();
+  /** Clear each layer's error signal tensor. */
+  virtual void clear_error_signals();
   /** Update weights step. */
   virtual void update_weights();
   /** Update layers step. */

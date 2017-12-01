@@ -287,21 +287,6 @@ Layer::~Layer() {
   if(m_error_signal_v      != nullptr) delete m_error_signal_v;
 }
 
-void Layer::reset() {
-  El::Zero(*m_activations);
-  El::Zero(*m_error_signal);
-#ifdef __LIB_CUDNN
-  if(m_cudnn != nullptr) {
-    m_cudnn->clear_on_gpus(m_activations_d,
-                           m_num_neurons,
-                           m_max_mini_batch_size_per_gpu);
-    m_cudnn->clear_on_gpus(m_error_signal_d,
-                           m_num_prev_neurons,
-                           m_max_mini_batch_size_per_gpu);
-  }
-#endif // __LIB_CUDNN
-}
-
 void Layer::forward_prop() {
   double fp_start = get_time();
 
@@ -482,6 +467,19 @@ void Layer::summarize_matrices(lbann_summary& summarizer, int step) {
   summarizer.reduce_max(prefix + "max", *m_error_signal_v, step);
   summarizer.reduce_stdev(prefix + "stdev", *m_error_signal_v, step);
   summarizer.reduce_2norm(prefix + "2norm2", *m_error_signal_v, step);
+}
+
+void Layer::clear_error_signal() {
+  if(m_using_gpus) {
+#ifdef __LIB_CUDNN
+    m_cudnn->clear_on_gpus(m_error_signal_d,
+                           m_num_prev_neurons,
+                           m_max_mini_batch_size_per_gpu);
+#endif // __LIB_CUDNN
+  }
+  else {
+    El::Zero(*m_error_signal);
+  }
 }
 
 void Layer::setup() {

@@ -58,10 +58,26 @@ class Layer {
   template <data_layout T_layout>
   void initialize_distributed_matrices();
 
-  virtual void reset();
+  /** Forward propagation step.
+   *  Apply the layer's operation to the previous activations tensor
+   *  to obtain the activations tensor.
+   */
   virtual void forward_prop();
+  /** Backward propagation step.
+   *  Compute the objective function gradient w.r.t. the previous
+   *  activations tensor and the weights. The gradient w.r.t. the
+   *  previous activations tensor is called the error signal tensor.
+   */
   virtual void back_prop();
+  /** Update step.
+   *  This updates the layer's internal members. The weights are
+   *  updated elsewhere.
+   */
   virtual bool update();
+
+  /** Clear the error signal tensor. */
+  virtual void clear_error_signal();
+
   virtual void summarize_stats(lbann_summary& summarizer, int step);
   virtual void summarize_matrices(lbann_summary& summarizer, int step);
 

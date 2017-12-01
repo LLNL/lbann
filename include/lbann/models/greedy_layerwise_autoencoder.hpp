@@ -96,12 +96,13 @@ class greedy_layerwise_autoencoder : public sequential_model {
   /** Set the greedy layerwise autoencover to a sequential model. */
   void restore_sequential_model();
 
-  /** Reset layers. */
-  void reset_layers() override;
   /** Forward prop step. */
   void forward_prop(execution_mode mode) override;
   /** Backward prop step. */
   void backward_prop() override;
+
+  /** Clear error signal tensors. */
+  void clear_error_signals() override;
 
 };
 
