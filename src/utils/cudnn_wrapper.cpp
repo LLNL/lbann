@@ -43,8 +43,12 @@ using namespace lbann;
 cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus, bool nccl_used)
   : comm(_comm) {
 
-  // Indicate whether NCCL is used 
+  // Indicate whether NCCL is used
+#ifdef __LIB_NCCL  
   m_nccl_used = nccl_used;
+#else
+  m_nccl_used = false;
+#endif
 
   // Determine number of MPI ranks on current compute node
   const int rank_in_node = comm->get_rank_in_node();

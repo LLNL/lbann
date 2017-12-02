@@ -163,6 +163,8 @@ fclose(fp_debug);
     broadcast_to_gpus(gpu_data, cpu_workspace);
 */
     //copy_from_gpu(0, cpu_workspace, gpu_data[0]);
+#else
+    throw lbann_exception("cudnn_manager: NCCL not detected");
 #endif // #ifdef __LIB_NCCL
   }
 }
