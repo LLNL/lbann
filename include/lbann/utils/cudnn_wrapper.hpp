@@ -303,7 +303,7 @@ class cudnn_manager {
   /** List of NCCL 2 related variables. */
 #ifdef __LIB_NCCL
   // One GPU per single thread of one MPI rank is assumed
-  ncclComm_t m_nccl_comm;
+  std::vector<ncclComm_t> m_nccl_comm;
   ncclDataType_t nccl_datatype();
 #endif // #ifdef __LIB_NCCL
 

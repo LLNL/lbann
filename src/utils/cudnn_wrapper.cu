@@ -64,17 +64,6 @@ void cudnn_manager::allreduce_on_gpus(std::vector<DataType*>& gpu_data,
     return;
   }
 
-/*
-  if(is_nccl_used()){
-#ifndef __LIB_NCCL
-    throw lbann::lbann_exception("cudnn_wrapper_cuda: NCCL is not used");
-#else
-    /// Use NCCL implementation if available
-    allreduce_on_gpus_nccl(gpu_data, height, width);
-    return;
-#endif // __LIB_NCCL
-  } else{
-*/
 
 
     const El::Int buf_len = 1 << 27;
@@ -101,16 +90,13 @@ void cudnn_manager::allreduce_on_gpus(std::vector<DataType*>& gpu_data,
       for (int j = 0; j < m_num_gpus - 1; ++j) {
         for(int i = 0; i < m_num_gpus; ++i) {
           CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-          int src_idx = i;
-          int dst_idx = (i + 1) % m_num_gpus;
-          int src_dev = m_gpus[src_idx];
-          int dst_dev = m_gpus[dst_idx];
-          DataType *src_buf = j == 0 ? gpu_data[src_idx] + offset : bufs[sbuf_idx][src_idx];
-          DataType *dst_buf = bufs[dbuf_idx][dst_idx];
-          // std::cerr << "Copying from device " << src_dev << " to device " << dst_dev << "\n";
+          int src_dev = i;
+          int dst_dev = (i + 1) % m_num_gpus;              
+          DataType *src_buf = j == 0 ? gpu_data[src_dev] + offset : bufs[sbuf_idx][src_dev];
+          DataType *dst_buf = bufs[dbuf_idx][dst_dev];
           // copy to the next device in the ring
           FORCE_CHECK_CUDA(cudaMemcpyPeerAsync(dst_buf, dst_dev, src_buf, src_dev,
-                                               len * sizeof(DataType), get_stream(src_idx)));
+                                             len * sizeof(DataType), get_stream(src_dev)));
         }
         synchronize();
         for(int i = 0; i < m_num_gpus; ++i) {
@@ -125,7 +111,6 @@ void cudnn_manager::allreduce_on_gpus(std::vector<DataType*>& gpu_data,
       }
       offset += len;
     } while (offset < total_len);
- // }
 }
 
 /// @todo Efficient implementation
@@ -143,26 +128,8 @@ void cudnn_manager::global_allreduce_on_gpus(std::vector<DataType*>& gpu_data,
     broadcast_to_gpus(gpu_data, cpu_workspace);
   } else{
 #ifdef __LIB_NCCL
-    static Mat cpu_workspace;
-FILE *fp_debug;
-char line[132];
-sprintf(line, "file.%02d", comm.Rank() );
-fp_debug = fopen(line, "a");
-fprintf(fp_debug, "Here 1\n");
-fflush(fp_debug);
-    // New implementation with NCCL 2
     global_allreduce_on_gpus_nccl (gpu_data, height, width);
-fprintf(fp_debug, "Here 2\n");
-fflush(fp_debug);
-fclose(fp_debug);
-
-/*
-    copy_from_gpu(0, cpu_workspace, gpu_data[0]);
     synchronize();
-    El::AllReduce(cpu_workspace, comm);
-    broadcast_to_gpus(gpu_data, cpu_workspace);
-*/
-    //copy_from_gpu(0, cpu_workspace, gpu_data[0]);
 #endif // #ifdef __LIB_NCCL
   }
 }
@@ -186,44 +153,31 @@ void cudnn_manager::global_allreduce_on_gpus_nccl(std::vector<DataType*>& gpu_da
                                                   El::Int height,
                                                   El::Int width,
                                                   DataType scale) {
+
+
 /**
   gpu_data is a vector of pointers, each of which points to a part of
   matrix allocated to GPU memory. Since we assume that one MPI rank is
   assigned to one GPU, the number of element in gpu_data is 1. */
 
-  /// It is assumed each MPI rank is assigned to one GPU (that is, m_num_gpus==1)
-  if(m_num_gpus != 1){
-    char line[1024];
-    sprintf(line, "cudnn_wrapper_cuda: the number of GPUs assigned to process is %d; should be 1", m_num_gpus);
-    throw lbann::lbann_exception(line);
-    //throw lbann::lbann_exception("cudnn_wrapper_cuda: the number of GPUs assigned to process is not 1");
+  int num_gpus_assigned = m_gpus.size();
 
-  }
-
-  int local_rank = comm->get_rank_in_node();
   ncclDataType_t type = nccl_datatype();
   El::Int total_len = height * width;
 
-  //DataType *target_buffer;
-  //CHECK_CUDA(cudaSetDevice(local_rank));
-
-  for(int i = 0; i < m_num_gpus; ++i) {
-
+  ncclGroupStart();
+  for(int i = 0; i < num_gpus_assigned; ++i) {
     CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-    //CHECK_CUDA(cudaMalloc((void **) &target_buffer, total_len*sizeof(DataType)));
-    //NCCLCHECK(ncclAllReduce(gpu_data[0], target_buffer, total_len, type, ncclSum, m_nccl_comm, get_stream(local_rank)));
-    NCCLCHECK(ncclAllReduce(gpu_data[0], gpu_data[0], total_len, type, ncclSum, m_nccl_comm, get_stream(local_rank)));
-    //CHECK_CUDA(cudaMemcpy(gpu_data[0], target_buffer, total_len*sizeof(type),  cudaMemcpyDeviceToDevice));
-    //CHECK_CUDA(cudaFree ((void **) &target_buffer));
+    NCCLCHECK(ncclAllReduce(gpu_data[i], gpu_data[i], total_len, type, ncclSum, m_nccl_comm[i], get_stream(i)));
 
     /// Apply scaling, if scale != 1
     if(scale != DataType(1)) {
       int tb_dim = 256;
       int grid_dim = total_len/tb_dim + (total_len % tb_dim ? 1 : 0);
-      scale_kernel<<<grid_dim, tb_dim>>>(gpu_data[0], scale, total_len);
+      scale_kernel<<<grid_dim, tb_dim>>>(gpu_data[i], scale, total_len);
     }
   }
-
+  ncclGroupEnd();
 }
 #endif // __LIB_NCCL
 
