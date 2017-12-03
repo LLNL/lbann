@@ -36,7 +36,7 @@ void lbann::lbann_callback_debug_io::on_epoch_begin(model *m) {
 }
 
 void lbann::lbann_callback_debug_io::on_forward_prop_begin(model *m, Layer *l) {
-  input_layer *input = dynamic_cast<input_layer*>(l);
+  auto *input = dynamic_cast<input_layer*>(l);
   if (input == nullptr || m_debug_lvl < 1) {
     return;
   }
@@ -89,7 +89,7 @@ void lbann::lbann_callback_debug_io::print_fp_start(model *m, input_layer *input
 //  179i @ 300s (=5m*60s) + 1i @ 100s (=5m*45s):offset <- num models
 void lbann::lbann_callback_debug_io::print_phase_start(model *m, execution_mode mode) {
   const std::vector<Layer *>layers = m->get_layers();
-  input_layer *input = dynamic_cast<input_layer*>(layers[0]);
+  auto *input = dynamic_cast<input_layer*>(layers[0]);
   generic_data_reader *data_reader=input->get_data_reader(mode);
 
   int64_t step;
@@ -150,7 +150,7 @@ void lbann::lbann_callback_debug_io::on_validation_begin(model *m) {
 }
 
 void lbann::lbann_callback_debug_io::on_evaluate_forward_prop_begin(model *m, Layer *l) {
-  input_layer *input = dynamic_cast<input_layer*>(l);
+  auto *input = dynamic_cast<input_layer*>(l);
   if (input == nullptr || m_debug_lvl < 1) {
     return;
   }

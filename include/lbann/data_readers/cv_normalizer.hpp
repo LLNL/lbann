@@ -271,9 +271,9 @@ inline OutputIterator cv_normalizer::scale(
 template<typename Tsrc, typename Tdst>
 inline bool cv_normalizer::scale_with_known_type(cv::Mat& image,
     const std::vector<channel_trans_t>& trans) {
-  const unsigned int Width  = static_cast<unsigned int>(image.cols);
-  const unsigned int Height = static_cast<unsigned int>(image.rows);
-  const unsigned int NCh    = static_cast<unsigned int>(image.channels());
+  const auto Width  = static_cast<unsigned int>(image.cols);
+  const auto Height = static_cast<unsigned int>(image.rows);
+  const auto NCh    = static_cast<unsigned int>(image.channels());
   if ((trans.size() > 0u) && (trans.size() != NCh)) {
     return false;
   }
@@ -290,7 +290,7 @@ inline bool cv_normalizer::scale_with_known_type(cv::Mat& image,
     } else {
       const unsigned int stride = Height*NCh;
       for (unsigned int i = 0u; i < Height; ++i) {
-        Tsrc *optr = reinterpret_cast<Tsrc *>(image.ptr<Tsrc>(i));
+        auto *optr = reinterpret_cast<Tsrc *>(image.ptr<Tsrc>(i));
         const Tsrc *iptr = optr;
         scale(iptr, iptr+stride, optr, trans);
       }
@@ -304,7 +304,7 @@ inline bool cv_normalizer::scale_with_known_type(cv::Mat& image,
             reinterpret_cast<Tdst *>(image_out.data), trans);
     } else {
       const unsigned int stride = Height*NCh;
-      Tdst *ptr_out = reinterpret_cast<Tdst *>(image_out.data);
+      auto *ptr_out = reinterpret_cast<Tdst *>(image_out.data);
       for (unsigned int i = 0u; i < Height; ++i, ptr_out += stride) {
         const Tsrc *ptr = reinterpret_cast<Tsrc *>(image.ptr<Tsrc>(i));
         scale(ptr, ptr+stride, ptr_out, trans);
@@ -338,7 +338,7 @@ inline bool cv_normalizer::compute_mean_stddev_with_known_type(const cv::Mat& im
   for (int ch = 0; ch < NCh; ++ch) {
     sum[ch] = 0.0;
     sqsum[ch] = 0.0;
-    const T *ptr = reinterpret_cast<const T *>(image.datastart);
+    const auto *ptr = reinterpret_cast<const T *>(image.datastart);
     shift[ch] = static_cast<ComputeType>(*(ptr+ch));
   }
 
@@ -346,8 +346,8 @@ inline bool cv_normalizer::compute_mean_stddev_with_known_type(const cv::Mat& im
   stddev.resize(NCh);
 
   if (image.isContinuous()) {
-    const T *ptr = reinterpret_cast<const T *>(image.datastart);
-    const T *const ptrend = reinterpret_cast<const T *>(image.dataend);
+    const auto *ptr = reinterpret_cast<const T *>(image.datastart);
+    const auto *const ptrend = reinterpret_cast<const T *>(image.dataend);
 
     int ch = 0;
     do {
@@ -368,7 +368,7 @@ inline bool cv_normalizer::compute_mean_stddev_with_known_type(const cv::Mat& im
     const int Height = image.rows;
 
     for (int i = 0; i < Height; ++i) {
-      const T *ptr = reinterpret_cast<const T *>(image.ptr<const T>(i));
+      const auto *ptr = reinterpret_cast<const T *>(image.ptr<const T>(i));
       const T *const ptrend = ptr + stride;
 
       int ch = 0;

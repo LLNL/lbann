@@ -46,7 +46,7 @@ lbann_comm* initialize(int& argc, char**& argv, int seed) {
   El::Initialize(argc, argv);
   // Create a new comm object.
   // Initial creation with every process in one model.
-  lbann_comm* comm = new lbann_comm(0);
+  auto* comm = new lbann_comm(0);
 #if defined(LBANN_TOPO_AWARE)
   // Determine the number of NUMA nodes present.
   hwloc_topology_t topo;

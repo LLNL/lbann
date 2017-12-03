@@ -81,7 +81,7 @@ void objective_function::setup(model& m) {
 
 DataType objective_function::compute_value() {
   double value_start = get_time();
-  DataType value = DataType(0);
+  auto value = DataType(0);
   for (objective_function_term *term : m_terms) {
     value += term->compute_value();
   }

@@ -47,7 +47,7 @@ bool get_single_channel_stats(const cv::Mat& _img, image_stats& stats) {
   cv::MatIterator_<pw_fp_t> itBegin = img.begin<pw_fp_t>();
   cv::MatIterator_<pw_fp_t> itEnd = img.end<pw_fp_t>();
 
-  const pw_fp_t typeZero = static_cast<pw_fp_t>(0);
+  const auto typeZero = static_cast<pw_fp_t>(0);
 
   double sum = 0.0;
 
@@ -75,15 +75,15 @@ bool get_single_channel_stats(const cv::Mat& _img, image_stats& stats) {
   const size_t nnz = stats.cnt - stats.cntZeros;
   const size_t halfPointNZ = nnz/2;
   const size_t halfPoint   = stats.cnt/2;
-  std::vector<pw_fp_t>::const_iterator itMedNZ = itbegNZ;
-  std::vector<pw_fp_t>::const_iterator itMed   = itbeg;
+  auto itMedNZ = itbegNZ;
+  auto itMed   = itbeg;
   std::advance(itMedNZ, halfPointNZ);
   std::advance(itMed,   halfPoint);
 
   stats.medianNZ = *itMedNZ;
   stats.median   = *itMed;
 
-  std::vector<pw_fp_t>::const_iterator it = itbegNZ;
+  auto it = itbegNZ;
   for( ; it != itend; ++it) {
     sum += *it;
   }

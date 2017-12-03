@@ -321,7 +321,7 @@ class base_convolution_layer : public learning {
     }
 
     // Initialize Glorot or He weight initialization
-    fan_in_fan_out_initializer* cast_initializer
+    auto* cast_initializer
       = dynamic_cast<fan_in_fan_out_initializer*>(&this->m_weights[0]->get_initializer());
     if (cast_initializer != nullptr) {
       cast_initializer->set_fan_in(m_kernel_size / this->m_neuron_dims[0]);

@@ -256,7 +256,7 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
     if (master) std::cout << "imagenet_reader_single is set" << std::endl;
   }
 
-  image_data_reader* image_data_reader_ptr = dynamic_cast<image_data_reader*>(reader);
+  auto* image_data_reader_ptr = dynamic_cast<image_data_reader*>(reader);
   if (!image_data_reader_ptr && master) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: invalid image data reade pointer";

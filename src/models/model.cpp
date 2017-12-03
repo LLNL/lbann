@@ -376,7 +376,7 @@ void model::set_execution_mode(execution_mode mode) {
 
 bool model::is_execution_mode_valid(execution_mode mode) const {
   for (const Layer *layer : m_layers) {
-    const input_layer *input = dynamic_cast<const input_layer*>(layer);
+    const auto *input = dynamic_cast<const input_layer*>(layer);
     if (input != nullptr
         && !input->is_execution_mode_valid(mode)) {
       return false;

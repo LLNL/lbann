@@ -105,7 +105,7 @@ void loss_function::setup(objective_function& obj_fn) {
   }
 
   // Initialize gradient matrix
-  target_layer *target = (target_layer*) m_layers[0];
+  auto *target = (target_layer*) m_layers[0];
   const AbsDistMat& ground_truth = target->get_activations();
   m_gradient = ground_truth.Construct(ground_truth.Grid(),
                                       ground_truth.Root());
@@ -116,7 +116,7 @@ void loss_function::setup(objective_function& obj_fn) {
 /// @todo Handle effective mini-batch size
 DataType loss_function::compute_value() {
   if (m_scale_factor == DataType(0)) { return DataType(0); }
-  target_layer *target = (target_layer*) m_layers[0];
+  auto *target = (target_layer*) m_layers[0];
   const AbsDistMat& prediction = target->get_prediction();
   const AbsDistMat& ground_truth = target->get_ground_truth();
   return m_scale_factor * evaluate(prediction, ground_truth);
@@ -124,7 +124,7 @@ DataType loss_function::compute_value() {
 
 void loss_function::compute_gradient() {
   if (m_scale_factor == DataType(0)) { return; }
-  target_layer *target = (target_layer*) m_layers[0];
+  auto *target = (target_layer*) m_layers[0];
   const AbsDistMat& prediction = target->get_prediction();
   const AbsDistMat& ground_truth = target->get_ground_truth();
   El::Zeros(*m_gradient, prediction.Height(), prediction.Width());

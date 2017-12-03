@@ -170,7 +170,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   generic_data_reader *get_data_reader(const execution_mode mode) const {
     generic_data_reader *data_reader = nullptr;
   
-    data_reader_map_t::const_iterator it = m_data_readers.find(mode);
+    auto it = m_data_readers.find(mode);
     if (it != m_data_readers.end()) data_reader = it->second;
 
     switch(mode) {

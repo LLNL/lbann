@@ -138,7 +138,7 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
           const DataType numerical_gradient
             = (- f_2h + 8 * f_h - 8 * f_nh + f_n2h) / (12 * step_size);
           const DataType error = std::fabs(analytical_gradient - numerical_gradient);
-          DataType relative_error = DataType(0);
+          auto relative_error = DataType(0);
           if (error != DataType(0)) {
             relative_error = error / std::max(std::fabs(analytical_gradient),
                                               std::fabs(numerical_gradient));

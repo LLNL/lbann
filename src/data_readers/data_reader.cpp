@@ -364,7 +364,7 @@ bool lbann::generic_data_reader::loadFromCheckpointShared(persist& p, const char
     // get size of ShuffleIndices
     snprintf(fieldname, sizeof(fieldname), "%s_data_size", name);
     p.read_uint64(persist_type::train, fieldname, &val);
-    int size = (int) val;
+    auto size = (int) val;
 
     // get current position within data
     snprintf(fieldname, sizeof(fieldname), "%s_data_position", name);

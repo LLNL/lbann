@@ -91,9 +91,9 @@ cv::Mat correct_chromatic_aberration(const cv::Mat& _img) {
   cv::MatIterator_<pw_cv_vec3> itend = img.end<pw_cv_vec3>();
 
   for ( ; it != itend; ++it) {
-    const pw_fp_t b0 = static_cast<pw_fp_t>((*it)[0]);
-    const pw_fp_t g0 = static_cast<pw_fp_t>((*it)[1]);
-    const pw_fp_t r0 = static_cast<pw_fp_t>((*it)[2]);
+    const auto b0 = static_cast<pw_fp_t>((*it)[0]);
+    const auto g0 = static_cast<pw_fp_t>((*it)[1]);
+    const auto r0 = static_cast<pw_fp_t>((*it)[2]);
 
     pw_fp_t b = b0 * B[0][0] + g0 * B[1][0] + r0 * B[2][0];
     pw_fp_t g = b0 * B[0][1] + g0 * B[1][1] + r0 * B[2][1];
@@ -139,8 +139,8 @@ cv::Mat drop_2channels(const cv::Mat& _img) {
   std::vector<image_stats> stats;
   get_channel_stats(_img, stats);
 
-  const pw_fp_t avg = static_cast<pw_fp_t>(stats[chosenCh].avg);
-  const pw_fp_t dev = static_cast<pw_fp_t>(stats[chosenCh].stdev/100.0);
+  const auto avg = static_cast<pw_fp_t>(stats[chosenCh].avg);
+  const auto dev = static_cast<pw_fp_t>(stats[chosenCh].stdev/100.0);
   pw_fp_t avgs[3] = {avg, avg, avg};
   pw_fp_t devs[3] = {dev, dev, dev};
 
@@ -152,9 +152,9 @@ cv::Mat drop_2channels(const cv::Mat& _img) {
   cv::MatIterator_<pw_cv_vec3> itend = img.end<pw_cv_vec3>();
 
   for ( ; it != itend; ++it) {
-    const pw_fp_t b0 = static_cast<pw_fp_t>((*it)[0]);
-    const pw_fp_t g0 = static_cast<pw_fp_t>((*it)[1]);
-    const pw_fp_t r0 = static_cast<pw_fp_t>((*it)[2]);
+    const auto b0 = static_cast<pw_fp_t>((*it)[0]);
+    const auto g0 = static_cast<pw_fp_t>((*it)[1]);
+    const auto r0 = static_cast<pw_fp_t>((*it)[2]);
 
 #if 1
     pw_fp_t b = b0*m[0] + (1.0-m[0])*rg_ch0(gen);

@@ -156,7 +156,7 @@ void lbann_quantizer::onebit_unquantize(const QuantizedMatrix& qmat, Mat& mat) {
     memcpy(&avg_neg, &tmp, sizeof(avg_neg));
     // Unquantize this column.
     for (El::Int row_chunk = 0; row_chunk < height; row_chunk += NUM_BITS) {
-      uqtype q = (uqtype) qmat_buf[qrow + col * qmat_ldim];
+      auto q = (uqtype) qmat_buf[qrow + col * qmat_ldim];
       for (size_t bit = 0; bit < NUM_BITS; ++bit) {
         El::Int row = row_chunk + bit;
         if (row >= height) {
@@ -194,7 +194,7 @@ void lbann_quantizer::onebit_unquantize_add(const QuantizedMatrix& qmat,
     memcpy(&avg_neg, &tmp, sizeof(avg_neg));
     // Unquantize this column.
     for (El::Int row_chunk = 0; row_chunk < height; row_chunk += NUM_BITS) {
-      uqtype q = (uqtype) qmat_buf[qrow + col * qmat_ldim];
+      auto q = (uqtype) qmat_buf[qrow + col * qmat_ldim];
       for (size_t bit = 0; bit < NUM_BITS; ++bit) {
         El::Int row = row_chunk + bit;
         if (row >= height) {

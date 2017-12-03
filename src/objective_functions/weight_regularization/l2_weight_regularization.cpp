@@ -61,7 +61,7 @@ DataType l2_weight_regularization::local_squared_l2_norm(const Mat& mat) const {
   const El::Int width = mat.Width();
   const El::Int ldim = mat.LDim();
   const DataType* __restrict__ buf = mat.LockedBuffer();
-  DataType sqsum = DataType(0);
+  auto sqsum = DataType(0);
   // Check if data is contiguous.
   if (ldim == height) {
     const El::Int size = height*width;
@@ -84,7 +84,7 @@ DataType l2_weight_regularization::local_squared_l2_norm(const Mat& mat) const {
 
 DataType l2_weight_regularization::compute_value() {
   if (m_scale_factor == DataType(0)) { return DataType(0); }
-  DataType value = DataType(0);
+  auto value = DataType(0);
   for (weights* w : m_weights) {
     cudnn::cudnn_manager* cudnn = w->get_cudnn_manager();
     if (cudnn != nullptr) {

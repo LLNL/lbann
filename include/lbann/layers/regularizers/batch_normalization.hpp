@@ -680,8 +680,8 @@ class batch_normalization : public regularizer_layer {
       // Compute sums and sums of squares
       #pragma omp parallel for
       for(int channel = 0; channel < num_channels; ++channel) {
-        DataType sum = DataType(0);
-        DataType sqsum = DataType(0);
+        auto sum = DataType(0);
+        auto sqsum = DataType(0);
         const El::Int row_start = channel * channel_size;
         const El::Int row_end = (channel+1) * channel_size;
         for(El::Int col = 0; col < local_width; ++col) {
@@ -791,10 +791,10 @@ class batch_normalization : public regularizer_layer {
       const DataType scale = scale_local(channel, 0);
       const DataType inv_stdev = 1 / std::sqrt(var + m_epsilon);
       const DataType dvar_factor = inv_stdev * inv_stdev * inv_stdev / 2;
-      DataType dmean = DataType(0);
-      DataType dvar = DataType(0);
-      DataType dscale = DataType(0);
-      DataType dbias = DataType(0);
+      auto dmean = DataType(0);
+      auto dvar = DataType(0);
+      auto dscale = DataType(0);
+      auto dbias = DataType(0);
 
       // Compute gradient contributions from local entries
       const El::Int row_start = channel * channel_size;

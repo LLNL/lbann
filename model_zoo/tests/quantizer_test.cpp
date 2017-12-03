@@ -188,7 +188,7 @@ void test_local() {
 
 /** Test global allreduce operations. */
 void test_allreduces() {
-  lbann_comm *comm = new lbann_comm(1);
+  auto *comm = new lbann_comm(1);
   if (comm->am_world_master()) {
     std::cout << "Testing quantized allreduces" << std::endl;
   }

@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
     ///////////////////////////////////////////////////////////////////
     // load training data (MNIST)
     ///////////////////////////////////////////////////////////////////
-    mnist_reader* mnist_trainset = new mnist_reader(true);
+    auto* mnist_trainset = new mnist_reader(true);
     mnist_trainset->set_file_dir(trainParams.DatasetRootDir);
     mnist_trainset->set_data_filename(g_MNIST_TrainImageFile);
     mnist_trainset->set_label_filename(g_MNIST_TrainLabelFile);
@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
     ///////////////////////////////////////////////////////////////////
     // create a validation set from the unused training data (MNIST)
     ///////////////////////////////////////////////////////////////////
-    mnist_reader* mnist_validation_set = new mnist_reader(*mnist_trainset); // Clone the training set object
+    auto* mnist_validation_set = new mnist_reader(*mnist_trainset); // Clone the training set object
     mnist_validation_set->use_unused_index_set();
 
     if (comm->am_world_master()) {
@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
     ///////////////////////////////////////////////////////////////////
     // load testing data (MNIST)
     ///////////////////////////////////////////////////////////////////
-    mnist_reader* mnist_testset = new mnist_reader(true);
+    auto* mnist_testset = new mnist_reader(true);
     mnist_testset->set_file_dir(trainParams.DatasetRootDir);
     mnist_testset->set_data_filename(g_MNIST_TestImageFile);
     mnist_testset->set_label_filename(g_MNIST_TestLabelFile);
@@ -194,7 +194,7 @@ int main(int argc, char *argv[]) {
 #else // __LIB_CUDNN
     cudnn::cudnn_manager *cudnn = nullptr;
 #endif // __LIB_CUDNN
-    objective_function *obj_fn = new objective_function();
+    auto *obj_fn = new objective_function();
     obj_fn->add_term(new cross_entropy());
     sequential_model dnn(comm, trainParams.MBSize, obj_fn, default_optimizer);
     dnn.add_metric(new metrics::categorical_accuracy<data_layout::MODEL_PARALLEL>(comm));
@@ -304,7 +304,7 @@ int main(int argc, char *argv[]) {
     Layer *tlayer = new target_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(comm, dynamic_cast<input_layer*>(ilayer), parallel_io, data_readers, true);
     dnn.add_layer(tlayer);
 
-    lbann_callback_print* print_cb = new lbann_callback_print;
+    auto* print_cb = new lbann_callback_print;
     dnn.add_callback(print_cb);
     lbann_callback_dump_weights *dump_weights_cb = nullptr;
     lbann_callback_dump_activations *dump_activations_cb = nullptr;
