@@ -82,14 +82,14 @@ void patch_descriptor::define_patch_set() {
   const int wdisp = m_width + m_gap;
   const int hdisp = m_height + m_gap;
   m_displacements.clear();
-  m_displacements.push_back(std::make_pair(-wdisp, -hdisp));
-  m_displacements.push_back(std::make_pair( 0,     -hdisp));
-  m_displacements.push_back(std::make_pair( wdisp, -hdisp));
-  m_displacements.push_back(std::make_pair(-wdisp,  0));
-  m_displacements.push_back(std::make_pair( wdisp,  0));
-  m_displacements.push_back(std::make_pair(-wdisp,  hdisp));
-  m_displacements.push_back(std::make_pair( 0,      hdisp));
-  m_displacements.push_back(std::make_pair( wdisp,  hdisp));
+  m_displacements.emplace_back(-wdisp, -hdisp);
+  m_displacements.emplace_back( 0,     -hdisp);
+  m_displacements.emplace_back( wdisp, -hdisp);
+  m_displacements.emplace_back(-wdisp,  0);
+  m_displacements.emplace_back( wdisp,  0);
+  m_displacements.emplace_back(-wdisp,  hdisp);
+  m_displacements.emplace_back( 0,      hdisp);
+  m_displacements.emplace_back( wdisp,  hdisp);
 }
 
 bool patch_descriptor::get_first_patch(ROI& patch) {

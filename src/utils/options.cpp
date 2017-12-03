@@ -50,7 +50,7 @@ void options::init(int argc, char **argv)
   std::string value;
   std::string loadme;
   for (int j=0; j<argc; j++) {
-    m_cmd_line.push_back(argv[j]);
+    m_cmd_line.emplace_back(argv[j]);
     m_parse_opt(argv[j], key, value);
     if (key == "loadme") {
       loadme = value;

@@ -93,13 +93,13 @@ void imagenet_reader_single::load() {
   }
 
   m_offsets.reserve(num_images+1);
-  m_offsets.push_back(std::make_pair(0,0));
+  m_offsets.emplace_back(0,0);
   size_t last_offset = 0u;
   size_t offset = 0u;
   int label = 0;
 
   while (in >> offset >> label) {
-    m_offsets.push_back(std::make_pair(offset + last_offset, label));
+    m_offsets.emplace_back(offset + last_offset, label);
     last_offset = m_offsets.back().first;
   }
 
