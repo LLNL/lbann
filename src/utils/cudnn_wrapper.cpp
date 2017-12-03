@@ -47,6 +47,9 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus, bool nc
 #ifdef __LIB_NCCL  
   m_nccl_used = nccl_used;
 #else
+  if (nccl_used) {
+    throw lbann::lbann_exception("cudnn_wrapper: NCCL is requested, but not enabled");
+  }
   m_nccl_used = false;
 #endif
 
