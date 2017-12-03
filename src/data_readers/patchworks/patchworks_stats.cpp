@@ -118,7 +118,7 @@ bool get_single_channel_stats(const cv::Mat& _img, image_stats& stats) {
 }
 
 bool get_channel_stats(const cv::Mat& img, std::vector<image_stats>& stats) {
-  if (img.data == NULL) {
+  if (img.data == nullptr) {
     std::cout << "get_channel_stats(): img not set" << std::endl;
     return false;
   }

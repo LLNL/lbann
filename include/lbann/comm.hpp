@@ -223,7 +223,7 @@ class lbann_comm {
   template <typename T>
   void model_gatherv(T* snd, int count, int root) {
     bytes_sent += sizeof(T) * count;
-    El::mpi::Gather(snd, count, (T *) NULL, (int *) NULL, (int *) NULL, root,
+    El::mpi::Gather(snd, count, (T *) NULL, (int *) nullptr, (int *) nullptr, root,
                     model_comm);
   }
   template <typename T>
@@ -259,7 +259,7 @@ class lbann_comm {
   template <typename T>
   void gather(T snd, int root, const El::mpi::Comm c) {
     bytes_sent += sizeof(T);
-    El::mpi::Gather(&snd, 1, (T*) NULL, 0, root, c);
+    El::mpi::Gather(&snd, 1, (T*) nullptr, 0, root, c);
   }
   /** Scalar gather (for root processes). */
   template <typename T>
@@ -276,7 +276,7 @@ class lbann_comm {
   template <typename T>
   void gather(T *snd, int count, int root, const El::mpi::Comm c) {
     bytes_sent += sizeof(T) * count;
-    El::mpi::Gather(snd, count, (T*) NULL, 0, root, c);
+    El::mpi::Gather(snd, count, (T*) nullptr, 0, root, c);
   }
   /** Scalar-array gather (for root processes). */
   template <typename T>

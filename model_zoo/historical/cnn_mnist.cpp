@@ -192,7 +192,7 @@ int main(int argc, char *argv[]) {
 #if __LIB_CUDNN
     cudnn::cudnn_manager *cudnn = new cudnn::cudnn_manager(comm, num_gpus);
 #else // __LIB_CUDNN
-    cudnn::cudnn_manager *cudnn = NULL;
+    cudnn::cudnn_manager *cudnn = nullptr;
 #endif // __LIB_CUDNN
     objective_function *obj_fn = new objective_function();
     obj_fn->add_term(new cross_entropy());
@@ -280,7 +280,7 @@ int main(int argc, char *argv[]) {
                                                                          128);
       dnn.add_layer(fc);
       Layer *relu = new relu_layer<data_layout::MODEL_PARALLEL>(comm,
-                                                                NULL);
+                                                                nullptr);
       dnn.add_layer(relu);
       Layer *dropout1 = new dropout<data_layout::MODEL_PARALLEL>(comm,
                                                                  0.5);

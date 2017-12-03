@@ -195,9 +195,9 @@ class Layer {
   virtual bool loadFromCheckpointShared(persist& p);
 
   /** Get forward propagation output, as seen by next layer. */
-  virtual void get_fp_output(AbsDistMat& fp_output, const Layer* next_layer = NULL) const;
+  virtual void get_fp_output(AbsDistMat& fp_output, const Layer* next_layer = nullptr) const;
   /** Get backward propagation output, as seen by previous layer. */
-  virtual void get_bp_output(AbsDistMat& fp_output, const Layer* prev_layer = NULL) const;
+  virtual void get_bp_output(AbsDistMat& fp_output, const Layer* prev_layer = nullptr) const;
 #ifdef __LIB_CUDNN
   /** Get forward propagation output on GPUs, as seen by next layer.
    *  output_dv is a view into GPU memory for the output. If the
@@ -217,7 +217,7 @@ class Layer {
                                  const Layer* prev_layer = NULL) const;
 #endif // __LIB_CUDNN
   /** Get forward propagation output dimensions, as seen by next layer. */
-  virtual const std::vector<int> fp_output_dims(const Layer* next_layer = NULL) const;
+  virtual const std::vector<int> fp_output_dims(const Layer* next_layer = nullptr) const;
 
   virtual void add_to_error_signal(const AbsDistMat& gradient,
                                    DataType scale = DataType(1)) {

@@ -310,7 +310,7 @@ void add_layers(
     if (layer.has_relu()) {
       //const lbann_data::Relu &ell = layer.relu();
       if (layout == data_layout::MODEL_PARALLEL) {
-        d = new relu_layer<data_layout::MODEL_PARALLEL>(comm, NULL);
+        d = new relu_layer<data_layout::MODEL_PARALLEL>(comm, nullptr);
       } else {
         d = new relu_layer<data_layout::DATA_PARALLEL>(comm, cudnn);
       }
@@ -1575,7 +1575,7 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
   bool master = comm->am_world_master();
 
   //sequential_model *model = 0;
-  model *model = 0;
+  model *model = nullptr;
 
   const lbann_data::Model& m = p.model();
   const std::string name = m.name();
@@ -1740,8 +1740,8 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
 
     const bool shuffle = readme.shuffle();
 
-    generic_data_reader *reader = 0;
-    generic_data_reader *reader_validation = 0;
+    generic_data_reader *reader = nullptr;
+    generic_data_reader *reader_validation = nullptr;
 
     if ((name == "imagenet_org") || (name == "mnist") || (name == "cifar10")) {
       init_org_image_data_reader(readme, master, reader);
@@ -2360,7 +2360,7 @@ void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::Lb
   std::vector<std::string> v = {"HOST", "SLURM_NODELIST", "SLURM_NNODES", "SLURM_NTASKS", "SLURM_TASKS_PER_NODE"};
   for (size_t i=0; i<v.size(); i++) {
     char *c = std::getenv(v[i].c_str());
-    if (c != 0) {
+    if (c != nullptr) {
       out << "# " << v[i] << "=" << c << std::endl;
     }
   }

@@ -63,7 +63,7 @@ class slice_layer : public transform {
   slice_layer(lbann_comm *comm,
               int slice_axis,
               std::vector<int> slice_points,
-              cudnn::cudnn_manager *cudnn = NULL)
+              cudnn::cudnn_manager *cudnn = nullptr)
     : transform(comm),
       m_slice_axis(slice_axis),
       m_slice_points(slice_points) {
@@ -488,7 +488,7 @@ class slice_layer : public transform {
   const std::vector<int> fp_output_dims(const Layer* next_layer) const override {
 
     // Return all neurons if input is null
-    if(next_layer == NULL) {
+    if(next_layer == nullptr) {
       return m_neuron_dims;
     }
 

@@ -29,6 +29,37 @@
 #include "lbann/lbann.hpp"
 #include "lbann/proto/proto_common.hpp"
 
+#include <time.h>
+#include <dlfcn.h>
+#include <string.h>
+
+#if 0
+extern "C" {
+void __cyg_profile_func_enter (void *, void *) __attribute__((no_instrument_function));
+void __cyg_profile_func_exit (void *, void *) __attribute__((no_instrument_function));
+
+int depth = -1;
+Dl_info info;
+
+void __cyg_profile_func_enter (void *func,  void *caller)
+{
+ depth++;
+  dladdr(func, &info);
+  if (strstr(info.dli_fname, "liblbann.so") != nullptr) {
+    printf("%d %s\n", depth, info.dli_sname);
+  }  
+}
+
+void __cyg_profile_func_exit (void *func, void *caller)
+{
+ depth--;
+}
+
+}
+#endif
+
+//===================================================================
+
 using namespace lbann;
 
 const int lbann_default_random_seed = 42;
@@ -156,7 +187,7 @@ int main(int argc, char *argv[]) {
     save_session(comm, argc, argv, pb);
 
     // Check for cudnn, with user feedback
-    cudnn::cudnn_manager *cudnn = NULL;
+    cudnn::cudnn_manager *cudnn = nullptr;
 #if __LIB_CUDNN
     if (pb_model->use_cudnn()) {
       if (master) {

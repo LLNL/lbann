@@ -189,7 +189,7 @@ bool patch_descriptor::get_next_patch(ROI& patch) {
 
 bool patch_descriptor::extract_patches(const cv::Mat& img, std::vector<cv::Mat>& patches) {
   patches.clear();
-  if (img.data == NULL) {
+  if (img.data == nullptr) {
     return false;
   }
 

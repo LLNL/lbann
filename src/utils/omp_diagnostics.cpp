@@ -150,7 +150,7 @@ int get_env_var(const char *id)
 {
   char *buf = getenv(id); 
 
-  if (buf == NULL)
+  if (buf == nullptr)
     return 0; 
   else 
     return atoi(buf);
@@ -160,7 +160,7 @@ int get_sleep_sec()
 {
   char *buf = getenv("SLEEP_SEC");
 
-  if (buf == NULL)
+  if (buf == nullptr)
     return 0; 
   else 
     return atoi(buf); 

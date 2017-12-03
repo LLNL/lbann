@@ -55,7 +55,7 @@ std::pair<double,double> check_min_max(const cv::Mat& _img) {
   const int nCh = img.channels();
 
   img.reshape(1);
-  cv::minMaxLoc(img, &minVal, &maxVal, 0, 0);
+  cv::minMaxLoc(img, &minVal, &maxVal, nullptr, nullptr);
   img.reshape(nCh);
 
   //std::cout << "min max : " << minVal << ' ' << maxVal << std::endl;
