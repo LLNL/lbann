@@ -130,6 +130,15 @@ void cudnn_manager::global_allreduce_on_gpus(std::vector<DataType*>& gpu_data,
 #ifdef __LIB_NCCL
     global_allreduce_on_gpus_nccl (gpu_data, height, width);
     synchronize();
+<<<<<<< HEAD
+=======
+    El::AllReduce(cpu_workspace, comm);
+    broadcast_to_gpus(gpu_data, cpu_workspace);
+*/
+    //copy_from_gpu(0, cpu_workspace, gpu_data[0]);
+#else
+    throw lbann_exception("cudnn_manager: NCCL not detected");
+>>>>>>> e3e55beebaa57e490260da60373174af2f19976c
 #endif // #ifdef __LIB_NCCL
   }
 }
