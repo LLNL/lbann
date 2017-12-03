@@ -103,6 +103,14 @@ class lbann_callback {
   virtual void on_backward_prop_end(model *m) {}
   /** Called when a layer ends backward propagation. */
   virtual void on_backward_prop_end(model *m, Layer *l) {}
+  /** Called when a model begins optimization. */
+  virtual void on_optimize_begin(model *m) {}
+  /** Called when weights begins optimization. */
+  virtual void on_optimize_begin(model *m, weights *l) {}
+  /** Called when a model ends optimization. */
+  virtual void on_optimize_end(model *m) {}
+  /** Called when weights ends optimization. */
+  virtual void on_optimize_end(model *m, weights *l) {}
 
   /** Called at the beginning of a (mini-)batch evaluation (validation / testing). */
   virtual void on_batch_evaluate_begin(model *m) {}

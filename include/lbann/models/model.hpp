@@ -363,6 +363,14 @@ class model {
   virtual void do_layer_backward_prop_begin_cbs(Layer *l);
   /** Execute callbacks at end of layer backward propagation. */
   virtual void do_layer_backward_prop_end_cbs(Layer *l);
+  /** Execute callbacks at start of model optimization. */
+  virtual void do_model_optimize_begin_cbs();
+  /** Execute callbacks at end of model optimization. */
+  virtual void do_model_optimize_end_cbs();
+  /** Execute callbacks at the start of weight optimization. */
+  virtual void do_weight_optimize_begin_cbs(weights *w);
+  /** Execute callbacks at the end of weight optimization. */
+  virtual void do_weight_optimize_end_cbs(weights *w);
 
 };
 
