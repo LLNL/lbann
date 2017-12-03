@@ -53,7 +53,7 @@ class sequential_model : public model {
   /** Copy assignment operator. */
   sequential_model& operator=(const sequential_model& other) = default;
   /** Destructor. */
-  virtual ~sequential_model() override = default;
+  ~sequential_model() override = default;
   /** Create copy. */
   sequential_model* copy() const override { return new sequential_model(*this); }
 

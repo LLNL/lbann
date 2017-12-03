@@ -48,7 +48,7 @@ class siamese_model : public dag_model {
   /** Copy assignment operator. */
   siamese_model& operator=(const siamese_model& other) = default;
   /** Destructor. */
-  ~siamese_model() = default;
+  ~siamese_model() override = default;
 
   /** Create copy. */
   siamese_model* copy() const override { return new siamese_model(*this); }
