@@ -26,6 +26,8 @@
 // lbann_variable_minibatch .hpp .cpp - Callback for variable-size mini-batches
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <utility>
+
 #include "lbann/callbacks/callback_variable_minibatch.hpp"
 
 namespace lbann {
@@ -150,7 +152,7 @@ bool lbann_callback_step_minibatch::schedule(
 
 lbann_callback_minibatch_schedule::lbann_callback_minibatch_schedule(
   int starting_mbsize, std::vector<minibatch_step> steps) :
-  lbann_callback_variable_minibatch(starting_mbsize), m_steps(steps) {
+  lbann_callback_variable_minibatch(starting_mbsize), m_steps(std::move(steps)) {
   std::sort(m_steps.rbegin(), m_steps.rend(),
             [] (const minibatch_step& a, const minibatch_step& b) {
               return a.epoch < b.epoch;

@@ -29,6 +29,7 @@
 #ifndef LBANN_LAYER_SLICE_HPP_INCLUDED
 #define LBANN_LAYER_SLICE_HPP_INCLUDED
 
+#include <utility>
 #include <vector>
 #include "lbann/base.hpp"
 #include "lbann/layers/transform/transform.hpp"
@@ -66,7 +67,7 @@ class slice_layer : public transform {
               cudnn::cudnn_manager *cudnn = nullptr)
     : transform(comm),
       m_slice_axis(slice_axis),
-      m_slice_points(slice_points) {
+      m_slice_points(std::move(slice_points)) {
 
     // Setup the data distribution
     initialize_distributed_matrices();
