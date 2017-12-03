@@ -61,8 +61,8 @@ imagenet_reader_single& imagenet_reader_single::operator=(const imagenet_reader_
 }
 
 imagenet_reader_single::~imagenet_reader_single() {
-  for(size_t i=0u; i < m_data_filestream.size(); ++i) {
-    if (m_data_filestream[i]) delete m_data_filestream[i];
+  for(auto & i : m_data_filestream) {
+    if (i) delete i;
   }
 }
 
@@ -185,8 +185,8 @@ void imagenet_reader_single::open_data_stream() {
   const int nthreads = omp_get_max_threads();
   m_work_buffer.resize(nthreads);
 
-  for(size_t i=0u; i < m_data_filestream.size(); ++i) {
-    if (m_data_filestream[i]) delete m_data_filestream[i];
+  for(auto & i : m_data_filestream) {
+    if (i) delete i;
   }
   m_data_filestream.clear();
   m_data_filestream.resize(nthreads);

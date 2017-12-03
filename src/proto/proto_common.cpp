@@ -2358,10 +2358,10 @@ void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::Lb
 
   out << "# Selected SLURM Environment Variables:\n";
   std::vector<std::string> v = {"HOST", "SLURM_NODELIST", "SLURM_NNODES", "SLURM_NTASKS", "SLURM_TASKS_PER_NODE"};
-  for (size_t i=0; i<v.size(); i++) {
-    char *c = std::getenv(v[i].c_str());
+  for (auto & i : v) {
+    char *c = std::getenv(i.c_str());
     if (c != nullptr) {
-      out << "# " << v[i] << "=" << c << std::endl;
+      out << "# " << i << "=" << c << std::endl;
     }
   }
   out << "\n#\n#\n";

@@ -92,8 +92,8 @@ cv_process& cv_process::operator=(const cv_process& rhs) {
 
 
 void cv_process::reset() {
-  for (size_t i = 0u; i < m_transforms.size(); ++i)
-    m_transforms[i]->reset();
+  for (auto & m_transform : m_transforms)
+    m_transform->reset();
 }
 
 void cv_process::disable_normalizer() {
@@ -103,8 +103,8 @@ void cv_process::disable_normalizer() {
 }
 
 void cv_process::disable_transforms() {
-  for (size_t i = 0u; i < m_transforms.size(); ++i) {
-    m_transforms[i]->disable();
+  for (auto & m_transform : m_transforms) {
+    m_transform->disable();
   }
 }
 

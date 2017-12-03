@@ -141,9 +141,9 @@ class fully_connected_layer : public learning {
                                         std::vector<DataType*> &bias,
                                         El::Int height, El::Int width) {
     activations = parameters;
-    for (unsigned i = 0; i < parameters.size(); ++i) {
+    for (auto & parameter : parameters) {
       // point to the last column 
-      bias.push_back(parameters[i] + height * (width - 1));
+      bias.push_back(parameter + height * (width - 1));
     }
   }
 
