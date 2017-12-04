@@ -113,7 +113,7 @@ class metric {
   lbann_comm *m_comm;
 
  public:
-  model *m_neural_network_model;
+  model *m_model;
 };
 
 }  // namespace metrics

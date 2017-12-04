@@ -98,53 +98,52 @@ class selu_dropout : public regularizer_layer {
  protected:
   /** Drop out units in forward propagation. */
   void fp_compute() override {
-    if (this->get_execution_mode() != execution_mode::training ||
+    if (this->m_model->get_execution_mode() != execution_mode::training ||
         m_keep_prob < 0.0f) {
-      // Copy previous activations over.
+      // Do nothing if dropout is disabled
       El::Copy(*(this->m_prev_activations_v), *(this->m_activations_v));
-      return;
-    }
-    AbsDistMat *input_acts = this->m_prev_activations_v;
-    const El::Int local_height = input_acts->LocalHeight();
-    const El::Int local_width = input_acts->LocalWidth();
+    } else {
 
-    Mat& local_input_acts = input_acts->Matrix();
-    Mat& local_output_acts = this->m_activations_v->Matrix();
+      AbsDistMat *input_acts = this->m_prev_activations_v;
+      const El::Int local_height = input_acts->LocalHeight();
+      const El::Int local_width = input_acts->LocalWidth();
 
-    // Construct and apply mask and the affine transform.
-    // TODO: Optimize.
-    El::Bernoulli(*m_cur_mask, local_height, local_width, m_keep_prob);
-    for (El::Int col = 0; col < local_width; ++col) {
-      for (El::Int row = 0; row < local_height; ++row) {
-        local_output_acts(row, col) = m_a *
-          (local_input_acts(row, col)*(*m_cur_mask)(row, col) +
-           m_alpha_prime*(1 - (*m_cur_mask)(row, col))) + m_b;
+      Mat& local_input_acts = input_acts->Matrix();
+      Mat& local_output_acts = this->m_activations_v->Matrix();
+
+      // Construct and apply mask and the affine transform.
+      // TODO: Optimize.
+      El::Bernoulli(*m_cur_mask, local_height, local_width, m_keep_prob);
+      for (El::Int col = 0; col < local_width; ++col) {
+        for (El::Int row = 0; row < local_height; ++row) {
+          local_output_acts(row, col) = m_a *
+            (local_input_acts(row, col)*(*m_cur_mask)(row, col) +
+             m_alpha_prime*(1 - (*m_cur_mask)(row, col))) + m_b;
+        }
       }
+
     }
   }
 
   /** Adjust gradients for dropout in backprop. */
   void bp_compute() override {
-    // Terminate early when not training.
-    if (this->get_execution_mode() != execution_mode::training) {
-      return;
-    }
-    if (m_keep_prob < 0.0f) {
-      // Copy error signal through.
-      El::Copy(*(this->m_prev_error_signal_v), *(this->m_error_signal_v));
-      return;
-    }
+    if (this->m_model->get_execution_mode() != execution_mode::training
+        || m_keep_prob < 0.0f) {
+      El::LockedView(*this->m_error_signal_v, *this->m_prev_error_signal_v);
+    } else {
 
-    Mat& local_prev_error_signal = this->m_prev_error_signal_v->Matrix();
-    Mat& local_error_signal = this->m_error_signal_v->Matrix();
-    const El::Int local_height = local_prev_error_signal.Height();
-    const El::Int local_width = local_prev_error_signal.Width();
-    // Reweight with the affine scale factor and the dropout mask.
-    for (El::Int col = 0; col < local_width; ++col) {
-      for (El::Int row = 0; row < local_height; ++row) {
-        local_error_signal(row, col) =
-          m_a * local_prev_error_signal(row, col) * (*m_cur_mask)(row, col);
+      Mat& local_prev_error_signal = this->m_prev_error_signal_v->Matrix();
+      Mat& local_error_signal = this->m_error_signal_v->Matrix();
+      const El::Int local_height = local_prev_error_signal.Height();
+      const El::Int local_width = local_prev_error_signal.Width();
+      // Reweight with the affine scale factor and the dropout mask.
+      for (El::Int col = 0; col < local_width; ++col) {
+        for (El::Int row = 0; row < local_height; ++row) {
+          local_error_signal(row, col) =
+            m_a * local_prev_error_signal(row, col) * (*m_cur_mask)(row, col);
+        }
       }
+
     }
   }
 

@@ -79,7 +79,7 @@ class input_layer_distributed_minibatch : public input_layer, public distributed
 
   void setup_data() override {
     input_layer::setup_data();
-    int max_mb_size = this->m_neural_network_model->get_max_mini_batch_size();
+    int max_mb_size = this->m_model->get_max_mini_batch_size();
     #ifdef LBANN_DEBUG
     std::cout << "Setting up data for the input layer " << io_layer::m_data_set_spans_models << std::endl;
     #endif
@@ -99,7 +99,7 @@ class input_layer_distributed_minibatch : public input_layer, public distributed
  protected:
   void fp_set_std_matrix_view() override {
     input_layer::fp_set_std_matrix_view();
-    El::Int cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
+    El::Int cur_mini_batch_size = m_model->get_current_mini_batch_size();
     El::View(X_local_v, X_local, El::ALL, El::IR(0, cur_mini_batch_size));
   }
 
@@ -114,7 +114,7 @@ class input_layer_distributed_minibatch : public input_layer, public distributed
 
     /// Let each rank know this size of the current mini-batch
     /// Note that this field has to be updated before distributing the data
-    this->m_neural_network_model->set_current_mini_batch_size(Layer::m_comm->model_broadcast(distributed_minibatch::m_root, num_samples_in_batch));
+    this->m_model->set_current_mini_batch_size(Layer::m_comm->model_broadcast(distributed_minibatch::m_root, num_samples_in_batch));
 
     distributed_minibatch::distribute_from_local_matrix(X_local, Xs, get_data_reader());
 
@@ -131,10 +131,6 @@ class input_layer_distributed_minibatch : public input_layer, public distributed
 
   void preprocess_data_samples(Mat& M_local, int num_samples_in_batch) override {
     return;
-  }
-
-  execution_mode get_execution_mode() const {
-    return this->m_execution_mode;
   }
 
   Mat *get_local_mat() {

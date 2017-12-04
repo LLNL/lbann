@@ -45,9 +45,6 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
 
   // Initialize network for testing
   m->set_execution_mode(execution_mode::testing);
-  for (auto layer : layers) {
-    layer->set_execution_mode(execution_mode::testing);
-  }
   layers[0]->forward_prop();
 
   // Compute objective function

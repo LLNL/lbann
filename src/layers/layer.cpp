@@ -76,7 +76,6 @@ void Layer::initialize_distributed_matrices<data_layout::DATA_PARALLEL>() {
 
 Layer::Layer(lbann_comm *comm)
   : m_comm(comm),
-    m_execution_mode(execution_mode::training),
     m_cudnn(nullptr) {
 
   // Initialize layer name
@@ -97,7 +96,7 @@ Layer::Layer(lbann_comm *comm)
   m_max_num_child_layers = 1;
 
   // Initialize model
-  m_neural_network_model = nullptr;
+  m_model = nullptr;
 
   // Initialize GPU information
   m_using_gpus = false;
@@ -128,8 +127,7 @@ Layer::Layer(const Layer& other) :
   m_child_layers(other.m_child_layers),
   m_max_num_parent_layers(other.m_max_num_parent_layers),
   m_max_num_child_layers(other.m_max_num_child_layers),
-  m_execution_mode(other.m_execution_mode),
-  m_neural_network_model(other.m_neural_network_model),
+  m_model(other.m_model),
   m_using_gpus(other.m_using_gpus),
   m_cudnn(other.m_cudnn)
 #ifdef __LIB_CUDNN
@@ -191,8 +189,7 @@ Layer& Layer::operator=(const Layer& other) {
   m_child_layers = other.m_child_layers;
   m_max_num_parent_layers = other.m_max_num_parent_layers;
   m_max_num_child_layers = other.m_max_num_child_layers;
-  m_execution_mode = other.m_execution_mode;
-  m_neural_network_model = other.m_neural_network_model;
+  m_model = other.m_model;
   m_using_gpus = other.m_using_gpus;
   m_cudnn = other.m_cudnn;
   fp_time = other.fp_time;
@@ -297,7 +294,7 @@ void Layer::forward_prop() {
   if(!m_parent_layers.empty()) {
     m_parent_layers.front()->get_fp_output(*m_prev_activations_v, this);
   } else {
-    const int mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
+    const int mini_batch_size = m_model->get_current_mini_batch_size();
     El::Zeros(*m_prev_activations_v, m_num_prev_neurons, mini_batch_size);
   }
 
@@ -367,7 +364,7 @@ void Layer::back_prop() {
   if(!m_child_layers.empty()) {
     m_child_layers.front()->get_bp_output(*m_prev_error_signal_v, this);
   } else {
-    const int mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
+    const int mini_batch_size = m_model->get_current_mini_batch_size();
     El::Zeros(*m_prev_error_signal_v, m_num_neurons, mini_batch_size);
   }
 
@@ -536,7 +533,7 @@ void Layer::setup_dims() {
 void Layer::setup_data() {
 
   // Initialize matrices
-  const int max_mini_batch_size = m_neural_network_model->get_max_mini_batch_size();
+  const int max_mini_batch_size = m_model->get_max_mini_batch_size();
   if(max_mini_batch_size <= 0) {
     throw lbann_exception(
       std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
@@ -585,8 +582,7 @@ void Layer::setup_gpu() {
   const int num_gpus = m_cudnn->get_num_gpus();
   const int num_processes = m_comm->get_procs_per_model();
   const int local_mini_batch_size =
-    (m_neural_network_model->get_max_mini_batch_size() + num_processes - 1) /
-    num_processes;
+    (m_model->get_max_mini_batch_size() + num_processes - 1) / num_processes;
   m_max_mini_batch_size_per_gpu = (local_mini_batch_size + num_gpus - 1) / num_gpus;
   m_mini_batch_size_per_gpu = m_max_mini_batch_size_per_gpu;
 
@@ -637,12 +633,12 @@ bool Layer::loadFromCheckpointShared(persist& p) {
 }
 
 void Layer::fp_set_std_matrix_view() {
-  int mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
+  int mini_batch_size = m_model->get_current_mini_batch_size();
   El::View(*m_activations_v, *m_activations, El::ALL, El::IR(0, mini_batch_size));
 }
 
 void Layer::bp_set_std_matrix_view() {
-  int mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
+  int mini_batch_size = m_model->get_current_mini_batch_size();
   El::View(*m_activations_v, *m_activations, El::ALL, El::IR(0, mini_batch_size));
   El::View(*m_error_signal_v, *m_error_signal, El::ALL, El::IR(0, mini_batch_size));
 }
@@ -651,7 +647,7 @@ void Layer::bp_set_std_matrix_view() {
 void Layer::pin_data() {
 
   // Get maximum mini-batch size
-  const int max_mini_batch_size = m_neural_network_model->get_max_mini_batch_size();
+  const int max_mini_batch_size = m_model->get_max_mini_batch_size();
 
   // Flags to determine whether to pin memory
   bool pin_fp_input = false;

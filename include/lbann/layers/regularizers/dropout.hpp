@@ -91,49 +91,45 @@ class dropout : public regularizer_layer {
  protected:
   /** Drop out units in forward propagation. */
   void fp_compute() override {
-
-    // Copy previous activations if dropout is disabled
-    if (this->get_execution_mode() != execution_mode::training
+    if (this->m_model->get_execution_mode() != execution_mode::training
         || m_keep_prob < 0.0f) {
-      El::Copy(*this->m_prev_activations_v, *this->m_activations_v);
-      return;
-    }
+      // Do nothing if dropout is disabled
+      El::LockedView(*this->m_activations_v, *this->m_prev_activations_v);
+    } else {
 
-    // Construct mask matrix
-    const DataType scale = DataType(1) / m_keep_prob;
-    const int height = this->m_activations_v->Height();
-    const int width = this->m_activations_v->Width();
-    m_mask->Resize(height, width);
+      // Construct mask matrix
+      const DataType scale = DataType(1) / m_keep_prob;
+      const int height = this->m_activations_v->Height();
+      const int width = this->m_activations_v->Width();
+      m_mask->Resize(height, width);
 #ifdef LBANN_PROCDET_DROPOUT
-    bernoulli_fill_procdet(*m_mask, height, width, m_keep_prob);
-    *m_mask *= scale;
+      bernoulli_fill_procdet(*m_mask, height, width, m_keep_prob);
+      *m_mask *= scale;
 #else
-    El::EntrywiseMap(*m_mask,
-                     (std::function<DataType(const DataType&)>)
-                     ([this,scale](const DataType& z)->DataType {
-                       auto& gen = get_fast_generator();
-                       std::bernoulli_distribution dist(m_keep_prob);
-                       return dist(gen) ? scale : DataType(0);
-                     }));
+      El::EntrywiseMap(*m_mask,
+                       (std::function<DataType(const DataType&)>)
+                       ([this,scale](const DataType& z)->DataType {
+                         auto& gen = get_fast_generator();
+                         std::bernoulli_distribution dist(m_keep_prob);
+                         return dist(gen) ? scale : DataType(0);
+                       }));
 #endif // LBANN_PROCDET_DROPOUT
 
-    // Apply mask matrix to get activations
-    El::Hadamard(*this->m_prev_activations_v, *m_mask, *this->m_activations_v);
+      // Apply mask matrix to get activations
+      El::Hadamard(*this->m_prev_activations_v, *m_mask, *this->m_activations_v);
 
+    }
   }
 
   /** Adjust gradients for dropout in backprop. */
   void bp_compute() override {
 
-    // Copy previous error signal if dropout is disabled
-    if (this->get_execution_mode() != execution_mode::training
+    if (this->m_model->get_execution_mode() != execution_mode::training
         || m_keep_prob < 0.0f) {
-      El::Copy(*this->m_prev_error_signal_v, *this->m_error_signal_v);
-      return;
+      El::LockedView(*this->m_error_signal_v, *this->m_prev_error_signal_v);
+    } else {
+      El::Hadamard(*this->m_prev_error_signal_v, *m_mask, *this->m_error_signal_v);
     }
-
-    // Apply mask matrix to error signal
-    El::Hadamard(*this->m_prev_error_signal_v, *m_mask, *this->m_error_signal_v);
 
   }
 

@@ -120,6 +120,7 @@ void siamese_model::setup() {
   // Setup layers before heads
   for (int i = 0; i < heads_start; ++i) {
     Layer* layer = m_layers[i];
+    layer->set_model(this);
     layer->setup();
     layer->check_setup();
     if (m_comm->am_world_master()) {
@@ -130,6 +131,7 @@ void siamese_model::setup() {
   // Setup master head
   for (int i = heads_start; i < master_head_end; ++i) {
     Layer* layer = m_layers[i];
+    layer->set_model(this);
     layer->setup();
     layer->check_setup();
     if (m_comm->am_world_master()) {
@@ -142,6 +144,7 @@ void siamese_model::setup() {
     Layer* layer = m_layers[i];
     Layer* master_layer = follower_to_master_layer[layer];
     layer->set_weights(master_layer->get_weights());
+    layer->set_model(this);
     layer->setup();
     layer->check_setup();
     if (m_comm->am_world_master()) {
@@ -152,6 +155,7 @@ void siamese_model::setup() {
   // Setup layers after heads
   for (size_t i = heads_end; i < m_layers.size(); ++i) {
     Layer* layer = m_layers[i];
+    layer->set_model(this);
     layer->setup();
     layer->check_setup();
     if (m_comm->am_world_master()) {

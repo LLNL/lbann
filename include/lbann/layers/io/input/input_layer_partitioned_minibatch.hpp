@@ -72,7 +72,7 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
 
   void setup_data() override {
     input_layer::setup_data();
-    int max_mb_size = this->m_neural_network_model->get_max_mini_batch_size();
+    int max_mb_size = this->m_model->get_max_mini_batch_size();
     if(io_layer::m_data_set_spans_models) {
       calculate_num_iterations_per_epoch_training_spans_models(max_mb_size);
     } else {
@@ -105,9 +105,6 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
     return;
   }
 
-  execution_mode get_execution_mode() const {
-    return this->m_execution_mode;
-  }
 };
 
 }

@@ -137,14 +137,6 @@ class Layer {
   inline const std::vector<int>& get_neuron_dims() const {
     return m_neuron_dims;
   }
-  /** Return the execution mode. */
-  inline execution_mode get_execution_mode() const {
-    return m_execution_mode;
-  }
-  /** Set the execution mode. */
-  inline void set_execution_mode(execution_mode mode) {
-    m_execution_mode = mode;
-  }
   /** Return the data layout of the given layer -- Every concrete
       layer has to overrride this with its T_layout template parameter */
   virtual data_layout get_data_layout() const = 0;
@@ -175,14 +167,11 @@ class Layer {
     return m_max_num_parent_layers != 1 && m_max_num_parent_layers != 0;
   }
 
-  /** Return the neural network model of this layer. */
-  inline model* get_neural_network_model() const {
-    return m_neural_network_model;
-  }
-  /** Set the neural network model of this layer. */
-  inline void set_neural_network_model(model* const m) {
-    m_neural_network_model = m;
-  }
+  /** Return the model that owns this layer. */
+  inline model* get_model() const { return m_model; }
+  /** Set the model that owns this layer. */
+  inline void set_model(model* m) { m_model = m; }
+
   virtual El::Matrix<El::Int>* get_sample_indices_per_mb() { return nullptr; };
 
   virtual bool saveToFile(int fd, const char *filename) const { return true; };
@@ -320,7 +309,7 @@ class Layer {
   int m_max_num_child_layers;
 
   execution_mode  m_execution_mode;
-  model *m_neural_network_model;
+  model *m_model;
 
   /** Setup views of the matrices for the layer's forward propagation. */
   virtual void fp_set_std_matrix_view();
