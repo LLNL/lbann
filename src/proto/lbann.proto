@@ -3,8 +3,8 @@ syntax = "proto3";
 package lbann_data;
 
 message LbannPB {
-  DataReader data_reader = 1; 
-  Model model = 2; 
+  DataReader data_reader = 1;
+  Model model = 2;
   Optimizer optimizer = 3;
   MotifDefinitions motif_definitions = 4;
 }
@@ -42,6 +42,8 @@ message Reader {
   bool disable_responses = 109;
   string format = 110; // numpy, csv
   string data_file_pattern = 111;
+  int64 num_neighbors = 112; // pilot2_molecular_reader
+  int64 max_neighborhood = 113; // pilot2_molecular_reader
 }
 
 message ImagePreprocessor {
@@ -155,7 +157,7 @@ message GenericPreprocessor {
 message Model {
   string name = 1; //sequential_model, dag_model, greedy_layerwise_autoencoder, planar
   ObjectiveFunction objective_function = 2;
-  repeated Metric metric = 5; 
+  repeated Metric metric = 5;
   string data_layout = 6;
 
   int64 mini_batch_size = 12;
@@ -176,7 +178,7 @@ message Model {
 
   // checknan, debug, dump_activations, etc;
   // for complete list, see: lbann/include/lbann/callbacks
-  repeated Callback callback = 20; 
+  repeated Callback callback = 20;
 
   //checkpointing
   string checkpoint_dir = 30;
@@ -269,7 +271,7 @@ message Optimizer {
 
 message Adagrad {
   double learn_rate = 1;
-  double eps = 2;  //default: 1e-8 
+  double eps = 2;  //default: 1e-8
 }
 
 message Adam {
@@ -474,7 +476,7 @@ message CallbackGradientCheck {
 //========================================================================
 
 //
-// weight initialization should be one of: 
+// weight initialization should be one of:
 //    zero, uniform, normal, glorot_normal, he_normal, he_uniform
 // see: lbann/include/lbann/lbann_base.hpp
 //
@@ -492,7 +494,7 @@ enum Imcomm {
 
 message Weights {
   string name = 1;
-    
+
   Imcomm imcomm = 55;
 }
 
@@ -514,7 +516,7 @@ message Motif {
 //========================================================================
 
 message Layer {
-   string name = 50; 
+   string name = 50;
    string parents = 151;
    string children = 152;
    string data_layout = 52;
@@ -740,7 +742,7 @@ message FullyConnected {
   bool has_bias = 3;                   //default: true
   double bias_initial_value = 4;       //default: 0
   double l2_regularization_factor = 5; //default: 0
-  double group_lasso_regularization_factor = 6; //default: 0 
+  double group_lasso_regularization_factor = 6; //default: 0
 }
 
 message Convolution {
@@ -755,9 +757,9 @@ message Convolution {
   string conv_strides = 7; //should be space-separated list, e.g, "2 2 3"
 
   // these are used if has_vector = false
-  int64 conv_dims_i = 50; 
-  int64 conv_pads_i = 60; 
-  int64 conv_strides_i = 70; 
+  int64 conv_dims_i = 50;
+  int64 conv_pads_i = 60;
+  int64 conv_strides_i = 70;
 
   string weight_initialization = 9;
   bool has_bias = 10;                   //default: true
@@ -777,9 +779,9 @@ message Deconvolution {
   string conv_strides = 7; //should be space-separated list, e.g, "2 2 3"
 
   // these are used if has_vector = false
-  int64 conv_dims_i = 50; 
-  int64 conv_pads_i = 60; 
-  int64 conv_strides_i = 70; 
+  int64 conv_dims_i = 50;
+  int64 conv_pads_i = 60;
+  int64 conv_strides_i = 70;
 
   string weight_initialization = 9;
   bool has_bias = 10;                   //default: true
@@ -805,4 +807,3 @@ message TargetPartitionedMinibatch {
 message TargetReconstruction {
   string original_layer = 1;
 }
-

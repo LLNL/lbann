@@ -294,8 +294,8 @@ void generic_data_reader::select_subset_of_data() {
         std::to_string(get_num_data()));
     }
     m_shuffled_indices.resize(get_absolute_sample_count());
-  } 
-  
+  }
+
   if (use_percent) {
     m_shuffled_indices.resize(get_use_percent()*get_num_data());
   }
