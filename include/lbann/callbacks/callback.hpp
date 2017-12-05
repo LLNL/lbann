@@ -106,11 +106,11 @@ class lbann_callback {
   /** Called when a model begins optimization. */
   virtual void on_optimize_begin(model *m) {}
   /** Called when weights begins optimization. */
-  virtual void on_optimize_begin(model *m, weights *l) {}
+  virtual void on_optimize_begin(model *m, weights *w) {}
   /** Called when a model ends optimization. */
   virtual void on_optimize_end(model *m) {}
   /** Called when weights ends optimization. */
-  virtual void on_optimize_end(model *m, weights *l) {}
+  virtual void on_optimize_end(model *m, weights *w) {}
 
   /** Called at the beginning of a (mini-)batch evaluation (validation / testing). */
   virtual void on_batch_evaluate_begin(model *m) {}

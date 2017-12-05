@@ -125,6 +125,7 @@
 #include "lbann/callbacks/callback_hang.hpp"
 #include "lbann/callbacks/callback_variable_minibatch.hpp"
 #include "lbann/callbacks/callback_gradient_check.hpp"
+#include "lbann/callbacks/callback_timeline.hpp"
 
 /// Weights and weight initializers
 #include "lbann/weights/weights.hpp"
