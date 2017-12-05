@@ -488,6 +488,11 @@ if [ "${CLUSTER}" == "surface" ] || [ "${CLUSTER}" == "ray" ]; then
     WITH_CUDA=${WITH_CUDA:-ON}
     WITH_CUDNN=ON
     ELEMENTAL_USE_CUBLAS=OFF
+    if [ "${CLUSTER}" == "ray" ]; then
+      NCCL_HOME_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.0.5-3+cuda8.0_ppc64el
+    else
+      NCCL_HOME_DIR=/usr/workspace/wsb/brain/nccl2/nccl-2.0.5+cuda8.0
+    fi
     if [ "${ARCH}" == "ppc64le" ]; then
         CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda
         CUDATOOLKIT_VERSION=$(ls -l ${CUDA_TOOLKIT_ROOT_DIR} | awk '{print $NF}' | cut -d '-' -f 2)
@@ -628,6 +633,7 @@ cmake \
 -D PATCH_OPENBLAS=${PATCH_OPENBLAS} \
 -D ELEMENTAL_USE_CUBLAS=${ELEMENTAL_USE_CUBLAS} \
 -D WITH_NCCL=${WITH_NCCL} \
+-D NCCL_HOME_DIR=${NCCL_HOME_DIR} \
 -D WITH_TOPO_AWARE=${WITH_TOPO_AWARE} \
 -D IPPROOT=${IPPROOT} \
 ${ROOT_DIR}
