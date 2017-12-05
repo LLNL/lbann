@@ -141,9 +141,9 @@ class fully_connected_layer : public learning {
                                         std::vector<DataType*> &bias,
                                         El::Int height, El::Int width) {
     activations = parameters;
-    for (unsigned i = 0; i < parameters.size(); ++i) {
+    for (auto & parameter : parameters) {
       // point to the last column 
-      bias.push_back(parameters[i] + height * (width - 1));
+      bias.push_back(parameter + height * (width - 1));
     }
   }
 
@@ -276,18 +276,18 @@ class fully_connected_layer : public learning {
       this->m_weights[0] = new weights(this->m_comm, this->m_cudnn);
       this->m_weights[0]->set_name(this->m_name + "_matrix_weights");
       this->m_weights[0]->set_initializer(new he_normal_initializer(this->m_comm));
-      this->m_weights[0]->set_optimizer(m_neural_network_model->create_optimizer());
-      this->m_neural_network_model->add_weights(this->m_weights[0]);
+      this->m_weights[0]->set_optimizer(m_model->create_optimizer());
+      this->m_model->add_weights(this->m_weights[0]);
     }
     if (this->m_weights[1] == nullptr) {
       this->m_weights[1] = new weights(this->m_comm, this->m_cudnn);
       this->m_weights[1]->set_name(this->m_name + "_bias_weights");
-      this->m_weights[1]->set_optimizer(m_neural_network_model->create_optimizer());
-      this->m_neural_network_model->add_weights(this->m_weights[1]);
+      this->m_weights[1]->set_optimizer(m_model->create_optimizer());
+      this->m_model->add_weights(this->m_weights[1]);
     }
 
     // Initialize Glorot or He weight initialization
-    fan_in_fan_out_initializer* cast_initializer
+    auto* cast_initializer
       = dynamic_cast<fan_in_fan_out_initializer*>(&this->m_weights[0]->get_initializer());
     if (cast_initializer != nullptr) {
       cast_initializer->set_fan_in(this->m_num_prev_neurons);
@@ -456,8 +456,7 @@ class fully_connected_layer : public learning {
                  m_bias_weights_gradient->Matrix());
       bias_optimizer->allreduce_and_add_to_gradient(
         *m_bias_weights_gradient,
-        m_bias_scaling_factor /
-        this->m_neural_network_model->get_effective_mini_batch_size());
+        m_bias_scaling_factor / this->m_model->get_current_mini_batch_size());
     }
 
   }
@@ -476,9 +475,11 @@ class fully_connected_layer : public learning {
                                     m_prev_error_signal_dv,
                                     m_prev_error_signal_v->Height(),
                                     m_mini_batch_size_per_gpu,
-                                    m_bias_scaling_factor / this->m_neural_network_model->get_effective_mini_batch_size(),
+                                    DataType(1),
                                     m_bias_weights_gradient_d);
-      bias_optimizer->allreduce_and_add_to_gradient_gpu(m_bias_weights_gradient_d);
+      bias_optimizer->allreduce_and_add_to_gradient_gpu(
+        m_bias_weights_gradient_d,
+        m_bias_scaling_factor / this->m_model->get_current_mini_batch_size());
     }
 
 #ifdef LBANN_DEBUG
@@ -560,13 +561,14 @@ fully_connected_layer<data_layout::MODEL_PARALLEL>::bp_compute_weights() {
   // Compute update for activation weights
   optimizer* matrix_optimizer = this->m_weights[0]->get_optimizer();
   if (matrix_optimizer != nullptr) {
-    El::Gemm(El::NORMAL, El::TRANSPOSE, DataType(1)/
-             this->m_neural_network_model->get_effective_mini_batch_size(),
+    El::Gemm(El::NORMAL, El::TRANSPOSE, DataType(1),
              *this->m_prev_error_signal_v,
              *this->m_prev_activations_v,
              DataType(0),
              *m_matrix_weights_gradient);
-    matrix_optimizer->add_to_gradient(*m_matrix_weights_gradient);
+    matrix_optimizer->add_to_gradient(
+      *m_matrix_weights_gradient,
+      DataType(1) / this->m_model->get_current_mini_batch_size());
   }
 }
 
@@ -581,13 +583,14 @@ fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_weights<device::CP
   // Compute update for activation weights
   optimizer* matrix_optimizer = this->m_weights[0]->get_optimizer();
   if (matrix_optimizer != nullptr) {
-    El::Gemm(El::NORMAL, El::TRANSPOSE, DataType(1)/
-             this->m_neural_network_model->get_effective_mini_batch_size(),
+    El::Gemm(El::NORMAL, El::TRANSPOSE, DataType(1),
              this->m_prev_error_signal_v->LockedMatrix(),
              this->m_prev_activations_v->LockedMatrix(),
              DataType(0),
              m_matrix_weights_gradient->Matrix());
-    matrix_optimizer->allreduce_and_add_to_gradient(*m_matrix_weights_gradient);
+    matrix_optimizer->allreduce_and_add_to_gradient(
+      *m_matrix_weights_gradient,
+      DataType(1) / this->m_model->get_current_mini_batch_size());
   }
 }
 
@@ -627,8 +630,7 @@ fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_weights<device::CU
                                 m_weights[0]->get_height(),
                                 m_weights[0]->get_width(),
                                 m_mini_batch_size_per_gpu,
-                                DataType(1)/
-                                this->m_neural_network_model->get_effective_mini_batch_size(),
+                                DataType(1),
                                 this->m_prev_error_signal_dv[i],
                                 this->m_prev_error_signal_v->Height(),
                                 this->m_prev_activations_dv[i],
@@ -637,7 +639,9 @@ fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_weights<device::CU
                                 this->m_matrix_weights_gradient_d[i],
                                 this->m_matrix_weights_gradient->Height()));
     }
-    matrix_optimizer->allreduce_and_add_to_gradient_gpu(m_matrix_weights_gradient_d);
+    matrix_optimizer->allreduce_and_add_to_gradient_gpu(
+      m_matrix_weights_gradient_d,
+      DataType(1) / this->m_model->get_current_mini_batch_size());
   }
   
 }

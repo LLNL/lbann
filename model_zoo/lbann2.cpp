@@ -196,7 +196,7 @@ model * build_model_from_prototext(int argc, char **argv, std::string model_fn, 
     //save_session(comm, argc, argv, pb);
 
     // Check for cudnn, with user feedback
-    cudnn::cudnn_manager *cudnn = NULL;
+    cudnn::cudnn_manager *cudnn = nullptr;
 #if __LIB_CUDNN
     if (pb_model->use_cudnn()) {
       if (master) {

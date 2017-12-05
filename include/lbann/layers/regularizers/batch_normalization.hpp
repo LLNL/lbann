@@ -332,27 +332,27 @@ class batch_normalization : public regularizer_layer {
       this->m_weights[0] = new weights(this->m_comm, this->m_cudnn);
       this->m_weights[0]->set_name(this->m_name + "_scale");
       this->m_weights[0]->set_initializer(new constant_initializer(this->m_comm, DataType(1)));
-      this->m_weights[0]->set_optimizer(m_neural_network_model->create_optimizer());
-      this->m_neural_network_model->add_weights(this->m_weights[0]);
+      this->m_weights[0]->set_optimizer(m_model->create_optimizer());
+      this->m_model->add_weights(this->m_weights[0]);
     }
     if (this->m_weights[1] == nullptr) {
       this->m_weights[1] = new weights(this->m_comm, this->m_cudnn);
       this->m_weights[1]->set_name(this->m_name + "_bias");
       this->m_weights[1]->set_initializer(new constant_initializer(this->m_comm, DataType(0)));
-      this->m_weights[1]->set_optimizer(m_neural_network_model->create_optimizer());
-      this->m_neural_network_model->add_weights(this->m_weights[1]);
+      this->m_weights[1]->set_optimizer(m_model->create_optimizer());
+      this->m_model->add_weights(this->m_weights[1]);
     }
     if (this->m_weights[2] == nullptr) {
       this->m_weights[2] = new weights(this->m_comm, this->m_cudnn);
       this->m_weights[2]->set_name(this->m_name + "_running_mean");
       this->m_weights[2]->set_initializer(new constant_initializer(this->m_comm, DataType(0)));
-      this->m_neural_network_model->add_weights(this->m_weights[2]);
+      this->m_model->add_weights(this->m_weights[2]);
     }
     if (this->m_weights[3] == nullptr) {
       this->m_weights[3] = new weights(this->m_comm, this->m_cudnn);
       this->m_weights[3]->set_name(this->m_name + "_running_variance");
       this->m_weights[3]->set_initializer(new constant_initializer(this->m_comm, DataType(1)));
-      this->m_neural_network_model->add_weights(this->m_weights[3]);
+      this->m_model->add_weights(this->m_weights[3]);
     }
 
     // Setup weights
@@ -447,7 +447,7 @@ class batch_normalization : public regularizer_layer {
   #else
 
     // Check execution mode
-    const bool is_training = this->get_execution_mode() == execution_mode::training;
+    const bool is_training = this->m_model->get_execution_mode() == execution_mode::training;
 
     // Matrix parameters
     const int num_gpus = this->m_cudnn->get_num_gpus();
@@ -549,7 +549,7 @@ class batch_normalization : public regularizer_layer {
   #else
 
     // Check execution mode
-    const bool is_training = this->get_execution_mode() == execution_mode::training;
+    const bool is_training = this->m_model->get_execution_mode() == execution_mode::training;
 
     // GPU objects
     const int num_gpus = this->m_cudnn->get_num_gpus();
@@ -558,6 +558,7 @@ class batch_normalization : public regularizer_layer {
     std::vector<DataType*> var_d = is_training ? m_var_d : m_weights[3]->get_values_gpu();
 
     // Matrix parameters
+    const int mini_batch_size = this->m_model->get_current_mini_batch_size();
     const int height = this->m_prev_activations_v->Height();
     const int width = this->m_prev_activations_v->Width();
     const int local_width = this->m_prev_activations_v->LocalWidth();
@@ -604,25 +605,11 @@ class batch_normalization : public regularizer_layer {
     }
     optimizer* scale_optimizer = m_weights[0]->get_optimizer();
     if (scale_optimizer != nullptr) {
-      for(int i=0; i<num_gpus; ++i) {
-        CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-        CHECK_CUBLAS(cublas::scal(this->m_cudnn->get_cublas_handle(i),
-                                  num_channels,
-                                  DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size(),
-                                  m_scale_gradient_d[i], 1));
-      }
-      scale_optimizer->allreduce_and_add_to_gradient_gpu(m_scale_gradient_d);
+      scale_optimizer->allreduce_and_add_to_gradient_gpu(m_scale_gradient_d, DataType(1) / mini_batch_size);
     }
     optimizer* bias_optimizer = m_weights[1]->get_optimizer();
     if (bias_optimizer != nullptr) {
-      for(int i=0; i<num_gpus; ++i) {
-        CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-        CHECK_CUBLAS(cublas::scal(this->m_cudnn->get_cublas_handle(i),
-                                  num_channels,
-                                  DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size(),
-                                  m_bias_gradient_d[i], 1));
-      }
-      bias_optimizer->allreduce_and_add_to_gradient_gpu(m_bias_gradient_d);
+      bias_optimizer->allreduce_and_add_to_gradient_gpu(m_bias_gradient_d, DataType(1) / mini_batch_size);
     }
 
     // Compute error signal
@@ -654,7 +641,7 @@ class batch_normalization : public regularizer_layer {
   void fp_compute_cpu() {
     
     // Check execution mode
-    const bool is_training = this->get_execution_mode() == execution_mode::training;
+    const bool is_training = this->m_model->get_execution_mode() == execution_mode::training;
 
     // Local matrices
     const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
@@ -680,8 +667,8 @@ class batch_normalization : public regularizer_layer {
       // Compute sums and sums of squares
       #pragma omp parallel for
       for(int channel = 0; channel < num_channels; ++channel) {
-        DataType sum = DataType(0);
-        DataType sqsum = DataType(0);
+        auto sum = DataType(0);
+        auto sqsum = DataType(0);
         const El::Int row_start = channel * channel_size;
         const El::Int row_end = (channel+1) * channel_size;
         for(El::Int col = 0; col < local_width; ++col) {
@@ -761,7 +748,7 @@ class batch_normalization : public regularizer_layer {
   void bp_compute_cpu() {
     
     // Check execution mode
-    const bool is_training = this->get_execution_mode() == execution_mode::training;
+    const bool is_training = this->m_model->get_execution_mode() == execution_mode::training;
 
     // Local matrices
     const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
@@ -776,6 +763,7 @@ class batch_normalization : public regularizer_layer {
     Mat& bias_gradient_local = m_bias_gradient->Matrix();
     
     // Matrix parameters
+    const int mini_batch_size = this->m_model->get_current_mini_batch_size();
     const int width = this->m_prev_activations_v->Width();
     const El::Int local_width = this->m_prev_activations_v->LocalWidth();
     const int num_channels = this->m_neuron_dims[0];
@@ -791,10 +779,10 @@ class batch_normalization : public regularizer_layer {
       const DataType scale = scale_local(channel, 0);
       const DataType inv_stdev = 1 / std::sqrt(var + m_epsilon);
       const DataType dvar_factor = inv_stdev * inv_stdev * inv_stdev / 2;
-      DataType dmean = DataType(0);
-      DataType dvar = DataType(0);
-      DataType dscale = DataType(0);
-      DataType dbias = DataType(0);
+      auto dmean = DataType(0);
+      auto dvar = DataType(0);
+      auto dscale = DataType(0);
+      auto dbias = DataType(0);
 
       // Compute gradient contributions from local entries
       const El::Int row_start = channel * channel_size;
@@ -834,15 +822,11 @@ class batch_normalization : public regularizer_layer {
     }
     optimizer* scale_optimizer = m_weights[0]->get_optimizer();
     if (scale_optimizer != nullptr) {
-      El::Scale(DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size(),
-                *m_scale_gradient);
-      scale_optimizer->allreduce_and_add_to_gradient(*m_scale_gradient);
+      scale_optimizer->allreduce_and_add_to_gradient(*m_scale_gradient, DataType(1) / mini_batch_size);
     }
     optimizer* bias_optimizer = m_weights[1]->get_optimizer();
     if (bias_optimizer != nullptr) {
-      El::Scale(DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size(),
-                *m_bias_gradient);
-      bias_optimizer->allreduce_and_add_to_gradient(*m_bias_gradient);
+      bias_optimizer->allreduce_and_add_to_gradient(*m_bias_gradient, DataType(1) / mini_batch_size);
     }
     
     // Compute error signal

@@ -78,7 +78,7 @@ void lbann_callback_check_dataset::on_epoch_end(model *m) {
     "] : I have processed " << training_set.size() << " elements" << std::endl;
   
   const std::vector<Layer *>& layers = m->get_layers();
-  input_layer *input = (input_layer *) dynamic_cast<input_layer *> (layers[0]);
+  auto *input = (input_layer *) dynamic_cast<input_layer *> (layers[0]);
   if (!input) {
     throw lbann_exception(
       "lbann_callback_check_dataset: could not get input layer");

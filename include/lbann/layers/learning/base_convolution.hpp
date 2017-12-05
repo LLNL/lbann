@@ -309,19 +309,19 @@ class base_convolution_layer : public learning {
       this->m_weights[0] = new weights(this->m_comm, this->m_cudnn);
       this->m_weights[0]->set_name(this->m_name + "_kernel_weights");
       this->m_weights[0]->set_initializer(new he_normal_initializer(this->m_comm));
-      this->m_weights[0]->set_optimizer(m_neural_network_model->create_optimizer());
-      this->m_neural_network_model->add_weights(this->m_weights[0]);
+      this->m_weights[0]->set_optimizer(m_model->create_optimizer());
+      this->m_model->add_weights(this->m_weights[0]);
     }
     if (this->m_weights[1] == nullptr) {
       this->m_weights[1] = new weights(this->m_comm, this->m_cudnn);
       this->m_weights[1]->set_name(this->m_name + "_bias_weights");
       this->m_weights[1]->set_initializer(new constant_initializer(this->m_comm, DataType(0)));
-      this->m_weights[1]->set_optimizer(m_neural_network_model->create_optimizer());
-      this->m_neural_network_model->add_weights(this->m_weights[1]);
+      this->m_weights[1]->set_optimizer(m_model->create_optimizer());
+      this->m_model->add_weights(this->m_weights[1]);
     }
 
     // Initialize Glorot or He weight initialization
-    fan_in_fan_out_initializer* cast_initializer
+    auto* cast_initializer
       = dynamic_cast<fan_in_fan_out_initializer*>(&this->m_weights[0]->get_initializer());
     if (cast_initializer != nullptr) {
       cast_initializer->set_fan_in(m_kernel_size / this->m_neuron_dims[0]);
@@ -594,40 +594,39 @@ class base_convolution_layer : public learning {
   #else
 
     // Useful constants
-    const DataType zero = 0;
+    const DataType zero = DataType(0);
+    const DataType one = DataType(1);
     const int num_gpus = this->m_cudnn->get_num_gpus();
-    const int effective_mini_batch_size = this->m_neural_network_model->get_effective_mini_batch_size();
+    const int mini_batch_size = this->m_model->get_current_mini_batch_size();
 
     // Clear unused columns in previous error signal matrix
     this->m_cudnn->clear_unused_columns_on_gpus(this->m_prev_error_signal_dv,
                                                 this->m_num_neurons,
-                                                this->m_prev_error_signal_v->LocalWidth(),
+                                                mini_batch_size,
                                                 this->m_mini_batch_size_per_gpu);
-
 
     // Compute bias gradient
     optimizer* bias_optimizer = m_weights[1]->get_optimizer();
     if(bias_optimizer != nullptr && m_bias_scaling_factor != DataType(0)) {
-      const DataType bias_scale = m_bias_scaling_factor / effective_mini_batch_size;
       for(int i=0; i<num_gpus; ++i) {
         CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
         CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
                                    this->m_cudnn->get_stream(i)));
         CHECK_CUDNN(cudnnConvolutionBackwardBias(this->m_cudnn->get_handle(i),
-                                                 &bias_scale,
+                                                 &one,
                                                  this->m_neurons_cudnn_desc,
                                                  this->m_prev_error_signal_dv[i],
                                                  &zero,
                                                  m_bias_cudnn_desc,
                                                  m_bias_weights_gradient_d[i]));
       }
-      bias_optimizer->allreduce_and_add_to_gradient_gpu(m_bias_weights_gradient_d);
+      bias_optimizer->allreduce_and_add_to_gradient_gpu(m_bias_weights_gradient_d,
+                                                        m_bias_scaling_factor / mini_batch_size);
     }
 
     // Compute kernel gradient
     optimizer* kernel_optimizer = m_weights[0]->get_optimizer();
     if(kernel_optimizer != nullptr) {
-      const DataType kernel_scale = DataType(1) / effective_mini_batch_size;
       for(int i=0; i<num_gpus; ++i) {
         CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
         CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
@@ -654,7 +653,7 @@ class base_convolution_layer : public learning {
                                                                  work_space_size,
                                                                  &kernel_gradient_cudnn_algorithm));
           CHECK_CUDNN(cudnnConvolutionBackwardFilter(this->m_cudnn->get_handle(i),
-                                                     &kernel_scale,
+                                                     &one,
                                                      this->m_neurons_cudnn_desc,
                                                      this->m_prev_error_signal_dv[i],
                                                      this->m_prev_neurons_cudnn_desc,
@@ -677,7 +676,7 @@ class base_convolution_layer : public learning {
                                                                  work_space_size,
                                                                  &kernel_gradient_cudnn_algorithm));
           CHECK_CUDNN(cudnnConvolutionBackwardFilter(this->m_cudnn->get_handle(i),
-                                                     &kernel_scale,
+                                                     &one,
                                                      this->m_prev_neurons_cudnn_desc,
                                                      this->m_prev_activations_dv[i],
                                                      this->m_neurons_cudnn_desc,
@@ -694,7 +693,8 @@ class base_convolution_layer : public learning {
       }
 
       // Add gradient contribution
-      kernel_optimizer->allreduce_and_add_to_gradient_gpu(m_kernel_weights_gradient_d);
+      kernel_optimizer->allreduce_and_add_to_gradient_gpu(m_kernel_weights_gradient_d,
+                                                          one / mini_batch_size);
       
     }
 
@@ -872,10 +872,7 @@ class base_convolution_layer : public learning {
     const int num_input_channels = this->m_prev_neuron_dims[0];
     const int num_output_channels = this->m_neuron_dims[0];
     const int num_per_output_channel = this->m_num_neurons / num_output_channels;
-
-    // Initialize weight gradients to zero
-    El::Zero(kernel_weights_gradient_local);
-    El::Zero(bias_weights_gradient_local);
+    const int mini_batch_size = this->m_model->get_current_mini_batch_size();
 
     // Compute bias gradient
     // Note: Sum is computed with Kahan summation
@@ -898,9 +895,8 @@ class base_convolution_layer : public learning {
         }
         bias_weights_gradient_local(channel, 0) = m_bias_scaling_factor * sum;
       }
-      bias_optimizer->allreduce_and_add_to_gradient(
-        *m_bias_weights_gradient,
-        DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size());
+      bias_optimizer->allreduce_and_add_to_gradient(*m_bias_weights_gradient,
+                                                    DataType(1) / mini_batch_size);
     }
 
     // Stop early if kernel is not being optimized
@@ -920,6 +916,7 @@ class base_convolution_layer : public learning {
     Mat im2col_matrix(m, k);
 
     // Compute kernel gradient contributions from each data sample
+    El::Zero(kernel_weights_gradient_local);
     for(El::Int col = 0; col < width_local; ++col) {
       if(using_transposed_convolution) {
         const Mat prev_activations_col(k, n, prev_activations_local.LockedBuffer(0,col), k);
@@ -956,9 +953,8 @@ class base_convolution_layer : public learning {
     }
 
     // Scale and accumulate gradients
-    kernel_optimizer->allreduce_and_add_to_gradient(
-      *m_kernel_weights_gradient,
-      DataType(1) / this->m_neural_network_model->get_effective_mini_batch_size());
+    kernel_optimizer->allreduce_and_add_to_gradient(*m_kernel_weights_gradient,
+                                                    DataType(1) / mini_batch_size);
 
   }
 

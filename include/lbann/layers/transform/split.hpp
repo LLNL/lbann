@@ -44,7 +44,7 @@ class split_layer : public transform {
  public:
   /// Constructor
   split_layer(lbann_comm *comm,
-              cudnn::cudnn_manager *cudnn = NULL)
+              cudnn::cudnn_manager *cudnn = nullptr)
     : transform(comm) {
 
     // Setup the data distribution

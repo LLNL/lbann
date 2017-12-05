@@ -71,14 +71,14 @@ void cifar10_reader::load() {
   //reserve space for string images
   int num_images = fs / len;
   m_data.resize(num_images);
-  for (size_t h=0; h<m_data.size(); h++) {
-    m_data[h].resize(len);
+  for (auto & h : m_data) {
+    h.resize(len);
   }
 
   //read in the images; each image is 1 byte, which is the
   //label (0-9), and 3072 pixels
-  for (size_t h=0; h<m_data.size(); h++) {
-    in.read((char *)&(m_data[h][0]), len);
+  for (auto & h : m_data) {
+    in.read((char *)&(h[0]), len);
   }
   in.close();
 
@@ -103,7 +103,7 @@ bool cifar10_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
 }
 
 bool cifar10_reader::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
-  int label = (int)m_data[data_id][0];
+  auto label = (int)m_data[data_id][0];
   Y.Set(label, mb_idx, 1);
   return true;
 }

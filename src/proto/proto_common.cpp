@@ -112,7 +112,7 @@ void setup_pointers(
 
     // Set a target layer's paired input layer
     if (dynamic_cast<target_layer*>(layer) != nullptr) {
-      target_layer *target = dynamic_cast<target_layer*>(layer);
+      auto *target = dynamic_cast<target_layer*>(layer);
 
       std::string name;
 
@@ -138,7 +138,7 @@ void setup_pointers(
       }
 
       // Set input layer
-      input_layer *input = dynamic_cast<input_layer*>(model_layers[name]);
+      auto *input = dynamic_cast<input_layer*>(model_layers[name]);
       target->set_paired_input_layer(input);
 
     }
@@ -167,12 +167,12 @@ void setup_pointers(
       // Set original layer
       Layer *original_layer = model_layers[name];
       if (dynamic_cast<reconstruction_layer<data_layout::MODEL_PARALLEL>*>(layer)) {
-        reconstruction_layer<data_layout::MODEL_PARALLEL> *reconstruction
+        auto *reconstruction
           = dynamic_cast<reconstruction_layer<data_layout::MODEL_PARALLEL>*>(layer);
         reconstruction->set_original_layer(original_layer);
       }
       if (dynamic_cast<reconstruction_layer<data_layout::DATA_PARALLEL>*>(layer)) {
-        reconstruction_layer<data_layout::DATA_PARALLEL> *reconstruction
+        auto *reconstruction
           = dynamic_cast<reconstruction_layer<data_layout::DATA_PARALLEL>*>(layer);
         reconstruction->set_original_layer(original_layer);
       }
@@ -287,6 +287,7 @@ void add_layers(
 
   std::stringstream err;
   model_layers.clear(); //shouldn't need this, but just in case ...
+  model_layer_names.clear();
 
   const lbann_data::Model& m = p.model();
   std::vector<lbann_data::Layer> proto_layers;
@@ -310,7 +311,7 @@ void add_layers(
     if (layer.has_relu()) {
       //const lbann_data::Relu &ell = layer.relu();
       if (layout == data_layout::MODEL_PARALLEL) {
-        d = new relu_layer<data_layout::MODEL_PARALLEL>(comm, NULL);
+        d = new relu_layer<data_layout::MODEL_PARALLEL>(comm, nullptr);
       } else {
         d = new relu_layer<data_layout::DATA_PARALLEL>(comm, cudnn);
       }
@@ -564,7 +565,7 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     else if (layer.has_unpooling()) {
       const lbann_data::Unpooling& ell = layer.unpooling();
-      pooling_layer<data_layout::DATA_PARALLEL> *pl = (pooling_layer<data_layout::DATA_PARALLEL>*)model_layers[ell.pooling_layer()];
+      auto *pl = (pooling_layer<data_layout::DATA_PARALLEL>*)model_layers[ell.pooling_layer()];
       if (layout == data_layout::MODEL_PARALLEL and master) {
         err << __FILE__ << " " << __LINE__ << " :: local_response_normalization "
             << "does not support MODEL_PARALLEL layouts";
@@ -1125,7 +1126,7 @@ void init_callbacks(
     //////////////////////////////////////////////////////////////////
     if (callback.has_ltfb()) {
       const lbann_data::CallbackLTFB &c = callback.ltfb();
-      lbann_callback_ltfb *ltfb_cb = new lbann_callback_ltfb(c.round_size(), summarizer);
+      auto *ltfb_cb = new lbann_callback_ltfb(c.round_size(), summarizer);
       model->add_callback(ltfb_cb);
     }
 
@@ -1149,7 +1150,7 @@ void init_callbacks(
       if (master) {
         std::cout << "adding print callback" << std::endl;
       }
-      lbann_callback_print *print_cb = new lbann_callback_print(c.interval());
+      auto *print_cb = new lbann_callback_print(c.interval());
       model->add_callback(print_cb);
     }
 
@@ -1157,7 +1158,7 @@ void init_callbacks(
     // CALLBACK: timer
     //////////////////////////////////////////////////////////////////
     if (callback.has_timer()) {
-      lbann_callback_timer *timer_cb = new lbann_callback_timer(summarizer);
+      auto *timer_cb = new lbann_callback_timer(summarizer);
       model->add_callback(timer_cb);
     }
 
@@ -1166,7 +1167,7 @@ void init_callbacks(
     //////////////////////////////////////////////////////////////////
     if (callback.has_summary()) {
       const lbann_data::CallbackSummary& c = callback.summary();
-      lbann_callback_summary *summary_cb = new lbann_callback_summary(summarizer, c.batch_interval(), c.mat_interval());
+      auto *summary_cb = new lbann_callback_summary(summarizer, c.batch_interval(), c.mat_interval());
       model->add_callback(summary_cb);
     }
 
@@ -1230,7 +1231,7 @@ void init_callbacks(
       if (master) {
         std::cout << "adding callback to check the dataset" << std::endl;
       }
-      lbann_callback_check_dataset *check_dataset_cb = new lbann_callback_check_dataset();
+      auto *check_dataset_cb = new lbann_callback_check_dataset();
       model->add_callback(check_dataset_cb);
     }
 
@@ -1388,7 +1389,7 @@ void init_callbacks(
       if (master) {
         std::cout << "adding check_small callback" << std::endl;
       }
-      lbann_callback_checksmall *checksmall_cb = new lbann_callback_checksmall();
+      auto *checksmall_cb = new lbann_callback_checksmall();
       model->add_callback(checksmall_cb);
     }
 
@@ -1399,7 +1400,7 @@ void init_callbacks(
       if (master) {
         std::cout << "adding check_nan callback" << std::endl;
       }
-      lbann_callback_checknan *checknan_cb = new lbann_callback_checknan();
+      auto *checknan_cb = new lbann_callback_checknan();
       model->add_callback(checknan_cb);
     }
 
@@ -1418,7 +1419,7 @@ void init_callbacks(
                     " IN HANG CALLBACK ***" << std::endl;
         }
       }
-      lbann_callback_hang *hang_cb = new lbann_callback_hang(rank_to_hang);
+      auto *hang_cb = new lbann_callback_hang(rank_to_hang);
       model->add_callback(hang_cb);
     }
 
@@ -1486,7 +1487,7 @@ void init_callbacks(
       if (master) {
         std::cout << "adding profiler callback" << std::endl;
       }
-      lbann_callback_profiler *profiler_cb = new lbann_callback_profiler();
+      auto *profiler_cb = new lbann_callback_profiler();
       model->add_callback(profiler_cb);
     }
 
@@ -1500,7 +1501,7 @@ void init_callbacks(
           c.starting_mbsize() << ", step=" << c.step() << " ramp=" <<
           c.ramp_time() << std::endl;
       }
-      lbann_callback_step_minibatch *step_mb_cb = new
+      auto *step_mb_cb = new
         lbann_callback_step_minibatch(c.starting_mbsize(), c.step(),
                                       c.ramp_time());
       model->add_callback(step_mb_cb);
@@ -1534,7 +1535,7 @@ void init_callbacks(
       if (master) {
         std::cout << "adding gradient_check callback" << std::endl;
       }
-      lbann_callback_gradient_check *gradient_check_cb = new
+      auto *gradient_check_cb = new
       lbann_callback_gradient_check(c.step_size(), c.verbose(), c.fail_on_error());
       model->add_callback(gradient_check_cb);
     }
@@ -1575,14 +1576,14 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
   bool master = comm->am_world_master();
 
   //sequential_model *model = 0;
-  model *model = 0;
+  model *model = nullptr;
 
   const lbann_data::Model& m = p.model();
   const std::string name = m.name();
   uint mini_batch_size = m.mini_batch_size();
 
   //instantiate the objective function
-  objective_function *obj_fn = new objective_function();
+  auto *obj_fn = new objective_function();
   const lbann_data::ObjectiveFunction &obj_fn_params = m.objective_function();
   for (int j=0; j<obj_fn_params.cross_entropy_size(); j++) {
     const lbann_data::CrossEntropy &params = obj_fn_params.cross_entropy(j);
@@ -1740,8 +1741,8 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
 
     const bool shuffle = readme.shuffle();
 
-    generic_data_reader *reader = 0;
-    generic_data_reader *reader_validation = 0;
+    generic_data_reader *reader = nullptr;
+    generic_data_reader *reader_validation = nullptr;
 
     if ((name == "imagenet_org") || (name == "mnist") || (name == "cifar10")) {
       init_org_image_data_reader(readme, master, reader);
@@ -1752,7 +1753,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
     } else if (name == "nci") {
       reader = new data_reader_nci(shuffle);
     } else if (name == "csv") {
-      csv_reader* reader_csv = new csv_reader(shuffle);
+      auto* reader_csv = new csv_reader(shuffle);
       reader_csv->set_label_col(readme.label_col());
       reader_csv->set_response_col(readme.response_col());
       reader_csv->disable_labels(readme.disable_labels()); 
@@ -1763,7 +1764,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       reader_csv->set_has_header(readme.has_header());
       reader = reader_csv;
     } else if (name == "numpy") {
-      numpy_reader* reader_numpy = new numpy_reader(shuffle);
+      auto* reader_numpy = new numpy_reader(shuffle);
       reader_numpy->set_has_labels(!readme.disable_labels());
       reader_numpy->set_has_responses(!readme.disable_responses());
       reader = reader_numpy;
@@ -1772,13 +1773,13 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       std::vector<generic_data_reader*> npy_readers;
       for (const auto path : paths) {
         if (readme.format() == "numpy") {
-          numpy_reader *reader_numpy = new numpy_reader(false);
+          auto *reader_numpy = new numpy_reader(false);
           reader_numpy->set_data_filename(path);
           reader_numpy->set_has_labels(!readme.disable_labels());
           reader_numpy->set_has_responses(!readme.disable_responses());
           npy_readers.push_back(reader_numpy);
         } else if (readme.format() == "csv") {
-          csv_reader* reader_csv = new csv_reader(shuffle);
+          auto* reader_csv = new csv_reader(shuffle);
           reader_csv->set_data_filename(path);
           reader_csv->set_label_col(readme.label_col());
           reader_csv->set_response_col(readme.response_col());
@@ -1910,7 +1911,7 @@ void read_prototext_file(std::string fn, lbann_data::LbannPB& pb, bool master)
       throw lbann_exception(err.str());
     }
   }
-  google::protobuf::io::FileInputStream *input = new google::protobuf::io::FileInputStream(fd);
+  auto *input = new google::protobuf::io::FileInputStream(fd);
   bool success = google::protobuf::TextFormat::Parse(input, &pb);
   if (!success) {
     if (master) {
@@ -1928,7 +1929,7 @@ bool write_prototext_file(const char *fn, lbann_data::LbannPB& pb)
   if (fd == -1) {
     return false;
   }
-  google::protobuf::io::FileOutputStream *output = new google::protobuf::io::FileOutputStream(fd);
+  auto *output = new google::protobuf::io::FileOutputStream(fd);
   if (!google::protobuf::TextFormat::Print(pb, output)) {
     close(fd);
     delete output;
@@ -2089,24 +2090,24 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
     double decay_rate = opts->has_float("decay_rate") ? opts->get_float("decay_rate") : 0.5;
     bool nesterov = opts->has_bool("nesterov") ? opts->get_float("nesterov") : false;
 
-    lbann_data::Optimizer *opt = new lbann_data::Optimizer;
+    auto *opt = new lbann_data::Optimizer;
 
     //construct the new optimizer
     std::string opt_string = opts->get_string("opt");
     if (opt_string == "adagrad") {
-      lbann_data::Adagrad *a = new lbann_data::Adagrad;
+      auto *a = new lbann_data::Adagrad;
       a->set_learn_rate(learn_rate);
       a->set_eps(eps);
       opt->set_allocated_adagrad(a);
     } else if (opt_string == "adam") {
-      lbann_data::Adam *a = new lbann_data::Adam;
+      auto *a = new lbann_data::Adam;
       a->set_learn_rate(learn_rate);
       a->set_eps(eps);
       a->set_beta1(beta1);
       a->set_beta2(beta2);
       opt->set_allocated_adam(a);
     } else if (opt_string == "hypergradient_adam") {
-      lbann_data::HypergradientAdam *a = new lbann_data::HypergradientAdam;
+      auto *a = new lbann_data::HypergradientAdam;
       a->set_init_learning_rate(init_learning_rate);
       a->set_hyper_learning_rate(hyper_learning_rate);
       a->set_beta1(beta1);
@@ -2114,14 +2115,14 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
       a->set_eps(eps);
       opt->set_allocated_hypergradient_adam(a);
     } else if (opt_string == "rmsprop") {
-      lbann_data::Rmsprop *a = new lbann_data::Rmsprop;
+      auto *a = new lbann_data::Rmsprop;
       a->set_learn_rate(learn_rate);
       a->set_decay_rate(decay_rate);
       a->set_eps(eps);
       opt->set_allocated_rmsprop(a);
     } else if (opt_string == "sgd") {
       if (master) std::cerr << "\n\nsetting: sgd\n\n";
-      lbann_data::Sgd *a = new lbann_data::Sgd;
+      auto *a = new lbann_data::Sgd;
       a->set_learn_rate(learn_rate);
       a->set_momentum(momentum);
       a->set_decay_rate(decay_rate);
@@ -2358,10 +2359,10 @@ void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::Lb
 
   out << "# Selected SLURM Environment Variables:\n";
   std::vector<std::string> v = {"HOST", "SLURM_NODELIST", "SLURM_NNODES", "SLURM_NTASKS", "SLURM_TASKS_PER_NODE"};
-  for (size_t i=0; i<v.size(); i++) {
-    char *c = std::getenv(v[i].c_str());
-    if (c != 0) {
-      out << "# " << v[i] << "=" << c << std::endl;
+  for (auto & i : v) {
+    char *c = std::getenv(i.c_str());
+    if (c != nullptr) {
+      out << "# " << i << "=" << c << std::endl;
     }
   }
   out << "\n#\n#\n";

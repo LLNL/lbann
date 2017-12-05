@@ -47,7 +47,7 @@ class greedy_layerwise_autoencoder : public sequential_model {
   /** Copy assignment operator. */
   greedy_layerwise_autoencoder& operator=(const greedy_layerwise_autoencoder&);
   /** Destructor. */
-  ~greedy_layerwise_autoencoder();
+  ~greedy_layerwise_autoencoder() override;
   /** Create copy. */
   greedy_layerwise_autoencoder* copy() const override {
     return new greedy_layerwise_autoencoder(*this);

@@ -212,7 +212,7 @@ void rowwise_mean_and_stdev(const Mat& data,
     const El::Int row_end = std::min(row_start + block_size, height);
 
     // Initialize shift and sums for each row
-    DataType *shifts = new DataType[block_size];
+    auto *shifts = new DataType[block_size];
     for(El::Int row = row_start; row < row_end; ++row) {
       means(row, 0) = 0;
       stdevs(row, 0) = 0;

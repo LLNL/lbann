@@ -108,6 +108,19 @@ void lbann_callback_imcomm::setup(model *m) {
   }
 }
 
+void lbann_callback_imcomm::on_train_begin(model *m) {
+  lbann_comm *comm = m->get_comm();
+  if (comm->get_num_models() == 1) {
+    return;  // No point with only one model.
+  }
+  for (weights *w : m->get_weights()) {
+    AbsDistMat *values = w->get_values().Copy();
+    comm->intermodel_broadcast_matrix(*values, 0);
+    w->set_values(*values);
+    delete values;
+  }
+}
+
 void lbann_callback_imcomm::on_epoch_end(model *m) {
   lbann_comm *comm = m->get_comm();
   if (comm->get_num_models() == 1 ||
@@ -129,6 +142,7 @@ void lbann_callback_imcomm::on_epoch_end(model *m) {
         local_gradients = &(opt->get_gradient().Matrix());
       }
       *local_gradients = params.error;
+      *local_gradients *= DataType(1) / comm->get_num_models();
       // Apply optimizer update with accumulated gradient error.
       opt->step();
       El::Zero(params.error);
@@ -178,6 +192,7 @@ void lbann_callback_imcomm::on_backward_prop_end(model *m) {
       throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: "
          + "imcomm: unknown comm type");
     }
+    *local_gradients *= DataType(1) / comm->get_num_models();
     double im_time = get_time() - start_time;
     do_summary(m, w, im_time);
   }

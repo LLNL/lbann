@@ -202,7 +202,7 @@ void greedy_layerwise_autoencoder::set_phase(int phase) {
   
   // Set objective function to reconstruction layer
   for (auto term : m_objective_function->get_terms()) {
-    loss_function* loss = dynamic_cast<loss_function*>(term);
+    auto* loss = dynamic_cast<loss_function*>(term);
     if (loss != nullptr) {
       loss->set_target_layer((target_layer*) m_reconstruction);
     }
@@ -219,9 +219,9 @@ void greedy_layerwise_autoencoder::restore_sequential_model() {
   m_phase = -1;
 
   // Restore sequential layer order
-  for (size_t i = 0; i < m_sections.size(); ++i) {
-    Layer* prev_layer = m_layers[m_sections[i]-1];
-    Layer* next_layer = m_layers[m_sections[i]];
+  for (int m_section : m_sections) {
+    Layer* prev_layer = m_layers[m_section-1];
+    Layer* next_layer = m_layers[m_section];
     auto& prev_layer_children = prev_layer->get_child_layers();
     auto& next_layer_parents = next_layer->get_parent_layers();
     prev_layer_children[0] = next_layer;
@@ -234,7 +234,7 @@ void greedy_layerwise_autoencoder::restore_sequential_model() {
 
   // Restore objective function to target layer
   for (auto term : m_objective_function->get_terms()) {
-    loss_function* loss = dynamic_cast<loss_function*>(term);
+    auto* loss = dynamic_cast<loss_function*>(term);
     if (loss != nullptr) {
       loss->set_target_layer((target_layer*) m_layers.back());
     }

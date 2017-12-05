@@ -51,7 +51,7 @@ void sequential_model::setup() {
 
   // Setup each layer
   for (size_t l = 0; l < m_layers.size(); ++l) {
-    m_layers[l]->set_neural_network_model(this); /// Provide a reverse point from each layer to the model
+    m_layers[l]->set_model(this);
     if (l > 0) {
       m_layers[l]->add_parent_layer(m_layers[l-1]);
     }

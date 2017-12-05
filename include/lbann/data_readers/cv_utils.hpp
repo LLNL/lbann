@@ -128,7 +128,7 @@ inline bool cv_utils::copy_cvMat_to_buf_with_full_info(
   const int sz = Height*Width;
 
   buf.resize(sz*NCh*sizeof(T));
-  T *Pixels = reinterpret_cast<T *>(&(buf[0]));
+  auto *Pixels = reinterpret_cast<T *>(&(buf[0]));
 
   if (pp.to_split()) {
     // TODO: like the case with the output in El::Matrixi type, branch on whether the
@@ -161,7 +161,7 @@ inline bool cv_utils::copy_cvMat_to_buf_with_full_info(
     } else {
       const int stride = Width*NCh;
       for (int i = 0; i < Height; ++i, Pixels += stride) {
-        const T *ptr = reinterpret_cast<const T *>(image.ptr<const T>(i));
+        const auto *ptr = reinterpret_cast<const T *>(image.ptr<const T>(i));
         cv_normalizer::
         scale(ptr, ptr+stride, Pixels, pp.get_transform_normalize());
       }
@@ -209,7 +209,7 @@ inline cv::Mat cv_utils::copy_buf_to_cvMat_with_full_info(
                         << sz*NCh*sizeof(T) << " are expected.", \
                         cv::Mat())
 
-  const T *Pixels = reinterpret_cast<const T *>(&(buf[0]));
+  const auto *Pixels = reinterpret_cast<const T *>(&(buf[0]));
 
   cv::Mat image = cv::Mat(Height, Width, CV_MAKETYPE(cv::DataType<T>::depth, NCh));
 
@@ -229,7 +229,7 @@ inline cv::Mat cv_utils::copy_buf_to_cvMat_with_full_info(
     }
 
     cv::merge(channels, image);
-    T *optr = reinterpret_cast<T *>(image.data);
+    auto *optr = reinterpret_cast<T *>(image.data);
     for(size_t ch=0; ch < NCh; ++ch, optr += sz) {
       cv_normalizer::
       scale(reinterpret_cast<const T *>(image.datastart),
@@ -259,7 +259,7 @@ inline cv::Mat cv_utils::copy_buf_to_cvMat_with_known_type(
                         "An empty image (" << Height << " x " << Width << ") or a buffer (" << buf.size() << ")", \
                         cv::Mat())
 
-  const size_t sz = static_cast<size_t>(Width*Height*sizeof(T));
+  const auto sz = static_cast<size_t>(Width*Height*sizeof(T));
   const size_t NCh = buf.size()/sz;
 
   _LBANN_MILD_EXCEPTION(sz*NCh != buf.size(), \
@@ -354,7 +354,7 @@ inline bool cv_utils::copy_cvMat_to_buf_with_full_info(
     } else {
       const int stride = Width*NCh;
       for (int i = 0; i < Height; ++i, Pixels += stride) {
-        const T *ptr = reinterpret_cast<const T *>(image.ptr<const T>(i));
+        const auto *ptr = reinterpret_cast<const T *>(image.ptr<const T>(i));
         cv_normalizer::
         scale(ptr, ptr+stride, Pixels, pp.get_transform_normalize());
       }
@@ -424,7 +424,7 @@ inline cv::Mat cv_utils::copy_buf_to_cvMat_with_full_info(
 
       cv::merge(channels, image);
 
-      T *optr = reinterpret_cast<T *>(image.data);
+      auto *optr = reinterpret_cast<T *>(image.data);
 
       for(size_t ch=0; ch < NCh; ++ch, optr += sz) {
         cv_normalizer::

@@ -29,6 +29,7 @@
 #ifndef LBANN_LAYER_POOLING_HPP_INCLUDED
 #define LBANN_LAYER_POOLING_HPP_INCLUDED
 
+#include <utility>
 #include <vector>
 #include "lbann/base.hpp"
 #include "lbann/layers/transform/transform.hpp"
@@ -100,9 +101,9 @@ class pooling_layer : public transform {
                 cudnn::cudnn_manager *cudnn = nullptr)
     : transform(comm),
       m_pool_mode(pool_mode),
-      m_pool_dims(pool_dims),
-      m_pool_pads(pool_pads),
-      m_pool_strides(pool_strides)  {
+      m_pool_dims(std::move(pool_dims)),
+      m_pool_pads(std::move(pool_pads)),
+      m_pool_strides(std::move(pool_strides))  {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "pooling only supports DATA_PARALLEL");
 

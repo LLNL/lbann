@@ -137,14 +137,6 @@ class Layer {
   inline const std::vector<int>& get_neuron_dims() const {
     return m_neuron_dims;
   }
-  /** Return the execution mode. */
-  inline execution_mode get_execution_mode() const {
-    return m_execution_mode;
-  }
-  /** Set the execution mode. */
-  inline void set_execution_mode(execution_mode mode) {
-    m_execution_mode = mode;
-  }
   /** Return the data layout of the given layer -- Every concrete
       layer has to overrride this with its T_layout template parameter */
   virtual data_layout get_data_layout() const = 0;
@@ -175,14 +167,11 @@ class Layer {
     return m_max_num_parent_layers != 1 && m_max_num_parent_layers != 0;
   }
 
-  /** Return the neural network model of this layer. */
-  inline model* get_neural_network_model() const {
-    return m_neural_network_model;
-  }
-  /** Set the neural network model of this layer. */
-  inline void set_neural_network_model(model* const m) {
-    m_neural_network_model = m;
-  }
+  /** Return the model that owns this layer. */
+  inline model* get_model() const { return m_model; }
+  /** Set the model that owns this layer. */
+  inline void set_model(model* m) { m_model = m; }
+
   virtual El::Matrix<El::Int>* get_sample_indices_per_mb() { return nullptr; };
 
   virtual bool saveToFile(int fd, const char *filename) const { return true; };
@@ -195,9 +184,9 @@ class Layer {
   virtual bool loadFromCheckpointShared(persist& p);
 
   /** Get forward propagation output, as seen by next layer. */
-  virtual void get_fp_output(AbsDistMat& fp_output, const Layer* next_layer = NULL) const;
+  virtual void get_fp_output(AbsDistMat& fp_output, const Layer* next_layer = nullptr) const;
   /** Get backward propagation output, as seen by previous layer. */
-  virtual void get_bp_output(AbsDistMat& fp_output, const Layer* prev_layer = NULL) const;
+  virtual void get_bp_output(AbsDistMat& fp_output, const Layer* prev_layer = nullptr) const;
 #ifdef __LIB_CUDNN
   /** Get forward propagation output on GPUs, as seen by next layer.
    *  output_dv is a view into GPU memory for the output. If the
@@ -217,7 +206,7 @@ class Layer {
                                  const Layer* prev_layer = NULL) const;
 #endif // __LIB_CUDNN
   /** Get forward propagation output dimensions, as seen by next layer. */
-  virtual const std::vector<int> fp_output_dims(const Layer* next_layer = NULL) const;
+  virtual const std::vector<int> fp_output_dims(const Layer* next_layer = nullptr) const;
 
   virtual void add_to_error_signal(const AbsDistMat& gradient,
                                    DataType scale = DataType(1)) {
@@ -320,7 +309,7 @@ class Layer {
   int m_max_num_child_layers;
 
   execution_mode  m_execution_mode;
-  model *m_neural_network_model;
+  model *m_model;
 
   /** Setup views of the matrices for the layer's forward propagation. */
   virtual void fp_set_std_matrix_view();

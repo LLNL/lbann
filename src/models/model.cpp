@@ -47,7 +47,7 @@ model::model(lbann_comm *comm,
              objective_function *obj_fn,
              optimizer* default_optimizer)
   : m_objective_function(obj_fn),
-    m_execution_mode(execution_mode::invalid),
+    m_execution_mode(execution_mode::training),
     m_terminate_training(false),
     m_current_epoch(0),
     m_current_step(0),
@@ -88,7 +88,7 @@ model::model(const model& other) :
   m_objective_function->set_model(this);
   for (const auto& metric : other.m_metrics) {
     metrics::metric *m_copy = metric->copy();
-    m_copy->m_neural_network_model = this;
+    m_copy->m_model = this;
     m_metrics.push_back(m_copy);
   }
   for (const auto& cb : other.m_callbacks) {
@@ -97,7 +97,7 @@ model::model(const model& other) :
   std::unordered_map<Layer *,Layer *> old_to_new_layer;
   for (Layer *old_layer : other.m_layers) {
     Layer *new_layer = old_layer->copy();
-    new_layer->set_neural_network_model(this);
+    new_layer->set_model(this);
     old_to_new_layer[old_layer] = new_layer;
     m_layers.push_back(new_layer);
   }
@@ -206,7 +206,7 @@ model& model::operator=(const model& other) {
   }
   for (const auto& metric : other.m_metrics) {
     metrics::metric *m_copy = metric->copy();
-    m_copy->m_neural_network_model = this;
+    m_copy->m_model = this;
     m_metrics.push_back(m_copy);
   }
   for (const auto& cb : other.m_callbacks) {
@@ -215,7 +215,7 @@ model& model::operator=(const model& other) {
   std::unordered_map<Layer *,Layer *> old_to_new_layer;
   for (Layer* old_layer : other.m_layers) {
     Layer* new_layer = old_layer->copy();
-    new_layer->set_neural_network_model(this);
+    new_layer->set_model(this);
     old_to_new_layer[old_layer] = new_layer;
     m_layers.push_back(new_layer);
   }
@@ -367,16 +367,9 @@ optimizer* model::create_optimizer() const {
   }
 }
 
-void model::set_execution_mode(execution_mode mode) {
-  m_execution_mode = mode;
-  for (auto&& l : get_layers()) {
-    l->set_execution_mode(mode);
-  }
-}
-
 bool model::is_execution_mode_valid(execution_mode mode) const {
   for (const Layer *layer : m_layers) {
-    const input_layer *input = dynamic_cast<const input_layer*>(layer);
+    const auto *input = dynamic_cast<const input_layer*>(layer);
     if (input != nullptr
         && !input->is_execution_mode_valid(mode)) {
       return false;

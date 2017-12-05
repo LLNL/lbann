@@ -140,7 +140,9 @@ class model {
     return m_current_testing_step;
   }
   /** Set the model (and all layers') execution mode. */
-  virtual void set_execution_mode(execution_mode mode);
+  inline void set_execution_mode(execution_mode mode) {
+    m_execution_mode = mode;
+  }
   /** Get the model's execution mode. */
   inline execution_mode get_execution_mode() const {
     return m_execution_mode;

@@ -147,7 +147,7 @@ bool cv_normalizer::determine_transform(const cv::Mat& image) {
   std::vector<ComputeType> mean;
   std::vector<ComputeType> stddev;
   const normalization_type code_wo_uscale = mask_normalization_bits(ntype, _z_score);
-  const size_t NCh = static_cast<size_t>(image.channels());
+  const auto NCh = static_cast<size_t>(image.channels());
 
   if (code_wo_uscale != _none) {
     if (!compute_mean_stddev(image, mean, stddev) || (NCh != mean.size())) {

@@ -60,7 +60,7 @@ void dag_model::setup() {
 
   // Setup each layer
   for (Layer* layer : m_layers) {
-    layer->set_neural_network_model(this);
+    layer->set_model(this);
     layer->setup();
     layer->check_setup();
     if (m_comm->am_world_master()) {
