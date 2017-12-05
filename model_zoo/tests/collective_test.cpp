@@ -38,7 +38,7 @@ const int num_trials = 20;
 void add_buffer_into_mat(const uint8_t *buf_, Mat& accum) {
   const El::Int height = accum.Height();
   const El::Int width = accum.Width();
-  const DataType *buf = (const DataType *) buf_;
+  const auto *buf = (const DataType *) buf_;
   DataType *accum_buf = accum.Buffer();
   for (El::Int i = 0; i < height*width; ++i) {
     accum_buf[i] += buf[i];
@@ -184,7 +184,7 @@ void print_stats(const std::vector<double>& times) {
 
 int main(int argc, char **argv) {
   El::Initialize(argc, argv);
-  lbann_comm *comm = new lbann_comm(1);
+  auto *comm = new lbann_comm(1);
   for (El::Int mat_size = 1; mat_size <= 16384; mat_size *= 2) {
     std::vector<double> mpi_times, rd_times, pe_ring_times, ring_times,
         rab_times;

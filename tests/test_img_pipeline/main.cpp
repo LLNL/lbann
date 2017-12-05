@@ -12,12 +12,14 @@
 struct cropper_params {
   bool m_is_set;
   bool m_rand_center;
+  bool m_adaptive_interpolation;
   std::pair<int, int> m_crop_sz;
   std::pair<int, int> m_roi_sz;
 
   cropper_params(void)
     : m_is_set(false),
       m_rand_center(false),
+      m_adaptive_interpolation(false),
       m_crop_sz(std::make_pair(0, 0)),
       m_roi_sz(std::make_pair(0,0)) {}
 };
@@ -93,6 +95,7 @@ int main(int argc, char *argv[]) {
     rp.m_rand_center = static_cast<bool>(atoi(argv[4]));
     rp.m_roi_sz.first = atoi(argv[5]);
     rp.m_roi_sz.second = atoi(argv[6]);
+    //rp.m_adaptive_interpolation = true;
   }
 
   augmenter_params ap;
@@ -202,7 +205,7 @@ bool test_image_io(const std::string filename,
     if (rp.m_is_set) { // If cropper parameters are given
       // Setup a cropper
       std::unique_ptr<lbann::cv_cropper> cropper(new(lbann::cv_cropper));
-      cropper->set(rp.m_crop_sz.first, rp.m_crop_sz.second, rp.m_rand_center, rp.m_roi_sz);
+      cropper->set(rp.m_crop_sz.first, rp.m_crop_sz.second, rp.m_rand_center, rp.m_roi_sz, rp.m_adaptive_interpolation);
       pp.add_transform(std::move(cropper));
       num_bytes = rp.m_crop_sz.first * rp.m_crop_sz.second * 3;
       transform_idx ++;

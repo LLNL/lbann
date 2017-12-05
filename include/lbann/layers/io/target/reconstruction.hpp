@@ -95,7 +95,7 @@ class reconstruction_layer : public target_layer {
 
  protected:
   void fp_set_std_matrix_view() override {
-    int64_t cur_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
+    int64_t cur_mini_batch_size = this->m_model->get_current_mini_batch_size();
 
     target_layer::fp_set_std_matrix_view();
 
@@ -111,8 +111,8 @@ class reconstruction_layer : public target_layer {
     El::Copy(*original_layer_act_v,*this->m_activations_v);
 
     // Compute metrics
-    const int curr_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
-    for (auto&& m : this->m_neural_network_model->get_metrics()) {
+    const int curr_mini_batch_size = this->m_model->get_current_mini_batch_size();
+    for (auto&& m : this->m_model->get_metrics()) {
       double num_errors = m->compute_metric(*this->m_prev_activations_v, *original_layer_act_v);
       m->record_error(num_errors, curr_mini_batch_size);
     }
@@ -123,7 +123,7 @@ class reconstruction_layer : public target_layer {
 
  public:
   bool update_compute() override {
-    if(this->m_execution_mode == execution_mode::training) {
+    if(this->m_model->get_execution_mode() == execution_mode::training) {
       double start = get_time();
       this->update_time += get_time() - start;
     }
@@ -132,7 +132,7 @@ class reconstruction_layer : public target_layer {
 
   void summarize_stats(lbann_summary& summarizer, int step) override {
     std::string tag = this->m_name + "/ReconstructionCost";
-    summarizer.reduce_scalar(tag, this->m_neural_network_model->get_objective_function()->get_history_mean_value(), step);
+    summarizer.reduce_scalar(tag, this->m_model->get_objective_function()->get_history_mean_value(), step);
     // Skip target layer (for now).
     io_layer::summarize_stats(summarizer, step);
   }

@@ -41,13 +41,10 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
 
   // Get model members
   lbann_comm *comm = m->get_comm();
-  std::vector<Layer*>& layers = m->get_layers();
+  const std::vector<Layer*>& layers = m->get_layers();
 
   // Initialize network for testing
   m->set_execution_mode(execution_mode::testing);
-  for (size_t l = 0; l < layers.size(); ++l) {
-    layers[l]->set_execution_mode(execution_mode::testing);
-  }
   layers[0]->forward_prop();
 
   // Compute objective function
@@ -73,6 +70,9 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
   expected_error = std::pow(expected_error, 0.9);
 
   // Compute gradients
+  for (auto layer : layers) {
+    layer->clear_error_signal();
+  }
   m->get_objective_function()->compute_gradient();
   for (int l = layers.size() - 1; l > 0; --l) {
     layers[l]->back_prop();
@@ -135,7 +135,7 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
           const DataType numerical_gradient
             = (- f_2h + 8 * f_h - 8 * f_nh + f_n2h) / (12 * step_size);
           const DataType error = std::fabs(analytical_gradient - numerical_gradient);
-          DataType relative_error = DataType(0);
+          auto relative_error = DataType(0);
           if (error != DataType(0)) {
             relative_error = error / std::max(std::fabs(analytical_gradient),
                                               std::fabs(numerical_gradient));
@@ -176,7 +176,7 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
 }
 
 DataType lbann_callback_gradient_check::compute_objective_function(model *m) {
-  std::vector<Layer*>& layers = m->get_layers();
+  const std::vector<Layer*>& layers = m->get_layers();
   objective_function* obj_fn = m->get_objective_function();
   for (size_t l = 1; l < layers.size(); l++) {
     layers[l]->forward_prop();

@@ -35,7 +35,7 @@ const int lbann_default_random_seed = 42;
 
 int mini_batch_size = 128;
 
-void test_is_shuffled(generic_data_reader *reader, bool is_shuffled, const char *msg = 0);
+void test_is_shuffled(generic_data_reader *reader, bool is_shuffled, const char *msg = nullptr);
 
 int main(int argc, char *argv[]) {
   int random_seed = lbann_default_random_seed;

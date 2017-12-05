@@ -36,12 +36,14 @@
 #ifdef __LIB_OPENCV
 namespace lbann {
 
+const int cv_cropper::m_interpolation_choices[3] = {cv::INTER_LINEAR, cv::INTER_AREA, cv::INTER_LINEAR};
+
 cv_cropper::cv_cropper()
   : cv_transform(), m_width(0u), m_height(0u),
     m_rand_crop(false), m_is_roi_set(false),
     m_roi_size(std::pair<int,int>(0,0)),
-    m_zoom(1.0), m_interpolation(cv::INTER_AREA) {
-}
+    m_zoom(1.0), m_interpolation(m_interpolation_choices[0]),
+    m_adaptive_interpolation(false) {}
 
 
 cv_cropper *cv_cropper::clone() const {
@@ -56,11 +58,13 @@ void cv_cropper::unset_roi() {
 
 void cv_cropper::set(const unsigned int width, const unsigned int height,
                      const bool random_crop,
-                     const std::pair<int, int>& roi_sz) {
+                     const std::pair<int, int>& roi_sz,
+                     const bool adaptive_interpolation) {
   reset();
   m_width = width;
   m_height = height;
   m_rand_crop = random_crop;
+  m_adaptive_interpolation = adaptive_interpolation;
 
   if ((roi_sz.first > 0) && (roi_sz.second > 0)) {
     if (((unsigned) roi_sz.first < width) || ((unsigned) roi_sz.second < height)) {
@@ -83,7 +87,7 @@ void cv_cropper::set(const unsigned int width, const unsigned int height,
 void cv_cropper::reset() {
   m_enabled = false; 
   m_zoom = 1.0;
-  m_interpolation = cv::INTER_AREA;
+  m_interpolation = m_interpolation_choices[0];
 }
 
 bool cv_cropper::determine_transform(const cv::Mat& image) {
@@ -101,13 +105,9 @@ bool cv_cropper::determine_transform(const cv::Mat& image) {
   m_zoom = std::min(zoom_h, zoom_v);
 
   if (m_zoom > 1.0) { // rescales the image by the factor of 1/m_zoom (shrink)
-    m_interpolation = cv::INTER_AREA; // (better for shrinking)
+    m_interpolation =  m_interpolation_choices[static_cast<int>(m_adaptive_interpolation)];
   } else {
-   #if 0
-    m_interpolation = cv::INTER_CUBIC; // (slow but better)
-   #else
-    m_interpolation = cv::INTER_LINEAR; // (faster but ok)
-   #endif
+    m_interpolation =  m_interpolation_choices[static_cast<int>(m_adaptive_interpolation) << 1];
   }
 
   return (m_enabled = true);
@@ -174,7 +174,8 @@ std::string cv_cropper::get_description() const {
   os << get_type() + ":" << std::endl
      << " - crop size: " << m_width  << "x" << m_height << std::endl
      << " - resized size: " << m_roi_size.first << "x" << m_roi_size.second << std::endl
-     << " - random crop: " << m_rand_crop << std::endl;
+     << " - random crop: " << m_rand_crop << std::endl
+     << " - adaptive interpolation: " << m_adaptive_interpolation << std::endl;
   return os.str();
 }
 

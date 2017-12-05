@@ -61,8 +61,8 @@ imagenet_reader_single& imagenet_reader_single::operator=(const imagenet_reader_
 }
 
 imagenet_reader_single::~imagenet_reader_single() {
-  for(size_t i=0u; i < m_data_filestream.size(); ++i) {
-    if (m_data_filestream[i]) delete m_data_filestream[i];
+  for(auto & i : m_data_filestream) {
+    if (i) delete i;
   }
 }
 
@@ -93,13 +93,13 @@ void imagenet_reader_single::load() {
   }
 
   m_offsets.reserve(num_images+1);
-  m_offsets.push_back(std::make_pair(0,0));
+  m_offsets.emplace_back(0,0);
   size_t last_offset = 0u;
   size_t offset = 0u;
   int label = 0;
 
   while (in >> offset >> label) {
-    m_offsets.push_back(std::make_pair(offset + last_offset, label));
+    m_offsets.emplace_back(offset + last_offset, label);
     last_offset = m_offsets.back().first;
   }
 
@@ -185,8 +185,8 @@ void imagenet_reader_single::open_data_stream() {
   const int nthreads = omp_get_max_threads();
   m_work_buffer.resize(nthreads);
 
-  for(size_t i=0u; i < m_data_filestream.size(); ++i) {
-    if (m_data_filestream[i]) delete m_data_filestream[i];
+  for(auto & i : m_data_filestream) {
+    if (i) delete i;
   }
   m_data_filestream.clear();
   m_data_filestream.resize(nthreads);

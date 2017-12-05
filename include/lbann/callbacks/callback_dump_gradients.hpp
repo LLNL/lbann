@@ -29,6 +29,8 @@
 #ifndef LBANN_CALLBACKS_CALLBACK_DUMP_GRADIENTS_HPP_INCLUDED
 #define LBANN_CALLBACKS_CALLBACK_DUMP_GRADIENTS_HPP_INCLUDED
 
+#include <utility>
+
 #include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
@@ -50,7 +52,7 @@ class lbann_callback_dump_gradients : public lbann_callback {
    * @param basename The basename for writing files.
    */
   lbann_callback_dump_gradients(std::string basename, int batch_interval = 1) :
-    lbann_callback(batch_interval), m_basename(basename) {}
+    lbann_callback(batch_interval), m_basename(std::move(basename)) {}
   lbann_callback_dump_gradients(
     const lbann_callback_dump_gradients&) = default;
   lbann_callback_dump_gradients& operator=(

@@ -33,3 +33,13 @@ else()
   target_link_libraries(lbann-bin lbann )
 endif()
 set_target_properties(lbann-bin PROPERTIES OUTPUT_NAME lbann)
+
+
+#this can be done simler - quick copy/paste hack //d hysom
+add_executable( lbann-bin2 lbann2.cpp )
+if(LBANN_HAS_TBINF)
+  target_link_libraries(lbann-bin2 lbann TBinf)
+else()
+  target_link_libraries(lbann-bin2 lbann )
+endif()
+set_target_properties(lbann-bin2 PROPERTIES OUTPUT_NAME lbann2)

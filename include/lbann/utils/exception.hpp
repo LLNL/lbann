@@ -47,9 +47,9 @@ class lbann_exception : public std::exception {
   std::string msg;
 };
 
-inline void lbann_report_exception( lbann_exception& e, lbann_comm *comm=NULL, std::ostream& os=std::cerr) {
+inline void lbann_report_exception( lbann_exception& e, lbann_comm *comm=nullptr, std::ostream& os=std::cerr) {
   if( std::string(e.what()) != "" ) {
-    if(comm != NULL) {
+    if(comm != nullptr) {
       os << "LBANN: rank " << comm->get_rank_in_model() << " of model " << comm->get_model_rank() <<" caught error message:";
     } else {
       os << "LBANN: caught error message:";

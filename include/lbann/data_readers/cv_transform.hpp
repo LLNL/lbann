@@ -198,7 +198,7 @@ inline bool cv_transform::apply(cv::Mat& image) {
 
 /// Return the pointer of a newly copy-constructed object
 inline cv_transform *cv_transform::clone() const {
-  return static_cast<cv_transform *>(NULL);
+  return static_cast<cv_transform *>(nullptr);
 }
 
 //inline std::string cv_transform::get_type() { return "image transform"; }

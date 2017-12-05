@@ -142,8 +142,7 @@ class softmax_layer : public activation_layer {
 
   void setup_data() override {
     activation_layer::setup_data();
-    m_workspace->Resize(
-      1, this->m_neural_network_model->get_max_mini_batch_size());
+    m_workspace->Resize(1, this->m_model->get_max_mini_batch_size());
   }
 
   void setup_gpu() override {
@@ -156,7 +155,7 @@ class softmax_layer : public activation_layer {
   }  
 
   void fp_set_std_matrix_view() override {
-    El::Int cur_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
+    El::Int cur_mini_batch_size = this->m_model->get_current_mini_batch_size();
     Layer::fp_set_std_matrix_view();
     El::View(*m_workspace_v, *m_workspace, El::ALL, El::IR(0, cur_mini_batch_size));
   }

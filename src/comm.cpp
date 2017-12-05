@@ -908,7 +908,7 @@ void lbann_comm::setup_node_comm() {
   const int hash_comm_size = El::mpi::Size(hash_comm);
 
   // Compare node names and split MPI processes
-  char *node_name_list = new char[hash_comm_size*MPI_MAX_PROCESSOR_NAME];
+  auto *node_name_list = new char[hash_comm_size*MPI_MAX_PROCESSOR_NAME];
   checkMPI(MPI_Allgather(node_name, MPI_MAX_PROCESSOR_NAME, MPI_CHAR,
                          node_name_list, MPI_MAX_PROCESSOR_NAME, MPI_CHAR,
                          hash_comm.comm));

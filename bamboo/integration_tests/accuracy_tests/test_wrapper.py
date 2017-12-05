@@ -18,6 +18,7 @@ def run_lbann(executable, test='accuracy_test.sh',model='mnist',optimizer='adagr
 def data_format(res_file):
     with open(res_file) as f:
         acc = map(float,f)
+    os.system('rm ' + res_file)
     return acc
 
 def fetch_expected(master,model,model_num,epochs):
@@ -64,7 +65,9 @@ def general_assert(model):
             epochs = numbers[1]
 
             actual_acc = data_format(filename)
-            os.system('rm res_' + model + '*' )
+            if not actual_acc:
+                print 'LBANN failed to generate results. Please check Bamboo build log'
+                sys.exit(1)
             expected_acc = fetch_expected(lbann_dir + '/bamboo/integration_tests/accuracy_tests/masters.txt',model,model_num,epochs)
             for expected, actual in zip(expected_acc, actual_acc):
                 assert expected <= actual

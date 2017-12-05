@@ -47,36 +47,15 @@ sequential_model::sequential_model(lbann_comm *comm,
                                    optimizer* default_optimizer)
   : model(comm, mini_batch_size, obj_fn, default_optimizer) {}
 
-void sequential_model::remove(int index) {
-  if (m_layers[index]) {
-    delete m_layers[index];
-  }
-  m_layers.erase(m_layers.begin() + index);
-}
-
-void sequential_model::insert(int index, Layer *layer) {
-  m_layers.insert(m_layers.begin() + index, layer);
-}
-
-Layer *sequential_model::swap(int index, Layer *layer) {
-  Layer *tmp = m_layers[index];
-  m_layers[index] = layer;
-  return tmp;
-}
-
 void sequential_model::setup() {
-  setup_subset(0, m_layers.size());
-}
-
-void sequential_model::setup_subset(int start_index, int end_index) {
 
   // Setup each layer
-  for (int l=start_index; l<end_index; ++l) {
-    m_layers[l]->set_neural_network_model(this); /// Provide a reverse point from each layer to the model
+  for (size_t l = 0; l < m_layers.size(); ++l) {
+    m_layers[l]->set_model(this);
     if (l > 0) {
       m_layers[l]->add_parent_layer(m_layers[l-1]);
     }
-    if (l < end_index - 1) {
+    if (l < m_layers.size() - 1) {
       m_layers[l]->add_child_layer(m_layers[l+1]);
     }
     m_layers[l]->setup();
@@ -91,14 +70,6 @@ void sequential_model::setup_subset(int start_index, int end_index) {
 
   // Set up callbacks
   setup_callbacks();
-}
-
-int sequential_model::num_previous_neurons() {
-  if (m_layers.size() == 0) {
-    return -1;
-  }
-  Layer *prev_layer = m_layers.back();
-  return prev_layer->get_num_neurons();
 }
 
 #if 0

@@ -30,6 +30,8 @@
 #ifndef LBANN_CALLBACKS_CALLBACK_DUMP_MINIBATCH_SAMPLE_INDICES_HPP_INCLUDED
 #define LBANN_CALLBACKS_CALLBACK_DUMP_MINIBATCH_SAMPLE_INDICES_HPP_INCLUDED
 
+#include <utility>
+
 #include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
@@ -50,7 +52,7 @@ class lbann_callback_dump_minibatch_sample_indices : public lbann_callback {
    * @param basename The basename for writing files.
    */
   lbann_callback_dump_minibatch_sample_indices(std::string basename, int batch_interval = 1) :
-    lbann_callback(batch_interval), m_basename(basename) {}
+    lbann_callback(batch_interval), m_basename(std::move(basename)) {}
   lbann_callback_dump_minibatch_sample_indices(
     const lbann_callback_dump_minibatch_sample_indices&) = default;
   lbann_callback_dump_minibatch_sample_indices& operator=(

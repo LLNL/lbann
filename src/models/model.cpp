@@ -47,7 +47,7 @@ model::model(lbann_comm *comm,
              objective_function *obj_fn,
              optimizer* default_optimizer)
   : m_objective_function(obj_fn),
-    m_execution_mode(execution_mode::invalid),
+    m_execution_mode(execution_mode::training),
     m_terminate_training(false),
     m_current_epoch(0),
     m_current_step(0),
@@ -88,7 +88,7 @@ model::model(const model& other) :
   m_objective_function->set_model(this);
   for (const auto& metric : other.m_metrics) {
     metrics::metric *m_copy = metric->copy();
-    m_copy->m_neural_network_model = this;
+    m_copy->m_model = this;
     m_metrics.push_back(m_copy);
   }
   for (const auto& cb : other.m_callbacks) {
@@ -97,7 +97,7 @@ model::model(const model& other) :
   std::unordered_map<Layer *,Layer *> old_to_new_layer;
   for (Layer *old_layer : other.m_layers) {
     Layer *new_layer = old_layer->copy();
-    new_layer->set_neural_network_model(this);
+    new_layer->set_model(this);
     old_to_new_layer[old_layer] = new_layer;
     m_layers.push_back(new_layer);
   }
@@ -127,7 +127,7 @@ model::model(const model& other) :
     new_layer->set_layer_pointers(new_layer_pointers);
 
     // Fix weights pointers
-    std::vector<weights *> old_weights = old_layer->get_weights();
+    const std::vector<weights *> old_weights = old_layer->get_weights();
     std::vector<weights *> new_weights;
     for (weights *old_weights_pointer : old_weights) {
       weights *new_weights_pointer = old_to_new_weights[old_weights_pointer];
@@ -146,7 +146,7 @@ model::model(const model& other) :
       new_layer_pointers.push_back(new_layer_pointer);
     }
     m_objective_function->set_layer_pointers(new_layer_pointers);
-    std::vector<weights *> old_weights_pointers = m_objective_function->get_weights_pointers();
+    const std::vector<weights *> old_weights_pointers = m_objective_function->get_weights_pointers();
     std::vector<weights *> new_weights_pointers;
     for (weights *old_weights_pointer : old_weights_pointers) {
       weights *new_weights_pointer = old_to_new_weights[old_weights_pointer];
@@ -171,7 +171,14 @@ model& model::operator=(const model& other) {
   }
   m_metrics.clear();
   m_callbacks.clear();
-  delete_layers();
+  for (Layer *layer : m_layers) {
+    delete layer;
+  }
+  m_layers.clear();
+  for (weights *w : m_weights) {
+    delete w;
+  }
+  m_weights.clear();
 
   // Shallow copies
   m_execution_mode = other.m_execution_mode;
@@ -199,7 +206,7 @@ model& model::operator=(const model& other) {
   }
   for (const auto& metric : other.m_metrics) {
     metrics::metric *m_copy = metric->copy();
-    m_copy->m_neural_network_model = this;
+    m_copy->m_model = this;
     m_metrics.push_back(m_copy);
   }
   for (const auto& cb : other.m_callbacks) {
@@ -208,7 +215,7 @@ model& model::operator=(const model& other) {
   std::unordered_map<Layer *,Layer *> old_to_new_layer;
   for (Layer* old_layer : other.m_layers) {
     Layer* new_layer = old_layer->copy();
-    new_layer->set_neural_network_model(this);
+    new_layer->set_model(this);
     old_to_new_layer[old_layer] = new_layer;
     m_layers.push_back(new_layer);
   }
@@ -238,7 +245,7 @@ model& model::operator=(const model& other) {
     new_layer->set_layer_pointers(new_layer_pointers);
 
     // Fix weights pointers
-    std::vector<weights *> old_weights = old_layer->get_weights();
+    const std::vector<weights *> old_weights = old_layer->get_weights();
     std::vector<weights *> new_weights;
     for (weights *old_weights_pointer : old_weights) {
       weights *new_weights_pointer = old_to_new_weights[old_weights_pointer];
@@ -257,7 +264,7 @@ model& model::operator=(const model& other) {
       new_layer_pointers.push_back(new_layer_pointer);
     }
     m_objective_function->set_layer_pointers(new_layer_pointers);
-    std::vector<weights *> old_weights_pointers = m_objective_function->get_weights_pointers();
+    const std::vector<weights *> old_weights_pointers = m_objective_function->get_weights_pointers();
     std::vector<weights *> new_weights_pointers;
     for (weights *old_weights_pointer : old_weights_pointers) {
       weights *new_weights_pointer = old_to_new_weights[old_weights_pointer];
@@ -279,20 +286,15 @@ model::~model() {
   for (lbann_callback *callback : m_callbacks) {
     delete callback;
   }
-  delete_layers();
+  for (Layer *layer : m_layers) {
+    delete layer;
+  }
   for (weights *w : m_weights) {
     delete w;
   }
   if (m_default_optimizer != nullptr) {
     delete m_default_optimizer;
   }
-}
-
-void model::delete_layers() {
-  for (Layer *layer : m_layers) {
-    delete layer;
-  }
-  m_layers.clear();
 }
 
 ////////////////////////////////////////////////////////////
@@ -365,17 +367,9 @@ optimizer* model::create_optimizer() const {
   }
 }
 
-void model::set_execution_mode(execution_mode mode) {
-  m_execution_mode = mode;
-  std::vector<Layer *>& layers = get_layers();
-  for (auto&& l : layers) {
-    l->set_execution_mode(mode);
-  }
-}
-
 bool model::is_execution_mode_valid(execution_mode mode) const {
   for (const Layer *layer : m_layers) {
-    const input_layer *input = dynamic_cast<const input_layer*>(layer);
+    const auto *input = dynamic_cast<const input_layer*>(layer);
     if (input != nullptr
         && !input->is_execution_mode_valid(mode)) {
       return false;
@@ -407,40 +401,20 @@ void model::evaluate(execution_mode mode) {
 
   // Return early if execution mode is invalid
   if (!is_execution_mode_valid(mode)) return;
-
-  // Initialize model for beginning of evaluation
-  set_execution_mode(mode);
-  m_objective_function->clear_history();
-  for (auto&& m : m_metrics) {
-    m->reset_metric();
+  if (mode != execution_mode::validation
+      && mode != execution_mode::testing) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "invalid execution mode for evaluation";
+    throw lbann_exception(err.str());
   }
 
-  // Start evaluation
-  switch(mode) {
-  case execution_mode::validation:
-    do_validation_begin_cbs();
-    break;
-  case execution_mode::testing:
-    do_test_begin_cbs();
-    break;
-  default:
-    throw lbann_exception("Illegal execution mode in evaluate function");
-  }
+  // Evaluate on all mini-batches
+  setup_epoch(mode);
+  do_evaluate_begin_cbs(mode);
+  while (!evaluate_mini_batch(mode)) {}
+  do_evaluate_end_cbs(mode);
 
-  // Evaluate on mini-batches until data set is finished
-  while (!evaluate_mini_batch()) {}
-
-  // Finish evaluation
-  switch(mode) {
-  case execution_mode::validation:
-    do_validation_end_cbs();
-    break;
-  case execution_mode::testing:
-    do_test_end_cbs();
-    break;
-  default:
-    throw lbann_exception("Illegal execution mode in evaluate function");
-  }
 }
 
 void model::train(int num_epochs) {
@@ -448,96 +422,74 @@ void model::train(int num_epochs) {
   for (int epoch = 0; epoch < num_epochs; ++epoch) {
 
     // Stop if training has been terminated
-    if (get_terminate_training()) {
-      break;
-    }
-    
-    // Initialize model for beginning of training epoch
-    set_execution_mode(execution_mode::training);
-    m_objective_function->clear_history();
-    for (auto&& m : m_metrics) {
-      m->reset_metric();
-    }
+    if (get_terminate_training()) { break; }
 
-    // Start epoch
+    // Setup epoch
+    setup_epoch(execution_mode::training);
     ++m_current_epoch;
+
+    // Train on mini-batches and evalaute on validation set
     do_epoch_begin_cbs();
-
-    // Train on mini-batches until data set is finished
     while (!train_mini_batch()) {}
-
-    // Evaluate model on validation set
     evaluate(execution_mode::validation);
-
-    // Finish epoch
     do_epoch_end_cbs();
 
   }
   do_train_end_cbs();
 }
 
-void model::forward_prop_to_evaluate() {
-
-  // Forward propagation
-  do_model_evaluate_forward_prop_begin_cbs();
-  for (Layer *layer : m_layers) {
-    do_layer_evaluate_forward_prop_begin_cbs(layer);
-    layer->forward_prop();
-    do_layer_evaluate_forward_prop_end_cbs(layer);
-  }
-  do_model_evaluate_forward_prop_end_cbs();
-
-}
-
-void model::reset_layers() {
-  for (Layer *layer : m_layers) {
-    layer->reset();
+void model::setup_epoch(execution_mode mode) {
+  set_execution_mode(mode);
+  m_objective_function->clear_history();
+  for (auto&& m : m_metrics) {
+    m->reset_metric();
   }
 }
 
-bool model::update_layers() {
-  bool finished = true;
-  for (int l = m_layers.size() - 1; l >= 0; --l) {
-    finished = m_layers[l]->update() && finished;
-  }
+bool model::evaluate_mini_batch(execution_mode mode) {
+  do_batch_begin_cbs(mode);
+  forward_prop(mode);
+  m_objective_function->compute_value();
+  const bool finished = update_layers();
+  do_batch_end_cbs(mode);
   return finished;
 }
 
-bool model::evaluate_mini_batch() {
-  do_batch_evaluate_begin_cbs();
+bool model::train_mini_batch() {
+  do_batch_begin_cbs(execution_mode::training);
 
-  reset_layers();
-
-  forward_prop_to_evaluate();
-
-  // Compute objective function value
+  // Forward prop step
+  forward_prop(execution_mode::training);
   m_objective_function->compute_value();
 
+  // Backward prop step
+  clear_error_signals();
+  m_objective_function->compute_gradient();
+  backward_prop();
+
+  // Update step
+  update_weights();
   const bool finished = update_layers();
 
-  // Finish up
-  do_batch_evaluate_end_cbs();
-  switch(m_execution_mode) {
-  case execution_mode::validation:
-    ++m_current_validation_step;
-    break;
-  case execution_mode::testing:
-    ++m_current_testing_step;
-    break;
-  default:
-    throw lbann_exception("Illegal execution mode in evaluate mini-batch function");
-  }
+  do_batch_end_cbs(execution_mode::training);
+  ++m_current_step;
   return finished;
 }
 
-void model::forward_prop() {
-  do_model_forward_prop_begin_cbs();
+void model::clear_error_signals() {
   for (Layer *layer : m_layers) {
-    do_layer_forward_prop_begin_cbs(layer);
-    layer->forward_prop();
-    do_layer_forward_prop_end_cbs(layer);
+    layer->clear_error_signal();
   }
-  do_model_forward_prop_end_cbs();
+}
+
+void model::forward_prop(execution_mode mode) {
+  do_model_forward_prop_begin_cbs(mode);
+  for (Layer *layer : m_layers) {
+    do_layer_forward_prop_begin_cbs(mode, layer);
+    layer->forward_prop();
+    do_layer_forward_prop_end_cbs(mode, layer);
+  }
+  do_model_forward_prop_end_cbs(mode);
 }
 
 void model::backward_prop() {
@@ -551,34 +503,20 @@ void model::backward_prop() {
   do_model_backward_prop_end_cbs();
 }
 
-bool model::train_mini_batch() {
-  do_batch_begin_cbs();
-
-  // Reset matrices
-  reset_layers();
-
-  forward_prop();
-
-  // Compute objective function value
-  m_objective_function->compute_value();
-
-  // Compute gradients
-  m_objective_function->compute_gradient();
-  backward_prop();
-
-  // Update weights
+void model::update_weights() {
   for (weights* w : m_weights) {
     optimizer* opt = w->get_optimizer();
     if (opt != nullptr) {
       opt->step();
     }
   }
+}
 
-  const bool finished = update_layers();
-
-  // Finish up
-  do_batch_end_cbs();
-  ++m_current_step;
+bool model::update_layers() {
+  bool finished = true;
+  for (int l = m_layers.size() - 1; l >= 0; --l) {
+    finished = m_layers[l]->update() && finished;
+  }
   return finished;
 }
 
@@ -604,9 +542,35 @@ void model::do_train_end_cbs() {
   }
 }
 
-void model::do_phase_end_cbs() {
+void model::do_evaluate_begin_cbs(execution_mode mode) {
   for (auto&& cb : m_callbacks) {
-    cb->on_phase_end(this);
+    switch (mode) {
+    case execution_mode::validation:
+      cb->on_validation_begin(this); break;
+    case execution_mode::testing:
+      cb->on_test_begin(this); break;
+    default:
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "invalid execution mode";
+      throw lbann_exception(err.str());
+    }
+  }
+}
+
+void model::do_evaluate_end_cbs(execution_mode mode) {
+  for (auto&& cb : m_callbacks) {
+    switch (mode) {
+    case execution_mode::validation:
+      cb->on_validation_end(this); break;
+    case execution_mode::testing:
+      cb->on_test_end(this); break;
+    default:
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "invalid execution mode";
+      throw lbann_exception(err.str());
+    }
   }
 }
 
@@ -622,75 +586,129 @@ void model::do_epoch_end_cbs() {
   }
 }
 
-void model::do_batch_begin_cbs() {
+void model::do_batch_begin_cbs(execution_mode mode) {
   for (auto&& cb : m_callbacks) {
-    if (get_cur_step() % cb->get_batch_interval() == 0) {
-      cb->on_batch_begin(this);
+    switch (mode) {
+    case execution_mode::training:
+      if (get_cur_step() % cb->get_batch_interval() == 0) {
+        cb->on_batch_begin(this);
+      }
+      break;
+    case execution_mode::validation:
+    case execution_mode::testing:
+      cb->on_batch_evaluate_begin(this);
+      break;
+    default:
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "invalid execution mode";
+      throw lbann_exception(err.str());
     }
   }
 }
 
-void model::do_batch_end_cbs() {
+void model::do_batch_end_cbs(execution_mode mode) {
   for (auto&& cb : m_callbacks) {
-    if (get_cur_step() % cb->get_batch_interval() == 0) {
-      cb->on_batch_end(this);
+    switch (mode) {
+    case execution_mode::training:
+      if (get_cur_step() % cb->get_batch_interval() == 0) {
+        cb->on_batch_end(this);
+      }
+      break;
+    case execution_mode::validation:
+    case execution_mode::testing:
+      cb->on_batch_evaluate_end(this);
+      break;
+    default:
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "invalid execution mode";
+      throw lbann_exception(err.str());
     }
   }
 }
 
-void model::do_test_begin_cbs() {
+void model::do_model_forward_prop_begin_cbs(execution_mode mode) {
   for (auto&& cb : m_callbacks) {
-    cb->on_test_begin(this);
-  }
-}
-
-void model::do_test_end_cbs() {
-  for (auto&& cb : m_callbacks) {
-    cb->on_test_end(this);
-  }
-}
-
-void model::do_validation_begin_cbs() {
-  for (auto&& cb : m_callbacks) {
-    cb->on_validation_begin(this);
-  }
-}
-
-void model::do_validation_end_cbs() {
-  for (auto&& cb : m_callbacks) {
-    cb->on_validation_end(this);
-  }
-}
-
-void model::do_model_forward_prop_begin_cbs() {
-  for (auto&& cb : m_callbacks) {
-    if (get_cur_step() % cb->get_batch_interval() == 0) {
-      cb->on_forward_prop_begin(this);
+    switch (mode) {
+    case execution_mode::training:
+      if (get_cur_step() % cb->get_batch_interval() == 0) {
+        cb->on_forward_prop_begin(this);
+      }
+      break;
+    case execution_mode::validation:
+    case execution_mode::testing:
+      cb->on_evaluate_forward_prop_begin(this);
+      break;
+    default:
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "invalid execution mode";
+      throw lbann_exception(err.str());
     }
   }
 }
 
-void model::do_layer_forward_prop_begin_cbs(Layer *l) {
+void model::do_model_forward_prop_end_cbs(execution_mode mode) {
   for (auto&& cb : m_callbacks) {
-    if (get_cur_step() % cb->get_batch_interval() == 0) {
-      cb->on_forward_prop_begin(this, l);
+    switch (mode) {
+    case execution_mode::training:
+      if (get_cur_step() % cb->get_batch_interval() == 0) {
+        cb->on_forward_prop_end(this);
+      }
+      break;
+    case execution_mode::validation:
+    case execution_mode::testing:
+      cb->on_evaluate_forward_prop_end(this);
+      break;
+    default:
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "invalid execution mode";
+      throw lbann_exception(err.str());
     }
   }
 }
 
-void model::do_model_forward_prop_end_cbs() {
+void model::do_layer_forward_prop_begin_cbs(execution_mode mode, Layer *l) {
   for (auto&& cb : m_callbacks) {
-    if (get_cur_step() % cb->get_batch_interval() == 0) {
-      cb->on_forward_prop_end(this);
-    }
+    switch (mode) {
+    case execution_mode::training:
+      if (get_cur_step() % cb->get_batch_interval() == 0) {
+        cb->on_forward_prop_begin(this, l);
+      }
+      break;
+    case execution_mode::validation:
+    case execution_mode::testing:
+      cb->on_evaluate_forward_prop_begin(this, l);
+      break;
+    default:
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "invalid execution mode";
+      throw lbann_exception(err.str());
+    }      
   }
 }
 
-void model::do_layer_forward_prop_end_cbs(Layer *l) {
+void model::do_layer_forward_prop_end_cbs(execution_mode mode, Layer *l) {
   for (auto&& cb : m_callbacks) {
-    if (get_cur_step() % cb->get_batch_interval() == 0) {
-      cb->on_forward_prop_end(this, l);
-    }
+    switch (mode) {
+    case execution_mode::training:
+      if (get_cur_step() % cb->get_batch_interval() == 0) {
+        cb->on_forward_prop_end(this, l);
+      }
+      break;
+    case execution_mode::validation:
+    case execution_mode::testing:
+      cb->on_evaluate_forward_prop_end(this, l);
+      break;
+    default:
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "invalid execution mode";
+      throw lbann_exception(err.str());
+    }      
   }
 }
 
@@ -698,14 +716,6 @@ void model::do_model_backward_prop_begin_cbs() {
   for (auto&& cb : m_callbacks) {
     if (get_cur_step() % cb->get_batch_interval() == 0) {
       cb->on_backward_prop_begin(this);
-    }
-  }
-}
-
-void model::do_layer_backward_prop_begin_cbs(Layer *l) {
-  for (auto&& cb : m_callbacks) {
-    if (get_cur_step() % cb->get_batch_interval() == 0) {
-      cb->on_backward_prop_begin(this, l);
     }
   }
 }
@@ -718,51 +728,19 @@ void model::do_model_backward_prop_end_cbs() {
   }
 }
 
+void model::do_layer_backward_prop_begin_cbs(Layer *l) {
+  for (auto&& cb : m_callbacks) {
+    if (get_cur_step() % cb->get_batch_interval() == 0) {
+      cb->on_backward_prop_begin(this, l);
+    }
+  }
+}
+
 void model::do_layer_backward_prop_end_cbs(Layer *l) {
   for (auto&& cb : m_callbacks) {
     if (get_cur_step() % cb->get_batch_interval() == 0) {
       cb->on_backward_prop_end(this, l);
     }
-  }
-}
-
-void model::do_batch_evaluate_begin_cbs() {
-  for (auto&& cb : m_callbacks) {
-    if (get_cur_step() % cb->get_batch_interval() == 0) {
-      cb->on_batch_evaluate_begin(this);
-    }
-  }
-}
-
-void model::do_batch_evaluate_end_cbs() {
-  for (auto&& cb : m_callbacks) {
-    if (get_cur_step() % cb->get_batch_interval() == 0) {
-      cb->on_batch_evaluate_end(this);
-    }
-  }
-}
-
-void model::do_model_evaluate_forward_prop_begin_cbs() {
-  for (auto&& cb : m_callbacks) {
-    cb->on_evaluate_forward_prop_begin(this);
-  }
-}
-
-void model::do_layer_evaluate_forward_prop_begin_cbs(Layer *l) {
-  for (auto&& cb : m_callbacks) {
-    cb->on_evaluate_forward_prop_begin(this, l);
-  }
-}
-
-void model::do_model_evaluate_forward_prop_end_cbs() {
-  for (auto&& cb : m_callbacks) {
-    cb->on_evaluate_forward_prop_end(this);
-  }
-}
-
-void model::do_layer_evaluate_forward_prop_end_cbs(Layer *l) {
-  for (auto&& cb : m_callbacks) {
-    cb->on_evaluate_forward_prop_end(this, l);
   }
 }
 

@@ -86,7 +86,7 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
   void setup_data() override {
     target_layer::setup_data();
 
-    int max_mb_size = this->m_neural_network_model->get_max_mini_batch_size();
+    int max_mb_size = this->m_model->get_max_mini_batch_size();
     Y_local.Resize(this->m_num_neurons, max_mb_size);
     Ys.Resize(this->m_num_neurons, max_mb_size);
 
@@ -97,7 +97,7 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
 
   void fp_set_std_matrix_view() override {
     target_layer::fp_set_std_matrix_view();
-    El::Int cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
+    El::Int cur_mini_batch_size = m_model->get_current_mini_batch_size();
     El::View(Y_local_v, Y_local, El::ALL, El::IR(0, cur_mini_batch_size));
   }
 
@@ -108,7 +108,7 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
       target_layer::update_num_samples_processed(num_samples_in_batch);
     }
 
-    int curr_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
+    int curr_mini_batch_size = this->m_model->get_current_mini_batch_size();
     if(is_current_root() && num_samples_in_batch != curr_mini_batch_size) {
       throw lbann_exception("lbann_target_layer_distributed_minibatch: number of labels ("
                             + std::to_string(num_samples_in_batch) + ") does not match the current mini-batch size (" 
@@ -119,7 +119,7 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
     distribute_from_local_matrix(Y_local, Ys, paired_input_layer->get_data_reader());
     Copy(Ys, *this->m_activations);
 
-    for (auto&& m : this->m_neural_network_model->get_metrics()) {
+    for (auto&& m : this->m_model->get_metrics()) {
       double num_errors = m->compute_metric(*this->m_prev_activations_v, *this->m_activations_v);
       m->record_error(num_errors, curr_mini_batch_size);
     }
@@ -140,9 +140,6 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
     return;
   }
 
-  execution_mode get_execution_mode() const {
-    return this->m_execution_mode;
-  }
 };
 
 }  // namespace lbann

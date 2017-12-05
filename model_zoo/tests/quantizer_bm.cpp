@@ -233,7 +233,7 @@ void test_mat(lbann_comm *comm, DistMat& mat) {
 
 int main(int argc, char **argv) {
   El::Initialize(argc, argv);
-  lbann_comm *comm = new lbann_comm(1);
+  auto *comm = new lbann_comm(1);
   normal_summarizer = new lbann_summary("qbm/normal", comm);
   onebit_summarizer = new lbann_summary("qbm/onebit", comm);
   //thresh_summarizer = new lbann_summary("qbm/thresh", comm);

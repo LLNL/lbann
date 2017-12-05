@@ -146,12 +146,12 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
     // Use the predetermined size of the mini-batch to set the current
     // batch size for the neural network
     El::Int cur_mini_batch_size = get_current_mini_batch_size();
-    this->m_neural_network_model->set_current_mini_batch_size(cur_mini_batch_size);
+    this->m_model->set_current_mini_batch_size(cur_mini_batch_size);
 
     // Use the precomputed size of the global mini-batch to set the
     // current effective batch size across all models
     int total_mini_batch_size = get_current_global_mini_batch_size();
-    this->m_neural_network_model->set_effective_mini_batch_size(total_mini_batch_size);
+    this->m_model->set_effective_mini_batch_size(total_mini_batch_size);
 
     // Once the current mini-batch size is defined, set the standard view for activations only
     El::View(*m_activations_v, *m_activations, El::ALL, El::IR(0, cur_mini_batch_size));
@@ -163,14 +163,11 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   //************************************************************************
   // Helper functions to access the data readers
   //************************************************************************
-  execution_mode get_execution_mode() const {
-    return this->m_execution_mode;
-  }
 
   generic_data_reader *get_data_reader(const execution_mode mode) const {
     generic_data_reader *data_reader = nullptr;
   
-    data_reader_map_t::const_iterator it = m_data_readers.find(mode);
+    auto it = m_data_readers.find(mode);
     if (it != m_data_readers.end()) data_reader = it->second;
 
     switch(mode) {
@@ -189,7 +186,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   }
 
   generic_data_reader *get_data_reader() const {
-    return get_data_reader(get_execution_mode());
+    return get_data_reader(this->m_model->get_execution_mode());
   }
 
   virtual int get_num_parallel_readers(execution_mode mode) const {
@@ -198,7 +195,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   }
 
   virtual int get_num_parallel_readers() const {
-    return get_num_parallel_readers(get_execution_mode());
+    return get_num_parallel_readers(this->m_model->get_execution_mode());
   }
 
   virtual int get_num_iterations_per_epoch(execution_mode mode) const {
@@ -207,7 +204,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   }
 
   virtual int get_num_iterations_per_epoch() const {
-    return get_num_iterations_per_epoch(get_execution_mode());
+    return get_num_iterations_per_epoch(this->m_model->get_execution_mode());
   }
 
   virtual int get_current_step_in_epoch(execution_mode mode) const {
@@ -216,7 +213,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   }
 
   virtual int get_current_step_in_epoch() const {
-    return get_current_step_in_epoch(get_execution_mode());
+    return get_current_step_in_epoch(this->m_model->get_execution_mode());
   }
 
   virtual int get_mini_batch_size(execution_mode mode) const {
@@ -230,7 +227,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   }
 
   virtual int get_last_mini_batch_size() const {
-    return get_last_mini_batch_size(get_execution_mode());
+    return get_last_mini_batch_size(this->m_model->get_execution_mode());
   }
 
   virtual int get_current_mini_batch_size(execution_mode mode) const {
@@ -239,7 +236,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   }
 
   virtual int get_current_mini_batch_size() const {
-    return get_current_mini_batch_size(get_execution_mode());
+    return get_current_mini_batch_size(this->m_model->get_execution_mode());
   }
 
   virtual int get_global_mini_batch_size(execution_mode mode) const {
@@ -258,7 +255,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   }
 
   virtual int get_current_global_mini_batch_size() const {
-    return get_current_global_mini_batch_size(get_execution_mode());
+    return get_current_global_mini_batch_size(this->m_model->get_execution_mode());
   }
 
   /** Calculate how many iterations are required for training, testing,
@@ -331,8 +328,8 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   /**
    * Return the dataset associated with the current execution mode.
    */
-  dataset& select_dataset() override { return get_dataset(m_execution_mode); }
-  const dataset& select_dataset() const override { return get_dataset(m_execution_mode); }
+  dataset& select_dataset() override { return get_dataset(m_model->get_execution_mode()); }
+  const dataset& select_dataset() const override { return get_dataset(m_model->get_execution_mode()); }
 
   /**
    * Return the first dataset with a valid (non-null) datareader.

@@ -102,7 +102,7 @@ class convolution_layer : public base_convolution_layer {
                     int conv_pad,
                     int conv_stride,
                     bool has_bias = true,
-                    cudnn::cudnn_manager *cudnn = NULL)
+                    cudnn::cudnn_manager *cudnn = nullptr)
     : convolution_layer(comm,
                         num_data_dims,
                         num_output_channels,
@@ -119,7 +119,7 @@ class convolution_layer : public base_convolution_layer {
                     std::vector<int> conv_pads,
                     std::vector<int> conv_strides,
                     bool has_bias = true,
-                    cudnn::cudnn_manager *cudnn = NULL)
+                    cudnn::cudnn_manager *cudnn = nullptr)
     : base_convolution_layer(comm,
                              num_data_dims,
                              num_output_channels,

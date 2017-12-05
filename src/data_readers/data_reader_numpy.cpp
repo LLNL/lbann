@@ -169,7 +169,7 @@ bool numpy_reader::fetch_response(Mat& Y, int data_id, int mb_idx, int tid) {
   if (!m_has_responses) {
     throw lbann_exception("numpy_reader: do not have responses");
   }
-  DataType response = DataType(0);
+  auto response = DataType(0);
   if (m_data.word_size == 4) {
     float *data = m_data.data<float>() + data_id*(m_num_features+1);
     response = (DataType) data[m_num_features+1];

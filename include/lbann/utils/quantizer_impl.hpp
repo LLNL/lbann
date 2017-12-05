@@ -71,7 +71,7 @@ void lbann_quantizer::adaptive_quantize(
   const adaptive_thresholds threshes =
     proportion_threshold(mat, qerror, proportion);
   // This is for accessing q in different ways.
-  colT *q_col = (colT *) q.data();
+  auto *q_col = (colT *) q.data();
   #pragma omp parallel firstprivate(threshes, height, width, ldim, mat_buf, qerror_buf) num_threads(num_threads)
   {
     const int tid = omp_get_thread_num();
@@ -186,7 +186,7 @@ void lbann_quantizer::adaptive_unquantize(
   const colT height = mat.Height();
 #endif
   const colT ldim = mat.LDim();
-  const colT *q_col = (const colT *) q;
+  const auto *q_col = (const colT *) q;
   const int num_threads = get_adaptive_quantization_threads(mat.Width());
   #pragma omp parallel for schedule(dynamic, 1), firstprivate(header_len, buf) num_threads(num_threads)
   for (colT header_loc = 0; header_loc < header_len; header_loc += HEADER_FACTOR) {
@@ -239,7 +239,7 @@ void lbann_quantizer::adaptive_unquantize_add(
   const colT height = mat.Height();
 #endif
   const colT ldim = mat.LDim();
-  const colT *q_col = (const colT *) q;
+  const auto *q_col = (const colT *) q;
   const int num_threads = get_adaptive_quantization_threads(mat.Width());
   #pragma omp parallel for schedule(dynamic, 1), firstprivate(header_len, buf) num_threads(num_threads)
   for (colT header_loc = 0; header_loc < header_len; header_loc += HEADER_FACTOR) {
@@ -301,7 +301,7 @@ void lbann_quantizer::adaptive_quantize_replace(
   // Compute the thresholds.
   const adaptive_thresholds threshes =
     proportion_threshold(mat, qerror, proportion);
-  colT *q_col = (colT *) q.data();
+  auto *q_col = (colT *) q.data();
   #pragma omp parallel firstprivate(threshes, height, width, ldim, mat_buf, qerror_buf) num_threads(num_threads)
   {
     const int tid = omp_get_thread_num();
@@ -415,7 +415,7 @@ void lbann_quantizer::adaptive_bound(
   const colT header_len = row_header_factor * HEADER_FACTOR * width +
                           row_header_factor;
   const colT num_quantized = q.size() - header_len;
-  colT *q_col = (colT *) q.data();
+  auto *q_col = (colT *) q.data();
   if (num_quantized > MAX_QUANTIZED_EXCESS * width * height / proportion) {
     // Ensure there is a maximum bound on the number of entries sent.
     // This should only occur if the threshold sampling is really bad.
@@ -475,10 +475,10 @@ void lbann_quantizer::adaptive_quantize_slice(
   const colT header_len = row_header_factor * width * HEADER_FACTOR +
                           row_header_factor;
   // Copy the header over. Locations will need to be adjusted later.
-  const colT *q_col = (const colT *) q.data();
+  const auto *q_col = (const colT *) q.data();
   const colT total_len = header_len + q_col[HEADER_FACTOR * end] - q_col[HEADER_FACTOR * start];
   slice.resize(total_len);
-  colT *slice_col = (colT *) slice.data();
+  auto *slice_col = (colT *) slice.data();
   std::copy(&q_col[HEADER_FACTOR*start], &q_col[HEADER_FACTOR*end + 1],
             slice_col);
   // Copy data over.

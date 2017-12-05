@@ -52,7 +52,9 @@ class objective_function {
    *  term and deallocates it during destruction.
    */
   void add_term(objective_function_term* term) { m_terms.push_back(term); }
-  
+  /** Get list of objective function terms. */
+  std::vector<objective_function_term*> get_terms() { return m_terms; }
+
   /** Setup objective function. */
   void setup(model& m);
   
@@ -75,16 +77,16 @@ class objective_function {
   DataType get_history_mean_value() const;
 
   /** Get model that owns this objective function. */
-  model* get_model() { return m_model; }
+  model* get_model() const { return m_model; }
   /** Set model that owns this objective function. */
   void set_model(model* m) { m_model = m; }
 
   /** Get list of pointers to layers. */
-  std::vector<Layer*> get_layer_pointers();
+  std::vector<Layer*> get_layer_pointers() const;
   /** Set list of pointers to layers. */
   void set_layer_pointers(std::vector<Layer*> layers);
   /** Get list of pointers to weights. */
-  std::vector<weights*> get_weights_pointers();
+  std::vector<weights*> get_weights_pointers() const;
   /** Set list of pointers to weights. */
   void set_weights_pointers(std::vector<weights*> w);
 

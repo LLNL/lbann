@@ -81,7 +81,7 @@ void objective_function::setup(model& m) {
 
 DataType objective_function::compute_value() {
   double value_start = get_time();
-  DataType value = DataType(0);
+  auto value = DataType(0);
   for (objective_function_term *term : m_terms) {
     value += term->compute_value();
   }
@@ -111,7 +111,7 @@ DataType objective_function::get_history_mean_value() const {
           / m_history.size());
 }
 
-std::vector<Layer*> objective_function::get_layer_pointers() {
+std::vector<Layer*> objective_function::get_layer_pointers() const {
   std::vector<Layer*> layers;
   for (objective_function_term *term : m_terms) {
     std::vector<Layer*> term_layers = term->get_layer_pointers();
@@ -138,7 +138,7 @@ void objective_function::set_layer_pointers(std::vector<Layer*> layers) {
   }
 }
 
-std::vector<weights*> objective_function::get_weights_pointers() {
+std::vector<weights*> objective_function::get_weights_pointers() const {
   std::vector<weights*> w;
   for (objective_function_term *term : m_terms) {
     std::vector<weights*> term_weights = term->get_weights_pointers();
