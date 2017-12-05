@@ -99,6 +99,7 @@
 #include "lbann/data_readers/data_reader_merge_samples.hpp"
 #include "lbann/data_readers/data_reader_merge_features.hpp"
 #include "lbann/data_readers/data_reader_ascii.hpp"
+#include "lbann/data_readers/data_reader_pilot2_molecular.hpp"
 
 /// Callbacks
 #include "lbann/callbacks/callback_check_init.hpp"

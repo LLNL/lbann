@@ -28,12 +28,14 @@
 
 #include "lbann/lbann.hpp"
 #include "lbann/proto/proto_common.hpp"
+#include "lbann/utils/protobuf_utils.hpp"
 
 using namespace lbann;
 
 const int lbann_default_random_seed = 42;
 
-model * build_model_from_prototext(int argc, char **argv, std::string model_fn, std::string reader_fn, std::string optimizer_fn); 
+model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &pb);
+          
 
 int main(int argc, char *argv[]) {
   int random_seed = lbann_default_random_seed;
@@ -56,52 +58,35 @@ int main(int argc, char *argv[]) {
 
     std::stringstream err;
 
-    // Get input prototext filename(s)
-    if (! (opts->has_string("model") and opts->has_string("reader") and opts->has_string("optimizer"))) {
-      if (master) {  
-        err << __FILE__ << " " << __LINE__
-            << 
-            " :: you must pass the cmd line options:\n" 
-            "       --model=<string> --reader=<string> --optimizer=<string>\n"
-            "    and optionally a second model:\n"
-            "       --model_2=<string> --reader_2=<string> --optimizer_2=<string>\n";
-        throw lbann_exception(err.str());
-      }
-    }
+    std::vector<lbann_data::LbannPB *> pbs;
+    protobuf_utils::load_prototext(master, argc, argv, pbs);
 
-
-
-    model *model_1 = build_model_from_prototext(
-      argc, argv, 
-      opts->get_string("model"), 
-      opts->get_string("reader"), 
-      opts->get_string("optimizer"));
-
+    model *model_1 = build_model_from_prototext(argc, argv, *(pbs[0]));
     model *model_2 = nullptr;
-    if (opts->has_string("model_2")) {
-      model_2 = build_model_from_prototext(
-        argc, argv, 
-        opts->get_string("model_2"), 
-        opts->get_string("reader_2"), 
-        opts->get_string("optimizer_2"));
+    if (pbs.size() > 1) {
+      model_2 = build_model_from_prototext(argc, argv, *(pbs[1]));
     }
 
+    // Train model
+    if (master) std::cerr << "\nSTARTING train - 1\n\n";
+    const lbann_data::Model pb_model = pbs[0]->model();
+    model_1->train( pb_model.num_epochs() );
+    model_1->evaluate(execution_mode::testing);
 
-      // Train model
-      model_1->train(10); //need to do something better here!
-
-      model_1->evaluate(execution_mode::testing);
-
-      if (model_2 != nullptr) {
-        //move or copy stuph from model to model_2?
-        model_2->train(10);
-        model_2->evaluate(execution_mode::testing);
-      }
-
+    if (model_2 != nullptr) {
+      if (master) std::cerr << "\nSTARTING train - 2\n\n";
+      const lbann_data::Model pb_model_2 = pbs[1]->model();
+      //move or copy stuph from model to model_2?
+      model_2->train( pb_model_2.num_epochs() );
+      model_2->evaluate(execution_mode::testing);
+    }
 
     delete model_1;
     if (model_2 != nullptr) {
       delete model_2;
+    }
+    for (auto t : pbs) {
+      delete t;
     }
 
   } catch (lbann_exception& e) {
@@ -115,14 +100,16 @@ int main(int argc, char *argv[]) {
   return 0;
 }
    
-model * build_model_from_prototext(int argc, char **argv, std::string model_fn, std::string reader_fn, std::string optimizer_fn) {
+model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &pb) {
   int random_seed = lbann_default_random_seed;
   lbann_comm *comm = initialize(argc, argv, random_seed);
   bool master = comm->am_world_master();
+  if (master) std::cerr << "starting build_model_from_prototext\n";
   model *model = nullptr; //d hysom bad namimg! should fix
   try {
     std::stringstream err;
 
+#if 0
     lbann_data::LbannPB pb;
     read_prototext_file(model_fn, pb, master);
     lbann_data::LbannPB pb_reader;
@@ -133,10 +120,12 @@ model * build_model_from_prototext(int argc, char **argv, std::string model_fn, 
     read_prototext_file(optimizer_fn, pb_optimizer, master);
     pb.MergeFrom(pb_optimizer);
 
-    lbann_data::Model *pb_model = pb.mutable_model();
+#endif
 
     // Optionally over-ride some values in prototext
     get_cmdline_overrides(comm, pb);
+
+    lbann_data::Model *pb_model = pb.mutable_model();
 
     // Adjust the number of parallel readers; this may be adjusted
     // after calling split_models()

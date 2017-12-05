@@ -39,7 +39,8 @@ namespace lbann {
  */
 class pilot2_molecular_reader : public generic_data_reader {
  public:
-  pilot2_molecular_reader(int num_neighbors, 
+  pilot2_molecular_reader(int num_neighbors,
+                          int max_neighborhood,
                           bool shuffle = true);
   pilot2_molecular_reader(const pilot2_molecular_reader&);
   pilot2_molecular_reader& operator=(const pilot2_molecular_reader&);
@@ -54,7 +55,7 @@ class pilot2_molecular_reader : public generic_data_reader {
     return m_num_features * (m_num_neighbors + 1);
   }
   const std::vector<int> get_data_dims() const override {
-    return {m_num_neighbors, (int) m_features.shape[2],
+    return {m_num_neighbors + 1, (int) m_features.shape[2],
         (int) m_features.shape[3]};
   }
  protected:
@@ -76,6 +77,8 @@ class pilot2_molecular_reader : public generic_data_reader {
   int m_num_samples_per_frame = 0;
   // Number of neighbors to fetch for each molecule.
   int m_num_neighbors;
+  // Size of the neighborhood in the data set
+  int m_max_neighborhood;
   /// Molecular features.
   cnpy::NpyArray m_features;
   /// Neighbor information (adjacency matrix).

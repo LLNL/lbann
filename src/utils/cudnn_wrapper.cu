@@ -164,7 +164,7 @@ void cudnn_manager::global_allreduce_on_gpus_nccl(std::vector<DataType*>& gpu_da
   ncclDataType_t type = nccl_datatype();
   El::Int total_len = height * width;
 
-  ncclGroupStart();
+  if(num_gpus_assigned > 1) ncclGroupStart();
   for(int i = 0; i < num_gpus_assigned; ++i) {
     CHECK_CUDA(cudaSetDevice(m_gpus[i]));
     NCCLCHECK(ncclAllReduce(gpu_data[i], gpu_data[i], total_len, type, ncclSum, m_nccl_comm[i], get_stream(i)));
@@ -176,7 +176,7 @@ void cudnn_manager::global_allreduce_on_gpus_nccl(std::vector<DataType*>& gpu_da
       scale_kernel<<<grid_dim, tb_dim>>>(gpu_data[i], scale, total_len);
     }
   }
-  ncclGroupEnd();
+  if(num_gpus_assigned > 1) ncclGroupEnd();
 }
 #endif // __LIB_NCCL
 

@@ -44,7 +44,7 @@ bool has_motifs(lbann_comm *comm, const lbann_data::LbannPB& p) {
     const lbann_data::Layer& layer = m.layer(j);
     if (layer.has_motif_layer()) {
       return true;
-    }  
+    }
   }
   return false;
 }
@@ -431,7 +431,7 @@ void add_layers(
       double group_lasso_regularization_factor = ell.group_lasso_regularization_factor();
       if (group_lasso_regularization_factor != double(0.0)) {
         ((learning *) d)->set_group_lasso_regularization_factor(group_lasso_regularization_factor);
-      } 
+      }
 #endif // 0
     }
 
@@ -483,7 +483,7 @@ void add_layers(
     }
 
     //////////////////////////////////////////////////////////////////
-    // LAYER: noise 
+    // LAYER: noise
     //////////////////////////////////////////////////////////////////
     else if (layer.has_noise()) {
       const lbann_data::Noise& ell = layer.noise();
@@ -895,7 +895,7 @@ void add_layers(
       } else {
         d = new atan_layer<data_layout::DATA_PARALLEL>(comm);
       }
-    } 
+    }
 
     //////////////////////////////////////////////////////////////////
     // LAYER: bent_identity
@@ -906,7 +906,7 @@ void add_layers(
       } else {
         d = new bent_identity_layer<data_layout::DATA_PARALLEL>(comm);
       }
-    } 
+    }
 
     //////////////////////////////////////////////////////////////////
     // LAYER: exponential
@@ -917,7 +917,7 @@ void add_layers(
       } else {
         d = new exponential_layer<data_layout::DATA_PARALLEL>(comm);
       }
-    } 
+    }
 
     //////////////////////////////////////////////////////////////////
     // LAYER: swish
@@ -928,7 +928,7 @@ void add_layers(
       } else {
         d = new swish_layer<data_layout::DATA_PARALLEL>(comm);
       }
-    } 
+    }
 
     //////////////////////////////////////////////////////////////////
     // LAYER: dropout
@@ -1056,7 +1056,7 @@ lbann_summary * construct_summarizer(const lbann_data::Model &m, lbann_comm *com
           throw lbann_exception(
             std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
             "summary directory " + c.dir() + " does not exist");
-        }    
+        }
       }
       summary = new lbann_summary(c.dir(), comm);
     }
@@ -1110,7 +1110,7 @@ void init_callbacks(
   const lbann_data::Model& m = p.model();
   if (master) std::cerr << std::endl << "starting init_callbacks; size: " << m.callback_size() << std::endl;
 
-  
+
   //the same summarizer is passed to all call backs that take a summarizer;
   //construct_summarizer returns this summarizer, which may be a nullptr
   lbann_summary *summarizer = construct_summarizer(m, comm);
@@ -1278,11 +1278,11 @@ void init_callbacks(
             include_list.insert(name);
           } else {
             if (master) {
-              std::cout << "WOULD ADD TO IMCOMM, but was explicitly excluded: " 
+              std::cout << "WOULD ADD TO IMCOMM, but was explicitly excluded: "
                         << name << std::endl;
-            } 
+            }
           }
-        }  
+        }
       }
       std::unordered_set<weights*> weights_list;
       for (std::string name : include_list) {
@@ -1602,7 +1602,7 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
   if (name == "sequential_model") {
     model = new sequential_model(comm, mini_batch_size, obj_fn, default_optimizer);
     if (master) std::cout << "instantiating sequential_model\n";
-  } 
+  }
   else if (name == "dag_model") {
     model = new dag_model(comm, mini_batch_size, obj_fn, default_optimizer);
     if (master) std::cout << "instantiating dag_model\n";
@@ -1619,7 +1619,7 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
   } else if (name == "greedy_layerwise_autoencoder") {
     model = new greedy_layerwise_autoencoder(comm, mini_batch_size, obj_fn, default_optimizer);
     if (master) std::cout << "instantiating greedy_layerwise_autoencoder\n";
-  } 
+  }
   else {
     if (master) {
       err << __FILE__ << " " << __LINE__
@@ -1756,7 +1756,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       auto* reader_csv = new csv_reader(shuffle);
       reader_csv->set_label_col(readme.label_col());
       reader_csv->set_response_col(readme.response_col());
-      reader_csv->disable_labels(readme.disable_labels()); 
+      reader_csv->disable_labels(readme.disable_labels());
       reader_csv->enable_responses(readme.disable_responses());
       reader_csv->set_separator(readme.separator()[0]);
       reader_csv->set_skip_cols(readme.skip_cols());
@@ -1768,6 +1768,9 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       reader_numpy->set_has_labels(!readme.disable_labels());
       reader_numpy->set_has_responses(!readme.disable_responses());
       reader = reader_numpy;
+    } else if (name == "pilot2_molecular_reader") {
+      pilot2_molecular_reader* reader_pilot2_molecular = new pilot2_molecular_reader(readme.num_neighbors(), readme.max_neighborhood(), shuffle);
+      reader = reader_pilot2_molecular;
     } else if (name == "merge_samples") {
       auto paths = glob(readme.data_file_pattern());
       std::vector<generic_data_reader*> npy_readers;
@@ -1778,6 +1781,10 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
           reader_numpy->set_has_labels(!readme.disable_labels());
           reader_numpy->set_has_responses(!readme.disable_responses());
           npy_readers.push_back(reader_numpy);
+        } else if (readme.format() == "pilot2_molecular_reader") {
+          pilot2_molecular_reader* reader_pilot2_molecular = new pilot2_molecular_reader(readme.num_neighbors(), readme.max_neighborhood(), shuffle);
+          reader_pilot2_molecular->set_data_filename(path);
+          npy_readers.push_back(reader_pilot2_molecular);
         } else if (readme.format() == "csv") {
           auto* reader_csv = new csv_reader(shuffle);
           reader_csv->set_data_filename(path);
@@ -2006,7 +2013,7 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
       lbann_data::Reader *readme = d_reader->mutable_reader(j);
       readme->set_percent_of_data_to_use(0.0);
       readme->set_absolute_sample_count(n);
-    }  
+    }
   }
 
   if (opts->has_string("dag_model")) {
