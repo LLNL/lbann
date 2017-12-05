@@ -287,6 +287,7 @@ void add_layers(
 
   std::stringstream err;
   model_layers.clear(); //shouldn't need this, but just in case ...
+  model_layer_names.clear();
 
   const lbann_data::Model& m = p.model();
   std::vector<lbann_data::Layer> proto_layers;
