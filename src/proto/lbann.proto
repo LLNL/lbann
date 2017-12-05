@@ -58,6 +58,7 @@ message ImagePreprocessor {
     uint32 crop_height = 5;
     int32 resized_width = 6;
     int32 resized_height = 7;
+    bool adaptive_interpolation = 8;
   }
 
   message Augmenter {
@@ -129,6 +130,7 @@ message ImagePreprocessor {
   bool crop_randomly = 28;
   int32 resized_width = 29;
   int32 resized_height = 30;
+  bool adaptive_interpolation = 31;
 }
 
 // TODO: wrap El::Mat based normalization into a generic preprocessor
@@ -153,7 +155,7 @@ message GenericPreprocessor {
 //========================================================================
 
 message Model {
-  string name = 1; //sequential_model, dag_model, greedy_layerwise_autoencoder, planar
+  string name = 1; //sequential_model, dag_model, greedy_layerwise_autoencoder, siamese_model
   ObjectiveFunction objective_function = 2;
   repeated Metric metric = 5; 
   string data_layout = 6;
@@ -188,23 +190,11 @@ message Model {
   // If true, models will have their model rank mixed into their random seed.
   bool random_init_models_differently = 35;
 
-  // For planar model. Eventtually, this should be oneof the existing models
-  message Planar {
-    message Planar_simple {
-      string name = 1;
-      uint32 num_heads = 2;
-    }
-    message Planar_regular {
-      string name = 1;
-      uint32 outdegrees_fanout = 2;
-      uint32 outdegrees_fanin = 3;
-    }
-    oneof planar_type {
-      Planar_simple simple = 1;
-      Planar_regular regular = 2;
-    }
+  // For Siamese model
+  message Siamese {
+    uint32 num_heads = 1;
   }
-  Planar planar = 36;
+  Siamese siamese = 36;
 }
 
 //========================================================================

@@ -1,7 +1,6 @@
 
 model {
-  name: "dnn"
-  objective_function: "cross_entropy"
+  name: "sequential_model"
   metric {
     categorical_accuracy {
     }
@@ -14,6 +13,13 @@ model {
   procs_per_model: 6
   use_cudnn: false
   num_gpus: -1
+
+  objective_function {
+    cross_entropy {}
+    l2_weight_regularization {
+      scale_factor: 1e-4
+    }
+  }
 
   ###################################################
   # Callbacks
@@ -49,13 +55,12 @@ model {
     adaptive_learning_rate {
       patience: 4
       amt: 0.1
-      layers: ""
     }
   }
   callback {
     imcomm {
       intermodel_comm_method: "normal"
-      all_learning_layers: true
+      all_optimizers: true
     }
   }
   # callback {

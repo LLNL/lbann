@@ -66,7 +66,7 @@ bool ROI::is_valid() const {
  * preceisely match the image boundary in case that it is out of boundary.
  */
 bool ROI::set_overlapping_region(const cv::Mat& img) {
-  if (!is_valid() || (img.data == NULL)) {
+  if (!is_valid() || (img.data == nullptr)) {
     return false;
   }
   if (m_left < 0) {

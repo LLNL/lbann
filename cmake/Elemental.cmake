@@ -40,7 +40,7 @@ if (NOT Elemental_FOUND AND NOT Hydrogen_FOUND)
   endif()
   if(NOT ELEMENTAL_TAG)
      # Latest development version.
-     set(ELEMENTAL_TAG "ca171b964a02d7a7c52d019fdf18cf01986e3de6")
+     set(ELEMENTAL_TAG "5b548cf854f670295a6f812edbd8231505f665e6")
   endif()
   message(STATUS "Will pull Elemental (tag ${ELEMENTAL_TAG}) from ${ELEMENTAL_URL}")
 

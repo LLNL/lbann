@@ -27,6 +27,44 @@
 /// OpenMP Diagnostic code from Edgar Leon at LLNL
 
 #include "lbann/utils/omp_diagnostics.hpp"
+#include <cstdio>
+#include <cstdlib>
+#include <unistd.h>           // sysconf
+#include <omp.h>
+
+/* __USE_GNU is needed for CPU_ISSET definition */ 
+#ifndef __USE_GNU
+#define __USE_GNU 1                
+#endif
+#include <sched.h>            // sched_getaffinity
+
+#include "mpi.h"
+
+#ifdef HPM
+#include "libhpc.h"
+#endif
+
+#ifdef MPI_VERSION
+#define MPI_CHECK( arg )			   \
+  if ( (arg) != MPI_SUCCESS ) {			   \
+    fprintf( stderr, "%s:%d " #arg " failed\n",	   \
+	     __FILE__, __LINE__			   \
+	     );					   \
+  }
+#endif 
+
+#define NULL_CHECK( arg )					\
+  if ( (arg) == NULL ) {					\
+    fprintf( stderr, "%s:%d " #arg " NULL return\n",		\
+	     __FILE__, __LINE__					\
+	     );							\
+  }
+
+#define NONZERO_CHECK( arg )				\
+  if ( (arg) != 0 ) {					\
+    fprintf(stderr, "%s:%d " #arg " NON-ZERO return\n", \
+	    __FILE__, __LINE__);			\
+  } 
 
 namespace lbann {
 /* Get number of processing units (cores or hwthreads) */ 
@@ -112,7 +150,7 @@ int get_env_var(const char *id)
 {
   char *buf = getenv(id); 
 
-  if (buf == NULL)
+  if (buf == nullptr)
     return 0; 
   else 
     return atoi(buf);
@@ -122,7 +160,7 @@ int get_sleep_sec()
 {
   char *buf = getenv("SLEEP_SEC");
 
-  if (buf == NULL)
+  if (buf == nullptr)
     return 0; 
   else 
     return atoi(buf); 

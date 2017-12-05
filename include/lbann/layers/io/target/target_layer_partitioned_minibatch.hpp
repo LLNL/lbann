@@ -84,9 +84,9 @@ class target_layer_partitioned_minibatch : public target_layer, public partition
 
     target_layer::update_num_samples_processed(num_samples_in_batch);
 
-    int curr_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
+    int curr_mini_batch_size = this->m_model->get_current_mini_batch_size();
 
-    for (auto&& m : this->m_neural_network_model->get_metrics()) {
+    for (auto&& m : this->m_model->get_metrics()) {
       double num_errors = m->compute_metric(*this->m_prev_activations_v, *this->m_activations_v);
       m->record_error(num_errors, curr_mini_batch_size);
     }
@@ -108,9 +108,6 @@ class target_layer_partitioned_minibatch : public target_layer, public partition
     return;
   }
 
-  execution_mode get_execution_mode() const {
-    return this->m_execution_mode;
-  }
 };
 
 }  // namespace lbann

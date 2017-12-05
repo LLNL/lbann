@@ -92,10 +92,10 @@ class target_layer : public io_layer {
       throw lbann_exception(err.str());
     }
 
-    for (auto&& m : this->m_neural_network_model->get_metrics()) {
+    for (auto&& m : this->m_model->get_metrics()) {
       m->setup(this->m_num_neurons,
-               this->m_neural_network_model->get_max_mini_batch_size());
-      m->m_neural_network_model = this->m_neural_network_model;
+               this->m_model->get_max_mini_batch_size());
+      m->m_model = this->m_model;
     }
 
   }
@@ -109,9 +109,9 @@ class target_layer : public io_layer {
   // }
 
   void fp_set_std_matrix_view() override {
-    int cur_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
+    int cur_mini_batch_size = this->m_model->get_current_mini_batch_size();
     Layer::fp_set_std_matrix_view();
-    for (auto&& m : this->m_neural_network_model->get_metrics()) {
+    for (auto&& m : this->m_model->get_metrics()) {
       m->fp_set_std_matrix_view(cur_mini_batch_size);
     }
   }

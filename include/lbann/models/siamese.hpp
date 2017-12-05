@@ -22,20 +22,50 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
+//
+// siamese .hpp .cpp - Siamese neural network models
 ////////////////////////////////////////////////////////////////////////////////
-#ifndef LBANN_OMP_DIAGNOSTICS_HPP
-#define LBANN_OMP_DIAGNOSTICS_HPP
 
-#include <cstdint>
+#ifndef LBANN_MODEL_SIAMESE_HPP
+#define LBANN_MODEL_SIAMESE_HPP
+
+#include "lbann/models/model_dag.hpp"
 
 namespace lbann {
-int get_num_pus();
-int get_affinity(uint8_t *cpus, uint8_t *count);
-void th_print_affinity(int rank, int np, char *host);
-void print_affinity(int rank, int np, char *host);
-int get_env_var(const char *id);
-int get_sleep_sec();
-void print_affinity_subset(int rank, int np, char *host);
-void display_omp_setup();
-} // namespace lbann
-#endif // LBANN_OMP_DIAGNOSTICS_HPP
+
+class siamese_model : public dag_model {
+ public:
+
+  /// Constructor
+  siamese_model(lbann_comm *comm,
+                int mini_batch_size,
+                objective_function *obj_fn,
+                optimizer* default_optimizer,
+                int num_heads);
+
+  /** Copy constructor. */
+  siamese_model(const siamese_model& other) = default;
+  /** Copy assignment operator. */
+  siamese_model& operator=(const siamese_model& other) = default;
+  /** Destructor. */
+  ~siamese_model() override = default;
+
+  /** Create copy. */
+  siamese_model* copy() const override { return new siamese_model(*this); }
+
+  /** Setup model. */
+  void setup() override;
+
+  /** Get model name. */
+  std::string name() const override { return "siamese_model"; }
+
+ protected:
+
+  /** The number of heads in Siamese model. */
+  int m_num_heads;
+
+};
+
+}  // namespace lbann
+
+#endif  // LBANN_MODEL_SIAMESE_HPP

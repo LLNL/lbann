@@ -29,6 +29,8 @@
 
 #include "data_reader.hpp"
 
+#include <utility>
+
 namespace lbann {
 
 /**
@@ -40,7 +42,7 @@ class generic_compound_data_reader : public generic_data_reader {
   generic_compound_data_reader(std::vector<generic_data_reader*> data_readers,
                                bool shuffle = true):
     generic_data_reader(shuffle),
-    m_data_readers(data_readers) {
+    m_data_readers(std::move(data_readers)) {
     if (m_data_readers.empty()) {
       throw lbann_exception(
         "generic_compound_data_reader: data reader list empty");

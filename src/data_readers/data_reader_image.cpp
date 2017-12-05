@@ -116,7 +116,7 @@ void image_data_reader::load() {
     if (fscanf(fplist, "%s%d", imagepath, &imagelabel) <= 1) {
       break;
     }
-    m_image_list.push_back(std::make_pair(imagepath, imagelabel));
+    m_image_list.emplace_back(imagepath, imagelabel);
   }
   fclose(fplist);
 

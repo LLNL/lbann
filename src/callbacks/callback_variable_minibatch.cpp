@@ -26,6 +26,8 @@
 // lbann_variable_minibatch .hpp .cpp - Callback for variable-size mini-batches
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <utility>
+
 #include "lbann/callbacks/callback_variable_minibatch.hpp"
 
 namespace lbann {
@@ -39,7 +41,7 @@ void lbann_callback_variable_minibatch::on_train_begin(model *m) {
   if (m->get_cur_epoch() != 0) {
     return;
   }
-  input_layer* input = dynamic_cast<input_layer*>(m->get_layers()[0]);
+  auto* input = dynamic_cast<input_layer*>(m->get_layers()[0]);
   if (!input) {
     throw lbann_exception("variable_minibatch: could not get input layer");
   }
@@ -58,7 +60,7 @@ void lbann_callback_variable_minibatch::on_train_begin(model *m) {
 }
 
 void lbann_callback_variable_minibatch::on_epoch_end(model *m) {
-  input_layer* input = dynamic_cast<input_layer*>(m->get_layers()[0]);
+  auto* input = dynamic_cast<input_layer*>(m->get_layers()[0]);
   lbann_comm *comm = m->get_comm();
   int new_mbsize = 0;
   float new_lr = 0.0f;
@@ -150,7 +152,7 @@ bool lbann_callback_step_minibatch::schedule(
 
 lbann_callback_minibatch_schedule::lbann_callback_minibatch_schedule(
   int starting_mbsize, std::vector<minibatch_step> steps) :
-  lbann_callback_variable_minibatch(starting_mbsize), m_steps(steps) {
+  lbann_callback_variable_minibatch(starting_mbsize), m_steps(std::move(steps)) {
   std::sort(m_steps.rbegin(), m_steps.rend(),
             [] (const minibatch_step& a, const minibatch_step& b) {
               return a.epoch < b.epoch;

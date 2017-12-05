@@ -94,7 +94,7 @@ void entrywise_mean_and_stdev(const AbsDistMat& data,
   mean = sum / size;
   const DataType var = std::max(sqsum / size - mean * mean, DataType(0));
   stdev = std::sqrt(var);
-  
+
 }
 
 void columnwise_mean_and_stdev(const Mat& data,
@@ -138,10 +138,10 @@ void columnwise_mean_and_stdev(const AbsDistMat& data,
                                AbsDistMat& stdevs) {
 
 #ifdef LBANN_DEBUG
-  DistData data_dist(data), means_dist(means), stdevs_dist(stdevs);
-  if(means_dist.colDist != STAR
+  El::DistData data_dist(data), means_dist(means), stdevs_dist(stdevs);
+  if(means_dist.colDist != El::STAR
       || means_dist.rowDist != data_dist.rowDist
-      || stdevs_dist.colDist != STAR
+    || stdevs_dist.colDist != El::STAR
       || stdevs_dist.rowDist != data_dist.rowDist) {
     throw lbann_exception("columnwise_mean_and_stdev: invalid matrix format");
   }
@@ -212,7 +212,7 @@ void rowwise_mean_and_stdev(const Mat& data,
     const El::Int row_end = std::min(row_start + block_size, height);
 
     // Initialize shift and sums for each row
-    DataType *shifts = new DataType[block_size];
+    auto *shifts = new DataType[block_size];
     for(El::Int row = row_start; row < row_end; ++row) {
       means(row, 0) = 0;
       stdevs(row, 0) = 0;
@@ -260,11 +260,11 @@ void rowwise_mean_and_stdev(const AbsDistMat& data,
                             AbsDistMat& stdevs) {
 
 #ifdef LBANN_DEBUG
-  DistData data_dist(data), means_dist(means), stdevs_dist(stdevs);
+  El::DistData data_dist(data), means_dist(means), stdevs_dist(stdevs);
   if(means_dist.colDist != data_dist.colDist
-      || means_dist.rowDist != STAR
+     || means_dist.rowDist != El::STAR
       || stdevs_dist.colDist != data_dist.colDist
-      || stdevs_dist.rowDist != STAR) {
+     || stdevs_dist.rowDist != El::STAR) {
     throw lbann_exception("rowwise_mean_and_stdev: invalid matrix format");
   }
 #endif // #ifdef LBANN_DEBUG

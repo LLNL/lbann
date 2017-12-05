@@ -45,8 +45,8 @@ void lbann_callback_print::setup(model *m) {
 void lbann_callback_print::on_epoch_begin(model *m) {
   lbann_comm *comm = m->get_comm();
   if (comm->am_world_master()) {
-    std::vector<Layer *>layers = m->get_layers();
-    input_layer *layer = dynamic_cast<input_layer*>(layers[0]);
+    const std::vector<Layer *>layers = m->get_layers();
+    auto *layer = dynamic_cast<input_layer*>(layers[0]);
     std::cout << "--------------------------------------------------------------------------------" 
               << std::endl;
     std::cout << "[" << m->get_cur_epoch() << "] Epoch : stats formated [tr/v/te]" 

@@ -125,7 +125,7 @@ inline cv::Mat cv_mean_extractor::extract() const {
 
   double minVal = 0.0;
   double maxVal = 0.0;
-  cv::minMaxLoc(avg_so_far, &minVal, &maxVal, 0, 0);
+  cv::minMaxLoc(avg_so_far, &minVal, &maxVal, nullptr, nullptr);
   //const double max_channel_type = std::numeric_limits<Channel_T>::max();
   const double max_channel_type = depth_normalization<Channel_T>::inverse_factor();
 

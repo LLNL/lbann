@@ -43,9 +43,15 @@ using namespace lbann;
 cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus, bool nccl_used)
   : comm(_comm) {
 
-  // Indicate whether NCCL is used 
+  // Indicate whether NCCL is used
+#ifdef __LIB_NCCL  
   m_nccl_used = nccl_used;
-
+#else
+  if (nccl_used) {
+    throw lbann::lbann_exception("cudnn_wrapper: NCCL is requested, but not enabled");
+  }
+  m_nccl_used = false;
+#endif
 
   // Determine number of MPI ranks on current compute node
   const int rank_in_node = comm->get_rank_in_node();
@@ -113,10 +119,6 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus, bool nc
     FORCE_CHECK_CUBLAS(cublasCreate(&m_cublas_handles.back()));
   }
 
-  // NCCL setup
-  if(m_nccl_used){
-    nccl_setup();
-  }
 
   // Get number of GPUs for current MPI rank
   m_num_gpus = m_gpus.size();
@@ -125,6 +127,11 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus, bool nc
   m_work_spaces = std::vector<void *>(m_num_gpus, nullptr);
   m_work_space_sizes = std::vector<size_t>(m_num_gpus, 0);
 
+  /// Setting up for NCCL collective calls
+  /// NOTE: For whoever makes changes in this file, please make sure following if statement comes last.
+  if(m_nccl_used){
+    nccl_setup();
+  }
 }
 
 cudnn_manager::~cudnn_manager() {
@@ -756,9 +763,20 @@ void cudnn_manager::check_error() {
 void cudnn_manager::nccl_setup() {
 
 #ifdef __LIB_NCCL
+  if(m_num_gpus != 1){
+    char line[1024];
+    sprintf(line, "cudnn_manager: the number of GPUs assigned to process is %d; should be 1", m_num_gpus);
+    throw lbann::lbann_exception(line);
+  }
+
+  /// Create nccl communicators
+  int num_gpus_assigned = m_gpus.size();
+  m_nccl_comm.resize(num_gpus_assigned);
+
+
   int nProcs = comm->get_procs_per_model();
   int myid = comm->get_rank_in_model();
-  int localRank = comm->get_rank_in_node();
+  int total_num_comms = nProcs*num_gpus_assigned;
 
   ncclUniqueId ncclId;
   if (myid == 0) {
@@ -773,24 +791,31 @@ void cudnn_manager::nccl_setup() {
   
   El::mpi::Broadcast(&ncclId, 1, 0, model_comm); */
 
+  /// todo@ check if we can use Elemental's broadcast
   MPI_Bcast(&ncclId, sizeof(ncclId), MPI_BYTE, 0, mpicomm);
 
   if (nProcs == 1) {
     int gpuArray = 0;
-    NCCLCHECK(ncclCommInitAll(&m_nccl_comm, 1, &gpuArray));
+    NCCLCHECK(ncclCommInitAll(&(m_nccl_comm[0]), 1, &gpuArray));
   } 
   else {
     NCCLCHECK(ncclGroupStart());
-    FORCE_CHECK_CUDA(cudaSetDevice(localRank));
-    NCCLCHECK(ncclCommInitRank(&m_nccl_comm, nProcs, ncclId, myid)); 
+    for(int i=0; i<num_gpus_assigned; i++){
+      FORCE_CHECK_CUDA(cudaSetDevice(m_gpus[i]));
+      NCCLCHECK(ncclCommInitRank(&(m_nccl_comm[i]), total_num_comms, ncclId, num_gpus_assigned*myid+i));
+    }
     NCCLCHECK(ncclGroupEnd());
+
   }
 #endif // #ifdef __LIB_NCCL
 }
 
 void cudnn_manager::nccl_destroy() {
 #ifdef __LIB_NCCL
-  ncclCommDestroy(m_nccl_comm);
+  int num_gpus_assigned = m_gpus.size();
+  for(int i=0; i<num_gpus_assigned; i++){
+    ncclCommDestroy(m_nccl_comm[i]);
+  }
 #endif // #ifdef __LIB_NCCL
 }
 

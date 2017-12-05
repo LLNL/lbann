@@ -52,7 +52,9 @@ class objective_function {
    *  term and deallocates it during destruction.
    */
   void add_term(objective_function_term* term) { m_terms.push_back(term); }
-  
+  /** Get list of objective function terms. */
+  std::vector<objective_function_term*> get_terms() { return m_terms; }
+
   /** Setup objective function. */
   void setup(model& m);
   
@@ -75,18 +77,28 @@ class objective_function {
   DataType get_history_mean_value() const;
 
   /** Get model that owns this objective function. */
-  model* get_model() { return m_model; }
+  model* get_model() const { return m_model; }
   /** Set model that owns this objective function. */
   void set_model(model* m) { m_model = m; }
 
   /** Get list of pointers to layers. */
-  std::vector<Layer*> get_layer_pointers();
+  std::vector<Layer*> get_layer_pointers() const;
   /** Set list of pointers to layers. */
   void set_layer_pointers(std::vector<Layer*> layers);
   /** Get list of pointers to weights. */
-  std::vector<weights*> get_weights_pointers();
+  std::vector<weights*> get_weights_pointers() const;
   /** Set list of pointers to weights. */
   void set_weights_pointers(std::vector<weights*> w);
+
+  /** Get the time spent computing the value. */
+  double get_value_time() const { return m_value_time; }
+  /** Get the itme spent computing the gradient. */
+  double get_gradient_time() const { return m_gradient_time; }
+  /** Reset time counters. */
+  void reset_counters() {
+    m_value_time = 0.0;
+    m_gradient_time = 0.0;
+  }
 
  private:
 
@@ -98,6 +110,11 @@ class objective_function {
 
   /** History of objective function values. */
   std::vector<DataType> m_history;
+
+  /** Time spent computing the value. */
+  double m_value_time = 0.0;
+  /** Time spent computing the gradient. */
+  double m_gradient_time = 0.0;
 
 };
 

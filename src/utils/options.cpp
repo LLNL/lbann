@@ -50,7 +50,7 @@ void options::init(int argc, char **argv)
   std::string value;
   std::string loadme;
   for (int j=0; j<argc; j++) {
-    m_cmd_line.push_back(argv[j]);
+    m_cmd_line.emplace_back(argv[j]);
     m_parse_opt(argv[j], key, value);
     if (key == "loadme") {
       loadme = value;
@@ -70,9 +70,9 @@ void options::init(int argc, char **argv)
 
 void lower(std::string &s)
 {
-  for (size_t j=0; j<s.size(); j++) {
-    if (isalpha(s[j])) {
-      s[j] = tolower(s[j]);
+  for (char & j : s) {
+    if (isalpha(j)) {
+      j = tolower(j);
     }
   }
 }
@@ -197,8 +197,8 @@ bool options::m_test_int(std::string option, int &out)
   }
   bool is_good = true;
   std::string val = m_opts[option];
-  for (size_t j=0; j<val.size(); j++) {
-    if (!isdigit(val[j])) {
+  for (char j : val) {
+    if (!isdigit(j)) {
       is_good = false;
       break;
     }
@@ -219,9 +219,9 @@ bool options::m_test_double(std::string option, double &out)
   if (!m_has_opt(option)) return false;
   std::string val(m_opts[option]);
   lower(val);
-  for (size_t j=0; j<val.size(); j++) {
-    if (!(isdigit(val[j]) or val[j] == '-'
-             or tolower(val[j] == 'e') or val[j] == '.')) {
+  for (char j : val) {
+    if (!(isdigit(j) or j == '-'
+             or tolower(j == 'e') or j == '.')) {
       return false;
     }
   }

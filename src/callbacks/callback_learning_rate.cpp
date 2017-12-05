@@ -28,6 +28,7 @@
 
 #include "lbann/callbacks/callback_learning_rate.hpp"
 #include <limits>
+#include <utility>
 
 namespace lbann {
 
@@ -36,7 +37,7 @@ float lbann_callback_learning_rate::m_cur_global_lr = 0.0f;
 lbann_callback_learning_rate::lbann_callback_learning_rate() {}
 
 lbann_callback_learning_rate::lbann_callback_learning_rate(
-  std::unordered_set<weights *> weights_list) : m_weights(weights_list) {}
+  std::unordered_set<weights *> weights_list) : m_weights(std::move(weights_list)) {}
 
 void lbann_callback_learning_rate::setup(model *m) {
 
@@ -153,7 +154,7 @@ lbann_callback_drop_fixed_learning_rate::lbann_callback_drop_fixed_learning_rate
 
 lbann_callback_drop_fixed_learning_rate::lbann_callback_drop_fixed_learning_rate(
   std::vector<int64_t> drop_epochs, float amt, std::unordered_set<weights *> weights_list) :
-  lbann_callback_learning_rate(weights_list), m_amt(amt), m_drop_epochs(drop_epochs) {
+  lbann_callback_learning_rate(weights_list), m_amt(amt), m_drop_epochs(std::move(drop_epochs)) {
   // Sort in reverse order.
   std::sort(m_drop_epochs.rbegin(), m_drop_epochs.rend());
 }
