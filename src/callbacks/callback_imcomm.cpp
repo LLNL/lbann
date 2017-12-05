@@ -108,6 +108,19 @@ void lbann_callback_imcomm::setup(model *m) {
   }
 }
 
+void lbann_callback_imcomm::on_train_begin(model *m) {
+  lbann_comm *comm = m->get_comm();
+  if (comm->get_num_models() == 1) {
+    return;  // No point with only one model.
+  }
+  for (weights *w : m->get_weights()) {
+    AbsDistMat *values = w->get_values().Copy();
+    comm->intermodel_broadcast_matrix(*values, 0);
+    w->set_values(*values);
+    delete values;
+  }
+}
+
 void lbann_callback_imcomm::on_epoch_end(model *m) {
   lbann_comm *comm = m->get_comm();
   if (comm->get_num_models() == 1 ||
