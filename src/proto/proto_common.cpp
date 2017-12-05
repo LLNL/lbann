@@ -775,8 +775,8 @@ void add_layers(
           comm,
           ell.decay(),
           ell.epsilon(),
-          cudnn/*,
-                 ell.global_stats()*/);
+          ell.global_stats(),
+          cudnn);
       }
     }
 
