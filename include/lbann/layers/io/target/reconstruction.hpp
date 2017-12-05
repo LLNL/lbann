@@ -51,7 +51,7 @@ class reconstruction_layer : public target_layer {
     // Setup the data distribution
     initialize_distributed_matrices();
   }
-  
+
   reconstruction_layer(const reconstruction_layer& other) :
     target_layer(other),
     m_original_layer(other.m_original_layer) {}
@@ -85,7 +85,11 @@ class reconstruction_layer : public target_layer {
     this->m_num_neuron_dims = m_original_layer->get_num_neuron_dims();
     this->m_num_neurons = m_original_layer->get_num_neurons();
     if(this->m_num_neurons != this->m_num_prev_neurons) {
-      throw lbann_exception("reconstruction_layer: original layer and reconstruction layer do not have the same number of neurons");
+      throw lbann_exception("reconstruction_layer: original layer ("
+                            + std::to_string(this->m_num_neurons)
+                            + ") and reconstruction layer ("
+                            + std::to_string(this->m_num_prev_neurons)
+                            +") do not have the same number of neurons");
     }
   }
 

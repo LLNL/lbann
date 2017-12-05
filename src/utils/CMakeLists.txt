@@ -7,6 +7,7 @@ add_sources(
   cudnn_wrapper.cpp
   options.cpp
   omp_diagnostics.cpp
+  protobuf_utils.cpp
 )
 
 if(LBANN_HAS_CUDA)
