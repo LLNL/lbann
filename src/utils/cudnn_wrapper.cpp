@@ -799,14 +799,15 @@ void cudnn_manager::nccl_setup() {
     NCCLCHECK(ncclCommInitAll(&(m_nccl_comm[0]), 1, &gpuArray));
   } 
   else {
-    NCCLCHECK(ncclGroupStart());
+    if(num_gpus_assigned > 1) NCCLCHECK(ncclGroupStart());
     for(int i=0; i<num_gpus_assigned; i++){
       FORCE_CHECK_CUDA(cudaSetDevice(m_gpus[i]));
       NCCLCHECK(ncclCommInitRank(&(m_nccl_comm[i]), total_num_comms, ncclId, num_gpus_assigned*myid+i));
     }
-    NCCLCHECK(ncclGroupEnd());
+    if(num_gpus_assigned > 1) NCCLCHECK(ncclGroupEnd());
 
   }
+
 #endif // #ifdef __LIB_NCCL
 }
 
