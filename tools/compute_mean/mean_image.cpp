@@ -34,6 +34,8 @@
 #include "file_utils.hpp"
 #include "mean_image.hpp"
 
+namespace tools_compute_mean {
+
 /**
  *  Compute the pixel-wise sum of the local mean images over MPI ranks.
  *  If the numeric format of the pixel value is not floating point (SP/DP),
@@ -138,3 +140,5 @@ bool write_mean_image(const lbann::cv_process& pp, const int mean_extractor_idx,
 
   return true;
 }
+
+} // end of namespace tools_compute_mean

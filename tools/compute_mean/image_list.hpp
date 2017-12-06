@@ -32,6 +32,8 @@
 #include <vector>
 #include <string>
 
+namespace tools_compute_mean {
+
 class image_list {
  protected:
   /// The num of ranks that only have assigned data
@@ -87,4 +89,5 @@ class image_list {
 
 };
 
+} // end of namespace tools_compute_mean
 #endif // _TOOLS_COMPUTE_MEAN_IMAGE_LIST_HPP_

@@ -28,6 +28,8 @@
 #include "file_utils.hpp"
 #include <algorithm>
 
+namespace tools_compute_mean {
+
 struct delimiter {
   bool operator()(char ch) const {
     return ch == (std::string(__DIR_DELIMITER))[0];
@@ -158,3 +160,5 @@ bool create_dir(const std::string dirname) {
   }
   return true;
 }
+
+} // end of namespace tools_compute_mean

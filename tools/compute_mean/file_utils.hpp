@@ -33,6 +33,8 @@
 #include <fstream>
 #include <iterator>
 
+namespace tools_compute_mean {
+
 #define __DIR_DELIMITER "/"
 
 bool parse_path(const std::string& path, std::string& dir, std::string& basename);
@@ -96,4 +98,5 @@ inline void write_file(const std::string filename, const unsigned char *buf, con
   file.close();
 }
 
+} // end of namespace tools_compute_mean
 #endif // _TOOLS_COMPUTE_MEAN_FILE_UTILS_HPP_

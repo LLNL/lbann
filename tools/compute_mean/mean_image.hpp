@@ -32,6 +32,9 @@
 #include "lbann/data_readers/opencv.hpp"
 #include "lbann/data_readers/cv_process.hpp"
 
+namespace tools_compute_mean {
+
 bool write_mean_image(const lbann::cv_process& pp, const int mean_extractor_idx, const mpi_states& ms, const std::string& out_dir);
 
+} // end of namespace tools_compute_mean
 #endif // _TOOLS_COMPUTE_MEAN_MEAN_IMAGE_HPP_

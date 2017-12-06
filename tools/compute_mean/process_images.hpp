@@ -32,6 +32,8 @@
 #include "walltimes.hpp"
 #include "image_list.hpp"
 
+namespace tools_compute_mean {
+
 /**
  * Crop images and use them to compute mean. At the same time, store the cropped
  * images.
@@ -39,4 +41,5 @@
 bool process_images(const image_list& img_list, const params& mp,
                     const mpi_states& ms, walltimes& wt);
 
+} // end of namespace tools_compute_mean
 #endif // _TOOLS_COMPUTE_MEAN_PROCESS_IMAGES_

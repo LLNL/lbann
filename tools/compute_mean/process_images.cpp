@@ -34,6 +34,8 @@
 #include "mean_image.hpp"
 
 
+namespace tools_compute_mean {
+
 /**
  * Set up the preprocessor pipeline, pp, consists of cropper, colorizer, and
  * mean_extractor based on the parameter mp. It also returns the transform index
@@ -167,3 +169,5 @@ bool process_images(const image_list& img_list, const params& mp,
 
   return true;
 }
+
+} // end of namespace tools_compute_mean
