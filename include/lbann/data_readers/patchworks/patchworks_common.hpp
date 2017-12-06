@@ -31,7 +31,9 @@
  *  - includes commonly used macros, definitions and declarations
  */
 
-#ifdef __LIB_OPENCV
+#include "lbann_config.hpp"
+
+#ifdef LBANN_HAS_OPENCV
 #ifndef _PATCHWORKS_COMMON_H_
 #define _PATCHWORKS_COMMON_H_
 
@@ -65,4 +67,4 @@ typedef cv::Vec3d pw_cv_vec3;
 } // end of namespace lbann
 
 #endif // _PATCHWORKS_COMMON_H_
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV

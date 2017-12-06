@@ -32,7 +32,7 @@
 #include "lbann/utils/exception.hpp"
 #include <algorithm> // std::min
 
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
 namespace lbann {
 
 /**
@@ -292,4 +292,4 @@ std::string cv_process::get_description() const {
 }
 
 } // end of namespace lbann
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV

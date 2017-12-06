@@ -30,7 +30,7 @@
 
 namespace lbann {
 
-#if __HAVE_TBINF
+#ifdef LBANN_HAS_TBINF
 
 lbann_summary::lbann_summary(std::string logdir, lbann_comm *comm)
   : m_comm(comm) {
@@ -493,6 +493,6 @@ void lbann_summary::gather_scalar_summary(const std::string tag,
   }
 }
 
-#endif  // __HAVE_TBINF
+#endif  // LBANN_HAS_TBINF
 
 }  // namespace lbann

@@ -32,7 +32,7 @@
 #include "cv_transform.hpp"
 #include <type_traits>
 
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
 namespace lbann {
 
 /**
@@ -151,6 +151,6 @@ inline cv::Mat cv_mean_extractor::extract() const {
 }
 
 } // end of namespace lbann
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV
 
 #endif // LBANN_CV_MEAN_EXTRACTOR_HPP

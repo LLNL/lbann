@@ -30,7 +30,7 @@
 #include "lbann/utils/exception.hpp"
 //#include <iostream>
 
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
 namespace lbann {
 
 const constexpr char* const cv_transform::cv_flip_desc[];
@@ -117,4 +117,4 @@ double cv_utils::get_depth_normalizing_factor(const int cv_depth) {
   return 1.0;
 }
 } // end of namespace lbann
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV

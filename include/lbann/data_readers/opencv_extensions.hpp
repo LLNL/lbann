@@ -26,7 +26,7 @@
 // opencv_extensions.hpp - LBANN's cv::Mat pixel type handling mechanisms
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
 #ifndef _LBANN_OPENCV_EXTENSIONS_H_INCLUDED_
 #define _LBANN_OPENCV_EXTENSIONS_H_INCLUDED_
 #include "lbann/data_readers/opencv.hpp"
@@ -191,4 +191,4 @@ struct depth_normalization<void> {
   }
 
 #endif // _LBANN_OPENCV_EXTENSIONS_H_INCLUDED_
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV

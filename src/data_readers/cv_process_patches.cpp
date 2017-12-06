@@ -31,7 +31,7 @@
 #include "lbann/data_readers/cv_process_patches.hpp"
 #include <limits> // std::numeric_limits
 
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
 namespace lbann {
 
 cv_process_patches::cv_process_patches()
@@ -106,4 +106,4 @@ std::string cv_process_patches::get_description() const {
 }
 
 } // end of namespace lbann
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV

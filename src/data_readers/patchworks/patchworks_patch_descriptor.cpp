@@ -30,9 +30,10 @@
  * LBANN PATCHWORKS implementation for patch descriptor
  */
 
-#ifdef __LIB_OPENCV
-#include <iostream>
 #include "lbann/data_readers/patchworks/patchworks_patch_descriptor.hpp"
+
+#ifdef LBANN_HAS_OPENCV
+#include <iostream>
 #include "lbann/utils/random.hpp"
 
 namespace lbann {
@@ -266,4 +267,4 @@ std::ostream& operator<<(std::ostream& os, const patch_descriptor& pd) {
 
 } // end of namespace patchworks
 } // end of namespace lbann
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV

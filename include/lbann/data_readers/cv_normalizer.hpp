@@ -34,7 +34,7 @@
 #include "lbann/base.hpp" // DataType
 #include "lbann/utils/mild_exception.hpp"
 
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
 namespace lbann {
 /**
  *  Modifies the channel values of each pixel according to the chosen normalization
@@ -391,6 +391,6 @@ inline bool cv_normalizer::compute_mean_stddev_with_known_type(const cv::Mat& im
 }
 
 } // end of namespace lbann
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV
 
 #endif // LBANN_CV_NORMALIZER_HPP

@@ -33,7 +33,7 @@
 #include "opencv.hpp"
 #include "opencv_extensions.hpp"
 
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
 namespace lbann {
 
 class cv_transform {
@@ -111,7 +111,7 @@ class cv_transform {
 
   /** Sets this transform's name; this is an arbitrary string, e.g, assigned in a prototext file. */
   void set_name(const std::string& name) { m_name = name; }
-  
+
   /** Returns a description of the parameters passed to the ctor */
   virtual std::string get_description() const;
 
@@ -139,7 +139,7 @@ inline cv_transform& cv_transform::operator=(const cv_transform& rhs) {
  *  The preparation includes as much precomputation as possible. For example,
  *  if the transformation consists of constructing four affine transform matrices
  *  and applying them to the given image in sequence, the transform matrices
- *  will be reduced to one. Then, the following function apply(image) will 
+ *  will be reduced to one. Then, the following function apply(image) will
  *  finally apply it to the image.
  */
 inline bool cv_transform::determine_transform(const cv::Mat& image) {
@@ -164,7 +164,7 @@ inline bool cv_transform::determine_inverse_transform() {
   // In case of manual overriding, if (!m_manual_switch) return false;
   // If this transform, by design, can not be or does not need to be inversed,
   //   return (m_enabled = false);
-  // 
+  //
   // If the transform has not been applied (e.g., m_trans has not been set),
   //   return (m_enabled = false);
   // Note that this cannot be determined by m_enabled as the transform is turned
@@ -203,7 +203,7 @@ inline cv_transform *cv_transform::clone() const {
 
 //inline std::string cv_transform::get_type() { return "image transform"; }
 
-inline std::string cv_transform::get_description() const { 
+inline std::string cv_transform::get_description() const {
   return std::string {} + get_type();
 }
 
@@ -216,6 +216,6 @@ inline std::ostream& cv_transform::print(std::ostream& os) const {
 std::ostream& operator<<(std::ostream& os, const cv_transform& tr);
 
 } // end of namespace lbann
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV
 
 #endif // LBANN_CV_TRANSFORM_HPP

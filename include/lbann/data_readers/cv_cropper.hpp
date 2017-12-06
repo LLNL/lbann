@@ -33,7 +33,7 @@
 #include <utility>
 #include <ostream>
 
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
 namespace lbann {
 
 /**
@@ -116,6 +116,6 @@ class cv_cropper : public cv_transform {
 };
 
 } // end of namespace lbann
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV
 
 #endif // LBANN_CV_CROPPER_HPP

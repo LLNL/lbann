@@ -32,30 +32,25 @@
 #include "El.hpp"
 #include "lbann/Elemental_extensions.hpp"
 
-#if LBANN_DATATYPE == 8
-typedef double DataType;
-#elif LBANN_DATATYPE == 4
-typedef float DataType;
-#else
-// Default to floats
-#define LBANN_DATATYPE 4
-typedef float DataType; 
-#endif
+// Defines, among other things, lbann::DataType.
+#include "lbann_config.hpp"
 
-typedef El::Grid EGrid;
-typedef El::Grid Grid;
-typedef El::Matrix<DataType> Mat;
-typedef El::AbstractDistMatrix<DataType> AbsDistMat;
-typedef El::DistMatrix<DataType, El::MC, El::MR> DistMat;
-typedef El::DistMatrix<DataType, El::CIRC, El::CIRC> CircMat;
-typedef El::DistMatrix<DataType, El::STAR, El::STAR> StarMat;
-typedef El::DistMatrix<DataType, El::MR, El::STAR> ColSumMat; /* Summary matrix over columns */
-typedef El::DistMatrix<DataType, El::MC, El::STAR> RowSumMat;
-typedef El::DistMatrix<DataType, El::STAR, El::VC> StarVCMat;
-typedef El::DistMatrix<DataType, El::STAR, El::MR> StarMRMat;
-typedef El::DistMatrix<DataType, El::VC, El::STAR> ColSumStarVCMat; /* Summary matrix over columns */
-typedef El::BlockMatrix<DataType> BlockMat;
-typedef El::ElementalMatrix<DataType> ElMat;
+using EGrid = El::Grid;
+using Grid = El::Grid;
+using Mat = El::Matrix<lbann::DataType>;
+using AbsDistMat = El::AbstractDistMatrix<lbann::DataType>;
+using DistMat = El::DistMatrix<lbann::DataType, El::MC, El::MR>;
+using CircMat = El::DistMatrix<lbann::DataType, El::CIRC, El::CIRC>;
+using StarMat = El::DistMatrix<lbann::DataType, El::STAR, El::STAR>;
+/* Summary matrix over columns */
+using ColSumMat = El::DistMatrix<lbann::DataType, El::MR, El::STAR>;
+using RowSumMat = El::DistMatrix<lbann::DataType, El::MC, El::STAR>;
+using StarVCMat = El::DistMatrix<lbann::DataType, El::STAR, El::VC>;
+using StarMRMat = El::DistMatrix<lbann::DataType, El::STAR, El::MR>;
+/* Summary matrix over columns */
+using ColSumStarVCMat = El::DistMatrix<lbann::DataType, El::VC, El::STAR>;
+using BlockMat = El::BlockMatrix<lbann::DataType>;
+using ElMat = El::ElementalMatrix<lbann::DataType>;
 
 /// Distributed matrix format
 enum class matrix_format {MC_MR, CIRC_CIRC, STAR_STAR, STAR_VC, MC_STAR, invalid};
@@ -101,7 +96,7 @@ static const char *__attribute__((used)) _to_string(execution_mode m) {
 enum class pool_mode {max, average, average_no_pad};
 
 /** returns a string representation of the pool_mode */
-std::string get_pool_mode_name(pool_mode m); 
+std::string get_pool_mode_name(pool_mode m);
 
 namespace lbann {
 

@@ -31,7 +31,7 @@
 #include "lbann/utils/mild_exception.hpp"
 #include "lbann/utils/exception.hpp"
 
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
 namespace lbann {
 
 cv_mean_extractor::cv_mean_extractor()
@@ -168,4 +168,4 @@ std::ostream& cv_mean_extractor::print(std::ostream& os) const {
 }
 
 } // end of namespace lbann
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV

@@ -34,7 +34,7 @@
 #include "patchworks/patchworks_patch_descriptor.hpp"
 #include <limits> // std::numeric_limits
 
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
 namespace lbann {
 
 /// Similar to cv_process but works on patches that are extracted from an image
@@ -77,6 +77,6 @@ class cv_process_patches : public cv_process {
 };
 
 } // end of namespace lbann
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV
 
 #endif // LBANN_CV_PROCESS_PATCHES_HPP

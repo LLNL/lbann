@@ -33,7 +33,7 @@
 #include <type_traits>
 #include <typeinfo>   // operator typeid
 
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
 #include "lbann/data_readers/cv_utils.hpp"
 #include "lbann/data_readers/cv_process_patches.hpp"
 #endif

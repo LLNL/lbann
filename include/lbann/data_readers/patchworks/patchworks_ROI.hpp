@@ -31,7 +31,9 @@
  *  - Region of interest descriptor
  */
 
-#ifdef __LIB_OPENCV
+#include "lbann_config.hpp"
+
+#ifdef LBANN_HAS_OPENCV
 #ifndef _PATCHWORKS_ROI_H_INCLUDED_
 #define _PATCHWORKS_ROI_H_INCLUDED_
 
@@ -148,4 +150,4 @@ std::ostream& operator<<(std::ostream& os, const ROI& roi);
 } // end of namespace patchworks
 } // end of namespace lbann
 #endif // _PATCHWORKS_ROI_H_INCLUDED_
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV
