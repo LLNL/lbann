@@ -31,19 +31,8 @@
 namespace lbann {
 
 pilot2_molecular_reader::pilot2_molecular_reader(
-  int num_neighbors, bool shuffle) :
-  generic_data_reader(shuffle), m_num_neighbors(num_neighbors) {}
-
-pilot2_molecular_reader::pilot2_molecular_reader(
-  const pilot2_molecular_reader& other) :
-  generic_data_reader(other) {}
-
-pilot2_molecular_reader& pilot2_molecular_reader::operator=(
-  const pilot2_molecular_reader& other) {
-  generic_data_reader::operator=(other);
-  
-  return *this;
-}
+  int num_neighbors, int max_neighborhood, bool shuffle) :
+  generic_data_reader(shuffle), m_num_neighbors(num_neighbors), m_max_neighborhood(max_neighborhood) {}
 
 void pilot2_molecular_reader::load() {
   std::string infile = get_data_filename();
@@ -117,12 +106,15 @@ bool pilot2_molecular_reader::fetch_datum(
   const int frame = get_frame(data_id);
   // Fetch the actual molecule.
   fetch_molecule(X, data_id, 0, mb_idx);
-  // Fetch the neighbors.
+  // Fetch the neighbors - note that the offset is 2x the max
+  // neighborhood size to accomodate the top and bottom of the
+  // bilayer
   const int neighbor_frame_offset =
-    frame * m_num_samples_per_frame * m_num_samples_per_frame;
+    frame * m_num_samples_per_frame * (2 * m_max_neighborhood);
+  const int intra_frame_data_id = data_id - frame * m_num_samples_per_frame;
   if (m_neighbors.word_size == 4) {
     float *neighbor_data = m_neighbors.data<float>() +
-      neighbor_frame_offset + data_id * m_num_samples_per_frame;
+      neighbor_frame_offset + intra_frame_data_id * (2 * m_max_neighborhood);
     // Start at 1 to skip self.
     for (int i = 1; i < m_num_neighbors + 1; ++i) {
       int neighbor_id = neighbor_data[i];
@@ -133,7 +125,7 @@ bool pilot2_molecular_reader::fetch_datum(
     }
   } else if (m_neighbors.word_size == 8) {
     double *neighbor_data = m_neighbors.data<double>() +
-      neighbor_frame_offset + data_id * m_num_samples_per_frame;
+      neighbor_frame_offset + intra_frame_data_id * (2 * m_max_neighborhood);
     // Start at 1 to skip self.
     for (int i = 1; i < m_num_neighbors + 1; ++i) {
       int neighbor_id = neighbor_data[i];
@@ -151,15 +143,16 @@ void pilot2_molecular_reader::fetch_molecule(Mat& X, int data_id, int idx,
   const int frame = get_frame(data_id);
   // Compute the offset in features for this frame.
   const int frame_offset = frame * m_num_features * m_num_samples_per_frame;
+  const int intra_frame_data_id = data_id - frame * m_num_samples_per_frame;
   if (m_features.word_size == 4) {
     float *data = m_features.data<float>() + frame_offset +
-      data_id * m_num_features;
+      intra_frame_data_id * m_num_features;
     for (int i = 0; i < m_num_features; ++i) {
       X(m_num_features * idx + i, mb_idx) = data[i];
     }
   } else if (m_features.word_size == 8) {
     double *data = m_features.data<double>() + frame_offset +
-      data_id * m_num_features;
+      intra_frame_data_id * m_num_features;
     for (int i = 0; i < m_num_features; ++i) {
       X(m_num_features * idx + i, mb_idx) = data[i];
     }

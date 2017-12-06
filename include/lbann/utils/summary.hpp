@@ -174,7 +174,11 @@ class lbann_summary {
   /** Compute the sum of elements in mat. */
   DataType local_sum(const Mat& mat) const;
   /** Compute the sum of square of elements in mat. */
-  DataType local_sqsum(const Mat& mat) const;
+  void local_sum_sqsum(const Mat& mat, DataType& sum, DataType& sqsum) const;
+  /** Compute the minimum element in mat. */
+  DataType local_min(const Mat& mat) const;
+  /** Compute the maximum element in mat. */
+  DataType local_max(const Mat& mat) const;
   /** Prepend "model<model>/" to tag. */
   std::string prepend_model(const std::string tag, int model) const;
   /** Gather and write out a scalar summary for each model. */

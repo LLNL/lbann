@@ -55,14 +55,14 @@ class cv_normalizer : public cv_transform {
   /** This is the interim type of input values computed from image data
    *  It does not have to be the same as the type of the values stored, i.e., DataType.
    */
-  typedef DataType ComputeType;
-  //typedef double ComputeType;
+  using ComputeType = DataType;
+  //using ComputeType = double;
   /**
    * Define the type of normalization methods available.
    * z-score method is essentially the combination of mean subtraction and unit variance
    */
   enum normalization_type {_none=0, _u_scale=1, _mean_sub=2, _unit_var=4, _z_score=6};
-  typedef std::pair<ComputeType, ComputeType> channel_trans_t;
+  using channel_trans_t = std::pair<ComputeType, ComputeType>;
 
  protected:
   // --- configuration variables ---
@@ -231,7 +231,7 @@ inline OutputIterator cv_normalizer::scale(
     }
   }
 
-  typedef typename std::iterator_traits<OutputIterator>::value_type T;
+  using T = typename std::iterator_traits<OutputIterator>::value_type;
 
   // At this point NCh should not be zero because both alpha and beta are not trivial.
   if (NCh == 1) {
@@ -280,15 +280,17 @@ inline bool cv_normalizer::scale_with_known_type(cv::Mat& image,
 
 
   // overwrite the storage of the source image if the source and the result have
-  // the same data type. Otherwise, create a new image for the result and replace
-  // the input with the input at the end.
+  // the same data type. Otherwise, create a new image for the result. The result
+  // will replace the image referenced by the input.
   if (std::is_same<Tsrc, Tdst>::value) {
     if (image.isContinuous()) {
       scale(reinterpret_cast<const Tsrc *>(image.datastart),
             reinterpret_cast<const Tsrc *>(image.dataend),
             reinterpret_cast<Tsrc *>(image.data), trans);
     } else {
-      const unsigned int stride = Height*NCh;
+      // TODO: Should we make this to copy to a new continuous block instead of
+      // updating the values in-place?
+      const unsigned int stride = Width*NCh;
       for (unsigned int i = 0u; i < Height; ++i) {
         auto *optr = reinterpret_cast<Tsrc *>(image.ptr<Tsrc>(i));
         const Tsrc *iptr = optr;
@@ -303,7 +305,7 @@ inline bool cv_normalizer::scale_with_known_type(cv::Mat& image,
             reinterpret_cast<const Tsrc *>(image.dataend),
             reinterpret_cast<Tdst *>(image_out.data), trans);
     } else {
-      const unsigned int stride = Height*NCh;
+      const unsigned int stride = Width*NCh;
       auto *ptr_out = reinterpret_cast<Tdst *>(image_out.data);
       for (unsigned int i = 0u; i < Height; ++i, ptr_out += stride) {
         const Tsrc *ptr = reinterpret_cast<Tsrc *>(image.ptr<Tsrc>(i));

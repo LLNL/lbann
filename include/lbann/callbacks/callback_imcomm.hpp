@@ -83,6 +83,8 @@ class lbann_callback_imcomm : public lbann_callback {
 
   /** Do initialization for this model. */
   void setup(model *m) override;
+  /** Make sure all models have the same weights. */
+  void on_train_begin(model *m) override;
   /** Clear out remaining error if needed. */
   void on_epoch_end(model *m) override;
   /** Do inter-model gradient updates. */

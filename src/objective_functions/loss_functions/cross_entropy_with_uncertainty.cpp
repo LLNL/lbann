@@ -24,142 +24,120 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/objective_functions/cross_entropy_with_uncertainty.hpp"
-#include "lbann/layers/activations/softmax.hpp"
-#include <typeinfo>
-#include <typeindex>
-#include <limits>
+#include "lbann/objective_functions/loss_functions/cross_entropy_with_uncertainty.hpp"
 
 namespace lbann {
 
-namespace objective_functions {
+cross_entropy_with_uncertainty::cross_entropy_with_uncertainty(DataType scale_factor)
+  : loss_function(scale_factor),
+    m_prediction_sums(nullptr) {}
 
-cross_entropy_with_uncertainty::cross_entropy_with_uncertainty(bool categorical_ground_truth)
-  : objective_function(),
-    m_categorical_ground_truth(categorical_ground_truth) {}
+cross_entropy_with_uncertainty::cross_entropy_with_uncertainty(const cross_entropy_with_uncertainty& other)
+  : loss_function(other),
+    m_prediction_sums(other.m_prediction_sums) {
+  if (m_prediction_sums != nullptr) {
+    m_prediction_sums = m_prediction_sums->Copy();
+  }
+}
 
-void cross_entropy_with_uncertainty::setup(const Layer& prev_layer) {
-  // Activate softmax-cross-entropy shortcut if possible
-  /*
-  if(m_categorical_ground_truth) {
-    const std::type_info& prev_layer_type = typeid(prev_layer);
-    const std::type_info& data_parallel_softmax_type
-      = typeid(softmax_layer<data_layout::DATA_PARALLEL>);
-    const std::type_info& model_parallel_softmax_type
-      = typeid(softmax_layer<data_layout::MODEL_PARALLEL>);
-    if((std::type_index(prev_layer_type)
-        == std::type_index(data_parallel_softmax_type))
-       || (std::type_index(prev_layer_type)
-           == std::type_index(model_parallel_softmax_type))) {
-      m_shortcut_softmax_layer = &prev_layer;
+cross_entropy_with_uncertainty& cross_entropy_with_uncertainty::operator=(const cross_entropy_with_uncertainty& other) {
+  loss_function::operator=(other);
+  if (m_prediction_sums != nullptr) delete m_prediction_sums;
+  m_prediction_sums = other.m_prediction_sums;
+  if (m_prediction_sums != nullptr) {
+    m_prediction_sums = m_prediction_sums->Copy();
+  }
+  return *this;
+}
+
+cross_entropy_with_uncertainty::~cross_entropy_with_uncertainty() {
+  if (m_prediction_sums != nullptr) delete m_prediction_sums;
+}
+
+void cross_entropy_with_uncertainty::setup(objective_function& obj_fn) {
+  loss_function::setup(obj_fn);
+
+  const El::DistData dist(*m_gradient);
+  if (dist.colDist == El::MC && dist.rowDist == El::MR) {
+    m_prediction_sums = new StarMRMat(*dist.grid);
+  } else if (dist.colDist == El::STAR && dist.rowDist == El::VC) {
+    m_prediction_sums = new StarVCMat(*dist.grid);
+  } else {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "invalid matrix distribution";
+    throw lbann_exception(err.str());
+  }
+
+}
+
+DataType cross_entropy_with_uncertainty::evaluate(const AbsDistMat& predictions,
+                                                  const AbsDistMat& ground_truth) {
+
+  // Initialize workspace
+  m_prediction_sums->Resize(1, predictions.Width());
+  Mat& prediction_sums_local = m_prediction_sums->Matrix();
+
+  // Local matrices
+  const Mat& predictions_local = predictions.LockedMatrix();
+  const Mat& ground_truth_local = ground_truth.LockedMatrix();
+  
+  // Matrix parameters
+  const int width = predictions.Width();
+  const int local_height = predictions_local.Height();
+  const int local_width = predictions_local.Width();
+
+  // Compute sum of predictions
+  #pragma omp parallel for
+  for (int col = 0; col < local_width; ++col) {
+    DataType pred_sum = DataType(0);
+    for (int row = 0; row < local_height; ++row) {
+      if (ground_truth_local(row, col) != DataType(0)) {
+        pred_sum += predictions_local(row, col);
+      }
     }
+    prediction_sums_local(0, col) = pred_sum;
   }
-  */
+  get_comm()->allreduce(*m_prediction_sums,
+                        m_prediction_sums->RedundantComm());
+
+  // Compute mean objective function value
+  DataType local_sum = DataType(0);
+  for (int col = 0; col < local_width; ++col) {
+    local_sum += -std::log(prediction_sums_local(0, col));
+  }
+  return get_comm()->allreduce(local_sum / width,
+                               m_prediction_sums->DistComm());
 
 }
 
-void cross_entropy_with_uncertainty::compute_value(const AbsDistMat& predictions,
-                                  const AbsDistMat& ground_truth) {
+void cross_entropy_with_uncertainty::differentiate(const AbsDistMat& predictions,
+                                                   const AbsDistMat& ground_truth,
+                                                   AbsDistMat& gradient) {
 
-  // Get local matrices and matrix parameters
-  const Mat& predictions_local = predictions.LockedMatrix();
+  // Local matrices
   const Mat& ground_truth_local = ground_truth.LockedMatrix();
-  const int width = predictions.Width();
-  const int local_height = predictions_local.Height();
-  const int local_width = predictions_local.Width();
-
-  AbsDistMat *workspace;
-  if (predictions.DistData().colDist == El::MC) {  
-    //model parallel
-    workspace = new StarMRMat(predictions.Grid());    
-  } else {
-    //data parallel 
-    workspace = new StarVCMat(predictions.Grid());
-  } 
-  workspace->Resize(1, width);
-  Mat& local_workspace = workspace->Matrix();
-
-  for (int col = 0;  col < local_width; ++col) {
-    double pred_sum = 0;
-    for (int row = 0; row < local_height; row++) {
-      if (ground_truth_local(row, col) != DataType(0)) {
-        pred_sum += predictions_local(row, col);
-      }
-    } 
-    local_workspace(0, col) = pred_sum;  
-  }
-  m_objective_function->get_model()->get_comm()->allreduce(
-    *workspace, workspace->RedundantComm());
-
-  double sum_cross_entropy = 0.0;
-  for (int i = 0; i < local_width; i++) sum_cross_entropy -= std::log(local_workspace(0, i));
-  sum_cross_entropy = m_objective_function->get_model()->get_comm()->allreduce(
-    sum_cross_entropy, workspace->DistComm());
-
-  // Update objective function value
-  add_to_value(sum_cross_entropy/width);
-
-}
-
-void cross_entropy_with_uncertainty::compute_gradient(const AbsDistMat& predictions,
-                                     const AbsDistMat& ground_truth,
-                                     AbsDistMat& gradient) {
-
-  // Apply softmax-cross-entropy shortcut if activated
-  /*
-  if(m_shortcut_softmax_layer != nullptr) {
-    El::LockedView(gradient, ground_truth);
-    return;
-  }
-  */
-
-  // Get local matrices
-  const Mat& predictions_local = predictions.LockedMatrix();
-  const Mat& ground_truth_local = ground_truth.LockedMatrix();
-  const int width = predictions.Width();
-  const int local_height = predictions_local.Height();
-  const int local_width = predictions_local.Width();
-
-  AbsDistMat *workspace;
-  if (predictions.DistData().colDist == El::MC) {  
-    //model parallel
-    workspace = new StarMRMat(predictions.Grid());    
-  } else {
-    //data parallel 
-    workspace = new StarVCMat(predictions.Grid());
-  } 
-  workspace->Resize(1, width);
-  Mat& local_workspace = workspace->Matrix();
-
-  for (int col = 0;  col < local_width; ++col) {
-    double pred_sum = 0;
-    for (int row = 0; row < local_height; row++) {
-      if (ground_truth_local(row, col) != DataType(0)) {
-        pred_sum += predictions_local(row, col);
-      }
-    } 
-    local_workspace(0, col) = pred_sum;  
-  }
-  m_objective_function->get_model()->get_comm()->allreduce(
-    *workspace, workspace->RedundantComm());
-
+  const Mat& prediction_sums_local = m_prediction_sums->LockedMatrix();
   Mat& gradient_local = gradient.Matrix();
 
+  // Matrix parameters
+  const El::Int local_height = gradient_local.Height();
+  const El::Int local_width = gradient_local.Width();
+
   // Compute gradient
-  El::IndexDependentFill(gradient_local,
-                         (std::function<DataType(El::Int,El::Int)>)
-                         ([&local_workspace, &ground_truth_local]
-                          (El::Int r, El::Int c) -> DataType {
-                           const DataType true_val = ground_truth_local(r,c);
-                           if(true_val != DataType(0)) {
-                             return -true_val/local_workspace(0, c);    // -1/(\sum_{i \in A} \hat{y}_i)
-                           } else {
-                             return DataType(0);
-                           }
-                         }));
+  #pragma omp parallel for collapse(2)
+  for (El::Int col = 0; col < local_width; ++col) {
+    for (El::Int row = 0; row < local_height; ++row) {
+      const DataType true_val = ground_truth_local(row, col);
+      DataType& grad_val = gradient_local(row, col);
+      if (true_val != DataType(0)) {
+        grad_val = -true_val / prediction_sums_local(0, col);
+      } else {
+        grad_val = DataType(0);
+      }
+    }
+  }
 
 }
-
-}  // namespace objective_functions
 
 }  // namespace lbann

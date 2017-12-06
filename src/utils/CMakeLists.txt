@@ -4,6 +4,7 @@ set_full_path(THIS_DIR_SOURCES
   im2col.cpp
   omp_diagnostics.cpp
   options.cpp
+  protobuf_utils.cpp
   quantizer.cpp
   random.cpp
   statistics.cpp

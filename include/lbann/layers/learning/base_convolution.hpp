@@ -47,7 +47,7 @@ namespace lbann {
 /** Base convolution layer.
  *  Parent class for convolution and deconvolution layers.
  */
-class base_convolution_layer : public learning {
+class base_convolution_layer : public learning_layer {
 
  protected:
 
@@ -108,7 +108,7 @@ class base_convolution_layer : public learning {
                          std::vector<int> conv_strides,
                          bool has_bias,
                          cudnn::cudnn_manager *cudnn)
-    : learning(comm) {
+    : learning_layer(comm) {
 
     if (conv_dims.size() == 1) {
       conv_dims.resize(num_data_dims, conv_dims[0]);
@@ -154,7 +154,7 @@ class base_convolution_layer : public learning {
   }
 
   base_convolution_layer(const base_convolution_layer& other) :
-    learning(other),
+    learning_layer(other),
     m_kernel_dims(other.m_kernel_dims),
     m_conv_pads(other.m_conv_pads),
     m_conv_strides(other.m_conv_strides),
@@ -196,7 +196,7 @@ class base_convolution_layer : public learning {
   }
 
   base_convolution_layer& operator=(const base_convolution_layer& other) {
-    learning::operator=(other);
+    learning_layer::operator=(other);
     m_kernel_dims = other.m_kernel_dims;
     m_conv_pads = other.m_conv_pads;
     m_conv_strides = other.m_conv_strides;
@@ -284,7 +284,7 @@ class base_convolution_layer : public learning {
 
 
   template<data_layout T_layout> void initialize_distributed_matrices() {
-    learning::initialize_distributed_matrices<T_layout>();
+    learning_layer::initialize_distributed_matrices<T_layout>();
     m_kernel_weights_gradient = new StarMat(this->m_comm->get_model_grid());
     m_bias_weights_gradient = new StarMat(this->m_comm->get_model_grid());
     m_kernel_weights_v = new StarMat(this->m_comm->get_model_grid());
@@ -295,7 +295,7 @@ class base_convolution_layer : public learning {
    *  The kernel weights are setup in the convolution and
    *  deconvolution classes. */
   void setup_data() override {
-    learning::setup_data();
+    learning_layer::setup_data();
 
     // Initialize default weights if none are provided
     if (this->m_weights.size() > 2) {
@@ -338,7 +338,7 @@ class base_convolution_layer : public learning {
   }
 
   void setup_views() override {
-    learning::setup_views();
+    learning_layer::setup_views();
     if ((m_weights.size() < 1u) || (this->m_weights[0] == nullptr)) {
       std::stringstream err;
       err << __FILE__ << ' ' << __LINE__ << " :: " << m_name
@@ -359,7 +359,7 @@ class base_convolution_layer : public learning {
 
   /// Initialize GPU objects
   void setup_gpu() override {
-    learning::setup_gpu();
+    learning_layer::setup_gpu();
   #ifndef __LIB_CUDNN
     throw lbann_exception("base_convolution_layer: cuDNN not detected");
   #else

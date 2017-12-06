@@ -24,116 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/objective_functions/polya_negloglike.hpp"
-#include "lbann/layers/activations/softmax.hpp"
-#include <typeinfo>
-#include <typeindex>
-#include <limits>
-
-namespace lbann {
-
-namespace objective_functions {
-
-polya_negloglike::polya_negloglike(bool categorical_ground_truth)
-  : objective_function(),
-    m_categorical_ground_truth(categorical_ground_truth) {}
-
-void polya_negloglike::setup(const Layer& prev_layer) {
-
-  /*
-  // Activate softmax-cross-entropy shortcut if possible
-  if(m_categorical_ground_truth) {
-    const std::type_info& prev_layer_type = typeid(prev_layer);
-    const std::type_info& data_parallel_softmax_type
-      = typeid(softmax_layer<data_layout::DATA_PARALLEL>);
-    const std::type_info& model_parallel_softmax_type
-      = typeid(softmax_layer<data_layout::MODEL_PARALLEL>);
-    if((std::type_index(prev_layer_type)
-        == std::type_index(data_parallel_softmax_type))
-       || (std::type_index(prev_layer_type)
-           == std::type_index(model_parallel_softmax_type))) {
-      m_shortcut_softmax_layer = &prev_layer;
-    }
-  }
-  */
-
-}
-
-void polya_negloglike::compute_value(const AbsDistMat& predictions,
-                                  const AbsDistMat& ground_truth) {
-
-  // Get local matrices and matrix parameters
-  const Mat& predictions_local = predictions.LockedMatrix();
-  const Mat& ground_truth_local = ground_truth.LockedMatrix();
-  const int width = predictions.Width();
-  const int local_height = predictions_local.Height();
-  const int local_width = predictions_local.Width();
-
-  AbsDistMat *counts;
-  AbsDistMat *alphaSums;
-  AbsDistMat *lgammaAlphaSums;
-  AbsDistMat *lgammaAlphaLevelCountSums;
-  
-  if (predictions.DistData().colDist == El::MC) {  
-    //model parallel
-    counts = new StarMRMat(ground_truth.Grid());
-    alphaSums = new StarMRMat(predictions.Grid());
-    lgammaAlphaSums = new StarMRMat(predictions.Grid());
-    lgammaAlphaLevelCountSums = new StarMRMat(predictions.Grid());
-  } else {
-    //data parallel 
-    counts = new StarVCMat(ground_truth.Grid());
-    alphaSums = new StarVCMat(predictions.Grid());
-    lgammaAlphaSums = new StarVCMat(predictions.Grid());
-    lgammaAlphaLevelCountSums = new StarVCMat(predictions.Grid());
-  } 
-  counts->Resize(1, width); 
-  alphaSums->Resize(1, width);
-  lgammaAlphaSums->Resize(1, width);
-  lgammaAlphaLevelCountSums->Resize(1, width); 
-
-  Mat& local_counts = counts->Matrix();
-  Mat& local_alphaSums = alphaSums->Matrix();
-  Mat& local_lgammaAlphaSums = lgammaAlphaSums->Matrix();
-  Mat& local_lgammaAlphaLevelCountSums = lgammaAlphaLevelCountSums->Matrix();
-
-  for (int col = 0;  col < local_width; ++col) {
-    double count = 0;
-    double alphaSum = 0;
-    double lgammaAlphaSum = 0;
-    double lgammaAlphaLevelCountSum = 0;
-    for (int row = 0; row < local_height; ++row) {
-      count += ground_truth_local(row, col);
-      alphaSum += predictions_local(row, col);
-      lgammaAlphaSum += std::lgamma(predictions_local(row, col));
-      lgammaAlphaLevelCountSum += std::lgamma(predictions_local(row, col) + ground_truth_local(row, col));
-    } 
-    local_counts(0, col) = count; 
-    local_alphaSums(0, col) = alphaSum;
-    local_lgammaAlphaSums(0, col) = lgammaAlphaSum;
-    local_lgammaAlphaLevelCountSums(0, col) = lgammaAlphaLevelCountSum;
-  }
-  lbann_comm *comm = m_objective_function->get_model()->get_comm();
-  comm->allreduce(*counts, counts->RedundantComm(), El::mpi::SUM); 
-  comm->allreduce(*alphaSums, alphaSums->RedundantComm(), El::mpi::SUM);
-  comm->allreduce(*lgammaAlphaSums, lgammaAlphaSums->RedundantComm(), El::mpi::SUM); 
-  comm->allreduce(*lgammaAlphaLevelCountSums, lgammaAlphaLevelCountSums->RedundantComm(), El::mpi::SUM); 
- 
-  // Compute total negative log-likelihood of Polya distribution across mini-batch.
-  double sum_polya_negloglike = 0;
-  for (int i = 0; i < local_width; i++) {
-    sum_polya_negloglike +=
-      -std::lgamma(local_alphaSums(0, i)) + std::lgamma(local_counts(0, i) + local_alphaSums(0, i)) - local_lgammaAlphaLevelCountSums(0, i) + local_lgammaAlphaSums(0, i);
-  }
-
-  double mean_polya_negloglike = sum_polya_negloglike / width;
-  mean_polya_negloglike = comm->allreduce(mean_polya_negloglike,
-                                          predictions.DistComm());
-
-  // Update objective function value
-  add_to_value(mean_polya_negloglike);
-
-}
+#include "lbann/objective_functions/loss_functions/polya_negloglike.hpp"
 
 double digamma(double x) {
   double result = 0.0;
@@ -151,73 +42,179 @@ double digamma(double x) {
   return result;
 }
 
-void polya_negloglike::compute_gradient(const AbsDistMat& predictions,
-                                     const AbsDistMat& ground_truth,
-                                     AbsDistMat& gradient) {
+namespace lbann {
 
-  /*
-  // Apply softmax-cross-entropy shortcut if activated
-  if(m_shortcut_softmax_layer != nullptr) {
-    El::LockedView(gradient, ground_truth);
-    return;
+polya_negloglike::polya_negloglike(DataType scale_factor)
+  : loss_function(scale_factor),
+    m_counts(nullptr),
+    m_alpha_sums(nullptr),
+    m_lgamma_alpha_sums(nullptr),
+    m_lgamma_alpha_level_count_sums(nullptr) {}
+
+polya_negloglike::polya_negloglike(const polya_negloglike& other) 
+  : loss_function(other),
+    m_counts(other.m_counts),
+    m_alpha_sums(other.m_alpha_sums),
+    m_lgamma_alpha_sums(other.m_lgamma_alpha_sums),
+    m_lgamma_alpha_level_count_sums(other.m_lgamma_alpha_level_count_sums) {
+  if (m_counts != nullptr) {
+    m_counts = m_counts->Copy();
   }
-  */
+  if (m_alpha_sums != nullptr) {
+    m_alpha_sums = m_alpha_sums->Copy();
+  }
+  if (m_lgamma_alpha_sums != nullptr) {
+    m_lgamma_alpha_sums = m_lgamma_alpha_sums->Copy();
+  }
+  if (m_lgamma_alpha_level_count_sums != nullptr) {
+    m_lgamma_alpha_level_count_sums = m_lgamma_alpha_level_count_sums->Copy();
+  }
+}
 
-  // Get local matrices
-  const Mat& predictions_local = predictions.LockedMatrix();
-  const Mat& ground_truth_local = ground_truth.LockedMatrix();
-  const int width = predictions.Width();
-  const int local_height = predictions_local.Height();
-  const int local_width = predictions_local.Width();
-  Mat& gradient_local = gradient.Matrix();
+polya_negloglike& polya_negloglike::operator=(const polya_negloglike& other) {
+  loss_function::operator=(other);
+  if (m_counts != nullptr) delete m_counts;
+  if (m_alpha_sums != nullptr) delete m_alpha_sums;
+  if (m_lgamma_alpha_sums != nullptr) delete m_lgamma_alpha_sums;
+  if (m_lgamma_alpha_level_count_sums != nullptr) delete m_lgamma_alpha_level_count_sums;
+  m_counts = other.m_counts;
+  m_alpha_sums = other.m_alpha_sums;
+  m_lgamma_alpha_sums = other.m_lgamma_alpha_sums;
+  m_lgamma_alpha_level_count_sums = other.m_lgamma_alpha_level_count_sums;
+  if (m_counts != nullptr) {
+    m_counts = m_counts->Copy();
+  }
+  if (m_alpha_sums != nullptr) {
+    m_alpha_sums = m_alpha_sums->Copy();
+  }
+  if (m_lgamma_alpha_sums != nullptr) {
+    m_lgamma_alpha_sums = m_lgamma_alpha_sums->Copy();
+  }
+  if (m_lgamma_alpha_level_count_sums != nullptr) {
+    m_lgamma_alpha_level_count_sums = m_lgamma_alpha_level_count_sums->Copy();
+  }
+  return *this;
+}
 
-  AbsDistMat *counts;
-  AbsDistMat *alphaSums;
+polya_negloglike::~polya_negloglike() {
+  if (m_counts != nullptr) delete m_counts;
+  if (m_alpha_sums != nullptr) delete m_alpha_sums;
+  if (m_lgamma_alpha_sums != nullptr) delete m_lgamma_alpha_sums;
+  if (m_lgamma_alpha_level_count_sums != nullptr) delete m_lgamma_alpha_level_count_sums;
+}
 
-  if (predictions.DistData().colDist == El::MC) {  
-    //model parallel
-    counts = new StarMRMat(ground_truth.Grid());
-    alphaSums = new StarMRMat(predictions.Grid());
+void polya_negloglike::setup(objective_function& obj_fn) {
+  loss_function::setup(obj_fn);
+
+  const El::DistData dist(*m_gradient);
+  if (dist.colDist == El::MC && dist.rowDist == El::MR) {
+    m_counts = new StarMRMat(*dist.grid);
+    m_alpha_sums = new StarMRMat(*dist.grid);
+    m_lgamma_alpha_sums = new StarMRMat(*dist.grid);
+    m_lgamma_alpha_level_count_sums = new StarMRMat(*dist.grid);
+  } else if (dist.colDist == El::STAR && dist.rowDist == El::VC) {
+    m_counts = new StarVCMat(*dist.grid);
+    m_alpha_sums = new StarVCMat(*dist.grid);
+    m_lgamma_alpha_sums = new StarVCMat(*dist.grid);
+    m_lgamma_alpha_level_count_sums = new StarVCMat(*dist.grid);
   } else {
-    //data parallel 
-    counts = new StarVCMat(ground_truth.Grid());
-    alphaSums = new StarVCMat(predictions.Grid());
-  } 
-  counts->Resize(1, width); 
-  alphaSums->Resize(1, width);
-
-  Mat& local_counts = counts->Matrix();
-  Mat& local_alphaSums = alphaSums->Matrix();
-
-  for (int col = 0;  col < local_width; ++col) {
-    double count = 0;
-    double alphaSum = 0;
-     for (int row = 0; row < local_height; ++row) {
-      count += ground_truth_local(row, col);
-      alphaSum += predictions_local(row, col);
-     } 
-    local_counts(0, col) = count; 
-    local_alphaSums(0, col) = alphaSum;
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "invalid matrix distribution";
+    throw lbann_exception(err.str());
   }
-  lbann_comm *comm = m_objective_function->get_model()->get_comm();
-  comm->allreduce(*counts, counts->RedundantComm(), El::mpi::SUM); 
-  comm->allreduce(*alphaSums, alphaSums->RedundantComm(), El::mpi::SUM);
-
-  // Compute gradient
-  El::IndexDependentFill(gradient_local,
-                         (std::function<DataType(El::Int,El::Int)>)
-                         ([&predictions_local, &ground_truth_local, &local_counts, &local_alphaSums]
-                          (El::Int r, El::Int c) -> DataType {                        
-                           return DataType(
-                             -digamma(local_alphaSums(0, c)) 
-                               + digamma(local_counts(0, c) + local_alphaSums(0, c)) 
-                               - digamma(ground_truth_local(r, c) + predictions_local(r, c)) 
-  			       + digamma(predictions_local(r, c))
-                           );
-                         }));
 
 }
 
-}  // namespace objective_functions
+DataType polya_negloglike::evaluate(const AbsDistMat& predictions,
+                                    const AbsDistMat& ground_truth) {
+
+  // Initialize workspace
+  m_counts->Resize(1, predictions.Width());
+  m_alpha_sums->Resize(1, predictions.Width());
+  m_lgamma_alpha_sums->Resize(1, predictions.Width());
+  m_lgamma_alpha_level_count_sums->Resize(1, predictions.Width());
+  Mat& counts_local = m_counts->Matrix();
+  Mat& alpha_sums_local = m_alpha_sums->Matrix();
+  Mat& lgamma_alpha_sums_local = m_lgamma_alpha_sums->Matrix();
+  Mat& lgamma_alpha_level_count_sums_local = m_lgamma_alpha_level_count_sums->Matrix();
+
+  // Local matrices
+  const Mat& predictions_local = predictions.LockedMatrix();
+  const Mat& ground_truth_local = ground_truth.LockedMatrix();
+  
+  // Matrix parameters
+  const int width = predictions.Width();
+  const int local_height = predictions_local.Height();
+  const int local_width = predictions_local.Width();
+
+  #pragma omp parallel for
+  for (int col = 0; col < local_width; ++col) {
+    DataType count = DataType(0);
+    DataType alpha_sum = DataType(0);
+    DataType lgamma_alpha_sum = DataType(0);
+    DataType lgamma_alpha_level_count_sum = DataType(0);
+    for (int row = 0; row < local_height; ++row) {
+      const DataType true_val = ground_truth_local(row, col);
+      const DataType pred_val = predictions_local(row, col);
+      count += true_val;
+      alpha_sum += pred_val;
+      lgamma_alpha_sum += std::lgamma(pred_val);
+      lgamma_alpha_level_count_sum += std::lgamma(pred_val + true_val);
+    }
+    counts_local(0, col) = count;
+    alpha_sums_local(0, col) = alpha_sum;
+    lgamma_alpha_sums_local(0, col) = lgamma_alpha_sum;
+    lgamma_alpha_level_count_sums_local(0, col) = lgamma_alpha_level_count_sum;
+  }
+  get_comm()->allreduce(*m_counts, m_counts->RedundantComm());
+  get_comm()->allreduce(*m_alpha_sums, m_alpha_sums->RedundantComm());
+  get_comm()->allreduce(*m_lgamma_alpha_sums, m_lgamma_alpha_sums->RedundantComm());
+  get_comm()->allreduce(*m_lgamma_alpha_level_count_sums,
+                        m_lgamma_alpha_level_count_sums->RedundantComm());
+
+  // Compute mean objective function value across mini-batch
+  DataType local_sum = DataType(0);
+  for (int col = 0; col < local_width; ++col) {
+    local_sum += (- std::lgamma(alpha_sums_local(0, col))
+                  + std::lgamma(counts_local(0, col) + alpha_sums_local(0, col))
+                  - lgamma_alpha_level_count_sums_local(0, col)
+                  + lgamma_alpha_sums_local(0, col));
+  }
+  return get_comm()->allreduce(local_sum / width, m_counts->DistComm());
+
+}
+
+void polya_negloglike::differentiate(const AbsDistMat& predictions,
+                                     const AbsDistMat& ground_truth,
+                                     AbsDistMat& gradient) {
+
+  // Local matrices
+  const Mat& predictions_local = predictions.LockedMatrix();
+  const Mat& ground_truth_local = ground_truth.LockedMatrix();
+  const Mat& counts_local = m_counts->LockedMatrix();
+  const Mat& alpha_sums_local = m_alpha_sums->LockedMatrix();
+  Mat& gradient_local = gradient.Matrix();
+
+  // Matrix parameters
+  const El::Int local_height = gradient_local.Height();
+  const El::Int local_width = gradient_local.Width();
+
+  // Compute gradient
+  #pragma omp parallel for collapse(2)
+  for (El::Int col = 0; col < local_width; ++col) {
+    for (El::Int row = 0; row < local_height; ++row) {
+      const DataType true_val = ground_truth_local(row, col);
+      const DataType pred_val = predictions_local(row, col);
+      const DataType alpha_sum = alpha_sums_local(0, col);
+      const DataType count = counts_local(0, col);
+      gradient_local(row, col) = (- digamma(alpha_sum)
+                                  + digamma(count + alpha_sum)
+                                  - digamma(true_val + pred_val)
+                                  + digamma(pred_val));
+    }
+  }
+
+}
 
 }  // namespace lbann

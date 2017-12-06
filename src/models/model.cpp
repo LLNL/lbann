@@ -504,12 +504,16 @@ void model::backward_prop() {
 }
 
 void model::update_weights() {
+  do_model_optimize_begin_cbs();
   for (weights* w : m_weights) {
     optimizer* opt = w->get_optimizer();
     if (opt != nullptr) {
+      do_weight_optimize_begin_cbs(w);
       opt->step();
+      do_weight_optimize_end_cbs(w);
     }
   }
+  do_model_optimize_end_cbs();
 }
 
 bool model::update_layers() {
@@ -740,6 +744,38 @@ void model::do_layer_backward_prop_end_cbs(Layer *l) {
   for (auto&& cb : m_callbacks) {
     if (get_cur_step() % cb->get_batch_interval() == 0) {
       cb->on_backward_prop_end(this, l);
+    }
+  }
+}
+
+void model::do_model_optimize_begin_cbs() {
+  for (auto&& cb : m_callbacks) {
+    if (get_cur_step() % cb->get_batch_interval() == 0) {
+      cb->on_optimize_begin(this);
+    }
+  }
+}
+
+void model::do_model_optimize_end_cbs() {
+  for (auto&& cb : m_callbacks) {
+    if (get_cur_step() % cb->get_batch_interval() == 0) {
+      cb->on_optimize_end(this);
+    }
+  }
+}
+
+void model::do_weight_optimize_begin_cbs(weights *w) {
+  for (auto&& cb : m_callbacks) {
+    if (get_cur_step() % cb->get_batch_interval() == 0) {
+      cb->on_optimize_begin(this, w);
+    }
+  }
+}
+
+void model::do_weight_optimize_end_cbs(weights *w) {
+  for (auto&& cb : m_callbacks) {
+    if (get_cur_step() % cb->get_batch_interval() == 0) {
+      cb->on_optimize_end(this, w);
     }
   }
 }

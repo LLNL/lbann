@@ -107,8 +107,8 @@ class batch_normalization : public regularizer_layer {
   batch_normalization(lbann_comm *comm,
                       DataType decay=0.9,
                       DataType epsilon=1e-5,
-                      cudnn::cudnn_manager *cudnn = nullptr,
-                      bool use_global_stats = true
+                      bool use_global_stats = false,
+                      cudnn::cudnn_manager *cudnn = nullptr
                       )
     : regularizer_layer(comm),
       m_decay(decay),
@@ -409,22 +409,6 @@ class batch_normalization : public regularizer_layer {
 
   }
 
-  void fp_set_std_matrix_view() override {
-    regularizer_layer::fp_set_std_matrix_view();
-    this->m_weights[0]->get_values_view(*m_scale_v);
-    this->m_weights[1]->get_values_view(*m_bias_v);
-    this->m_weights[2]->get_values_view(*m_running_mean_v);
-    this->m_weights[3]->get_values_view(*m_running_var_v);
-  }
-
-  void bp_set_std_matrix_view() override {
-    regularizer_layer::bp_set_std_matrix_view();
-    this->m_weights[0]->get_values_view(*m_scale_v);
-    this->m_weights[1]->get_values_view(*m_bias_v);
-    this->m_weights[2]->get_values_view(*m_running_mean_v);
-    this->m_weights[3]->get_values_view(*m_running_var_v);
-  }
-
   void fp_compute() override {
     if(this->m_using_gpus) {
       fp_compute_gpu();
@@ -643,6 +627,12 @@ class batch_normalization : public regularizer_layer {
     // Check execution mode
     const bool is_training = this->m_model->get_execution_mode() == execution_mode::training;
 
+    // Setup matrix views
+    this->m_weights[0]->get_values_view(*m_scale_v);
+    this->m_weights[1]->get_values_view(*m_bias_v);
+    this->m_weights[2]->get_values_view(*m_running_mean_v);
+    this->m_weights[3]->get_values_view(*m_running_var_v);
+
     // Local matrices
     const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
     Mat& activations_local = this->m_activations_v->Matrix();
@@ -749,6 +739,12 @@ class batch_normalization : public regularizer_layer {
     
     // Check execution mode
     const bool is_training = this->m_model->get_execution_mode() == execution_mode::training;
+
+    // Setup matrix views
+    this->m_weights[0]->get_values_view(*m_scale_v);
+    this->m_weights[1]->get_values_view(*m_bias_v);
+    this->m_weights[2]->get_values_view(*m_running_mean_v);
+    this->m_weights[3]->get_values_view(*m_running_var_v);
 
     // Local matrices
     const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();

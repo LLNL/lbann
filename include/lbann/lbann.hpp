@@ -99,6 +99,7 @@
 #include "lbann/data_readers/data_reader_merge_samples.hpp"
 #include "lbann/data_readers/data_reader_merge_features.hpp"
 #include "lbann/data_readers/data_reader_ascii.hpp"
+#include "lbann/data_readers/data_reader_pilot2_molecular.hpp"
 
 /// Callbacks
 #include "lbann/callbacks/callback_check_init.hpp"
@@ -125,6 +126,7 @@
 #include "lbann/callbacks/callback_hang.hpp"
 #include "lbann/callbacks/callback_variable_minibatch.hpp"
 #include "lbann/callbacks/callback_gradient_check.hpp"
+#include "lbann/callbacks/callback_timeline.hpp"
 
 /// Weights and weight initializers
 #include "lbann/weights/weights.hpp"
@@ -138,16 +140,19 @@
 #include "lbann/optimizers/rmsprop.hpp"
 #include "lbann/optimizers/sgd.hpp"
 
-/// Objective functions (cost functions)
+/// Objective functions
+#include "lbann/objective_functions/objective_function.hpp"
 #include "lbann/objective_functions/loss_functions/cross_entropy.hpp"
 #include "lbann/objective_functions/loss_functions/mean_squared_error.hpp"
-// #include "lbann/objective_functions/binary_cross_entropy.hpp"
-// #include "lbann/objective_functions/cross_entropy_with_uncertainty.hpp"
-// #include "lbann/objective_functions/geom_negloglike.hpp"
-// #include "lbann/objective_functions/mean_absolute_deviation.hpp"
-// #include "lbann/objective_functions/poisson_negloglike.hpp"
-// #include "lbann/objective_functions/polya_negloglike.hpp"
-#include "lbann/objective_functions/weight_regularization/l2_weight_regularization.hpp"
+#include "lbann/objective_functions/loss_functions/binary_cross_entropy.hpp"
+#include "lbann/objective_functions/loss_functions/cross_entropy_with_uncertainty.hpp"
+#include "lbann/objective_functions/loss_functions/geom_negloglike.hpp"
+#include "lbann/objective_functions/loss_functions/mean_absolute_deviation.hpp"
+#include "lbann/objective_functions/loss_functions/poisson_negloglike.hpp"
+#include "lbann/objective_functions/loss_functions/polya_negloglike.hpp"
+#include "lbann/objective_functions/weight_regularization/l1.hpp"
+#include "lbann/objective_functions/weight_regularization/l2.hpp"
+#include "lbann/objective_functions/weight_regularization/group_lasso.hpp"
 
 /// Metrics
 #include "lbann/metrics/metric_categorical_accuracy.hpp"

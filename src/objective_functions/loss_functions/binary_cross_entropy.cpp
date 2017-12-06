@@ -24,80 +24,80 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/objective_functions/binary_cross_entropy.hpp"
+#include "lbann/objective_functions/loss_functions/binary_cross_entropy.hpp"
 
 namespace lbann {
 
-namespace objective_functions {
+DataType binary_cross_entropy::evaluate(const AbsDistMat& predictions,
+                                        const AbsDistMat& ground_truth) {
 
-void binary_cross_entropy::compute_value(const AbsDistMat& predictions,
-                                       const AbsDistMat& ground_truth) {
-  
-  // Get local matrices and matrix parameters
+  // Local matrices
   const Mat& predictions_local = predictions.LockedMatrix();
   const Mat& ground_truth_local = ground_truth.LockedMatrix();
-  const El::Int width = predictions.Width();
-  const El::Int local_height = predictions_local.Height();
-  const El::Int local_width = predictions_local.Width();
+  
+  // Matrix parameters
+  const int width = predictions.Width();
+  const int local_height = predictions_local.Height();
+  const int local_width = predictions_local.Width();
 
-  // Compute sum of cross entropies with Kahan summation
-  double sum = 0;
-  double correction = 0;
-  for(El::Int col = 0; col < local_width; ++col) {
-    for(El::Int row = 0; row < local_height; ++row) {
-      const double true_val = ground_truth_local(row, col);
-      const double pred_val = predictions_local(row, col);
-      double term;
+  // Compute sum of cross entropy terms
+  DataType sum = 0;
+  #pragma omp parallel for reduction(+:sum) collapse(2)
+  for (int col = 0; col < local_width; ++col) {
+    for (int row = 0; row < local_height; ++row) {
+      const DataType true_val = ground_truth_local(row, col);
+      const DataType pred_val = predictions_local(row, col);
       if (true_val == DataType(1)) {
-        term = -std::log(pred_val);
+        sum += - std::log(pred_val);
       } else if (true_val == DataType(0)) {
-	term = -std::log(1 - pred_val);
-      } else continue;
-      term += correction;
-      const double next_sum = sum + term;
-      correction = term - (next_sum - sum);
-      sum = next_sum;
+        sum += - std::log(DataType(1) - pred_val);
+      } else {
+        std::stringstream err;
+        err << __FILE__ << " " << __LINE__ << " :: "
+            << "binary cross entropy loss function requires binary ground truth";
+        throw lbann_exception(err.str());
+      }
     }
   }
-  
-  // Compute binary cross entropy
-  double binary_ce = sum / width;  
-  binary_ce = m_objective_function->get_model()->get_comm()->allreduce(
-    binary_ce, predictions.DistComm());
 
-  // Update objective function value
-  add_to_value(binary_ce);
+  // Compute mean objective function value across mini-batch
+  return get_comm()->allreduce(sum / width, predictions.DistComm());
 
 }
 
-/// Compute derivative of binary cross entropy objective function
-void binary_cross_entropy::compute_gradient(const AbsDistMat& predictions,
-                                          const AbsDistMat& ground_truth,
-                                          AbsDistMat& gradient) {
+void binary_cross_entropy::differentiate(const AbsDistMat& predictions,
+                                         const AbsDistMat& ground_truth,
+                                         AbsDistMat& gradient) {
 
-  // Get local matrices and matrix parameters
+  // Local matrices
   const Mat& predictions_local = predictions.LockedMatrix();
   const Mat& ground_truth_local = ground_truth.LockedMatrix();
   Mat& gradient_local = gradient.Matrix();
 
+  // Matrix parameters
+  const El::Int local_height = gradient_local.Height();
+  const El::Int local_width = gradient_local.Width();
+
   // Compute gradient
-  El::IndexDependentFill(gradient_local,
-                         (std::function<DataType(El::Int,El::Int)>)
-                         ([&predictions_local, &ground_truth_local]
-                          (El::Int r, El::Int c) -> DataType {
-                           const DataType pred_val = predictions_local(r,c);
-                           const DataType true_val = ground_truth_local(r,c);
-                           if (true_val == DataType(1)) {
-                             return -1/pred_val;
-                           } else if (true_val == DataType(0)) {
-                             return 1/(1 - pred_val);
-			   } else {
-                             return 0;
-			   }
-                         }));
+  #pragma omp parallel for collapse(2)
+  for (El::Int col = 0; col < local_width; ++col) {
+    for (El::Int row = 0; row < local_height; ++row) {
+      const DataType true_val = ground_truth_local(row, col);
+      const DataType pred_val = predictions_local(row, col);
+      DataType& grad_val = gradient_local(row, col);
+      if (true_val == DataType(1)) {
+        grad_val = - DataType(1) / pred_val;
+      } else if (true_val == DataType(0)) {
+        grad_val = DataType(1) / (DataType(1) - pred_val);
+      } else {
+        std::stringstream err;
+        err << __FILE__ << " " << __LINE__ << " :: "
+            << "binary cross entropy loss function requires binary ground truth";
+        throw lbann_exception(err.str());
+      }
+    }
+  }
 
 }
-
-}  // namespace objective_functions
 
 }  // namespace lbann

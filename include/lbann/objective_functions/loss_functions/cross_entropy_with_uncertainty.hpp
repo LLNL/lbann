@@ -24,33 +24,35 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_OBJECTIVE_FUNCTION_CROSS_ENTROPY_WITH_UNCERTAINTY_HPP_INCLUDED
-#define LBANN_OBJECTIVE_FUNCTION_CROSS_ENTROPY_WITH_UNCERTAINTY_HPP_INCLUDED
+#ifndef LBANN_OBJECTIVE_FUNCTION_LOSS_FUNCTION_CROSS_ENTROPY_WITH_UNCERTAINTY_HPP_INCLUDED
+#define LBANN_OBJECTIVE_FUNCTION_LOSS_FUNCTION_CROSS_ENTROPY_WITH_UNCERTAINTY_HPP_INCLUDED
 
-#include "lbann/objective_functions/objective_function.hpp"
+#include "lbann/objective_functions/loss_functions/loss_function.hpp"
 
 namespace lbann {
 
-namespace objective_functions {
-
-/** Cross entropy objective function. */
-class cross_entropy_with_uncertainty : public objective_function {
-
+/** Cross entropy with uncertainty loss function. */
+class cross_entropy_with_uncertainty : public loss_function {
  public:
   /** Default constructor. */
-  cross_entropy_with_uncertainty(bool categorical_ground_truth = true);
+  cross_entropy_with_uncertainty(DataType scale_factor = DataType(1));
+
   /** Copy constructor. */
-  cross_entropy_with_uncertainty(const cross_entropy_with_uncertainty& other) = default;
+  cross_entropy_with_uncertainty(const cross_entropy_with_uncertainty& other);
   /** Copy assignment operator. */
-  cross_entropy_with_uncertainty& operator=(const cross_entropy_with_uncertainty& other) = default;
+  cross_entropy_with_uncertainty& operator=(const cross_entropy_with_uncertainty& other);
   /** Destructor. */
-  ~cross_entropy_with_uncertainty() = default;
+  ~cross_entropy_with_uncertainty() override;
   /** Copy function. */
-  cross_entropy_with_uncertainty* copy() const {
+  cross_entropy_with_uncertainty* copy() const override {
     return new cross_entropy_with_uncertainty(*this);
   }
 
-  void setup(const Layer& prev_layer);
+  /** Get the name of the objective function term. */
+  std::string name() const override { return "cross_entropy_with_uncertainty"; }
+
+  /** Setup cross entropy term. */
+  void setup(objective_function& obj_fn) override;
 
   /** Compute the cross entropy objective function.
    *  Given a predicted distribution \f$y\f$ and ground truth
@@ -60,11 +62,11 @@ class cross_entropy_with_uncertainty : public objective_function {
    *    \f]
    *  This function updates the objective function value with the mean
    *  cross entropy across the mini-batch. Note that each column of
-   *  the predictions and ground truth matrices should have
-   *  non-negative entries that add up to one.
+   *  the predictions matrix should have non-negative entries that add up 
+   *  to one.
    */
-  void compute_value(const AbsDistMat& predictions,
-                     const AbsDistMat& ground_truth);
+  DataType evaluate(const AbsDistMat& prediction,
+                    const AbsDistMat& ground_truth) override;
 
   /** Compute the gradient of the cross entropy objective function.
    *  Given a predicted distribution \f$y\f$ and ground truth
@@ -73,54 +75,17 @@ class cross_entropy_with_uncertainty : public objective_function {
    *    \f[
    *    \nabla_y CE (y,\hat{y}) = - \hat{y} . / y
    *    \f]
-   *  If the softmax-cross-entropy shortcut is activated (see
-   *  description for m_shortcut_softmax_layer), the returned gradient
-   *  is with respect to the softmax layer input.
    */
-  void compute_gradient(const AbsDistMat& predictions,
-                        const AbsDistMat& ground_truth,
-                        AbsDistMat& gradient);
-
-  /** Get the name of the objective function. */
-  std::string name() const { return "cross entropy"; }
-
-  
-  /** Get softmax layer for softmax-cross-entropy shortcut. 
-   *  See description for m_shortcut_softmax_layer.
-   */
-  /*  
-  const Layer* get_shortcut_softmax_layer() {
-    return m_shortcut_softmax_layer;
-  }
-  */
-
-  
+  void differentiate(const AbsDistMat& prediction,
+                     const AbsDistMat& ground_truth,
+                     AbsDistMat& gradient) override;
 
  private:
-
-  /** Whether the ground truth is categorical. */
-  bool m_categorical_ground_truth;
-
-  /** Softmax layer for softmax-cross-entropy shortcut.
-   *  If this is not a null pointer, then it activates the
-   *  softmax-cross-entropy shortcut. If the penultimate layer is a
-   *  softmax layer, the objective function is cross entropy, and the
-   *  ground truth is categorical, then we can use a mathematical
-   *  trick. Given a predicted distribution \f$y\f$ and ground truth
-   *  distribution \f$\hat{y}\f$, the gradient of the categorical
-   *  cross entropy with respect to the softmax layer input is
-   *    \f[
-   *      \nabla CE (y,\hat{y}) = y - \hat{y}
-   *    \f]
-   */
-  /*
-  const Layer* m_shortcut_softmax_layer = nullptr;
-  */
+  /** Workspace. */
+  AbsDistMat* m_prediction_sums;
 
 };
 
-}  // namespace objective_functions
-
 }  // namespace lbann
 
-#endif  // LBANN_OBJECTIVE_FUNCTION_CROSS_ENTROPY_WITH_UNCERTAINTY_HPP_INCLUDED
+#endif  // LBANN_OBJECTIVE_FUNCTION_LOSS_FUNCTION_CROSS_ENTROPY_WITH_UNCERTAINTY_HPP_INCLUDED

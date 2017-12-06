@@ -60,7 +60,7 @@ namespace lbann {
 class cv_mean_extractor : public cv_transform {
  public:
   /// type of image statistics value accumulated
-  typedef double Float_T;
+  using Float_T = double;
   static const unsigned int m_default_batch_size = 65536u;
 
  protected:

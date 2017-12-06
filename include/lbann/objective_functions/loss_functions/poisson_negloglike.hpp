@@ -24,29 +24,31 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_OBJECTIVE_FUNCTION_POISSON_NEGLOGLIKE_HPP_INCLUDED
-#define LBANN_OBJECTIVE_FUNCTION_POISSON_NEGLOGLIKE_HPP_INCLUDED
+#ifndef LBANN_OBJECTIVE_FUNCTION_LOSS_FUNCTION_POISSON_NEGLOGLIKE_HPP_INCLUDED
+#define LBANN_OBJECTIVE_FUNCTION_LOSS_FUNCTION_POISSON_NEGLOGLIKE_HPP_INCLUDED
 
-#include "lbann/objective_functions/objective_function.hpp"
+#include "lbann/objective_functions/loss_functions/loss_function.hpp"
 
 namespace lbann {
 
-namespace objective_functions {
-
 /** Poisson negative log-likelihood objective function. */
-class poisson_negloglike : public objective_function {
-
+class poisson_negloglike : public loss_function {
  public:
   /** Default constructor. */
-  poisson_negloglike() = default;
+  poisson_negloglike(DataType scale_factor = DataType(1)) 
+    : loss_function(scale_factor) {}
+
   /** Copy constructor. */
   poisson_negloglike(const poisson_negloglike& other) = default;
   /** Copy assignment operator. */
   poisson_negloglike& operator=(const poisson_negloglike& other) = default;
   /** Destructor. */
-  ~poisson_negloglike() = default;
+  ~poisson_negloglike() override = default;
   /** Copy function. */
-  poisson_negloglike* copy() const { return new poisson_negloglike(*this); }
+  poisson_negloglike* copy() const override { return new poisson_negloglike(*this); }
+
+  /** Get the name of the objective function term. */
+  std::string name() const override { return "poisson_negloglike"; }
 
   /** Compute the Poisson negative log-likelihood objective function.
    *  Given a prediction \f$\hat{y}\f$ and ground truth \f$y\f$, the
@@ -57,8 +59,8 @@ class poisson_negloglike : public objective_function {
    *  This function updates the objective function value with the mean
    *  value of the Poisson negative log-likelihood across the mini-batch.
    */
-  void compute_value(const AbsDistMat& predictions,
-                     const AbsDistMat& ground_truth);
+  DataType evaluate(const AbsDistMat& prediction,
+                    const AbsDistMat& ground_truth) override;
 
   /** Compute the gradient of the Poisson negative log-likelihood objective function.
    *  Given a prediction \f$\hat{y}\f$ and ground truth \f$y\f$, the
@@ -67,17 +69,12 @@ class poisson_negloglike : public objective_function {
    *    \nabla_y Pois_nll(\hat{y},y) = 1 - y/\hat{y}
    *    \f]
    */
-  void compute_gradient(const AbsDistMat& predictions,
-                        const AbsDistMat& ground_truth,
-                        AbsDistMat& gradient);
-
-  /** Get the name of the objective function. */
-  std::string name() const { return "poisson negative log-likelihood"; }
+  void differentiate(const AbsDistMat& prediction,
+                     const AbsDistMat& ground_truth,
+                     AbsDistMat& gradient) override;
 
 };
 
-}  // namespace objective_functions
-
 }  // namespace lbann
 
-#endif  // LBANN_OBJECTIVE_FUNCTION_POISSON_NEGLOGLIKE_HPP_INCLUDED
+#endif  // LBANN_OBJECTIVE_FUNCTION_LOSS_FUNCTION_POISSON_NEGLOGLIKE_HPP_INCLUDED

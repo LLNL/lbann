@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_OBJECTIVE_FUNCTION_MEAN_SQUARED_ERROR_HPP_INCLUDED
-#define LBANN_OBJECTIVE_FUNCTION_MEAN_SQUARED_ERROR_HPP_INCLUDED
+#ifndef LBANN_OBJECTIVE_FUNCTION_LOSS_FUNCTION_MEAN_SQUARED_ERROR_HPP_INCLUDED
+#define LBANN_OBJECTIVE_FUNCTION_LOSS_FUNCTION_MEAN_SQUARED_ERROR_HPP_INCLUDED
 
 #include "lbann/objective_functions/loss_functions/loss_function.hpp"
 
@@ -50,12 +50,24 @@ class mean_squared_error : public loss_function {
   /** Get the name of the objective function term. */
   std::string name() const override { return "mean_squared_error"; }
 
-  /** Evaluate the cross entropy loss function. */
+  /** Compute the mean squared error objective function.
+   *  Given a prediction \f$\hat{y}\f$ and ground truth \f$y\f$, the
+   *  mean squared error is
+   *    \f[
+   *    MSE(\hat{y}, y) = \frac{1}{n} \lVert y - \hat{y} \rVert_2^2
+   *    \f]
+   *  This function updates the objective function value with the mean
+   *  value of the mean absolute deviation across the mini-batch.
+   */
   DataType evaluate(const AbsDistMat& prediction,
                     const AbsDistMat& ground_truth) override;
 
-  /** Compute the cross entropy gradient.
-   *  The gradient is w.r.t. the prediction vector.
+  /** Compute the gradient of the mean squared error objective function.
+   *  Given a prediction \f$y\f$ and ground truth \f$\hat{y}\f$, the
+   *  gradient of the mean squared error is
+   *    \f[
+   *    \nabla_y MSE (y,\hat{y}) = \frac{2}{n} (y - \hat{y})
+   *    \f]
    */
   void differentiate(const AbsDistMat& prediction,
                      const AbsDistMat& ground_truth,
@@ -65,4 +77,4 @@ class mean_squared_error : public loss_function {
 
 } // namespace lbann
 
-#endif // LBANN_OBJECTIVE_FUNCTION_MEAN_SQUARED_ERROR_HPP_INCLUDED
+#endif // LBANN_OBJECTIVE_FUNCTION_LOSS_FUNCTION_MEAN_SQUARED_ERROR_HPP_INCLUDED
