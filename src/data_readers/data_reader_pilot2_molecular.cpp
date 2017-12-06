@@ -34,17 +34,6 @@ pilot2_molecular_reader::pilot2_molecular_reader(
   int num_neighbors, int max_neighborhood, bool shuffle) :
   generic_data_reader(shuffle), m_num_neighbors(num_neighbors), m_max_neighborhood(max_neighborhood) {}
 
-pilot2_molecular_reader::pilot2_molecular_reader(
-  const pilot2_molecular_reader& other) :
-  generic_data_reader(other) {}
-
-pilot2_molecular_reader& pilot2_molecular_reader::operator=(
-  const pilot2_molecular_reader& other) {
-  generic_data_reader::operator=(other);
-
-  return *this;
-}
-
 void pilot2_molecular_reader::load() {
   std::string infile = get_data_filename();
   // Ensure the file exists.

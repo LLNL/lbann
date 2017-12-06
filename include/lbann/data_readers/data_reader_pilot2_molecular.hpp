@@ -42,8 +42,8 @@ class pilot2_molecular_reader : public generic_data_reader {
   pilot2_molecular_reader(int num_neighbors,
                           int max_neighborhood,
                           bool shuffle = true);
-  pilot2_molecular_reader(const pilot2_molecular_reader&);
-  pilot2_molecular_reader& operator=(const pilot2_molecular_reader&);
+  pilot2_molecular_reader(const pilot2_molecular_reader&) = default;
+  pilot2_molecular_reader& operator=(const pilot2_molecular_reader&) = default;
   ~pilot2_molecular_reader() override {}
   pilot2_molecular_reader* copy() const override {
     return new pilot2_molecular_reader(*this);
