@@ -676,6 +676,13 @@ void add_layers(
           conv_strides.push_back(i);
         }
 
+        int num_neurons;
+        if (layer.num_neurons_from_data_reader()) {
+          num_neurons = data_readers[execution_mode::training]->get_linearized_data_size();
+        } else {
+          num_neurons = ell.num_output_channels();
+        }
+
         if (layout == data_layout::MODEL_PARALLEL and master) {
           err << __FILE__ << " " << __LINE__ << " :: deconvolution "
               << "does not support MODEL_PARALLEL layouts";
@@ -684,7 +691,7 @@ void add_layers(
           d = new deconvolution_layer<data_layout::DATA_PARALLEL>(
             comm,
             ell.num_dims(),
-            ell.num_output_channels(),
+            num_neurons/*ell.num_output_channels()*/,
             conv_dims,
             conv_pads,
             conv_strides,
@@ -1802,6 +1809,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       auto paths = glob(readme.data_file_pattern());
       std::vector<generic_data_reader*> npy_readers;
       for (const auto path : paths) {
+        if(master) { std::cout << "Loading file: " << path << std::endl; }
         if (readme.format() == "numpy") {
           auto *reader_numpy = new numpy_reader(false);
           reader_numpy->set_data_filename(path);
