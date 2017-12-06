@@ -38,7 +38,7 @@ namespace lbann {
 
 /// Concatenation layer
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
-class concatenation_layer : public transform {
+class concatenation_layer : public transform_layer {
  private:
 
   /** Tensor dimension to concatenate. */
@@ -62,7 +62,7 @@ class concatenation_layer : public transform {
   concatenation_layer(lbann_comm *comm,
                       int concatenation_axis,
                       cudnn::cudnn_manager *cudnn = nullptr)
-    : transform(comm),
+    : transform_layer(comm),
       m_concatenation_axis(concatenation_axis) {
 
     // Setup the data distribution
@@ -82,14 +82,14 @@ class concatenation_layer : public transform {
   }
 
   concatenation_layer(const concatenation_layer& other) :
-    transform(other) {
+    transform_layer(other) {
     m_bp_output = other.m_bp_output->Copy();
     m_input_slice_v = other.m_input_slice_v->Copy();
     m_output_slice_v = other.m_output_slice_v->Copy();
   }
 
   concatenation_layer& operator=(const concatenation_layer& other) {
-    transform::operator=(other);
+    transform_layer::operator=(other);
     if(m_bp_output)      delete m_bp_output;
     if(m_input_slice_v)  delete m_input_slice_v;
     if(m_output_slice_v) delete m_output_slice_v;
@@ -121,7 +121,7 @@ class concatenation_layer : public transform {
   void setup_dims() override {
 
     // Initialize previous layer dimensions with first parent layer
-    transform::setup_dims();
+    transform_layer::setup_dims();
 
     // Check if concatenation axis is valid
     if(m_concatenation_axis < 0
@@ -165,7 +165,7 @@ class concatenation_layer : public transform {
   }
 
   void setup_gpu() override {
-    transform::setup_gpu();
+    transform_layer::setup_gpu();
   #ifndef __LIB_CUDNN
     throw lbann_exception("concatenation_layer: cuDNN not detected");
   #else
@@ -362,7 +362,7 @@ class concatenation_layer : public transform {
                                         prev_layer)
                               - this->m_parent_layers.begin());
     if(parent_index >= (int) this->m_parent_layers.size()) {
-      transform::get_bp_output(bp_output, prev_layer);
+      transform_layer::get_bp_output(bp_output, prev_layer);
     }
 
     // Split the error signal tensor into slices of width 1 along the
@@ -427,7 +427,7 @@ class concatenation_layer : public transform {
                                         prev_layer)
                               - this->m_parent_layers.begin());
     if(parent_index >= (int) this->m_parent_layers.size()) {
-      transform::get_gpu_bp_output(output_dv, output_d, prev_layer);
+      transform_layer::get_gpu_bp_output(output_dv, output_d, prev_layer);
     }
 
     // Split the error signal tensor into slices of width 1 along the
@@ -481,7 +481,7 @@ class concatenation_layer : public transform {
 
 /// Matrices should be in MC,MR distributions
 template<> inline void concatenation_layer<data_layout::MODEL_PARALLEL>::initialize_distributed_matrices() {
-  transform::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>();
+  transform_layer::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>();
   m_bp_output = new DistMat(this->m_comm->get_model_grid());
   m_input_slice_v = new DistMat(this->m_comm->get_model_grid());
   m_output_slice_v = new DistMat(this->m_comm->get_model_grid());
@@ -489,7 +489,7 @@ template<> inline void concatenation_layer<data_layout::MODEL_PARALLEL>::initial
 
 /// Matrices should be in Star,VC distributions
 template<> inline void concatenation_layer<data_layout::DATA_PARALLEL>::initialize_distributed_matrices() {
-  transform::initialize_distributed_matrices<data_layout::DATA_PARALLEL>();
+  transform_layer::initialize_distributed_matrices<data_layout::DATA_PARALLEL>();
   m_bp_output = new StarVCMat(this->m_comm->get_model_grid());
   m_input_slice_v = new StarVCMat(this->m_comm->get_model_grid());
   m_output_slice_v = new StarVCMat(this->m_comm->get_model_grid());

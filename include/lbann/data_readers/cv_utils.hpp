@@ -106,6 +106,7 @@ class cv_utils {
   static cv::Mat copy_buf_to_cvMat(const ::Mat& buf, const int Width, const int Height, const int Type, const cv_process& pp);
 
   static double get_depth_normalizing_factor(const int cv_depth);
+  static double get_depth_denormalizing_factor(const int cv_depth);
 };
 
 
@@ -294,7 +295,7 @@ inline bool cv_utils::copy_cvMat_to_buf_with_full_info(
   // NCh need not be a template parameter here. It can be a function argument.
   // However, keeping it as a static parameter enables custom accesses on pixels
   // For example,
-  //   typedef cv::Vec<T, NCh> Vec_T;
+  //   using Vec_T = cv::Vec<T, NCh>;
   //   image.at<Vec_T>(y, x) = newPixel;
   _LBANN_SILENT_EXCEPTION(image.empty(), "", false)
 
@@ -488,6 +489,16 @@ inline cv::Mat cv_utils::copy_buf_to_cvMat_with_known_type(
   return cv::Mat();
 }
 //vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+
+template<typename T>
+static double depth_norm_factor() {
+  return depth_normalization<T>::factor();
+}
+
+template<typename T>
+static double depth_norm_inverse_factor() {
+  return depth_normalization<T>::inverse_factor();
+}
 
 } // end of namespace lbann
 #endif // __LIB_OPENCV

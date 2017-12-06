@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/objective_functions/weight_regularization/l2_weight_regularization.hpp"
+#include "lbann/objective_functions/weight_regularization/l2.hpp"
 #include "lbann/objective_functions/objective_function.hpp"
 #include "lbann/models/model.hpp"
 #ifdef __LIB_CUDNN
@@ -97,10 +97,9 @@ DataType l2_weight_regularization::compute_value() {
 #endif // __LIB_CUDNN
     } else {
       // Further optimization: Can batch allreduces on the same communicator.
-      DataType local_norm =
-        local_squared_l2_norm(w->get_values().LockedMatrix());
-      value += m_objective_function->get_model()->get_comm()->allreduce(
-        local_norm, w->get_values().DistComm());
+      const AbsDistMat& values = w->get_values();
+      DataType local_norm = local_squared_l2_norm(values.LockedMatrix());
+      value += get_comm()->allreduce(local_norm, values.DistComm());
     }
   }
   return m_scale_factor * value;

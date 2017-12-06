@@ -42,27 +42,20 @@ DataType mean_squared_error::evaluate(const AbsDistMat& predictions,
   const El::Int local_width = predictions_local.Width();
 
   // Compute sum of squared errors
-  double sum = 0;
-  const El::Int block_size = std::max((int) (64 / sizeof(DataType)), 1);
+  DataType sum = 0;
   #pragma omp parallel for reduction(+:sum) collapse(2)
   for(El::Int col = 0; col < local_width; ++col) {
-    for(El::Int block_start = 0; block_start < local_height; block_start += block_size) {
-      double block_sum = 0;
-      const El::Int block_end = std::min(block_start + block_size, local_height);
-      for(El::Int row = block_start; row < block_end; ++row) {
-        const double true_val = ground_truth_local(row, col);
-        const double pred_val = predictions_local(row, col);
-        const double error = true_val - pred_val;
-        block_sum += error * error;
-      }
-      sum += block_sum;
+    for(El::Int row = 0; row < local_height; ++row) {
+      const DataType true_val = ground_truth_local(row, col);
+      const DataType pred_val = predictions_local(row, col);
+      const DataType error = true_val - pred_val;
+      sum += error * error;
     }
   }
   
   // Compute mean objective function value across mini-batch
-  lbann_comm* comm = m_objective_function->get_model()->get_comm();
-  return comm->allreduce(sum / (height * width),
-                         predictions.DistComm());
+  return get_comm()->allreduce(sum / (height * width),
+                               predictions.DistComm());
 
 }
 

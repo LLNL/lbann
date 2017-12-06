@@ -68,6 +68,12 @@ class reconstruction_layer : public target_layer {
 
   std::string get_type() const override { return "reconstruction"; }
 
+  std::string get_description() const override {
+    return std::string{} + " reconstruction_layer " +
+                           " original: " + m_original_layer->get_name() +
+                           " dataLayout: " + this->get_data_layout_string(get_data_layout());
+  }
+
   //virtual inline void initialize_distributed_matrices();
   virtual inline void initialize_distributed_matrices() {
     target_layer::initialize_distributed_matrices<T_layout>();

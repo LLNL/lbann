@@ -1,3 +1,5 @@
 add_sources(
-  l2_weight_regularization.cpp
+  l1.cpp
+  l2.cpp
+  group_lasso.cpp
 )

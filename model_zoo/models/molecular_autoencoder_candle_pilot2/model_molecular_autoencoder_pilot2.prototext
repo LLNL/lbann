@@ -38,20 +38,6 @@ model {
   #     extension: "pgm"
   #   }
   # }
-
-  callback {
-    debug_io {
-      phase: "train"
-    }
-  }
-  callback {
-    check_nan {
-    }
-  }
-  callback {
-    check_small{
-    }
-  }
   ###################################################
   # start of layers
   ###################################################
@@ -67,10 +53,10 @@ model {
   }
 
   #############
-  # CONVOLUTION 1
+  # FULLY CONNECTED ENCODE 1
   #############
   layer {
-    name: "fc1"
+    name: "encode1"
     data_layout: "data_parallel"
     fully_connected {
       num_neurons: 12
@@ -80,10 +66,10 @@ model {
   }
 
   ######
-  # RELU 1
+  # RELU encode1
   ######
   layer {
-    name: "relu1"
+    name: "encode_relu1"
     data_layout: "data_parallel"
     relu {
     }
@@ -103,11 +89,11 @@ model {
   }
 
   #######
-  # RELU relu10
+  # RELU decode1
   #######
   layer {
-    name: "relu10"
-    data_layout: "model_parallel"
+    name: "decode_relu10"
+    data_layout: "data_parallel"
     relu {
     }
   }

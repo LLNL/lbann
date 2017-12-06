@@ -2,6 +2,11 @@
 \copydetails lbann::lbann_callback LBANN supported callbacks are found below.
 
 
+\section checkdata Check Dataset
+    \copydetails lbann::lbann_callback_check_dataset
+       
+    Implementation details: lbann::lbann_callback_check_dataset
+
 \section checkinit Check Initialization
     \copydetails lbann::lbann_callback_check_init
        
@@ -44,6 +49,21 @@
       
     Implementation details: lbann::lbann_callback_dump_weights
 
+\section earlystop Early Stopping
+    \copydetails lbann::lbann_callback_early_stopping
+       
+    Implementation details: lbann::lbann_callback_early_stopping
+
+\section gradientcheck Gradient Check
+    \copydetails lbann::lbann_callback_gradient_check
+       
+    Implementation details: lbann::lbann_callback_gradient_check
+
+\section hang Hang
+    \copydetails lbann::lbann_callback_hang
+       
+    Implementation details: lbann::lbann_callback_hang
+
 \section im_comm Inter-model Communication
     \copydetails lbann::lbann_callback_imcomm
       
@@ -74,7 +94,7 @@
       
     Implementation details: lbann::lbann_callback_save_images
 
-\section sum Summary
+\section summary Summary
     \copydetails lbann::lbann_callback_summary
       
     Implementation details: lbann::lbann_callback_summary
@@ -89,5 +109,10 @@
     \copydetails lbann::lbann_callback_debug
       
     Implementation details: lbann::lbann_callback_debug
+
+\section variable_mb Variable Minibatch
+    \copydetails lbann::lbann_callback_variable_minibatch
+       
+    Implementation details: lbann::lbann_callback_variable_minibatch
 
 */

@@ -94,6 +94,9 @@ class objective_function_term {
   /** Weights used to compute objective function term. */
   std::vector<weights*> m_weights;
 
+  /** Get LBANN communicator. */
+  lbann_comm* get_comm();
+
 };
 
 } // namespace lbann
