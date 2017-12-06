@@ -38,3 +38,7 @@ set_property(TARGET HWLOC::hwloc
 
 # Set the last of the output variables
 set(HWLOC_LIBRARIES HWLOC::hwloc)
+
+# Cleanup
+mark_as_advanced(FORCE HWLOC_INCLUDE_PATH)
+mark_as_advanced(FORCE HWLOC_LIBRARY)
