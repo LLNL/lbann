@@ -4,7 +4,7 @@ data_reader {
     format: "pilot2_molecular_reader"
     role: "train"
     shuffle: true
-    data_file_pattern: "/p/lscratchf/brainusr/datasets/cancer/pilot2/*.dir/*.npz"
+    data_file_pattern: "/p/lscratchf/brainusr/datasets/cancer/pilot2/3k_run10_10us.35fs-DPPC.10-DOPC.70-CHOL.20.dir/3k_run10_10us.35fs-DPPC.10-DOPC.70-CHOL.20_chunk_*_outof_29.npz"
     validation_percent: 0.1
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
