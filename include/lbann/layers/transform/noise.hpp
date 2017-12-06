@@ -40,7 +40,7 @@ namespace lbann {
  * @param noise_factor controls the noise level
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
-class noise_layer : public transform {
+class noise_layer : public transform_layer {
  private:
 
  public:
@@ -48,7 +48,7 @@ class noise_layer : public transform {
   noise_layer(lbann_comm *comm,
               float noise_factor=0.5f,
               cudnn::cudnn_manager *cudnn = nullptr)
-    : transform(comm), m_noise_factor(noise_factor) {
+    : transform_layer(comm), m_noise_factor(noise_factor) {
 
     // Setup the data distribution
     initialize_distributed_matrices();
@@ -64,11 +64,11 @@ class noise_layer : public transform {
   }
 
   noise_layer(const noise_layer& other) :
-    transform(other),
+    transform_layer(other),
     m_noise_factor(other.m_noise_factor) { }
 
   noise_layer& operator=(const noise_layer& other) {
-    transform::operator=(other);
+    transform_layer::operator=(other);
     m_noise_factor = other.m_noise_factor;
     return *this;
   }
@@ -93,13 +93,13 @@ class noise_layer : public transform {
   std::string get_type() const override { return "noise"; }
 
   virtual inline void initialize_distributed_matrices() {
-    transform::initialize_distributed_matrices<T_layout>();
+    transform_layer::initialize_distributed_matrices<T_layout>();
   }
   data_layout get_data_layout() const override { return T_layout; }
 
 
   void setup_gpu() override {
-    transform::setup_gpu();
+    transform_layer::setup_gpu();
   #ifndef __LIB_CUDNN
     throw lbann_exception("noise_layer: cuDNN not detected");
   #else
