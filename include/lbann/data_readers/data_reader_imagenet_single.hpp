@@ -23,34 +23,37 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_imagenet .hpp .cpp - generic_data_reader class for ImageNetSingle dataset
+// data_reader_imagenet_single .hpp .cpp - data reader class for ImageNet
+//                                         dataset packed into a single file
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_DATA_READER_IMAGENET_SINGLE_HPP
 #define LBANN_DATA_READER_IMAGENET_SINGLE_HPP
 
 #include "data_reader_imagenet.hpp"
-#include "image_preprocessor.hpp"
+#include <vector>
 
 namespace lbann {
-class imagenet_readerSingle : public imagenet_reader {
+class imagenet_reader_single : public imagenet_reader {
  public:
-  imagenet_readerSingle(int batchSize, bool shuffle = true);
-  imagenet_readerSingle(const imagenet_readerSingle& source);
-  ~imagenet_readerSingle();
+  imagenet_reader_single(const std::shared_ptr<cv_process>& pp, bool shuffle = true);
+  imagenet_reader_single(const imagenet_reader_single& source);
+  imagenet_reader_single& operator=(const imagenet_reader_single& source);
+  ~imagenet_reader_single() override;
 
-  imagenet_readerSingle& operator=(const imagenet_readerSingle& source);
+  imagenet_reader_single* copy() const override { return new imagenet_reader_single(*this); }
 
-  void load();
+  // ImageNet specific functions
+  void load() override;
 
  protected:
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
-  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid);
+  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;
 
  private:
-  std::ifstream m_data_filestream;
+  std::vector<std::ifstream*> m_data_filestream;
   size_t m_file_size;
-  std::vector<unsigned char> m_work_buffer;
+  std::vector<std::vector<unsigned char> > m_work_buffer;
   std::vector<std::pair<size_t, int> > m_offsets; //stores: <offset, label>
 
   void open_data_stream();

@@ -23,11 +23,11 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_mnist .hpp .cpp - generic_data_reader class for MNIST dataset
+// mnist_reader .hpp .cpp - data reader class for MNIST dataset
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_mnist.hpp"
-#include <stdio.h>
+#include <cstdio>
 
 inline void __swapEndianInt(unsigned int& ui) {
   ui = ((ui >> 24) | ((ui<<8) & 0x00FF0000) | ((ui>>8) & 0x0000FF00) | (ui << 24));
@@ -35,20 +35,24 @@ inline void __swapEndianInt(unsigned int& ui) {
 
 namespace lbann {
 
-mnist_reader::mnist_reader(int batchSize, bool shuffle)
-  : generic_data_reader(batchSize, shuffle) {
+mnist_reader::mnist_reader(bool shuffle)
+  : image_data_reader(shuffle) {
+  set_defaults();
+}
+
+mnist_reader::mnist_reader()
+  : mnist_reader(true) {}
+
+void mnist_reader::set_defaults() {
   m_image_width = 28;
   m_image_height = 28;
+  m_image_num_channels = 1;
   m_num_labels = 10;
 }
 
-mnist_reader::mnist_reader(int batchSize)
-  : mnist_reader(batchSize, true) {}
-
-
 bool mnist_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
   int pixelcount = m_image_width * m_image_height;
-  vector<unsigned char>& tmp = m_image_data[data_id];
+  std::vector<unsigned char>& tmp = m_image_data[data_id];
   
   for (int p = 0; p < pixelcount; p++) {
     X.Set(p, mb_idx, tmp[p+1]);

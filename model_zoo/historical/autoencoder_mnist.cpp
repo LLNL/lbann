@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
 
     ///////////////////////////////////////////////////////////////////
     // load training data (MNIST)
-    mnist_reader mnist_trainset(trainParams.MBSize, true);
+    mnist_reader mnist_trainset(true);
     mnist_trainset.set_file_dir(trainParams.DatasetRootDir);
     mnist_trainset.set_data_filename(g_MNIST_TrainImageFile);
     mnist_trainset.set_label_filename(g_MNIST_TrainLabelFile);
@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
     ///////////////////////////////////////////////////////////////////
     // load testing data (MNIST)
     ///////////////////////////////////////////////////////////////////
-    mnist_reader mnist_testset(trainParams.MBSize, true);
+    mnist_reader mnist_testset(true);
     mnist_testset.set_file_dir(trainParams.DatasetRootDir);
     mnist_testset.set_data_filename(g_MNIST_TestImageFile);
     mnist_testset.set_label_filename(g_MNIST_TestLabelFile);
@@ -185,7 +185,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Initialize network
-    deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::mean_squared_error(), optimizer_fac);
+    sequential_model dnn(trainParams.MBSize, comm, new objective_functions::mean_squared_error(), optimizer_fac);
     dnn.add_metric(new metrics::categorical_accuracy<data_layout::MODEL_PARALLEL>(comm));
     std::map<execution_mode, generic_data_reader *> data_readers = {std::make_pair(execution_mode::training,&mnist_trainset),
                                                            std::make_pair(execution_mode::validation, &mnist_validation_set),
@@ -197,97 +197,97 @@ int main(int argc, char *argv[]) {
     dnn.add(input_layer);
 
     Layer *encode1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
-                       1, comm,
+                       comm,
                        1000, 
                        weight_initialization::glorot_uniform,
                        optimizer_fac->create_optimizer());
     dnn.add(encode1);
 
-    Layer *relu1 = new relu_layer<data_layout::MODEL_PARALLEL>(2, comm);
+    Layer *relu1 = new relu_layer<data_layout::MODEL_PARALLEL>(comm);
     dnn.add(relu1);
 
-    /*Layer *dropout1 = new dropout<data_layout::MODEL_PARALLEL>(3,
+    /*Layer *dropout1 = new dropout<data_layout::MODEL_PARALLEL>(
                                                comm, trainParams.MBSize,
                                                trainParams.DropOut);
     dnn.add(dropout1);*/
 
     //third layer 
-    Layer *encode2 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(3, comm,
+    Layer *encode2 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(comm,
                                                         500, 
                                                         weight_initialization::glorot_uniform,
                                                         optimizer_fac->create_optimizer());
     dnn.add(encode2);
 
-    Layer *relu2 = new relu_layer<data_layout::MODEL_PARALLEL>(4, comm);
+    Layer *relu2 = new relu_layer<data_layout::MODEL_PARALLEL>(comm);
     dnn.add(relu2);
 
-    /*Layer *dropout2 = new dropout<data_layout::MODEL_PARALLEL>(6,
+    /*Layer *dropout2 = new dropout<data_layout::MODEL_PARALLEL>(
                                                comm, trainParams.MBSize,
                                                trainParams.DropOut);
     dnn.add(dropout2);*/
 
-    Layer *encode3 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(5, comm,
+    Layer *encode3 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(comm,
                                                         250,
                                                         weight_initialization::glorot_uniform,
                                                         optimizer_fac->create_optimizer());
     dnn.add(encode3);
     
-    Layer *relu3 = new relu_layer<data_layout::MODEL_PARALLEL>(6, comm);
+    Layer *relu3 = new relu_layer<data_layout::MODEL_PARALLEL>(comm);
     dnn.add(relu3);
 
-    /*Layer *dropout3 = new dropout<data_layout::MODEL_PARALLEL>(9,
+    /*Layer *dropout3 = new dropout<data_layout::MODEL_PARALLEL>(
                                                comm, trainParams.MBSize,
                                                trainParams.DropOut);
     dnn.add(dropout3);*/
 
-    Layer *encode4 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(7, comm,
+    Layer *encode4 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(comm,
                                                         30, 
                                                         weight_initialization::glorot_uniform,
                                                         optimizer_fac->create_optimizer());
     dnn.add(encode4);
     //decoder
-    Layer *decode4 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(8, comm,
+    Layer *decode4 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(comm,
                                                         250, 
                                                         weight_initialization::glorot_uniform,
                                                         optimizer_fac->create_optimizer());
     dnn.add(decode4);
     
-    Layer *relu4 = new relu_layer<data_layout::MODEL_PARALLEL>(9, comm);
+    Layer *relu4 = new relu_layer<data_layout::MODEL_PARALLEL>(comm);
     dnn.add(relu4);
 
 
    
-    Layer *decode3 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(10, comm,
+    Layer *decode3 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(comm,
                                                         500, 
                                                         weight_initialization::glorot_uniform,
                                                         optimizer_fac->create_optimizer());
     dnn.add(decode3);
     
-    Layer *relu5 = new relu_layer<data_layout::MODEL_PARALLEL>(11, comm);
+    Layer *relu5 = new relu_layer<data_layout::MODEL_PARALLEL>(comm);
     dnn.add(relu5);
 
 
-    Layer *decode2 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(12, comm,
+    Layer *decode2 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(comm,
                                                         1000, 
                                                         weight_initialization::glorot_uniform,
                                                         optimizer_fac->create_optimizer());
     dnn.add(decode2);
     
-    Layer *relu6 = new relu_layer<data_layout::MODEL_PARALLEL>(13, comm);
+    Layer *relu6 = new relu_layer<data_layout::MODEL_PARALLEL>(comm);
     dnn.add(relu6);
 
 
-    Layer *decode1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(14, comm,
+    Layer *decode1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(comm,
                                                         784, 
                                                         weight_initialization::glorot_uniform,
                                                         optimizer_fac->create_optimizer());
     dnn.add(decode1);
     
-    Layer *sigmoid1 = new sigmoid_layer<data_layout::MODEL_PARALLEL>(15, comm);
+    Layer *sigmoid1 = new sigmoid_layer<data_layout::MODEL_PARALLEL>(comm);
     dnn.add(sigmoid1);
 
 
-    Layer* rcl  = new reconstruction_layer<data_layout::MODEL_PARALLEL>(16, comm, 
+    Layer* rcl  = new reconstruction_layer<data_layout::MODEL_PARALLEL>(comm, 
                                                           input_layer);
     dnn.add(rcl);
 
@@ -324,7 +324,7 @@ int main(int argc, char *argv[]) {
       optimizer *o = optimizer_fac->create_optimizer();
       cout << "\nOptimizer:\n" << o->get_description() << endl << endl;
       delete o;
-      std::vector<Layer *>& layers = dnn.get_layers();
+      const std::vector<Layer *>& layers = dnn.get_layers();
       for (size_t h=0; h<layers.size(); h++) {
         std::cout << h << " " << layers[h]->get_description() << endl;
       }
@@ -344,7 +344,7 @@ int main(int argc, char *argv[]) {
     dnn.set_checkpoint_secs(trainParams.CkptSecs);
 
     // restart model from checkpoint if we have one
-    dnn.restartShared();
+    // dnn.restartShared();
 
     // train/test
     dnn.train(trainParams.EpochCount);

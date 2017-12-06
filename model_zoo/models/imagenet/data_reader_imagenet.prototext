@@ -5,26 +5,73 @@ data_reader {
     shuffle: true
     data_filedir: "/p/lscratchf/brainusr/datasets/ILSVRC2012/resized_256x256/train/"
     data_filename: "/p/lscratchf/brainusr/datasets/ILSVRC2012/labels/train_c0-9_01.txt"
-    train_or_test_percent: 1
-    validation_percent: 0.2
+    validation_percent: 0.1
+    absolute_sample_count: 0
+    percent_of_data_to_use: 1.0
+    num_labels: 1000
+
     image_preprocessor {
-      scale: true
-      subtract_mean: true
-      unit_variance: false
+      # assume fixed size of input images if cropper is not used
+      raw_width: 256
+      raw_height: 256
+
+      cropper {
+        disable: true
+        crop_width: 224
+        crop_height: 224
+        crop_randomly: true
+        resized_width: 256
+        resized_height: 256
+      }
+
+      colorizer {
+        disable: false
+      }
+
+      normalizer {
+        scale: true
+        subtract_mean: true
+        unit_variance: false
+        z_score: false
+      }
     }
   }
+
   reader {
     name: "imagenet"
     role: "test"
     shuffle: true
     data_filedir: "/p/lscratchf/brainusr/datasets/ILSVRC2012/resized_256x256/val/"
     data_filename: "/p/lscratchf/brainusr/datasets/ILSVRC2012/labels/val_c0-9_01.txt"
-    train_or_test_percent: 1
-    validation_percent: 1
+    validation_percent: 1.0
+    absolute_sample_count: 0
+    percent_of_data_to_use: 1.0
+    num_labels: 1000
+
     image_preprocessor {
-      scale: true
-      subtract_mean: true
-      unit_variance: false
+      # assume fixed size of input images if cropper is not used
+      raw_width: 256
+      raw_height: 256
+
+      cropper {
+        disable: true
+        crop_width: 224
+        crop_height: 224
+        crop_randomly: false
+        resized_width: 256
+        resized_height: 256
+      }
+
+      colorizer {
+        disable: false
+      }
+
+      normalizer {
+        scale: true
+        subtract_mean: true
+        unit_variance: false
+        z_score: false
+      }
     }
   }
 }

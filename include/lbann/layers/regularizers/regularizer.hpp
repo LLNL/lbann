@@ -37,14 +37,13 @@ namespace lbann {
 
 class regularizer_layer : public Layer {
  public:
-  regularizer_layer(int index, 
-                    lbann_comm *comm) :
-    Layer(index, comm) {
+  regularizer_layer(lbann_comm *comm) :
+    Layer(comm) {
     
   }
   regularizer_layer(const regularizer_layer&) = default;
   regularizer_layer& operator=(const regularizer_layer&) = default;
-  virtual ~regularizer_layer() {}
+  ~regularizer_layer() override {}
 
   template<data_layout T_layout> inline void initialize_distributed_matrices() {
     Layer::initialize_distributed_matrices<T_layout>();

@@ -32,73 +32,57 @@
 namespace lbann {
 
 void lbann_callback_checksmall::on_forward_prop_end(model *m, Layer *l) {
-  // Skip output layer.
-  if (l->get_index() == (int) m->get_layers().size() - 1) {
+  if (dynamic_cast<target_layer*>(l) != nullptr) {
     return;
   }
-  AbsDistMat& acts = l->get_activations();
+  const AbsDistMat& acts = l->get_activations();
   if (!is_good(acts)) {
-    lbann_comm *comm = m->get_comm();
-    std::cout << "[" << comm->get_rank_in_world() << "]: error in layer " <<
-              l->get_index() << " activations (step=" << m->get_cur_step() << ")" <<
-              std::endl;
-    throw lbann_exception("checksmall: error in activations");
+    std::stringstream ss;
+    ss << name() << ": "
+       << "[" << std::to_string(m->get_comm()->get_rank_in_world()) << "]: "
+       << "error in activations of " << l->get_name() << " "
+       << "(step=" << std::to_string(m->get_cur_step()) << ")";
+    throw lbann_exception(ss.str());
   }
 }
 
-void lbann_callback_checksmall::on_backward_prop_end(model *m, Layer *l) {
-  // Skip input/output layers.
-  if (l->get_index() == 0 || l->get_index() == (int) m->get_layers().size() - 1) {
-    return;
-  }
-  // Skip non-learning layers.
-  learning *learning_layer = (learning *) dynamic_cast<learning *> (l);
-  if(learning_layer == NULL) {
-    return;
-  }
-
-  AbsDistMat& grad = learning_layer->get_weights_gradient();
-  if (!is_good(grad)) {
-    lbann_comm *comm = m->get_comm();
-    std::cout << "[" << comm->get_rank_in_world() << "]: error in layer " <<
-              l->get_index() << " gradients (shape=" << grad.Height() << "x" <<
-              grad.Width() << " step=" << m->get_cur_step() << ")" <<
-              std::endl;
-    throw lbann_exception("checksmall: error in gradients");
+void lbann_callback_checksmall::on_backward_prop_end(model *m) {
+  for (weights *w : m->get_weights()) {
+    optimizer *opt = w->get_optimizer();
+    if (opt != nullptr && !is_good(opt->get_gradient())) {
+      std::stringstream ss;
+      ss << name() << ": "
+         << "[" << std::to_string(m->get_comm()->get_rank_in_world()) << "]: "
+         << "error in weights gradient of " << w->get_name() << " "
+         << "(step=" << std::to_string(m->get_cur_step()) << ")";
+      throw lbann_exception(ss.str());
+    }
   }
 }
 
 void lbann_callback_checksmall::on_batch_end(model *m) {
-  std::vector<Layer *>& layers = m->get_layers();
-  // Skip input/output layers-- they don't have weights.
-  for (size_t i = 1; i < layers.size() - 1; ++i) {
-    Layer *l = layers[i];
-    // Skip non-learning layers.
-    learning *learning_layer = (learning *) dynamic_cast<learning *> (l);
-    if(learning_layer == NULL) {
-      continue;
-    }
-    AbsDistMat& weights = learning_layer->get_weights();
-    if (!is_good(weights)) {
-      lbann_comm *comm = m->get_comm();
-      std::cout << "[" << comm->get_rank_in_world() << "]: error in layer " <<
-                l->get_index() << " weights (step=" << m->get_cur_step() << ")" <<
-                std::endl;
-      throw lbann_exception("checksmall: error in weights");
+  for (weights *w : m->get_weights()) {
+    if (!is_good(w->get_values())) {
+      std::stringstream ss;
+      ss << name() << ": "
+         << "[" << std::to_string(m->get_comm()->get_rank_in_world()) << "]: "
+         << "error in weights of " << w->get_name() << " "
+         << "(step=" << std::to_string(m->get_cur_step()) << ")";
+      throw lbann_exception(ss.str());
     }
   }
 }
 
 bool lbann_callback_checksmall::is_good(const AbsDistMat& m) {
   const Mat& local_mat = m.LockedMatrix();
-  const Int height = local_mat.Height();
-  const Int width = local_mat.Width();
-  for (Int col = 0; col < width; ++col) {
-    for (Int row = 0; row < height; ++row) {
-      const DataType val = Abs(local_mat(row, col));
+  const El::Int height = local_mat.Height();
+  const El::Int width = local_mat.Width();
+  for (El::Int col = 0; col < width; ++col) {
+    for (El::Int row = 0; row < height; ++row) {
+      const DataType val = std::abs(local_mat(row, col));
       if (val > 0 && val <= m_threshold) {
-        std::cout << "Found small value " << val << " at (" << row << "," <<
-                  col << ")!" << std::endl;
+        std::cout << "Found small value " << val << " "
+                  << "at (" << row << "," << col << ")!" << std::endl;
         return false;
       }
     }

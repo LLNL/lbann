@@ -1,6 +1,5 @@
 model {
-  name: "dnn"
-  objective_function: "mean_squared_error"
+  name: "sequential_model"
   data_layout: "data_parallel"
   mini_batch_size: 128
   block_size: 256
@@ -9,6 +8,17 @@ model {
   procs_per_model: 0 
   use_cudnn: false
   num_gpus: -1
+
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    mean_squared_error {}
+    l2_weight_regularization {
+      scale_factor: 0.0005
+    }
+  }
 
   ###################################################
   # Callbacks
@@ -37,8 +47,7 @@ model {
   # INPUT
   #######
   layer {
-    name: "1"
-    parent: "1"
+    name: "data"
     data_layout: "data_parallel"
     input_distributed_minibatch {
     }
@@ -48,8 +57,7 @@ model {
   # CONVOLUTION 1
   #############
   layer {
-    name: "2"
-    parent: "1"
+    name: "conv1"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -57,10 +65,8 @@ model {
       conv_dims: "3 3"
       conv_pads: "0 0"
       conv_strides: "1 1"
-      weight_initialization: "he_normal"
       has_bias: true
       has_vectors: true
-      l2_regularization_factor: 0.0005
     }
   }
 
@@ -68,8 +74,7 @@ model {
   # RELU 1
   ######
   layer {
-    name: "3"
-    parent: "2"
+    name: "relu1"
     data_layout: "data_parallel"
     relu {
     }
@@ -79,8 +84,7 @@ model {
   # POOLING 1
   #########
   layer {
-    name: "4"
-    parent: "3"
+    name: "pool1"
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
@@ -96,8 +100,7 @@ model {
   # CONVOLUTION 2
   #############
   layer {
-    name: "5"
-    parent: "4"
+    name: "conv2"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -105,10 +108,8 @@ model {
       conv_dims: "3 3"
       conv_pads: "0 0"
       conv_strides: "1 1"
-      weight_initialization: "he_normal"
       has_bias: true
       has_vectors: true
-      l2_regularization_factor: 0.0005
     }
   }
 
@@ -116,8 +117,7 @@ model {
   # RELU 2
   ######
   layer {
-    name: "6"
-    parent: "5"
+    name: "relu2"
     data_layout: "data_parallel"
     relu {
     }
@@ -127,8 +127,7 @@ model {
   # POOLING 2
   #########
   layer {
-    name: "7"
-    parent: "6"
+    name: "pool2"
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
@@ -144,8 +143,7 @@ model {
   # CONVOLUTION 3
   #############
   layer {
-    name: "8"
-    parent: "7"
+    name: "conv3"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -153,10 +151,8 @@ model {
       conv_dims: "3 3"
       conv_pads: "0 0"
       conv_strides: "1 1"
-      weight_initialization: "he_normal"
       has_bias: true
       has_vectors: true
-      l2_regularization_factor: 0.0005
     }
   }
 
@@ -164,8 +160,7 @@ model {
   # RELU 3
   ######
   layer {
-    name: "9"
-    parent: "8"
+    name: "relu3"
     data_layout: "data_parallel"
     relu {
     }
@@ -175,8 +170,7 @@ model {
   # POOLING 3
   #########
   layer {
-    name: "10"
-    parent: "9"
+    name: "pool3"
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
@@ -192,12 +186,11 @@ model {
   # UNPOOLING 3
   #########
   layer {
-    name: "11"
-    parent: "10"
+    name: "unpool3"
     data_layout: "data_parallel"
     unpooling {
       num_dims: 2
-      pooling_layer: "10"
+      pooling_layer: "pool3"
     }
   }
  
@@ -205,8 +198,7 @@ model {
   # DECONVOLUTION 3
   #############
   layer {
-    name: "12"
-    parent: "11"
+    name: "deconv3"
     data_layout: "data_parallel"
     deconvolution {
       num_dims: 2
@@ -214,10 +206,8 @@ model {
       conv_dims: "3 3"
       conv_pads: "0 0"
       conv_strides: "1 1"
-      weight_initialization: "he_normal"
       has_bias: true
       has_vectors: true
-      l2_regularization_factor: 0.0005
     }
   }
 
@@ -225,8 +215,7 @@ model {
   # RELU 4
   ######
   layer {
-    name: "13"
-    parent: "12"
+    name: "relu4"
     data_layout: "data_parallel"
     relu {
     }
@@ -236,12 +225,11 @@ model {
   # UNPOOLING 2
   #########
   layer {
-    name: "14"
-    parent: "13"
+    name: "unpool2"
     data_layout: "data_parallel"
     unpooling {
       num_dims: 2
-      pooling_layer: "7"
+      pooling_layer: "pool2"
     }
   }
 
@@ -249,8 +237,7 @@ model {
   # DECONVOLUTION 2
   #############
   layer {
-    name: "15"
-    parent: "14"
+    name: "deconv2"
     data_layout: "data_parallel"
     deconvolution {
       num_dims: 2
@@ -258,10 +245,8 @@ model {
       conv_dims: "3 3"
       conv_pads: "0 0"
       conv_strides: "1 1"
-      weight_initialization: "he_normal"
       has_bias: true
       has_vectors: true
-      l2_regularization_factor: 0.0005
     }
   }
 
@@ -269,8 +254,7 @@ model {
   # RELU 5 
   ######
   layer {
-    name: "16"
-    parent: "15"
+    name: "relu5"
     data_layout: "data_parallel"
     relu {
     }
@@ -280,12 +264,11 @@ model {
   # UNPOOLING 1
   #########
   layer {
-    name: "17"
-    parent: "16"
+    name: "unpool1"
     data_layout: "data_parallel"
     unpooling {
       num_dims: 2
-      pooling_layer: "4"
+      pooling_layer: "pool1"
     }
   }
 
@@ -293,8 +276,7 @@ model {
   # DECONVOLUTION 1
   #############
   layer {
-    name: "18"
-    parent: "17"
+    name: "deconv1"
     data_layout: "data_parallel"
     deconvolution {
       num_dims: 2
@@ -302,10 +284,8 @@ model {
       conv_dims: "3 3"
       conv_pads: "0 0"
       conv_strides: "1 1"
-      weight_initialization: "he_normal"
       has_bias: true
       has_vectors: true
-      l2_regularization_factor: 0.0005
     }
   }
 
@@ -313,8 +293,7 @@ model {
   # RELU 6
   ######
   layer {
-    name: "19"
-    parent: "18"
+    name: "relu6"
     data_layout: "data_parallel"
     relu {
     }
@@ -325,12 +304,10 @@ model {
   # FULLY_CONNECTED decode1
   #################
   layer {
-    name: "20"
-    parent: "19"
+    name: "decode1"
     data_layout: "data_parallel"
     num_neurons_from_data_reader: true
     fully_connected {
-      weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }
@@ -339,8 +316,7 @@ model {
   # SIGMOID sigmoid
   #######
   layer {
-    name: "21"
-    parent: "20"
+    name: "sigmoid"
     data_layout: "data_parallel"
     sigmoid {
     }
@@ -351,11 +327,10 @@ model {
   # RECONSTRUCTION
   #################
   layer {
-    name: "22"
-    parent: "21"
+    name: "reconstruction"
     data_layout: "data_parallel"
     reconstruction {
-      original_layer: "1"
+      original_layer: "data"
     }
   }
 

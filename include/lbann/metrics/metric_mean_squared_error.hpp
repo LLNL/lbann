@@ -28,7 +28,6 @@
 #define LBANN_METRIC_MEAN_SQUARED_ERROR_HPP
 
 #include "lbann/metrics/metric.hpp"
-#include "lbann/objective_functions/mean_squared_error.hpp"
 
 namespace lbann {
 
@@ -45,15 +44,15 @@ class mean_squared_error : public metric {
     const mean_squared_error<T_layout>& other) = default;
 
   /// Destructor
-  ~mean_squared_error() {}
+  ~mean_squared_error() override {}
 
-  mean_squared_error* copy() const { return new mean_squared_error(*this); }
+  mean_squared_error* copy() const override { return new mean_squared_error(*this); }
 
-  void setup(int num_neurons, int mini_batch_size) {
+  void setup(int num_neurons, int mini_batch_size) override {
     metric::setup(num_neurons, mini_batch_size);
   }
-  void fp_set_std_matrix_view(int cur_mini_batch_size) {}
-  double compute_metric(AbsDistMat& predictions_v, AbsDistMat& groundtruth_v) {
+  void fp_set_std_matrix_view(int cur_mini_batch_size) override {}
+  double compute_metric(AbsDistMat& predictions_v, AbsDistMat& groundtruth_v) override {
     
     // Get local matrices and matrix parameters
     const Mat& predictions_local = predictions_v.LockedMatrix();
@@ -74,33 +73,30 @@ class mean_squared_error : public metric {
       }
     }
     mse /= height * width;
-    mse = El::mpi::AllReduce(mse, predictions_v.DistComm());
+    mse = m_comm->allreduce(mse, predictions_v.DistComm());
     return mse;
 
   }
 
-  double report_metric(execution_mode mode) {
+  double report_metric(execution_mode mode) override {
     statistics *stats = get_statistics(mode);
     double error_per_epoch = stats->m_error_per_epoch;
-    long samples_per_epoch = stats->m_samples_per_epoch;
-
-    double mse = error_per_epoch / samples_per_epoch;
-    string score = std::to_string(mse);
+    long iterations_per_epoch = stats->m_iterations_per_epoch;
+    double mse = error_per_epoch / iterations_per_epoch;
 
     return mse;
   }
-  double report_lifetime_metric(execution_mode mode) {
+  double report_lifetime_metric(execution_mode mode) override {
     statistics *stats = get_statistics(mode);
     double total_error = stats->m_total_error;
     long total_num_samples = stats->m_total_num_samples;
 
     double mse = total_error / total_num_samples;
-    string score = std::to_string(mse);
 
     return mse;
   }
 
-  std::string name() const { return "mean squared error"; }
+  std::string name() const override { return "mean squared error metric"; }
 
 };
 

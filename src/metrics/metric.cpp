@@ -51,14 +51,16 @@ statistics *metric::get_statistics(execution_mode mode) {
 }
 
 void metric::record_error(double error, long num_samples) {
-  statistics *stats = get_statistics(m_neural_network_model->get_execution_mode());
+  statistics *stats = get_statistics(m_model->get_execution_mode());
   stats->m_error_per_epoch += error;
   stats->m_samples_per_epoch += num_samples;
+  //assumes record_error is called per step (iterations)
+  stats->m_iterations_per_epoch++;
   return;
 }
 
 void metric::reset_metric() {
-  statistics *stats = get_statistics(m_neural_network_model->get_execution_mode());
+  statistics *stats = get_statistics(m_model->get_execution_mode());
   stats->reset_stats();
 }
 

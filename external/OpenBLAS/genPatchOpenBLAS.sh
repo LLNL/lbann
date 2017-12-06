@@ -21,7 +21,6 @@ do
   if [ ! -f $f ] || [ ! -f ${patchDir}/${fnew} ] ; then
     continue;
   fi
-
   pushd . > /dev/null
   cd ${fdir}
   ln -sf ${patchDir}/${fnew} ${fnew}

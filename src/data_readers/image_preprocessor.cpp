@@ -28,7 +28,6 @@
 
 #include "lbann/data_readers/image_preprocessor.hpp"
 #include "lbann/data_readers/image_utils.hpp"
-#include "lbann/data_readers/patchworks/patchworks.hpp"
 #include "lbann/utils/random.hpp"
 #include "lbann/utils/statistics.hpp"
 #include "lbann/utils/exception.hpp"
@@ -122,9 +121,9 @@ void lbann_image_preprocessor::augment(Mat& pixels, unsigned imheight,
     // Compute the final transformation.
     Mat affine_mat_tmp(3, 3);
     Mat affine_mat(3, 3);
-    El::Gemm(NORMAL, NORMAL, (DataType) 1.0, trans_mat, shear_mat,
+    El::Gemm(El::NORMAL, El::NORMAL, (DataType) 1.0, trans_mat, shear_mat,
              (DataType) 0.0, affine_mat_tmp);
-    El::Gemm(NORMAL, NORMAL, (DataType) 1.0, affine_mat_tmp, rot_mat,
+    El::Gemm(El::NORMAL, El::NORMAL, (DataType) 1.0, affine_mat_tmp, rot_mat,
              (DataType) 0.0, affine_mat);
     affine_trans(sqpixels, affine_mat);
     col_pixels(sqpixels, pixels, num_channels);
@@ -178,7 +177,7 @@ void lbann_image_preprocessor::unit_variance(
     Mat pixels_channel = El::View(pixels, El::IR(channel_start, channel_end), El::ALL);
     DataType mean, stdev;
     entrywise_mean_and_stdev(pixels_channel, mean, stdev);
-    if(stdev > DataType(1e-7)*Abs(mean)) {
+    if(stdev > DataType(1e-7)*std::abs(mean)) {
       const DataType inv_stdev = 1 / stdev;
       for (unsigned i = 0; i < height_per_channel; ++i) {
         DataType& pixels_entry = pixels_channel(i, 0);
@@ -225,7 +224,7 @@ void lbann_image_preprocessor::z_score(Mat& pixels,
     Mat pixels_channel = El::View(pixels, El::IR(channel_start, channel_end), El::ALL);
     DataType mean, stdev;
     entrywise_mean_and_stdev(pixels_channel, mean, stdev);
-    if(stdev > DataType(1e-7)*Abs(mean)) {
+    if(stdev > DataType(1e-7)*std::abs(mean)) {
       const DataType inv_stdev = 1 / stdev;
       for (unsigned i = 0; i < height_per_channel; ++i) {
         DataType& pixels_entry = pixels_channel(i, 0);

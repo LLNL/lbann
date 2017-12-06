@@ -29,12 +29,44 @@
 #include "lbann/lbann.hpp"
 #include "lbann/proto/proto_common.hpp"
 
+#include <time.h>
+#include <dlfcn.h>
+#include <string.h>
+
+#if 0
+extern "C" {
+void __cyg_profile_func_enter (void *, void *) __attribute__((no_instrument_function));
+void __cyg_profile_func_exit (void *, void *) __attribute__((no_instrument_function));
+
+int depth = -1;
+Dl_info info;
+
+void __cyg_profile_func_enter (void *func,  void *caller)
+{
+ depth++;
+  dladdr(func, &info);
+  if (strstr(info.dli_fname, "liblbann.so") != nullptr) {
+    printf("%d %s\n", depth, info.dli_sname);
+  }  
+}
+
+void __cyg_profile_func_exit (void *func, void *caller)
+{
+ depth--;
+}
+
+}
+#endif
+
+//===================================================================
+
 using namespace lbann;
 
-const int lbann_random_seed = 42;
+const int lbann_default_random_seed = 42;
 
 int main(int argc, char *argv[]) {
-  lbann_comm *comm = initialize(argc, argv, lbann_random_seed);
+  int random_seed = lbann_default_random_seed;
+  lbann_comm *comm = initialize(argc, argv, random_seed);
   bool master = comm->am_world_master();
 
 #ifdef EL_USE_CUBLAS
@@ -53,9 +85,6 @@ int main(int argc, char *argv[]) {
 
     std::stringstream err;
 
-    // Run LTFB?
-    //bool ltfb = opts->has_int("ltfb") and opts->get_int("ltfb");
-
     // Get input prototext filename(s)
     if (not (opts->has_string("loadme") or opts->has_string("model"))) {
       if (master) {  
@@ -64,12 +93,12 @@ int main(int argc, char *argv[]) {
             " :: you must either pass the option: --loadme=<string> (if the file\n"
             "contains a specification for the model, readers, and optimizer\n"
              "or --model=<string> --reader=<string> --optimizer=<string>\n";
-      throw lbann_exception(err.str());
-    }
+        throw lbann_exception(err.str());
+      }
     }
    
     lbann_data::LbannPB pb;
-    string prototext_model_fn;
+    std::string prototext_model_fn;
     if (opts->has_string("model")) {
       prototext_model_fn = opts->get_string("model");
     } else if (opts->has_string("loadme")) {
@@ -84,10 +113,15 @@ int main(int argc, char *argv[]) {
     }
 
     if (opts->has_string("optimizer")) {
-      string prototext_opt_fn;
+      std::string prototext_opt_fn;
       lbann_data::LbannPB pb_optimizer;
       read_prototext_file(opts->get_string("optimizer").c_str(), pb_optimizer, master);
       pb.MergeFrom(pb_optimizer);
+    }
+
+    if (has_motifs(comm, pb)) {
+      expand_motifs(comm, pb);
+      exit(9);
     }
 
     lbann_data::Model *pb_model = pb.mutable_model();
@@ -99,14 +133,36 @@ int main(int argc, char *argv[]) {
     // after calling split_models()
     set_num_parallel_readers(comm, pb);
 
-    // Save info to file; this includes the complete prototext (with any over-rides
-
     // Set algorithmic blocksize
     if (pb_model->block_size() == 0 and master) {
       err << __FILE__ << " " << __LINE__ << " :: model does not provide a valid block size: " << pb_model->block_size();
       throw lbann_exception(err.str());
     }
-    SetBlocksize(pb_model->block_size());
+    El::SetBlocksize(pb_model->block_size());
+
+    // Change random seed if needed.
+    if (pb_model->random_seed() > 0) {
+      random_seed = pb_model->random_seed();
+      // Reseed here so that setup is done with this new seed.
+      init_random(random_seed);
+      init_data_seq_random(random_seed);
+    }
+    // Initialize models differently if needed.
+#ifndef LBANN_SEQUENTIAL_CONSISTENCY
+    if (pb_model->random_init_models_differently()) {
+      random_seed = random_seed + comm->get_model_rank();
+      // Reseed here so that setup is done with this new seed.
+      init_random(random_seed);
+      init_data_seq_random(random_seed);
+    }
+#else
+    if (pb_model->random_init_models_differently()) {
+      if (master) {
+        std::cout << "WARNING: Ignoring random_init_models_differently " <<
+          "due to sequential consistency" << std::endl;
+      }
+    }
+#endif
 
     // Set up the communicator and get the grid.
     int procs_per_model = pb_model->procs_per_model();
@@ -114,128 +170,124 @@ int main(int argc, char *argv[]) {
       procs_per_model = comm->get_procs_in_world();
     }
     comm->split_models(procs_per_model);
-    if (master) cout << "  procs_per_model: " << procs_per_model << endl;
     if (pb_model->num_parallel_readers() > procs_per_model) {
       pb_model->set_num_parallel_readers(procs_per_model);
     }
 
-    Grid& grid = comm->get_model_grid();
     if (master) {
-      cout << "  Number of models: " << comm->get_num_models() << endl;
-      cout << "  Grid is " << grid.Height() << " x " << grid.Width() << endl;
-      cout << endl;
+      std::cout << "Model settings" << std::endl
+                << "  Models              : " << comm->get_num_models() << std::endl
+                << "  Processes per model : " << procs_per_model << std::endl
+                << "  Grid dimensions     : " << comm->get_model_grid().Height() << " x " << comm->get_model_grid().Width() << std::endl;
+      std::cout << std::endl;
     }
 
+    // Save info to file; this includes the complete prototext (with any over-rides
     // from the cmd line) and various other info
     save_session(comm, argc, argv, pb);
 
-    // Initialize data readers
-    //@todo: code not in place for correctly handling image preprocessing
-    std::map<execution_mode, generic_data_reader *> data_readers;
-    init_data_readers(master, pb, data_readers, pb_model->mini_batch_size());
-
     // Check for cudnn, with user feedback
-    cudnn::cudnn_manager *cudnn = NULL;
+    cudnn::cudnn_manager *cudnn = nullptr;
 #if __LIB_CUDNN
     if (pb_model->use_cudnn()) {
       if (master) {
-        cerr << "code was compiled with __LIB_CUDNN, and we are using cudnn\n";
+        std::cerr << "code was compiled with __LIB_CUDNN, and we are using cudnn\n";
       }
-      cudnn = new cudnn::cudnn_manager(comm, pb_model->num_gpus());
+      if(pb_model->use_nccl()) {
+        cudnn = new cudnn::cudnn_manager(comm, pb_model->num_gpus(), true);
+      }
+      else{
+        cudnn = new cudnn::cudnn_manager(comm, pb_model->num_gpus(), false);
+      }
     } else {
       if (master) {
-        cerr << "code was compiled with __LIB_CUDNN, but we are NOT USING cudnn\n";
+        std::cerr << "code was compiled with __LIB_CUDNN, but we are NOT USING cudnn\n";
       }
     }
 #else
     if (master) {
-      cerr << "code was NOT compiled with __LIB_CUDNN\n";
+      std::cerr << "code was NOT compiled with __LIB_CUDNN\n";
     }
 #endif
 
+    if (master) {
+      std::cout << "Hardware settings (for master process)" << std::endl
+                << "  Processes on node            : " << comm->get_procs_per_node() << std::endl
+                << "  OpenMP threads per process   : " << omp_get_max_threads() << std::endl;
+      #if __LIB_CUDNN
+      if (cudnn != nullptr) {
+        std::cout << "  GPUs on node                 : " << cudnn->get_num_visible_gpus() << std::endl
+                  << "  GPUs per process             : " << cudnn->get_num_gpus() << std::endl;
+      }
+      #endif // __LIB_CUDNN
+      std::cout << std::endl;
+    }
+    // Display how the OpenMP threads are provisioned
+    display_omp_setup();
+
+    // Initialize data readers
+    //@todo: code not in place for correctly handling image preprocessing
+    std::map<execution_mode, generic_data_reader *> data_readers;
+    init_data_readers(master, pb, data_readers);
+
     // Construct optimizer
-    optimizer_factory *optimizer_fac = init_optimizer_factory(comm, cudnn, pb);
+    optimizer *default_optimizer = init_default_optimizer(comm, cudnn, pb);
 
     // User feedback
     print_parameters(comm, pb);
 
     // Initalize model
     // @todo: not all callbacks code is in place
-    sequential_model *model = init_model(comm, optimizer_fac, pb);
-
-    //maps: layer name (from prototext) to the lbann::layer
-    std::unordered_map<std::string, Layer*> name_mapping;
-    //maps: layer index (wrt lbann::sequential_model) to the lbann::layer
-    std::unordered_map<uint, Layer*> index_mapping;
-    //maps: layer name (from prototext)  to layer index (wrt lbann::sequential_model)
-    std::unordered_map<std::string, uint> name_to_index;
-
-    add_layers(model, data_readers, cudnn, pb, name_mapping, index_mapping, name_to_index);
-    init_callbacks(comm, model, data_readers, pb, name_mapping, index_mapping, name_to_index);
+    model *model = init_model(comm, default_optimizer, pb);
+    add_layers(model, data_readers, cudnn, pb);
+    init_callbacks(comm, model, data_readers, pb);
     model->setup();
-
-    // Optionally run ltfb
-    #if 0
-    sequential_model *model_2;
-    std::map<execution_mode, generic_data_reader *> data_readers_2;
-    //under development ...
-    if (ltfb) {
-      if (master) {
-        cerr << endl << "running ltfb\n\n";
-        throw lbann_exception("ltfb is not ready yet; coming soon!");
-      }
-      init_data_readers(master, pb, data_readers_2, pb_model->mini_batch_size());
-      optimizer_factory *optimizer_fac_2 = init_optimizer_factory(comm, pb);
-      model_2 = init_model(comm, optimizer_fac_2, pb);
-      model_2->setup();
-      //lbann_callback_ltfb ltfb(45, model_2);
-      //model->add_callback(&ltfb);
-    }
-    #endif
 
     // restart model from checkpoint if we have one
     //@todo
     //model->restartShared();
 
     if (comm->am_world_master()) {
-      optimizer *o = optimizer_fac->create_optimizer();
-      cout << "\nOptimizer:\n" << o->get_description() << endl << endl;
-      delete o;
-      std::vector<Layer *>& layers = model->get_layers();
+      std::cout << std::endl;
+      if (default_optimizer != nullptr) {
+        std::cout << "Default optimizer: " << default_optimizer->get_description();
+      } else {
+        std::cout << "No optimizer";
+      }
+      std::cout << std::endl << std::endl;
+      std::cout << "Callbacks:" << std::endl;
+      for (lbann_callback *cb : model->get_callbacks()) {
+        std::cout << cb->name() << std::endl;
+      }
+      std::cout << std::endl;
+      const std::vector<Layer *>& layers = model->get_layers();
       for (size_t h=0; h<layers.size(); h++) {
-        std::cout << h << " " << layers[h]->get_description() << endl;
+        std::cout << h << " " << layers[h]->get_description() << std::endl;
       }
     }
 
-    if (not opts->has_string("exit_after_setup")) {
-
-    ///////////////////////////////////////////////////////////////////
-    // main loop for training/testing
-    ///////////////////////////////////////////////////////////////////
-
+    if (!opts->has_string("exit_after_setup")) {
 #ifndef LBANN_SEQUENTIAL_CONSISTENCY
-    // Under normal conditions, reinitialize the random number generator so
-    // that regularization techniques (e.g. dropout) generate unique patterns
-    // on different ranks.
-    init_random(lbann_random_seed + comm->get_rank_in_world());
+      // Under normal conditions, reinitialize the random number generator so
+      // that regularization techniques (e.g. dropout) generate unique patterns
+      // on different ranks.
+      init_random(random_seed + comm->get_rank_in_world());
 #else
-    if(comm->am_world_master()) {
-      std::cout << 
-        "--------------------------------------------------------------------------------\n"
-        "ALERT: executing in sequentially consistent mode -- performance will suffer\n"
-        "--------------------------------------------------------------------------------\n";
-    }
+      if(comm->am_world_master()) {
+        std::cout << 
+          "--------------------------------------------------------------------------------\n"
+          "ALERT: executing in sequentially consistent mode -- performance will suffer\n"
+          "--------------------------------------------------------------------------------\n";
+      }
 #endif
 
-    // Train model
-    model->train(pb_model->num_epochs());
+      // Train model
+      model->train(pb_model->num_epochs());
 
-    // Evaluate model on test set
-    model->evaluate(execution_mode::testing);
+      // Evaluate model on test set
+      model->evaluate(execution_mode::testing);
 
-    } 
-
-    else {
+    } else {
       if (comm->am_world_master()) {
         std::cout << 
           "--------------------------------------------------------------------------------\n"
@@ -248,12 +300,11 @@ int main(int argc, char *argv[]) {
     // @todo: figure out and implement coherent strategy
     // for freeing dynamically allocated memory
     delete model;
-    delete optimizer_fac;
 
   } catch (lbann_exception& e) {
     lbann_report_exception(e, comm);
-  } catch (exception& e) {
-    ReportException(e);  /// Elemental exceptions
+  } catch (std::exception& e) {
+    El::ReportException(e);  // Elemental exceptions
   }
 
   // free all resources by El and MPI

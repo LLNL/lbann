@@ -2,8 +2,7 @@ model {
   ### Model description and network architecture taken from:
   ### https://lc.llnl.gov/bitbucket/projects/BIOM/repos/molresp/browse/tf_model.py?at=TensorFlow_chemClass
   ### This network description is anologous to AutoEncoder_Chem_Sigmoid 
-  name: "dnn"
-  objective_function: "mean_squared_error"
+  name: "sequential_model"
   data_layout: "model_parallel"
   mini_batch_size: 128
   block_size: 256
@@ -12,6 +11,14 @@ model {
   procs_per_model: 0
   use_cudnn: true
   num_gpus: -1
+
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    mean_squared_error {}
+  }
 
   ###################################################
   # Callbacks
@@ -46,8 +53,7 @@ model {
   # INPUT
   #######
   layer {
-    name: "1"
-    parent: "1"
+    name: "data"
     data_layout: "model_parallel"
     input_distributed_minibatch {
     }
@@ -57,8 +63,7 @@ model {
   # FULLY_CONNECTED encode1
   #################
   layer {
-    name: "2"
-    parent: "1"
+    name: "encode1"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 2000
@@ -71,8 +76,7 @@ model {
   # SIGMOID sigmoid1
   ######
   layer {
-    name: "3"
-    parent: "2"
+    name: "sigmoid1"
     data_layout: "model_parallel"
     sigmoid {
     }
@@ -82,8 +86,7 @@ model {
   # FULLY_CONNECTED encode2
   #################
   layer {
-    name: "4"
-    parent: "3"
+    name: "encode2"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 500
@@ -96,8 +99,7 @@ model {
   # SIGMOID sigmoid2
   #######
   layer {
-    name: "5"
-    parent: "4"
+    name: "sigmoid2"
     data_layout: "model_parallel"
     sigmoid {
     }
@@ -107,8 +109,7 @@ model {
   # FULLY_CONNECTED encode3
   #################
   layer {
-    name: "6"
-    parent: "5"
+    name: "encode3"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 100 
@@ -121,8 +122,7 @@ model {
   # SIGMOID sigmoid3
   #######
   layer {
-    name: "7"
-    parent: "6"
+    name: "sigmoid3"
     data_layout: "model_parallel"
     sigmoid {
     }
@@ -133,8 +133,7 @@ model {
   # FULLY_CONNECTED decode3
   #################
   layer {
-    name: "8"
-    parent: "7"
+    name: "decode3"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 500
@@ -147,8 +146,7 @@ model {
   # SIGMOID sigmoid4
   #######
   layer {
-    name: "9"
-    parent: "8"
+    name: "sigmoid4"
     data_layout: "model_parallel"
     sigmoid {
     }
@@ -158,8 +156,7 @@ model {
   # FULLY_CONNECTED decode2
   #################
   layer {
-    name: "10"
-    parent: "9"
+    name: "decode2"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 2000
@@ -173,8 +170,7 @@ model {
   # SIGMOID sigmoid5
   #######
   layer {
-    name: "11"
-    parent: "10"
+    name: "sigmoid5"
     data_layout: "model_parallel"
     sigmoid {
     }
@@ -184,8 +180,7 @@ model {
   # FULLY_CONNECTED decode1
   #################
   layer {
-    name: "12"
-    parent: "11"
+    name: "decode1"
     data_layout: "model_parallel"
     num_neurons_from_data_reader: true
     fully_connected {
@@ -198,8 +193,7 @@ model {
   # SIGMOID sigmoid6
   #######
   layer {
-    name: "13"
-    parent: "12"
+    name: "sigmoid6"
     data_layout: "model_parallel"
     sigmoid {
     }
@@ -210,11 +204,10 @@ model {
   # RECONSTRUCTION
   #################
   layer {
-    name: "14"
-    parent: "13"
+    name: "reconstruction"
     data_layout: "model_parallel"
     reconstruction {
-      original_layer: 1
+      original_layer: "data"
     }
   }
 

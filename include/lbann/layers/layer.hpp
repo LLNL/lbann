@@ -33,10 +33,6 @@
 #include "lbann/comm.hpp"
 #include "lbann/utils/summary.hpp"
 #include "lbann/optimizers/optimizer.hpp"
-#include "lbann/optimizers/optimizer_sgd.hpp"
-#include "lbann/optimizers/optimizer_adagrad.hpp"
-#include "lbann/optimizers/optimizer_rmsprop.hpp"
-#include "lbann/optimizers/optimizer_adam.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/utils/timer.hpp"
@@ -51,7 +47,7 @@ class model;
 
 class Layer {
  public:
-  Layer(const int index, lbann_comm *comm);
+  Layer(lbann_comm *comm);
   Layer(const Layer& other);
   Layer& operator=(const Layer& other);
 
@@ -62,20 +58,28 @@ class Layer {
   template <data_layout T_layout>
   void initialize_distributed_matrices();
 
+  /** Forward propagation step.
+   *  Apply the layer's operation to the previous activations tensor
+   *  to obtain the activations tensor.
+   */
   virtual void forward_prop();
+  /** Backward propagation step.
+   *  Compute the objective function gradient w.r.t. the previous
+   *  activations tensor and the weights. The gradient w.r.t. the
+   *  previous activations tensor is called the error signal tensor.
+   */
   virtual void back_prop();
+  /** Update step.
+   *  This updates the layer's internal members. The weights are
+   *  updated elsewhere.
+   */
   virtual bool update();
+
+  /** Clear the error signal tensor. */
+  virtual void clear_error_signal();
+
   virtual void summarize_stats(lbann_summary& summarizer, int step);
   virtual void summarize_matrices(lbann_summary& summarizer, int step);
-  /**
-   * Print information at the end of an epoch.
-   * This is always called on the model masters and should synchronize
-   * printing if needed.
-   */
-  virtual void epoch_print() const {}
-  virtual DataType checkGradientMB(Layer& PrevLayer, DataType Epsilon=1e-4) {
-    return 0.0;
-  };
 
   /** Setup layer dimensions and data.
    *  By default, this calls the setup_pointers, setup_dims,
@@ -88,12 +92,20 @@ class Layer {
   /** Validate that the setup is reasonable. */
   virtual void check_setup();
 
-  /** Return this layer's name */
-  virtual std::string get_name() const = 0;
+  /** Return this layer's type, e.g: "fully connected," "batch normalization," etc. */
+  virtual std::string get_type() const = 0;
+
+  /** Returns this layer's name; this is an arbitrary string, e.g, assigned in a prototext file. */
+  std::string get_name() const { return m_name; }
+
+  /** Sets this layer's name; this is an arbitrary string, e.g, assigned in a prototext file. */
+  void set_name(std::string name) { m_name = name; }
   
   /** Returns a description of the parameters passed to the ctor */
   virtual std::string get_description() const { 
-    return std::string {} + get_name() + " - DESCRIPTION NOT IMPLEMENTED FOR THIS LAYER";
+    return std::string {} + get_type() + " - DESCRIPTION NOT IMPLEMENTED FOR THIS LAYER\n"
+     + " to get a description, you need to edit the class file by adding this method:\n"
+     + " virtual std::string get_descrciption() const override";
   }
   /** Returns a description of the topology */
   virtual std::string get_topo_description() const { return ""; };
@@ -101,14 +113,6 @@ class Layer {
   /** Returns a string description of the data_layout */
   std::string get_data_layout_string(data_layout d) const; 
 
-  /** Return the layer index. */
-  inline int get_index() const {
-    return m_index;
-  }
-  /** Set the layer index. */
-  inline void set_index(int i) {
-    m_index = i;
-  }
   /** Return the number of neurons from previous layer. */
   inline int get_num_prev_neurons() const {
     return m_num_prev_neurons;
@@ -133,14 +137,6 @@ class Layer {
   inline const std::vector<int>& get_neuron_dims() const {
     return m_neuron_dims;
   }
-  /** Return the execution mode. */
-  inline execution_mode get_execution_mode() const {
-    return m_execution_mode;
-  }
-  /** Set the execution mode. */
-  inline void set_execution_mode(execution_mode mode) {
-    m_execution_mode = mode;
-  }
   /** Return the data layout of the given layer -- Every concrete
       layer has to overrride this with its T_layout template parameter */
   virtual data_layout get_data_layout() const = 0;
@@ -161,40 +157,62 @@ class Layer {
     return m_using_gpus;
   }
 
-  /// Following function tells whether a layer has weights; default is false
-  virtual bool is_learning_layer() { return false; }
+  /// Following functions tell whether current layer is a fan-out layer; default is false
+  virtual bool is_fan_out_layer() const {
+    return m_max_num_child_layers != 1 && m_max_num_child_layers != 0;
+  }
 
-  /** Return the neural network model of this layer. */
-  inline model* get_neural_network_model() const {
-    return m_neural_network_model;
+  /// Following functions tell whether current layer is a fan-in layer; default is false
+  virtual bool is_fan_in_layer() const {
+    return m_max_num_parent_layers != 1 && m_max_num_parent_layers != 0;
   }
-  /** Set the neural network model of this layer. */
-  inline void set_neural_network_model(model* const m) {
-    m_neural_network_model = m;
-  }
+
+  /** Return the model that owns this layer. */
+  inline model* get_model() const { return m_model; }
+  /** Set the model that owns this layer. */
+  inline void set_model(model* m) { m_model = m; }
+
   virtual El::Matrix<El::Int>* get_sample_indices_per_mb() { return nullptr; };
 
-  virtual bool saveToFile(int fd, const char *filename) { return true; };
+  virtual bool saveToFile(int fd, const char *filename) const { return true; };
   virtual bool loadFromFile(int fd, const char *filename) { return true; };
 
-  virtual bool saveToCheckpoint(int fd, const char *filename, size_t *bytes);
+  virtual bool saveToCheckpoint(int fd, const char *filename, size_t *bytes) const;
   virtual bool loadFromCheckpoint(int fd, const char *filename, size_t *bytes);
 
-  virtual bool saveToCheckpointShared(persist& p);
+  virtual bool saveToCheckpointShared(persist& p) const;
   virtual bool loadFromCheckpointShared(persist& p);
 
   /** Get forward propagation output, as seen by next layer. */
-  virtual void get_fp_output(AbsDistMat& fp_output, const Layer* next_layer = NULL) const;
+  virtual void get_fp_output(AbsDistMat& fp_output, const Layer* next_layer = nullptr) const;
   /** Get backward propagation output, as seen by previous layer. */
-  virtual void get_bp_output(AbsDistMat& fp_output, const Layer* prev_layer = NULL) const;
+  virtual void get_bp_output(AbsDistMat& fp_output, const Layer* prev_layer = nullptr) const;
 #ifdef __LIB_CUDNN
-  /** Get forward propagation output on GPUs, as seen by next layer. */
-  virtual void get_gpu_fp_output(std::vector<DataType*>& fp_output, const Layer* next_layer = NULL) const;
-  /** Get backward propagation output on GPUs, as seen by previous layer. */
-  virtual void get_gpu_bp_output(std::vector<DataType*>& bp_output, const Layer* prev_layer = NULL) const;
+  /** Get forward propagation output on GPUs, as seen by next layer.
+   *  output_dv is a view into GPU memory for the output. If the
+   *  output cannot be represented as a view, the data is copied into
+   *  output_d and output_dv is set as a view into it.
+   */
+  virtual void get_gpu_fp_output(std::vector<DataType*>& output_dv,
+                                 std::vector<DataType*>& output_d,
+                                 const Layer* next_layer = NULL) const;
+  /** Get backward propagation output on GPUs, as seen by previous layer.
+   *  output_dv is a view into GPU memory for the output. If the
+   *  output cannot be represented as a view, the data is copied into
+   *  output_d and output_dv is set as a view into it.
+   */
+  virtual void get_gpu_bp_output(std::vector<DataType*>& output_dv,
+                                 std::vector<DataType*>& output_d,
+                                 const Layer* prev_layer = NULL) const;
 #endif // __LIB_CUDNN
   /** Get forward propagation output dimensions, as seen by next layer. */
-  virtual const std::vector<int> fp_output_dims(const Layer* next_layer = NULL) const;
+  virtual const std::vector<int> fp_output_dims(const Layer* next_layer = nullptr) const;
+
+  virtual void add_to_error_signal(const AbsDistMat& gradient,
+                                   DataType scale = DataType(1)) {
+    bp_set_std_matrix_view();    
+    El::Axpy(scale, gradient, *m_error_signal_v);
+  }
 
   /** Get list of parent layers. */
   std::vector<const Layer*>& get_parent_layers();
@@ -204,15 +222,32 @@ class Layer {
   std::vector<const Layer*>& get_child_layers();
   /** Get list of child layers (const). */
   const std::vector<const Layer*>& get_child_layers() const;
+  /** Get names in a particular list of layers */
+  static std::string get_layer_names(const std::vector<const Layer*>& list);
+  std::string get_child_names() const { return get_layer_names(m_child_layers); }
+  std::string get_parent_names() const { return get_layer_names(m_parent_layers); }
 
   /** Add a parent layer. */
   void add_parent_layer(const Layer* parent);
   /** Add a child layer. */
   void add_child_layer(const Layer* child);
 
- protected:
+  /** clear the list of parent layer pointers without deallocating them. */
+  void clear_parent_layers();
+  /** clear the list of child layer pointers without deallocating them. */
+  void clear_child_layers();
 
-  int m_index;                 ///< Layer index (start with 0)
+  /** Get list of pointers to other layers. */
+  virtual std::vector<Layer*> get_layer_pointers();
+  /** Set list of pointers to other layers. */
+  virtual void set_layer_pointers(std::vector<Layer*> layers);
+
+  /** Get list of pointers to weights. */
+  std::vector<weights*> get_weights() { return m_weights; }
+  /** Set list of pointers to weights. */
+  void set_weights(std::vector<weights*> w) { m_weights = w; }
+
+ protected:
 
   lbann_comm *m_comm;
 
@@ -223,12 +258,41 @@ class Layer {
   int m_num_prev_neuron_dims;           ///< Number of dimensions in previous layer's neuron tensor
   std::vector<int> m_prev_neuron_dims;  ///< Neuron tensor dimensions in previous layer
 
-  AbsDistMat *m_prev_activations;   ///< Local view or copy of the activations from the "previous" layer ((# previous layer's neurons) x mini-batch size)
-  AbsDistMat *m_activations;        ///< Activations - non-linearity applied to weighted sum ((# neurons) x mini-batch size)
-  AbsDistMat *m_activations_v;      ///< View of active columns in activations matrix
-  AbsDistMat *m_prev_error_signal;  ///< Local copy of the error signal from "previous" layer ((# neurons) x mini-batch size)
-  AbsDistMat *m_error_signal;       ///< Error signal to "next" layer (i.e. deltas) ((# neurons) x mini-batch size)
-  AbsDistMat *m_error_signal_v;     ///< View of active columns in error signal matrix
+  /** Activations matrix from the "previous" layer.
+   *  This matrix is the forward propagation input. This is typically
+   *  a matrix view with dimensions m_num_prev_neurons x mini-batch
+   *  size.
+   */
+  AbsDistMat* m_prev_activations_v;
+  /** Memory for activations matrix.
+   *  This matrix has dimensions m_num_neurons x max mini-batch size.
+   */
+  AbsDistMat* m_activations;
+  /** Activations matrix.
+   *  This matrix is the forward propagation output. This is typically
+   *  a matrix view into m_activations with dimensions m_num_neurons x
+   *  mini-batch size.
+   */
+  AbsDistMat* m_activations_v;
+  /** Error signal matrix from the "next" layer.
+   *  This matrix is the backward propagation input. This is typically
+   *  a matrix view with dimensions m_num_neurons x mini-batch size.
+   */
+  AbsDistMat* m_prev_error_signal_v;
+  /** Memory for error signal matrix.
+   *  This matrix has dimensions m_num_prev_neurons x max mini-batch
+   *  size.
+   */
+  AbsDistMat* m_error_signal;
+  /** Error signal matrix.
+   *  This matrix is the backward propagation output. This is
+   *  typically a matrix view into m_error_signal with dimensions
+   *  m_num_prev_neurons x mini-batch size.
+   */
+  AbsDistMat *m_error_signal_v;
+
+  /** List of layer weights. */
+  std::vector<weights*> m_weights;
 
   /** List of parent layers. */
   std::vector<const Layer*> m_parent_layers;
@@ -245,7 +309,7 @@ class Layer {
   int m_max_num_child_layers;
 
   execution_mode  m_execution_mode;
-  model *m_neural_network_model;
+  model *m_model;
 
   /** Setup views of the matrices for the layer's forward propagation. */
   virtual void fp_set_std_matrix_view();
@@ -300,13 +364,19 @@ class Layer {
 
   /** Number of mini-batch samples per GPU. */
   int m_mini_batch_size_per_gpu;
+  /** Maximum number of mini-batch samples per GPU. */
+  int m_max_mini_batch_size_per_gpu;
 
   /** GPU memory for activations from "previous" layer. */
   std::vector<DataType*> m_prev_activations_d;
+  /** View into GPU memory for activations from "previous" layer. */
+  std::vector<DataType*> m_prev_activations_dv;
   /** GPU memory for activations. */
   std::vector<DataType*> m_activations_d;
   /** GPU memory for error signal from "next" layer. */
   std::vector<DataType*> m_prev_error_signal_d;
+  /** View into GPU memory for error signal from "next" layer. */
+  std::vector<DataType*> m_prev_error_signal_dv;
   /** GPU memory for error signal. */
   std::vector<DataType*> m_error_signal_d;
 
@@ -336,6 +406,8 @@ class Layer {
   double bp_compute_time;
   /** Time spent in updates. */
   double update_time;
+
+  std::string m_name;
 };
 }
 

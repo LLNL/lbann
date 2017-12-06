@@ -27,13 +27,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_synthetic.hpp"
-#include <stdio.h>
+#include <cstdio>
 #include <string>
 
 namespace lbann {
 
-data_reader_synthetic::data_reader_synthetic(int batch_size, int num_samples, int num_features, bool shuffle)
-  : generic_data_reader(batch_size, shuffle) {
+data_reader_synthetic::data_reader_synthetic(int num_samples, int num_features, bool shuffle)
+  : generic_data_reader(shuffle) {
   m_num_samples = num_samples;
   m_num_features = num_features;
 }

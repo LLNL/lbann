@@ -1,0 +1,19 @@
+This directory contains two simplistic models that may be useful 
+for testing/debugging:
+
+  model_mnist_simple_1.prototext  
+
+    contains two fully connected layers: 500 and 10 neurons
+  
+  model_mnist_simple_2.prototext
+
+    contains three fully connected layers: 500, 200 and 10 neurons
+
+Sample execution for testing lbann2:
+
+  $ srun --nodes=1 --ntasks-per-node=12 \
+      ../../../build/catalyst.llnl.gov/model_zoo/lbann2 \
+      --model={model_mnist_simple_1.prototext,model_mnist_simple_2.prototext} \
+      --reader=../../data_readers/data_reader_mnist.prototext \
+      --optimizer=../../optimizers/opt_sgd.prototext \
+      --num_epochs=2

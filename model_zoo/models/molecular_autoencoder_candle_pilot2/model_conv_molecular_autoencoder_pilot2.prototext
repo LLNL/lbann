@@ -1,6 +1,5 @@
 model {
-  name: "dnn"
-  objective_function: "mean_squared_error"
+  name: "sequential_model"
   data_layout: "data_parallel"
   mini_batch_size: 128
   block_size: 256
@@ -9,6 +8,16 @@ model {
   procs_per_model: 0
   use_cudnn: false
   num_gpus: -1
+
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    mean_squared_error {}
+      scale_factor: 0.0005
+    }
+  }
 
   ###################################################
   # Callbacks
@@ -37,8 +46,7 @@ model {
   # INPUT
   #######
   layer {
-    name: "1"
-    parent: "1"
+    name: "data"
     data_layout: "data_parallel"
     input_partitioned_minibatch {
     }
@@ -48,8 +56,7 @@ model {
   # CONVOLUTION 1
   #############
   layer {
-    name: "2"
-    parent: "1"
+    name: "conv1"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -60,7 +67,6 @@ model {
       weight_initialization: "he_normal"
       has_bias: true
       has_vectors: true
-      l2_regularization_factor: 0.0005
     }
   }
 
@@ -68,8 +74,7 @@ model {
   # RELU 1
   ######
   layer {
-    name: "3"
-    parent: "2"
+    name: "relu1"
     data_layout: "data_parallel"
     relu {
     }
@@ -81,8 +86,7 @@ model {
   # DECONVOLUTION 1
   #############
   layer {
-    name: "6"
-    parent: "4"
+    name: "deconv1"
     data_layout: "data_parallel"
     deconvolution {
       num_dims: 2
@@ -90,10 +94,8 @@ model {
       conv_dims: "12 20"
       conv_pads: "0 0"
       conv_strides: "12 20"
-      weight_initialization: "he_normal"
       has_bias: true
       has_vectors: true
-      l2_regularization_factor: 0.0005
     }
   }
 
@@ -101,8 +103,7 @@ model {
   # SIGMOID sigmoid
   #######
   layer {
-    name: "7"
-    parent: "6"
+    name: "sigmoid"
     data_layout: "data_parallel"
     sigmoid {
     }
@@ -113,11 +114,10 @@ model {
   # RECONSTRUCTION
   #################
   layer {
-    name: "10"
-    parent: "9"
+    name: "reconstruction"
     data_layout: "data_parallel"
     reconstruction {
-      original_layer: 1
+      original_layer: "data"
     }
   }
 

@@ -42,24 +42,23 @@ template <data_layout T_layout = data_layout::DATA_PARALLEL>
 class input_layer_partitioned_minibatch : public input_layer, public partitioned_minibatch {
  public:
   /// @todo make the map and vector references
-  input_layer_partitioned_minibatch(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
+  input_layer_partitioned_minibatch(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, bool data_set_spans_models = true)
     : generic_data_distribution(comm, num_parallel_readers, data_readers),
-      input_layer(comm, num_parallel_readers, data_readers),
+      input_layer(comm, num_parallel_readers, data_readers, data_set_spans_models),
       partitioned_minibatch(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), data_readers) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "partitioned_minibatch only supports DATA_PARALLEL");
     // Setup the data distribution
     initialize_distributed_matrices();
   }
-  input_layer_partitioned_minibatch* copy() const {
-    throw lbann_exception("Cannot copy input_layer_partitioned_minibatch");
-    return nullptr;
+  input_layer_partitioned_minibatch* copy() const override {
+    return new input_layer_partitioned_minibatch(*this);
   }
 
-  std::string get_name() const { return "input:partitioned"; }
+  std::string get_type() const override { return "input:partitioned"; }
 
   /** Returns description of ctor params */
-  std::string get_description() const {
+  std::string get_description() const override {
     std::string s = get_topo_description();
     return std::string {} + " input_layer_partitioned_minibatch "
            + " dataLayout: " + this->get_data_layout_string(get_data_layout())
@@ -69,15 +68,15 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
   virtual inline void initialize_distributed_matrices() {
     input_layer::initialize_distributed_matrices<T_layout>();
   }
-  virtual data_layout get_data_layout() const { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
-  void setup_data() {
+  void setup_data() override {
     input_layer::setup_data();
-    int max_mb_size = this->m_neural_network_model->get_max_mini_batch_size();
-    if(io_layer::m_data_sets_span_models) {
-      partitioned_minibatch::calculate_num_iterations_per_epoch_training_spans_models(max_mb_size);
+    int max_mb_size = this->m_model->get_max_mini_batch_size();
+    if(io_layer::m_data_set_spans_models) {
+      calculate_num_iterations_per_epoch_training_spans_models(max_mb_size);
     } else {
-      partitioned_minibatch::calculate_num_iterations_per_epoch_training_unique_per_models(max_mb_size);
+      calculate_num_iterations_per_epoch_training_unique_per_models(max_mb_size);
     }
 
     partitioned_minibatch::m_local_data_valid = false;
@@ -85,16 +84,12 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
     partitioned_minibatch::m_num_data_per_epoch = 0;
   }
 
-  void fp_compute() {
-    //  generic_data_reader *data_reader = input_layer::select_data_reader();
-    //int num_parallel_readers = get_num_parallel_readers();
-
-    //  DISPLAY_MATRIX(m_activations);
-    partitioned_minibatch::fetch_to_local_matrix(this->m_activations_v->Matrix());
+  void fp_compute() override {
+    partitioned_minibatch::fetch_to_local_matrix(this->m_activations_v->Matrix(), get_data_reader());
 
     // Use the predetermined size of the mini-batch to set the current
     // batch size for the neural network
-    int num_samples_in_batch = partitioned_minibatch::get_current_mini_batch_size();
+    int num_samples_in_batch = get_current_mini_batch_size();
 
     input_layer::update_num_samples_processed(num_samples_in_batch);
   }
@@ -102,28 +97,14 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
   /**
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary
    */
-  bool update_compute() {
-    return partitioned_minibatch::is_data_set_processed();
+  bool update_compute() override {
+    return partitioned_minibatch::is_data_set_processed(get_data_reader());
   }
 
-
-  int fetch_from_data_reader(Mat& M_local) {
-    generic_data_reader *data_reader = input_layer::select_data_reader();
-    return data_reader->fetch_data(M_local);
-  }
-
-  void preprocess_data_samples(Mat& M_local, int num_samples_in_batch) {
+  void preprocess_data_samples(Mat& M_local, int num_samples_in_batch) override {
     return;
   }
 
-  bool update_data_reader(bool is_active_reader) {
-    generic_data_reader *data_reader = input_layer::select_data_reader();
-    return data_reader->update(is_active_reader);
-  }
-
-  execution_mode get_execution_mode() const {
-    return this->m_execution_mode;
-  }
 };
 
 }

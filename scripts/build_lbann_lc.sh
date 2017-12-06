@@ -55,7 +55,6 @@ INSTALL_DIR=
 BUILD_SUFFIX=
 SEQ_INIT=OFF
 WITH_CUDA=
-WITH_FULLY_CONNECTED_CUDA=OFF
 WITH_TOPO_AWARE=ON
 
 # In case that autoconf fails during on-demand buid on surface, try the newer
@@ -106,8 +105,8 @@ Options:
   ${C}--install-lbann${N}         Install LBANN headers and dynamic library into the build directory.
   ${C}--build${N}                 Specify alternative build directory; default is <lbann_home>/build.
   ${C}--suffix${N}                Specify suffix for build directory. If you are, e.g, building on surface, your build will be <someplace>/surface.llnl.gov, regardless of your choice of compiler or other flags. This option enables you to specify, e.g: --suffix gnu_debug, in which case your build will be in the directory <someplace>/surface.llnl.gov.gnu_debug
+  ${C}--use-nccl${N}              Use NCCL library
   ${C}--disable-cuda${N}          Disable CUDA
-  ${C}--fully-connected-cuda${N}  Enable use of CUDA in the fully connected layer.
   ${C}--disable-topo-aware${N}    Disable topological-aware configuration (no HWLOC)
 EOF
 }
@@ -217,8 +216,8 @@ while :; do
         --disable-cuda)
             WITH_CUDA=OFF
             ;;
-        --fully-connected-cuda)
-            WITH_FULLY_CONNECTED_CUDA=ON
+        --use-nccl)
+            WITH_NCCL=ON
             ;;
         --disable-topo-aware)
             WITH_TOPO_AWARE=OFF
@@ -261,8 +260,13 @@ if [ ${USE_MODULES} -ne 0 ]; then
     module load git
     module load cmake
 else
-    use git
-    use cmake
+    if [ "${CLUSTER}" == "surface" ]; then
+        use git-2.8.0
+        use cmake-3.4.1
+    else
+        use git
+        use cmake
+    fi
 fi
 
 ################################################################
@@ -298,6 +302,7 @@ if [ ${USE_MODULES} -ne 0 ]; then
         COMPILER_=gcc
     fi
     if [ -z "$(module list 2>&1 | grep ${COMPILER_})" ]; then
+        COMPILER_=$(module --terse spider ${COMPILER_} 2>&1 | sed '/^$/d' | tail -1)
         module load ${COMPILER_}
     fi
     if [ -z "$(module list 2>&1 | grep ${COMPILER_})" ]; then
@@ -336,7 +341,8 @@ elif [ "${COMPILER}" == "intel" ]; then
     CXX_COMPILER=${COMPILER_BASE}/bin/icpc
     Fortran_COMPILER=${COMPILER_BASE}/bin/ifort
     COMPILER_VERSION=$(${C_COMPILER} --version | head -n 1 | awk '{print $3}')
-    FORTRAN_LIB=${COMPILER_BASE}/lib/intel64/libifcore.so
+    FORTRAN_LIB=${COMPILER_BASE}/lib/intel64/libifcoremt.so.5
+    CXX_FLAGS="${CXX_FLAGS} -std=c++11"
 elif [ "${COMPILER}" == "clang" ]; then
     # clang
     # clang depends on gnu fortran library. so, find the dependency
@@ -345,7 +351,7 @@ elif [ "${COMPILER}" == "clang" ]; then
         #GCC_VERSION=`ls -l $gccdep | awk '{print $NF}' | cut -d '-' -f 2 | cut -d '/' -f 1`
         # Forcing to gcc 4.9.3 because of the current way of ray's gcc and various clang installation
         GCC_VERSION=4.9.3
-        GNU_DIR=/usr/tcetmp/packages/gcc/gcc-${GCC_VERSION}
+        GNU_DIR=/usr/tce/packages/gcc/gcc-${GCC_VERSION}
     elif [ ${USE_MODULES} -ne 0 ]; then
         GCC_VERSION=$(ldd ${COMPILER_BASE}/lib/libclang.so | grep gcc- | awk 'BEGIN{FS="/"} {for (i=1;i<=NF; i++) if ($i~/^gcc-/) print $i}' | tail -n 1)
         GNU_DIR=/usr/tce/packages/gcc/${GCC_VERSION}
@@ -384,6 +390,10 @@ if [ "${BUILD_TYPE}" == "Release" ]; then
             C_FLAGS="${C_FLAGS} -march=sandybridge -mtune=sandybridge"
             CXX_FLAGS="${CXX_FLAGS} -march=sandybridge -mtune=sandybridge"
             Fortran_FLAGS="${Fortran_FLAGS} -march=sandybridge -mtune=sandybridge"
+        elif [ "${CLUSTER}" == "ray" ]; then
+            C_FLAGS="${C_FLAGS} -mcpu=power8 -mtune=power8"
+            CXX_FLAGS="${CXX_FLAGS} -mcpu=power8 -mtune=power8"
+            Fortran_FLAGS="${Fortran_FLAGS} -mcpu=power8 -mtune=power8"
         fi
     fi
 else 
@@ -418,6 +428,7 @@ fi
 
 if [ ${USE_MODULES} -ne 0 ]; then
     if [ -z "$(module list 2>&1 | grep ${MPI})" ]; then
+        MPI=$(module --terse spider ${MPI} 2>&1 | sed '/^$/d' | tail -1)
         module load ${MPI}
     fi
     if [ -z "$(module list 2>&1 | grep ${MPI})" ]; then
@@ -434,6 +445,10 @@ else
         elif [ "${COMPILER}" == "clang" ]; then
             MPI_DOTKIT=${MPI}-gnu
         fi
+        # The default MVAPICH version does not work on surface
+        if [ "${CLUSTER}" == "surface" -a "${MPI}" == "mvapich2" ]; then
+            MPI_DOTKIT+="-2.2"
+        fi  
         use ${MPI_DOTKIT}
         if [ -z "$(use | grep ${MPI_DOTKIT})" ]; then
             echo "Could not load dotkit (${MPI_DOTKIT})"
@@ -473,6 +488,11 @@ if [ "${CLUSTER}" == "surface" ] || [ "${CLUSTER}" == "ray" ]; then
     WITH_CUDA=${WITH_CUDA:-ON}
     WITH_CUDNN=ON
     ELEMENTAL_USE_CUBLAS=OFF
+    if [ "${CLUSTER}" == "ray" ]; then
+      NCCL_HOME_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.0.5-3+cuda8.0_ppc64el
+    else
+      NCCL_HOME_DIR=/usr/workspace/wsb/brain/nccl2/nccl-2.0.5+cuda8.0
+    fi
     if [ "${ARCH}" == "ppc64le" ]; then
         CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda
         CUDATOOLKIT_VERSION=$(ls -l ${CUDA_TOOLKIT_ROOT_DIR} | awk '{print $NF}' | cut -d '-' -f 2)
@@ -551,7 +571,6 @@ if [ ${VERBOSE} -ne 0 ]; then
     print_variable VERBOSE
     print_variable MAKE_NUM_PROCESSES
     print_variable GEN_DOC
-    print_variable WITH_FULLY_CONNECTED_CUDA
     print_variable WITH_TOPO_AWARE
     echo ""
 fi
@@ -578,6 +597,7 @@ fi
 # Configure build with CMake
 CONFIGURE_COMMAND=$(cat << EOF
 cmake \
+-D CMAKE_EXPORT_COMPILE_COMMANDS=ON \
 -D CMAKE_BUILD_TYPE=${BUILD_TYPE} \
 -D CMAKE_INSTALL_MESSAGE=${CMAKE_INSTALL_MESSAGE} \
 -D CMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
@@ -612,7 +632,8 @@ cmake \
 -D LIBJPEG_TURBO_DIR=${LIBJPEG_TURBO_DIR} \
 -D PATCH_OPENBLAS=${PATCH_OPENBLAS} \
 -D ELEMENTAL_USE_CUBLAS=${ELEMENTAL_USE_CUBLAS} \
--D WITH_FULLY_CONNECTED_CUDA=${WITH_FULLY_CONNECTED_CUDA} \
+-D WITH_NCCL=${WITH_NCCL} \
+-D NCCL_HOME_DIR=${NCCL_HOME_DIR} \
 -D WITH_TOPO_AWARE=${WITH_TOPO_AWARE} \
 -D IPPROOT=${IPPROOT} \
 ${ROOT_DIR}
@@ -630,12 +651,8 @@ if [ $? -ne 0 ]; then
 fi
 
 # Build LBANN with make
-if [ "${WITH_FULLY_CONNECTED_CUDA}" = "ON" ]; then
-	# Ensure Elemental to be built before LBANN. Dependency violation appears to occur only when using cuda_add_library.
-	BUILD_COMMAND="make -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE} project_Elemental all"
-else 
-	BUILD_COMMAND="make -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE} all"
-fi
+# Note: Ensure Elemental to be built before LBANN. Dependency violation appears to occur only when using cuda_add_library.
+BUILD_COMMAND="make -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE} project_Elemental all"
 if [ ${VERBOSE} -ne 0 ]; then
     echo "${BUILD_COMMAND}"
 fi

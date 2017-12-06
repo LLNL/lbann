@@ -31,23 +31,19 @@
 
 namespace lbann {
 
-void lbann_callback_dump_gradients::on_backward_prop_end(model *m, Layer *l) {
-  const std::string prefix = m_basename + "model" +
-                             std::to_string(m->get_comm()->get_model_rank()) +
-                             "-epoch" + std::to_string(m->get_cur_epoch()) + "-step" +
-                             std::to_string(m->get_cur_step()) + "-layer";
-  uint idx = l->get_index();
-  // Skip the input and output layers.
-  if (idx == 0 || idx == m->get_layers().size() - 1) {
-    return;
-  }
-  // Skip non-learning layers.
-  learning *learning_layer = (learning *) dynamic_cast<learning *> (l);
-  if(learning_layer != NULL) {
-    El::Write(learning_layer->get_weights_gradient(),
-              prefix + std::to_string(idx) +
-              "-Gradients",
-              El::ASCII);
+void lbann_callback_dump_gradients::on_backward_prop_end(model *m) {
+  for (weights *w : m->get_weights()) {
+    optimizer *opt = w->get_optimizer();
+    if (opt != nullptr) {
+      const std::string file
+        = (m_basename
+           + "model" + std::to_string(m->get_comm()->get_model_rank())
+           + "-epoch" + std::to_string(m->get_cur_epoch())
+           + "-step" + std::to_string(m->get_cur_step())
+           + "-" + w->get_name()
+           + "-Gradient");
+      El::Write(opt->get_gradient(), file, El::ASCII);
+    }
   }
 }
 

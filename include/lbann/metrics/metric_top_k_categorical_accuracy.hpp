@@ -49,17 +49,17 @@ class top_k_categorical_accuracy : public metric {
   top_k_categorical_accuracy& operator=(
     const top_k_categorical_accuracy<T_layout>& other) = default;
 
-  ~top_k_categorical_accuracy() {}
+  ~top_k_categorical_accuracy() override {}
 
-  top_k_categorical_accuracy* copy() const {
+  top_k_categorical_accuracy* copy() const override {
     return new top_k_categorical_accuracy(*this);
   }
 
-  void setup(int num_neurons, int mini_batch_size) {
+  void setup(int num_neurons, int mini_batch_size) override {
     metric::setup(num_neurons, mini_batch_size);
   }
-  void fp_set_std_matrix_view(int cur_mini_batch_size) {}
-  double compute_metric(AbsDistMat& predictions_v, AbsDistMat& ground_truth_v) {
+  void fp_set_std_matrix_view(int cur_mini_batch_size) override {}
+  double compute_metric(AbsDistMat& predictions_v, AbsDistMat& ground_truth_v) override {
     // This first computes the top k predictions within each column locally,
     // then each column master gathers these, computes the global top k, and
     // determines if an error was made.
@@ -81,7 +81,7 @@ class top_k_categorical_accuracy : public metric {
       std::partial_sort(
         local_indices.begin(), local_indices.begin() + m_top_k,
         local_indices.end(),
-        [mb_idx, &predictions_v, this] (El::Int a, El::Int b) -> bool {
+        [mb_idx, &predictions_v] (El::Int a, El::Int b) -> bool {
           return predictions_v.GetLocal(a, mb_idx) >
             predictions_v.GetLocal(b, mb_idx); });
       for (El::Int i = 0; i < m_top_k; ++i) {
@@ -99,9 +99,8 @@ class top_k_categorical_accuracy : public metric {
       // appropriate strides.
       std::vector<top_k_ele> global_top_k(
         m_top_k * local_width * col_comm_size);
-      El::mpi::Gather((DataType*) local_top_k.data(), 2*local_top_k.size(),
-                      (DataType*) global_top_k.data(), 2*local_top_k.size(),
-                      0, col_comm);
+      m_comm->gather((DataType*) local_top_k.data(), 2*local_top_k.size(),
+                     (DataType*) global_top_k.data(), col_comm);
       // Compute the global top k elements in each column.
       std::vector<El::Int> global_indices(m_top_k * col_comm_size);
       std::iota(global_indices.begin(), global_indices.end(), 0);
@@ -133,38 +132,36 @@ class top_k_categorical_accuracy : public metric {
         }
       }
     } else {
-      El::mpi::Gather((DataType*) local_top_k.data(), 2*local_top_k.size(),
-                      (DataType*) NULL, 0, 0, col_comm);
+      m_comm->gather((DataType*) local_top_k.data(), 2*local_top_k.size(), 0,
+                     col_comm);
     }
     return this->m_comm->model_allreduce(num_errors);
   }
 
-  double report_metric(execution_mode mode) {
+  double report_metric(execution_mode mode) override {
     statistics *stats = get_statistics(mode);
     double errors_per_epoch = stats->m_error_per_epoch;
     long samples_per_epoch = stats->m_samples_per_epoch;
 
     double accuracy = (double)(samples_per_epoch - errors_per_epoch) /
       samples_per_epoch * 100;
-    string score = std::to_string(accuracy);
 
     return accuracy;
   }
-  double report_lifetime_metric(execution_mode mode) {
+  double report_lifetime_metric(execution_mode mode) override {
     statistics *stats = get_statistics(mode);
     double total_error = stats->m_total_error;
     long total_num_samples = stats->m_total_num_samples;
 
     double accuracy = (double)(total_num_samples - total_error) / total_num_samples * 100;
-    string score = std::to_string(accuracy);
 
     return accuracy;
   }
 
-  std::string name() const {
+  std::string name() const override {
     return "top-" + std::to_string(m_top_k) + " categorical accuracy";
   }
-  std::string display_unit() const { return "%"; }
+  std::string display_unit() const override { return "%"; }
 
  protected:
   /** Number of top classes to check for correct prediction. */

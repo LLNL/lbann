@@ -27,14 +27,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_nci.hpp"
-#include <stdio.h>
+#include <cstdio>
 #include <string>
 #include <omp.h>
 
 namespace lbann {
 
-data_reader_nci::data_reader_nci(int batch_size, bool shuffle)
-  : csv_reader(batch_size, shuffle) {
+data_reader_nci::data_reader_nci(bool shuffle)
+  : csv_reader(shuffle) {
   set_response_col(2);
   enable_responses();
   set_label_col(3);
@@ -51,7 +51,7 @@ data_reader_nci::data_reader_nci(int batch_size, bool shuffle)
     });
 }
 
-data_reader_nci::data_reader_nci(int batchSize)
-  : data_reader_nci(batchSize, true) {}
+data_reader_nci::data_reader_nci()
+  : data_reader_nci(true) {}
 
 }  // namespace lbann

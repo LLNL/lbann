@@ -34,76 +34,35 @@
 
 namespace lbann {
 
+/** Directed acyclic graph neural network model. */
 class dag_model : public model {
  public:
 
   /** Constructor. */
-  dag_model(int mini_batch_size,
-            lbann_comm *comm,
-            objective_functions::objective_function *obj_fn,
-            optimizer_factory *optimizer_fac);
+  dag_model(lbann_comm *comm,
+            int max_mini_batch_size,
+            objective_function *obj_fn,
+            optimizer *default_optimizer);
 
   /** Copy constructor. */
-  dag_model(const dag_model& other);
+  dag_model(const dag_model& other) = default;
 
   /** Copy assignment operator. */
-  dag_model& operator=(const dag_model& other);
+  dag_model& operator=(const dag_model& other) = default;
 
   /** Destructor. */
-  virtual ~dag_model();
+  ~dag_model() override = default;
 
-  /** Get list of layers. */
-  std::vector<Layer*>& get_layers() {
-    return m_layers;
-  }
-
-  /** Set list of layers. */
-  void set_layers(vector<Layer*>& layers) {
-    m_layers = layers;
-  }
-
-  /** Add layer to model.
-   *  It is assumed that the layer's parent and child pointers are
-   *  initialized externally. The model takes responsibility for
-   *  deallocating the layer.
-   */
-  void add(Layer *new_layer);
+  /** Create copy. */
+  dag_model* copy() const override { return new dag_model(*this); }
 
   /** Setup model. */
-  void setup();
+  void setup() override;
 
-  /** Train model. */
-  void train(int num_epochs);
+  /** Get model name. */
+  std::string name() const override { return "dag_model"; }
 
-  /** Training step on one mini-batch.
-   *  Returns true if epoch has completed.
-   */
-  bool train_mini_batch();
-
-  /** Evaluate model. */
-  void evaluate(execution_mode mode);
-
-  /** Evaluation step on one mini-batch.
-   *  Returns true if epoch has completed.
-   */
-  bool evaluate_mini_batch();
-
-  /** Summarize statistics.
-   *  E.g. timers, counters. These should be computable quickly.
-   */
-  void summarize_stats(lbann_summary& summarizer);
-
-  /** Summarize matrices.
-   *  E.g. means. These are called occasionally and can be moderately
-   *  expensive.
-   */
-  void summarize_matrices(lbann_summary& summarizer);
-
- private:
-  /** List of layers.
-   *  After setup phase, this list is topologically sorted.
-   */
-  std::vector<Layer*> m_layers;
+ protected:
 
   /** Apply topological sort to list of layers.
    *  A topologically sorted ordering allows us to traverse a directed

@@ -112,8 +112,7 @@ int main(int argc, char *argv[]) {
     if (comm->am_world_master()) {
       cout << endl << "USING cifar10_reader\n\n";
     }
-    cifar10_reader cifar10_trainset(trainParams.MBSize, true);
-    cifar10_trainset.set_firstN(false);
+    cifar10_reader cifar10_trainset(true);
     cifar10_trainset.set_role("train");
     cifar10_trainset.set_master(comm->am_world_master());
     cifar10_trainset.set_file_dir(g_cifar10_dir);
@@ -147,8 +146,7 @@ int main(int argc, char *argv[]) {
     ///////////////////////////////////////////////////////////////////
     // load testing data (CIFAR10)
     ///////////////////////////////////////////////////////////////////
-    cifar10_reader cifar10_testset(trainParams.MBSize, true);
-    cifar10_testset.set_firstN(false);
+    cifar10_reader cifar10_testset(true);
     cifar10_testset.set_role("test");
     cifar10_testset.set_master(comm->am_world_master());
     cifar10_testset.set_file_dir(g_cifar10_dir);
@@ -189,7 +187,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Initialize network
-    deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::mean_squared_error(), optimizer_fac);
+    sequential_model dnn(trainParams.MBSize, comm, new objective_functions::mean_squared_error(), optimizer_fac);
     std::map<execution_mode, generic_data_reader *> data_readers = {std::make_pair(execution_mode::training,&cifar10_trainset),
                                                            std::make_pair(execution_mode::validation, &cifar10_validation_set),
                                                            std::make_pair(execution_mode::testing, &cifar10_testset)
@@ -200,39 +198,39 @@ int main(int argc, char *argv[]) {
     dnn.add(input_layer);
 
     Layer *encode1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
-                       1, comm,
+                       comm,
                        1000, 
                        weight_initialization::glorot_uniform,
                        optimizer_fac->create_optimizer());
     dnn.add(encode1);
     
 
-    Layer *relu1 = new relu_layer<data_layout::MODEL_PARALLEL>(2, comm);
+    Layer *relu1 = new relu_layer<data_layout::MODEL_PARALLEL>(comm);
     dnn.add(relu1);
 
-    Layer *dropout1 = new dropout<data_layout::MODEL_PARALLEL>(3, 
+    Layer *dropout1 = new dropout<data_layout::MODEL_PARALLEL>(
                                                comm,
                                                trainParams.DropOut);
     dnn.add(dropout1);
 
 
     Layer *decode1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
-                       4, comm,
+                       comm,
                        cifar10_trainset.get_linearized_data_size(),
                        weight_initialization::glorot_uniform,
                        optimizer_fac->create_optimizer());
     dnn.add(decode1);
     
-    Layer *relu2 = new sigmoid_layer<data_layout::MODEL_PARALLEL>(5, comm);
+    Layer *relu2 = new sigmoid_layer<data_layout::MODEL_PARALLEL>(comm);
     dnn.add(relu2);
 
-    Layer *dropout2 = new dropout<data_layout::MODEL_PARALLEL>(6,
+    Layer *dropout2 = new dropout<data_layout::MODEL_PARALLEL>(
                                                comm,
                                                trainParams.DropOut);
     dnn.add(dropout2);
 
 
-    Layer* rcl  = new reconstruction_layer<data_layout::MODEL_PARALLEL>(7, comm, 
+    Layer* rcl  = new reconstruction_layer<data_layout::MODEL_PARALLEL>(comm, 
                                                           input_layer);
     dnn.add(rcl);
 
@@ -270,7 +268,7 @@ int main(int argc, char *argv[]) {
       optimizer *o = optimizer_fac->create_optimizer();
       cout << "\nOptimizer:\n" << o->get_description() << endl << endl;
       delete o;
-      std::vector<Layer *>& layers = dnn.get_layers();
+      const std::vector<Layer *>& layers = dnn.get_layers();
       for (size_t h=0; h<layers.size(); h++) {
         std::cout << h << " " << layers[h]->get_description() << endl;
       }
@@ -290,7 +288,7 @@ int main(int argc, char *argv[]) {
     dnn.set_checkpoint_secs(trainParams.CkptSecs);
 
     // restart model from checkpoint if we have one
-    dnn.restartShared();
+    // dnn.restartShared();
 
     // train/test
     dnn.train(trainParams.EpochCount);

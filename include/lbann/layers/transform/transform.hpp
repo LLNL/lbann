@@ -39,18 +39,13 @@ namespace lbann {
 class transform : public Layer {
 
  public:
-  transform(int index, 
-            // int numPrevNeurons,
-            // int numNeurons,
-           lbann_comm *comm)
-    : Layer(index, comm) {
-
-  }
+  transform(lbann_comm *comm)
+    : Layer(comm) {}
 
   transform(const transform&) = default;
   transform& operator=(const transform&) = default;
 
-  virtual ~transform() = default;
+  ~transform() override = default;
 
   template<data_layout T_layout> inline void initialize_distributed_matrices() {
     Layer::initialize_distributed_matrices<T_layout>();

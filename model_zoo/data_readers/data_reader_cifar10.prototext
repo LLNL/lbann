@@ -5,22 +5,29 @@ data_reader {
     shuffle: true
     data_filename: "/p/lscratchf/brainusr/datasets/cifar10-bin/data_all.bin"
     label_filename: "/p/lscratchf/brainusr/datasets/cifar10-bin/data_all.bin"
-    train_or_test_percent: 1.0
     validation_percent: 0.1
-    firstN: false
-    max_sample_count: 0
-    percent_of_data_to_use: 0
+    absolute_sample_count: 0
+    percent_of_data_to_use: 1.0
     image_preprocessor {
-      scale: true
-      subtract_mean: false
-      unit_variance: false
-      z_score: false
-      horizontal_flip: false
-      vertical_flip: false
-      rotation: 0
-      horizontal_shift: 0
-      vertical_shift: 0
-      shear_range: 0
+      normalizer {
+        scale: true
+        subtract_mean: false
+        unit_variance: false
+        z_score: false
+      }
+      augmenter {
+        disable: true
+        horizontal_flip: false
+        vertical_flip: false
+        rotation: 0
+        horizontal_shift: 0
+        vertical_shift: 0
+        shear_range: 0
+      }
+      noiser {
+        disable: true
+        factor: 0.0
+      }
     }
   }
   reader {
@@ -29,22 +36,29 @@ data_reader {
     shuffle: true
     data_filename: "/p/lscratchf/brainusr/datasets/cifar10-bin/test_batch.bin"
     label_filename: "/p/lscratchf/brainusr/datasets/cifar10-bin/test_batch.bin"
-    train_or_test_percent: 1.0
     validation_percent: 1.0
-    firstN: false
-    max_sample_count: 0
-    percent_of_data_to_use: 0
+    absolute_sample_count: 0
+    percent_of_data_to_use: 1.0
     image_preprocessor {
-      scale: true
-      subtract_mean: false
-      unit_variance: false
-      z_score: false
-      horizontal_flip: false
-      vertical_flip: false
-      rotation: 0
-      horizontal_shift: 0
-      vertical_shift: 0
-      shear_range: 0
+      normalizer {
+        scale: true
+        subtract_mean: false
+        unit_variance: false
+        z_score: false
+      }
+      augmenter {
+        disable: true
+        horizontal_flip: false
+        vertical_flip: false
+        rotation: 0
+        horizontal_shift: 0
+        vertical_shift: 0
+        shear_range: 0
+      }
+      noiser {
+        disable: true
+        factor: 0.0
+      }
     }
   }
 }

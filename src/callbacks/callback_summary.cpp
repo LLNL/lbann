@@ -101,20 +101,21 @@ void lbann_callback_summary::on_test_end(model *m) {
 
 void lbann_callback_summary::save_histograms(model *m) {
   for (const auto& layer : m->get_layers()) {
-    std::string prefix = "layer" + std::to_string(layer->get_index()) +
-      "/";
+    const std::string prefix = layer->get_name() + "/";
     m_summarizer->reduce_histogram(prefix + "activations",
                                    layer->get_activations(),
                                    m->get_cur_step());
-    learning *learning_layer = (learning *) dynamic_cast<learning *> (layer);
-    if(learning_layer != nullptr) {
-      m_summarizer->reduce_histogram(prefix + "weights",
-                                     learning_layer->get_weights(),
+  }
+  for (const auto& w : m->get_weights()) {
+    const std::string prefix = w->get_name() + "/";
+    m_summarizer->reduce_histogram(prefix + "weights",
+                                   w->get_values(),
+                                   m->get_cur_step());
+    optimizer *opt = w->get_optimizer();
+    if (opt != nullptr) {
+      m_summarizer->reduce_histogram(prefix + "weights_gradient",
+                                     opt->get_gradient(),
                                      m->get_cur_step());
-      m_summarizer->reduce_histogram(
-        prefix + "weights_gradient",
-        learning_layer->get_weights_gradient(),
-        m->get_cur_step());
     }
   }
 }

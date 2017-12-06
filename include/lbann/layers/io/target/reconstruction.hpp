@@ -37,47 +37,71 @@ namespace lbann {
 template <data_layout T_layout>
 class reconstruction_layer : public target_layer {
  private:
+
+  /** Original layer to reconstruct. */
   Layer *m_original_layer;
-  double aggregate_cost;
-  long num_forwardprop_steps;
+  /** View of original layer activation */
   AbsDistMat *original_layer_act_v;
 
  public:
-  /// @todo note that the reconstruction layer used to use weight_initialization::glorot_uniform
-  reconstruction_layer(int index,
-                       lbann_comm *comm,
+  reconstruction_layer(lbann_comm *comm,
                        Layer *original_layer)
-    :  target_layer(comm, {}, false), m_original_layer(original_layer) {
+    :  target_layer(comm, dynamic_cast<input_layer*>(original_layer), {}, false),
+       m_original_layer(original_layer) {
     // Setup the data distribution
     initialize_distributed_matrices();
-    this->m_index = index;
-    aggregate_cost = 0.0;
-    num_forwardprop_steps = 0;
   }
 
-  reconstruction_layer* copy() const {
+  reconstruction_layer(const reconstruction_layer& other) :
+    target_layer(other),
+    m_original_layer(other.m_original_layer) {}
+
+  reconstruction_layer& operator=(const reconstruction_layer& other) {
+    target_layer::operator=(other);
+    m_original_layer = other.m_original_layer;
+  }
+
+  reconstruction_layer* copy() const override {
     throw lbann_exception("reconstruction_layer can't be copied");
     return nullptr;
   }
 
-  std::string get_name() const { return "reconstruction"; }
+  std::string get_type() const override { return "reconstruction"; }
+
+  std::string get_description() const override {
+    return std::string{} + " reconstruction_layer " +
+                           " original: " + m_original_layer->get_name() +
+                           " dataLayout: " + this->get_data_layout_string(get_data_layout());
+  }
 
   //virtual inline void initialize_distributed_matrices();
   virtual inline void initialize_distributed_matrices() {
     target_layer::initialize_distributed_matrices<T_layout>();
   }
-  virtual data_layout get_data_layout() const { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
-  void setup_dims() {
+  /** Set original layer. */
+  void set_original_layer(Layer *original_layer) {
+    m_original_layer = original_layer;
+  }
+
+  void setup_dims() override {
     target_layer::setup_dims();
-    this->m_num_neurons = m_original_layer->get_num_neurons();
     this->m_neuron_dims = m_original_layer->get_neuron_dims();
     this->m_num_neuron_dims = m_original_layer->get_num_neuron_dims();
+    this->m_num_neurons = m_original_layer->get_num_neurons();
+    if(this->m_num_neurons != this->m_num_prev_neurons) {
+      throw lbann_exception("reconstruction_layer: original layer ("
+                            + std::to_string(this->m_num_neurons)
+                            + ") and reconstruction layer ("
+                            + std::to_string(this->m_num_prev_neurons)
+                            +") do not have the same number of neurons");
+    }
   }
 
  protected:
-  void fp_set_std_matrix_view() {
-    int64_t cur_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
+  void fp_set_std_matrix_view() override {
+    int64_t cur_mini_batch_size = this->m_model->get_current_mini_batch_size();
 
     target_layer::fp_set_std_matrix_view();
 
@@ -87,48 +111,48 @@ class reconstruction_layer : public target_layer {
     El::View(*original_layer_act_v, orig_acts, El::ALL, El::IR(0, cur_mini_batch_size));
   }
 
+  void fp_compute() override {
 
-  void fp_compute() {
-     //Copy prev (decoder) activations for greedy layer wise training
-    El::Copy(*this->m_prev_activations,*this->m_activations_v);
-    // Compute cost will be sum of squared error of fp_input (linearly transformed to m_activations)
-    // and original layer fp_input/original input
-    this->m_neural_network_model->m_obj_fn->compute_value(*this->m_prev_activations,
-                                                          *original_layer_act_v);
-    //compute metric
-    int64_t cur_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
-    for (auto&& m : this->m_neural_network_model->get_metrics()) {
-      double num_errors = m->compute_metric(*this->m_prev_activations, *original_layer_act_v);
-      m->record_error(num_errors, cur_mini_batch_size);
+    //Copy prev (decoder) activations for greedy layer wise training
+    El::Copy(*original_layer_act_v,*this->m_activations_v);
+
+    // Compute metrics
+    const int curr_mini_batch_size = this->m_model->get_current_mini_batch_size();
+    for (auto&& m : this->m_model->get_metrics()) {
+      double num_errors = m->compute_metric(*this->m_prev_activations_v, *original_layer_act_v);
+      m->record_error(num_errors, curr_mini_batch_size);
     }
+
   }
 
-  void bp_compute() {
-    // Compute error signal
-    this->m_neural_network_model->m_obj_fn->compute_gradient(*this->m_prev_activations,
-                                                             *original_layer_act_v,
-                                                             *this->m_error_signal_v);
-
-    //m_prev_error_signal_v is the error computed by objective function
-    //is really not previous, but computed in this layer
-    //@todo: rename as obj_error_signal
-  }
+  void bp_compute() override {}
 
  public:
-  bool update_compute() {
-    if(this->m_execution_mode == execution_mode::training) {
+  bool update_compute() override {
+    if(this->m_model->get_execution_mode() == execution_mode::training) {
       double start = get_time();
       this->update_time += get_time() - start;
     }
     return true;
   }
 
-  void summarize_stats(lbann_summary& summarizer, int step) {
-    std::string tag = "layer" + std::to_string(this->m_index)
-      + "/ReconstructionCost";
-    summarizer.reduce_scalar(tag, this->m_neural_network_model->m_obj_fn->get_mean_value(), step);
+  void summarize_stats(lbann_summary& summarizer, int step) override {
+    std::string tag = this->m_name + "/ReconstructionCost";
+    summarizer.reduce_scalar(tag, this->m_model->get_objective_function()->get_history_mean_value(), step);
     // Skip target layer (for now).
     io_layer::summarize_stats(summarizer, step);
+  }
+
+  std::vector<Layer*> get_layer_pointers() override {
+    std::vector<Layer*> layers = target_layer::get_layer_pointers();
+    layers.push_back(m_original_layer);
+    return layers;
+  }
+
+  void set_layer_pointers(std::vector<Layer*> layers) override {
+    m_original_layer = layers.back();
+    layers.pop_back();
+    target_layer::set_layer_pointers(layers);
   }
 
 };

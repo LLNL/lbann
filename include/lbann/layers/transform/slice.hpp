@@ -29,6 +29,7 @@
 #ifndef LBANN_LAYER_SLICE_HPP_INCLUDED
 #define LBANN_LAYER_SLICE_HPP_INCLUDED
 
+#include <utility>
 #include <vector>
 #include "lbann/base.hpp"
 #include "lbann/layers/transform/transform.hpp"
@@ -60,14 +61,13 @@ class slice_layer : public transform {
 
  public:
   /// Constructor
-  slice_layer(int index,
-              lbann_comm *comm,
+  slice_layer(lbann_comm *comm,
               int slice_axis,
               std::vector<int> slice_points,
-              cudnn::cudnn_manager *cudnn = NULL)
-    : transform(index, comm),
+              cudnn::cudnn_manager *cudnn = nullptr)
+    : transform(comm),
       m_slice_axis(slice_axis),
-      m_slice_points(slice_points) {
+      m_slice_points(std::move(slice_points)) {
 
     // Setup the data distribution
     initialize_distributed_matrices();
@@ -102,7 +102,7 @@ class slice_layer : public transform {
     m_output_slice_v = other.m_output_slice_v->Copy();
   }
 
-  ~slice_layer() {
+  ~slice_layer() override {
     delete m_fp_output;
     delete m_input_slice_v;
     delete m_output_slice_v;
@@ -115,12 +115,12 @@ class slice_layer : public transform {
   }
 
   /** Returns description of ctor params */
-  std::string get_description() const {
+  std::string get_description() const override {
     std::stringstream s;
     s << " slice; slice_axis: "
       << m_slice_axis << " children: ";
     for (size_t h=0; h<this->m_child_layers.size(); h++) {
-      s << this->m_child_layers[h]->get_index() << " " << this->m_child_layers[h]->get_name() << " ";
+      s << this->m_child_layers[h]->get_name() << " " << this->m_child_layers[h]->get_type() << " ";
     }
     s << " slice_points: ";
     for (size_t h=0; h<this->m_slice_points.size(); h++) {
@@ -130,14 +130,14 @@ class slice_layer : public transform {
     return s.str();
   }
 
-  slice_layer* copy() const { return new slice_layer(*this); }
+  slice_layer* copy() const override { return new slice_layer(*this); }
 
-  std::string get_name() const { return "slice"; }
+  std::string get_type() const override { return "slice"; }
 
   virtual inline void initialize_distributed_matrices();
-  virtual data_layout get_data_layout() const { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
-  void setup_dims() {
+  void setup_dims() override {
     std::stringstream err;
 
     // Initialize previous neuron tensor dimensions
@@ -152,12 +152,20 @@ class slice_layer : public transform {
     // Check that slice points are valid
     if(m_slice_points.size() != m_child_layers.size() + 1
        || !std::is_sorted(m_slice_points.begin(), m_slice_points.end())) {
-      throw lbann_exception("slice_layer: invalid list of slice points");
+      err << __FILE__ << " " << __LINE__ << " :: slice_layer: ";
+      if (!std::is_sorted(m_slice_points.begin(), m_slice_points.end())) {
+        err << "slice points not sorted";
+      } else {
+        err << "number of slice points (" << m_slice_points.size()
+            << ") != number of children (" << m_child_layers.size() << ") + 1"
+            << " {" << get_layer_names(m_child_layers) << "}";
+      }
+      throw lbann_exception(err.str());
     }
 
   }
 
-  void setup_gpu() {
+  void setup_gpu() override {
     transform::setup_gpu();
   #ifndef __LIB_CUDNN
     std::stringstream err;
@@ -203,7 +211,7 @@ class slice_layer : public transform {
 
   protected:
 
-  void fp_compute() {
+  void fp_compute() override {
     if(this->m_using_gpus) {
   #ifndef __LIB_CUDNN
     std::stringstream err;
@@ -211,17 +219,17 @@ class slice_layer : public transform {
     throw lbann_exception(err.str());
   #else
     this->m_cudnn->copy_on_gpus(this->m_activations_d,
-                                this->m_prev_activations_d,
+                                this->m_prev_activations_dv,
                                 this->m_num_prev_neurons,
                                 this->m_mini_batch_size_per_gpu);
   #endif // __LIB_CUDNN
     }
     else {
-      El::LockedView(*this->m_activations_v, *this->m_prev_activations);
+      El::LockedView(*this->m_activations_v, *this->m_prev_activations_v);
     }
   }
 
-  void bp_compute() {
+  void bp_compute() override {
     if(this->m_using_gpus) {
       bp_compute_gpu();
     } else {
@@ -259,21 +267,22 @@ class slice_layer : public transform {
       // Get child error signal on GPUs
       std::vector<DataType*> input;
       if(child_index == 0) {
-        input = this->m_prev_error_signal_d;
+        input = this->m_prev_error_signal_dv;
       }
       else {
-        std::vector<void*> work_spaces = this->m_cudnn->get_work_spaces();
+        std::vector<DataType*> work_spaces;
         for(int i=0; i<num_gpus; ++i) {
-          input.push_back((DataType*) work_spaces[i]);
+          work_spaces.push_back((DataType*)this->m_cudnn->get_work_space(i));
         }
         if(child->using_gpus()) {
-          child->get_gpu_bp_output(input, this);
+          child->get_gpu_bp_output(input, work_spaces, this);
         }
         else {
-          child->get_bp_output(*this->m_prev_error_signal, this);
-          this->m_cudnn->scatter_to_gpus(input,
-                                         this->m_prev_error_signal->LockedMatrix(),
+          child->get_bp_output(*this->m_prev_error_signal_v, this);
+          this->m_cudnn->scatter_to_gpus(work_spaces,
+                                         this->m_prev_error_signal_v->LockedMatrix(),
                                          this->m_mini_batch_size_per_gpu);
+          input = work_spaces;
         }
       }
 
@@ -330,7 +339,7 @@ class slice_layer : public transform {
     for(size_t i = 0; i < this->m_child_layers.size(); ++i) {
 
       // Split previous error signal tensor into slices
-      this->m_child_layers[i]->get_bp_output(*this->m_prev_error_signal, this);
+      this->m_child_layers[i]->get_bp_output(*this->m_prev_error_signal_v, this);
       const int input_slice_dim = m_slice_points[i+1] - m_slice_points[i];
       const int input_slice_size = input_slice_dim * slice_unit_size;
       const int slice_offset_start = m_slice_points[i] * slice_unit_size;
@@ -339,7 +348,7 @@ class slice_layer : public transform {
       // Copy slices from previous error signal tensor into error signal tensor
       for(int slice = 0; slice < num_slices; ++slice) {
         El::LockedView(*m_input_slice_v,
-                       *this->m_prev_error_signal,
+                       *this->m_prev_error_signal_v,
                        El::IR(slice * input_slice_size,
                               (slice+1) * input_slice_size),
                        El::ALL);
@@ -355,7 +364,7 @@ class slice_layer : public transform {
 
   }
 
-  void get_fp_output(AbsDistMat& fp_output, const Layer* next_layer) const {
+  void get_fp_output(AbsDistMat& fp_output, const Layer* next_layer) const override {
 
     // Check if input is in the list of child layers
     const int child_index = (std::find(this->m_child_layers.begin(),
@@ -418,7 +427,9 @@ class slice_layer : public transform {
   }
 
   #ifdef __LIB_CUDNN
-  void get_gpu_fp_output(std::vector<DataType*>& fp_output, const Layer* next_layer) const {
+  void get_gpu_fp_output(std::vector<DataType*>& output_dv,
+                         std::vector<DataType*>& output_d,
+                         const Layer* next_layer) const override {
 
     // Check if input is in the list of child layers
     const int child_index = (std::find(this->m_child_layers.begin(),
@@ -426,7 +437,7 @@ class slice_layer : public transform {
                                        next_layer)
                              - this->m_child_layers.begin());
     if(child_index >= (int) this->m_child_layers.size()) {
-      transform::get_gpu_fp_output(fp_output, next_layer);
+      transform::get_gpu_fp_output(output_dv, output_d, next_layer);
     }
 
     // Split the activations tensor into slices of width 1 along the
@@ -447,6 +458,14 @@ class slice_layer : public transform {
     const int output_slice_size = output_slice_dim * slice_unit_size;
     const int output_size = num_slices * output_slice_size;
     const int slice_offset = m_slice_points[child_index] * slice_unit_size;
+
+    // Allocate GPU memory if needed and set data view
+    if(output_d.empty()) {
+      m_cudnn->allocate_on_gpus(output_d,
+                                output_size,
+                                m_max_mini_batch_size_per_gpu);
+    }
+    output_dv = output_d;
     
     // Copy slices from previous activations tensor into output
     const int num_gpus = this->m_cudnn->get_num_gpus();
@@ -454,7 +473,7 @@ class slice_layer : public transform {
       std::vector<DataType*> input_slice(num_gpus), output_slice(num_gpus);
       for(int i = 0; i < num_gpus; ++i) {
         input_slice[i] = this->m_activations_d[i] + slice * input_slice_size + slice_offset;
-        output_slice[i] = fp_output[i] + slice * output_slice_size;
+        output_slice[i] = output_d[i] + slice * output_slice_size;
       }
       this->m_cudnn->copy_on_gpus(output_slice,
                                   input_slice,
@@ -467,10 +486,10 @@ class slice_layer : public transform {
   }
   #endif // __LIB_CUDNN
 
-  const std::vector<int> fp_output_dims(const Layer* next_layer) const {
+  const std::vector<int> fp_output_dims(const Layer* next_layer) const override {
 
     // Return all neurons if input is null
-    if(next_layer == NULL) {
+    if(next_layer == nullptr) {
       return m_neuron_dims;
     }
 

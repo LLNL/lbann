@@ -31,7 +31,7 @@
 namespace lbann {
 
 void lbann_callback_check_dataset::add_to_set(model *m, Layer *l, int64_t step, std::set<long>& set) {
-  if (!dynamic_cast<io_layer*>(l) || l->get_index() != 0) {
+  if (!dynamic_cast<io_layer*>(l)) {
     return;
   }
 
@@ -77,8 +77,8 @@ void lbann_callback_check_dataset::on_epoch_end(model *m) {
   std::cout << "Training [" << comm->get_rank_in_model() <<
     "] : I have processed " << training_set.size() << " elements" << std::endl;
   
-  std::vector<Layer *>& layers = m->get_layers();
-  input_layer *input = (input_layer *) dynamic_cast<input_layer *> (layers[0]);
+  const std::vector<Layer *>& layers = m->get_layers();
+  auto *input = (input_layer *) dynamic_cast<input_layer *> (layers[0]);
   if (!input) {
     throw lbann_exception(
       "lbann_callback_check_dataset: could not get input layer");

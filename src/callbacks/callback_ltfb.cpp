@@ -86,11 +86,8 @@ void lbann_callback_ltfb::on_batch_end(model *m) {
   exchange(m, partner);
   // Evaluate on tournament data.
   // Have to cast, assumes deep_neural_network.
-  deep_neural_network *dnn = dynamic_cast<deep_neural_network *>(m);
-  deep_neural_network *remote_dnn =
-    dynamic_cast<deep_neural_network *>(m_remote_model);
-  double local_acc = evaluate(dnn);
-  double remote_acc = evaluate(remote_dnn);
+  double local_acc = evaluate(m);
+  double remote_acc = evaluate(m_remote_model);
   // If the remote is better, keep it.
   if (remote_acc > local_acc) {
     if (m_comm->am_model_master()) {
@@ -126,38 +123,34 @@ int lbann_callback_ltfb::select_partner() {
       std::fill_n(partners.begin() + last_rank*m_comm->get_procs_per_model(),
                   m_comm->get_procs_per_model(), last_rank);
     }
-    El::mpi::Scatter(partners.data(), 1, &my_partner, 1, 0,
-                     El::mpi::COMM_WORLD);
+    my_partner = m_comm->scatter(partners.data(), m_comm->get_world_comm());
   } else {
-    El::mpi::Scatter((int *) nullptr, 0, &my_partner, 1, 0, El::mpi::COMM_WORLD);
+    my_partner = m_comm->scatter<int>(0, m_comm->get_world_comm());
   }
   return my_partner;
 }
 
 void lbann_callback_ltfb::exchange(model *m, int partner) {
-  std::vector<Layer *>& layers = m->get_layers();
-  std::vector<Layer *>& remote_layers = m_remote_model->get_layers();
-  for (size_t i = 0; i < layers.size(); ++i) {
-    // Only exchange learning layers.
-    learning *layer = dynamic_cast<learning*>(layers[i]);
-    if (layer) {
-      learning *remote_layer = dynamic_cast<learning*>(remote_layers[i]);
-      // TODO: Support sending optimizer state.
-      AbsDistMat& weights = layer->get_weights();
-      AbsDistMat& remote_weights = remote_layer->get_weights();
-      if (weights.Height() > 0) {
-        m_comm->sendrecv(weights.LockedBuffer(),
-                         weights.LocalHeight()*weights.LocalWidth(),
-                         partner,
-                         remote_weights.Buffer(),
-                         weights.LocalHeight()*weights.LocalWidth(),
-                         partner);
-      }
+  const std::vector<weights *> local_weights = m->get_weights();
+  const std::vector<weights *> remote_weights = m_remote_model->get_weights();
+  for (size_t i = 0; i < local_weights.size(); ++i) {
+    // TODO: Support sending optimizer state
+    const AbsDistMat& local_matrix = local_weights[i]->get_values();
+    AbsDistMat *remote_matrix = local_matrix.Copy();
+    if (local_matrix.Height() > 0) {
+      m_comm->sendrecv(local_matrix.LockedBuffer(),
+                       local_matrix.LocalHeight()*local_matrix.LocalWidth(),
+                       partner,
+                       remote_matrix->Buffer(),
+                       local_matrix.LocalHeight()*local_matrix.LocalWidth(),
+                       partner);
+      remote_weights[i]->set_values(*remote_matrix);
     }
+    delete remote_matrix;
   }
 }
 
-double lbann_callback_ltfb::evaluate(deep_neural_network *m) {
+double lbann_callback_ltfb::evaluate(model *m) {
   m->evaluate(execution_mode::validation);
   m->set_execution_mode(execution_mode::training);  // Reset execution mode.
   double acc = 0;
@@ -177,16 +170,11 @@ double lbann_callback_ltfb::evaluate(deep_neural_network *m) {
 }
 
 void lbann_callback_ltfb::replace_with_remote(model *m) {
-  std::vector<Layer *>& layers = m->get_layers();
-  std::vector<Layer *>& remote_layers = m_remote_model->get_layers();
-  for (size_t i = 0; i < layers.size(); ++i) {
-    learning *layer = dynamic_cast<learning*>(layers[i]);
-    if (layer) {
-      learning *remote_layer = dynamic_cast<learning*>(remote_layers[i]);
-      // TODO: Update optimizers.
-      layer->get_weights().Matrix() =
-        remote_layer->get_weights().Matrix();
-    }
+  const std::vector<weights *> local_weights = m->get_weights();
+  const std::vector<weights *> remote_weights = m_remote_model->get_weights();
+  for (size_t i = 0; i < local_weights.size(); ++i) {
+    // TODO: Update optimizers.
+    local_weights[i]->set_values(remote_weights[i]->get_values());
   }
 }
 

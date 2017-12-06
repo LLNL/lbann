@@ -117,7 +117,7 @@ int main(int argc, char *argv[]) {
     ///////////////////////////////////////////////////////////////////
     // load training data (MNIST)
     ///////////////////////////////////////////////////////////////////
-    mnist_reader mnist_trainset(trainParams.MBSize, true);
+    mnist_reader mnist_trainset(true);
     mnist_trainset.set_file_dir(trainParams.DatasetRootDir);
     mnist_trainset.set_data_filename(g_MNIST_TrainImageFile);
     mnist_trainset.set_label_filename(g_MNIST_TrainLabelFile);
@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
     ///////////////////////////////////////////////////////////////////
     // load testing data (MNIST)
     ///////////////////////////////////////////////////////////////////
-    mnist_reader mnist_testset(trainParams.MBSize, true);
+    mnist_reader mnist_testset(true);
     mnist_testset.set_file_dir(trainParams.DatasetRootDir);
     mnist_testset.set_data_filename(g_MNIST_TestImageFile);
     mnist_testset.set_label_filename(g_MNIST_TestLabelFile);
@@ -179,56 +179,56 @@ int main(int argc, char *argv[]) {
     gla.add(input_layer);
 
     Layer *encode1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
-                       1, comm,
+                       comm,
                        100, 
                        weight_initialization::glorot_uniform,
                        optimizer_fac->create_optimizer());
     gla.add(encode1);
     
-    Layer *relu1 = new sigmoid_layer<data_layout::MODEL_PARALLEL>(2, comm);
+    Layer *relu1 = new sigmoid_layer<data_layout::MODEL_PARALLEL>(comm);
     gla.add(relu1);
 
 
     Layer *decode1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
-                       3, comm,
+                       comm,
                        mnist_trainset.get_linearized_data_size(),
                        weight_initialization::glorot_uniform,
                        optimizer_fac->create_optimizer());
     gla.add(decode1);
     
-    Layer *relu2 = new sigmoid_layer<data_layout::MODEL_PARALLEL>(4, comm);
+    Layer *relu2 = new sigmoid_layer<data_layout::MODEL_PARALLEL>(comm);
     gla.add(relu2);
 
 
-    Layer* rcl1  = new reconstruction_layer<data_layout::MODEL_PARALLEL>(5, comm, 
+    Layer* rcl1  = new reconstruction_layer<data_layout::MODEL_PARALLEL>(comm, 
                                                           input_layer);
     gla.add(rcl1);
 
    // Laywerise2 
     Layer *encode2 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
-                       6, comm,
+                       comm,
                        50, 
                        weight_initialization::glorot_uniform,
                        optimizer_fac->create_optimizer());
     gla.add(encode2);
     
 
-    Layer *relu3 = new relu_layer<data_layout::MODEL_PARALLEL>(7, comm);
+    Layer *relu3 = new relu_layer<data_layout::MODEL_PARALLEL>(comm);
     gla.add(relu3);
 
 
     Layer *decode2 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
-                       8, comm,
+                       comm,
                        100,
                        weight_initialization::glorot_uniform,
                        optimizer_fac->create_optimizer());
     gla.add(decode2);
     
-    Layer *relu4 = new sigmoid_layer<data_layout::MODEL_PARALLEL>(9, comm);
+    Layer *relu4 = new sigmoid_layer<data_layout::MODEL_PARALLEL>(comm);
     gla.add(relu4);
 
 
-    Layer* rcl2  = new reconstruction_layer<data_layout::MODEL_PARALLEL>(10, comm, 
+    Layer* rcl2  = new reconstruction_layer<data_layout::MODEL_PARALLEL>(comm, 
                                                           relu1);
 
     gla.add(rcl2);
@@ -262,7 +262,7 @@ int main(int argc, char *argv[]) {
     if (comm->am_world_master()) {
       optimizer *o = optimizer_fac->create_optimizer();
       cout << "\nOptimizer:\n" << o->get_description() << endl << endl;
-      std::vector<Layer *>& layers = gla.get_layers();
+      const std::vector<Layer *>& layers = gla.get_layers();
       for (size_t h=0; h<layers.size(); h++) {
         std::cout << h << " " << layers[h]->get_description() << endl;
       }
@@ -283,7 +283,7 @@ int main(int argc, char *argv[]) {
     gla.set_checkpoint_secs(trainParams.CkptSecs);
 
     // restart model from checkpoint if we have one
-    gla.restartShared();
+    // gla.restartShared();
 
     if (comm->am_world_master()) {
       cout << "(Pre) train autoencoder - unsupersived training" << endl;

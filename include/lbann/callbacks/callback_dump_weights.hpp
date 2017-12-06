@@ -29,6 +29,8 @@
 #ifndef LBANN_CALLBACKS_CALLBACK_DUMP_WEIGHTS_HPP_INCLUDED
 #define LBANN_CALLBACKS_CALLBACK_DUMP_WEIGHTS_HPP_INCLUDED
 
+#include <utility>
+
 #include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
@@ -46,16 +48,16 @@ class lbann_callback_dump_weights : public lbann_callback {
    * @param basename The basename for writing files.
    */
   lbann_callback_dump_weights(std::string basename, int batch_interval = 1) :
-    lbann_callback(batch_interval), m_basename(basename) {}
+    lbann_callback(batch_interval), m_basename(std::move(basename)) {}
   lbann_callback_dump_weights(const lbann_callback_dump_weights&) = default;
   lbann_callback_dump_weights& operator=(
     const lbann_callback_dump_weights&) = default;
-  lbann_callback_dump_weights* copy() const {
+  lbann_callback_dump_weights* copy() const override {
     return new lbann_callback_dump_weights(*this);
   }
-  void on_train_begin(model *m);
-  void on_epoch_end(model *m);
-  std::string name() const { return "dump weights"; }
+  void on_train_begin(model *m) override;
+  void on_epoch_end(model *m) override;
+  std::string name() const override { return "dump weights"; }
  private:
   /** Basename for writing files. */
   std::string m_basename;

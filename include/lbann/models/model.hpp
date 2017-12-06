@@ -37,27 +37,34 @@
 #include "lbann/io/persist.hpp"
 #include "lbann/objective_functions/objective_function.hpp"
 #include "lbann/metrics/metric.hpp"
+#include "lbann/weights/weights.hpp"
 #include "lbann/optimizers/optimizer.hpp"
 #include <vector>
 #include <string>
+#include <unordered_map>
 
 namespace lbann {
 
 // Forward-declare this.
 class lbann_callback;
 
-/**
- * Base class for LBANN models.
- */
+/** Base class for LBANN models. */
 class model {
  public:
-  model(lbann_comm *comm, int mini_batch_size,
-        objective_functions::objective_function *obj_fn,
-        optimizer_factory *optimizer_fac);
-  model(const model& other);
-  model& operator=(const model& other);
-  virtual ~model();
 
+  /** Constructor. */
+  model(lbann_comm *comm,
+        int mini_batch_size,
+        objective_function *obj_fn,
+        optimizer* default_optimizer = nullptr);
+  
+  /** Copy constructor. */
+  model(const model& other);
+  /** Copy assignment operator. */
+  model& operator=(const model& other);
+  /** Destructor. */
+  virtual ~model();
+  /** Copy model. */
   virtual model* copy() const = 0;
 
   /** Return the model's name. */
@@ -66,24 +73,55 @@ class model {
   /** Initialize the model. */
   virtual void setup() {}
 
+  /** Add layer to model. */
+  virtual void add_layer(Layer *layer);
+
+  /** Add weights to model. */
+  void add_weights(weights *w);
+
   /** Register a new callback for the model. */
-  virtual void add_callback(lbann_callback *cb);
+  void add_callback(lbann_callback *cb);
+
+  /** Get the list of callbacks for the model. */
+  virtual std::vector<lbann_callback*>& get_callbacks() {
+    return m_callbacks;
+  }
 
   /** Register a new metric for the model. */
-  virtual void add_metric(metrics::metric *m);
+  void add_metric(metrics::metric *m);
+
+  /** Construct an instance of the default optimizer.
+   *  If there is no default optimizer, a null pointer is returned.
+   */
+  optimizer* create_optimizer() const;
+
+  /** Return the model's objective function. */
+  objective_function* get_objective_function() const {
+    return m_objective_function;
+  }
 
   /** Return the model's metrics. */
-  virtual std::vector<metrics::metric *>& get_metrics() {
+  virtual const std::vector<metrics::metric *>& get_metrics() const {
     return m_metrics;
   }
 
+  /** Set the model's layers. */
+  void set_layers(std::vector<Layer *>& layers);
+
   /** Return the model's layers. */
-  virtual std::vector<Layer *>& get_layers() = 0;
+  virtual const std::vector<Layer *>& get_layers() const { return m_layers; }
+
+  /** Set the model's weights. */
+  void set_weights(std::vector<weights *>& w);
+
+  /** Return the model's weights. */
+  const std::vector<weights *>& get_weights() const { return m_weights; }
 
   /** Get the model's comm. */
   inline lbann_comm *get_comm() const {
     return m_comm;
   }
+
   /** Get the current epoch for the model. */
   inline int get_cur_epoch() const {
     return m_current_epoch;
@@ -101,17 +139,13 @@ class model {
   inline int get_cur_testing_step() const {
     return m_current_testing_step;
   }
-  /** Get the model's execution mode. */
-  inline execution_mode get_execution_mode() const {
-    return m_execution_mode;
-  }
   /** Set the model (and all layers') execution mode. */
   inline void set_execution_mode(execution_mode mode) {
     m_execution_mode = mode;
-    std::vector<Layer *>& layers = get_layers();
-    for (auto&& l : layers) {
-      l->set_execution_mode(mode);
-    }
+  }
+  /** Get the model's execution mode. */
+  inline execution_mode get_execution_mode() const {
+    return m_execution_mode;
   }
   /** Set the model's current mini-batch size. */
   inline void set_current_mini_batch_size(int mini_batch_size) {
@@ -135,7 +169,7 @@ class model {
   }
 
   /** Get the current phase (multiple epochs) in layer-wise model training. */
-  inline int get_current_phase() {
+  inline int get_current_phase() const {
     return m_current_phase;
   }
 
@@ -143,12 +177,12 @@ class model {
    * Summarize statistics (e.g. timers, counters); these should be computable
    * quickly.
    */
-  virtual void summarize_stats(lbann_summary& summarizer) {}
+  virtual void summarize_stats(lbann_summary& summarizer);
   /**
    * Summarize matrices (e.g. means); these are called less frequently and can
    * be more expensive.
    */
-  virtual void summarize_matrices(lbann_summary& summarizer) {}
+  virtual void summarize_matrices(lbann_summary& summarizer);
 
   /** Return true if the flag to stop training is set. */
   bool get_terminate_training() const {
@@ -159,13 +193,10 @@ class model {
     m_terminate_training = f;
   }
 
-  /** Return true if about to start a new training epoch */
-  virtual bool at_epoch_start() = 0;
-
-  /** Create a new optimizer. */
-  inline optimizer *create_optimizer() {
-    return m_optimizer_fac->create_optimizer();
-  }
+  /** Train model. */
+  virtual void train(int num_epochs);
+  /** Evaluate model. */
+  virtual void evaluate(execution_mode mode);
 
   /** Set checkpoint values */
   inline void set_checkpoint_dir(std::string dir)   {
@@ -179,6 +210,13 @@ class model {
   }
   inline void set_checkpoint_secs(double secs)      {
     m_checkpoint_secs   = secs;
+  }
+
+#if 0
+  /** Return true if about to start a new training epoch
+   */
+  virtual bool at_epoch_start() {
+    return true;
   }
 
   /** Returns true if a checkpoint should be taken, false otherwise */
@@ -197,14 +235,13 @@ class model {
    *  and then calls the model's load_from_checkpoint_shared() virtual function */
   bool restartShared();
 
-  /**
-   * Objective functions are used to judge the performance of the model during
-   * training and can be used to adapt training via either early termination or
-   * adaptive learning rates.
-   */
-  objective_functions::objective_function *m_obj_fn;
+#endif // 0
 
  protected:
+
+  /** The objective function used to train the model. */
+  objective_function *m_objective_function;
+
   /** The model's current execution mode. */
   execution_mode m_execution_mode;
   /** Flag telling the model to terminate training. */
@@ -247,44 +284,96 @@ class model {
   /** Timestamp of last checkpoint */
   double m_checkpoint_last;
 
-  /** Factory to create optimizers. */
-  optimizer_factory *m_optimizer_fac;
+  /** Default optimizer. 
+   *  If a layer needs to construct an optimizer during setup, it will
+   *  make a copy of the default optimizer.
+   */
+  optimizer *m_default_optimizer;
 
-  /**
-   * A metric is a function that is used to judge the performance of your model.
-   * A metric function is similar to an objective function, except that the
-   * results from evaluating a metric are not used when training the model.
+  /** List of model metrics.
+   *  A metric is a function that is used to judge the performance of your model.
+   *  A metric function is similar to an objective function, except that the
+   *  results from evaluating a metric are not used when training the model.
    */
   std::vector<metrics::metric *> m_metrics;
 
-  // Methods for calling every callback at different points.
-  void setup_callbacks();
-  void do_train_begin_cbs();
-  void do_train_end_cbs();
-  void do_phase_end_cbs();
-  void do_epoch_begin_cbs();
-  void do_epoch_end_cbs();
-  void do_batch_begin_cbs();
-  void do_batch_end_cbs();
-  void do_test_begin_cbs();
-  void do_test_end_cbs();
-  void do_validation_begin_cbs();
-  void do_validation_end_cbs();
-  void do_model_forward_prop_begin_cbs();
-  void do_layer_forward_prop_begin_cbs(Layer *l);
-  void do_model_forward_prop_end_cbs();
-  void do_layer_forward_prop_end_cbs(Layer *l);
-  void do_model_backward_prop_begin_cbs();
-  void do_layer_backward_prop_begin_cbs(Layer *l);
-  void do_model_backward_prop_end_cbs();
-  void do_layer_backward_prop_end_cbs(Layer *l);
-  /// Evaluation phases (validation / testing)
-  void do_batch_evaluate_begin_cbs();
-  void do_batch_evaluate_end_cbs();
-  void do_model_evaluate_forward_prop_begin_cbs();
-  void do_layer_evaluate_forward_prop_begin_cbs(Layer *l);
-  void do_model_evaluate_forward_prop_end_cbs();
-  void do_layer_evaluate_forward_prop_end_cbs(Layer *l);
+  /** List of layers in model.
+   *  The list is in execution order for forward propagation.
+   */
+  std::vector<Layer *> m_layers;
+  /** List of weights in model. */
+  std::vector<weights *> m_weights;
+
+  /** Check if the model (and all layers') execution mode valid. */
+  virtual bool is_execution_mode_valid(execution_mode mode) const;
+  /** Print out the description of a layer set up. */
+  virtual std::string print_layer_description(const Layer* layer) const;
+
+  /** Setup model for an epoch. */
+  virtual void setup_epoch(execution_mode mode);
+  /** Evaluate model on a mini-batch */
+  virtual bool evaluate_mini_batch(execution_mode mode);
+  /** Train model on a mini-batch. */
+  virtual bool train_mini_batch();
+
+  /** Forward propagation step. */
+  virtual void forward_prop(execution_mode mode);
+  /** Backward propagation step. */
+  virtual void backward_prop();
+  /** Clear each layer's error signal tensor. */
+  virtual void clear_error_signals();
+  /** Update weights step. */
+  virtual void update_weights();
+  /** Update layers step. */
+  virtual bool update_layers();
+
+  ////////////////////////////////////////////////////////////
+  // Callbacks
+  ////////////////////////////////////////////////////////////
+
+  /** Setup callbacks. */
+  virtual void setup_callbacks();
+  /** Execute callbacks at start of training. */
+  virtual void do_train_begin_cbs();
+  /** Execute callbacks at end of training. */
+  virtual void do_train_end_cbs();
+  /** Execute callbacks at start of evaluation. */
+  virtual void do_evaluate_begin_cbs(execution_mode mode);
+  /** Execute callbacks at end of evaluation. */
+  virtual void do_evaluate_end_cbs(execution_mode mode);
+  /** Execute callbacks at start of epoch. */
+  virtual void do_epoch_begin_cbs();
+  /** Execute callbacks at end of epoch. */
+  virtual void do_epoch_end_cbs();
+  /** Execute callbacks at start of mini-batch. */
+  virtual void do_batch_begin_cbs(execution_mode mode);
+  /** Execute callbacks at end of mini-batch. */
+  virtual void do_batch_end_cbs(execution_mode mode);
+  /** Execute callbacks at start of model forward propagation. */
+  virtual void do_model_forward_prop_begin_cbs(execution_mode mode);
+  /** Execute callbacks at end of model forward propagation. */
+  virtual void do_model_forward_prop_end_cbs(execution_mode mode);
+  /** Execute callbacks at start of layer forward propagation. */
+  virtual void do_layer_forward_prop_begin_cbs(execution_mode mode, Layer *l);
+  /** Execute callbacks at end of layer forward propagation. */
+  virtual void do_layer_forward_prop_end_cbs(execution_mode mode, Layer *l);
+  /** Execute callbacks at start of model backward propagation. */
+  virtual void do_model_backward_prop_begin_cbs();
+  /** Execute callbacks at end of model backward propagation. */
+  virtual void do_model_backward_prop_end_cbs();
+  /** Execute callbacks at start of layer backward propagation. */
+  virtual void do_layer_backward_prop_begin_cbs(Layer *l);
+  /** Execute callbacks at end of layer backward propagation. */
+  virtual void do_layer_backward_prop_end_cbs(Layer *l);
+  /** Execute callbacks at start of model optimization. */
+  virtual void do_model_optimize_begin_cbs();
+  /** Execute callbacks at end of model optimization. */
+  virtual void do_model_optimize_end_cbs();
+  /** Execute callbacks at the start of weight optimization. */
+  virtual void do_weight_optimize_begin_cbs(weights *w);
+  /** Execute callbacks at the end of weight optimization. */
+  virtual void do_weight_optimize_end_cbs(weights *w);
+
 };
 
 }  // namespace lbann

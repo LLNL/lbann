@@ -36,11 +36,10 @@ void lbann::lbann_callback_debug_io::on_epoch_begin(model *m) {
 }
 
 void lbann::lbann_callback_debug_io::on_forward_prop_begin(model *m, Layer *l) {
-  if (!dynamic_cast<input_layer*>(l) || l->get_index() != 0 || m_debug_lvl < 1) {
+  auto *input = dynamic_cast<input_layer*>(l);
+  if (input == nullptr || m_debug_lvl < 1) {
     return;
   }
-
-  input_layer *input = dynamic_cast<input_layer*>(l);
 
   if(input->current_root_rank() == 0) {
     if(m->get_comm()->get_rank_in_model() < input->get_data_reader()->get_num_parallel_readers() && !input->is_local_reader_done()) {
@@ -73,8 +72,8 @@ void lbann::lbann_callback_debug_io::print_fp_start(model *m, input_layer *input
             << "." << m->get_comm()->get_rank_in_model() 
             << "] @" << m->get_cur_epoch() << "." << step 
             << " Phase: " << _to_string(m->get_execution_mode()) 
-            << " starting forward propagation for layer " << input->get_index() 
-            << " name: " << input->get_name() 
+            << " starting forward propagation for layer " << input->get_name() 
+            << " type: " << input->get_type() 
             << " iteration: " << input->get_data_reader()->get_current_mini_batch_index()
             << " of " << input->get_num_iterations_per_epoch()
             << " loading idx " << input->get_data_reader()->get_loaded_mini_batch_index()
@@ -89,8 +88,8 @@ void lbann::lbann_callback_debug_io::print_fp_start(model *m, input_layer *input
 
 //  179i @ 300s (=5m*60s) + 1i @ 100s (=5m*45s):offset <- num models
 void lbann::lbann_callback_debug_io::print_phase_start(model *m, execution_mode mode) {
-  std::vector<Layer *>layers = m->get_layers();
-  input_layer *input = dynamic_cast<input_layer*>(layers[0]);
+  const std::vector<Layer *>layers = m->get_layers();
+  auto *input = dynamic_cast<input_layer*>(layers[0]);
   generic_data_reader *data_reader=input->get_data_reader(mode);
 
   int64_t step;
@@ -151,11 +150,10 @@ void lbann::lbann_callback_debug_io::on_validation_begin(model *m) {
 }
 
 void lbann::lbann_callback_debug_io::on_evaluate_forward_prop_begin(model *m, Layer *l) {
-  if (!dynamic_cast<input_layer*>(l) || l->get_index() != 0 || m_debug_lvl < 1) {
+  auto *input = dynamic_cast<input_layer*>(l);
+  if (input == nullptr || m_debug_lvl < 1) {
     return;
   }
-
-  input_layer *input = dynamic_cast<input_layer*>(l);
 
   if(input->current_root_rank() == 0) {
     if(m->get_comm()->get_rank_in_model() < input->get_data_reader()->get_num_parallel_readers() && !input->is_local_reader_done()) {

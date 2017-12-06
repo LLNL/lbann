@@ -88,7 +88,16 @@ void im2col(const Mat& im,
   }
   #endif // LBANN_DEBUG  
 
-  // Call optimized routine if data is 2D
+  // Call optimized routine for 1x1 im2col
+  std::vector<int> zeros(im_num_dims, 0), ones(im_num_dims, 1);
+  if(std::equal(im_pads, im_pads + im_num_dims, zeros.begin())
+     && std::equal(window_dims, window_dims + im_num_dims, ones.begin())
+     && std::equal(window_strides, window_strides + im_num_dims, ones.begin())) {
+    im2col_1x1(im_buffer, col_buffer, num_channels, im_num_dims, im_dims);
+    return;
+  }
+
+  // Call optimized routine for 2D data
   if(im_num_dims == 2) {
     im2col_2d(im_buffer, col_buffer,
               im_dims[1], im_dims[0], im_pads[1], im_pads[0], num_channels,
@@ -202,18 +211,28 @@ void col2im(const Mat& col,
   }
   #endif // LBANN_DEBUG  
 
-  // Call optimized routine if data is 2D
+  // Call optimized routine for 1x1 col2im
+  std::vector<int> zeros(im_num_dims, 0), ones(im_num_dims, 1);
+  if(std::equal(im_pads, im_pads + im_num_dims, zeros.begin())
+     && std::equal(window_dims, window_dims + im_num_dims, ones.begin())
+     && std::equal(window_strides, window_strides + im_num_dims, ones.begin())) {
+    col2im_1x1(col_buffer, im_buffer, num_channels, im_num_dims, im_dims);
+    return;
+  }
+
+  // Call optimized routine for 2D data
   if(im_num_dims == 2) {
     col2im_2d(col_buffer, im_buffer,
               im_dims[1], im_dims[0], im_pads[1], im_pads[0], num_channels,
               window_dims[1], window_dims[0],
               window_strides[1], window_strides[0]);
+    return;
   }
-  else {
-    col2im(col, im, num_channels, im_num_dims,
-           im_dims, im_pads, window_dims, window_strides,
-           std::plus<DataType>());
-  }
+
+  // Default algorithm
+  col2im(col, im, num_channels, im_num_dims,
+         im_dims, im_pads, window_dims, window_strides,
+         std::plus<DataType>());
 
 }
 
@@ -243,6 +262,15 @@ void col2im(const Mat& col,
     offset_end[d] = im_dims[d] + im_pads[d] - window_dims[d] + 1;
     offset_stride[d] = window_strides[d];
     offset_num[d] = (offset_end[d] - offset_start[d] + offset_stride[d] - 1) / offset_stride[d];
+  }
+
+  // Call optimized routine for 1x1 col2im
+  std::vector<int> zeros(im_num_dims, 0), ones(im_num_dims, 1);
+  if(std::equal(im_pads, im_pads + im_num_dims, zeros.begin())
+     && std::equal(window_dims, window_dims + im_num_dims, ones.begin())
+     && std::equal(window_strides, window_strides + im_num_dims, ones.begin())) {
+    col2im_1x1(col_buffer, im_buffer, num_channels, im_num_dims, im_dims);
+    return;
   }
 
   // Iterate through im matrix entries
@@ -319,6 +347,20 @@ void col2im(const Mat& col,
 
 }
 
+void im2col_1x1(const DataType * input_buffer,
+                DataType * output_buffer,
+                const int num_channels,
+                const int num_input_dims,
+                const int * input_dims) {
+  const int spatial_size = std::accumulate(input_dims,
+                                           input_dims + num_input_dims,
+                                           1,
+                                           std::multiplies<int>());
+  const Mat input_matrix(spatial_size, num_channels, input_buffer, spatial_size);
+  Mat output_matrix(num_channels, spatial_size, output_buffer, num_channels);
+  El::Transpose(input_matrix, output_matrix);
+}
+
 void im2col_2d(const DataType *__restrict__ input_buffer,
                DataType *__restrict__ output_buffer,
                const int input_dim_x,
@@ -382,6 +424,20 @@ void im2col_2d(const DataType *__restrict__ input_buffer,
     }
   }
 
+}
+
+void col2im_1x1(const DataType * input_buffer,
+                DataType * output_buffer,
+                const int num_channels,
+                const int num_output_dims,
+                const int * output_dims) {
+  const int spatial_size = std::accumulate(output_dims,
+                                           output_dims + num_output_dims,
+                                           1,
+                                           std::multiplies<int>());
+  const Mat input_matrix(num_channels, spatial_size, input_buffer, num_channels);
+  Mat output_matrix(spatial_size, num_channels, output_buffer, spatial_size);
+  El::Transpose(input_matrix, output_matrix);
 }
 
 void col2im_2d(const DataType *__restrict__ input_buffer,

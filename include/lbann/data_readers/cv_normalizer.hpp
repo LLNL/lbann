@@ -31,7 +31,6 @@
 #define LBANN_CV_NORMALIZER_HPP
 
 #include "cv_transform.hpp"
-#include "patchworks/patchworks_opencv.hpp"
 #include "lbann/base.hpp" // DataType
 #include "lbann/utils/mild_exception.hpp"
 
@@ -66,7 +65,7 @@ class cv_normalizer : public cv_transform {
   typedef std::pair<ComputeType, ComputeType> channel_trans_t;
 
  protected:
-  // --- Parameters for normalization ---
+  // --- configuration variables ---
   /// Whether to normalize to 0 mean.
   bool m_mean_subtraction;
   /// Whether to normalize to unit variance.
@@ -77,7 +76,7 @@ class cv_normalizer : public cv_transform {
   bool m_z_score;
 
 
-  // --- normalizing transform determined ---
+  // --- state variables ---
   /**
    *  The parameter to use for linearly transforming channel values of each pixel as:
    *  new_value[ch] = cv::saturate_cast<T>(m_trans[ch].first*value[ch] + m_trans[ch].second)
@@ -86,32 +85,32 @@ class cv_normalizer : public cv_transform {
 
 
   /// Set a normalization bit flag
-  virtual normalization_type set_normalization_bits(const normalization_type ntype, const normalization_type flag) const {
+  normalization_type set_normalization_bits(const normalization_type ntype, const normalization_type flag) const {
     return static_cast<normalization_type>(static_cast<uint32_t>(ntype) | static_cast<uint32_t>(flag));
   }
 
   /// Mask normalization bits
-  virtual normalization_type mask_normalization_bits(const normalization_type ntype, const normalization_type flag) const {
+  normalization_type mask_normalization_bits(const normalization_type ntype, const normalization_type flag) const {
     return static_cast<normalization_type>(static_cast<uint32_t>(ntype) & static_cast<uint32_t>(flag));
   }
 
   /// Enable a particular normalization method
-  virtual normalization_type& set_normalization_type(normalization_type& ntype, const normalization_type flag) const;
+  normalization_type& set_normalization_type(normalization_type& ntype, const normalization_type flag) const;
 
   /// Check if there is a reason to enable. (i.e., any option set)
-  virtual bool check_to_enable() const;
+  bool check_to_enable() const override;
 
  public:
 
   cv_normalizer();
   cv_normalizer(const cv_normalizer& rhs);
   cv_normalizer& operator=(const cv_normalizer& rhs);
-  virtual cv_normalizer *clone() const;
+  cv_normalizer *clone() const override;
 
-  virtual ~cv_normalizer() {}
+  ~cv_normalizer() override {}
 
   /// Set the parameters all at once
-  virtual void set(const bool meansub, const bool unitvar, const bool unitscale, const bool zscore);
+  void set(const bool meansub, const bool unitvar, const bool unitscale, const bool zscore);
 
   /// Whether to subtract the per-channel and per-sample mean.
   void subtract_mean(bool b) {
@@ -130,8 +129,11 @@ class cv_normalizer : public cv_transform {
     m_z_score = b;
   }
 
-  /// Reset all the paramters to the default values
-  virtual void reset();
+  /// Set a pre-determined normalization transform.
+  void set_transform(const std::vector<channel_trans_t>& t);
+
+  /// Clear the states of the previous transform applied
+  void reset() override;
 
   /// Returns the channel-wise scaling parameter for normalization transform
   std::vector<channel_trans_t> transform() const {
@@ -144,24 +146,22 @@ class cv_normalizer : public cv_transform {
    * If not, it is disabled.
    * @return false if not enabled or unsuccessful.
    */
-  virtual bool determine_transform(const cv::Mat& image);
+  bool determine_transform(const cv::Mat& image) override;
 
-  /**
-   * Apply the normalization defined as a linear tranform per pixel.
-   * As this method is executed, the transform becomes deactivated.
-   * @return false if not successful.
-   */
-  virtual bool apply(cv::Mat& image);
-
-  /// Set a pre-determined normalization transform.
-  void set_transform(const std::vector<channel_trans_t>& t);
   /**
    * Reverse the normalization done as x' = alpha*x + beta by
    * x = (x'- beta)/alpha
    * If successful, the tranform is enabled. If not, it is disabled.
    * @return false if not enabled or unsuccessful.
    */
-  bool determine_inverse_transform();
+  bool determine_inverse_transform() override;
+
+  /**
+   * Apply the normalization defined as a linear tranform per pixel.
+   * As this method is executed, the transform becomes deactivated.
+   * @return false if not successful.
+   */
+  bool apply(cv::Mat& image) override;
 
   // utilities
   template<class InputIterator, class OutputIterator>
@@ -188,7 +188,9 @@ class cv_normalizer : public cv_transform {
                                   std::vector<ComputeType>& mean, std::vector<ComputeType>& stddev,
                                   cv::InputArray mask=cv::noArray());
 
-  virtual std::ostream& print(std::ostream& os) const;
+  std::string get_type() const override { return "normalizer"; }
+  std::string get_description() const override;
+  std::ostream& print(std::ostream& os) const override;
 };
 
 
@@ -269,9 +271,9 @@ inline OutputIterator cv_normalizer::scale(
 template<typename Tsrc, typename Tdst>
 inline bool cv_normalizer::scale_with_known_type(cv::Mat& image,
     const std::vector<channel_trans_t>& trans) {
-  const unsigned int Width  = static_cast<unsigned int>(image.cols);
-  const unsigned int Height = static_cast<unsigned int>(image.rows);
-  const unsigned int NCh    = static_cast<unsigned int>(image.channels());
+  const auto Width  = static_cast<unsigned int>(image.cols);
+  const auto Height = static_cast<unsigned int>(image.rows);
+  const auto NCh    = static_cast<unsigned int>(image.channels());
   if ((trans.size() > 0u) && (trans.size() != NCh)) {
     return false;
   }
@@ -288,7 +290,7 @@ inline bool cv_normalizer::scale_with_known_type(cv::Mat& image,
     } else {
       const unsigned int stride = Height*NCh;
       for (unsigned int i = 0u; i < Height; ++i) {
-        Tsrc *optr = reinterpret_cast<Tsrc *>(image.ptr<Tsrc>(i));
+        auto *optr = reinterpret_cast<Tsrc *>(image.ptr<Tsrc>(i));
         const Tsrc *iptr = optr;
         scale(iptr, iptr+stride, optr, trans);
       }
@@ -302,7 +304,7 @@ inline bool cv_normalizer::scale_with_known_type(cv::Mat& image,
             reinterpret_cast<Tdst *>(image_out.data), trans);
     } else {
       const unsigned int stride = Height*NCh;
-      Tdst *ptr_out = reinterpret_cast<Tdst *>(image_out.data);
+      auto *ptr_out = reinterpret_cast<Tdst *>(image_out.data);
       for (unsigned int i = 0u; i < Height; ++i, ptr_out += stride) {
         const Tsrc *ptr = reinterpret_cast<Tsrc *>(image.ptr<Tsrc>(i));
         scale(ptr, ptr+stride, ptr_out, trans);
@@ -336,7 +338,7 @@ inline bool cv_normalizer::compute_mean_stddev_with_known_type(const cv::Mat& im
   for (int ch = 0; ch < NCh; ++ch) {
     sum[ch] = 0.0;
     sqsum[ch] = 0.0;
-    const T *ptr = reinterpret_cast<const T *>(image.datastart);
+    const auto *ptr = reinterpret_cast<const T *>(image.datastart);
     shift[ch] = static_cast<ComputeType>(*(ptr+ch));
   }
 
@@ -344,8 +346,8 @@ inline bool cv_normalizer::compute_mean_stddev_with_known_type(const cv::Mat& im
   stddev.resize(NCh);
 
   if (image.isContinuous()) {
-    const T *ptr = reinterpret_cast<const T *>(image.datastart);
-    const T *const ptrend = reinterpret_cast<const T *const>(image.dataend);
+    const auto *ptr = reinterpret_cast<const T *>(image.datastart);
+    const auto *const ptrend = reinterpret_cast<const T *>(image.dataend);
 
     int ch = 0;
     do {
@@ -366,7 +368,7 @@ inline bool cv_normalizer::compute_mean_stddev_with_known_type(const cv::Mat& im
     const int Height = image.rows;
 
     for (int i = 0; i < Height; ++i) {
-      const T *ptr = reinterpret_cast<const T *>(image.ptr<const T>(i));
+      const auto *ptr = reinterpret_cast<const T *>(image.ptr<const T>(i));
       const T *const ptrend = ptr + stride;
 
       int ch = 0;

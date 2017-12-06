@@ -4,6 +4,11 @@ cmake_minimum_required(VERSION 3.1)
 #set(LBANN_MAJOR_VERSION 0)
 #set(LBANN_MINOR_VERSION 91)
 
+set(LBANN_PUBLIC_LINK_FLAG "PUBLIC")
+if (CMAKE_VERSION VERSION_LESS 3.9)
+  set(LBANN_PUBLIC_LINK_FLAG)
+endif()
+  
 # Check to see if we are in a git repo
 execute_process(COMMAND git rev-parse --is-inside-work-tree OUTPUT_VARIABLE GIT_REPO OUTPUT_STRIP_TRAILING_WHITESPACE)
 
@@ -25,11 +30,11 @@ endif()
 
 option(WITH_CUDA  "Include Nvidia CUDA"                    ON)
 option(WITH_CUDNN "Include Nvidia cuDNN"                   ON)
+option(WITH_NCCL  "Include Nvidia NCCL"                    OFF)
 option(WITH_CNPY  "Include cnpy"                           ON)
 option(WITH_TBINF "Include Tensorboard interface"          ON)
 option(WITH_VTUNE "Link the Intel VTune profiling library" OFF)
 option(WITH_NVPROF "Enable NVTX-based instrumentation for nvprof" OFF)
-option(WITH_FULLY_CONNECTED_CUDA "Enable CUDA-based fully connected layer" ON)
 option(WITH_TOPO_AWARE "Enable topology-aware profiling (HWLOC)" ON)
 option(WITH_SOFTMAX_CUDA "Enable CUDA-based softmax layer" ON)
 if(NOT DATATYPE)
@@ -42,9 +47,6 @@ endif()
 if(NOT LIBRARY_TYPE)
   set(LIBRARY_TYPE SHARED)
 endif()
-if(WITH_FULLY_CONNECTED_CUDA)
-  add_definitions(-DLBANN_FULLY_CONNECTED_CUDA)
-endif()
 if(WITH_TOPO_AWARE)
   add_definitions(-DLBANN_TOPO_AWARE)
 endif()  
@@ -56,6 +58,12 @@ endif()
 ################################################################
 # Initialize build
 ################################################################
+
+# Temporary workaround to force CMake to recognize the XL compiler. The latest beta XL compiler is recognized as Clang. 
+if (CMAKE_CXX_COMPILER MATCHES "xlc" AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  set(CMAKE_CXX_COMPILER_ID "XL")
+endif()
+
 
 # Add CMake modules
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
@@ -139,8 +147,8 @@ set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR};${CMAKE
 # Required dependencies
 include(OpenMP)
 include(MPI)
-include(OpenCV)
 include(protobuf)
+include(OpenCV)
 include(LbannProto)
 
 # Optional dependencies
@@ -158,6 +166,11 @@ if(CUDA_FOUND)
   include(CUB)
   if(WITH_CUDNN)
     include(cuDNN)
+  endif()
+  set(CUDA_LINK_LIBRARIES_KEYWORD ${LBANN_PUBLIC_LINK_FLAG})
+
+  if(WITH_NCCL)
+     add_definitions(-D__LIB_NCCL)
   endif()
 endif()
 
@@ -244,6 +257,7 @@ add_subdirectory(src)
 add_subdirectory(model_zoo)
 add_subdirectory(model_zoo/tests)
 add_subdirectory(model_zoo/historical)
+add_subdirectory(tests)
 
 # Build LBANN source files
 # Note that CUDA sources are not included as they are not
@@ -280,35 +294,39 @@ else()
 endif()
 
 # Link libraries
-target_link_libraries(lbann PUBLIC ${MPI_CXX_LIBRARIES})
-target_link_libraries(lbann PUBLIC ${Elemental_LIBRARIES})
-target_link_libraries(lbann PUBLIC ${OpenCV_LIBRARIES})
-target_link_libraries(lbann PUBLIC ${PROTOBUF_LIBRARIES})
-target_link_libraries(lbann PUBLIC ${CNPY_LIBRARIES})
+target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} ${MPI_CXX_LIBRARIES})
+target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} ${Elemental_LIBRARIES})
+target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} ${OpenCV_LIBRARIES})
+target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} ${PROTOBUF_LIBRARIES})
+target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} ${CNPY_LIBRARIES})
 
 message("main CMakeFiles XXX LbannProto_LIBRARIES: ${LbannProto_LIBRARIES}")
-# target_link_libraries(lbann PUBLIC ${LbannProto_LIBRARIES})
+# target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} ${LbannProto_LIBRARIES})
 
 if(LBANN_HAS_CUDA)
-  target_link_libraries(lbann PUBLIC ${CUDA_LIBRARIES})
+  target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} ${CUDA_LIBRARIES})
   if(WITH_NVPROF)
     add_definitions(-DLBANN_NVPROF)
-    target_link_libraries(lbann PUBLIC ${NVTX_LIBRARIES})
+    target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} ${NVTX_LIBRARIES})
   endif()
-  target_link_libraries(lbann PUBLIC ${cuBLAS_LIBRARIES})
+  target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} ${cuBLAS_LIBRARIES})
+  
+  if(WITH_NCCL)
+    target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} ${nccl2_LIBRARIES})
+  endif()
 endif()
 if(LBANN_HAS_CUDNN)
-  target_link_libraries(lbann PUBLIC ${cuDNN_LIBRARIES})
+  target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} ${cuDNN_LIBRARIES})
 endif()
 if(LBANN_HAS_VTUNE)
-  target_link_libraries(lbann PUBLIC ${VTUNE_STATIC_LIB})
-  target_link_libraries(lbann PUBLIC dl)
+  target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} ${VTUNE_STATIC_LIB})
+  target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} dl)
 endif()
 if(LBANN_HAS_TBINF)
-  target_link_libraries(lbann PUBLIC TBinf)
+  target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} TBinf)
 endif()
 if(LBANN_HAS_LBANN_PROTO)
-  target_link_libraries(lbann PUBLIC LbannProto)
+  target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} LbannProto)
 endif()
 
 if(WITH_TOPO_AWARE)
@@ -316,8 +334,8 @@ if(WITH_TOPO_AWARE)
   find_package(HWLOC)
 
   if (HWLOC_FOUND)
-    target_link_libraries(lbann PUBLIC ${HWLOC_LIBRARIES})
-    target_include_directories(lbann PUBLIC ${HWLOC_INCLUDE_PATH})
+    target_include_directories(src SYSTEM PUBLIC ${HWLOC_INCLUDE_PATH})
+    target_link_libraries(lbann ${LBANN_PUBLIC_LINK_FLAG} ${HWLOC_LIBRARIES})
   else()
     message(FATAL_ERROR "Requested WITH_TOPO_AWARE but HWLOC not found. "
       "Try specifying HWLOC_DIR as the root of an HWLOC install. "

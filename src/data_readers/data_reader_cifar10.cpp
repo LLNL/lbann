@@ -30,12 +30,19 @@
 
 namespace lbann {
 
-cifar10_reader::cifar10_reader(int batchSize, bool shuffle)
-  : generic_data_reader(batchSize, shuffle),
-    m_image_width(32), m_image_height(32), m_image_num_channels(3) {
+cifar10_reader::cifar10_reader(bool shuffle)
+  : image_data_reader(shuffle) {
+  set_defaults();
 }
 
-cifar10_reader::~cifar10_reader() { }
+cifar10_reader::~cifar10_reader() {}
+
+void cifar10_reader::set_defaults() {
+  m_image_width = 32;
+  m_image_height = 32;
+  m_image_num_channels = 3;
+  m_num_labels = 10;
+}
 
 void cifar10_reader::load() {
   //open data file
@@ -43,7 +50,7 @@ void cifar10_reader::load() {
   std::string filename = get_data_filename();
   std::string path = image_dir + "/" + filename;
   std::ifstream in(path, std::ios::binary);
-  if (not in.good()) {
+  if (!in.good()) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
       " :: failed to open " + path + " for reading");
@@ -64,14 +71,14 @@ void cifar10_reader::load() {
   //reserve space for string images
   int num_images = fs / len;
   m_data.resize(num_images);
-  for (size_t h=0; h<m_data.size(); h++) {
-    m_data[h].resize(len);
+  for (auto & h : m_data) {
+    h.resize(len);
   }
 
   //read in the images; each image is 1 byte, which is the
-  //label (0-9), and 2072 pixels
-  for (size_t h=0; h<m_data.size(); h++) {
-    in.read((char *)&(m_data[h][0]), len);
+  //label (0-9), and 3072 pixels
+  for (auto & h : m_data) {
+    in.read((char *)&(h[0]), len);
   }
   in.close();
 
@@ -96,7 +103,7 @@ bool cifar10_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
 }
 
 bool cifar10_reader::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
-  int label = (int)m_data[data_id][0];
+  auto label = (int)m_data[data_id][0];
   Y.Set(label, mb_idx, 1);
   return true;
 }

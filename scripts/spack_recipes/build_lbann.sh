@@ -1,4 +1,8 @@
-#!/bin/sh
+#!/bin/bash
+
+if [ ! -z "$bamboo_SPACK_ROOT" ]; then
+    . $bamboo_SPACK_ROOT/share/spack/setup-env.sh
+fi
 
 SPACK_RECIPES=`dirname ${0}`
 #Set Script Name variable
@@ -38,7 +42,7 @@ function HELP {
   exit 1
 }
 
-while getopts "b:c:de:ghm:t:" opt; do
+while getopts "b:c:de:ghm:st:z" opt; do
   case $opt in
     b)
       BLAS=$OPTARG
@@ -67,6 +71,9 @@ while getopts "b:c:de:ghm:t:" opt; do
       ;;
     t)
       DTYPE=$OPTARG
+      ;;
+    z)
+      SPACK_DIRTY=1
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
@@ -160,10 +167,17 @@ if [ ! -z "${Fortran_FLAGS}" ]; then
     SPACK_FFLAGS="fflags=\"${Fortran_FLAGS}\""
 fi
 
-SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ${SPACK_CFLAGS} ${SPACK_CXXFLAGS} ${SPACK_FFLAGS} ^elemental@${EL_VER} blas=${BLAS} ^${MPI}"
+SPACK_SETUP_FLAGS=
+if [ "${SPACK_DIRTY}" == "1" ]; then
+  SPACK_SETUP_FLAGS="--dirty"
+fi
+
+SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ^elemental@${EL_VER} blas=${BLAS} ^${MPI}"
+# Disable the extra compiler flags until spack supports propagating flags properly
+#SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ${SPACK_CFLAGS} ${SPACK_CXXFLAGS} ${SPACK_FFLAGS} ^elemental@${EL_VER} blas=${BLAS} ^${MPI}"
 
 SPEC="spack spec ${SPACK_OPTIONS}"
-CMD="spack setup ${SPACK_OPTIONS}"
+CMD="spack setup ${SPACK_SETUP_FLAGS} ${SPACK_OPTIONS}"
 
 # Create a directory for the build
 DIR="${CLUSTER}_${COMPILER}_${ARCH}_${MPI}_${BLAS}_${DIST}"
@@ -209,6 +223,6 @@ if [ ! -z ${PATH_TO_SRC} -a -d ${PATH_TO_SRC}/src ]; then
 fi
 
 # Deal with the fact that spack should not install a package when doing setup"
-FIX="spack uninstall -y lbann"
+FIX="spack uninstall -y lbann %${COMPILER}"
 echo $FIX
 eval $FIX

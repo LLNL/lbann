@@ -37,6 +37,7 @@
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/utils/random.hpp"
+#include "lbann/utils/omp_diagnostics.hpp"
 
 namespace lbann {
 
@@ -45,7 +46,7 @@ lbann_comm* initialize(int& argc, char**& argv, int seed) {
   El::Initialize(argc, argv);
   // Create a new comm object.
   // Initial creation with every process in one model.
-  lbann_comm* comm = new lbann_comm(0);
+  auto* comm = new lbann_comm(0);
 #if defined(LBANN_TOPO_AWARE)
   // Determine the number of NUMA nodes present.
   hwloc_topology_t topo;
@@ -85,19 +86,6 @@ void finalize(lbann_comm* comm) {
 }
 
 }  // namespace lbann
-
-/** hack to avoid long switch/case statement; users should ignore; of interest to developers */
-static std::vector<std::string> weight_initialization_names  = 
-    { "zero", "uniform", "normal", "glorot_normal", "glorot_uniform", "he_normal", "he_uniform"};
-
-/** returns a string representation of the weight_initialization */
-std::string get_weight_initialization_name(weight_initialization m) {
-  if ((int)m < 0 or (int)m >= (int)weight_initialization_names.size()) {
-    throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: "
-          + " Invalid weight_initialization");
-  }
-  return weight_initialization_names[(int)m];
-}
 
 /** hack to avoid long switch/case statement; users should ignore; of interest to developers */
 static std::vector<std::string> pool_mode_names = { "max", "average", "average_no_pad" };

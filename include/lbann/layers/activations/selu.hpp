@@ -43,29 +43,29 @@ namespace lbann {
 template <data_layout T_layout>
 class selu_layer : public entrywise_activation_layer {
  public:
-  selu_layer(int index, lbann_comm *comm,
+  selu_layer(lbann_comm *comm,
              DataType alpha = DataType(1.6732632423543772848170429916717),
              DataType scale = DataType(1.0507009873554804934193349852946)) :
-    entrywise_activation_layer(index, comm),
+    entrywise_activation_layer(comm),
     m_alpha(alpha), m_scale(scale)
   {
     initialize_distributed_matrices();
   }
 
-  selu_layer* copy() const { return new selu_layer(*this); }
+  selu_layer* copy() const override { return new selu_layer(*this); }
 
-  std::string get_name() const { return "SELU"; }
+  std::string get_type() const override { return "SELU"; }
 
-  virtual inline void initialize_distributed_matrices() {
+  inline void initialize_distributed_matrices() override {
     entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
   }
-  virtual data_layout get_data_layout() const { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
  protected:
-  DataType activation_function(DataType z) {
+  DataType activation_function(DataType z) override {
     return (z >= DataType(0)) ? m_scale*z : m_scale*(m_alpha*std::expm1(z));
   }
-  DataType activation_function_gradient(DataType z) {
+  DataType activation_function_gradient(DataType z) override {
     return (z >= DataType(0)) ? m_scale : m_scale*m_alpha*std::exp(z);
   }
  private:

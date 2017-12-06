@@ -42,15 +42,15 @@ using namespace El;
 #define DATA_LAYOUT data_layout::MODEL_PARALLEL
 
 // train/test data info
-const int g_SaveImageIndex[1] = {0}; // for auto encoder
+//const int g_SaveImageIndex[1] = {0}; // for auto encoder
 //const int g_SaveImageIndex[5] = {293, 2138, 3014, 6697, 9111}; // for auto encoder
 //const int g_SaveImageIndex[5] = {1000, 2000, 3000, 4000, 5000}; // for auto encoder
 const string g_ImageNet_TrainDir = "resized_256x256/train/";
 const string g_ImageNet_ValDir = "resized_256x256/val/";
 const string g_ImageNet_TestDir = "resized_256x256/val/";
 const string g_ImageNet_LabelDir = "labels/";
-const int g_ImageNet_Width = 256;
-const int g_ImageNet_Height = 256;
+//const int g_ImageNet_Width = 256;
+//const int g_ImageNet_Height = 256;
 
 const string g_ImageNet_TrainLabelFile = "train_c0-9_01.txt";
 //const string g_ImageNet_TrainLabelFile = "train_c0-9.txt";
@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
     // initalize grid, block
     ///////////////////////////////////////////////////////////////////
     TrainingParams trainParams;
-    trainParams.DatasetRootDir = "/p/lscratchf/brainusr/datasets/ILSVRC2012/";
+    trainParams.DatasetRootDir = "/p/lscratchh/brainusr/datasets/ILSVRC2012/";
     trainParams.LearnRate = 5e-3;
     trainParams.DropOut = 0.9;
     trainParams.ProcsPerModel = 0;
@@ -132,6 +132,21 @@ int main(int argc, char *argv[]) {
       }
     }
 
+    // set up the image preprocessor
+    std::shared_ptr<cv_process> pp = std::make_shared<cv_process>();
+
+    // set up a custom transform (colorizer)
+    std::unique_ptr<lbann::cv_colorizer> colorizer(new(lbann::cv_colorizer));
+    pp->add_transform(std::move(colorizer));
+
+    // set up the normalizer
+    std::unique_ptr<lbann::cv_normalizer> normalizer(new(lbann::cv_normalizer));
+    normalizer->unit_scale(unit_scale);
+    normalizer->subtract_mean(subtract_mean);
+    normalizer->unit_variance(unit_variance);
+    normalizer->z_score(z_score);
+    pp->add_normalizer(std::move(normalizer));
+
     std::map<execution_mode, generic_data_reader *> data_readers;
     ///////////////////////////////////////////////////////////////////
     // load training data (ImageNet)
@@ -140,8 +155,7 @@ int main(int argc, char *argv[]) {
       if (comm->am_world_master()) {
         cout << endl << "USING imagenet_reader\n\n";
       }
-      imagenet_reader *imagenet_trainset = new imagenet_reader(trainParams.MBSize, true);
-      imagenet_trainset->set_firstN(false);
+      imagenet_reader *imagenet_trainset = new imagenet_reader(pp, true);
       imagenet_trainset->set_role("train");
       imagenet_trainset->set_master(comm->am_world_master());
       imagenet_trainset->set_rank(comm->get_rank_in_world());
@@ -149,11 +163,6 @@ int main(int argc, char *argv[]) {
       imagenet_trainset->set_data_filename(trainParams.DatasetRootDir + g_ImageNet_LabelDir + g_ImageNet_TrainLabelFile);
       imagenet_trainset->set_validation_percent(trainParams.PercentageValidationSamples);
       imagenet_trainset->load();
-
-      imagenet_trainset->scale(unit_scale);
-      imagenet_trainset->subtract_mean(subtract_mean);
-      imagenet_trainset->unit_variance(unit_variance);
-      imagenet_trainset->z_score(z_score);
 
       ///////////////////////////////////////////////////////////////////
       // create a validation set from the unused training data (ImageNet)
@@ -174,8 +183,7 @@ int main(int argc, char *argv[]) {
       ///////////////////////////////////////////////////////////////////
       // load testing data (ImageNet)
       ///////////////////////////////////////////////////////////////////
-      imagenet_reader *imagenet_testset = new imagenet_reader(trainParams.MBSize, true);
-      imagenet_testset->set_firstN(false);
+      imagenet_reader *imagenet_testset = new imagenet_reader(pp, true);
       imagenet_testset->set_role("test");
       imagenet_testset->set_master(comm->am_world_master());
       imagenet_testset->set_rank(comm->get_rank_in_world());
@@ -188,23 +196,17 @@ int main(int argc, char *argv[]) {
         cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << imagenet_testset->get_num_data() << " samples." << endl;
       }
 
-      imagenet_testset->scale(unit_scale);
-      imagenet_testset->subtract_mean(subtract_mean);
-      imagenet_testset->unit_variance(unit_variance);
-      imagenet_testset->z_score(z_score);
-
       data_readers[execution_mode::training] = imagenet_trainset;
       data_readers[execution_mode::validation] = imagenet_validation_set;
       data_readers[execution_mode::testing] = imagenet_testset;
     } else {
       //===============================================================
-      // imagenet_readerSingle
+      // imagenet_reader_single
       //===============================================================
       if (comm->am_world_master()) {
-        cout << endl << "USING imagenet_readerSingle\n\n";
+        cout << endl << "USING imagenet_reader_single\n\n";
       }
-      imagenet_readerSingle *imagenet_trainset = new imagenet_readerSingle(trainParams.MBSize, true);
-      imagenet_trainset->set_firstN(false);
+      imagenet_reader_single *imagenet_trainset = new imagenet_reader_single(pp, true);
       imagenet_trainset->set_role("train");
       imagenet_trainset->set_master(comm->am_world_master());
       imagenet_trainset->set_rank(comm->get_rank_in_world());
@@ -217,15 +219,10 @@ int main(int argc, char *argv[]) {
 
       imagenet_trainset->load();
 
-      imagenet_trainset->scale(unit_scale);
-      imagenet_trainset->subtract_mean(subtract_mean);
-      imagenet_trainset->unit_variance(unit_variance);
-      imagenet_trainset->z_score(z_score);
-
       ///////////////////////////////////////////////////////////////////
       // create a validation set from the unused training data (ImageNet)
       ///////////////////////////////////////////////////////////////////
-      imagenet_readerSingle *imagenet_validation_set = new imagenet_readerSingle(*imagenet_trainset); // Clone the training set object
+      imagenet_reader_single *imagenet_validation_set = new imagenet_reader_single(*imagenet_trainset); // Clone the training set object
       imagenet_validation_set->set_role("validation");
       imagenet_validation_set->use_unused_index_set();
 
@@ -244,8 +241,7 @@ int main(int argc, char *argv[]) {
       ss.clear();
       ss.str("");
       ss << "Single_" << g_ImageNet_TestLabelFile.substr(0, g_ImageNet_TestLabelFile.size()-4);
-      imagenet_readerSingle *imagenet_testset = new imagenet_readerSingle(trainParams.MBSize, true);
-      imagenet_testset->set_firstN(false);
+      imagenet_reader_single *imagenet_testset = new imagenet_reader_single(pp, true);
       imagenet_testset->set_role("test");
       imagenet_testset->set_master(comm->am_world_master());
       imagenet_testset->set_rank(comm->get_rank_in_world());
@@ -258,19 +254,10 @@ int main(int argc, char *argv[]) {
         cout << "Testing using " << (trainParams.PercentageTestingSamples*100) << "% of the testing data set, which is " << imagenet_testset->get_num_data() << " samples." << endl;
       }
 
-      imagenet_testset->scale(unit_scale);
-      imagenet_testset->subtract_mean(subtract_mean);
-      imagenet_testset->unit_variance(unit_variance);
-      imagenet_testset->z_score(z_score);
-
       data_readers[execution_mode::training] = imagenet_trainset;
       data_readers[execution_mode::validation] = imagenet_validation_set;
       data_readers[execution_mode::testing] = imagenet_testset;
     }
-
-    //data_readers[execution_mode::training]->set_num_parallel_readers(parallel_io);
-    //data_readers[execution_mode::validation]->set_num_parallel_readers(parallel_io);
-    //data_readers[execution_mode::testing]->set_num_parallel_readers(parallel_io);
 
     ///////////////////////////////////////////////////////////////////
     // initalize neural network (layers)
@@ -288,19 +275,17 @@ int main(int argc, char *argv[]) {
       optimizer_fac = new sgd_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
     }
 
-    deep_neural_network *dnn = NULL;
-    dnn = new deep_neural_network(trainParams.MBSize, comm, new objective_functions::cross_entropy(), optimizer_fac);
+    sequential_model *dnn = NULL;
+    dnn = new sequential_model(trainParams.MBSize, comm, new objective_functions::cross_entropy(), optimizer_fac);
     dnn->add_metric(new metrics::categorical_accuracy<DATA_LAYOUT>(comm));
     Layer *ilayer = new input_layer_distributed_minibatch<data_layout::DATA_PARALLEL>(comm, parallel_io, data_readers);
     dnn->add(ilayer);
 
     const int NumLayers = netParams.Network.size();
-    int lcnt = 1;
     // initalize neural network (layers)
     for (int l = 0; l < NumLayers-1; l++) {
       fully_connected_layer<DATA_LAYOUT> *fc 
         = new fully_connected_layer<DATA_LAYOUT>(
-          lcnt++,
           comm,
           netParams.Network[l],
           weight_initialization::glorot_uniform, 
@@ -309,18 +294,17 @@ int main(int argc, char *argv[]) {
 
       Layer *act = NULL;
       if (trainParams.ActivationType == 1) { // sigmoid
-        act = new sigmoid_layer<DATA_LAYOUT>(lcnt++, comm);
+        act = new sigmoid_layer<DATA_LAYOUT>(comm);
       } else if (trainParams.ActivationType == 2) { // tanh
-        act = new tanh_layer<DATA_LAYOUT>(lcnt++, comm);
+        act = new tanh_layer<DATA_LAYOUT>(comm);
       } else if (trainParams.ActivationType == 3) { // reLU
-        act = new relu_layer<DATA_LAYOUT>(lcnt++, comm);
+        act = new relu_layer<DATA_LAYOUT>(comm);
       } else { // ID
-        act = new id_layer<DATA_LAYOUT>(lcnt++, comm);
+        act = new id_layer<DATA_LAYOUT>(comm);
       }
       dnn->add(act);
 
-      Layer *reg = new dropout<DATA_LAYOUT>(lcnt++,
-                                            comm,
+      Layer *reg = new dropout<DATA_LAYOUT>(comm,
                                             trainParams.DropOut);
       dnn->add(reg);
     }
@@ -330,7 +314,6 @@ int main(int argc, char *argv[]) {
       // Fully-connected without bias before softmax.
       fully_connected_layer<DATA_LAYOUT> *fc
         = new fully_connected_layer<DATA_LAYOUT>(
-          lcnt++,
           comm,
           netParams.Network[NumLayers-1],
           weight_initialization::glorot_uniform, 
@@ -339,11 +322,11 @@ int main(int argc, char *argv[]) {
       dnn->add(fc);
       //      get_prev_neurons_and_index( dnn, prev_num_neurons, layer_id);
       Layer *softmax 
-        = new softmax_layer<DATA_LAYOUT>(lcnt++, comm);
+        = new softmax_layer<DATA_LAYOUT>(comm);
       dnn->add(softmax);
     }
 
-    Layer *tlayer = new target_layer_distributed_minibatch<data_layout::DATA_PARALLEL>(comm, parallel_io, data_readers, true);
+    Layer *tlayer = new target_layer_distributed_minibatch<data_layout::DATA_PARALLEL>(comm, dynamic_cast<input_layer*>(ilayer), parallel_io, data_readers, true);
     dnn->add(tlayer);
 
 
@@ -387,7 +370,7 @@ int main(int argc, char *argv[]) {
 
     // load parameters from file if available
     if (trainParams.LoadModel && trainParams.ParameterDir.length() > 0) {
-      dnn->load_from_file(trainParams.ParameterDir);
+      // dnn->load_from_file(trainParams.ParameterDir);
     }
 
     mpi::Barrier(grid.Comm());
@@ -396,7 +379,7 @@ int main(int argc, char *argv[]) {
       optimizer *o = optimizer_fac->create_optimizer();
       cout << "\nOptimizer:\n" << o->get_description() << endl << endl;
       delete o;
-      std::vector<Layer *>& layers = dnn->get_layers();
+      const std::vector<Layer *>& layers = dnn->get_layers();
       for (size_t h=0; h<layers.size(); h++) {
         std::cout << h << " " << layers[h]->get_description() << endl;
       }
@@ -1079,8 +1062,8 @@ int main(int argc, char *argv[]) {
           char imagepath_rc[512];
           sprintf(imagepath_gt, "%s/lbann_autoencoder_imagenet_gt.png", trainParams.SaveImageDir.c_str());
           sprintf(imagepath_rc, "%s/lbann_autoencoder_imagenet_%04d.png", trainParams.SaveImageDir.c_str(), epoch);
-          CImageUtil::savePNG(imagepath_gt, g_ImageNet_Width * imagecount, g_ImageNet_Height, true, pixels_gt);
-          CImageUtil::savePNG(imagepath_rc, g_ImageNet_Width * imagecount, g_ImageNet_Height, true, pixels_rc);
+          image_utils::saveIMG(imagepath_gt, g_ImageNet_Width * imagecount, g_ImageNet_Height, true, pixels_gt);
+          image_utils::saveIMG(imagepath_rc, g_ImageNet_Width * imagecount, g_ImageNet_Height, true, pixels_rc);
         }
 
         delete [] pixels_gt;

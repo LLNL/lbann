@@ -43,12 +43,11 @@ template <data_layout T_layout>
 class selu_dropout : public regularizer_layer {
  public:
   /** Keep units with probabiliy keep_prob. */
-  selu_dropout(int index,
-               lbann_comm *comm,
+  selu_dropout(lbann_comm *comm,
                float keep_prob=0.95f,
                DataType alpha = DataType(1.6732632423543772848170429916717),
                DataType scale = DataType(1.0507009873554804934193349852946)) :
-    regularizer_layer(index, comm),
+    regularizer_layer(comm),
     m_keep_prob(keep_prob) {
 #ifdef LBANN_PROCDET_DROPOUT
     throw lbann_exception("selu_dropout: deterministic dropout not supported");
@@ -85,67 +84,66 @@ class selu_dropout : public regularizer_layer {
     return *this;
   }
 
-  ~selu_dropout() {
+  ~selu_dropout() override {
     delete m_cur_mask;
   }
 
-  selu_dropout* copy() const { return new selu_dropout(*this); }
+  selu_dropout* copy() const override { return new selu_dropout(*this); }
 
-  std::string get_name() const { return "selu dropout"; }
+  std::string get_type() const override { return "selu dropout"; }
 
   virtual inline void initialize_distributed_matrices();
-  virtual data_layout get_data_layout() const { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
  protected:
   /** Drop out units in forward propagation. */
-  void fp_compute() {
-    if (this->get_execution_mode() != execution_mode::training ||
+  void fp_compute() override {
+    if (this->m_model->get_execution_mode() != execution_mode::training ||
         m_keep_prob < 0.0f) {
-      // Copy previous activations over.
-      El::Copy(*(this->m_prev_activations), *(this->m_activations_v));
-      return;
-    }
-    AbsDistMat *input_acts = this->m_prev_activations;
-    const El::Int local_height = input_acts->LocalHeight();
-    const El::Int local_width = input_acts->LocalWidth();
+      // Do nothing if dropout is disabled
+      El::Copy(*(this->m_prev_activations_v), *(this->m_activations_v));
+    } else {
 
-    Mat& local_input_acts = input_acts->Matrix();
-    Mat& local_output_acts = this->m_activations_v->Matrix();
+      AbsDistMat *input_acts = this->m_prev_activations_v;
+      const El::Int local_height = input_acts->LocalHeight();
+      const El::Int local_width = input_acts->LocalWidth();
 
-    // Construct and apply mask and the affine transform.
-    // TODO: Optimize.
-    El::Bernoulli(*m_cur_mask, local_height, local_width, m_keep_prob);
-    for (El::Int col = 0; col < local_width; ++col) {
-      for (El::Int row = 0; row < local_height; ++row) {
-        local_output_acts(row, col) = m_a *
-          (local_input_acts(row, col)*(*m_cur_mask)(row, col) +
-           m_alpha_prime*(1 - (*m_cur_mask)(row, col))) + m_b;
+      Mat& local_input_acts = input_acts->Matrix();
+      Mat& local_output_acts = this->m_activations_v->Matrix();
+
+      // Construct and apply mask and the affine transform.
+      // TODO: Optimize.
+      El::Bernoulli(*m_cur_mask, local_height, local_width, m_keep_prob);
+      for (El::Int col = 0; col < local_width; ++col) {
+        for (El::Int row = 0; row < local_height; ++row) {
+          local_output_acts(row, col) = m_a *
+            (local_input_acts(row, col)*(*m_cur_mask)(row, col) +
+             m_alpha_prime*(1 - (*m_cur_mask)(row, col))) + m_b;
+        }
       }
+
     }
   }
 
   /** Adjust gradients for dropout in backprop. */
-  void bp_compute() {
-    // Terminate early when not training.
-    if (this->get_execution_mode() != execution_mode::training) {
-      return;
-    }
-    if (m_keep_prob < 0.0f) {
-      // Copy error signal through.
-      El::Copy(*(this->m_prev_error_signal), *(this->m_error_signal_v));
-      return;
-    }
+  void bp_compute() override {
+    if (this->m_model->get_execution_mode() != execution_mode::training
+        || m_keep_prob < 0.0f) {
+      El::LockedView(*this->m_error_signal_v, *this->m_prev_error_signal_v);
+    } else {
 
-    Mat& local_prev_error_signal = this->m_prev_error_signal->Matrix();
-    Mat& local_error_signal = this->m_error_signal_v->Matrix();
-    const El::Int local_height = local_prev_error_signal.Height();
-    const El::Int local_width = local_prev_error_signal.Width();
-    // Reweight with the affine scale factor and the dropout mask.
-    for (El::Int col = 0; col < local_width; ++col) {
-      for (El::Int row = 0; row < local_height; ++row) {
-        local_error_signal(row, col) =
-          m_a * local_prev_error_signal(row, col) * (*m_cur_mask)(row, col);
+      Mat& local_prev_error_signal = this->m_prev_error_signal_v->Matrix();
+      Mat& local_error_signal = this->m_error_signal_v->Matrix();
+      const El::Int local_height = local_prev_error_signal.Height();
+      const El::Int local_width = local_prev_error_signal.Width();
+      // Reweight with the affine scale factor and the dropout mask.
+      for (El::Int col = 0; col < local_width; ++col) {
+        for (El::Int row = 0; row < local_height; ++row) {
+          local_error_signal(row, col) =
+            m_a * local_prev_error_signal(row, col) * (*m_cur_mask)(row, col);
+        }
       }
+
     }
   }
 

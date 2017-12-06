@@ -56,49 +56,52 @@ class lbann_callback_imcomm : public lbann_callback {
   };
 
   /**
-   * Initialize with ct being used for every layer.
+   * Initialize with ct being used for all weights.
    */
   lbann_callback_imcomm(comm_type ct = NORMAL,
                         lbann_summary *summarizer = nullptr);
   lbann_callback_imcomm(const lbann_callback_imcomm&) = default;
   lbann_callback_imcomm& operator=(const lbann_callback_imcomm&) = default;
-  lbann_callback_imcomm* copy() const {
+  lbann_callback_imcomm* copy() const override {
     return new lbann_callback_imcomm(*this);
   }
   /**
-   * Convenience initialization to do one update type for a set of layers.
-   * Implies no inter-model updates for other layers.
+   * Convenience initialization to do one update type for specific weights.
+   * Implies no inter-model updates for other weights.
    */
-  lbann_callback_imcomm(comm_type ct, std::unordered_set<uint> layers,
+  lbann_callback_imcomm(comm_type ct, std::unordered_set<weights *> weights_list,
                         lbann_summary *summarizer = nullptr);
 
-  /** Choose comm type ct for layer. */
-  void set_layer_comm(uint layer, comm_type ct);
-  /** Set a layer to use adaptive quantization with proportion. */
-  void set_layer_adaptive(uint layer, int proportion);
-  /** Set a layer to use threshold quantization with given thresholds. */
-  void set_layer_threshold(uint layer, DataType pos_thresh,
-                           DataType neg_thresh);
+  /** Choose comm type ct for weights. */
+  void set_weights_comm(weights *w, comm_type ct);
+  /** Set weights to use adaptive quantization with proportion. */
+  void set_weights_adaptive(weights *w, int proportion);
+  /** Set weights to use threshold quantization with given thresholds. */
+  void set_weights_threshold(weights *w,
+                             DataType pos_thresh,
+                             DataType neg_thresh);
 
   /** Do initialization for this model. */
-  void setup(model *m);
+  void setup(model *m) override;
+  /** Make sure all models have the same weights. */
+  void on_train_begin(model *m) override;
   /** Clear out remaining error if needed. */
-  void on_epoch_end(model *m);
+  void on_epoch_end(model *m) override;
   /** Do inter-model gradient updates. */
-  void on_backward_prop_end(model *m);
+  void on_backward_prop_end(model *m) override;
 
-  std::string name() const { return "imcomm"; }
+  std::string name() const override { return "imcomm"; }
 
  private:
-  /** Parameters for a given layer. */
+  /** Parameters for a given set of weights. */
   struct imcomm_params {
     /** Type of communication done. */
     comm_type ct = NONE;
     /** Accumulated error (e.g. from quantization). */
     Mat error;
-    /** If >0, reshape (local) layer gradients to these dimensions. */
-    Int reshape_height = 0;
-    Int reshape_width = 0;
+    /** If >0, reshape (local) gradients to these dimensions. */
+    El::Int reshape_height = 0;
+    El::Int reshape_width = 0;
     /** Adaptive quantization proportion. */
     int proportion = 32;
     /** Threshold quantization thresholds. */
@@ -107,12 +110,10 @@ class lbann_callback_imcomm : public lbann_callback {
   };
   /** Default communication type. */
   comm_type m_default_ct;
-  /** Per-layer parameters. */
-  std::vector<imcomm_params> m_layer_params;
+  /** Per-weights parameters. */
+  std::unordered_map<weights *, imcomm_params> m_weights_params;
   /** Quantizer for quantization of updates, if needed. */
   lbann_quantizer m_quantizer;
-  /** Record param choices for specific layers for setup. */
-  std::unordered_map<uint, imcomm_params> m_param_choices;
 
   /** Return true if the comm type does quantization. */
   inline bool ct_does_quantization(comm_type ct) const {
@@ -130,12 +131,12 @@ class lbann_callback_imcomm : public lbann_callback {
    * Get a matrix that reinterprets mat as being height x width.
    * Assumes that mat.Height()*mat.Width() == height*width.
    */
-  void reshape_mat(Mat& mat, Mat& reshaped, Int height, Int width) {
+  void reshape_mat(Mat& mat, Mat& reshaped, El::Int height, El::Int width) {
     reshaped.Attach(height, width, mat.Buffer(), height);
   }
 
   /** Summarize relevant statistics. */
-  void do_summary(model *m, learning *layer, double im_time);
+  void do_summary(model *m, weights *w, double im_time);
 };
 
 

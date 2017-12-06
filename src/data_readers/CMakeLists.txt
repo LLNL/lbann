@@ -2,10 +2,11 @@ add_subdirectory(patchworks)
 
 add_sources(data_reader.cpp
             data_reader_mnist.cpp
+            data_reader_image.cpp
             data_reader_imagenet.cpp
             data_reader_imagenet_single.cpp
-            data_reader_imagenet_cv.cpp
-            data_reader_imagenet_single_cv.cpp
+            data_reader_imagenet_org.cpp
+            data_reader_imagenet_patches.cpp
             data_reader_nci.cpp
             data_reader_cifar10.cpp
             image_utils.cpp
@@ -15,11 +16,14 @@ add_sources(data_reader.cpp
             cv_normalizer.cpp
             cv_process.cpp
             cv_process_patches.cpp
-            cv_resizer.cpp
+            cv_cropper.cpp
+            cv_mean_extractor.cpp
             cv_utils.cpp
             data_reader_numpy.cpp
             data_reader_synthetic.cpp
             data_reader_csv.cpp
             data_reader_merge_features.cpp
             data_reader_merge_samples.cpp
+            data_reader_pilot2_molecular.cpp
+            data_reader_ascii.cpp
 )

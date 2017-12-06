@@ -1,0 +1,4 @@
+Model_name,           max_epoch_time, max_mean_minibatch_time, max_min_time, max_max_time, max_stdev, min_accuracy
+mnist_distributed_io, 50.00,          0.02,                    0.10,         0.10,         0.05,      96.00
+alexnet,              700.00,         200.00,                  20.00,        50.00,        40.00,     8.00
+resnet50,             2500.00,        75.00,                   40.00,        75.00,        5.00,      7.00

@@ -36,7 +36,7 @@
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/data_readers/image_preprocessor.hpp"
-#include <assert.h>
+#include <cassert>
 #include <algorithm>
 #include <string>
 #include <vector>
@@ -59,10 +59,9 @@ namespace lbann {
 class generic_data_reader : public lbann_image_preprocessor {
  public:
   /**
-   * @param batch_size The initial mini-batch size to use.
-   * @param shuffle Whether to shuffle data (default true).
+   * ctor
    */
-  generic_data_reader(int batch_size, bool shuffle = true) :
+  generic_data_reader(bool shuffle = true) :
     m_mini_batch_size(0), m_current_pos(0),
     m_stride_to_next_mini_batch(0), m_base_offset(0), m_model_offset(0),
     m_sample_stride(1), m_iteration_stride(1),
@@ -75,14 +74,14 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_global_last_mini_batch_size(0),
     m_num_parallel_readers(0), m_model_rank(0),
     m_file_dir(""), m_data_fn(""), m_label_fn(""),
-    m_first_n(false), m_max_sample_count(0), m_validation_percent(-1),
-    m_max_sample_count_was_set(false), m_use_percent(1.0),
+    m_shuffle(shuffle), m_absolute_sample_count(0), m_validation_percent(0.0),
+    m_use_percent(1.0),
     m_master(false)
   {}
   generic_data_reader(const generic_data_reader&) = default;
   generic_data_reader& operator=(const generic_data_reader&) = default;
 
-  virtual ~generic_data_reader() {}
+  ~generic_data_reader() override {}
   virtual generic_data_reader* copy() const = 0;
 
   // These non-virtual methods are used to specify where data is, how much to
@@ -131,32 +130,42 @@ class generic_data_reader : public lbann_image_preprocessor {
   std::string get_label_filename() const;
 
   /**
-   * If set to true, indices (data samples) are not shuffled;
-   * default is false.
+   * If set to false, indices (data samples) are not shuffled
+   * default (in ctor) is true.
    */
-  void set_firstN(bool b);
+  void set_shuffle(bool b) { m_shuffle = b; }
 
   /**
-   * Returns true if data samples are not shuffled.
+   * Returns true if data samples are shuffled.
    */
-  bool get_firstN() const;
+  bool is_shuffled() const { return m_shuffle; }
+
+  /**
+   * Set shuffled indices; primary use is for testing
+   * and reproducibility
+   */
+  void set_shuffled_indices(const std::vector<int> &indices) {
+    m_shuffled_indices = indices;
+  }
+
+  /**
+   * Returns the shuffled indices; primary use is for testing.
+   */
+  const std::vector<int> & get_shuffled_indices() const {
+    return m_shuffled_indices;
+  }
 
   /**
    * Sets the absolute number of data samples that will be used for training or
    * testing.
    */
-  void set_max_sample_count(size_t s);
-
-  /**
-   * True if set_max_sample_count was called.
-   */
-  bool has_max_sample_count() const;
+  void set_absolute_sample_count(size_t s);
 
   /**
    * Return the absolute number of data samples that will be used for training
    * or testing.
    */
-  size_t get_max_sample_count() const;
+  size_t get_absolute_sample_count() const;
 
   /**
    * Set the percentage of the data set to use for training and validation or
@@ -164,11 +173,6 @@ class generic_data_reader : public lbann_image_preprocessor {
    * @param s The percentage used, in the range [0, 1].
    */
   void set_use_percent(double s);
-
-  /**
-   * True if set_use_percent was called.
-   */
-  bool has_use_percent() const;
 
   /**
    * Returns the percent of the dataset to be used for training or testing.
@@ -182,11 +186,6 @@ class generic_data_reader : public lbann_image_preprocessor {
    * @param s The percentage used, in the range [0, 1].
    */
   virtual void set_validation_percent(double s);
-
-  /**
-   * True if set_validation_percent was called.
-   */
-  bool has_validation_percent() const;
 
   /**
    * Return the percent of the dataset to be used for validation.
@@ -252,8 +251,9 @@ class generic_data_reader : public lbann_image_preprocessor {
    * Save pixels to an image. The implementing data reader is responsible for
    * handling format detection, conversion, etc.
    */
-  virtual void save_image(Mat& pixels, const std::string filename,
-                          bool do_scale = true) {
+  // TODO: This function needs to go away from here
+  void save_image(Mat& pixels, const std::string filename,
+                          bool do_scale = true) override {
     NOT_IMPLEMENTED("save_image");
   }
   bool is_data_reader_done(bool is_active_reader);
@@ -454,6 +454,11 @@ class generic_data_reader : public lbann_image_preprocessor {
     return m_num_iterations_per_epoch;  /// @todo BVE FIXME merge this with alternate approach
   }
 
+  /// Return the index of the current iteration step in the epoch (also the mini-batch index)
+  int get_current_step_in_epoch() const {
+    return  m_current_mini_batch_idx;
+  }
+
   /// only the master may write to cerr or cout; primarily for use in debugging during development
   virtual void set_master(bool m) {
     m_master = m;
@@ -486,7 +491,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   void use_unused_index_set();
 
   /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
-  bool saveToCheckpointShared(persist& p, const char *name);
+  bool saveToCheckpointShared(persist& p, const char *name) const;
 
   /** \brief Given directory to store checkpoint files, read state from file and add to number of bytes read */
   bool loadFromCheckpointShared(persist& p, const char *name);
@@ -574,10 +579,9 @@ class generic_data_reader : public lbann_image_preprocessor {
   std::string m_file_dir;
   std::string m_data_fn;
   std::string m_label_fn;
-  bool m_first_n;
-  size_t m_max_sample_count;
+  bool m_shuffle;
+  size_t m_absolute_sample_count;
   double m_validation_percent;
-  size_t m_max_sample_count_was_set;
   double m_use_percent;
   std::string m_role;
 

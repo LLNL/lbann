@@ -43,26 +43,26 @@ namespace lbann {
  */
 class numpy_reader : public generic_data_reader {
  public:
-  numpy_reader(int batch_size, bool shuffle = true);
+  numpy_reader(bool shuffle = true);
   // These need to be explicit because of some issue with the cnpy copy
   // constructor/assignment operator not linking correctly otherwise.
   numpy_reader(const numpy_reader&);
   numpy_reader& operator=(const numpy_reader&);
-  ~numpy_reader() {}
+  ~numpy_reader() override {}
 
-  numpy_reader* copy() const { return new numpy_reader(*this); }
+  numpy_reader* copy() const override { return new numpy_reader(*this); }
 
   /// Set whether to fetch labels.
   void set_has_labels(bool b) { m_has_labels = b; }
   /// Set whether to fetch responses.
   void set_has_responses(bool b) { m_has_responses = b; }
 
-  void load();
+  void load() override;
 
-  int get_num_labels() const { return m_num_labels; }
-  int get_linearized_data_size() const { return m_num_features; }
-  int get_linearized_label_size() const { return m_num_labels; }
-  const std::vector<int> get_data_dims() const {
+  int get_num_labels() const override { return m_num_labels; }
+  int get_linearized_data_size() const override { return m_num_features; }
+  int get_linearized_label_size() const override { return m_num_labels; }
+  const std::vector<int> get_data_dims() const override {
     std::vector<int> dims(m_data.shape.begin() + 1,
                           m_data.shape.end());
     if (m_has_labels || m_has_responses) {
@@ -72,9 +72,9 @@ class numpy_reader : public generic_data_reader {
   }
 
  protected:
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
-  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid);
-  bool fetch_response(Mat& Y, int data_id, int mb_idx, int tid);
+  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;
+  bool fetch_response(Mat& Y, int data_id, int mb_idx, int tid) override;
 
   /// Number of samples.
   int m_num_samples = 0;

@@ -35,25 +35,28 @@ namespace lbann {
 template <data_layout T_layout>
 class reshape_layer : public transform {
  public:
-  reshape_layer(int index,
-                lbann_comm *comm,
+  reshape_layer(lbann_comm *comm,
                 int num_dims,
                 const int *dims) :
-    transform(index, comm) {
+    transform(comm) {
     initialize_distributed_matrices();
     this->m_num_neuron_dims = num_dims;
     this->m_neuron_dims.assign(dims, dims+num_dims);
   }
-  reshape_layer* copy() const { return new reshape_layer(*this); }
+  reshape_layer(const reshape_layer&) = default;
+  reshape_layer& operator=(const reshape_layer&) = default;
+  ~reshape_layer() override = default;
 
-  std::string get_name() const { return "reshape"; }
+  reshape_layer* copy() const override { return new reshape_layer(*this); }
+
+  std::string get_type() const override { return "reshape"; }
 
   virtual inline void initialize_distributed_matrices() {
     transform::initialize_distributed_matrices<T_layout>();
   }
-  virtual data_layout get_data_layout() const { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
-  void setup_dims() {
+  void setup_dims() override {
     // Store neuron tensor dimensions
     const int num_neuron_dims = this->m_num_neuron_dims;
     const std::vector<int> neuron_dims = this->m_neuron_dims;
@@ -86,17 +89,21 @@ class reshape_layer : public transform {
                                               this->m_neuron_dims.end(),
                                               1,
                                               std::multiplies<int>())) {
-      throw lbann_exception("reshape_layer: invalid neuron dimensions");
+      std::string num_neurons = " {";
+      for(int n: m_neuron_dims) num_neurons += " " + std::to_string(n);
+      num_neurons += " }";
+      throw lbann_exception("reshape_layer: invalid neuron dimensions, " +
+                             std::to_string(m_num_neurons) + " != " + num_neurons);
     }
 
   }
 
-  void fp_compute() {
-    El::LockedView(*this->m_activations_v, *this->m_prev_activations);
+  void fp_compute() override {
+    El::LockedView(*this->m_activations_v, *this->m_prev_activations_v);
   }
 
-  void bp_compute() {
-    El::LockedView(*this->m_error_signal_v, *this->m_prev_error_signal);
+  void bp_compute() override {
+    El::LockedView(*this->m_error_signal_v, *this->m_prev_error_signal_v);
   }
 
 };

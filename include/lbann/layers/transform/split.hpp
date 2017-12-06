@@ -43,10 +43,9 @@ class split_layer : public transform {
 
  public:
   /// Constructor
-  split_layer(int index,
-              lbann_comm *comm,
-              cudnn::cudnn_manager *cudnn = NULL)
-    : transform(index, comm) {
+  split_layer(lbann_comm *comm,
+              cudnn::cudnn_manager *cudnn = nullptr)
+    : transform(comm) {
 
     // Setup the data distribution
     initialize_distributed_matrices();
@@ -66,7 +65,7 @@ class split_layer : public transform {
 
   split_layer(const split_layer&) = default;
   split_layer& operator=(const split_layer&) = default;
-  ~split_layer() {
+  ~split_layer() override {
   #ifdef __LIB_CUDNN
     // GPU memory for activations is a copy of previous layer's activations
     this->m_activations_d.clear();
@@ -74,26 +73,26 @@ class split_layer : public transform {
   }
 
   /** Returns description of ctor params */
-  std::string get_description() const {
+  std::string get_description() const override {
     std::stringstream s;
     s << " split; children: ";
     for (size_t h=0; h<this->m_child_layers.size(); h++) {
-      s << this->m_child_layers[h]->get_index() << " " << this->m_child_layers[h]->get_name() << " ";
+      s << this->m_child_layers[h]->get_name() << " " << this->m_child_layers[h]->get_type() << " ";
     }
     s << " dataLayout: " << this->get_data_layout_string(get_data_layout());
     return s.str();
   }
 
-  split_layer* copy() const { return new split_layer(*this); }
+  split_layer* copy() const override { return new split_layer(*this); }
 
-  std::string get_name() const { return "split"; }
+  std::string get_type() const override { return "split"; }
 
   virtual inline void initialize_distributed_matrices() {
     transform::initialize_distributed_matrices<T_layout>();
   }
-  virtual data_layout get_data_layout() const { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
-  void setup_gpu() {
+  void setup_gpu() override {
     transform::setup_gpu();
   #ifndef __LIB_CUDNN
     throw lbann_exception("split_layer: cuDNN not detected");
@@ -112,23 +111,23 @@ class split_layer : public transform {
 
   protected:
 
-  void fp_compute() {
+  void fp_compute() override {
     if(this->m_using_gpus) {
   #ifndef __LIB_CUDNN
       throw lbann_exception("split_layer: cuDNN not detected");
   #else
       this->m_cudnn->copy_on_gpus(this->m_activations_d,
-                                  this->m_prev_activations_d,
+                                  this->m_prev_activations_dv,
                                   this->m_num_prev_neurons,
                                   this->m_mini_batch_size_per_gpu);
   #endif // __LIB_CUDNN
     }
     else {
-      El::LockedView(*this->m_activations_v, *this->m_prev_activations);
+      El::LockedView(*this->m_activations_v, *this->m_prev_activations_v);
     }
   }
 
-  void bp_compute() {
+  void bp_compute() override {
     if(this->m_using_gpus) {
       bp_compute_cudnn();
     } else {
@@ -146,7 +145,7 @@ class split_layer : public transform {
 
     // Copy error signal from first child layer
     this->m_cudnn->copy_on_gpus(this->m_error_signal_d,
-                                this->m_prev_error_signal_d,
+                                this->m_prev_error_signal_dv,
                                 this->m_num_neurons,
                                 this->m_mini_batch_size_per_gpu);
 
@@ -159,13 +158,21 @@ class split_layer : public transform {
 
       // Get child error signal on GPUs
       if(child->using_gpus()) {
-        child->get_gpu_bp_output(this->m_prev_error_signal_d, this);
+        child->get_gpu_bp_output(this->m_prev_error_signal_dv,
+                                 this->m_prev_error_signal_d,
+                                 this);
       }
       else {
-        child->get_bp_output(*this->m_prev_error_signal, this);
+        child->get_bp_output(*this->m_prev_error_signal_v, this);
+        if(m_prev_error_signal_d.empty()) {
+          m_cudnn->allocate_on_gpus(m_prev_error_signal_d,
+                                    m_num_neurons,
+                                    m_max_mini_batch_size_per_gpu);
+        }
         this->m_cudnn->scatter_to_gpus(this->m_prev_error_signal_d,
-                                       this->m_prev_error_signal->LockedMatrix(),
+                                       this->m_prev_error_signal_v->LockedMatrix(),
                                        this->m_mini_batch_size_per_gpu);
+        m_prev_error_signal_dv = m_prev_error_signal_d;
       }
 
       // Add child error signal to this layer's error signal
@@ -176,7 +183,7 @@ class split_layer : public transform {
         CHECK_CUDNN(cudnnAddTensor(this->m_cudnn->get_handle(i),
                                    &one,
                                    this->m_neurons_cudnn_desc,
-                                   this->m_prev_error_signal_d[i],
+                                   this->m_prev_error_signal_dv[i],
                                    &one,
                                    this->m_prev_neurons_cudnn_desc,
                                    this->m_error_signal_d[i]));
@@ -188,11 +195,11 @@ class split_layer : public transform {
   }
 
   void bp_compute_cpu() {
-    El::Copy(*this->m_prev_error_signal, *this->m_error_signal_v);
+    El::Copy(*this->m_prev_error_signal_v, *this->m_error_signal_v);
     for(size_t i=1; i<this->m_child_layers.size(); ++i) {
-      this->m_child_layers[i]->get_bp_output(*this->m_prev_error_signal, this);
+      this->m_child_layers[i]->get_bp_output(*this->m_prev_error_signal_v, this);
       El::Axpy(DataType(1),
-               *this->m_prev_error_signal,
+               *this->m_prev_error_signal_v,
                *this->m_error_signal_v);
     }
   }

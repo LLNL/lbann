@@ -39,45 +39,86 @@
 namespace lbann {
 namespace cublas {
 
-// CUBLAS uses int for size parameters
-template <typename ElmType>
-cublasStatus_t Gemm(const cublasHandle_t &handle,
+// cuBLAS routines for floats
+#if LBANN_DATATYPE == 4
+inline
+cublasStatus_t axpy(const cublasHandle_t &handle,
+                    int n,
+                    float alpha,
+                    const float *x, int incx,
+                    float *y, int incy) {
+  return cublasSaxpy(handle, n, &alpha, x, incx, y, incy);
+}
+inline
+float nrm2(const cublasHandle_t &handle,
+           int n, const float *x, int incx) {
+  float result;
+  CHECK_CUBLAS(cublasSnrm2(handle, n, x, incx, &result));
+  return result;
+}
+inline
+cublasStatus_t scal(const cublasHandle_t &handle,
+                    int n,
+                    float alpha,
+                    float *x, int incx) {
+  return cublasSscal(handle, n, &alpha, x, incx);
+}
+inline
+cublasStatus_t gemm(const cublasHandle_t &handle,
                     cublasOperation_t transa,
                     cublasOperation_t transb,
                     int m, int n, int k,
-                    const ElmType alpha,
-                    const ElmType *A, int lda,
-                    const ElmType *B, int ldb,
-                    const ElmType beta,
-                    ElmType *C, int ldc);
-
-template <> inline
-cublasStatus_t Gemm<float>(const cublasHandle_t &handle,
-                           cublasOperation_t transa,
-                           cublasOperation_t transb,
-                           int m, int n, int k,
-                           const float alpha,
-                           const float *A, int lda,
-                           const float *B, int ldb,
-                           const float beta,
-                           float *C, int ldc) {
+                    float alpha,
+                    const float *A, int lda,
+                    const float *B, int ldb,
+                    float beta,
+                    float *C, int ldc) {
   return cublasSgemm(handle, transa, transb, m, n, k,
                      &alpha, A, lda, B, ldb, &beta, C, ldc);
 }
 
-template <> inline
-cublasStatus_t Gemm<double>(const cublasHandle_t &handle,
-                            cublasOperation_t transa,
-                            cublasOperation_t transb,
-                            int m, int n, int k,
-                            const double alpha,
-                            const double *A, int lda,
-                            const double *B, int ldb,
-                            const double beta,
-                            double *C, int ldc) {
+// cuBLAS routines for doubles
+#elif LBANN_DATATYPE == 8
+inline
+cublasStatus_t axpy(const cublasHandle_t &handle,
+                    int n,
+                    double alpha,
+                    const double *x, int incx,
+                    double *y, int incy) {
+  return cublasDaxpy(handle, n, &alpha, x, incx, y, incy);
+}
+inline
+double nrm2(const cublasHandle_t &handle,
+            int n, const double *x, int incx) {
+  double result;
+  CHECK_CUBLAS(cublasDnrm2(handle, n, x, incx, &result));
+  return result;
+}
+inline
+cublasStatus_t scal(const cublasHandle_t &handle,
+                    int n,
+                    double alpha,
+                    double *x, int incx) {
+  return cublasDscal(handle, n, &alpha, x, incx);
+}
+inline
+cublasStatus_t gemm(const cublasHandle_t &handle,
+                    cublasOperation_t transa,
+                    cublasOperation_t transb,
+                    int m, int n, int k,
+                    double alpha,
+                    const double *A, int lda,
+                    const double *B, int ldb,
+                    double beta,
+                    double *C, int ldc) {
   return cublasDgemm(handle, transa, transb, m, n, k,
                      &alpha, A, lda, B, ldb, &beta, C, ldc);
 }
+
+// cuBLAS routines for an invalid datatype
+#else
+#error Invalid floating-point datatype (must be float or double)
+#endif
                     
 }
 }

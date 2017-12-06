@@ -32,70 +32,56 @@
 namespace lbann {
 
 void lbann_callback_checknan::on_forward_prop_end(model *m, Layer *l) {
-  // Skip output layer.
-  if (l->get_index() == (int) m->get_layers().size() - 1) {
+  if (dynamic_cast<target_layer*>(l) != nullptr) {
     return;
   }
-  DistMat& acts = (DistMat&) l->get_activations();
+  const AbsDistMat& acts = l->get_activations();
   if (!is_good(acts)) {
-    lbann_comm *comm = m->get_comm();
     dump_network(m);
-    throw lbann_exception(
-      "checknan: [" + std::to_string(comm->get_rank_in_world()) +
-      "]: error in layer " + std::to_string(l->get_index()) +
-      " gradients (step=" + std::to_string(m->get_cur_step()) + ")");
+    std::stringstream ss;
+    ss << name() << ": "
+       << "[" << std::to_string(m->get_comm()->get_rank_in_world()) << "]: "
+       << "error in activations of " << l->get_name() << " "
+       << "(step=" << std::to_string(m->get_cur_step()) << ")";
+    throw lbann_exception(ss.str());
   }
 }
 
-void lbann_callback_checknan::on_backward_prop_end(model *m, Layer *l) {
-  // Skip non-learning layers.
-  learning *learning_layer = (learning *) dynamic_cast<learning *> (l);
-  if(learning_layer == NULL) {
-    return;
-  }
-  // Skip input/output layers.
-  if (l->get_index() == 0 || l->get_index() == (int) m->get_layers().size() - 1) {
-    return;
-  }
-  DistMat& grad = (DistMat&) learning_layer->get_weights_gradient();
-  if (!is_good(grad)) {
-    lbann_comm *comm = m->get_comm();
-    dump_network(m);
-    throw lbann_exception(
-      "checknan: [" + std::to_string(comm->get_rank_in_world()) +
-      "]: error in layer " + std::to_string(l->get_index()) +
-      " gradients (step=" + std::to_string(m->get_cur_step()) + ")");
+void lbann_callback_checknan::on_backward_prop_end(model *m) {
+  for (weights *w : m->get_weights()) {
+    optimizer *opt = w->get_optimizer();
+    if (opt != nullptr && !is_good(opt->get_gradient())) {
+      dump_network(m);
+      std::stringstream ss;
+      ss << name() << ": "
+         << "[" << std::to_string(m->get_comm()->get_rank_in_world()) << "]: "
+         << "error in weights gradient of " << w->get_name() << " "
+         << "(step=" << std::to_string(m->get_cur_step()) << ")";
+      throw lbann_exception(ss.str());
+    }
   }
 }
 
 void lbann_callback_checknan::on_batch_end(model *m) {
-  std::vector<Layer *>& layers = m->get_layers();
-  // Skip input/output layers-- they don't have weights.
-  for (size_t i = 1; i < layers.size() - 1; ++i) {
-    Layer *l = layers[i];
-    // Skip non-learning layers.
-    learning *learning_layer = (learning *) dynamic_cast<learning *> (l);
-    if(learning_layer == NULL) {
-      continue;
-    }
-    DistMat& weights = (DistMat&) learning_layer->get_weights();
-    if (!is_good(weights)) {
-      lbann_comm *comm = m->get_comm();
+  for (weights *w : m->get_weights()) {
+    if (!is_good(w->get_values())) {
       dump_network(m);
-      throw lbann_exception(
-      "checknan: [" + std::to_string(comm->get_rank_in_world()) +
-      "]: error in layer " + std::to_string(l->get_index()) +
-      " weights (step=" + std::to_string(m->get_cur_step()) + ")");
+      std::stringstream ss;
+      ss << name() << ": "
+         << "[" << std::to_string(m->get_comm()->get_rank_in_world()) << "]: "
+         << "error in weights of " << w->get_name() << " "
+         << "(step=" << std::to_string(m->get_cur_step()) << ")";
+      throw lbann_exception(ss.str());
     }
   }
 }
 
-bool lbann_callback_checknan::is_good(const DistMat& m) {
+bool lbann_callback_checknan::is_good(const AbsDistMat& m) {
   const Mat& lm = m.LockedMatrix();
-  const Int height = lm.Height();
-  const Int width = lm.Width();
-  for (Int col = 0; col < width; ++col) {
-    for (Int row = 0; row < height; ++row) {
+  const El::Int height = lm.Height();
+  const El::Int width = lm.Width();
+  for (El::Int col = 0; col < width; ++col) {
+    for (El::Int row = 0; row < height; ++row) {
       const DataType val = lm(row, col);
       if (std::isnan(val)) {
         std::cout << "Found NaN at (" << row << ", " << col << ")!" << std::endl;
@@ -110,27 +96,35 @@ bool lbann_callback_checknan::is_good(const DistMat& m) {
 }
 
 void lbann_callback_checknan::dump_network(model *m) {
-  std::vector<Layer*>& layers = m->get_layers();
   // Dump only the local matrices because not every rank will necessarily
   // have bad data, and the check is purely local.
-  const std::string prefix =
-    "model" + std::to_string(m->get_comm()->get_model_rank()) +
-    "-rank" + std::to_string(m->get_comm()->get_rank_in_model()) +
-    "-epoch" + std::to_string(m->get_cur_epoch()) + "-step" +
-    std::to_string(m->get_cur_step()) + "-layer";
-  for (size_t idx = 0; idx < layers.size(); ++idx) {
-    Layer *l = layers[idx];
-    // Dump activations.
-    El::Write(l->get_activations().Matrix(),
-              prefix + std::to_string(l->get_index()) + "-Activations",
+  for (Layer *layer : m->get_layers()) {
+    const std::string prefix
+      = ("model" + std::to_string(m->get_comm()->get_model_rank())
+         + "-rank" + std::to_string(m->get_comm()->get_rank_in_model()) +
+         + "-epoch" + std::to_string(m->get_cur_epoch())
+         + "-step" + std::to_string(m->get_cur_step())
+         + "-" + layer->get_name()
+         + "-");
+    El::Write(layer->get_activations().LockedMatrix(),
+              prefix + "Activations",
               El::ASCII);
-    learning *learning_layer = dynamic_cast<learning*>(l);
-    if (learning_layer != NULL) {
-      El::Write(learning_layer->get_weights().Matrix(),
-                prefix + std::to_string(l->get_index()) + "-WeightsBiases",
-                El::ASCII);
-      El::Write(learning_layer->get_weights_gradient().Matrix(),
-                prefix + std::to_string(l->get_index()) + "-Gradients",
+  }
+  for (weights *w : m->get_weights()) {
+    const std::string prefix
+      = ("model" + std::to_string(m->get_comm()->get_model_rank())
+         + "-rank" + std::to_string(m->get_comm()->get_rank_in_model()) +
+         + "-epoch" + std::to_string(m->get_cur_epoch())
+         + "-step" + std::to_string(m->get_cur_step())
+         + "-" + w->get_name()
+         + "-");
+    El::Write(w->get_values().LockedMatrix(),
+              prefix + "Weights",
+              El::ASCII);
+    optimizer *opt = w->get_optimizer();
+    if (opt != nullptr) {
+      El::Write(opt->get_gradient().LockedMatrix(),
+                prefix + "Gradient",
                 El::ASCII);
     }
   }

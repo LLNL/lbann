@@ -48,9 +48,9 @@ class lbann_callback_hang : public lbann_callback {
     m_rank_to_hang(rank_to_hang) {}
   lbann_callback_hang(const lbann_callback_hang&) = default;
   lbann_callback_hang& operator=(const lbann_callback_hang&) = default;
-  lbann_callback_hang* copy() const { return new lbann_callback_hang(*this); }
+  lbann_callback_hang* copy() const override { return new lbann_callback_hang(*this); }
   /// Hang on train begin.
-  void on_train_begin(model* m) {
+  void on_train_begin(model* m) override {
     if (m_rank_to_hang == -1 ||
         m_rank_to_hang == m->get_comm()->get_rank_in_world()) {
       // Set this flag to false with your debugger to resume execution.
@@ -58,7 +58,7 @@ class lbann_callback_hang : public lbann_callback {
       while (lbann_hang) {}
     }
   }
-  std::string name() const { return "hang"; }
+  std::string name() const override { return "hang"; }
  protected:
   /// The rank that will hang; -1 for every rank.
   int m_rank_to_hang;

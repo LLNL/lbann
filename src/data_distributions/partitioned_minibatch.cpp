@@ -27,13 +27,11 @@
 #include "lbann/data_distributions/partitioned_minibatch.hpp"
 #include "lbann/utils/exception.hpp"
 
-using namespace std;
-
 lbann::partitioned_minibatch::partitioned_minibatch(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
   : generic_data_distribution(comm, num_parallel_readers, data_readers) {}
 
-int lbann::partitioned_minibatch::fetch_to_local_matrix(Mat& M_local) {
-  int num_parallel_readers = get_num_parallel_readers();
+int lbann::partitioned_minibatch::fetch_to_local_matrix(Mat& M_local, generic_data_reader *data_reader) {
+  int num_parallel_readers = data_reader->get_num_parallel_readers();
 
   int num_samples_fetched = 0;
 
@@ -44,7 +42,7 @@ int lbann::partitioned_minibatch::fetch_to_local_matrix(Mat& M_local) {
 
     /// Each data reader needs to either have independent / split
     /// data, or take an offset / stride
-    num_samples_fetched = fetch_from_data_reader(M_local);
+    num_samples_fetched = (*fetch_data_fn)(M_local, data_reader);
     bool data_valid = (num_samples_fetched > 0);
     if(data_valid) {
       m_num_data_per_epoch+=num_samples_fetched; /// BVE FIXME need to change how this is shared
@@ -55,32 +53,31 @@ int lbann::partitioned_minibatch::fetch_to_local_matrix(Mat& M_local) {
   return num_samples_fetched;
 }
 
-void lbann::partitioned_minibatch::distribute_from_local_matrix(Mat& M_local, CircMat& Ms) {
+void lbann::partitioned_minibatch::distribute_from_local_matrix(Mat& M_local, CircMat& Ms, generic_data_reader *data_reader) {
 
   /// Nothing to do here, it is already done
   return;
 }
 
-bool lbann::partitioned_minibatch::is_data_set_processed() {
-  int num_iterations_per_epoch = get_num_iterations_per_epoch();
+bool lbann::partitioned_minibatch::is_data_set_processed(generic_data_reader *data_reader) {
+  int num_iterations_per_epoch = data_reader->get_num_iterations_per_epoch();
+  int current_step_in_epoch = data_reader->get_current_step_in_epoch(); // Get the current step before the update function increments it
 
-  m_local_reader_done = !update_data_reader(true);
+  m_local_reader_done = !(*update_data_reader_fn)(true, data_reader);
 
-  if(m_cur_step_in_epoch == (num_iterations_per_epoch - 1)) {
+  if(current_step_in_epoch == (num_iterations_per_epoch - 1)) {
     m_local_reader_done = false;
     m_root = 0; /// When the epoch is finished, make sure that the root node for distributing data is reset because
     /// if the number of parallel readers does not evenly divide the data set size, the epoch will finish
     /// without all of the parallel readers participating in the last round.
     m_num_data_per_epoch = 0;
-    m_cur_step_in_epoch = 0;
     return true;
   } else {
-    m_cur_step_in_epoch++;
     return false;
   }
 }
 
-int lbann::partitioned_minibatch::compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) {
+int lbann::partitioned_minibatch::compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) const {
   int num_parallel_readers = requested_num_parallel_readers;
 
   if(m_comm->get_procs_per_model() != num_parallel_readers) {
@@ -111,7 +108,7 @@ int lbann::partitioned_minibatch::compute_max_num_parallel_readers(long data_set
 }
 
 void lbann::partitioned_minibatch::calculate_num_iterations_per_epoch_spanning_models(int max_mini_batch_size, generic_data_reader *data_reader) {
-  if(data_reader == NULL) { return; }
+  if(data_reader == nullptr) { return; }
   // If the data reader does not have any data bail out (e.g. unused validation reader)
   if(data_reader->get_use_percent() == double(0.0)) { return; }
 
@@ -192,7 +189,7 @@ void lbann::partitioned_minibatch::calculate_num_iterations_per_epoch_spanning_m
 
   /// BVE FIXME - I feel like this is wrong  I don't think that the -1
   /// should be there
-  int last_mini_batch_offset = max(0, num_whole_mini_batches_per_model - 1) * data_reader->get_stride_to_next_mini_batch();
+  int last_mini_batch_offset = std::max(0, num_whole_mini_batches_per_model - 1) * data_reader->get_stride_to_next_mini_batch();
 
   ///  The last mini-batch may be partial and thus may have a smaller stride
   if(per_model_partial_mini_batch_size > 0 || world_master_remainder_adjustment > 0) {
@@ -205,7 +202,7 @@ void lbann::partitioned_minibatch::calculate_num_iterations_per_epoch_spanning_m
 }
 
 void lbann::partitioned_minibatch::calculate_num_iterations_per_epoch_single_model(int max_mini_batch_size, generic_data_reader *data_reader) {
-  if(data_reader == NULL) { return; }
+  if(data_reader == nullptr) { return; }
   // If the data reader does not have any data bail out (e.g. unused validation reader)
   if(data_reader->get_use_percent() == double(0.0)) { return; }
 

@@ -1,43 +1,56 @@
 model {
-  name: "dnn"
-  objective_function: "cross_entropy"
+  name: "sequential_model"
   num_epochs: 20
-  metric {
-    categorical_accuracy {
-    }
-  }
-  metric {
-    top_k_categorical_accuracy {
-      top_k: 5
-    }
-  }
   data_layout: "data_parallel"
   use_cudnn: false
+
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    cross_entropy {}
+    l2_weight_regularization {
+      scale_factor: 0.0005
+    }
+  }
+
+  ###################################################
+  # Metrics
+  ###################################################
+
+  metric { categorical_accuracy {} }
+  metric {
+    top_k_categorical_accuracy {
+       top_k: 5
+    }
+  }
+
   layer {
     input_partitioned_minibatch {
     }
     name: "1"
-    parent: "1"
+    parents: "1"
+    children: ""
     data_layout: "data_parallel"
   }
   #############################################
   layer {
     fully_connected {
       num_neurons: 4096
-  #    weight_initialization: "he_normal"
-      weight_initialization: "glorot_uniform"
       has_bias: true
-  #    l2_regularization_factor: 0.0005
     }
     name: "2"
-    parent: "1"
+    parents: "1"
+    children: ""
     data_layout: "model_parallel"
   }
   layer {
     relu {
     }
     name: "3"
-    parent: "2"
+    parents: "2"
+    children: ""
     data_layout: "model_parallel"
   }
   layer {
@@ -45,23 +58,24 @@ model {
       keep_prob: 0.9
     }
     name: "4"
-    parent: "3"
+    parents: "3"
+    children: ""
     data_layout: "model_parallel"
   }
   #############################################
   layer {
     fully_connected {
       num_neurons: 1000
-      weight_initialization: "he_normal"
-      l2_regularization_factor: 0.0005
     }
     name: "5"
-    parent: "4"
+    parents: "4"
+    children: ""
     data_layout: "model_parallel"
   }
   layer {
     name: "6"
-    parent: "5"
+    parents: "5"
+    children: ""
     data_layout: "model_parallel"
     softmax {
     }
@@ -69,7 +83,8 @@ model {
   #############################################
   layer {
     name: "7"
-    parent: "6"
+    parents: "6"
+    children: ""
     data_layout: "data_parallel"
     target_partitioned_minibatch {
       shared_data_reader: true
@@ -80,7 +95,7 @@ model {
   callback {
     imcomm {
       intermodel_comm_method: "normal"
-      layers: "2 5"
+      all_optimizers: true
     }
   }
   callback {

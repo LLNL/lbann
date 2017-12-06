@@ -53,19 +53,18 @@ class local_response_normalization_layer : public regularizer_layer {
 
 #ifdef __LIB_CUDNN
   /// Pooling descriptor
-  cudnnLRNDescriptor_t m_lrn_desc;
+  cudnnLRNDescriptor_t m_lrn_cudnn_desc;
 #endif // __LIB_CUDNN
 
  public:
   local_response_normalization_layer
-  (int index,
-   lbann_comm *comm,
+  (lbann_comm *comm,
    int window_width,
    DataType lrn_alpha,
    DataType lrn_beta,
    DataType lrn_k,
-   cudnn::cudnn_manager *cudnn = NULL)
-    : regularizer_layer(index, comm),
+   cudnn::cudnn_manager *cudnn = nullptr)
+    : regularizer_layer(comm),
       m_window_width(window_width), m_lrn_alpha(lrn_alpha), m_lrn_beta(lrn_beta),
       m_lrn_k(lrn_k) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
@@ -76,7 +75,7 @@ class local_response_normalization_layer : public regularizer_layer {
   #ifdef __LIB_CUDNN
 
     // Initialize cuDNN objects
-    m_lrn_desc = NULL;
+    m_lrn_cudnn_desc = nullptr;
 
     // Initialize GPU memory if using GPU
     if(cudnn) {
@@ -86,27 +85,45 @@ class local_response_normalization_layer : public regularizer_layer {
   #endif // __LIB_CUDNN
   }
 
-  local_response_normalization_layer(
-    const local_response_normalization_layer&) = default;
-  local_response_normalization_layer& operator=(
-    const local_response_normalization_layer&) = default;
+  local_response_normalization_layer(const local_response_normalization_layer& other) :
+    regularizer_layer(other),
+    m_window_width(other.m_window_width),
+    m_lrn_alpha(other.m_lrn_alpha),
+    m_lrn_beta(other.m_lrn_beta),
+    m_lrn_k(other.m_lrn_k) {
+  #ifdef __LIB_CUDNN
+    m_lrn_cudnn_desc = nullptr;
+    cudnn::copy_lrn_cudnn_desc(other.m_lrn_cudnn_desc, m_lrn_cudnn_desc);
+  #endif // __LIB_CUDNN
+  }
 
-  ~local_response_normalization_layer() {
+  local_response_normalization_layer& operator=(const local_response_normalization_layer& other) {
+    regularizer_layer::operator=(other);
+    m_window_width = other.m_window_width;
+    m_lrn_alpha = other.m_lrn_alpha;
+    m_lrn_beta = other.m_lrn_beta;
+    m_lrn_k = other.m_lrn_k;
+  #ifdef __LIB_CUDNN
+    cudnn::copy_lrn_cudnn_desc(other.m_lrn_cudnn_desc, m_lrn_cudnn_desc);
+  #endif // __LIB_CUDNN
+  }
+
+  ~local_response_normalization_layer() override {
   #ifdef __LIB_CUDNN
     // Destroy cuDNN objects
-    if(m_lrn_desc) {
-      CHECK_CUDNN(cudnnDestroyLRNDescriptor(m_lrn_desc));
+    if(m_lrn_cudnn_desc) {
+      CHECK_CUDNN(cudnnDestroyLRNDescriptor(m_lrn_cudnn_desc));
     }
   #endif // __LIB_CUDNN
   }
 
-  local_response_normalization_layer* copy() const {
+  local_response_normalization_layer* copy() const override {
     return new local_response_normalization_layer(*this);
   }
 
-  std::string get_name() const { return "local response normalization"; }
+  std::string get_type() const override { return "local response normalization"; }
 
-  std::string get_description() const {
+  std::string get_description() const override {
     return " LRN window width: " + std::to_string(m_window_width) + " alpha: " +
       std::to_string(m_lrn_alpha) + " beta: " + std::to_string(m_lrn_beta) 
       + " k: " + std::to_string(m_lrn_k)
@@ -116,18 +133,18 @@ class local_response_normalization_layer : public regularizer_layer {
   virtual inline void initialize_distributed_matrices() {
     regularizer_layer::initialize_distributed_matrices<T_layout>();
   }
-  virtual data_layout get_data_layout() const { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
   /// Initialize GPU objects
-  void setup_gpu() {
+  void setup_gpu() override {
     regularizer_layer::setup_gpu();
   #ifndef __LIB_CUDNN
     throw lbann_exception("lbann_layer_local_response_normalization: cuDNN not detected");
   #else
 
     // Initialize local response normalization descriptor
-    CHECK_CUDNN(cudnnCreateLRNDescriptor(&m_lrn_desc));
-    CHECK_CUDNN(cudnnSetLRNDescriptor(m_lrn_desc,
+    CHECK_CUDNN(cudnnCreateLRNDescriptor(&m_lrn_cudnn_desc));
+    CHECK_CUDNN(cudnnSetLRNDescriptor(m_lrn_cudnn_desc,
                                       (unsigned int) m_window_width,
                                       (double) m_lrn_alpha,
                                       (double) m_lrn_beta,
@@ -136,7 +153,7 @@ class local_response_normalization_layer : public regularizer_layer {
   #endif // #ifndef __LIB_CUDNN
   }
 
-  void fp_compute() {
+  void fp_compute() override {
     if(this->m_using_gpus) {
       fp_compute_cudnn();
     } else {
@@ -144,7 +161,7 @@ class local_response_normalization_layer : public regularizer_layer {
     }
   }
 
-  void bp_compute() {
+  void bp_compute() override {
     if(this->m_using_gpus) {
       bp_compute_cudnn();
     } else {
@@ -170,11 +187,11 @@ class local_response_normalization_layer : public regularizer_layer {
       CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
                                  this->m_cudnn->get_stream(i)));
       CHECK_CUDNN(cudnnLRNCrossChannelForward(this->m_cudnn->get_handle(i),
-                                              m_lrn_desc,
+                                              m_lrn_cudnn_desc,
                                               CUDNN_LRN_CROSS_CHANNEL_DIM1,
                                               &one,
                                               this->m_prev_neurons_cudnn_desc,
-                                              this->m_prev_activations_d[i],
+                                              this->m_prev_activations_dv[i],
                                               &zero,
                                               this->m_neurons_cudnn_desc,
                                               this->m_activations_d[i]));
@@ -202,15 +219,15 @@ class local_response_normalization_layer : public regularizer_layer {
       CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
                                  this->m_cudnn->get_stream(i)));
       CHECK_CUDNN(cudnnLRNCrossChannelBackward(this->m_cudnn->get_handle(i),
-                                               m_lrn_desc,
+                                               m_lrn_cudnn_desc,
                                                CUDNN_LRN_CROSS_CHANNEL_DIM1,
                                                &one,
                                                this->m_neurons_cudnn_desc,
                                                this->m_activations_d[i],
                                                this->m_neurons_cudnn_desc,
-                                               this->m_prev_error_signal_d[i],
+                                               this->m_prev_error_signal_dv[i],
                                                this->m_prev_neurons_cudnn_desc,
-                                               this->m_prev_activations_d[i],
+                                               this->m_prev_activations_dv[i],
                                                &zero,
                                                this->m_prev_neurons_cudnn_desc,
                                                this->m_error_signal_d[i]));
@@ -223,7 +240,7 @@ class local_response_normalization_layer : public regularizer_layer {
   void fp_compute_cpu() {
 
     // Get local matrices
-    const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
+    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
     Mat& activations_local = this->m_activations_v->Matrix();
 
     // Get matrix buffers
@@ -308,9 +325,9 @@ class local_response_normalization_layer : public regularizer_layer {
   void bp_compute_cpu() {
 
     // Get local matrices
-    const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
+    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
     const Mat& activations_local = this->m_activations_v->LockedMatrix();
-    const Mat& prev_error_signal_local = this->m_prev_error_signal->LockedMatrix();
+    const Mat& prev_error_signal_local = this->m_prev_error_signal_v->LockedMatrix();
     Mat& error_signal_local = this->m_error_signal_v->Matrix();
 
     // Get matrix buffers

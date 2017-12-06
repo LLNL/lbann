@@ -6,7 +6,7 @@
 #include <string>
 #include <sstream>
 #include <fstream>
-#include <string.h>
+#include <cstring>
 #include <cstdlib>
 #include <stdexcept>
 
@@ -50,7 +50,7 @@ void options::init(int argc, char **argv)
   std::string value;
   std::string loadme;
   for (int j=0; j<argc; j++) {
-    m_cmd_line.push_back(argv[j]);
+    m_cmd_line.emplace_back(argv[j]);
     m_parse_opt(argv[j], key, value);
     if (key == "loadme") {
       loadme = value;
@@ -70,9 +70,9 @@ void options::init(int argc, char **argv)
 
 void lower(std::string &s)
 {
-  for (size_t j=0; j<s.size(); j++) {
-    if (isalpha(s[j])) {
-      s[j] = tolower(s[j]);
+  for (char & j : s) {
+    if (isalpha(j)) {
+      j = tolower(j);
     }
   }
 }
@@ -101,7 +101,7 @@ bool options::m_has_opt(std::string option)
 bool options::get_bool(std::string option, bool the_default)
 {
   int result;
-  if (not m_test_int(option, result)) {
+  if (!m_test_int(option, result)) {
     set_option(option, the_default);
     return the_default;
   }
@@ -111,7 +111,7 @@ bool options::get_bool(std::string option, bool the_default)
 bool options::get_bool(std::string option) 
 {
   int result;
-  if (not m_test_int(option, result)) {
+  if (!m_test_int(option, result)) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__
         << " ::options::get_int() - failed to find option: " << option
@@ -125,7 +125,7 @@ bool options::get_bool(std::string option)
 int options::get_int(std::string option, int the_default)
 {
   int result;
-  if (not m_test_int(option, result)) {
+  if (!m_test_int(option, result)) {
     set_option(option, the_default);
     return the_default;
   }
@@ -135,7 +135,7 @@ int options::get_int(std::string option, int the_default)
 int options::get_int(std::string option)
 {
   int result;
-  if (not m_test_int(option, result)) {
+  if (!m_test_int(option, result)) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__
         << " :: options::get_int() - failed to find option: " << option
@@ -147,7 +147,7 @@ int options::get_int(std::string option)
 
 double options::get_double(std::string option, double the_default) {
   double result;
-  if (not m_test_double(option, result)) {
+  if (!m_test_double(option, result)) {
     set_option(option, the_default);
     return the_default;
   }
@@ -157,7 +157,7 @@ double options::get_double(std::string option, double the_default) {
 double options::get_double(std::string option)
 {
   double result;
-  if (not m_test_double(option, result)) {
+  if (!m_test_double(option, result)) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__
         << " :: options::get_double() - failed to find option: " << option
@@ -170,7 +170,7 @@ double options::get_double(std::string option)
 std::string options::get_string(std::string option, std::string the_default)
 {
   std::string result;
-  if (not m_test_string(option, result)) {
+  if (!m_test_string(option, result)) {
     return the_default;
   }  
   return the_default;
@@ -179,7 +179,7 @@ std::string options::get_string(std::string option, std::string the_default)
 std::string options::get_string(std::string option)
 {
   std::string result;
-  if (not m_test_string(option, result)) {
+  if (!m_test_string(option, result)) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__
         << " :: options::get_string() - failed to find option: " << option;
@@ -192,18 +192,18 @@ std::string options::get_string(std::string option)
 
 bool options::m_test_int(std::string option, int &out)
 {
-  if (not m_has_opt(option)) {
+  if (!m_has_opt(option)) {
     return false;
   }
   bool is_good = true;
   std::string val = m_opts[option];
-  for (size_t j=0; j<val.size(); j++) {
-    if (not isdigit(val[j])) {
+  for (char j : val) {
+    if (!isdigit(j)) {
       is_good = false;
       break;
     }
   }
-  if (not is_good) {
+  if (!is_good) {
     return false;
   }
 
@@ -216,12 +216,12 @@ bool options::m_test_int(std::string option, int &out)
 
 bool options::m_test_double(std::string option, double &out)
 {
-  if (not m_has_opt(option)) return false;
+  if (!m_has_opt(option)) return false;
   std::string val(m_opts[option]);
   lower(val);
-  for (size_t j=0; j<val.size(); j++) {
-    if (not (isdigit(val[j]) or val[j] == '-'
-             or tolower(val[j] == 'e') or val[j] == '.')) {
+  for (char j : val) {
+    if (!(isdigit(j) or j == '-'
+             or tolower(j == 'e') or j == '.')) {
       return false;
     }
   }
@@ -234,7 +234,7 @@ bool options::m_test_double(std::string option, double &out)
 
 bool options::m_test_string(std::string option, std::string &out)
 {
-  if (not m_has_opt(option)) return false;
+  if (!m_has_opt(option)) return false;
   out = m_opts[option];
   return true;
 }
@@ -292,7 +292,7 @@ void options::set_option(std::string name, double value) {
 void options::m_parse_file(std::string fn) 
 {
   std::ifstream in(fn.c_str());
-  if (not in.is_open()) {
+  if (!in.is_open()) {
     if (!m_rank) {
       std::stringstream err;
       err << __FILE__ << " " << __LINE__

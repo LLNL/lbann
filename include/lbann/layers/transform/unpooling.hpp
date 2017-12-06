@@ -49,10 +49,9 @@ class unpooling_layer : public transform {
  public:
 
   /// Constructor
-  unpooling_layer(int index,
-                  lbann_comm *comm,
+  unpooling_layer(lbann_comm *comm,
                   pooling_layer<T_layout>* p_layer)
-    : transform(index, comm),
+    : transform(comm),
       m_pooling_layer(p_layer) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "unpooling only supports DATA_PARALLEL");
@@ -72,18 +71,18 @@ class unpooling_layer : public transform {
 
   unpooling_layer(const unpooling_layer&) = default;
   unpooling_layer& operator=(const unpooling_layer&) = default;
-  ~unpooling_layer() = default;
+  ~unpooling_layer() override = default;
 
-  unpooling_layer* copy() const { return new unpooling_layer(*this); }
+  unpooling_layer* copy() const override { return new unpooling_layer(*this); }
 
-  std::string get_name() const { return "unpooling"; }
+  std::string get_type() const override { return "unpooling"; }
 
   virtual inline void initialize_distributed_matrices() {
     transform::initialize_distributed_matrices<T_layout>();
   }
-  virtual data_layout get_data_layout() const { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
-  void setup_dims() {
+  void setup_dims() override {
 
     // Initialize previous neuron tensor dimensions
     transform::setup_dims();
@@ -104,7 +103,7 @@ class unpooling_layer : public transform {
 
   protected:
 
-  void fp_compute() {
+  void fp_compute() override {
     if(this->m_using_gpus) {
       throw lbann_exception("unpooling_layer: GPU version not yet implemented");
     } else {
@@ -112,7 +111,7 @@ class unpooling_layer : public transform {
     }
   }
 
-  void bp_compute() {
+  void bp_compute() override {
     if(this->m_using_gpus) {
       throw lbann_exception("unpooling_layer: GPU version not yet implemented");
     } else {
@@ -126,7 +125,7 @@ class unpooling_layer : public transform {
   void fp_compute_im2col() {
 
     // Get local matrices
-    const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
+    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
     Mat& activations_local = this->m_activations_v->Matrix();
 
     // Get parameters
@@ -181,7 +180,7 @@ class unpooling_layer : public transform {
   void bp_compute_im2col() {
 
     // Get local matrices
-    const Mat& prev_error_signal_local = this->m_prev_error_signal->LockedMatrix();
+    const Mat& prev_error_signal_local = this->m_prev_error_signal_v->LockedMatrix();
     Mat& error_signal_local = this->m_error_signal_v->Matrix();
 
     // Get parameters
@@ -225,6 +224,24 @@ class unpooling_layer : public transform {
 
     }
 
+  }
+
+  std::vector<Layer*> get_layer_pointers() override {
+    std::vector<Layer*> layers = transform::get_layer_pointers();
+    layers.push_back((Layer*) m_pooling_layer);
+    return layers;
+  }
+
+  void set_layer_pointers(std::vector<Layer*> layers) override {
+    m_pooling_layer = dynamic_cast<pooling_layer<T_layout>*>(layers.back());
+    if (m_pooling_layer == nullptr) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ 
+          << " :: unpooling_layer: invalid layer pointer used to set paired pooling layer";
+      throw lbann_exception(err.str());
+    }
+    layers.pop_back();
+    transform::set_layer_pointers(layers);
   }
 
 };

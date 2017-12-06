@@ -23,14 +23,17 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_cv_utils .cpp .hpp - operations related to opencv images
+// cv_utils .cpp .hpp - operations related to opencv images
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/cv_utils.hpp"
+#include "lbann/utils/exception.hpp"
 //#include <iostream>
 
 #ifdef __LIB_OPENCV
 namespace lbann {
+
+const constexpr char* const cv_transform::cv_flip_desc[];
 
 /** The mathematical constant (this is the way to get it in C++). */
 const float cv_transform::pi = static_cast<float>(std::acos(-1));
@@ -90,6 +93,28 @@ cv::Mat cv_utils::copy_buf_to_cvMat(const ::Mat& buf,
 
   _LBANN_DEBUG_MSG("Unknown image depth: " << CV_MAT_DEPTH(Type));
   return cv::Mat();
+}
+
+std::ostream& operator<<(std::ostream& os, const cv_transform& tr) {
+  tr.print(os);
+  return os;
+}
+
+double cv_utils::get_depth_normalizing_factor(const int cv_depth) {
+  switch (cv_depth) {
+    case CV_8U : return depth_normalization<uint8_t>::factor();
+    case CV_8S : return depth_normalization<int8_t>::factor();
+    case CV_16U: return depth_normalization<uint16_t>::factor();
+    case CV_16S: return depth_normalization<int16_t>::factor();
+    case CV_32S: return depth_normalization<int32_t>::factor();
+    case CV_32F: return depth_normalization<float>::factor();
+    case CV_64F: return depth_normalization<double>::factor();
+  }
+
+  std::stringstream err;
+  err << __FILE__ << " " << __LINE__ << " :: cv_utils::get_depth_type: invalid depth code";
+  throw lbann_exception(err.str());
+  return 1.0;
 }
 } // end of namespace lbann
 #endif // __LIB_OPENCV

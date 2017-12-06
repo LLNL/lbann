@@ -155,7 +155,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Initialize network
-    deep_neural_network dnn(mb_size, comm, new objective_functions::mean_squared_error(),optimizer_fac);
+    sequential_model dnn(mb_size, comm, new objective_functions::mean_squared_error(),optimizer_fac);
     std::map<execution_mode, generic_data_reader *> data_readers = {std::make_pair(execution_mode::training,&synthetic_trainset),
                                                            std::make_pair(execution_mode::validation, &synthetic_validation_set),
                                                            std::make_pair(execution_mode::testing, &synthetic_testset)
@@ -167,38 +167,38 @@ int main(int argc, char *argv[]) {
     dnn.add(input_layer);
 
     Layer *encode1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
-                       1, comm,
+                       comm,
                        100, 
                        weight_initialization::glorot_uniform,
                        optimizer_fac->create_optimizer());
     dnn.add(encode1);
     
 
-    Layer *relu1 = new relu_layer<data_layout::MODEL_PARALLEL>(2, comm);
+    Layer *relu1 = new relu_layer<data_layout::MODEL_PARALLEL>(comm);
     dnn.add(relu1);
 
-    Layer *dropout1 = new dropout<data_layout::MODEL_PARALLEL>(3, 
+    Layer *dropout1 = new dropout<data_layout::MODEL_PARALLEL>(
                                                comm,
                                                drop_out);
     dnn.add(dropout1);
 
 
     Layer *decode1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
-                       4, comm,
+                       comm,
                        synthetic_trainset.get_linearized_data_size(),
                        weight_initialization::glorot_uniform,
                        optimizer_fac->create_optimizer());
     dnn.add(decode1);
     
-    Layer *relu2 = new sigmoid_layer<data_layout::MODEL_PARALLEL>(5, comm);
+    Layer *relu2 = new sigmoid_layer<data_layout::MODEL_PARALLEL>(comm);
     dnn.add(relu2);
 
-    Layer *dropout2 = new dropout<data_layout::MODEL_PARALLEL>(6,
+    Layer *dropout2 = new dropout<data_layout::MODEL_PARALLEL>(
                                                comm,
                                                drop_out);
     dnn.add(dropout2);
 
-    Layer* rcl  = new reconstruction_layer<data_layout::MODEL_PARALLEL>(7, comm, 
+    Layer* rcl  = new reconstruction_layer<data_layout::MODEL_PARALLEL>(comm, 
                                                           input_layer);
     dnn.add(rcl);
 

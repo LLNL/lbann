@@ -39,34 +39,33 @@ namespace lbann {
  */
 class data_reader_merge_samples : public generic_compound_data_reader {
  public:
-  data_reader_merge_samples(int batch_size,
-                            std::vector<generic_data_reader*> data_readers,
+  data_reader_merge_samples(std::vector<generic_data_reader*> data_readers,
                             bool shuffle = true);
   data_reader_merge_samples(const data_reader_merge_samples&);
   data_reader_merge_samples& operator=(const data_reader_merge_samples&);
-  ~data_reader_merge_samples();
-  data_reader_merge_samples* copy() const {
+  ~data_reader_merge_samples() override;
+  data_reader_merge_samples* copy() const override {
     return new data_reader_merge_samples(*this);
   }
 
   /// Load subsidiary data readers.
-  void load();
+  void load() override;
 
-  int get_num_labels() const { return m_data_readers[0]->get_num_labels(); }
-  int get_linearized_data_size() const {
+  int get_num_labels() const override { return m_data_readers[0]->get_num_labels(); }
+  int get_linearized_data_size() const override {
     return m_data_readers[0]->get_linearized_data_size();
   }
-  int get_linearized_label_size() const {
+  int get_linearized_label_size() const override {
     return m_data_readers[0]->get_linearized_label_size();
   }
-  const std::vector<int> get_data_dims() const {
+  const std::vector<int> get_data_dims() const override {
     return m_data_readers[0]->get_data_dims();
   }
 
  protected:
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
-  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid);
-  bool fetch_response(Mat& Y, int data_id, int mb_idx, int tid);
+  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;
+  bool fetch_response(Mat& Y, int data_id, int mb_idx, int tid) override;
 
   /// Partial sums of the number of samples in each reader.
   std::vector<int> m_num_samples_psum;

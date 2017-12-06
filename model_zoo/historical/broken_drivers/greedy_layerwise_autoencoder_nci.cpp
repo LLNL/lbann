@@ -25,10 +25,6 @@
 //
 // dnn_nci.cpp - Autoencoder application for NCI
 ////////////////////////////////////////////////////////////////////////////////
-#include "lbann/data_readers/data_reader_nci.hpp"
-#include "lbann/callbacks/callback_dump_weights.hpp"
-#include "lbann/callbacks/callback_dump_activations.hpp"
-#include "lbann/callbacks/callback_dump_gradients.hpp"
 #include "lbann/lbann.hpp"
 
 using namespace std;
@@ -118,12 +114,14 @@ int main(int argc, char *argv[]) {
     data_reader_nci nci_validation_set(nci_trainset); // Clone the training set object
     nci_validation_set.use_unused_index_set();
     if (comm->am_world_master()) {
+    /*
       size_t num_train = nci_trainset.getNumData();
       size_t num_validate = nci_trainset.getNumData();
       double validate_percent = num_validate / (num_train+num_validate)*100.0;
       double train_percent = num_train / (num_train+num_validate)*100.0;
       cout << "Training using " << train_percent << "% of the training data set, which is " << nci_trainset.getNumData() << " samples." << endl
            << "Validating training using " << validate_percent << "% of the training data set, which is " << nci_validation_set.getNumData() << " samples." << endl;
+    */
     }
 
 
@@ -161,7 +159,7 @@ int main(int argc, char *argv[]) {
 
     Layer *input_layer = new input_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(comm, parallel_io, data_readers);
     gla.add(input_layer);
-    Layer *fc1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(1,
+    Layer *fc1 = new fully_connected_layer<data_layout::MODEL_PARALLEL>(
                                                         nci_trainset.get_linearized_data_size(), 500,trainParams.MBSize,
                                                         weight_initialization::glorot_uniform, comm, optimizer_fac->create_optimizer());
     gla.add(fc1);
@@ -190,6 +188,15 @@ int main(int argc, char *argv[]) {
       cout << "\tDump Dir : " << trainParams.DumpDir << endl;
     }
 
+    if (comm->am_world_master()) {
+      optimizer *o = optimizer_fac->create_optimizer();
+      cout << "\nOptimizer:\n" << o->get_description() << endl << endl;
+      delete o;
+      std::vector<Layer *>& layers = gla.get_layers();
+      for (size_t h=0; h<layers.size(); h++) {
+        std::cout << h << " " << layers[h]->get_description() << endl;
+      }
+    }
 
 
     gla.setup();
@@ -210,7 +217,7 @@ int main(int argc, char *argv[]) {
         std::cout << "\n(Pre) train autoencoder - unsupersived training, global epoch [ " << i << " ]" << std::endl;
         std::cout << "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" << std::endl;
       }
-      gla.train(1,true);
+      gla.train(1);
       gla.reset_phase();
     }
 

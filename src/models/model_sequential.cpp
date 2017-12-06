@@ -28,81 +28,51 @@
 
 #include "lbann/models/model_sequential.hpp"
 #include "lbann/layers/io/io_layer.hpp"
+#include "lbann/layers/io/input/input_layer.hpp"
+#include "lbann/layers/io/target/target_layer.hpp"
 #include "lbann/io/persist.hpp"
 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <iomanip>
 
 #include "mpi.h"
 
 namespace lbann {
 
-sequential_model::sequential_model(int mini_batch_size,
-                                   lbann_comm *comm,
-                                   objective_functions::objective_function *obj_fn,
-                                   optimizer_factory *optimizer_fac)
-  : model(comm, mini_batch_size, obj_fn, optimizer_fac) {}
+sequential_model::sequential_model(lbann_comm *comm,
+                                   int mini_batch_size,
+                                   objective_function *obj_fn,
+                                   optimizer* default_optimizer)
+  : model(comm, mini_batch_size, obj_fn, default_optimizer) {}
 
-sequential_model::sequential_model(const sequential_model& other) :
-  model(other) {
-  // First copy over the layers.
-  for (const auto& l : other.m_layers) {
-    m_layers.push_back(l->copy());
-  }
-  // Update pointers for each layer.
+void sequential_model::setup() {
+
+  // Setup each layer
   for (size_t l = 0; l < m_layers.size(); ++l) {
-    m_layers[l]->set_neural_network_model(this);
+    m_layers[l]->set_model(this);
     if (l > 0) {
-      m_layers[l]->get_parent_layers().front() = m_layers[l-1];
+      m_layers[l]->add_parent_layer(m_layers[l-1]);
     }
     if (l < m_layers.size() - 1) {
-      m_layers[l]->get_child_layers().front() = m_layers[l+1];
+      m_layers[l]->add_child_layer(m_layers[l+1]);
+    }
+    m_layers[l]->setup();
+    m_layers[l]->check_setup();
+    if (m_comm->am_world_master()) {
+      std::cout << print_layer_description(m_layers[l]) << std::endl;
     }
   }
-  // Update target layer data readers.
-  io_layer *input = dynamic_cast<io_layer*>(m_layers[0]);
-  io_layer *target = dynamic_cast<io_layer*>(m_layers.back());
-  if (input && target) {
-    target->set_data_readers_from_layer(input);
-  }
+
+  // Setup objective function
+  m_objective_function->setup(*this);
+
+  // Set up callbacks
+  setup_callbacks();
 }
 
-sequential_model& sequential_model::operator=(const sequential_model& other) {
-  model::operator=(other);
-  m_layers.clear();
-  // First copy over the layers.
-  for (const auto& l : other.m_layers) {
-    m_layers.push_back(l->copy());
-  }
-  // Update pointers for each layer.
-  for (size_t l = 0; l < m_layers.size(); ++l) {
-    m_layers[l]->set_neural_network_model(this);
-    if (l > 0) {
-      m_layers[l]->get_parent_layers().front() = m_layers[l-1];
-    }
-    if (l < m_layers.size() - 1) {
-      m_layers[l]->get_child_layers().front() = m_layers[l+1];
-    }
-  }
-  // Update target layer data readers.
-  io_layer *input = dynamic_cast<io_layer*>(m_layers[0]);
-  io_layer *target = dynamic_cast<io_layer*>(m_layers.back());
-  if (input && target) {
-    target->set_data_readers_from_layer(input);
-  }
-  return *this;
-}
-
-sequential_model::~sequential_model() {
-  // Free layers
-  for (size_t l = 0; l < m_layers.size(); ++l) {
-    if (m_layers[l])
-      delete m_layers[l];
-  }
-}
+#if 0
 
 bool sequential_model::save_to_file(const string file_dir) {
   // get our directory name
@@ -280,80 +250,6 @@ bool sequential_model::load_from_checkpoint_shared(persist& p) {
 
   return true;
 }
-
-int sequential_model::num_previous_neurons() {
-  if (m_layers.size() == 0) {
-    return -1;
-  }
-  Layer *prev_layer = m_layers.back();
-  return prev_layer->get_num_neurons();
-}
-
-int sequential_model::add(Layer *new_layer) {
-  const uint layer_index = m_layers.size();
-  new_layer->set_index(layer_index);
-  m_layers.push_back(new_layer);
-  return layer_index;
-}
-
-void sequential_model::remove(int index) {
-  if (m_layers[index])
-    delete m_layers[index];
-  m_layers.erase(m_layers.begin()+index);
-}
-
-void sequential_model::insert(int index, Layer *new_layer) {
-  m_layers.insert(m_layers.begin()+index, new_layer);
-}
-
-Layer *sequential_model::swap(int index, Layer *new_layer) {
-  Layer *tmp = m_layers[index];
-  m_layers[index] = new_layer;
-  return tmp;
-}
-
-void sequential_model::setup(int start_index, int end_index) {
-  if(end_index <= 0) {
-    end_index = m_layers.size();
-  }
-
-  // Setup each layer
-  for (int l=start_index; l<end_index; ++l) {
-    m_layers[l]->set_neural_network_model(this); /// Provide a reverse point from each layer to the model
-    const Layer* prev_layer = l > 0 ? m_layers[l-1] : nullptr;
-    const Layer* next_layer = l < end_index-1 ? m_layers[l+1] : nullptr;
-    m_layers[l]->add_parent_layer(prev_layer);
-    m_layers[l]->add_child_layer(next_layer);
-    m_layers[l]->setup();
-    m_layers[l]->check_setup();
-    m_layers[l]->set_index(l);
-    if (m_comm->am_world_master()) {
-      string description = m_layers[l]->get_description();
-      std::cout << std::setw(3) << l << ":[" << std::setw(18) << m_layers[l]->get_name() <<  "] Set up a layer with input " << std::setw(7) << m_layers[l]->get_num_prev_neurons() << " and " << std::setw(7) << m_layers[l]->get_num_neurons() << " neurons.";
-      std::string s = m_layers[l]->get_topo_description();
-      if(s != "") {
-        std::cout << " (" << s << ")";
-      }
-      std::cout << std::endl;
-    }
-  }
-
-  // Set up callbacks
-  setup_callbacks();
-}
-
-bool sequential_model::at_epoch_start() {
-  // use mini batch index in data reader to signify start of epoch
-  io_layer *input = (io_layer *) m_layers[0];
-  bool flag = input->at_new_epoch();
-  return flag;
-}
-
-/// Check if the model has a valid data set for the execution mode
-bool sequential_model::is_execution_mode_valid(execution_mode mode) {
-  io_layer *input = (io_layer *) m_layers[0];
-  bool flag = input->is_execution_mode_valid(mode);
-  return flag;
-}
+#endif // 0
 
 }  // namespace lbann

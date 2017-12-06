@@ -23,68 +23,38 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_mnist .hpp .cpp - generic_data_reader class for MNIST dataset
+// mnist_reader .hpp .cpp - data reader class for MNIST dataset
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_DATA_READER_MNIST_HPP
 #define LBANN_DATA_READER_MNIST_HPP
 
-#include "data_reader.hpp"
+#include "data_reader_image.hpp"
 #include "image_preprocessor.hpp"
 
 namespace lbann {
 
-class mnist_reader : public generic_data_reader {
+class mnist_reader : public image_data_reader {
  public:
-  mnist_reader(int batchSize, bool shuffle);
-  mnist_reader(int batchSize);
+  mnist_reader(bool shuffle = true);
+  mnist_reader();
   mnist_reader(const mnist_reader&) = default;
   mnist_reader& operator=(const mnist_reader&) = default;
-  ~mnist_reader() {}
-  mnist_reader* copy() const { return new mnist_reader(*this); }
+  ~mnist_reader() override {}
+  mnist_reader* copy() const override { return new mnist_reader(*this); }
 
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
-  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid);
-
-  int get_num_labels() const {
-    return m_num_labels;
-  }
+  void set_input_params(const int, const int, const int, const int) override { set_defaults(); }
 
   // MNIST-specific functions
-  void load();
+  void load() override;
 
-  int get_image_width() const {
-    return m_image_width;
-  }
-  int get_image_height() const {
-    return m_image_height;
-  }
-  int get_linearized_data_size() const {
-    return m_image_width * m_image_height;
-  }
-  int get_linearized_label_size() const {
-    return m_num_labels;
-  }
-  const std::vector<int> get_data_dims() const {
-    return {1, m_image_height, m_image_width};
-  }
-
-
-  //don't need this, since default ctor is adequate; eliminating
-  //explict implementation reduces possible bugs
-  //mnist_reader& operator=(const mnist_reader& source);
-
-  void save_image(Mat& pixels, const std::string filename, bool do_scale = true) {
-    internal_save_image(pixels, filename, m_image_height, m_image_width, 1,
-                        do_scale);
-  }
+ protected:
+  void set_defaults() override;
+  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;
 
  private:
-
   std::vector<std::vector<unsigned char>> m_image_data;
-  int m_image_width;
-  int m_image_height;
-  int m_num_labels;
 };
 
 }  // namespace lbann

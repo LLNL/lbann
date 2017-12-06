@@ -1,5 +1,7 @@
+add_subdirectory(loss_functions)
+add_subdirectory(weight_regularization)
+
 add_sources(
   objective_function.cpp
-  cross_entropy.cpp
-  mean_squared_error.cpp
+  objective_function_term.cpp
 )

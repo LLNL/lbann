@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_csv .hpp .cpp - generic_data_reader class for CSV files
+// data_reader_csv .hpp .cpp - generic_data_reader class for CSV files
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_DATA_READER_CSV_HPP
@@ -46,12 +46,12 @@ class csv_reader : public generic_data_reader {
   /**
    * This defaults to using the last column for the label/response.
    */
-  csv_reader(int batch_size, bool shuffle = true);
+  csv_reader(bool shuffle = true);
   csv_reader(const csv_reader&);
   csv_reader& operator=(const csv_reader&);
-  ~csv_reader();
+  ~csv_reader() override;
 
-  csv_reader* copy() const { return new csv_reader(*this); }
+  csv_reader* copy() const override { return new csv_reader(*this); }
 
   /// Set the label column.
   void set_label_col(int col) { m_label_col = col; }
@@ -98,10 +98,10 @@ class csv_reader : public generic_data_reader {
   /**
    * This parses the header of the CSV to determine column information.
    */
-  void load();
+  void load() override;
 
-  int get_num_labels() const { return m_num_labels; }
-  int get_linearized_data_size() const {
+  int get_num_labels() const override { return m_num_labels; }
+  int get_linearized_data_size() const override {
     // Account for label and skipped columns.
     if (m_label_col < m_skip_cols) {
       return m_num_cols - m_skip_cols;
@@ -109,10 +109,10 @@ class csv_reader : public generic_data_reader {
       return m_num_cols - 1 - m_skip_cols;
     }
   }
-  int get_linearized_label_size() const {
+  int get_linearized_label_size() const override {
     return m_num_labels;
   }
-  const std::vector<int> get_data_dims() const {
+  const std::vector<int> get_data_dims() const override {
     return {get_linearized_data_size()};
   }
 
@@ -121,11 +121,11 @@ class csv_reader : public generic_data_reader {
    * Fetch the data associated with data_id.
    * Note this does *not* normalize the data.
    */
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
+  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
   /// Fetch the label associated with data_id.
-  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid);
+  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;
   /// Fetch the response associated with data_id.
-  bool fetch_response(Mat& Y, int data_id, int mb_idx, int tid);
+  bool fetch_response(Mat& Y, int data_id, int mb_idx, int tid) override;
 
   /** Return a raw line from the CSV file. */
   std::string fetch_raw_line(int data_id);

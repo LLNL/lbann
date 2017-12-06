@@ -83,6 +83,8 @@ class lbann_summary {
   void sum_reduce_scalar(const std::string tag, DataType s, int step);
   /** Report a histogram of the values in mat. */
   void reduce_histogram(const std::string tag, const AbsDistMat& mat, int step);
+  /** Report the (squared) 2-norm of mat. */
+  void reduce_2norm(const std::string tag, const AbsDistMat& mat, int step);
 
   /**
    * Write all summaries out.
@@ -172,7 +174,11 @@ class lbann_summary {
   /** Compute the sum of elements in mat. */
   DataType local_sum(const Mat& mat) const;
   /** Compute the sum of square of elements in mat. */
-  DataType local_sqsum(const Mat& mat) const;
+  void local_sum_sqsum(const Mat& mat, DataType& sum, DataType& sqsum) const;
+  /** Compute the minimum element in mat. */
+  DataType local_min(const Mat& mat) const;
+  /** Compute the maximum element in mat. */
+  DataType local_max(const Mat& mat) const;
   /** Prepend "model<model>/" to tag. */
   std::string prepend_model(const std::string tag, int model) const;
   /** Gather and write out a scalar summary for each model. */
@@ -196,6 +202,7 @@ class lbann_summary {
   void reduce_scalar(const std::string tag, DataType s, int step) {}
   void sum_reduce_scalar(const std::string tag, DataType s, int step) {}
   void reduce_histogram(const std::string tag, const AbsDistMat& mat, int step) {}
+  void reduce_2norm(const std::string tag, const AbsDistMat& mat, int step) {}
   void flush() {}
 };
 

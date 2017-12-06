@@ -77,15 +77,15 @@ void lbann_summary::reduce_mean(const std::string tag,
 void lbann_summary::reduce_min(const std::string tag,
                                const AbsDistMat& mat,
                                int step) {
-  DataType local_min = El::Min(mat.LockedMatrix());
-  m_pending_mins.emplace_back(tag, step, local_min);
+  DataType mat_local_min = local_min(mat.LockedMatrix());
+  m_pending_mins.emplace_back(tag, step, mat_local_min);
 }
 
 void lbann_summary::reduce_max(const std::string tag,
                                const AbsDistMat& mat,
                                int step) {
-  DataType local_max = El::Max(mat.LockedMatrix());
-  m_pending_maxes.emplace_back(tag, step, local_max);
+  DataType mat_local_max = local_max(mat.LockedMatrix());
+  m_pending_maxes.emplace_back(tag, step, mat_local_max);
 }
 
 void lbann_summary::reduce_stdev(const std::string tag,
@@ -100,16 +100,14 @@ void lbann_summary::reduce_stdev(const std::string tag,
   if(mat_format.colDist == El::STAR && mat_format.rowDist == El::STAR) {
     // Compute local sums on master process if matrix is Star,Star
     if(m_comm->am_model_master()) {
-      sum = local_sum(mat.LockedMatrix());
-      sqsum = local_sqsum(mat.LockedMatrix());
+      local_sum_sqsum(mat.LockedMatrix(), sum, sqsum);
     }
   } else {
     // Compute local sums on all processes if matrix is in MC,MR;
     // Star,VC; or similar format
     // TODO: implement for matrices in Circ,Circ; MC,Star; or similar
     // formats
-    sum = local_sum(mat.LockedMatrix());
-    sqsum = local_sqsum(mat.LockedMatrix());
+    local_sum_sqsum(mat.LockedMatrix(), sum, sqsum);
   }
 
   // Add local sums to list of pending stdevs.
@@ -133,8 +131,8 @@ void lbann_summary::sum_reduce_scalar(const std::string tag,
 void lbann_summary::reduce_histogram(const std::string tag,
                                      const AbsDistMat& mat,
                                      int step) {
-  DataType local_min = El::Min(mat.LockedMatrix());
-  DataType local_max = El::Max(mat.LockedMatrix());
+  DataType mat_local_min = local_min(mat.LockedMatrix());
+  DataType mat_local_max = local_max(mat.LockedMatrix());
   // Local sum and squared sum
   DataType sum = 0.0f;
   DataType sqsum = 0.0f;
@@ -143,16 +141,14 @@ void lbann_summary::reduce_histogram(const std::string tag,
   if(mat_format.colDist == El::STAR && mat_format.rowDist == El::STAR) {
     // Compute local sums on master process if matrix is Star,Star
     if(m_comm->am_model_master()) {
-      sum = local_sum(mat.LockedMatrix());
-      sqsum = local_sqsum(mat.LockedMatrix());
+      local_sum_sqsum(mat.LockedMatrix(), sum, sqsum);
     }
   } else {
     // Compute local sums on all processes if matrix is in MC,MR;
     // Star,VC; or similar format
     // TODO: implement for matrices in Circ,Circ; MC,Star; or similar
     // formats
-    sum = local_sum(mat.LockedMatrix());
-    sqsum = local_sqsum(mat.LockedMatrix());
+    local_sum_sqsum(mat.LockedMatrix(), sum, sqsum);
   }
   // Compute local buckets.
   std::vector<float> buckets(m_histogram_buckets.size(), 0.0f);
@@ -171,9 +167,16 @@ void lbann_summary::reduce_histogram(const std::string tag,
   }
   // Add to list of pending histograms.
   m_pending_histograms.emplace_back(
-    tag, step, buckets, local_min, local_max, mat.Height() * mat.Width(),
+    tag, step, buckets, mat_local_min, mat_local_max, mat.Height() * mat.Width(),
     sum, sqsum);
   // TODO: Support histograms on multiple models.
+}
+
+void lbann_summary::reduce_2norm(const std::string tag, const AbsDistMat& mat,
+                                 int step) {
+  // Using a squared 2-norm so that we can just sum this.
+  DataType local_norm = El::Nrm2(mat.LockedMatrix());
+  sum_reduce_scalar(tag, local_norm * local_norm, step);
 }
 
 void lbann_summary::flush() {
@@ -198,7 +201,7 @@ void lbann_summary::flush_means() {
     local_sums.push_back(op.local);
   }
   if (m_comm->am_model_master()) {
-    std::vector<DataType> global_sums(m_pending_means.size());
+    std::vector<DataType> global_sums(local_sums.size());
     m_comm->model_reduce(local_sums.data(), local_sums.size(),
                          global_sums.data());
     // Compute the means in-place.
@@ -222,7 +225,7 @@ void lbann_summary::flush_mins() {
     local_mins.push_back(op.local);
   }
   if (m_comm->am_model_master()) {
-    std::vector<DataType> global_mins(m_pending_mins.size());
+    std::vector<DataType> global_mins(local_mins.size());
     m_comm->model_reduce(local_mins.data(), local_mins.size(),
                          global_mins.data(), El::mpi::MIN);
     gather_scalar_summary(m_pending_mins, global_mins);
@@ -242,7 +245,7 @@ void lbann_summary::flush_maxes() {
     local_maxes.push_back(op.local);
   }
   if (m_comm->am_model_master()) {
-    std::vector<DataType> global_maxes(m_pending_maxes.size());
+    std::vector<DataType> global_maxes(local_maxes.size());
     m_comm->model_reduce(local_maxes.data(), local_maxes.size(),
                          global_maxes.data(), El::mpi::MAX);
     gather_scalar_summary(m_pending_maxes, global_maxes);
@@ -269,8 +272,8 @@ void lbann_summary::flush_stdevs() {
     // The n-1 is to use an unbiased variance estimate.
     // This unrolls the usual formulation of standard deviation some, to avoid
     // global operations when pushing the operation.
-    std::vector<DataType> global_sums(m_pending_stdevs.size());
-    std::vector<DataType> global_sqsums(m_pending_stdevs.size());
+    std::vector<DataType> global_sums(local_sums.size());
+    std::vector<DataType> global_sqsums(local_sqsums.size());
     m_comm->model_reduce(local_sums.data(), local_sums.size(),
                          global_sums.data());
     m_comm->model_reduce(local_sqsums.data(), local_sqsums.size(),
@@ -315,7 +318,7 @@ void lbann_summary::flush_sum_scalars() {
     local_sums.push_back(op.local);
   }
   if (m_comm->am_model_master()) {
-    std::vector<DataType> global_sums(m_pending_sum_scalars.size());
+    std::vector<DataType> global_sums(local_sums.size());
     m_comm->model_reduce(local_sums.data(), local_sums.size(),
                          global_sums.data());
     gather_scalar_summary(m_pending_sum_scalars, global_sums);
@@ -343,10 +346,10 @@ void lbann_summary::flush_histograms() {
     buckets.insert(buckets.end(), op.buckets.begin(), op.buckets.end());
   }
   if (m_comm->am_model_master()) {
-    std::vector<DataType> model_mins(m_pending_histograms.size());
-    std::vector<DataType> model_maxes(m_pending_histograms.size());
-    std::vector<DataType> model_sums(m_pending_histograms.size());
-    std::vector<DataType> model_sqsums(m_pending_histograms.size());
+    std::vector<DataType> model_mins(local_mins.size());
+    std::vector<DataType> model_maxes(local_maxes.size());
+    std::vector<DataType> model_sums(local_sums.size());
+    std::vector<DataType> model_sqsums(local_sqsums.size());
     std::vector<float> model_buckets(buckets.size());
     m_comm->model_reduce(local_mins.data(), local_mins.size(),
                          model_mins.data(), El::mpi::MIN);
@@ -421,33 +424,101 @@ void lbann_summary::flush_histograms() {
 
 DataType lbann_summary::local_sum(const Mat& mat) const {
   // Note there are more numerically stable ways to compute a sum.
-  DataType sum = 0.0;
-  const int height = mat.Height();
-  const int width = mat.Width();
-  const int ldim = mat.LDim();
+  const El::Int height = mat.Height();
+  const El::Int width = mat.Width();
+  const El::Int ldim = mat.LDim();
   const DataType * __restrict__ mat_buf = mat.LockedBuffer();
-  for (int row = 0; row < height; ++row) {
-    for (int col = 0; col < width; ++col) {
-      sum += mat_buf[row + col * ldim];
+  auto sum = DataType(0);
+  if (ldim == height) {
+    const El::Int size = height*width;
+#pragma omp parallel for reduction(+:sum)
+    for (El::Int i = 0; i < size; ++i) {
+      sum += mat_buf[i];
+    }
+  } else {
+#pragma omp parallel for reduction(+:sum) collapse(2)
+    for (El::Int row = 0; row < height; ++row) {
+      for (El::Int col = 0; col < width; ++col) {
+        sum += mat_buf[row + col * ldim];
+      }
     }
   }
   return sum;
 }
 
-DataType lbann_summary::local_sqsum(const Mat& mat) const {
+void lbann_summary::local_sum_sqsum(
+  const Mat& mat, DataType& sum, DataType& sqsum) const {
   // Note there are more numerically stable ways to compute a sum.
-  DataType sqsum = 0.0;
-  const int height = mat.Height();
-  const int width = mat.Width();
-  const int ldim = mat.LDim();
+  const El::Int height = mat.Height();
+  const El::Int width = mat.Width();
+  const El::Int ldim = mat.LDim();
   const DataType * __restrict__ mat_buf = mat.LockedBuffer();
-  for (int row = 0; row < height; ++row) {
-    for (int col = 0; col < width; ++col) {
-      const int pos = row + col * ldim;
-      sqsum += mat_buf[pos] * mat_buf[pos];
+  sum = DataType(0);
+  sqsum = DataType(0);
+  if (ldim == height) {
+    const El::Int size = height*width;
+#pragma omp parallel for reduction(+:sum,sqsum)
+    for (El::Int i = 0; i < size; ++i) {
+      const DataType val = mat_buf[i];
+      sum += val;
+      sqsum += val*val;
+    }
+  } else {
+#pragma omp parallel for reduction(+:sum,sqsum) collapse(2)
+    for (El::Int row = 0; row < height; ++row) {
+      for (El::Int col = 0; col < width; ++col) {
+        const DataType val = mat_buf[row + col*ldim];
+        sum += val;
+        sqsum += val * val;
+      }
     }
   }
-  return sqsum;
+}
+
+DataType lbann_summary::local_min(const Mat& mat) const {
+  const El::Int height = mat.Height();
+  const El::Int width = mat.Width();
+  const El::Int ldim = mat.LDim();
+  const DataType * __restrict__ mat_buf = mat.LockedBuffer();
+  auto min = std::numeric_limits<DataType>::max();
+  if (ldim == height) {
+    const El::Int size = height*width;
+#pragma omp parallel for reduction(min:min)
+    for (El::Int i = 0; i < size; ++i) {
+      min = std::min(min, mat_buf[i]);
+    }
+  } else {
+#pragma omp parallel for reduction(min:min) collapse(2)
+    for (El::Int row = 0; row < height; ++row) {
+      for (El::Int col = 0; col < width; ++col) {
+        min = std::min(min, mat_buf[row + col*ldim]);
+      }
+    }
+  }
+  return min;
+}
+
+DataType lbann_summary::local_max(const Mat& mat) const {
+  const El::Int height = mat.Height();
+  const El::Int width = mat.Width();
+  const El::Int ldim = mat.LDim();
+  const DataType * __restrict__ mat_buf = mat.LockedBuffer();
+  auto max = std::numeric_limits<DataType>::min();
+  if (ldim == height) {
+    const El::Int size = height*width;
+#pragma omp parallel for reduction(max:max)
+    for (El::Int i = 0; i < size; ++i) {
+      max = std::max(max, mat_buf[i]);
+    }
+  } else {
+#pragma omp parallel for reduction(max:max) collapse(2)
+    for (El::Int row = 0; row < height; ++row) {
+      for (El::Int col = 0; col < width; ++col) {
+        max = std::max(max, mat_buf[row + col*ldim]);
+      }
+    }
+  }
+  return max;
 }
 
 std::string lbann_summary::prepend_model(const std::string tag,

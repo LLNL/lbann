@@ -23,19 +23,19 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_numpy_reader .hpp .cpp
+// data_reader_numpy .hpp .cpp - generic_data_reader class for numpy dataset
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_numpy.hpp"
-#include <stdio.h>
+#include <cstdio>
 #include <string>
 #include <unordered_set>
 #include <cnpy.h>
 
 namespace lbann {
 
-numpy_reader::numpy_reader(int batch_size, bool shuffle)
-  : generic_data_reader(batch_size, shuffle), m_num_samples(0),
+numpy_reader::numpy_reader(bool shuffle)
+  : generic_data_reader(shuffle), m_num_samples(0),
     m_num_features(0) {}
 
 numpy_reader::numpy_reader(const numpy_reader& other) :
@@ -169,7 +169,7 @@ bool numpy_reader::fetch_response(Mat& Y, int data_id, int mb_idx, int tid) {
   if (!m_has_responses) {
     throw lbann_exception("numpy_reader: do not have responses");
   }
-  DataType response = DataType(0);
+  auto response = DataType(0);
   if (m_data.word_size == 4) {
     float *data = m_data.data<float>() + data_id*(m_num_features+1);
     response = (DataType) data[m_num_features+1];
