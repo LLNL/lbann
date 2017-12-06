@@ -88,7 +88,6 @@ model::model(const model& other) :
   m_objective_function->set_model(this);
   for (const auto& metric : other.m_metrics) {
     metrics::metric *m_copy = metric->copy();
-    m_copy->m_model = this;
     m_metrics.push_back(m_copy);
   }
   for (const auto& cb : other.m_callbacks) {
@@ -206,7 +205,6 @@ model& model::operator=(const model& other) {
   }
   for (const auto& metric : other.m_metrics) {
     metrics::metric *m_copy = metric->copy();
-    m_copy->m_model = this;
     m_metrics.push_back(m_copy);
   }
   for (const auto& cb : other.m_callbacks) {
@@ -428,11 +426,13 @@ void model::train(int num_epochs) {
     setup_epoch(execution_mode::training);
     ++m_current_epoch;
 
-    // Train on mini-batches and evalaute on validation set
+    // Train on mini-batches
     do_epoch_begin_cbs();
     while (!train_mini_batch()) {}
-    evaluate(execution_mode::validation);
     do_epoch_end_cbs();
+
+    // Evaluate on validation set
+    evaluate(execution_mode::validation);
 
   }
   do_train_end_cbs();
@@ -440,9 +440,14 @@ void model::train(int num_epochs) {
 
 void model::setup_epoch(execution_mode mode) {
   set_execution_mode(mode);
+  m_objective_function->set_model(this);
   m_objective_function->clear_history();
   for (auto&& m : m_metrics) {
+    m->set_model(this);
     m->reset_metric();
+  }
+  for (auto&& l : m_layers) {
+    l->set_model(this);
   }
 }
 
