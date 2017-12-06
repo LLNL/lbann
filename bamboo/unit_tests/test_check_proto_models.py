@@ -1,10 +1,10 @@
 import sys, os, subprocess, re, pytest
 
-def test_models():
+def test_models(exe):
     lbann_dir = subprocess.check_output('git rev-parse --show-toplevel'.split()).strip()
     hostname = subprocess.check_output('hostname'.split()).strip()
     host = re.sub("\d+", "", hostname)
-    exe = lbann_dir + '/../LBANN-NIGHTD-BDE/build/' + host + '.llnl.gov/model_zoo/lbann'
+    #exe = lbann_dir + '/../LBANN-NIGHTD-BDE/build/' + host + '.llnl.gov/model_zoo/lbann'
     opt = lbann_dir + '/model_zoo/optimizers/opt_adagrad.prototext'
     defective_models = []
     for subdir, dirs, files in os.walk(lbann_dir + '/model_zoo/models/'):
