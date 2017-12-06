@@ -1,0 +1,33 @@
+#ifndef LBANN_CONFIG_HPP__
+#define LBANN_CONFIG_HPP__
+
+/* Version string for LBANN */
+#define LBANN_VERSION @LBANN_VERSION@
+
+/* Defined if LBANN is in debug mode */
+#cmakedefine LBANN_DEBUG
+
+/* Defined if LBANN is linked to HWLOC */
+#cmakedefine LBANN_TOPO_AWARE
+
+/* Defined if LBANN uses CUDA-enabled softmax */
+#cmakedefine LBANN_SOFTMAX_CUDA
+
+#cmakedefine LBANN_SEQUENTIAL_CONSISTENCY
+#cmakedefine LBANN_PROCDET_DROPOUT
+#cmakedefine LBANN_PARALLEL_RANDOM_MATRICES
+
+#cmakedefine LBANN_NVPROF
+
+#cmakedefine __LIB_CUDNN
+#cmakedefine __LIB_CUDA
+
+#cmakedefine LBANN_HAS_OPENCV
+#cmakedefine LBANN_HAS_TBINF
+
+namespace lbann
+{
+using DataType = @LBANN_DATATYPE@;
+}// namespace lbann
+
+#endif /* LBANN_CONFIG_H__ */

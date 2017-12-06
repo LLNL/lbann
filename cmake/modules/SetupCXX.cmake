@@ -1,0 +1,101 @@
+# This sets up all of the proper compiler information, including some
+# custom flags. <Tom's skeptical face>
+
+include(CheckCXXCompilerFlag)
+
+# MACRO LBANN_CHECK_AND_APPEND_FLAG
+#
+# Purpose: checks that all flags are valid and appends them to the
+#   given list. Valid means that the compiler does not throw an error
+#   upon encountering the flag.
+#
+# Arguments:
+#   VAR The list of current flags
+#   ARGN The flags to check
+#
+# Note: If flag is not valid, it is not appended.
+macro(lbann_check_and_append_flag VAR)
+  foreach(flag ${ARGN})
+    string(REPLACE "-" "_" _CLEAN_FLAG "${flag}")
+
+    set(CMAKE_REQUIRED_LIBRARIES "${flag}")
+    check_cxx_compiler_flag("${flag}" FLAG_${_CLEAN_FLAG}_OK)
+    unset(CMAKE_REQUIRED_LIBRARIES)
+
+    if (FLAG_${_CLEAN_FLAG}_OK)
+      set(MY_VAR "${MY_VAR} ${flag}")
+    endif ()
+  endforeach()
+endmacro()
+
+# Temporary workaround to force CMake to recognize the XL
+# compiler. The latest beta XL compiler is recognized as Clang.
+if (CMAKE_CXX_COMPILER MATCHES "xlc" AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  set(CMAKE_CXX_COMPILER_ID "XL")
+endif ()
+
+################################################################
+# Check Compiler versions
+################################################################
+
+execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion OUTPUT_VARIABLE CXX_VERSION)
+
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+   if (NOT (CXX_VERSION VERSION_GREATER 4.9 OR CXX_VERSION VERSION_EQUAL 4.9))
+     message(FATAL_ERROR "LBANN & Elemental requires G++ Version >= 4.9")
+   endif ()
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
+   if (NOT (CXX_VERSION VERSION_GREATER 16.0 OR CXX_VERSION VERSION_EQUAL 16.0))
+     message(FATAL_ERROR "LBANN & Elemental requires icpc Version >= 16.0")
+   endif ()
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+   if (NOT (CXX_VERSION VERSION_GREATER 3.5 OR CXX_VERSION VERSION_EQUAL 3.5))
+     message(FATAL_ERROR "LBANN & Elemental requires clang Version >= 3.5")
+   endif ()
+   if (CMAKE_BUILD_TYPE MATCHES Debug)
+     lbann_check_and_append_flag(CMAKE_CXX_FLAGS
+       -fsanitize=address -fno-omit-frame-pointer -fsanitize-recover=address)
+   else()
+     lbann_check_and_append_flag(CMAKE_CXX_FLAGS -fno-omit-frame-pointer)
+   endif ()
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "XL")
+  # Version requirement for xlc++? The latest compiler on ray is 14.1.0
+  if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 14.1.0)
+    message(WARNING "LBANN & Elemental may not work with xlc++ Version < 14.1.0")
+  endif ()
+else()
+   message(FATAL_ERROR "Unsupported compiler: Unknown compiler vendor (${CMAKE_CXX_COMPILER_ID})")
+endif ()
+
+################################################################
+# Muck with flags
+################################################################
+
+# Initialize C++ flags
+lbann_check_and_append_flag(CMAKE_CXX_FLAGS
+  -fPIC -g -Wall -Wextra -Wno-unused-parameter -Wnon-virtual-dtor -Wshadow)
+
+# Disable all optimization in debug for better viewing under debuggers (cmake already adds -g)
+lbann_check_and_append_flag(CMAKE_CXX_FLAGS_DEBUG -O0)
+
+# Some behavior is dependent on the compiler version.
+if (NOT CMAKE_CXX_COMPILER_VERSION)
+  execute_process(
+    COMMAND ${CMAKE_CXX_COMPILER} -dumpversion
+    OUTPUT_VARIABLE CXX_VERSION)
+else ()
+  set(CXX_VERSION "${CMAKE_CXX_COMPILER_VERSION}")
+endif ()
+
+# Special handling if we're compiling with Clang's address sanitizer
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+   if (NOT (CXX_VERSION VERSION_GREATER 3.5 OR CXX_VERSION VERSION_EQUAL 3.5))
+     message(FATAL_ERROR "LBANN & Elemental requires clang Version >= 3.5")
+   endif ()
+   if (CMAKE_BUILD_TYPE MATCHES Debug)
+     lbann_check_and_append_flag(CMAKE_CXX_FLAGS
+       -fsanitize=address -fno-omit-frame-pointer -fsanitize-recover=address)
+   else()
+     lbann_check_and_append_flag(CMAKE_CXX_FLAGS -fno-omit-frame-pointer)
+   endif ()
+endif ()
