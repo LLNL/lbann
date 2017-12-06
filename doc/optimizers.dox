@@ -1,15 +1,23 @@
 /** \page optimizers Optimizers
    
 \section Adagrad Adagrad
+    \copydetails lbann::adagrad
+
     Implementation details: lbann::adagrad
           
 \section Adam Adam
+    \copydetails lbann::adam
+
     Implementation details: lbann::adam
 
 \section hadam Hypergradient Adam
+    \copydetails lbann::hypergradient_adam
+
     Implementation details: lbann::hypergradient_adam
 
 \section rmsp RMSprop
+    \copydetails lbann::rmsprop
+    
     Implementation details: lbann::rmsprop
 
 \section SGD SGD
