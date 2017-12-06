@@ -29,3 +29,12 @@ function(lbann_determine_library_type lib_name output_var)
   set(${output_var} "UNKNOWN" PARENT_SCOPE)
 endfunction(lbann_determine_library_type lib_name output)
 
+# A handy macro to add the current source directory to a local
+# filename. To be used for creating a list of sources.
+macro(set_full_path VAR)
+  unset(__tmp_names)
+  foreach(filename ${ARGN})
+    list(APPEND __tmp_names "${CMAKE_CURRENT_SOURCE_DIR}/${filename}")
+  endforeach()
+  set(${VAR} "${__tmp_names}")
+endmacro()
