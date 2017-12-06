@@ -22,33 +22,21 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
+//
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/objective_functions/objective_function_term.hpp"
-#include "lbann/objective_functions/objective_function.hpp"
-#include "lbann/models/model.hpp"
+#ifndef _TOOLS_COMPUTE_MEAN_PROCESS_IMAGES_
+#define _TOOLS_COMPUTE_MEAN_PROCESS_IMAGES_
+#include "params.hpp"
+#include "mpi_states.hpp"
+#include "walltimes.hpp"
+#include "image_list.hpp"
 
-namespace lbann {
+/**
+ * Crop images and use them to compute mean. At the same time, store the cropped
+ * images.
+ */
+bool process_images(const image_list& img_list, const params& mp,
+                    const mpi_states& ms, walltimes& wt);
 
-objective_function_term::objective_function_term(DataType scale_factor)
-  : m_objective_function(nullptr),
-    m_scale_factor(scale_factor) {
-  if (m_scale_factor == DataType(0)) {
-    m_scale_factor = DataType(1);
-  }
-}
-
-void objective_function_term::setup(objective_function& obj_fn) {
-  m_objective_function = &obj_fn;
-}
-
-lbann_comm* objective_function_term::get_comm() {
-  if (m_objective_function != nullptr
-      && m_objective_function->get_model() != nullptr) {
-    return m_objective_function->get_model()->get_comm();
-  } else {
-    return nullptr;
-  }
-}
-
-}  // namespace lbann
+#endif // _TOOLS_COMPUTE_MEAN_PROCESS_IMAGES_
