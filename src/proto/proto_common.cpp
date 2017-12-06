@@ -1603,9 +1603,17 @@ objective_function *init_objective_function(lbann_data::ObjectiveFunction obj_fn
     const lbann_data::PolyaNegLogLike &params = obj_fn_params.polya_negloglike(j);
     obj_fn->add_term(new polya_negloglike(params.scale_factor()));
   }
+  for (int j=0; j<obj_fn_params.l1_weight_regularization_size(); j++) {
+    const lbann_data::L1WeightRegularization &params = obj_fn_params.l1_weight_regularization(j);
+    obj_fn->add_term(new l1_weight_regularization(params.scale_factor()));
+  }
   for (int j=0; j<obj_fn_params.l2_weight_regularization_size(); j++) {
     const lbann_data::L2WeightRegularization &params = obj_fn_params.l2_weight_regularization(j);
     obj_fn->add_term(new l2_weight_regularization(params.scale_factor()));
+  }
+  for (int j=0; j<obj_fn_params.group_lasso_weight_regularization_size(); j++) {
+    const lbann_data::GroupLassoWeightRegularization &params = obj_fn_params.group_lasso_weight_regularization(j);
+    obj_fn->add_term(new group_lasso_weight_regularization(params.scale_factor()));
   }
   return obj_fn;
 }
