@@ -22,33 +22,49 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
+//
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/objective_functions/objective_function_term.hpp"
-#include "lbann/objective_functions/objective_function.hpp"
-#include "lbann/models/model.hpp"
+#ifndef _TOOLS_COMPUTE_MEAN_WALLTIMES_HPP_
+#define _TOOLS_COMPUTE_MEAN_WALLTIMES_HPP_
+#include <chrono>
+#include <vector>
+#include "mpi_states.hpp"
 
-namespace lbann {
+/** Return time in fractional seconds since an epoch. */
+inline double get_time() {
+  using namespace std::chrono;
+  return duration_cast<duration<double>>(
+           steady_clock::now().time_since_epoch()).count();
+}
 
-objective_function_term::objective_function_term(DataType scale_factor)
-  : m_objective_function(nullptr),
-    m_scale_factor(scale_factor) {
-  if (m_scale_factor == DataType(0)) {
-    m_scale_factor = DataType(1);
+class walltimes {
+ public:
+  double total;
+  double load;
+  double decode;
+  double preprocess;
+
+  walltimes() :
+    total(0.0),
+    load(0.0),
+    decode(0.0),
+    preprocess(0.0) {}
+
+  std::vector<double> get() const {
+    return {total, load, decode, preprocess};
   }
-}
 
-void objective_function_term::setup(objective_function& obj_fn) {
-  m_objective_function = &obj_fn;
-}
-
-lbann_comm* objective_function_term::get_comm() {
-  if (m_objective_function != nullptr
-      && m_objective_function->get_model() != nullptr) {
-    return m_objective_function->get_model()->get_comm();
-  } else {
-    return nullptr;
+  std::vector<std::string> get_names() const {
+    return {"total", "load", "decode", "preprocess"};
   }
-}
+};
 
-}  // namespace lbann
+void collect_times(const std::vector<double>& localTimes,
+                   std::vector<double>& avgTimes, std::vector<double>& minTimes,
+                   std::vector<double>& maxTimes, std::vector<double>& stdTimes,
+                   const mpi_states& ms);
+
+void summarize_walltimes(walltimes& wt, mpi_states& ms);
+
+#endif // _TOOLS_COMPUTE_MEAN_WALLTIMES_HPP_

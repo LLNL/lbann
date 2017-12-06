@@ -73,7 +73,6 @@ void cross_entropy_with_uncertainty::setup(objective_function& obj_fn) {
 
 DataType cross_entropy_with_uncertainty::evaluate(const AbsDistMat& predictions,
                                                   const AbsDistMat& ground_truth) {
-  lbann_comm* comm = m_objective_function->get_model()->get_comm();
 
   // Initialize workspace
   m_prediction_sums->Resize(1, predictions.Width());
@@ -99,14 +98,16 @@ DataType cross_entropy_with_uncertainty::evaluate(const AbsDistMat& predictions,
     }
     prediction_sums_local(0, col) = pred_sum;
   }
-  comm->allreduce(*m_prediction_sums, m_prediction_sums->RedundantComm());
+  get_comm()->allreduce(*m_prediction_sums,
+                        m_prediction_sums->RedundantComm());
 
   // Compute mean objective function value
   DataType local_sum = DataType(0);
   for (int col = 0; col < local_width; ++col) {
     local_sum += -std::log(prediction_sums_local(0, col));
   }
-  return comm->allreduce(local_sum / width, m_prediction_sums->DistComm());
+  return get_comm()->allreduce(local_sum / width,
+                               m_prediction_sums->DistComm());
 
 }
 

@@ -113,7 +113,6 @@ void loss_function::setup(objective_function& obj_fn) {
 
 }
 
-/// @todo Handle effective mini-batch size
 DataType loss_function::compute_value() {
   if (m_scale_factor == DataType(0)) { return DataType(0); }
   auto *target = (target_layer*) m_layers[0];
