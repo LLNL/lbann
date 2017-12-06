@@ -28,6 +28,9 @@
 #include "mpi_states.hpp"
 #include <iostream>
 
+
+namespace tools_compute_mean {
+
 mpi_states::mpi_states()
   : m_comm(MPI_COMM_WORLD), m_effective_num_ranks(1), m_num_ranks(1), m_my_rank(0), m_root(0) {}
 
@@ -104,3 +107,5 @@ void mpi_states::split_over_ranks(const unsigned int num_total,
   }
   num_per_rank[num_ranks] = num_total;
 }
+
+} // end of namespace tools_compute_mean

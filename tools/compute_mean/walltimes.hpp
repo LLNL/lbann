@@ -31,6 +31,9 @@
 #include <vector>
 #include "mpi_states.hpp"
 
+
+namespace tools_compute_mean {
+
 /** Return time in fractional seconds since an epoch. */
 inline double get_time() {
   using namespace std::chrono;
@@ -67,4 +70,5 @@ void collect_times(const std::vector<double>& localTimes,
 
 void summarize_walltimes(walltimes& wt, mpi_states& ms);
 
+} // end of namespace tools_compute_mean
 #endif // _TOOLS_COMPUTE_MEAN_WALLTIMES_HPP_

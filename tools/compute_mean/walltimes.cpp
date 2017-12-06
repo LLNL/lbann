@@ -30,6 +30,9 @@
 #include <iostream>
 #include "walltimes.hpp"
 
+
+namespace tools_compute_mean {
+
 /**
  *  Collects the average, the min, the max and the stdev of various timing
  *  measured over the processes. Each processors supposed to have the same
@@ -108,3 +111,5 @@ void summarize_walltimes(walltimes& wt, mpi_states& ms) {
     }
   }
 }
+
+} // end of namespace tools_compute_mean

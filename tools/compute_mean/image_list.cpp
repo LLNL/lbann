@@ -32,6 +32,8 @@
 #include "file_utils.hpp"
 
 
+namespace tools_compute_mean {
+
 /**
  * Read the data path file, load the input image list, and determine the subset
  * of images for the current rank to process.
@@ -251,3 +253,5 @@ void image_list::description() const {
   std::cout << " - m_out_dir : " << m_out_dir << std::endl;
   std::cout << " - m_image_list.size() : " << m_image_list.size() << std::endl;
 }
+
+} // end of namespace tools_compute_mean

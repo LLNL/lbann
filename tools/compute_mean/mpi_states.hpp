@@ -40,6 +40,8 @@
 #define _VoidP(_P_)      reinterpret_cast<void*>(_P_)
 #endif
 
+namespace tools_compute_mean {
+
 class mpi_states {
  public:
   MPI_Comm m_comm;
@@ -81,4 +83,5 @@ class mpi_states {
   }
 };
 
+} // end of namespace tools_compute_mean
 #endif /// _TOOLS_COMPUTE_MEAN_MPI_STATES_HPP_

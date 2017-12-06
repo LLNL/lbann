@@ -29,6 +29,8 @@
 #include <sstream>
 
 
+namespace tools_compute_mean {
+
 /// Parse the command line arguments.
 bool params::set(int argc, char *argv[]) {
   if ((argc != 6) && (argc != 9)) {
@@ -90,3 +92,5 @@ std::string params::show_help(std::string name) {
 
   return oss.str();
 }
+
+} // end of namespace tools_compute_mean
