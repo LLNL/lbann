@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_OBJECTIVE_FUNCTION_CROSS_ENTROPY_HPP_INCLUDED
-#define LBANN_OBJECTIVE_FUNCTION_CROSS_ENTROPY_HPP_INCLUDED
+#ifndef LBANN_OBJECTIVE_FUNCTION_LOSS_FUNCTION_CROSS_ENTROPY_HPP_INCLUDED
+#define LBANN_OBJECTIVE_FUNCTION_LOSS_FUNCTION_CROSS_ENTROPY_HPP_INCLUDED
 
 #include "lbann/objective_functions/loss_functions/loss_function.hpp"
 
@@ -50,12 +50,27 @@ class cross_entropy : public loss_function {
   /** Get the name of the objective function term. */
   std::string name() const override { return "cross_entropy"; }
 
-  /** Evaluate the cross entropy loss function. */
+  /** Compute the cross entropy objective function.
+   *  Given a predicted distribution \f$y\f$ and ground truth
+   *  distribution \f$\hat{y}\f$, the cross entropy is
+   *    \f[
+   *    CE(y,\hat{y}) = - \sum\limits_{i} \hat{y}_i \log y_i
+   *    \f]
+   *  This function updates the objective function value with the mean
+   *  cross entropy across the mini-batch. Note that each column of
+   *  the predictions and ground truth matrices should have
+   *  non-negative entries that add up to one.
+   */
   DataType evaluate(const AbsDistMat& prediction,
                     const AbsDistMat& ground_truth) override;
 
-  /** Compute the cross entropy gradient.
-   *  The gradient is w.r.t. the prediction vector.
+  /** Compute the gradient of the cross entropy objective function.
+   *  Given a predicted distribution \f$y\f$ and ground truth
+   *  distribution \f$\hat{y}\f$, the gradient of the cross entropy
+   *  is
+   *    \f[
+   *    \nabla_y CE (y,\hat{y}) = - \hat{y} . / y
+   *    \f]
    */
   void differentiate(const AbsDistMat& prediction,
                      const AbsDistMat& ground_truth,
@@ -65,4 +80,4 @@ class cross_entropy : public loss_function {
 
 } // namespace lbann
 
-#endif // LBANN_OBJECTIVE_FUNCTION_CROSS_ENTROPY_HPP_INCLUDED
+#endif // LBANN_OBJECTIVE_FUNCTION_LOSS_FUNCTION_CROSS_ENTROPY_HPP_INCLUDED

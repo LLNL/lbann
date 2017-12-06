@@ -24,29 +24,31 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_OBJECTIVE_FUNCTION_GEOM_NEGLOGLIKE_HPP_INCLUDED
-#define LBANN_OBJECTIVE_FUNCTION_GEOM_NEGLOGLIKE_HPP_INCLUDED
+#ifndef LBANN_OBJECTIVE_FUNCTION_LOSS_FUNCTION_GEOM_NEGLOGLIKE_HPP_INCLUDED
+#define LBANN_OBJECTIVE_FUNCTION_LOSS_FUNCTION_GEOM_NEGLOGLIKE_HPP_INCLUDED
 
-#include "lbann/objective_functions/objective_function.hpp"
+#include "lbann/objective_functions/loss_functions/loss_function.hpp"
 
 namespace lbann {
 
-namespace objective_functions {
-
 /** Geometric negative log-likelihood objective function. */
-class geom_negloglike : public objective_function {
-
+class geom_negloglike : public loss_function {
  public:
   /** Default constructor. */
-  geom_negloglike() = default;
+  geom_negloglike(DataType scale_factor = DataType(1)) 
+    : loss_function(scale_factor) {}
+
   /** Copy constructor. */
   geom_negloglike(const geom_negloglike& other) = default;
   /** Copy assignment operator. */
   geom_negloglike& operator=(const geom_negloglike& other) = default;
   /** Destructor. */
-  ~geom_negloglike() = default;
+  ~geom_negloglike() override = default;
   /** Copy function. */
-  geom_negloglike* copy() const { return new geom_negloglike(*this); }
+  geom_negloglike* copy() const override { return new geom_negloglike(*this); }
+
+  /** Get the name of the objective function term. */
+  std::string name() const override { return "geom_negloglike"; }
 
   /** Compute the Geometric negative log-likelihood objective function.
    *  Given a prediction \f$\hat{y}\f$ and ground truth \f$y\f$, the
@@ -57,8 +59,8 @@ class geom_negloglike : public objective_function {
    *  This function updates the objective function value with the mean
    *  value of the mean squared error across the mini-batch.
    */
-  void compute_value(const AbsDistMat& predictions,
-                     const AbsDistMat& ground_truth);
+  DataType evaluate(const AbsDistMat& prediction,
+                    const AbsDistMat& ground_truth) override;
 
   /** Compute the gradient of the Geometric negative log-likelihood objective function.
    *  Given a prediction \f$y\f$ and ground truth \f$\hat{y}\f$, the
@@ -67,17 +69,12 @@ class geom_negloglike : public objective_function {
    *    \nabla_{\hat{y}} \text{Geom}_{\text{nll}} (\hat{y},y) = y/(1-\hat{y}) + 1/\hat{y}
    *    \f]
    */
-  void compute_gradient(const AbsDistMat& predictions,
-                        const AbsDistMat& ground_truth,
-                        AbsDistMat& gradient);
-
-  /** Get the name of the objective function. */
-  std::string name() const { return "geometric negative log-likelihood"; }
+  void differentiate(const AbsDistMat& prediction,
+                     const AbsDistMat& ground_truth,
+                     AbsDistMat& gradient) override;
 
 };
 
-}  // namespace objective_functions
-
 }  // namespace lbann
 
-#endif  // LBANN_OBJECTIVE_FUNCTION_GEOM_NEGLOGLIKE_HPP_INCLUDED
+#endif  // LBANN_OBJECTIVE_FUNCTION_LOSS_FUNCTION_GEOM_NEGLOGLIKE_HPP_INCLUDED

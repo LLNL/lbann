@@ -24,60 +24,53 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_OBJECTIVE_FUNCTION_MEAN_ABSOLUTE_DEVIATION_HPP_INCLUDED
-#define LBANN_OBJECTIVE_FUNCTION_MEAN_ABSOLUTE_DEVIATION_HPP_INCLUDED
+#ifndef LBANN_OBJECTIVE_FUNCTION_LOSS_FUNCTION_MEAN_ABSOLUTE_DEVIATION_HPP_INCLUDED
+#define LBANN_OBJECTIVE_FUNCTION_LOSS_FUNCTION_MEAN_ABSOLUTE_DEVIATION_HPP_INCLUDED
 
-#include "lbann/objective_functions/objective_function.hpp"
+#include "lbann/objective_functions/loss_functions/loss_function.hpp"
 
 namespace lbann {
 
-namespace objective_functions {
-
-/** Mean absolute deviation objective function. */
-class mean_absolute_deviation : public objective_function {
-
+/** Mean absolution deviation loss function. */
+class mean_absolute_deviation : public loss_function {
  public:
   /** Default constructor. */
-  mean_absolute_deviation() = default;
+  mean_absolute_deviation(DataType scale_factor = DataType(1)) 
+    : loss_function(scale_factor) {}
+
   /** Copy constructor. */
   mean_absolute_deviation(const mean_absolute_deviation& other) = default;
   /** Copy assignment operator. */
   mean_absolute_deviation& operator=(const mean_absolute_deviation& other) = default;
   /** Destructor. */
-  ~mean_absolute_deviation() = default;
+  ~mean_absolute_deviation() override = default;
   /** Copy function. */
-  mean_absolute_deviation* copy() const { return new mean_absolute_deviation(*this); }
+  mean_absolute_deviation* copy() const override { return new mean_absolute_deviation(*this); }
+
+  /** Get the name of the objective function term. */
+  std::string name() const override { return "mean_absolute_deviation"; }
 
   /** Compute the mean absolute deviation objective function.
    *  Given a prediction \f$\hat{y}\f$ and ground truth \f$y\f$, the
    *  mean absolute deviation is
    *    \f[
-   *    MAD(\hat{y}, y) = \frac{1}{n} \lVert y - \hat{y} \rVert
+   *    MAD(\hat{y}, y) = \frac{1}{n} \lVert y - \hat{y} \rVert_1
    *    \f]
    *  This function updates the objective function value with the mean
    *  value of the mean absolute deviation across the mini-batch.
    */
-  void compute_value(const AbsDistMat& predictions,
-                     const AbsDistMat& ground_truth);
+  DataType evaluate(const AbsDistMat& prediction,
+                    const AbsDistMat& ground_truth) override;
 
-  /** Compute the gradient of the mean squared error objective function.
-   *  Given a prediction \f$y\f$ and ground truth \f$\hat{y}\f$, the
-   *  gradient of the mean squared error is
-   *    \f[
-   *    \nabla_y MSE (y,\hat{y}) = \frac{2}{n} (y - \hat{y})
-   *    \f]
+  /** Compute the mean absolution deviation gradient.
+   *  The gradient is w.r.t. the prediction vector.
    */
-  void compute_gradient(const AbsDistMat& predictions,
-                        const AbsDistMat& ground_truth,
-                        AbsDistMat& gradient);
-
-  /** Get the name of the objective function. */
-  std::string name() const { return "mean absolute deviation"; }
+  void differentiate(const AbsDistMat& prediction,
+                     const AbsDistMat& ground_truth,
+                     AbsDistMat& gradient) override;
 
 };
 
-}  // namespace objective_functions
+} // namespace lbann
 
-}  // namespace lbann
-
-#endif  // LBANN_OBJECTIVE_FUNCTION_MEAN_ABSOLUTE_DEVIATION_HPP_INCLUDED
+#endif // LBANN_OBJECTIVE_FUNCTION_LOSS_FUNCTION_MEAN_ABSOLUTE_DEVIATION_HPP_INCLUDED

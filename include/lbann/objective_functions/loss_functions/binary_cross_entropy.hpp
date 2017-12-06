@@ -24,29 +24,31 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_OBJECTIVE_FUNCTION_BINARY_CROSS_ENTROPY_HPP_INCLUDED
-#define LBANN_OBJECTIVE_FUNCTION_BINARY_CROSS_ENTROPY_HPP_INCLUDED
+#ifndef LBANN_OBJECTIVE_FUNCTION_LOSS_FUNCTION_BINARY_CROSS_ENTROPY_HPP_INCLUDED
+#define LBANN_OBJECTIVE_FUNCTION_LOSS_FUNCTION_BINARY_CROSS_ENTROPY_HPP_INCLUDED
 
-#include "lbann/objective_functions/objective_function.hpp"
+#include "lbann/objective_functions/loss_functions/loss_function.hpp"
 
 namespace lbann {
 
-namespace objective_functions {
-
-/** Binary cross entropy objective function. */
-class binary_cross_entropy : public objective_function {
-
+/** Binary cross entropy loss function. */
+class binary_cross_entropy : public loss_function {
  public:
   /** Default constructor. */
-  binary_cross_entropy() = default;
+  binary_cross_entropy(DataType scale_factor = DataType(1))
+    : loss_function(scale_factor) {}
+
   /** Copy constructor. */
   binary_cross_entropy(const binary_cross_entropy& other) = default;
   /** Copy assignment operator. */
   binary_cross_entropy& operator=(const binary_cross_entropy& other) = default;
   /** Destructor. */
-  ~binary_cross_entropy() = default;
+  ~binary_cross_entropy() override = default;
   /** Copy function. */
-  binary_cross_entropy* copy() const { return new binary_cross_entropy(*this); }
+  binary_cross_entropy* copy() const override { return new binary_cross_entropy(*this); }
+
+  /** Get the name of the objective function term. */
+  std::string name() const override { return "binary_cross_entropy"; }
 
   /** Compute the binary cross entropy objective function.
    *  Given a prediction \f$\hat{y}\f$ and ground truth \f$yf$, the
@@ -57,8 +59,8 @@ class binary_cross_entropy : public objective_function {
    *  This function updates the objective function value with the mean
    *  value of the binary cross entropy across the mini-batch.
    */
-  void compute_value(const AbsDistMat& predictions,
-                     const AbsDistMat& ground_truth);
+  DataType evaluate(const AbsDistMat& prediction,
+                    const AbsDistMat& ground_truth) override;
 
   /** Compute the gradient of the binary cross entropy objective function.
    *  Given a prediction \f$\hat{y}\f$ and ground truth \f$y\f$, the
@@ -67,17 +69,12 @@ class binary_cross_entropy : public objective_function {
    *    \nabla_{\hat{y}} CE(\hat{y}, y) = -y/\hat{y}  + (1-y)/(1-\hat{y}) 
    *    \f]
    */
-  void compute_gradient(const AbsDistMat& predictions,
-                        const AbsDistMat& ground_truth,
-                        AbsDistMat& gradient);
-
-  /** Get the name of the objective function. */
-  std::string name() const { return "binary_cross_entropy"; }
+  void differentiate(const AbsDistMat& prediction,
+                     const AbsDistMat& ground_truth,
+                     AbsDistMat& gradient) override;
 
 };
 
-}  // namespace objective_functions
-
 }  // namespace lbann
 
-#endif  // LBANN_OBJECTIVE_FUNCTION_BINARY_CROSS_ENTROPY_HPP_INCLUDED
+#endif  // LBANN_OBJECTIVE_FUNCTION_LOSS_FUNCTION_BINARY_CROSS_ENTROPY_HPP_INCLUDED

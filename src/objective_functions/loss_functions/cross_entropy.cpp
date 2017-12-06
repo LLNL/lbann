@@ -57,12 +57,9 @@ DataType cross_entropy::evaluate(const AbsDistMat& predictions,
     }
   }
 
-  // Compute mean cross entropy across mini-batch
-  DataType mean_cross_entropy = sum / width;
-  mean_cross_entropy =
-    m_objective_function->get_model()->get_comm()->allreduce(
-    mean_cross_entropy, predictions.DistComm());
-  return mean_cross_entropy;
+  // Compute mean objective function value across mini-batch
+  lbann_comm* comm = m_objective_function->get_model()->get_comm();
+  return comm->allreduce(sum / width, predictions.DistComm());
 
 }
 
