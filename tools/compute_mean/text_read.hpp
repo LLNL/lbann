@@ -36,6 +36,9 @@
 #include <iostream>
 #include <exception>
 
+
+namespace tools_compute_mean {
+
 template <typename T, typename F>
 inline bool read_text_stream(const std::string& fileName, std::istream& textStream,
                              T& container, F func, const unsigned int numHeaderLines = 0u);
@@ -114,4 +117,5 @@ inline bool read_text_stream(const std::string& fileName, std::istream& textStre
   return true;
 }
 
+} // end of namespace tools_compute_mean
 #endif // _TOOLS_COMPUTE_MEAN_TEXT_READ_HPP_

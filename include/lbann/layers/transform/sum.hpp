@@ -38,14 +38,14 @@ namespace lbann {
 
 /// Sum layer
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
-class sum_layer : public transform {
+class sum_layer : public transform_layer {
  private:
 
  public:
   /// Constructor
   sum_layer(lbann_comm *comm,
             cudnn::cudnn_manager *cudnn = nullptr)
-    : transform(comm) {
+    : transform_layer(comm) {
 
     // Setup the data distribution
     initialize_distributed_matrices();
@@ -88,12 +88,12 @@ class sum_layer : public transform {
   std::string get_type() const override { return "sum"; }
 
   virtual inline void initialize_distributed_matrices() {
-    transform::initialize_distributed_matrices<T_layout>();
+    transform_layer::initialize_distributed_matrices<T_layout>();
   }
   data_layout get_data_layout() const override { return T_layout; }
 
   void setup_gpu() override {
-    transform::setup_gpu();
+    transform_layer::setup_gpu();
   #ifndef __LIB_CUDNN
     throw lbann_exception("sum_layer: cuDNN not detected");
   #else

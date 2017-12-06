@@ -30,6 +30,9 @@
 #include <utility>
 #include <string>
 
+
+namespace tools_compute_mean {
+
 struct cropper_params {
   bool m_is_set;
   bool m_rand_center;
@@ -131,4 +134,5 @@ class params {
   }
 };
 
+} // end of namespace tools_compute_mean
 #endif // _TOOLS_COMPUTE_MEAN_CV_PARAMS_HPP_

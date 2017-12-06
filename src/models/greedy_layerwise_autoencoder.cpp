@@ -70,7 +70,7 @@ void greedy_layerwise_autoencoder::setup() {
   // Note: first half are encoder sections and second half are decoder
   // sections
   for (size_t i = 1; i < m_layers.size() - 1; ++i) {
-    if (dynamic_cast<learning*>(m_layers[i]) != nullptr) {
+    if (dynamic_cast<learning_layer*>(m_layers[i]) != nullptr) {
       m_sections.push_back(i);
     }
   }

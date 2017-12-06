@@ -150,7 +150,9 @@
 #include "lbann/objective_functions/loss_functions/mean_absolute_deviation.hpp"
 #include "lbann/objective_functions/loss_functions/poisson_negloglike.hpp"
 #include "lbann/objective_functions/loss_functions/polya_negloglike.hpp"
-#include "lbann/objective_functions/weight_regularization/l2_weight_regularization.hpp"
+#include "lbann/objective_functions/weight_regularization/l1.hpp"
+#include "lbann/objective_functions/weight_regularization/l2.hpp"
+#include "lbann/objective_functions/weight_regularization/group_lasso.hpp"
 
 /// Metrics
 #include "lbann/metrics/metric_categorical_accuracy.hpp"

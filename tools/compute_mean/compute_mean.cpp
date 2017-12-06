@@ -32,8 +32,8 @@
 #include "image_list.hpp"
 #include "process_images.hpp"
 
-
 int main(int argc, char *argv[]) {
+  using namespace tools_compute_mean;
 
   mpi_states ms;
   ms.initialize(argc, argv);
