@@ -42,27 +42,21 @@ DataType binary_cross_entropy::evaluate(const AbsDistMat& predictions,
 
   // Compute sum of cross entropy terms
   DataType sum = 0;
-  const int block_size = std::max((int) (64 / sizeof(DataType)), 1);
   #pragma omp parallel for reduction(+:sum) collapse(2)
   for (int col = 0; col < local_width; ++col) {
-    for (int block_start = 0; block_start < local_height; block_start += block_size) {
-      DataType block_sum = 0;
-      const int block_end = std::min(block_start + block_size, local_height);
-      for (int row = block_start; row < block_end; ++row) {
-        const DataType true_val = ground_truth_local(row, col);
-        const DataType pred_val = predictions_local(row, col);
-        if (true_val == DataType(1)) {
-          block_sum += -std::log(pred_val);
-        } else if (true_val == DataType(0)) {
-          block_sum += -std::log(DataType(1) - pred_val);
-        } else {
-          std::stringstream err;
-          err << __FILE__ << " " << __LINE__ << " :: "
-              << "binary cross entropy loss function requires binary ground truth";
-          throw lbann_exception(err.str());
-        }
+    for (int row = 0; row < local_height; ++row) {
+      const DataType true_val = ground_truth_local(row, col);
+      const DataType pred_val = predictions_local(row, col);
+      if (true_val == DataType(1)) {
+        sum += - std::log(pred_val);
+      } else if (true_val == DataType(0)) {
+        sum += - std::log(DataType(1) - pred_val);
+      } else {
+        std::stringstream err;
+        err << __FILE__ << " " << __LINE__ << " :: "
+            << "binary cross entropy loss function requires binary ground truth";
+        throw lbann_exception(err.str());
       }
-      sum += block_sum;
     }
   }
 
