@@ -139,15 +139,16 @@
 #include "lbann/optimizers/rmsprop.hpp"
 #include "lbann/optimizers/sgd.hpp"
 
-/// Objective functions (cost functions)
+/// Objective functions
+#include "lbann/objective_functions/objective_function.hpp"
 #include "lbann/objective_functions/loss_functions/cross_entropy.hpp"
 #include "lbann/objective_functions/loss_functions/mean_squared_error.hpp"
-// #include "lbann/objective_functions/binary_cross_entropy.hpp"
-// #include "lbann/objective_functions/cross_entropy_with_uncertainty.hpp"
-// #include "lbann/objective_functions/geom_negloglike.hpp"
-// #include "lbann/objective_functions/mean_absolute_deviation.hpp"
-// #include "lbann/objective_functions/poisson_negloglike.hpp"
-// #include "lbann/objective_functions/polya_negloglike.hpp"
+#include "lbann/objective_functions/loss_functions/binary_cross_entropy.hpp"
+#include "lbann/objective_functions/loss_functions/cross_entropy_with_uncertainty.hpp"
+#include "lbann/objective_functions/loss_functions/geom_negloglike.hpp"
+#include "lbann/objective_functions/loss_functions/mean_absolute_deviation.hpp"
+#include "lbann/objective_functions/loss_functions/poisson_negloglike.hpp"
+#include "lbann/objective_functions/loss_functions/polya_negloglike.hpp"
 #include "lbann/objective_functions/weight_regularization/l2_weight_regularization.hpp"
 
 /// Metrics

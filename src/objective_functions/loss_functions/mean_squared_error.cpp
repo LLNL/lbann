@@ -59,11 +59,10 @@ DataType mean_squared_error::evaluate(const AbsDistMat& predictions,
     }
   }
   
-  // Compute mean squared error
-  double mse = sum / (height * width);
-  mse = m_objective_function->get_model()->get_comm()->allreduce(
-    mse, predictions.DistComm());
-  return mse;
+  // Compute mean objective function value across mini-batch
+  lbann_comm* comm = m_objective_function->get_model()->get_comm();
+  return comm->allreduce(sum / (height * width),
+                         predictions.DistComm());
 
 }
 

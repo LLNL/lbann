@@ -204,9 +204,15 @@ message Model {
 //========================================================================
 
 message ObjectiveFunction {
-  repeated CrossEntropy cross_entropy = 11;
-  repeated MeanSquaredError mean_squared_error = 12;
-  repeated L2WeightRegularization l2_weight_regularization = 21;
+  repeated MeanSquaredError mean_squared_error = 2;
+  repeated MeanAbsoluteDeviation mean_absolute_deviation = 5;
+  repeated CrossEntropy cross_entropy = 1;
+  repeated BinaryCrossEntropy binary_cross_entropy = 3;
+  repeated CrossEntropyWithUncertainty cross_entropy_with_uncertainty = 4;
+  repeated GeomNegLogLike geom_negloglike = 6;
+  repeated PoissonNegLogLike poisson_negloglike = 7;
+  repeated PolyaNegLogLike polya_negloglike = 8;
+  repeated L2WeightRegularization l2_weight_regularization = 9;
 }
 
 message CrossEntropy {
@@ -214,6 +220,30 @@ message CrossEntropy {
 }
 
 message MeanSquaredError {
+  double scale_factor = 1;
+}
+
+message BinaryCrossEntropy {
+  double scale_factor = 1;
+}
+
+message CrossEntropyWithUncertainty {
+  double scale_factor = 1;
+}
+
+message MeanAbsoluteDeviation {
+  double scale_factor = 1;
+}
+
+message GeomNegLogLike {
+  double scale_factor = 1;
+}
+
+message PoissonNegLogLike {
+  double scale_factor = 1;
+}
+
+message PolyaNegLogLike {
   double scale_factor = 1;
 }
 

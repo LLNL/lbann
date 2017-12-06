@@ -1569,6 +1569,46 @@ void init_callbacks(
 
 }
 
+objective_function *init_objective_function(lbann_data::ObjectiveFunction obj_fn_params) {
+  objective_function *obj_fn = new objective_function();
+  for (int j=0; j<obj_fn_params.mean_squared_error_size(); j++) {
+    const lbann_data::MeanSquaredError &params = obj_fn_params.mean_squared_error(j);
+    obj_fn->add_term(new mean_squared_error(params.scale_factor()));
+  }
+  for (int j=0; j<obj_fn_params.mean_absolute_deviation_size(); j++) {
+    const lbann_data::MeanAbsoluteDeviation &params = obj_fn_params.mean_absolute_deviation(j);
+    obj_fn->add_term(new mean_absolute_deviation(params.scale_factor()));
+  }
+  for (int j=0; j<obj_fn_params.cross_entropy_size(); j++) {
+    const lbann_data::CrossEntropy &params = obj_fn_params.cross_entropy(j);
+    obj_fn->add_term(new cross_entropy(params.scale_factor()));
+  }
+  for (int j=0; j<obj_fn_params.binary_cross_entropy_size(); j++) {
+    const lbann_data::BinaryCrossEntropy &params = obj_fn_params.binary_cross_entropy(j);
+    obj_fn->add_term(new binary_cross_entropy(params.scale_factor()));
+  }
+  for (int j=0; j<obj_fn_params.cross_entropy_with_uncertainty_size(); j++) {
+    const lbann_data::CrossEntropyWithUncertainty &params = obj_fn_params.cross_entropy_with_uncertainty(j);
+    obj_fn->add_term(new cross_entropy_with_uncertainty(params.scale_factor()));
+  }
+  for (int j=0; j<obj_fn_params.geom_negloglike_size(); j++) {
+    const lbann_data::GeomNegLogLike &params = obj_fn_params.geom_negloglike(j);
+    obj_fn->add_term(new geom_negloglike(params.scale_factor()));
+  }
+  for (int j=0; j<obj_fn_params.poisson_negloglike_size(); j++) {
+    const lbann_data::PoissonNegLogLike &params = obj_fn_params.poisson_negloglike(j);
+    obj_fn->add_term(new poisson_negloglike(params.scale_factor()));
+  }
+  for (int j=0; j<obj_fn_params.polya_negloglike_size(); j++) {
+    const lbann_data::PolyaNegLogLike &params = obj_fn_params.polya_negloglike(j);
+    obj_fn->add_term(new polya_negloglike(params.scale_factor()));
+  }
+  for (int j=0; j<obj_fn_params.l2_weight_regularization_size(); j++) {
+    const lbann_data::L2WeightRegularization &params = obj_fn_params.l2_weight_regularization(j);
+    obj_fn->add_term(new l2_weight_regularization(params.scale_factor()));
+  }
+  return obj_fn;
+}
 
 model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_data::LbannPB& p)
 {
@@ -1583,20 +1623,7 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
   uint mini_batch_size = m.mini_batch_size();
 
   //instantiate the objective function
-  auto *obj_fn = new objective_function();
-  const lbann_data::ObjectiveFunction &obj_fn_params = m.objective_function();
-  for (int j=0; j<obj_fn_params.cross_entropy_size(); j++) {
-    const lbann_data::CrossEntropy &params = obj_fn_params.cross_entropy(j);
-    obj_fn->add_term(new cross_entropy(params.scale_factor()));
-  }
-  for (int j=0; j<obj_fn_params.mean_squared_error_size(); j++) {
-    const lbann_data::MeanSquaredError &params = obj_fn_params.mean_squared_error(j);
-    obj_fn->add_term(new mean_squared_error(params.scale_factor()));
-  }
-  for (int j=0; j<obj_fn_params.l2_weight_regularization_size(); j++) {
-    const lbann_data::L2WeightRegularization &params = obj_fn_params.l2_weight_regularization(j);
-    obj_fn->add_term(new l2_weight_regularization(params.scale_factor()));
-  }
+  objective_function *obj_fn = init_objective_function(m.objective_function());
 
   //instantiate the network; layers will be added in a separate function call
   if (name == "sequential_model") {

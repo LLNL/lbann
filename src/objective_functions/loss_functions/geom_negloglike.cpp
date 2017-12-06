@@ -24,69 +24,70 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/objective_functions/geom_negloglike.hpp"
+#include "lbann/objective_functions/loss_functions/geom_negloglike.hpp"
 
 namespace lbann {
 
-namespace objective_functions {
+DataType geom_negloglike::evaluate(const AbsDistMat& predictions,
+                                   const AbsDistMat& ground_truth) {
 
-void geom_negloglike::compute_value(const AbsDistMat& predictions,
-                                       const AbsDistMat& ground_truth) {
-  
-  // Get local matrices and matrix parameters
+  // Local matrices
   const Mat& predictions_local = predictions.LockedMatrix();
   const Mat& ground_truth_local = ground_truth.LockedMatrix();
-  const El::Int width = predictions.Width();
-  const El::Int local_height = predictions_local.Height();
-  const El::Int local_width = predictions_local.Width();
+  
+  // Matrix parameters
+  const int width = predictions.Width();
+  const int local_height = predictions_local.Height();
+  const int local_width = predictions_local.Width();
 
-  // Compute sum of Geometric negative log-likelihood with Kahan summation
-  double sum = 0;
-  double correction = 0;
-  for(El::Int col = 0; col < local_width; ++col) {
-    for(El::Int row = 0; row < local_height; ++row) {
-      const double true_val = ground_truth_local(row, col);
-      const double pred_val = predictions_local(row, col);
-      double term = -(true_val*std::log(1-pred_val) + std::log(pred_val));
-      term += correction;
-      const double next_sum = sum + term;
-      correction = term - (next_sum - sum);
-      sum = next_sum;
+  // Compute sum of terms
+  DataType sum = 0;
+  const int block_size = std::max((int) (64 / sizeof(DataType)), 1);
+  #pragma omp parallel for reduction(+:sum) collapse(2)
+  for (int col = 0; col < local_width; ++col) {
+    for (int block_start = 0; block_start < local_height; block_start += block_size) {
+      DataType block_sum = 0;
+      const int block_end = std::min(block_start + block_size, local_height);
+      for (int row = block_start; row < block_end; ++row) {
+        const DataType true_val = ground_truth_local(row, col);
+        const DataType pred_val = predictions_local(row, col);
+        block_sum += (- true_val * std::log(DataType(1) - pred_val)
+                      - std::log(pred_val));
+      }
+      sum += block_sum;
     }
   }
-  
-  // Compute Geometric negative log-likelihood error
-  double geom_nll = sum / width;
-  geom_nll = m_objective_function->get_model()->get_comm()->allreduce(
-    geom_nll, predictions.DistComm());
 
-  // Update objective function value
-  add_to_value(geom_nll);
+  // Compute mean objective function value across mini-batch
+  lbann_comm* comm = m_objective_function->get_model()->get_comm();
+  return comm->allreduce(sum / width, predictions.DistComm());
 
 }
 
-/// Compute derivative of Geometric negative log-likelihood objective function
-void geom_negloglike::compute_gradient(const AbsDistMat& predictions,
-                                          const AbsDistMat& ground_truth,
-                                          AbsDistMat& gradient) {
+void geom_negloglike::differentiate(const AbsDistMat& predictions,
+                                    const AbsDistMat& ground_truth,
+                                    AbsDistMat& gradient) {
 
-  // Get local matrices and matrix parameters
+  // Local matrices
   const Mat& predictions_local = predictions.LockedMatrix();
   const Mat& ground_truth_local = ground_truth.LockedMatrix();
   Mat& gradient_local = gradient.Matrix();
 
+  // Matrix parameters
+  const El::Int local_height = gradient_local.Height();
+  const El::Int local_width = gradient_local.Width();
+
   // Compute gradient
-  El::IndexDependentFill(gradient_local,
-                         (std::function<DataType(El::Int,El::Int)>)
-                         ([&predictions_local, &ground_truth_local]
-                          (El::Int r, El::Int c) -> DataType {
-                           const DataType pred_val = predictions_local(r,c);
-                           const DataType true_val = ground_truth_local(r,c);
-                           return true_val/(1 - pred_val) - 1/pred_val;
-                         }));
+  #pragma omp parallel for collapse(2)
+  for (El::Int col = 0; col < local_width; ++col) {
+    for (El::Int row = 0; row < local_height; ++row) {
+      const DataType true_val = ground_truth_local(row, col);
+      const DataType pred_val = predictions_local(row, col);
+      gradient_local(row, col) = (true_val / (DataType(1) - pred_val)
+                                  - DataType(1) / pred_val);
+    }
+  }
 
 }
-
-}  // namespace objective_functions
 
 }  // namespace lbann
