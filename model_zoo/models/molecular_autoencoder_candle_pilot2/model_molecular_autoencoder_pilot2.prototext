@@ -1,0 +1,129 @@
+model {
+  name: "sequential_model"
+  data_layout: "data_parallel"
+  mini_batch_size: 512
+  block_size: 256
+  num_epochs: 4
+  num_parallel_readers: 1
+  procs_per_model: 0
+  use_cudnn: false
+  num_gpus: -1
+
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    mean_squared_error {}
+    l2_weight_regularization {
+      scale_factor: 0.0005
+    }
+  }
+
+  ###################################################
+  # Callbacks
+  ###################################################
+  callback {
+    print {
+      interval: 1
+    }
+  }
+  callback {
+    timer {
+    }
+  }
+  # callback {
+  #   save_images {
+  #     image_dir: "images_"
+  #     extension: "pgm"
+  #   }
+  # }
+
+  callback {
+    debug_io {
+      phase: "train"
+    }
+  }
+  callback {
+    check_nan {
+    }
+  }
+  callback {
+    check_small{
+    }
+  }
+  ###################################################
+  # start of layers
+  ###################################################
+
+  #######
+  # INPUT
+  #######
+  layer {
+    name: "data"
+    data_layout: "data_parallel"
+    input_partitioned_minibatch {
+    }
+  }
+
+  #############
+  # CONVOLUTION 1
+  #############
+  layer {
+    name: "fc1"
+    data_layout: "data_parallel"
+    fully_connected {
+      num_neurons: 12
+      weight_initialization: "he_normal"
+      has_bias: true
+    }
+  }
+
+  ######
+  # RELU 1
+  ######
+  layer {
+    name: "relu1"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+
+  #################
+  # FULLY_CONNECTED decode1
+  #################
+  layer {
+    name: "decode1"
+    data_layout: "data_parallel"
+    num_neurons_from_data_reader: true
+    fully_connected {
+      weight_initialization: "glorot_uniform"
+      has_bias: true
+    }
+  }
+
+  #######
+  # RELU relu10
+  #######
+  layer {
+    name: "relu10"
+    data_layout: "model_parallel"
+    relu {
+    }
+  }
+
+  #################
+  # RECONSTRUCTION
+  #################
+  layer {
+    name: "reconstruction"
+    data_layout: "data_parallel"
+    reconstruction {
+      original_layer: "data"
+    }
+  }
+
+  ###################################################
+  # end of layers
+  ###################################################
+}
