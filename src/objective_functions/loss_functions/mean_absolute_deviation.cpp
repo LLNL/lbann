@@ -42,7 +42,7 @@ DataType mean_absolute_deviation::evaluate(const AbsDistMat& predictions,
   const El::Int local_width = predictions_local.Width();
 
   // Compute sum of errors
-  double sum = 0;
+  DataType sum = 0;
   #pragma omp parallel for reduction(+:sum) collapse(2)
   for(El::Int col = 0; col < local_width; ++col) {
     for(El::Int row = 0; row < local_height; ++row) {
@@ -54,8 +54,8 @@ DataType mean_absolute_deviation::evaluate(const AbsDistMat& predictions,
   }
   
   // Compute mean objective function value across mini-batch
-  lbann_comm* comm = m_objective_function->get_model()->get_comm();
-  return comm->allreduce(sum / (height * width), predictions.DistComm());
+  return get_comm()->allreduce(sum / (height * width),
+                               predictions.DistComm());
 
 }
 

@@ -61,8 +61,7 @@ DataType binary_cross_entropy::evaluate(const AbsDistMat& predictions,
   }
 
   // Compute mean objective function value across mini-batch
-  lbann_comm* comm = m_objective_function->get_model()->get_comm();
-  return comm->allreduce(sum / width, predictions.DistComm());
+  return get_comm()->allreduce(sum / width, predictions.DistComm());
 
 }
 

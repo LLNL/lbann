@@ -25,6 +25,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/objective_functions/objective_function_term.hpp"
+#include "lbann/objective_functions/objective_function.hpp"
+#include "lbann/models/model.hpp"
 
 namespace lbann {
 
@@ -38,6 +40,15 @@ objective_function_term::objective_function_term(DataType scale_factor)
 
 void objective_function_term::setup(objective_function& obj_fn) {
   m_objective_function = &obj_fn;
+}
+
+lbann_comm* objective_function_term::get_comm() {
+  if (m_objective_function != nullptr
+      && m_objective_function->get_model() != nullptr) {
+    return m_objective_function->get_model()->get_comm();
+  } else {
+    return nullptr;
+  }
 }
 
 }  // namespace lbann

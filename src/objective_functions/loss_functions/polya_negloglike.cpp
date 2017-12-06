@@ -128,7 +128,6 @@ void polya_negloglike::setup(objective_function& obj_fn) {
 
 DataType polya_negloglike::evaluate(const AbsDistMat& predictions,
                                     const AbsDistMat& ground_truth) {
-  lbann_comm* comm = m_objective_function->get_model()->get_comm();
 
   // Initialize workspace
   m_counts->Resize(1, predictions.Width());
@@ -168,11 +167,11 @@ DataType polya_negloglike::evaluate(const AbsDistMat& predictions,
     lgamma_alpha_sums_local(0, col) = lgamma_alpha_sum;
     lgamma_alpha_level_count_sums_local(0, col) = lgamma_alpha_level_count_sum;
   }
-  comm->allreduce(*m_counts, m_counts->RedundantComm());
-  comm->allreduce(*m_alpha_sums, m_alpha_sums->RedundantComm());
-  comm->allreduce(*m_lgamma_alpha_sums, m_lgamma_alpha_sums->RedundantComm());
-  comm->allreduce(*m_lgamma_alpha_level_count_sums,
-                  m_lgamma_alpha_level_count_sums->RedundantComm());
+  get_comm()->allreduce(*m_counts, m_counts->RedundantComm());
+  get_comm()->allreduce(*m_alpha_sums, m_alpha_sums->RedundantComm());
+  get_comm()->allreduce(*m_lgamma_alpha_sums, m_lgamma_alpha_sums->RedundantComm());
+  get_comm()->allreduce(*m_lgamma_alpha_level_count_sums,
+                        m_lgamma_alpha_level_count_sums->RedundantComm());
 
   // Compute mean objective function value across mini-batch
   DataType local_sum = DataType(0);
@@ -182,7 +181,7 @@ DataType polya_negloglike::evaluate(const AbsDistMat& predictions,
                   - lgamma_alpha_level_count_sums_local(0, col)
                   + lgamma_alpha_sums_local(0, col));
   }
-  return comm->allreduce(local_sum / width, m_counts->DistComm());
+  return get_comm()->allreduce(local_sum / width, m_counts->DistComm());
 
 }
 
