@@ -28,12 +28,14 @@
 
 #include "lbann/lbann.hpp"
 #include "lbann/proto/proto_common.hpp"
+#include "lbann/utils/protobuf_utils.hpp"
+
+#if 0
 
 #include <time.h>
 #include <dlfcn.h>
 #include <string.h>
 
-#if 0
 extern "C" {
 void __cyg_profile_func_enter (void *, void *) __attribute__((no_instrument_function));
 void __cyg_profile_func_exit (void *, void *) __attribute__((no_instrument_function));
@@ -94,6 +96,7 @@ int main(int argc, char *argv[]) {
 
     std::stringstream err;
 
+#if 0
     // Get input prototext filename(s)
     if (not (opts->has_string("loadme") or opts->has_string("model"))) {
       if (master) {  
@@ -106,7 +109,7 @@ int main(int argc, char *argv[]) {
       }
     }
    
-    lbann_data::LbannPB pb;
+
     std::string prototext_model_fn;
     if (opts->has_string("model")) {
       prototext_model_fn = opts->get_string("model");
@@ -132,6 +135,12 @@ int main(int argc, char *argv[]) {
       expand_motifs(comm, pb);
       exit(9);
     }
+#endif
+
+    std::vector<lbann_data::LbannPB *> pbs;
+    protobuf_utils::load_prototext(master, argc, argv, pbs);
+    lbann_data::LbannPB pb = *(pbs[0]);
+
 
     lbann_data::Model *pb_model = pb.mutable_model();
 
