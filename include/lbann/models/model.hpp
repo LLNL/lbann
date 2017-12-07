@@ -111,8 +111,8 @@ class model {
   /** Return the model's layers. */
   virtual const std::vector<Layer *>& get_layers() const { return m_layers; }
 
-  /** Set the model's weights. */
-  void set_weights(std::vector<weights *>& w);
+  /** Replace the model's weights. */
+  void replace_weights(std::vector<weights *>& w);
 
   /** Return the model's weights. */
   const std::vector<weights *>& get_weights() const { return m_weights; }
