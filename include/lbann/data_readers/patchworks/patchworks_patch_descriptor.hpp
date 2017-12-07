@@ -133,6 +133,8 @@ class patch_descriptor {
 
   bool is_self_labeling() const { return m_self_label; }
 
+  unsigned int get_num_labels() const { return 8u; }
+
   /// A function that populates the list of displacements from the base patch to the next one
   virtual void define_patch_set();
 

@@ -115,6 +115,9 @@ bool imagenet_reader_patches::replicate_processor(const cv_process_patches& pp) 
     m_image_width = static_cast<int>(dims[1]);
     m_image_height = static_cast<int>(dims[2]);
   }
+  if (pp.is_self_labeling()) {
+    m_num_labels = pp.get_num_labels();
+  }
 
   return true;
 }
