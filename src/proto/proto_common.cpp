@@ -2040,6 +2040,24 @@ void set_data_readers_filenames(std::string which, lbann_data::LbannPB& p)
   }
 }
 
+void set_data_readers_percent(lbann_data::LbannPB& p)
+{
+  options *opts = options::get();
+  double percent = opts->get_float("data_reader_percent");
+  if (percent <= 0 || percent > 1.0) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << " --data_reader_percent=<float> must be > 0 and <= 1.0";
+      throw lbann_exception(err.str());
+  }
+  lbann_data::DataReader *readers = p.mutable_data_reader();
+  int size = readers->reader_size();
+  for (int j=0; j<size; j++) {
+    lbann_data::Reader *r = readers->mutable_reader(j);
+    r->set_percent_of_data_to_use( percent );
+  }  
+}
+
 void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
 {
   bool master = comm->am_world_master();
@@ -2080,6 +2098,9 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
   if (opts->has_string("data_filedir_test") or opts->has_string("data_filename_test")
       or opts->has_string("label_filename_test")) {
     set_data_readers_filenames("test", p);
+  }
+  if (opts->has_string("data_reader_percent")) {
+    set_data_readers_percent(p);
   }
 
   if (opts->has_string("image_dir")) {
@@ -2293,6 +2314,7 @@ void print_help(lbann::lbann_comm *comm)
        "  --data_filedir_train=<string>   --data_filedir_test=<string>\n"
        "  --data_filename_train=<string>  --data_filename_test=<string>\n"
        "  --label_filename_train=<string> --label_filename_test=<string>\n"
+       "  --data_reader_percent=<float>\n"
        "\n"
        "Callbacks:\n"
        "  --image_dir=<string>\n"
