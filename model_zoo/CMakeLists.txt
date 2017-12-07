@@ -10,9 +10,6 @@ function(add_mpi_ctest TEST_NAME)
   include_directories(${CMAKE_CURRENT_SOURCE_DIR})
   target_link_libraries(${TEST_EXE} ${MPI_CXX_LIBRARIES})
   target_link_libraries(${TEST_EXE} lbann)
-  if(LBANN_HAS_TBINF)
-    target_link_libraries(${TEST_EXE} TBinf)
-  endif()
 
   # ctest with 1, 2, and 4 MPI processes
   set(NUM_PROCS 1)
@@ -27,19 +24,26 @@ endfunction()
 
 # Parallel Tests
 add_executable( lbann-bin lbann.cpp )
-if(LBANN_HAS_TBINF)
-  target_link_libraries(lbann-bin lbann TBinf)
-else()
-  target_link_libraries(lbann-bin lbann )
-endif()
+target_link_libraries(lbann-bin lbann )
 set_target_properties(lbann-bin PROPERTIES OUTPUT_NAME lbann)
 
 
 #this can be done simler - quick copy/paste hack //d hysom
 add_executable( lbann-bin2 lbann2.cpp )
-if(LBANN_HAS_TBINF)
-  target_link_libraries(lbann-bin2 lbann TBinf)
-else()
-  target_link_libraries(lbann-bin2 lbann )
-endif()
+target_link_libraries(lbann-bin2 lbann )
 set_target_properties(lbann-bin2 PROPERTIES OUTPUT_NAME lbann2)
+
+# Install the binaries
+install(
+  TARGETS lbann-bin lbann-bin2
+  EXPORT LBANNTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  )
+
+# Install the relevant prototext
+install(FILES README.md DESTINATION ${CMAKE_INSTALL_DATADIR}/model_zoo)
+install(DIRECTORY data_readers models optimizers
+  DESTINATION ${CMAKE_INSTALL_DATADIR}/model_zoo)

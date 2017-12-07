@@ -111,7 +111,7 @@ if (${UPPER_PROJECT_NAME}_WITH_CUDA)
   if (LBANN_HAS_CUDA)
     set(LBANN_SOFTMAX_CUDA ${${UPPER_PROJECT_NAME}_WITH_SOFTMAX_CUDA})
   else ()
-    message(STATUS "CUDA support not found. Disabling.")
+    message(FATAL_ERROR "CUDA support not found. Disabling.")
     set(LBANN_SOFTMAX_CUDA FALSE)
     set(LBANN_WITH_SOFTMAX_CUDA OFF)
     set(LBANN_WITH_CUDA OFF)
@@ -136,36 +136,11 @@ endif ()
 # Initialize build
 #
 
-include(SetupCXX)
-
-# Get installation directories
+# Get installation directories -- these get used in various places;
+# best to just make them available
 include(GNUInstallDirs)
 
-################################################################
-# Initialize RPATH (always full RPATH)
-# Note: see https://cmake.org/Wiki/CMake_RPATH_handling
-################################################################
-
-# Use RPATH on OS X
-if (APPLE)
-  set(CMAKE_MACOSX_RPATH ON)
-endif ()
-
-# Use (i.e. don't skip) RPATH for build
-set(CMAKE_SKIP_BUILD_RPATH FALSE)
-
-# Use same RPATH for build and install
-set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
-
-# Add the automatically determined parts of the RPATH
-# which point to directories outside the build tree to the install RPATH
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
-# Add build and install directories to RPATH
-set(CMAKE_INSTALL_RPATH "${PROJECT_BINARY_DIR};${CMAKE_INSTALL_RPATH}")
-set(CMAKE_INSTALL_RPATH "${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR};${CMAKE_INSTALL_RPATH}")
-set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib;${CMAKE_INSTALL_RPATH}")
-set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR};${CMAKE_INSTALL_RPATH}")
+include(SetupCXX)
 
 ################################################################
 # Initialize dependencies
@@ -255,6 +230,11 @@ add_subdirectory(tests)
 # Create the LBANN library
 add_library(lbann ${LBANN_SOURCES} ${LBANN_HEADERS} ${LBANN_CUDA_SOURCES})
 
+target_include_directories(lbann PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
+  $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}>)
+
 # Use the IMPORTED targets when possible.
 target_link_libraries(lbann PUBLIC LbannProto)
 target_link_libraries(lbann PUBLIC OpenMP::OpenMP_CXX)
@@ -275,8 +255,7 @@ if (LBANN_TOPO_AWARE)
   target_link_libraries(lbann PUBLIC HWLOC::hwloc)
 endif ()
 
-
-#FIXME HERE DOWN
+#== FIXME HERE DOWN ==
 
 if (LBANN_HAS_CUDA)
   target_link_libraries(lbann PUBLIC ${CUDA_LIBRARIES})
@@ -299,11 +278,6 @@ if (LBANN_HAS_VTUNE)
 endif ()
 
 
-target_compile_options(lbann PUBLIC "-Werror")
-target_include_directories(lbann PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
-  $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}>)
 
 ################################################################
 # Install LBANN
@@ -312,16 +286,25 @@ target_include_directories(lbann PUBLIC
 # Install library
 install(
   TARGETS lbann
-  EXPORT lbann
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
+  EXPORT LBANNTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  )
+
+# Install export
+install(EXPORT LBANNTargets
+  NAMESPACE LBANN::
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/lbann
+  )
 
 # Install header files
 install(
   DIRECTORY "${PROJECT_SOURCE_DIR}/include/lbann"
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
   FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
-)
+  )
 
 # Install contributor list, license, readme
 install(
@@ -329,7 +312,7 @@ install(
         "${PROJECT_SOURCE_DIR}/LICENSE"
         "${PROJECT_SOURCE_DIR}/README.md"
   DESTINATION ${CMAKE_INSTALL_DOCDIR}
-)
+  )
 
 # Display all of the accumulated compiler definitions
 get_directory_property( DirDefs COMPILE_DEFINITIONS )

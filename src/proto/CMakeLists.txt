@@ -7,8 +7,20 @@ if (LBANN_HAS_PROTOBUF)
   target_link_libraries(LbannProto PUBLIC protobuf::libprotobuf)
   target_include_directories(LbannProto PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}>)
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
   set(LBANN_HAS_TBINF TRUE)
+
+  # Install the library
+  install(TARGETS LbannProto
+    EXPORT LBANNTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    )
+
+  # Install the newly built headers
+  install(FILES ${PROTO_HDRS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 endif (LBANN_HAS_PROTOBUF)
 
@@ -17,9 +29,6 @@ set_full_path(THIS_DIR_SOURCES
   init_image_data_readers.cpp
   proto_common.cpp
   )
-#list(APPEND THIS_DIR_SOURCES ${PROTO_SRCS})
-
 
 # Propagate the files up the tree
-#set(HEADERS "${HEADERS}" "${THIS_DIR_HEADERS}" PARENT_SCOPE)
 set(SOURCES "${SOURCES}" "${THIS_DIR_SOURCES}" PARENT_SCOPE)

@@ -73,7 +73,7 @@ endif ()
 
 # Initialize C++ flags
 lbann_check_and_append_flag(CMAKE_CXX_FLAGS
-  -fPIC -g -Wall -Wextra -Wno-unused-parameter -Wnon-virtual-dtor -Wshadow)
+  -fPIC -g -Wall -Wextra -Werror -Wno-unused-parameter -Wnon-virtual-dtor -Wshadow)
 
 # Disable all optimization in debug for better viewing under debuggers (cmake already adds -g)
 lbann_check_and_append_flag(CMAKE_CXX_FLAGS_DEBUG -O0)
@@ -99,3 +99,29 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
      lbann_check_and_append_flag(CMAKE_CXX_FLAGS -fno-omit-frame-pointer)
    endif ()
 endif ()
+
+################################################################
+# Initialize RPATH (always full RPATH)
+# Note: see https://cmake.org/Wiki/CMake_RPATH_handling
+################################################################
+
+# Use RPATH on OS X
+if (APPLE)
+  set(CMAKE_MACOSX_RPATH ON)
+endif ()
+
+# Use (i.e. don't skip) RPATH for build
+set(CMAKE_SKIP_BUILD_RPATH FALSE)
+
+# Use same RPATH for build and install
+set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+
+# Add the automatically determined parts of the RPATH
+# which point to directories outside the build tree to the install RPATH
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+# Add build and install directories to RPATH
+set(CMAKE_INSTALL_RPATH "${PROJECT_BINARY_DIR};${CMAKE_INSTALL_RPATH}")
+set(CMAKE_INSTALL_RPATH "${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR};${CMAKE_INSTALL_RPATH}")
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib;${CMAKE_INSTALL_RPATH}")
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR};${CMAKE_INSTALL_RPATH}")
