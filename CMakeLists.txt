@@ -160,12 +160,20 @@ set(LBANN_HAS_OPENCV ${OpenCV_FOUND})
 
 # Setup some additional CUDA-y things
 if (LBANN_HAS_CUDA)
+  if (NOT LBANN_WITH_CUDNN)
+    message(WARNING
+      "Despite the fact that it looks optional, cuDNN is currently required "
+      "when building with CUDA support. You have tried LBANN_WITH_CUDNN=OFF. "
+      "It will be searched for anyway.")
+    set(LBANN_WITH_CUDNN ON)
+  endif ()
+
   include(SetupCUDAToolkit)
+
+  set(LBANN_HAS_CUDNN ${CUDNN_FOUND})
+
   if (LBANN_WITH_NCCL2)
     include(SetupNCCL2)
-  endif ()
-  if (LBANN_WITH_CUDNN)
-    include(SetupcuDNN)
   endif ()
 endif ()
 
@@ -259,6 +267,7 @@ endif ()
 
 if (LBANN_HAS_CUDA)
   target_link_libraries(lbann PUBLIC ${CUDA_LIBRARIES})
+  target_link_libraries(lbann PUBLIC cuda::toolkit)
   if (WITH_NVPROF)
     add_definitions(-DLBANN_NVPROF)
     target_link_libraries(lbann PUBLIC ${NVTX_LIBRARIES})

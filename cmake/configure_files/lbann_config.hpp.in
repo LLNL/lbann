@@ -19,8 +19,8 @@
 
 #cmakedefine LBANN_NVPROF
 
-#cmakedefine __LIB_CUDNN
-#cmakedefine __LIB_CUDA
+#cmakedefine LBANN_HAS_CUDA
+#cmakedefine LBANN_HAS_CUDNN
 
 #cmakedefine LBANN_HAS_OPENCV
 #cmakedefine LBANN_HAS_TBINF

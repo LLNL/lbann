@@ -82,7 +82,7 @@ class base_convolution_layer : public learning_layer {
    */
   AbsDistMat *m_bias_weights_gradient;
 
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
 
   /** Bias tensor cuDNN descriptor. */
   cudnnTensorDescriptor_t m_bias_cudnn_desc;
@@ -96,7 +96,7 @@ class base_convolution_layer : public learning_layer {
   /** GPU memory for convolution bias gradient. */
   std::vector<DataType*> m_bias_weights_gradient_d;
 
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 
   public:
 
@@ -141,7 +141,7 @@ class base_convolution_layer : public learning_layer {
     // Initialize bias
     m_bias_scaling_factor = has_bias ? DataType(1) : DataType(0);
 
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
 
     // Initialize cuDNN objects
     this->m_cudnn = cudnn;
@@ -149,7 +149,7 @@ class base_convolution_layer : public learning_layer {
     m_kernel_cudnn_desc = nullptr;
     m_convolution_cudnn_desc = nullptr;
 
-  #endif // #ifdef __LIB_CUDNN
+  #endif // #ifdef LBANN_HAS_CUDNN
 
   }
 
@@ -167,7 +167,7 @@ class base_convolution_layer : public learning_layer {
     m_kernel_weights_gradient = other.m_kernel_weights_gradient->Copy();
     m_bias_weights_gradient = other.m_bias_weights_gradient->Copy();
 
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
 
     // Copy cuDNN objects
     m_bias_cudnn_desc = nullptr;
@@ -188,7 +188,7 @@ class base_convolution_layer : public learning_layer {
                                               this->m_bias_weights_gradient->Height(),
                                               this->m_bias_weights_gradient->Width());
 
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
 
     // Update views
     setup_views();
@@ -223,7 +223,7 @@ class base_convolution_layer : public learning_layer {
     COPY_MATRIX(other.m_bias_weights_gradient, m_bias_weights_gradient);
   #undef COPY_MATRIX
 
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
 
     // Copy cuDNN objects
     cudnn::copy_tensor_cudnn_desc(other.m_bias_cudnn_desc,
@@ -245,7 +245,7 @@ class base_convolution_layer : public learning_layer {
                                                 this->m_bias_weights_gradient->Width());
     }
 
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
 
     // Update views
     setup_views();
@@ -254,7 +254,7 @@ class base_convolution_layer : public learning_layer {
   }
 
   ~base_convolution_layer() override {
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
     // Destroy cuDNN objects
     if(m_bias_cudnn_desc) {
       CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_bias_cudnn_desc));
@@ -272,7 +272,7 @@ class base_convolution_layer : public learning_layer {
       this->m_cudnn->deallocate_on_gpus(m_bias_weights_gradient_d);
     }
 
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
 
     // Delete matrix views
     delete m_kernel_weights_v;
@@ -360,7 +360,7 @@ class base_convolution_layer : public learning_layer {
   /// Initialize GPU objects
   void setup_gpu() override {
     learning_layer::setup_gpu();
-  #ifndef __LIB_CUDNN
+  #ifndef LBANN_HAS_CUDNN
     throw lbann_exception("base_convolution_layer: cuDNN not detected");
   #else
 
@@ -399,14 +399,14 @@ class base_convolution_layer : public learning_layer {
                                       this->m_bias_weights_gradient->Width());
     }
 
-  #endif // #ifdef __LIB_CUDNN
+  #endif // #ifdef LBANN_HAS_CUDNN
   }
 
  protected:
 
   /** Convolution with cuDNN. */
   void apply_convolution_cudnn(bool during_forward_prop) {
-  #ifndef __LIB_CUDNN
+  #ifndef LBANN_HAS_CUDNN
     throw lbann_exception("base_convolution_layer: cuDNN not detected");
   #else
 
@@ -477,12 +477,12 @@ class base_convolution_layer : public learning_layer {
 
     }
 
-  #endif // #ifndef __LIB_CUDNN
+  #endif // #ifndef LBANN_HAS_CUDNN
   }
 
   /** Transposed convolution with cuDNN. */
   void apply_transposed_convolution_cudnn(bool during_forward_prop) {
-  #ifndef __LIB_CUDNN
+  #ifndef LBANN_HAS_CUDNN
     throw lbann_exception("base_convolution_layer: cuDNN not detected");
   #else
 
@@ -553,11 +553,11 @@ class base_convolution_layer : public learning_layer {
 
     }
 
-  #endif // #ifndef __LIB_CUDNN
+  #endif // #ifndef LBANN_HAS_CUDNN
   }
 
   void apply_bias_cudnn() {
-  #ifndef __LIB_CUDNN
+  #ifndef LBANN_HAS_CUDNN
     throw lbann_exception("base_convolution_layer: cuDNN not detected");
   #else
 
@@ -585,11 +585,11 @@ class base_convolution_layer : public learning_layer {
                                  this->m_activations_d[i]));
     }
 
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
   }
 
   void compute_gradients_cudnn(bool using_transposed_convolution) {
-  #ifndef __LIB_CUDNN
+  #ifndef LBANN_HAS_CUDNN
     throw lbann_exception("base_convolution_layer: cuDNN not detected");
   #else
 
@@ -698,7 +698,7 @@ class base_convolution_layer : public learning_layer {
       
     }
 
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
   }
 
   /** Convolution with im2col GEMM algorithm. */

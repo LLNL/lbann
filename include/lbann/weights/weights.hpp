@@ -122,10 +122,10 @@ class weights {
    */
   void get_values_view(AbsDistMat& values_v);
 
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
   /** Get the weights matrix on GPU. */
   std::vector<DataType*> get_values_gpu();
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 
  protected:
 
@@ -156,10 +156,10 @@ class weights {
    */
   optimizer* m_optimizer;
 
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
   /** GPU memory for weights matrix. */
   std::vector<DataType*> m_values_d;
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 
 };
 

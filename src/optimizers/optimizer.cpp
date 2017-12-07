@@ -41,11 +41,11 @@ optimizer::optimizer(lbann_comm *comm, DataType learning_rate)
     m_cpu_gradient_is_nonzero(false),
     m_cpu_staging_is_nonzero(false),
     m_staging(nullptr)
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
   ,
     m_gpu_gradient_is_nonzero(false),
     m_gpu_staging_is_nonzero(false)
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 {}
 
 optimizer::optimizer(const optimizer& other)
@@ -57,23 +57,23 @@ optimizer::optimizer(const optimizer& other)
     m_cpu_gradient_is_nonzero(other.m_cpu_gradient_is_nonzero),
     m_cpu_staging_is_nonzero(other.m_cpu_staging_is_nonzero),
     m_staging(other.m_staging)
-    #ifdef __LIB_CUDNN
+    #ifdef LBANN_HAS_CUDNN
     ,
     m_gpu_gradient_is_nonzero(other.m_gpu_gradient_is_nonzero),
     m_gpu_staging_is_nonzero(other.m_gpu_staging_is_nonzero)
-    #endif // __LIB_CUDNN
+    #endif // LBANN_HAS_CUDNN
     , m_step_time(other.m_step_time)
 {
   if (m_gradient != nullptr) { m_gradient = m_gradient->Copy(); }
   if (m_staging != nullptr)  { m_staging = m_staging->Copy(); }
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
   if (m_cudnn != nullptr && other.m_weights != nullptr) {
     const int height = other.m_weights->get_height();
     const int width = other.m_weights->get_width();
     m_gradient_d = m_cudnn->copy(other.m_gradient_d, height, width);
     m_staging_d = m_cudnn->copy(other.m_staging_d, height, width);
   }
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
 }
 
 optimizer& optimizer::operator=(const optimizer& other) {
@@ -102,7 +102,7 @@ optimizer& optimizer::operator=(const optimizer& other) {
   #undef COPY_MATRIX
 
   // Copy GPU data
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
   if (m_cudnn != nullptr && other.m_weights != nullptr) {
     const int height = other.m_weights->get_height();
     const int width = other.m_weights->get_width();
@@ -111,7 +111,7 @@ optimizer& optimizer::operator=(const optimizer& other) {
     m_gradient_d = m_cudnn->copy(other.m_gradient_d, height, width);
     m_staging_d = m_cudnn->copy(other.m_staging_d, height, width);
   }
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
 
   return *this;
 }
@@ -119,12 +119,12 @@ optimizer& optimizer::operator=(const optimizer& other) {
 optimizer::~optimizer() {
   if (m_gradient != nullptr) { delete m_gradient; }
   if (m_staging != nullptr)  { delete m_staging; }
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
   if (m_cudnn != nullptr) {
     m_cudnn->deallocate_on_gpus(m_gradient_d);
     m_cudnn->deallocate_on_gpus(m_staging_d);
   }
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
 }
 
 std::string optimizer::get_description() const {
@@ -166,7 +166,7 @@ AbsDistMat& optimizer::get_gradient() {
     m_cpu_staging_is_nonzero = false;
   }
 
-#if __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
 
   // Get matrix dimensions
   const int height = m_weights->get_height();
@@ -194,15 +194,15 @@ AbsDistMat& optimizer::get_gradient() {
     El::Zero(*m_staging);
     m_gpu_gradient_is_nonzero = false;
   }
-  
-#endif // __LIB_CUDNN
+
+#endif // LBANN_HAS_CUDNN
 
   // Return full gradient
   return *m_gradient;
-  
+
 }
 
-#if __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
 std::vector<DataType*> optimizer::get_gradient_gpu() {
 
   // Check if gradient is initialized
@@ -253,12 +253,12 @@ std::vector<DataType*> optimizer::get_gradient_gpu() {
     m_cudnn->clear_on_gpus(m_staging_d, height, width);
     m_cpu_gradient_is_nonzero = false;
   }
-  
+
   // Return full gradient
   return m_gradient_d;
 
 }
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 
 void optimizer::clear_gradient() {
 
@@ -273,7 +273,7 @@ void optimizer::clear_gradient() {
   // Zero out matrices
   El::Zero(*m_gradient);
   El::Zero(*m_staging);
-#if __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
   if (m_cudnn != nullptr) {
     m_cudnn->clear_on_gpus(m_gradient_d,
                            m_weights->get_height(),
@@ -282,15 +282,15 @@ void optimizer::clear_gradient() {
                            m_weights->get_height(),
                            m_weights->get_width());
   }
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 
   // Reset flags
   m_cpu_gradient_is_nonzero = false;
   m_cpu_staging_is_nonzero = false;
-#if __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
   m_gpu_gradient_is_nonzero = false;
   m_gpu_staging_is_nonzero = false;
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 
 }
 
@@ -322,7 +322,7 @@ void optimizer::allreduce_and_add_to_gradient(const AbsDistMat& gradient,
   }
 }
 
-#if __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
 
 void optimizer::add_to_gradient_gpu(std::vector<DataType*>& gradient,
                                     DataType scale) {
@@ -378,7 +378,7 @@ void optimizer::allreduce_and_add_to_gradient_gpu(std::vector<DataType*>& gradie
   }
 }
 
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 
 void optimizer::setup(weights& w) {
   if (is_initialized()) {
@@ -401,10 +401,10 @@ void optimizer::setup(weights& w) {
   // Initialize GPU
   m_cudnn = m_weights->m_cudnn;
   if (m_cudnn != nullptr) {
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
     m_cudnn->allocate_on_gpus(m_gradient_d, height, width);
     m_cudnn->allocate_on_gpus(m_staging_d, height, width);
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
   }
 
   // Initialize with zero gradient
@@ -423,11 +423,11 @@ void optimizer::step() {
   double step_start = get_time();
   // Apply optimization step
   if (m_cudnn != nullptr) {
-  #if __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
     std::vector<DataType*> values_d = m_weights->m_values_d;
     std::vector<DataType*> gradient_d = get_gradient_gpu();
     step_compute_gpu(values_d, gradient_d);
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
   } else {
     m_weights->get_values(); // Move data to CPU
     AbsDistMat& values = *m_weights->m_values;
@@ -442,7 +442,7 @@ void optimizer::step() {
 
 }
 
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
 void optimizer::step_compute_gpu(std::vector<DataType*> values_d,
                                  std::vector<DataType*> gradient_d) {
   m_cudnn->copy_from_gpu(0, m_weights->m_values->Matrix(), values_d[0]);
@@ -451,6 +451,6 @@ void optimizer::step_compute_gpu(std::vector<DataType*> values_d,
   step_compute(*m_weights->m_values, *m_gradient);
   m_cudnn->broadcast_to_gpus(values_d, m_weights->m_values->LockedMatrix());
 }
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 
 }  // namespace lbann

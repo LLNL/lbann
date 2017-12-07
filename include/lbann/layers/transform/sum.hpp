@@ -53,23 +53,23 @@ class sum_layer : public transform_layer {
     // Sum layer has no limit on parents
     m_max_num_parent_layers = -1;
 
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
     // Initialize GPU if available
     if(cudnn) {
       this->m_using_gpus = true;
       this->m_cudnn = cudnn;
     }
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
 
   }
 
   sum_layer(const sum_layer&) = default;
   sum_layer& operator=(const sum_layer&) = default;
   ~sum_layer() override {
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
     // GPU memory for activations is a copy of previous layer's activations
     this->m_error_signal_d.clear();
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
   }
 
   /** Returns description of ctor params */
@@ -94,7 +94,7 @@ class sum_layer : public transform_layer {
 
   void setup_gpu() override {
     transform_layer::setup_gpu();
-  #ifndef __LIB_CUDNN
+  #ifndef LBANN_HAS_CUDNN
     throw lbann_exception("sum_layer: cuDNN not detected");
   #else
 
@@ -106,7 +106,7 @@ class sum_layer : public transform_layer {
       }
     }
 
-  #endif // #ifndef __LIB_CUDNN
+  #endif // #ifndef LBANN_HAS_CUDNN
   }
 
   protected:
@@ -121,14 +121,14 @@ class sum_layer : public transform_layer {
 
   void bp_compute() override {
     if(this->m_using_gpus) {
-  #ifndef __LIB_CUDNN
+  #ifndef LBANN_HAS_CUDNN
       throw lbann_exception("sum_layer: cuDNN not detected");
   #else
       this->m_cudnn->copy_on_gpus(this->m_error_signal_d,
                                   this->m_prev_error_signal_dv,
                                   this->m_num_neurons,
                                   this->m_mini_batch_size_per_gpu);
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
     }
     else {
       El::LockedView(*this->m_error_signal_v, *this->m_prev_error_signal_v);
@@ -136,7 +136,7 @@ class sum_layer : public transform_layer {
   }
 
   void fp_compute_cudnn() {
-  #ifndef __LIB_CUDNN
+  #ifndef LBANN_HAS_CUDNN
     throw lbann_exception("sum_layer: cuDNN not detected");
   #else
 
@@ -191,7 +191,7 @@ class sum_layer : public transform_layer {
 
     }
 
-  #endif // #ifndef __LIB_CUDNN
+  #endif // #ifndef LBANN_HAS_CUDNN
   }
 
   void fp_compute_cpu() {

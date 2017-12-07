@@ -75,13 +75,13 @@ class slice_layer : public transform_layer {
     // Slice layer has no limit on children
     m_max_num_child_layers = -1;
 
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
     // Initialize GPU if available
     if(cudnn) {
       this->m_using_gpus = true;
       this->m_cudnn = cudnn;
     }
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
 
   }
 
@@ -107,10 +107,10 @@ class slice_layer : public transform_layer {
     delete m_input_slice_v;
     delete m_output_slice_v;
 
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
     // GPU memory for activations is a copy of previous layer's activations
     this->m_activations_d.clear();
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
 
   }
 
@@ -167,7 +167,7 @@ class slice_layer : public transform_layer {
 
   void setup_gpu() override {
     transform_layer::setup_gpu();
-  #ifndef __LIB_CUDNN
+  #ifndef LBANN_HAS_CUDNN
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: slice_layer: cuDNN not detected";
     throw lbann_exception(err.str());
@@ -206,14 +206,14 @@ class slice_layer : public transform_layer {
       }
     }
 
-  #endif // #ifndef __LIB_CUDNN
+  #endif // #ifndef LBANN_HAS_CUDNN
   }
 
   protected:
 
   void fp_compute() override {
     if(this->m_using_gpus) {
-  #ifndef __LIB_CUDNN
+  #ifndef LBANN_HAS_CUDNN
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: slice_layer: cuDNN not detected";
     throw lbann_exception(err.str());
@@ -222,7 +222,7 @@ class slice_layer : public transform_layer {
                                 this->m_prev_activations_dv,
                                 this->m_num_prev_neurons,
                                 this->m_mini_batch_size_per_gpu);
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
     }
     else {
       El::LockedView(*this->m_activations_v, *this->m_prev_activations_v);
@@ -238,7 +238,7 @@ class slice_layer : public transform_layer {
   }
 
   void bp_compute_gpu() {
-  #ifndef __LIB_CUDNN
+  #ifndef LBANN_HAS_CUDNN
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: slice_layer: cuDNN not detected";
     throw lbann_exception(err.str());
@@ -309,7 +309,7 @@ class slice_layer : public transform_layer {
 
     }
     
-  #endif // #ifndef __LIB_CUDNN
+  #endif // #ifndef LBANN_HAS_CUDNN
   }
 
   void bp_compute_cpu() {
@@ -426,7 +426,7 @@ class slice_layer : public transform_layer {
 
   }
 
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
   void get_gpu_fp_output(std::vector<DataType*>& output_dv,
                          std::vector<DataType*>& output_d,
                          const Layer* next_layer) const override {
@@ -484,7 +484,7 @@ class slice_layer : public transform_layer {
     }
 
   }
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
 
   const std::vector<int> fp_output_dims(const Layer* next_layer) const override {
 

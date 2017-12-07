@@ -59,14 +59,14 @@ adam::adam(const adam& other)
     m_moment2(other.m_moment2) {
   if (m_moment1 != nullptr) { m_moment1 = m_moment1->Copy(); }
   if (m_moment2 != nullptr) { m_moment2 = m_moment2->Copy(); }
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
   if (m_cudnn != nullptr && other.m_weights != nullptr) {
     const int height = other.m_weights->get_height();
     const int width = other.m_weights->get_width();
     m_moment1_d = m_cudnn->copy(other.m_moment1_d, height, width);
     m_moment2_d = m_cudnn->copy(other.m_moment2_d, height, width);
   }
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
 }
 
 adam& adam::operator=(const adam& other) {
@@ -98,7 +98,7 @@ adam& adam::operator=(const adam& other) {
   }
 
   // Copy GPU data
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
   if (m_cudnn != nullptr && other.m_weights != nullptr) {
     const int height = other.m_weights->get_height();
     const int width = other.m_weights->get_width();
@@ -107,7 +107,7 @@ adam& adam::operator=(const adam& other) {
     m_moment1_d = m_cudnn->copy(other.m_moment1_d, height, width);
     m_moment2_d = m_cudnn->copy(other.m_moment2_d, height, width);
   }
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
 
   return *this;
 }
@@ -115,12 +115,12 @@ adam& adam::operator=(const adam& other) {
 adam::~adam() {
   if(m_moment1 != nullptr) { delete m_moment1; }
   if(m_moment2 != nullptr) { delete m_moment2; }
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
   if (m_cudnn != nullptr) {
     m_cudnn->deallocate_on_gpus(m_moment1_d);
     m_cudnn->deallocate_on_gpus(m_moment2_d);
   }
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
 }
 
 std::string adam::get_description() const {
@@ -147,10 +147,10 @@ void adam::setup(weights& w) {
 
   // Allocate GPU objects
   if (m_cudnn != nullptr) {
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
     m_cudnn->allocate_on_gpus(m_moment1_d, height, width);
     m_cudnn->allocate_on_gpus(m_moment2_d, height, width);
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
   }
 
 }

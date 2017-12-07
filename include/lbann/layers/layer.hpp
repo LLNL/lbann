@@ -187,7 +187,7 @@ class Layer {
   virtual void get_fp_output(AbsDistMat& fp_output, const Layer* next_layer = nullptr) const;
   /** Get backward propagation output, as seen by previous layer. */
   virtual void get_bp_output(AbsDistMat& fp_output, const Layer* prev_layer = nullptr) const;
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
   /** Get forward propagation output on GPUs, as seen by next layer.
    *  output_dv is a view into GPU memory for the output. If the
    *  output cannot be represented as a view, the data is copied into
@@ -204,7 +204,7 @@ class Layer {
   virtual void get_gpu_bp_output(std::vector<DataType*>& output_dv,
                                  std::vector<DataType*>& output_d,
                                  const Layer* prev_layer = NULL) const;
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
   /** Get forward propagation output dimensions, as seen by next layer. */
   virtual const std::vector<int> fp_output_dims(const Layer* next_layer = nullptr) const;
 
@@ -315,10 +315,10 @@ class Layer {
   virtual void fp_set_std_matrix_view();
   /** Setup views of the matrices for the layer's backward propagation. */
   virtual void bp_set_std_matrix_view();
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
   /** Pin host memory if needed for GPU memory transfers. */
   virtual void pin_data();
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 
   /** Setup pointers to parent and child layers.
    *  Called by the setup function. This base method just checks that
@@ -360,7 +360,7 @@ class Layer {
   /// cuDNN manager
   cudnn::cudnn_manager *m_cudnn;
 
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
 
   /** Number of mini-batch samples per GPU. */
   int m_mini_batch_size_per_gpu;
@@ -394,7 +394,7 @@ class Layer {
   /** cuDNN descriptor for neuron tensor. */
   cudnnTensorDescriptor_t m_neurons_cudnn_desc;
 
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 
   /** Time spent in forward propagation. */
   double fp_time;

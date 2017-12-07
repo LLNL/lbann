@@ -46,13 +46,13 @@ sgd::sgd(const sgd& other)
     m_nesterov(other.m_nesterov),
     m_velocity(other.m_velocity) {
   if (m_velocity != nullptr) { m_velocity = m_velocity->Copy(); }
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
   if (m_cudnn != nullptr && other.m_weights != nullptr) {
     const int height = other.m_weights->get_height();
     const int width = other.m_weights->get_width();
     m_velocity_d = m_cudnn->copy(other.m_velocity_d, height, width);
   }
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
 }
 
 sgd& sgd::operator=(const sgd& other) {
@@ -72,25 +72,25 @@ sgd& sgd::operator=(const sgd& other) {
   }
 
   // Copy GPU data
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
   if (m_cudnn != nullptr && other.m_weights != nullptr) {
     const int height = other.m_weights->get_height();
     const int width = other.m_weights->get_width();
     m_cudnn->deallocate_on_gpus(m_velocity_d);
     m_velocity_d = m_cudnn->copy(other.m_velocity_d, height, width);
   }
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
 
   return *this;
 }
 
 sgd::~sgd() {
   if (m_velocity != nullptr) { delete m_velocity; }
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
   if (m_cudnn != nullptr) {
     m_cudnn->deallocate_on_gpus(m_velocity_d);
   }
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
 }
 
 std::string sgd::get_description() const {
@@ -113,9 +113,9 @@ void sgd::setup(weights& w) {
 
   // Allocate GPU objects
   if (m_cudnn != nullptr) {
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
     m_cudnn->allocate_on_gpus(m_velocity_d, height, width);
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
   }
   
 }

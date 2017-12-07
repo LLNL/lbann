@@ -34,7 +34,7 @@
 #include "lbann/comm.hpp"
 #include "lbann/utils/exception.hpp"
 
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
 #include <cuda.h>
 #include <cudnn.h>
 #include <cublas_v2.h>
@@ -45,10 +45,10 @@
 #include "common.h"
 #endif // #ifdef __LIB_NCCL
 
-#endif // #ifdef __LIB_CUDNN
+#endif // #ifdef LBANN_HAS_CUDNN
 
 // Error utility macros
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
 #define FORCE_CHECK_CUDA(cuda_call)                                     \
   do {                                                                  \
     const cudaError_t cuda_status = cuda_call;                          \
@@ -88,13 +88,16 @@
 #define CHECK_CUDNN(cudnn_call)   cudnn_call
 #define CHECK_CUBLAS(cublas_call) cublas_call
 #endif // #ifdef LBANN_DEBUG
-#endif // #ifdef __LIB_CUDNN
+#endif // #ifdef LBANN_HAS_CUDNN
 
-namespace cudnn {
+namespace lbann
+{
+namespace cudnn
+{
 
 /** cuDNN manager class */
 class cudnn_manager {
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
 
  public:
   /** Constructor
@@ -254,7 +257,7 @@ class cudnn_manager {
                               int height,
                               int width_per_gpu,
                               int leading_dim = 0);
-  
+
   /** Pin matrix memory.
    *  Pinned memory accelerates memory transfers with GPU, but may
    *  degrade system performance. This function assumes that the
@@ -307,10 +310,10 @@ class cudnn_manager {
   ncclDataType_t nccl_datatype();
 #endif // #ifdef __LIB_NCCL
 
-#endif // #ifdef __LIB_CUDNN
+#endif // #ifdef LBANN_HAS_CUDNN
 };
 
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
 
 /** Print cuDNN version information to standard output. */
 void print_version();
@@ -363,8 +366,9 @@ void copy_activation_cudnn_desc(const cudnnActivationDescriptor_t& src,
 void copy_lrn_cudnn_desc(const cudnnLRNDescriptor_t& src,
                          cudnnLRNDescriptor_t& dst);
 
-#endif // #ifdef __LIB_CUDNN
+#endif // #ifdef LBANN_HAS_CUDNN
 
-}
+}// namespace cudnn
+}// namespace lbann
 
 #endif // CUDNN_WRAPPER_HPP_INCLUDED

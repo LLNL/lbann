@@ -31,9 +31,7 @@
 
 #include "El.hpp"
 
-using namespace cudnn;
-using namespace lbann;
-
+namespace lbann {
 namespace cudnn {
 
 namespace {
@@ -45,7 +43,8 @@ __global__ void reduce_kernel(DataType *dst, const DataType *src,
   dst[offset] += src[offset];
 }
 
-__global__ void scale_kernel(DataType *data, 
+#ifdef __LIB_NCCL
+__global__ void scale_kernel(DataType *data,
                              const DataType scale,
                              El::Int len) {
 
@@ -54,7 +53,7 @@ __global__ void scale_kernel(DataType *data,
   data[offset] *= scale;
 
 }
-
+#endif // __LIB_NCCL
 }
 
 void cudnn_manager::allreduce_on_gpus(std::vector<DataType*>& gpu_data,
@@ -71,11 +70,11 @@ void cudnn_manager::allreduce_on_gpus(std::vector<DataType*>& gpu_data,
   std::vector<DataType*> bufs[2];
   for(int i=0; i<m_num_gpus; ++i) {
     if (get_work_space_size(i) < work_len_bytes) {
-      set_work_space_size(i, work_len_bytes); 
+      set_work_space_size(i, work_len_bytes);
     }
     bufs[0].push_back(static_cast<DataType*>(get_work_space(i)));
     bufs[1].push_back(static_cast<DataType*>(get_work_space(i)) + buf_len);
-  }  
+  }
 
   El::Int total_len = height * width;
   El::Int offset = 0;
@@ -88,7 +87,7 @@ void cudnn_manager::allreduce_on_gpus(std::vector<DataType*>& gpu_data,
       for(int i = 0; i < m_num_gpus; ++i) {
         CHECK_CUDA(cudaSetDevice(m_gpus[i]));
         int src_dev = i;
-        int dst_dev = (i + 1) % m_num_gpus;              
+        int dst_dev = (i + 1) % m_num_gpus;
         DataType *src_buf = j == 0 ? gpu_data[src_dev] + offset : bufs[sbuf_idx][src_dev];
         DataType *dst_buf = bufs[dbuf_idx][dst_dev];
         // copy to the next device in the ring
@@ -97,7 +96,7 @@ void cudnn_manager::allreduce_on_gpus(std::vector<DataType*>& gpu_data,
       }
       synchronize();
       for(int i = 0; i < m_num_gpus; ++i) {
-        CHECK_CUDA(cudaSetDevice(m_gpus[i]));        
+        CHECK_CUDA(cudaSetDevice(m_gpus[i]));
         DataType *dst_buf = bufs[dbuf_idx][i];
         // TODO: use Thrust
         int tb_dim = 256;
@@ -181,3 +180,4 @@ void cudnn_manager::global_allreduce_on_gpus_nccl(std::vector<DataType*>& gpu_da
 #endif // __LIB_NCCL
 
 } // namespace cudnn
+} // namespace lbann

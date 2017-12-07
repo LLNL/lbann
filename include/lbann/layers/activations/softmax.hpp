@@ -34,7 +34,7 @@
 #include "lbann/io/file_io.hpp"
 #include "lbann/utils/random.hpp"
 #include "lbann/models/model.hpp"
-#if defined(__LIB_CUDA) && defined(LBANN_SOFTMAX_CUDA)
+#if defined(LBANN_HAS_CUDA) && defined(LBANN_SOFTMAX_CUDA)
 #include "lbann/layers/activations/softmax_cuda.hpp"
 #endif
 #include <unistd.h>
@@ -64,7 +64,7 @@ class softmax_layer : public activation_layer {
    */
   DataType m_min_output;
 
-#if defined(__LIB_CUDA) && defined(LBANN_SOFTMAX_CUDA)
+#if defined(LBANN_HAS_CUDA) && defined(LBANN_SOFTMAX_CUDA)
   cudnnTensorDescriptor_t m_cudnn_desc = nullptr;
 #endif
 
@@ -75,7 +75,7 @@ class softmax_layer : public activation_layer {
     initialize_distributed_matrices();
     m_min_output = std::sqrt(std::numeric_limits<DataType>::min());
     this->m_cudnn = cudnn;
-#if defined(__LIB_CUDA) && defined(LBANN_SOFTMAX_CUDA)
+#if defined(LBANN_HAS_CUDA) && defined(LBANN_SOFTMAX_CUDA)
     if (this->m_cudnn && T_layout == data_layout::DATA_PARALLEL) {
       this->m_using_gpus = true;
     }
@@ -89,7 +89,7 @@ class softmax_layer : public activation_layer {
     m_min_output = other.m_min_output;
     this->m_cudnn = other.m_cudnn;
     this->m_using_gpus = other.m_using_gpus;
-#if defined(__LIB_CUDA) && defined(LBANN_SOFTMAX_CUDA)
+#if defined(LBANN_HAS_CUDA) && defined(LBANN_SOFTMAX_CUDA)
     if (this->m_using_gpus) {
       cudnn::copy_tensor_cudnn_desc(other.m_cudnn_desc,
                                     m_cudnn_desc);
@@ -108,7 +108,7 @@ class softmax_layer : public activation_layer {
     m_min_output = other.m_min_output;
     this->m_cudnn = other.m_cudnn;
     this->m_using_gpus = other.m_using_gpus;
-#if defined(__LIB_CUDA) && defined(LBANN_SOFTMAX_CUDA)    
+#if defined(LBANN_HAS_CUDA) && defined(LBANN_SOFTMAX_CUDA)    
     if (this->m_using_gpus) {
       cudnn::copy_tensor_cudnn_desc(other.m_cudnn_desc,
                                     m_cudnn_desc);
@@ -120,7 +120,7 @@ class softmax_layer : public activation_layer {
     delete m_workspace;
     delete m_workspace_v;
 
-#if defined(__LIB_CUDA) && defined(LBANN_SOFTMAX_CUDA)
+#if defined(LBANN_HAS_CUDA) && defined(LBANN_SOFTMAX_CUDA)
     if (m_cudnn_desc) {
       CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_cudnn_desc));
     }
@@ -147,7 +147,7 @@ class softmax_layer : public activation_layer {
 
   void setup_gpu() override {
     activation_layer::setup_gpu();
-#if !(defined(__LIB_CUDA) && defined(LBANN_SOFTMAX_CUDA))
+#if !(defined(LBANN_HAS_CUDA) && defined(LBANN_SOFTMAX_CUDA))
     throw lbann_exception("softmax: CUDA not detected");
 #else
     FORCE_CHECK_CUDNN(cudnnCreateTensorDescriptor(&m_cudnn_desc));    
@@ -237,7 +237,7 @@ class softmax_layer : public activation_layer {
 #if 0
   void bp_compute_cross_entropy_shortcut() {
     if(this->m_using_gpus) {
-#if defined(__LIB_CUDA) && defined(LBANN_SOFTMAX_CUDA)
+#if defined(LBANN_HAS_CUDA) && defined(LBANN_SOFTMAX_CUDA)
       Mat& error_signal_local = this->m_error_signal_v->Matrix();
       int height = error_signal_local.Height();
       int width = this->m_mini_batch_size_per_gpu;
@@ -356,7 +356,7 @@ template<> inline void softmax_layer<data_layout::DATA_PARALLEL>::initialize_dis
 }
 
 template<> inline void softmax_layer<data_layout::DATA_PARALLEL>::fp_compute_cuda() {
-#if !(defined(__LIB_CUDA) && defined(LBANN_SOFTMAX_CUDA))
+#if !(defined(LBANN_HAS_CUDA) && defined(LBANN_SOFTMAX_CUDA))
     throw lbann_exception("softmax: CUDA not detected");
 #else
     const DataType one = 1;
@@ -392,7 +392,7 @@ template<> inline void softmax_layer<data_layout::DATA_PARALLEL>::fp_compute_cud
 }
 
 template<> inline void softmax_layer<data_layout::MODEL_PARALLEL>::fp_compute_cuda() {
-#if !(defined(__LIB_CUDA) && defined(LBANN_SOFTMAX_CUDA))
+#if !(defined(LBANN_HAS_CUDA) && defined(LBANN_SOFTMAX_CUDA))
     throw lbann_exception("softmax: CUDA not detected");
 #else
     throw lbann_exception("softmax: model-parallel CUDA not implemented");
@@ -400,7 +400,7 @@ template<> inline void softmax_layer<data_layout::MODEL_PARALLEL>::fp_compute_cu
 }
 
 template<> inline void softmax_layer<data_layout::DATA_PARALLEL>::bp_compute_cuda() {
-#if !(defined(__LIB_CUDA) && defined(LBANN_SOFTMAX_CUDA))
+#if !(defined(LBANN_HAS_CUDA) && defined(LBANN_SOFTMAX_CUDA))
     throw lbann_exception("softmax: CUDA not detected");
 #else
     const DataType one = 1;
@@ -433,7 +433,7 @@ template<> inline void softmax_layer<data_layout::DATA_PARALLEL>::bp_compute_cud
 }
 
 template<> inline void softmax_layer<data_layout::MODEL_PARALLEL>::bp_compute_cuda() {
-#if !(defined(__LIB_CUDA) && defined(LBANN_SOFTMAX_CUDA))
+#if !(defined(LBANN_HAS_CUDA) && defined(LBANN_SOFTMAX_CUDA))
     throw lbann_exception("softmax: CUDA not detected");
 #else
     throw lbann_exception("softmax: model-parallel CUDA not implemented");    

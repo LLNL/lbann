@@ -53,7 +53,7 @@ weights::weights(lbann_comm* comm,
 
 }
 
-weights::weights(const weights& other) 
+weights::weights(const weights& other)
   : m_name(other.m_name),
     m_comm(other.m_comm),
     m_cudnn(other.m_cudnn),
@@ -71,12 +71,12 @@ weights::weights(const weights& other)
     m_optimizer->set_weights(*this);
   }
 
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
   // Copy GPU data
   if (m_cudnn != nullptr) {
     m_values_d = m_cudnn->copy(other.m_values_d, m_height, m_width);
   }
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
 
 }
 
@@ -119,13 +119,13 @@ weights& weights::operator=(const weights& other) {
     m_optimizer->set_weights(*this);
   }
 
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
   // Copy GPU data
   if (m_cudnn != nullptr) {
     m_cudnn->deallocate_on_gpus(m_values_d);
     m_values_d = m_cudnn->copy(other.m_values_d, m_height, m_width);
   }
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
 
   return *this;
 }
@@ -165,7 +165,7 @@ void weights::setup(int height,
       throw lbann_exception(err.str());
     }
   }
-  
+
   // Initialize weights matrix
   m_height = height;
   m_width = width;
@@ -187,7 +187,7 @@ void weights::setup(int height,
 }
 
 void weights::setup_gpu() {
-  #ifndef __LIB_CUDNN
+  #ifndef LBANN_HAS_CUDNN
   std::stringstream err;
   err << __FILE__ << " " << __LINE__ << " :: " << "cuDNN not detected";
   throw lbann_exception(err.str());
@@ -209,7 +209,7 @@ void weights::setup_gpu() {
   m_cudnn->allocate_on_gpus(m_values_d, m_height, m_width);
   m_cudnn->broadcast_to_gpus(m_values_d, m_values->LockedMatrix());
 
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
 }
 
 void weights::set_initializer(weights_initializer* initializer) {
@@ -233,18 +233,18 @@ const AbsDistMat& weights::get_values() {
     throw lbann_exception(err.str());
   }
 
-  #if __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
   // Copy weights matrix from GPU if needed
   if (m_cudnn != nullptr) {
     m_cudnn->copy_from_gpu(0, m_values->Matrix(), m_values_d[0]);
   }
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
 
   return *m_values;
 }
 
 void weights::set_values(const AbsDistMat& values) {
-  
+
   // Check if weights matrix has been setup
   if (m_values == nullptr) {
     std::stringstream err;
@@ -256,12 +256,12 @@ void weights::set_values(const AbsDistMat& values) {
   // Copy input to weights matrix
   El::Copy(values, *m_values);
 
-  #if __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
   // Copy weights matrix to GPU if needed
   if (m_cudnn != nullptr) {
     m_cudnn->broadcast_to_gpus(m_values_d, m_values->Matrix());
   }
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
 
 }
 
@@ -273,7 +273,7 @@ void weights::set_value(int row, int col, DataType value) {
       m_values->SetLocal(local_row, local_col, value);
     }
   } else {
-    #if __LIB_CUDNN
+    #ifdef LBANN_HAS_CUDNN
     Mat cpu_value(1, 1);
     cpu_value(0, 0) = value;
     std::vector<DataType*> gpu_value = m_values_d;
@@ -281,7 +281,7 @@ void weights::set_value(int row, int col, DataType value) {
       pointer += row + col * m_height;
     }
     m_cudnn->broadcast_to_gpus(gpu_value, cpu_value);
-    #endif // __LIB_CUDNN
+    #endif // LBANN_HAS_CUDNN
   }
 }
 
@@ -292,16 +292,16 @@ void weights::get_values_view(AbsDistMat& values_v) {
     El::LockedView(values_v, values);
   }
   else {
-    #if __LIB_CUDNN
+    #ifdef LBANN_HAS_CUDNN
     if (m_cudnn != nullptr) {
       m_cudnn->copy_from_gpu(0, m_values->Matrix(), m_values_d[0]);
     }
-    #endif // __LIB_CUDNN
+    #endif // LBANN_HAS_CUDNN
     El::Copy(values, values_v);
   }
 }
 
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
 std::vector<DataType*> weights::get_values_gpu() {
   if (m_cudnn == nullptr) {
     std::stringstream err;
