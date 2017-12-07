@@ -69,6 +69,15 @@ int main(int argc, char *argv[]) {
   lbann_comm *comm = initialize(argc, argv, random_seed);
   bool master = comm->am_world_master();
 
+  if (master) {
+    std::cout << "\n\n==============================================================\n"
+              << "STARTING lbann with this command line:\n";
+    for (int j=0; j<argc; j++) {
+      std::cout << argv[j] << " ";
+    }
+    std::cout << std::endl << std::endl;
+  }
+
 #ifdef EL_USE_CUBLAS
   El::GemmUseGPU(32,32,32);
 #endif
