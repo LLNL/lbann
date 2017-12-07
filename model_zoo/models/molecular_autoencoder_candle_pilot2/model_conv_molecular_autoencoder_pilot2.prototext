@@ -124,7 +124,7 @@ model {
   #######
   layer {
     name: "relu10"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     relu {
     }
   }
