@@ -347,21 +347,25 @@ void model::set_layers(std::vector<Layer*>& layers) {
 void model::replace_weights(std::vector<weights*>& new_weights) {
 
   // Check that number of weights is valid
-  if (new_weights.size() != m_weights.size()) {
+  if (new_weights.size() > m_weights.size()) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
         << "attempted to replace weights with an invalid number of weights "
-        << "(expected " << m_weights.size() << ", found " << new_weights.size() << ")";
+        << "(expected at most " << m_weights.size() << ", found " << new_weights.size() << ")";
     throw lbann_exception(err.str());
   }
-
+  
   // Replace weights in list
-  std::vector<weights *> old_weights = m_weights;
+  std::vector<weights *> old_weights(m_weights.begin(),
+                                     m_weights.begin() + new_weights.size());
   std::unordered_map<weights *,weights *> old_to_new_weights;
-  for (size_t i = 0; i < old_weights.size(); ++i) {
+  for (size_t i = 0; i < new_weights.size(); ++i) {
     old_to_new_weights[old_weights[i]] = new_weights[i];
+    m_weights[i] = new_weights[i];
   }
-  m_weights = new_weights;
+  for (size_t i = new_weights.size(); i < old_weights.size(); ++i) {
+    old_to_new_weights[m_weights[i]] = m_weights[i];
+  }
 
   // Fix weights pointers in layers
   for (const auto& layer : m_layers) {
