@@ -14,7 +14,7 @@ include(CheckCXXCompilerFlag)
 #   ARGN The flags to check
 #
 # Note: If flag is not valid, it is not appended.
-macro(lbann_check_and_append_flag VAR)
+macro(lbann_check_and_append_flag MY_VAR)
   foreach(flag ${ARGN})
     string(REPLACE "-" "_" _CLEAN_FLAG "${flag}")
 
@@ -23,7 +23,7 @@ macro(lbann_check_and_append_flag VAR)
     unset(CMAKE_REQUIRED_LIBRARIES)
 
     if (FLAG_${_CLEAN_FLAG}_OK)
-      set(MY_VAR "${MY_VAR} ${flag}")
+      set(${MY_VAR} "${${MY_VAR}} ${flag}")
     endif ()
   endforeach()
 endmacro()
@@ -73,7 +73,7 @@ endif ()
 
 # Initialize C++ flags
 lbann_check_and_append_flag(CMAKE_CXX_FLAGS
-  -fPIC -g -Wall -Wextra -Werror -Wno-unused-parameter -Wnon-virtual-dtor -Wshadow)
+  -fPIC -g -Wall -Wextra -Wno-unused-parameter -Wnon-virtual-dtor -Wshadow)
 
 # Disable all optimization in debug for better viewing under debuggers (cmake already adds -g)
 lbann_check_and_append_flag(CMAKE_CXX_FLAGS_DEBUG -O0)
@@ -98,6 +98,11 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
    else()
      lbann_check_and_append_flag(CMAKE_CXX_FLAGS -fno-omit-frame-pointer)
    endif ()
+endif ()
+
+# Turn off some annoying warnings
+if (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
+  lbann_check_and_append_flag(CMAKE_CXX_FLAGS -diag-disable=2196)
 endif ()
 
 ################################################################
