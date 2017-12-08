@@ -7,6 +7,7 @@ set(CLUSTER "surface")
 set(LBANN_DIR ../..)
 set(LBANN_BUILD_DIR ${LBANN_DIR}/build/${CLUSTER}.llnl.gov)
 include(${LBANN_DIR}/cmake/MPI.cmake)
+include(${LBANN_DIR}/cmake/OpenMP.cmake)
 
 set(COMPUTE_MEAN_EXE compute_mean)
 set(COMPUTE_MEAN_TEST_SRCS compute_mean.cpp)
@@ -32,19 +33,12 @@ if(NOT OpenCV_FOUND)
   message(STATUS "OpenCV_DIR: ${OpenCV_DIR}")
 endif()
 
-include_directories(SYSTEM ${OpenCV_INCLUDE_DIRS} ${LBANN_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(SYSTEM ${OpenCV_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR})
 link_directories(${OpenCV_LIB_DIR})
 
 list (APPEND Elemental_DIR ${LBANN_BUILD_DIR})
 find_package(Elemental REQUIRED HINTS ${Elemental_DIR}/CMake/elemental)
 message(STATUS "Elemental_DIR: ${Elemental_DIR}")
-
-#Elemental library is required just becase of the dependency of utils/random.hpp is included in cv_cropper.hpp
-#include_directories(SYSTEM ${Elemental_DIR}/include)
-include_directories(SYSTEM ${Elemental_INCLUDE_DIRS})
-link_directories(${Elemental_DIR}/lib)
-link_directories(${Elemental_DIR}/lib64)
-set(Elemental_LIBS ${Elemental_LIBRARIES})
 
 
 find_package(MPI REQUIRED)
@@ -60,7 +54,7 @@ file(GLOB COMPUTE_MEAN_SRCS
      image_list.cpp
      mean_image.cpp
      process_images.cpp
-     ${LBANN_DIR}/src/utils/random.cpp
+     lbann/utils/random.cpp
      ${LBANN_DIR}/src/data_readers/cv_augmenter.cpp
      ${LBANN_DIR}/src/data_readers/cv_colorizer.cpp
      ${LBANN_DIR}/src/data_readers/cv_normalizer.cpp
