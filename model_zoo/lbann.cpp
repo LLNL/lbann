@@ -28,12 +28,14 @@
 
 #include "lbann/lbann.hpp"
 #include "lbann/proto/proto_common.hpp"
+#include "lbann/utils/protobuf_utils.hpp"
+
+#if 0
 
 #include <time.h>
 #include <dlfcn.h>
 #include <string.h>
 
-#if 0
 extern "C" {
 void __cyg_profile_func_enter (void *, void *) __attribute__((no_instrument_function));
 void __cyg_profile_func_exit (void *, void *) __attribute__((no_instrument_function));
@@ -69,6 +71,15 @@ int main(int argc, char *argv[]) {
   lbann_comm *comm = initialize(argc, argv, random_seed);
   bool master = comm->am_world_master();
 
+  if (master) {
+    std::cout << "\n\n==============================================================\n"
+              << "STARTING lbann with this command line:\n";
+    for (int j=0; j<argc; j++) {
+      std::cout << argv[j] << " ";
+    }
+    std::cout << std::endl << std::endl;
+  }
+
 #ifdef EL_USE_CUBLAS
   El::GemmUseGPU(32,32,32);
 #endif
@@ -85,44 +96,10 @@ int main(int argc, char *argv[]) {
 
     std::stringstream err;
 
-    // Get input prototext filename(s)
-    if (not (opts->has_string("loadme") or opts->has_string("model"))) {
-      if (master) {  
-        err << __FILE__ << " " << __LINE__
-            << 
-            " :: you must either pass the option: --loadme=<string> (if the file\n"
-            "contains a specification for the model, readers, and optimizer\n"
-             "or --model=<string> --reader=<string> --optimizer=<string>\n";
-        throw lbann_exception(err.str());
-      }
-    }
-   
-    lbann_data::LbannPB pb;
-    std::string prototext_model_fn;
-    if (opts->has_string("model")) {
-      prototext_model_fn = opts->get_string("model");
-    } else if (opts->has_string("loadme")) {
-      prototext_model_fn = opts->get_string("loadme");
-    } 
-    read_prototext_file(prototext_model_fn.c_str(), pb, master);
+    std::vector<lbann_data::LbannPB *> pbs;
+    protobuf_utils::load_prototext(master, argc, argv, pbs);
+    lbann_data::LbannPB pb = *(pbs[0]);
 
-    if (opts->has_string("reader")) {
-      lbann_data::LbannPB pb_reader;
-      read_prototext_file(opts->get_string("reader").c_str(), pb_reader, master);
-      pb.MergeFrom(pb_reader);
-    }
-
-    if (opts->has_string("optimizer")) {
-      std::string prototext_opt_fn;
-      lbann_data::LbannPB pb_optimizer;
-      read_prototext_file(opts->get_string("optimizer").c_str(), pb_optimizer, master);
-      pb.MergeFrom(pb_optimizer);
-    }
-
-    if (has_motifs(comm, pb)) {
-      expand_motifs(comm, pb);
-      exit(9);
-    }
 
     lbann_data::Model *pb_model = pb.mutable_model();
 

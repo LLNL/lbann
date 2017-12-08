@@ -100,6 +100,11 @@ class metric {
   void record_error(double error, long num_samples);
   void reset_metric();
 
+  /** Get model. */
+  model *get_model() { return m_model; }
+  /** Set model. */
+  void set_model(model *m) { m_model = m; }
+
   /** Return a string name for this metric. */
   virtual std::string name() const = 0;
   /** Return a display unit, e.g. %, for this metric. */
@@ -112,8 +117,8 @@ class metric {
 
   lbann_comm *m_comm;
 
- public:
   model *m_model;
+
 };
 
 }  // namespace metrics

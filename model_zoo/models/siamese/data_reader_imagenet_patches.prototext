@@ -9,7 +9,7 @@ data_reader {
     validation_percent: 0.1
     absolute_sample_count: 0
     percent_of_data_to_use: 0.001
-    num_labels: 1000
+    num_labels: 8
 
     image_preprocessor {
       # assume fixed size of input images if cropper is not used
@@ -71,7 +71,7 @@ data_reader {
     validation_percent: 1.0
     absolute_sample_count: 0
     percent_of_data_to_use: 0.1
-    num_labels: 1000
+    num_labels: 8
 
     image_preprocessor {
       # assume fixed size of input images if cropper is not used

@@ -88,7 +88,6 @@ model::model(const model& other) :
   m_objective_function->set_model(this);
   for (const auto& metric : other.m_metrics) {
     metrics::metric *m_copy = metric->copy();
-    m_copy->m_model = this;
     m_metrics.push_back(m_copy);
   }
   for (const auto& cb : other.m_callbacks) {
@@ -206,7 +205,6 @@ model& model::operator=(const model& other) {
   }
   for (const auto& metric : other.m_metrics) {
     metrics::metric *m_copy = metric->copy();
-    m_copy->m_model = this;
     m_metrics.push_back(m_copy);
   }
   for (const auto& cb : other.m_callbacks) {
@@ -344,17 +342,48 @@ void model::set_layers(std::vector<Layer*>& layers) {
 
 }
 
-void model::set_weights(std::vector<weights*>& w) {
+void model::replace_weights(std::vector<weights*>& new_weights) {
+
+  // Check that number of weights is valid
+  if (new_weights.size() > m_weights.size()) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "attempted to replace weights with an invalid number of weights "
+        << "(expected at most " << m_weights.size() << ", found " << new_weights.size() << ")";
+    throw lbann_exception(err.str());
+  }
+  
+  // Replace weights in list
+  std::vector<weights *> old_weights(m_weights.begin(),
+                                     m_weights.begin() + new_weights.size());
+  std::unordered_map<weights *,weights *> old_to_new_weights;
+  for (size_t i = 0; i < new_weights.size(); ++i) {
+    old_to_new_weights[old_weights[i]] = new_weights[i];
+    m_weights[i] = new_weights[i];
+  }
+  for (size_t i = new_weights.size(); i < old_weights.size(); ++i) {
+    old_to_new_weights[m_weights[i]] = m_weights[i];
+  }
+
+  // Fix weights pointers in layers
+  for (auto&& layer : m_layers) {
+    std::vector<weights *> layer_weights = layer->get_weights();
+    for (auto&& w : layer_weights) {
+      w = old_to_new_weights[w];
+    }
+    layer->set_weights(layer_weights);
+  }
+
+  // Fix weights pointers in objective function
+  std::vector<weights *> obj_weights = m_objective_function->get_weights_pointers();
+  for (auto&& w : obj_weights) {
+    w = old_to_new_weights[w];
+  }
+  m_objective_function->set_weights_pointers(obj_weights);
 
   // Delete old weights
-  for (weights *old_weights : m_weights) {
-    delete old_weights;
-  }
-  m_weights.clear();
-
-  // Add new weights
-  for (weights* new_weights : w) {
-    add_weights(new_weights);
+  for (weights *w : old_weights) {
+    delete w;
   }
 
 }
@@ -428,11 +457,13 @@ void model::train(int num_epochs) {
     setup_epoch(execution_mode::training);
     ++m_current_epoch;
 
-    // Train on mini-batches and evalaute on validation set
+    // Train on mini-batches
     do_epoch_begin_cbs();
     while (!train_mini_batch()) {}
-    evaluate(execution_mode::validation);
     do_epoch_end_cbs();
+
+    // Evaluate on validation set
+    evaluate(execution_mode::validation);
 
   }
   do_train_end_cbs();
@@ -440,9 +471,14 @@ void model::train(int num_epochs) {
 
 void model::setup_epoch(execution_mode mode) {
   set_execution_mode(mode);
+  m_objective_function->set_model(this);
   m_objective_function->clear_history();
   for (auto&& m : m_metrics) {
+    m->set_model(this);
     m->reset_metric();
+  }
+  for (auto&& l : m_layers) {
+    l->set_model(this);
   }
 }
 

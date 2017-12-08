@@ -109,19 +109,6 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
   try {
     std::stringstream err;
 
-#if 0
-    lbann_data::LbannPB pb;
-    read_prototext_file(model_fn, pb, master);
-    lbann_data::LbannPB pb_reader;
-    read_prototext_file(reader_fn, pb_reader, master);
-    pb.MergeFrom(pb_reader);
-    std::string prototext_opt_fn;
-    lbann_data::LbannPB pb_optimizer;
-    read_prototext_file(optimizer_fn, pb_optimizer, master);
-    pb.MergeFrom(pb_optimizer);
-
-#endif
-
     // Optionally over-ride some values in prototext
     get_cmdline_overrides(comm, pb);
 

@@ -95,7 +95,6 @@ class target_layer : public io_layer {
     for (auto&& m : this->m_model->get_metrics()) {
       m->setup(this->m_num_neurons,
                this->m_model->get_max_mini_batch_size());
-      m->m_model = this->m_model;
     }
 
   }

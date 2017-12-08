@@ -676,6 +676,13 @@ void add_layers(
           conv_strides.push_back(i);
         }
 
+        int num_neurons;
+        if (layer.num_neurons_from_data_reader()) {
+          num_neurons = data_readers[execution_mode::training]->get_linearized_data_size();
+        } else {
+          num_neurons = ell.num_output_channels();
+        }
+
         if (layout == data_layout::MODEL_PARALLEL and master) {
           err << __FILE__ << " " << __LINE__ << " :: deconvolution "
               << "does not support MODEL_PARALLEL layouts";
@@ -684,7 +691,7 @@ void add_layers(
           d = new deconvolution_layer<data_layout::DATA_PARALLEL>(
             comm,
             ell.num_dims(),
-            ell.num_output_channels(),
+            num_neurons/*ell.num_output_channels()*/,
             conv_dims,
             conv_pads,
             conv_strides,
@@ -1810,6 +1817,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       auto paths = glob(readme.data_file_pattern());
       std::vector<generic_data_reader*> npy_readers;
       for (const auto path : paths) {
+        if(master) { std::cout << "Loading file: " << path << std::endl; }
         if (readme.format() == "numpy") {
           auto *reader_numpy = new numpy_reader(false);
           reader_numpy->set_data_filename(path);
@@ -2032,6 +2040,24 @@ void set_data_readers_filenames(std::string which, lbann_data::LbannPB& p)
   }
 }
 
+void set_data_readers_percent(lbann_data::LbannPB& p)
+{
+  options *opts = options::get();
+  double percent = opts->get_float("data_reader_percent");
+  if (percent <= 0 || percent > 1.0) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << " --data_reader_percent=<float> must be > 0 and <= 1.0";
+      throw lbann_exception(err.str());
+  }
+  lbann_data::DataReader *readers = p.mutable_data_reader();
+  int size = readers->reader_size();
+  for (int j=0; j<size; j++) {
+    lbann_data::Reader *r = readers->mutable_reader(j);
+    r->set_percent_of_data_to_use( percent );
+  }  
+}
+
 void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
 {
   bool master = comm->am_world_master();
@@ -2072,6 +2098,9 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
   if (opts->has_string("data_filedir_test") or opts->has_string("data_filename_test")
       or opts->has_string("label_filename_test")) {
     set_data_readers_filenames("test", p);
+  }
+  if (opts->has_string("data_reader_percent")) {
+    set_data_readers_percent(p);
   }
 
   if (opts->has_string("image_dir")) {
@@ -2285,6 +2314,7 @@ void print_help(lbann::lbann_comm *comm)
        "  --data_filedir_train=<string>   --data_filedir_test=<string>\n"
        "  --data_filename_train=<string>  --data_filename_test=<string>\n"
        "  --label_filename_train=<string> --label_filename_test=<string>\n"
+       "  --data_reader_percent=<float>\n"
        "\n"
        "Callbacks:\n"
        "  --image_dir=<string>\n"
