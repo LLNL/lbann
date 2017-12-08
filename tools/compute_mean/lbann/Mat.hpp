@@ -28,7 +28,7 @@ class ElMatLike {
 };
 
 template<typename T>
-void ElMatLike<T>::Resize(int w, int h) {
+inline void ElMatLike<T>::Resize(int w, int h) {
   if ((w < 0) || (h < 0)) {
     m_width = 0;
     m_height = 0;
@@ -38,7 +38,7 @@ void ElMatLike<T>::Resize(int w, int h) {
 
 
 template<typename T>
-T *ElMatLike<T>::Buffer() {
+inline T *ElMatLike<T>::Buffer() {
   if (m_buf.size() != static_cast<size_t>(m_width*m_height)) {
     m_buf.resize(static_cast<size_t>(m_width*m_height));
   }
@@ -49,7 +49,7 @@ T *ElMatLike<T>::Buffer() {
 }
 
 template<typename T>
-const T *ElMatLike<T>::LockedBuffer() const {
+inline const T *ElMatLike<T>::LockedBuffer() const {
   if (m_buf.size() == 0u) {
     return nullptr;
   }
