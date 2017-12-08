@@ -30,37 +30,6 @@
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/protobuf_utils.hpp"
 
-#if 0
-
-#include <time.h>
-#include <dlfcn.h>
-#include <string.h>
-
-extern "C" {
-void __cyg_profile_func_enter (void *, void *) __attribute__((no_instrument_function));
-void __cyg_profile_func_exit (void *, void *) __attribute__((no_instrument_function));
-
-int depth = -1;
-Dl_info info;
-
-void __cyg_profile_func_enter (void *func,  void *caller)
-{
- depth++;
-  dladdr(func, &info);
-  if (strstr(info.dli_fname, "liblbann.so") != nullptr) {
-    printf("%d %s\n", depth, info.dli_sname);
-  }  
-}
-
-void __cyg_profile_func_exit (void *func, void *caller)
-{
- depth--;
-}
-
-}
-#endif
-
-//===================================================================
 
 using namespace lbann;
 
