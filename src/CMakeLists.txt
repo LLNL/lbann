@@ -20,6 +20,10 @@ add_subdirectory(proto)
 add_subdirectory(utils)
 add_subdirectory(weights)
 
+if (TARGET LbannProto)
+  set(LBANN_HAS_LBANN_PROTO TRUE PARENT_SCOPE)
+endif ()
+
 # Propagate the files up the tree
 set(LBANN_HEADERS "${HEADERS}" "${THIS_DIR_HEADERS}" PARENT_SCOPE)
 set(LBANN_SOURCES "${SOURCES}" "${THIS_DIR_SOURCES}" PARENT_SCOPE)

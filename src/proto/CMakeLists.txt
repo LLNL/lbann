@@ -8,7 +8,6 @@ if (LBANN_HAS_PROTOBUF)
   target_include_directories(LbannProto PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
-  set(LBANN_HAS_TBINF TRUE)
 
   # Install the library
   install(TARGETS LbannProto

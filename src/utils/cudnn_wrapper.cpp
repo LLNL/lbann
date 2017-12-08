@@ -46,7 +46,7 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus, bool nc
     : comm(_comm) {
 
     // Indicate whether NCCL is used
-#ifdef __LIB_NCCL
+#ifdef LBANN_HAS_NCCL2
     m_nccl_used = nccl_used;
 #else
     if (nccl_used) {
@@ -764,7 +764,7 @@ void cudnn_manager::check_error() {
 
 void cudnn_manager::nccl_setup() {
 
-#ifdef __LIB_NCCL
+#ifdef LBANN_HAS_NCCL2
     if(m_num_gpus != 1){
         char line[1024];
         sprintf(line, "cudnn_manager: the number of GPUs assigned to process is %d; should be 1", m_num_gpus);
@@ -810,16 +810,16 @@ void cudnn_manager::nccl_setup() {
 
     }
 
-#endif // #ifdef __LIB_NCCL
+#endif // #ifdef LBANN_HAS_NCCL2
 }
 
 void cudnn_manager::nccl_destroy() {
-#ifdef __LIB_NCCL
+#ifdef LBANN_HAS_NCCL2
     int num_gpus_assigned = m_gpus.size();
     for(int i=0; i<num_gpus_assigned; i++){
         ncclCommDestroy(m_nccl_comm[i]);
     }
-#endif // #ifdef __LIB_NCCL
+#endif // #ifdef LBANN_HAS_NCCL2
 }
 
 void print_version() {

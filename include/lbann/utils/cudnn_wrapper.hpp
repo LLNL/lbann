@@ -39,11 +39,11 @@
 #include <cudnn.h>
 #include <cublas_v2.h>
 
-#ifdef __LIB_NCCL
+#ifdef LBANN_HAS_NCCL2
 #include "nccl.h"
 #include "nccl1_compat.h"
 #include "common.h"
-#endif // #ifdef __LIB_NCCL
+#endif // #ifdef LBANN_HAS_NCCL2
 
 #endif // #ifdef LBANN_HAS_CUDNN
 
@@ -304,11 +304,11 @@ class cudnn_manager {
   void nccl_destroy();
 
   /** List of NCCL 2 related variables. */
-#ifdef __LIB_NCCL
+#ifdef LBANN_HAS_NCCL2
   // One GPU per single thread of one MPI rank is assumed
   std::vector<ncclComm_t> m_nccl_comm;
   ncclDataType_t nccl_datatype();
-#endif // #ifdef __LIB_NCCL
+#endif // #ifdef LBANN_HAS_NCCL2
 
 #endif // #ifdef LBANN_HAS_CUDNN
 };
