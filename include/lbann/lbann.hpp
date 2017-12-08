@@ -34,8 +34,8 @@
 #define LBANN_HPP_INCLUDED
 
 /// Models
-#include "lbann/models/model_sequential.hpp"
-#include "lbann/models/model_dag.hpp"
+#include "lbann/models/sequential.hpp"
+#include "lbann/models/directed_acyclic_graph.hpp"
 #include "lbann/models/greedy_layerwise_autoencoder.hpp"
 #include "lbann/models/siamese.hpp"
 
