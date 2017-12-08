@@ -131,11 +131,8 @@ static void __attribute__((used)) _display_matrix(ElMat *m, const char *name) {
 }
 #define DISPLAY_MATRIX(x) _display_matrix(x, #x);
 
-#ifndef DEBUG
-#define DEBUG 1 // set debug mode
-#endif
-
-#if DEBUG
+// FIXME
+#if 1
 // __FILE__
 #define log_msg(...) {\
   char str[256];\
