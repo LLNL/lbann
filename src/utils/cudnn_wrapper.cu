@@ -86,13 +86,16 @@ void cudnn_manager::allreduce_on_gpus(std::vector<DataType*>& gpu_data,
     for (int j = 0; j < m_num_gpus - 1; ++j) {
       for(int i = 0; i < m_num_gpus; ++i) {
         CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-        int src_dev = i;
-        int dst_dev = (i + 1) % m_num_gpus;
-        DataType *src_buf = j == 0 ? gpu_data[src_dev] + offset : bufs[sbuf_idx][src_dev];
-        DataType *dst_buf = bufs[dbuf_idx][dst_dev];
+        int src_idx = i;
+        int dst_idx = (i + 1) % m_num_gpus;
+        int src_dev = m_gpus[src_idx];
+        int dst_dev = m_gpus[dst_idx];
+        DataType *src_buf = j == 0 ? gpu_data[src_idx] + offset : bufs[sbuf_idx][src_idx];
+        DataType *dst_buf = bufs[dbuf_idx][dst_idx];
+        // std::cerr << "Copying from device " << src_dev << " to device " << dst_dev << "\n";
         // copy to the next device in the ring
         FORCE_CHECK_CUDA(cudaMemcpyPeerAsync(dst_buf, dst_dev, src_buf, src_dev,
-                                           len * sizeof(DataType), get_stream(src_dev)));
+                                             len * sizeof(DataType), get_stream(src_idx)));
       }
       synchronize();
       for(int i = 0; i < m_num_gpus; ++i) {
