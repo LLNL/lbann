@@ -41,8 +41,22 @@
 
 #ifdef LBANN_HAS_NCCL2
 #include "nccl.h"
-#include "nccl1_compat.h"
-#include "common.h"
+
+#define NCCLCHECK(cmd)                                                  \
+    {                                                                   \
+        ncclResult_t result__ = cmd;                                    \
+        if (result__ != ncclSuccess)                                    \
+        {                                                               \
+            std::ostringstream oss;                                     \
+            oss << "NCCL failure in " << __FILE__ << " at line "        \
+                << __LINE__ << ": " << ncclGetErrorString(result__)     \
+                << std::endl;                                           \
+            throw lbann::lbann_exception(oss.str());                    \
+        }                                                               \
+    }
+
+//#include "nccl1_compat.h"
+//#include "common.h"
 #endif // #ifdef LBANN_HAS_NCCL2
 
 #endif // #ifdef LBANN_HAS_CUDNN
