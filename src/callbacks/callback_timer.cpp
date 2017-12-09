@@ -32,66 +32,131 @@
 
 namespace lbann {
 
-void lbann_callback_timer::on_epoch_begin(model *m) {
-  m_epoch_start = get_time();
+void lbann_callback_timer::batch_timing_begin(model *m) {
+  m_batch_start_time = get_time();
 }
 
-void lbann_callback_timer::on_epoch_end(model *m) {
-  double end = get_time();
-  double epoch_time = end - m_epoch_start;
-  // Compute minibatch stats.
-  double mean = std::accumulate(m_batch_times.begin(), m_batch_times.end(), 0.0) /
-                m_batch_times.size();
-  auto minmax = std::minmax_element(m_batch_times.begin(), m_batch_times.end());
-  double stdev = 0.0;
-  for (const auto& t : m_batch_times) {
-    stdev += (t - mean) * (t - mean);
+void lbann_callback_timer::batch_timing_end(model *m) {
+  const double mb_time = get_time() - m_batch_start_time;
+  m_batch_times.push_back(mb_time);
+  if (m_summarizer != nullptr) {
+    m_summarizer->reduce_scalar("minibatch_time", mb_time, m->get_cur_step());
   }
-  stdev = sqrt(stdev / (m_batch_times.size() - 1));
-  m_batch_times.clear();
+}
 
-  // Output.
+void lbann_callback_timer::timing_begin(model *m) {
+  m_batch_times.clear();
+  m_start_time = get_time();
+}
+
+void lbann_callback_timer::timing_end(model *m) {
+
+  // Get run time
+  const double run_time = get_time() - m_start_time;
+
+  // Compute minibatch statistics
+  const int num_batches = m_batch_times.size();
+  const double mean = (std::accumulate(m_batch_times.begin(),
+                                       m_batch_times.end(),
+                                       0.0)
+                       / num_batches);
+  const auto& minmax = std::minmax_element(m_batch_times.begin(), m_batch_times.end());
+  const double sqmean = (std::inner_product(m_batch_times.begin(),
+                                            m_batch_times.end(),
+                                            m_batch_times.begin(),
+                                            0.0)
+                         / num_batches);
+  const double var = std::max(sqmean - mean * mean, 0.0);
+  const double stdev = std::sqrt(var * num_batches / (num_batches - 1));
+
+  // Print execution mode
   lbann_comm *comm = m->get_comm();
+  if (comm->am_world_master()) {
+    std::cout << "  ";
+    switch(m->get_execution_mode()) {
+    case execution_mode::training:
+      std::cout << "Training epoch " << m->get_cur_epoch();
+      break;
+    case execution_mode::validation:
+      std::cout << "Validation";
+      break;
+    case execution_mode::testing:
+      std::cout << "Test";
+      break;
+    default:
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "invalid execution mode for reporting results";
+      throw lbann_exception(err.str());
+    }
+    std::cout << " timing:" << std::endl;
+  }
+
+  // Report timing results
+  const int num_models = comm->get_num_models();
   if (comm->am_model_master()) {
+
+    // Gather timing results in world master
+    std::vector<double> run_time_list(num_models);
+    std::vector<double> mean_list(num_models);
+    std::vector<double> min_list(num_models);
+    std::vector<double> max_list(num_models);
+    std::vector<double> stdev_list(num_models);
     if (comm->am_world_master()) {
-      std::vector<double> epoch_times(comm->get_num_models());
-      std::vector<double> means(comm->get_num_models());
-      std::vector<double> mins(comm->get_num_models());
-      std::vector<double> maxes(comm->get_num_models());
-      std::vector<double> stdevs(comm->get_num_models());
-      comm->intermodel_gather(epoch_time, epoch_times);
-      comm->intermodel_gather(mean, means);
-      comm->intermodel_gather(*(minmax.first), mins);
-      comm->intermodel_gather(*(minmax.second), maxes);
-      comm->intermodel_gather(stdev, stdevs);
-      for (int i = 0; i < comm->get_num_models(); ++i) {
-        std::cout << "Model " << i << " Epoch time: " << epoch_times[i] << "s; ";
-        std::cout << "Mean minibatch time: " << means[i] << "s; ";
-        std::cout << "Min: " << mins[i] << "s; ";
-        std::cout << "Max: " << maxes[i] << "s; ";
-        std::cout << "Stdev: " << stdevs[i] << "s" << std::endl;
-      }
+      comm->intermodel_gather(run_time, run_time_list);
+      comm->intermodel_gather(mean, mean_list);
+      comm->intermodel_gather(*(minmax.first), min_list);
+      comm->intermodel_gather(*(minmax.second), max_list);
+      comm->intermodel_gather(stdev, stdev_list);
     } else {
-      comm->intermodel_gather(epoch_time, comm->get_intermodel_master());
+      comm->intermodel_gather(run_time, comm->get_intermodel_master());
       comm->intermodel_gather(mean, comm->get_intermodel_master());
       comm->intermodel_gather(*(minmax.first), comm->get_intermodel_master());
       comm->intermodel_gather(*(minmax.second), comm->get_intermodel_master());
       comm->intermodel_gather(stdev, comm->get_intermodel_master());
     }
-  }
-}
 
-void lbann_callback_timer::on_batch_begin(model *m) {
-  m_batch_start = get_time();
-}
+    // Print results
+    if (comm->am_world_master()) {
+      for (int i = 0; i < num_models; ++i) {
+        std::cout << "    ";
+        if (i == 0) { std::cout << "Total           "; }
+        else        { std::cout << "                "; }
+        if (num_models > 1) { std::cout << " (model " << i << ")"; }
+        std::cout << " : " << run_time_list[i] << "s"  << std::endl;
+      }
+      for (int i = 0; i < num_models; ++i) {
+        std::cout << "    ";
+        if (i == 0) { std::cout << "Mini-batch mean "; }
+        else        { std::cout << "                "; }
+        if (num_models > 1) { std::cout << " (model " << i << ")"; }
+        std::cout << " : " << mean_list[i] << "s"  << std::endl;
+      }
+      for (int i = 0; i < num_models; ++i) {
+        std::cout << "    ";
+        if (i == 0) { std::cout << "Mini-batch min  "; }
+        else        { std::cout << "                "; }
+        if (num_models > 1) { std::cout << " (model " << i << ")"; }
+        std::cout << " : " << min_list[i] << "s"  << std::endl;
+      }
+      for (int i = 0; i < num_models; ++i) {
+        std::cout << "    ";
+        if (i == 0) { std::cout << "Mini-batch max  "; }
+        else        { std::cout << "                "; }
+        if (num_models > 1) { std::cout << " (model " << i << ")"; }
+        std::cout << " : " << max_list[i] << "s"  << std::endl;
+      }
+      for (int i = 0; i < num_models; ++i) {
+        std::cout << "    ";
+        if (i == 0) { std::cout << "Mini-batch stdev"; }
+        else        { std::cout << "                "; }
+        if (num_models > 1) { std::cout << " (model " << i << ")"; }
+        std::cout << " : " << stdev_list[i] << "s" << std::endl;
+      }
 
-void lbann_callback_timer::on_batch_end(model *m) {
-  double end = get_time();
-  double mb_time = end - m_batch_start;
-  m_batch_times.push_back(mb_time);
-  if (m_summarizer != nullptr) {
-    m_summarizer->reduce_scalar("minibatch_time", mb_time, m->get_cur_step());
+    }
   }
+  
 }
 
 }  // namespace lbann
