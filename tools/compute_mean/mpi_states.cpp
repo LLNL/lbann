@@ -44,10 +44,10 @@ bool mpi_states::check_mpi(const int mpi_code) const {
 };
 
 
-/// Abort MPI. In case that a root rank initiates abortion, it print out a message.
-void mpi_states::abort(const std::string err) const {
-  if (m_my_rank == m_root) {
-    std::cerr << err << std::endl;
+/// Abort MPI. Only a designated rank prints out a message.
+void mpi_states::abort(const std::string err, const int report_rank) const {
+  if (m_my_rank == report_rank) {
+    std::cerr << "rank " << m_my_rank << ": " << err << std::endl;
   }
   MPI_Abort(m_comm, 1);
 }

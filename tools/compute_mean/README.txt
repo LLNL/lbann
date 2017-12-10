@@ -10,11 +10,13 @@ Computing mean and storing the cropped images are optional. This relies on MPI.
 **************************************
 mkdir build; cd build; cmake ..; make
 
-Compilation requires OpenCV and Elemental which LBANN builds. The former dependency
-can be fullfilled by a system installed copy of OpenCV. This implementation does not
-require Elemental. However, the latter dependency comes from LBANN.
-CMakeList.txt needs to point to the lbann build directory via the variable
-LBANN_BUILD_DIR, or simply via CLUSTER on LC. Set the environment variables CC and CXX.
+OpenCV and MPI are required to build this tool. The former dependency can be
+fullfilled by a system installed copy of OpenCV, or the one built by LBANN.
+The variable 'OpenCV_DIR' in CMakeList.txt needs to point to the OpenCV
+installation directory.
+To use the one built by LBANN, the variable 'LBANN_BUILD_DIR' needs to point to
+the LBANN build directory.
+Finally, make sure to set the environment variables CC and CXX.
 
 
 **************************************

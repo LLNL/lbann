@@ -52,7 +52,13 @@ class mpi_states {
 
   mpi_states();
   bool check_mpi(const int mpi_code) const;
-  void abort(const std::string err) const;
+  void abort(const std::string err, const int report_rank) const;
+  void abort(const std::string err) const {
+    abort(err, m_root);
+  }
+  void abort_by_me(const std::string err) const {
+    abort(err, m_my_rank);
+  }
   void initialize(int& argc, char **& argv);
   void finalize() {
     MPI_Finalize();
