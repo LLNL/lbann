@@ -108,7 +108,7 @@ bool process_images(const image_list& img_list, const params& mp,
     // Load an image bytestream into memory
     bool ok = read_file(root_data_path + filenames[i], buf);
     if (!ok) {
-      ms.abort("Failed to load " + root_data_path + filenames[i]);
+      ms.abort_by_me("Failed to load " + root_data_path + filenames[i]);
     }
 
     // create a view on a block of bytes
@@ -116,26 +116,27 @@ bool process_images(const image_list& img_list, const params& mp,
     const cv::Mat inbuf(1, buf.size(), InputBuf_T::T(1), &(buf[0]));
 
     const double step2_start_time = get_time();
-    wt.load += step2_start_time - step1_start_time;
+    wt.m_load += step2_start_time - step1_start_time;
 
     // decode the original image
     cv::Mat image = cv::imdecode(inbuf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
     //std::cout << filenames[i] << ' ' << image.cols << ' ' << image.rows;
 
     const double step3_start_time = get_time();
-    wt.decode += step3_start_time - step2_start_time;
+    wt.m_decode += step3_start_time - step2_start_time;
 
     // preprocess the image
     ok = !image.empty() && pp.preprocess(image);
 
     if (!ok) {
-      ms.abort("Failed to import " + filenames[i]);
+      ms.abort_by_me("Failed to import " + filenames[i]);
     }
 
-    wt.preprocess += get_time() - step3_start_time;
+    const double step4_start_time = get_time();
+    wt.m_preprocess += step4_start_time - step3_start_time;
 
-    // Export the unnormalized image
-    if (mp.to_write_cropped()) {
+    if (mp.to_write_cropped()) { // Export the cropped image
+
       const size_t capacity = lbann::cv_utils::image_data_amount(image) + max_img_header_size;
       if (outbuf.size() < capacity) {
         //std::cout << "bytes reserved for the image: " << image_data_amount(image) << std::endl;
@@ -143,10 +144,11 @@ bool process_images(const image_list& img_list, const params& mp,
       }
       bool ok = !image.empty() && cv::imencode(mp.get_out_ext(), image, outbuf);
       if (!ok) {
-        ms.abort("Failed to write " + filenames[i]);
+        ms.abort_by_me("Failed to write " + filenames[i]);
       }
       std::string ofilename = img_list.get_image_name_with_new_ext(i, mp.get_out_ext());
       write_file(ofilename, outbuf);
+      wt.m_write += get_time() - step4_start_time;
     }
     if (ms.is_root()) {
       if (i >= static_cast<size_t>(next_progress_report_point+0.5)) {
@@ -157,7 +159,7 @@ bool process_images(const image_list& img_list, const params& mp,
     }
   }
 
-  wt.total = get_time() - loop_start_time;
+  wt.m_total = get_time() - loop_start_time;
 
   if (mp.to_enable_mean_extractor()) {
     // Extract the mean of images

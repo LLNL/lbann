@@ -30,7 +30,6 @@
 #define LBANN_CV_AUGMENTER_HPP
 
 #include "cv_transform.hpp"
-#include "lbann/utils/random.hpp"
 #include <iostream>
 #include <ostream>
 #include <cstring>

@@ -43,23 +43,25 @@ inline double get_time() {
 
 class walltimes {
  public:
-  double total;
-  double load;
-  double decode;
-  double preprocess;
+  double m_total;
+  double m_load;
+  double m_decode;
+  double m_preprocess;
+  double m_write;
 
   walltimes() :
-    total(0.0),
-    load(0.0),
-    decode(0.0),
-    preprocess(0.0) {}
+    m_total(0.0),
+    m_load(0.0),
+    m_decode(0.0),
+    m_preprocess(0.0),
+    m_write(0.0) {}
 
   std::vector<double> get() const {
-    return {total, load, decode, preprocess};
+    return {m_total, m_load, m_decode, m_preprocess, m_write};
   }
 
   std::vector<std::string> get_names() const {
-    return {"total", "load", "decode", "preprocess"};
+    return {"total", "load", "decode", "preprocess", "write"};
   }
 };
 
