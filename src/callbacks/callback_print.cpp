@@ -115,26 +115,23 @@ void lbann_callback_print::on_test_end(model *m) {
 void lbann_callback_print::report_results(model *m) {
   lbann_comm *comm = m->get_comm();
 
-  // Print execution mode
-  if (comm->am_world_master()) {
-    std::cout << "  ";
-    switch(m->get_execution_mode()) {
-    case execution_mode::training:
-      std::cout << "Training epoch " << m->get_cur_epoch();
-      break;
-    case execution_mode::validation:
-      std::cout << "Validation";
-      break;
-    case execution_mode::testing:
-      std::cout << "Test";
-      break;
-    default:
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "invalid execution mode for reporting results";
-      throw lbann_exception(err.str());
-    }
-    std::cout << " results:" << std::endl;
+  // Get string for execution mode
+  std::string mode_string;
+  switch(m->get_execution_mode()) {
+  case execution_mode::training:
+    mode_string = "training epoch " + std::to_string(m->get_cur_epoch());
+    break;
+  case execution_mode::validation:
+    mode_string = "validation";
+    break;
+  case execution_mode::testing:
+    mode_string = "test";
+    break;
+  default:
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "invalid execution mode for reporting results";
+    throw lbann_exception(err.str());
   }
 
   if (comm->am_model_master()) {
@@ -146,11 +143,9 @@ void lbann_callback_print::report_results(model *m) {
       std::vector<double> obj_fn_list(comm->get_num_models());
       comm->intermodel_gather(obj_fn, obj_fn_list);
       for (int i = 0; i < num_models; ++i) {
-        std::cout << "    ";
-        if (i == 0) { std::cout << "Objective function"; }
-        else        { std::cout << "                  "; }
-        if (num_models > 1) { std::cout << " (model " << i << ")"; }
-        std::cout << " : " << obj_fn_list[i] << std::endl;
+        std::cout << "Model " << i << " " << mode_string << " "
+                  << "objective function : " << obj_fn_list[i]
+                  << std::endl;
       }
     } else {
       comm->intermodel_gather(obj_fn, comm->get_world_master());
@@ -162,17 +157,10 @@ void lbann_callback_print::report_results(model *m) {
       if (comm->am_world_master()) {
         std::vector<double> score_list(comm->get_num_models());
         comm->intermodel_gather(score, score_list);
-        std::string metric_name = metric->name();
-        metric_name[0] = std::toupper(metric_name[0]);
         for (int i = 0; i < num_models; ++i) {
-          std::cout << "    ";
-          if (i == 0) {
-            std::cout << metric_name;
-          } else {
-            std::cout << std::string(metric_name.size(), ' ');
-          }
-          if (num_models > 1) { std::cout << " (model " << i << ")"; }
-          std::cout << " : " << score_list[i] << metric->display_unit()
+          std::cout << "Model " << i << " " << mode_string << " "
+                    << metric->name() << " : " 
+                    << score_list[i] << metric->display_unit()
                     << std::endl;
         }
       } else {

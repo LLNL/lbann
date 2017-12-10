@@ -50,6 +50,7 @@ void lbann_callback_timer::timing_begin(model *m) {
 }
 
 void lbann_callback_timer::timing_end(model *m) {
+  lbann_comm *comm = m->get_comm();
 
   // Get run time
   const double run_time = get_time() - m_start_time;
@@ -69,27 +70,23 @@ void lbann_callback_timer::timing_end(model *m) {
   const double var = std::max(sqmean - mean * mean, 0.0);
   const double stdev = std::sqrt(var * num_batches / (num_batches - 1));
 
-  // Print execution mode
-  lbann_comm *comm = m->get_comm();
-  if (comm->am_world_master()) {
-    std::cout << "  ";
-    switch(m->get_execution_mode()) {
-    case execution_mode::training:
-      std::cout << "Training epoch " << m->get_cur_epoch();
-      break;
-    case execution_mode::validation:
-      std::cout << "Validation";
-      break;
-    case execution_mode::testing:
-      std::cout << "Test";
-      break;
-    default:
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "invalid execution mode for reporting results";
-      throw lbann_exception(err.str());
-    }
-    std::cout << " timing:" << std::endl;
+  // Get string for execution mode
+  std::string mode_string;
+  switch(m->get_execution_mode()) {
+  case execution_mode::training:
+    mode_string = "training epoch " + std::to_string(m->get_cur_epoch());
+    break;
+  case execution_mode::validation:
+    mode_string = "validation";
+    break;
+  case execution_mode::testing:
+    mode_string = "test";
+    break;
+  default:
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "invalid execution mode for reporting results";
+    throw lbann_exception(err.str());
   }
 
   // Report timing results
@@ -119,39 +116,17 @@ void lbann_callback_timer::timing_end(model *m) {
     // Print results
     if (comm->am_world_master()) {
       for (int i = 0; i < num_models; ++i) {
-        std::cout << "    ";
-        if (i == 0) { std::cout << "Total           "; }
-        else        { std::cout << "                "; }
-        if (num_models > 1) { std::cout << " (model " << i << ")"; }
-        std::cout << " : " << run_time_list[i] << "s"  << std::endl;
+        std::cout << "Model " << i << " " << mode_string << " "
+                  << "run time : " << run_time_list[i] << "s"
+                  << std::endl;
       }
       for (int i = 0; i < num_models; ++i) {
-        std::cout << "    ";
-        if (i == 0) { std::cout << "Mini-batch mean "; }
-        else        { std::cout << "                "; }
-        if (num_models > 1) { std::cout << " (model " << i << ")"; }
-        std::cout << " : " << mean_list[i] << "s"  << std::endl;
-      }
-      for (int i = 0; i < num_models; ++i) {
-        std::cout << "    ";
-        if (i == 0) { std::cout << "Mini-batch min  "; }
-        else        { std::cout << "                "; }
-        if (num_models > 1) { std::cout << " (model " << i << ")"; }
-        std::cout << " : " << min_list[i] << "s"  << std::endl;
-      }
-      for (int i = 0; i < num_models; ++i) {
-        std::cout << "    ";
-        if (i == 0) { std::cout << "Mini-batch max  "; }
-        else        { std::cout << "                "; }
-        if (num_models > 1) { std::cout << " (model " << i << ")"; }
-        std::cout << " : " << max_list[i] << "s"  << std::endl;
-      }
-      for (int i = 0; i < num_models; ++i) {
-        std::cout << "    ";
-        if (i == 0) { std::cout << "Mini-batch stdev"; }
-        else        { std::cout << "                "; }
-        if (num_models > 1) { std::cout << " (model " << i << ")"; }
-        std::cout << " : " << stdev_list[i] << "s" << std::endl;
+        std::cout << "Model " << i << " " << mode_string << " "
+                  << "mini-batch time statistics : "
+                  << mean_list[i] << "s mean, "
+                  << min_list[i] << "s min, "
+                  << max_list[i] << "s max, "
+                  << stdev_list[i] << "s stdev" << std::endl;
       }
 
     }
