@@ -1645,9 +1645,9 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
     model = new sequential_model(comm, mini_batch_size, obj_fn, default_optimizer);
     if (master) std::cout << "instantiating sequential_model\n";
   }
-  else if (name == "dag_model") {
-    model = new dag_model(comm, mini_batch_size, obj_fn, default_optimizer);
-    if (master) std::cout << "instantiating dag_model\n";
+  else if (name == "directed_acyclic_graph_model") {
+    model = new directed_acyclic_graph_model(comm, mini_batch_size, obj_fn, default_optimizer);
+    if (master) std::cout << "instantiating directed_acyclic_graph_model\n";
   } else if(name == "siamese_model") {
     if (m.has_siamese()) {
       const lbann_data::Model::Siamese& siamese = m.siamese();

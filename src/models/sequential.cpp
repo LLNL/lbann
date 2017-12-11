@@ -23,39 +23,39 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_print .hpp .cpp - Callback hooks to print information
+// sequential .hpp .cpp - Sequential neural network models
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CALLBACKS_CALLBACK_PRINT_HPP_INCLUDED
-#define LBANN_CALLBACKS_CALLBACK_PRINT_HPP_INCLUDED
-
-#include "lbann/callbacks/callback.hpp"
+#include "lbann/models/sequential.hpp"
+#include <unordered_set>
 
 namespace lbann {
 
-/** Periodically print computational results.
- *  Prints average objective function value and metric scores after
- *  each training epoch and evaluation.
- */
-class lbann_callback_print : public lbann_callback {
- public:
-  lbann_callback_print(int batch_interval = 1) : lbann_callback(batch_interval) {}
-  lbann_callback_print(const lbann_callback_print&) = default;
-  lbann_callback_print& operator=(const lbann_callback_print&) = default;
-  lbann_callback_print* copy() const override { return new lbann_callback_print(*this); }
-  void setup(model *m) override;
-  void on_epoch_begin(model *m) override;
-  void on_epoch_end(model *m) override;
-  void on_validation_end(model *m) override;
-  void on_test_end(model *m) override;
-  std::string name() const override { return "print"; }
+sequential_model::sequential_model(lbann_comm *comm,
+                                   int mini_batch_size,
+                                   objective_function *obj_fn,
+                                   optimizer* default_optimizer)
+  : model(comm, mini_batch_size, obj_fn, default_optimizer) {}
 
- private:
-  /** Print objective function and metrics to standard output. */
-  void report_results(model *m);
+void sequential_model::setup_layer_topology() {
+  model::setup_layer_topology();
 
-};
+  // Set up parent/child relationships between adjacent layers
+  for (size_t i = 1; i < m_layers.size(); ++i) {
+    m_layers[i]->add_parent_layer(m_layers[i-1]);
+  }
+  for (size_t i = 0; i < m_layers.size() - 1; ++i) {
+    m_layers[i]->add_child_layer(m_layers[i+1]);
+  }
+
+  // Make sure that execution order is valid
+  if (!is_topologically_sorted()) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "layer execution order is not topologically sorted";
+    throw lbann_exception(err.str());
+  }
+
+}
 
 }  // namespace lbann
-
-#endif  // LBANN_CALLBACKS_CALLBACK_PRINT_HPP_INCLUDED

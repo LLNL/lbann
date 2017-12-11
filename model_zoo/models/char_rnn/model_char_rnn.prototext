@@ -1,5 +1,5 @@
 model {
-  name: "dag_model"
+  name: "directed_acyclic_graph_model"
   data_layout: "data_parallel"
   mini_batch_size: 256
   block_size: 256

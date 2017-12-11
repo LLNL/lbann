@@ -23,39 +23,27 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_print .hpp .cpp - Callback hooks to print information
+// lbann_exception .hpp .cpp - LBANN exception class
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CALLBACKS_CALLBACK_PRINT_HPP_INCLUDED
-#define LBANN_CALLBACKS_CALLBACK_PRINT_HPP_INCLUDED
+#ifndef LBANN_EXCEPTION_HPP_INCLUDED
+#define LBANN_EXCEPTION_HPP_INCLUDED
 
-#include "lbann/callbacks/callback.hpp"
+#include <iostream>
+#include <exception>
 
 namespace lbann {
-
-/** Periodically print computational results.
- *  Prints average objective function value and metric scores after
- *  each training epoch and evaluation.
- */
-class lbann_callback_print : public lbann_callback {
+class lbann_exception : public std::exception {
  public:
-  lbann_callback_print(int batch_interval = 1) : lbann_callback(batch_interval) {}
-  lbann_callback_print(const lbann_callback_print&) = default;
-  lbann_callback_print& operator=(const lbann_callback_print&) = default;
-  lbann_callback_print* copy() const override { return new lbann_callback_print(*this); }
-  void setup(model *m) override;
-  void on_epoch_begin(model *m) override;
-  void on_epoch_end(model *m) override;
-  void on_validation_end(model *m) override;
-  void on_test_end(model *m) override;
-  std::string name() const override { return "print"; }
+  lbann_exception(const std::string m="my custom exception"):msg(m) {}
+  ~lbann_exception() override {}
+  const char *what() const noexcept override {
+    return msg.c_str();
+  }
 
  private:
-  /** Print objective function and metrics to standard output. */
-  void report_results(model *m);
-
+  std::string msg;
 };
+}
 
-}  // namespace lbann
-
-#endif  // LBANN_CALLBACKS_CALLBACK_PRINT_HPP_INCLUDED
+#endif // LBANN_EXCEPTION_HPP_INCLUDED

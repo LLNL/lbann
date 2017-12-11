@@ -1,7 +1,7 @@
 add_sources(
   model.cpp
-  model_sequential.cpp
-  model_dag.cpp
+  sequential.cpp
+  directed_acyclic_graph.cpp
   greedy_layerwise_autoencoder.cpp
   siamese.cpp
 )

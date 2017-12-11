@@ -23,55 +23,53 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// model_dag .hpp .cpp - Directed acyclic graph neural network models
+// lbann_model_sequential .hpp .cpp - Sequential neural network models
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_MODEL_DAG_HPP
-#define LBANN_MODEL_DAG_HPP
+#ifndef LBANN_MODEL_SEQUENTIAL_HPP
+#define LBANN_MODEL_SEQUENTIAL_HPP
 
 #include "lbann/models/model.hpp"
 #include "lbann/layers/layer.hpp"
+#include "lbann/layers/activations/activation.hpp"
+#include "lbann/data_readers/data_reader.hpp"
+#include "lbann/io/persist.hpp"
+#include <vector>
+#include <string>
 
 namespace lbann {
 
-/** Directed acyclic graph neural network model. */
-class dag_model : public model {
+class sequential_model : public model {
  public:
 
   /** Constructor. */
-  dag_model(lbann_comm *comm,
-            int max_mini_batch_size,
-            objective_function *obj_fn,
-            optimizer *default_optimizer);
-
+  sequential_model(lbann_comm *comm,
+                   int max_mini_batch_size,
+                   objective_function *obj_fn,
+                   optimizer* default_optimizer = nullptr);
+  
   /** Copy constructor. */
-  dag_model(const dag_model& other) = default;
-
+  sequential_model(const sequential_model& other) = default;
   /** Copy assignment operator. */
-  dag_model& operator=(const dag_model& other) = default;
-
+  sequential_model& operator=(const sequential_model& other) = default;
   /** Destructor. */
-  ~dag_model() override = default;
-
+  ~sequential_model() override = default;
   /** Create copy. */
-  dag_model* copy() const override { return new dag_model(*this); }
-
-  /** Setup model. */
-  void setup() override;
+  sequential_model* copy() const override { return new sequential_model(*this); }
 
   /** Get model name. */
-  std::string name() const override { return "dag_model"; }
+  std::string name() const override { return "sequential_model"; }
 
  protected:
 
-  /** Apply topological sort to list of layers.
-   *  A topologically sorted ordering allows us to traverse a directed
-   *  acyclic graph without violating dependencies.
+  /** Set up topology of layer graph.
+   *  Called in setup function. Parent/child relationships are
+   *  established between adjacent layers.
    */
-  void topologically_sort_layers();
+  virtual void setup_layer_topology() override;
 
 };
 
 }  // namespace lbann
 
-#endif  // LBANN_MODEL_DAG_HPP
+#endif  // LBANN_MODEL_SEQUENTIAL_HPP
