@@ -329,11 +329,11 @@ int main(int argc, char *argv[]) {
     }
 
     // Initialize cuDNN (if detected)
-#if __LIB_CUDNN
+#if LBANN_HAS_CUDNN
     cudnn::cudnn_manager *cudnn = new cudnn::cudnn_manager(comm, num_gpus);
-#else // __LIB_CUDNN
+#else // LBANN_HAS_CUDNN
     cudnn::cudnn_manager *cudnn = NULL;
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 
     deep_neural_network *dnn = NULL;
    dnn = new deep_neural_network(trainParams.MBSize, comm, new objective_functions::categorical_cross_entropy(comm), optimizer_fac);
