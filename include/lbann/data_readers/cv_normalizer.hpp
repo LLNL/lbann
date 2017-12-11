@@ -30,6 +30,7 @@
 #ifndef LBANN_CV_NORMALIZER_HPP
 #define LBANN_CV_NORMALIZER_HPP
 
+#include <typeinfo> // typeid
 #include "cv_transform.hpp"
 #include "lbann/base.hpp" // DataType
 #include "lbann/utils/mild_exception.hpp"
