@@ -329,7 +329,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Initialize cuDNN (if detected)
-#if LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_CUDNN
     cudnn::cudnn_manager *cudnn = new cudnn::cudnn_manager(comm, num_gpus);
 #else // LBANN_HAS_CUDNN
     cudnn::cudnn_manager *cudnn = NULL;

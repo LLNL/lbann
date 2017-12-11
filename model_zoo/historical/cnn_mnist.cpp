@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
     //if set to true, above three settings have no effect
     bool z_score = Input("--z-score", "standardize to unit-variance; NA if not subtracting mean", false);
 
-#if LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_CUDNN
     // Number of GPUs per node to use
     int num_gpus = Input("--num-gpus", "number of GPUs to use", -1);
 #endif
@@ -189,7 +189,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Initialize network
-#if LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_CUDNN
     cudnn::cudnn_manager *cudnn = new cudnn::cudnn_manager(comm, num_gpus);
 #else // LBANN_HAS_CUDNN
     cudnn::cudnn_manager *cudnn = nullptr;

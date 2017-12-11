@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
 
     // Check for cudnn, with user feedback
     cudnn::cudnn_manager *cudnn = nullptr;
-#if LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_CUDNN
     if (pb_model->use_cudnn()) {
       if (master) {
         std::cerr << "code was compiled with LBANN_HAS_CUDNN, and we are using cudnn\n";
@@ -191,7 +191,7 @@ int main(int argc, char *argv[]) {
       std::cout << "Hardware settings (for master process)" << std::endl
                 << "  Processes on node            : " << comm->get_procs_per_node() << std::endl
                 << "  OpenMP threads per process   : " << omp_get_max_threads() << std::endl;
-      #if LBANN_HAS_CUDNN
+      #ifdef LBANN_HAS_CUDNN
       if (cudnn != nullptr) {
         std::cout << "  GPUs on node                 : " << cudnn->get_num_visible_gpus() << std::endl
                   << "  GPUs per process             : " << cudnn->get_num_gpus() << std::endl;
