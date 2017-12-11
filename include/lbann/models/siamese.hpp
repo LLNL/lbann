@@ -29,11 +29,11 @@
 #ifndef LBANN_MODEL_SIAMESE_HPP
 #define LBANN_MODEL_SIAMESE_HPP
 
-#include "lbann/models/model_dag.hpp"
+#include "lbann/models/directed_acyclic_graph.hpp"
 
 namespace lbann {
 
-class siamese_model : public dag_model {
+class siamese_model : public directed_acyclic_graph_model {
  public:
 
   /// Constructor
@@ -53,16 +53,32 @@ class siamese_model : public dag_model {
   /** Create copy. */
   siamese_model* copy() const override { return new siamese_model(*this); }
 
-  /** Setup model. */
-  void setup() override;
-
   /** Get model name. */
   std::string name() const override { return "siamese_model"; }
 
  protected:
 
+  /** Set up topology of Siamese network.
+   *  Called in setup function. Determines the network's master head
+   *  and duplicates it.
+   */
+  void setup_layer_topology() override;
+  /** Set up layers.
+   *  Called in setup function. Layers in follower heads share weights
+   *  with corresponding layers in master head.
+   */ 
+ void setup_layers() override;
+
+ private:
+
   /** The number of heads in Siamese model. */
   int m_num_heads;
+
+  /** Map from follower to master layers.
+   *  Layers in follower heads map to corresponding layers in master
+   *  head. All other layers map to themselves.
+   */
+  std::unordered_map<Layer *, Layer *> m_follower_to_master_layer;
 
 };
 

@@ -23,76 +23,45 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// model_dag .hpp .cpp - Directed acyclic graph neural network models
+// directed_acyclic_graph .hpp .cpp - Directed acyclic graph neural network models
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/models/model_dag.hpp"
-#include "lbann/layers/io/input/input_layer.hpp"
-#include "lbann/layers/io/target/target_layer.hpp"
-
-#include <iomanip>
-#include <vector>
+#include "lbann/models/directed_acyclic_graph.hpp"
 #include <stack>
 #include <unordered_map>
 
 namespace lbann {
 
-dag_model::dag_model(lbann_comm *comm,
-                     int mini_batch_size,
-                     objective_function *obj_fn,
-                     optimizer* default_optimizer)
+directed_acyclic_graph_model::directed_acyclic_graph_model(lbann_comm *comm,
+                                                           int mini_batch_size,
+                                                           objective_function *obj_fn,
+                                                           optimizer* default_optimizer)
   : model(comm, mini_batch_size, obj_fn, default_optimizer) {}
 
-void dag_model::setup() {
-
-  // Make sure parent and child relationships are reciprocated
-  for (Layer* layer : m_layers) {
-    for (const Layer *parent_layer : layer->get_parent_layers()) {
-      const_cast<Layer*>(parent_layer)->add_child_layer(layer);
-    }
-    for (const Layer *child_layer : layer->get_child_layers()) {
-      const_cast<Layer*>(child_layer)->add_parent_layer(layer);
-    }
-  }
-
-  // Sort layers topologically
-  topologically_sort_layers();
-
-  // Setup each layer
-  for (Layer* layer : m_layers) {
-    layer->set_model(this);
-    layer->setup();
-    layer->check_setup();
-    if (m_comm->am_world_master()) {
-      std::cout << "[" << std::setw(18) << layer->get_type() <<  "] Set up a layer with input " << std::setw(7) << layer->get_num_prev_neurons() << " and " << std::setw(7) << layer->get_num_neurons() << " neurons."  << std::endl;
-    }
-  }
-
-  // Setup objective function
-  m_objective_function->setup(*this);
-
-  // Set up callbacks
-  setup_callbacks();
-}
-
-void dag_model::topologically_sort_layers() {
-  /* Note: This sort must be deterministic so that it produces
-   * identical orderings when applied on different MPI processes.
+void directed_acyclic_graph_model::setup_layer_execution_order() {
+  /* Note: This topological sort must be deterministic so that it
+   * produces identical orderings when applied on different MPI
+   * processes.
    */
+
+  // Check if execution order is already valid
+  if (is_topologically_sorted()) {
+    return;
+  }
 
   // Initialize data structures for topological sort
   std::stack<const Layer*> sorted_stack;
   std::stack<const Layer*> search_stack;
   std::unordered_map<const Layer*,bool> is_sorted;
   std::unordered_map<const Layer*,bool> is_visited;
-  for (const Layer* layer : m_layers) {
+  for (const auto& layer : m_layers) {
     is_sorted[layer] = false;
     is_visited[layer] = false;
     search_stack.push(layer);
   }
 
   // Perform depth-first searches until DAG has been traversed
-  while(!search_stack.empty()) {
+  while (!search_stack.empty()) {
     const Layer* layer = search_stack.top();
     search_stack.pop();
     if (!is_sorted[layer]) {
@@ -104,7 +73,7 @@ void dag_model::topologically_sort_layers() {
         // Visit search layer by adding children to search stack
         search_stack.push(layer);
         is_visited[layer] = true;
-        for (const Layer* child_layer : layer->get_child_layers()) {
+        for (const auto& child_layer : layer->get_child_layers()) {
           if (is_visited[child_layer] && !is_sorted[child_layer]) {
             throw lbann_exception("model_dag: detected a cycle in network graph");
           }

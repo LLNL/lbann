@@ -33,6 +33,8 @@
 #include <string>
 #include <unistd.h>
 #include <iomanip>
+#include <queue>
+#include <unordered_set>
 
 #include "mpi.h"
 
@@ -94,14 +96,14 @@ model::model(const model& other) :
     m_callbacks.push_back(cb->copy());
   }
   std::unordered_map<Layer *,Layer *> old_to_new_layer;
-  for (Layer *old_layer : other.m_layers) {
+  for (const auto& old_layer : other.m_layers) {
     Layer *new_layer = old_layer->copy();
     new_layer->set_model(this);
     old_to_new_layer[old_layer] = new_layer;
     m_layers.push_back(new_layer);
   }
   std::unordered_map<weights *,weights *> old_to_new_weights;
-  for (weights *old_weights : other.m_weights) {
+  for (const auto& old_weights : other.m_weights) {
     weights *new_weights = old_weights->copy();
     old_to_new_weights[old_weights] = new_weights;
     m_weights.push_back(new_weights);
@@ -113,7 +115,7 @@ model::model(const model& other) :
   }
 
   // Fix pointers
-  for (Layer *old_layer : other.m_layers) {
+  for (const auto& old_layer : other.m_layers) {
     Layer *new_layer = old_to_new_layer[old_layer];
 
     // Fix layer pointers
@@ -128,7 +130,7 @@ model::model(const model& other) :
     // Fix weights pointers
     const std::vector<weights *> old_weights = old_layer->get_weights();
     std::vector<weights *> new_weights;
-    for (weights *old_weights_pointer : old_weights) {
+    for (const auto& old_weights_pointer : old_weights) {
       weights *new_weights_pointer = old_to_new_weights[old_weights_pointer];
       new_weights.push_back(new_weights_pointer);
     }
@@ -140,14 +142,14 @@ model::model(const model& other) :
   {
     std::vector<Layer *> old_layer_pointers = m_objective_function->get_layer_pointers();
     std::vector<Layer *> new_layer_pointers;
-    for (Layer *old_layer_pointer : old_layer_pointers) {
+    for (const auto& old_layer_pointer : old_layer_pointers) {
       Layer *new_layer_pointer = old_to_new_layer[old_layer_pointer];
       new_layer_pointers.push_back(new_layer_pointer);
     }
     m_objective_function->set_layer_pointers(new_layer_pointers);
     const std::vector<weights *> old_weights_pointers = m_objective_function->get_weights_pointers();
     std::vector<weights *> new_weights_pointers;
-    for (weights *old_weights_pointer : old_weights_pointers) {
+    for (const auto& old_weights_pointer : old_weights_pointers) {
       weights *new_weights_pointer = old_to_new_weights[old_weights_pointer];
       new_weights_pointers.push_back(new_weights_pointer);
     }
@@ -162,19 +164,19 @@ model& model::operator=(const model& other) {
   if (m_objective_function) {
     delete m_objective_function;
   }
-  for (metrics::metric *metric : m_metrics) {
+  for (const auto& metric : m_metrics) {
     delete metric;
   }
-  for (lbann_callback *callback : m_callbacks) {
+  for (const auto& callback : m_callbacks) {
     delete callback;
   }
   m_metrics.clear();
   m_callbacks.clear();
-  for (Layer *layer : m_layers) {
+  for (const auto& layer : m_layers) {
     delete layer;
   }
   m_layers.clear();
-  for (weights *w : m_weights) {
+  for (const auto& w : m_weights) {
     delete w;
   }
   m_weights.clear();
@@ -200,7 +202,7 @@ model& model::operator=(const model& other) {
   // Deep copies
   m_objective_function = other.m_objective_function->copy();
   m_objective_function->set_model(this);
-  for (metrics::metric *m : m_metrics) {
+  for (const auto& m : m_metrics) {
     delete m;
   }
   for (const auto& metric : other.m_metrics) {
@@ -211,14 +213,14 @@ model& model::operator=(const model& other) {
     m_callbacks.push_back(cb->copy());
   }
   std::unordered_map<Layer *,Layer *> old_to_new_layer;
-  for (Layer* old_layer : other.m_layers) {
+  for (const auto& old_layer : other.m_layers) {
     Layer* new_layer = old_layer->copy();
     new_layer->set_model(this);
     old_to_new_layer[old_layer] = new_layer;
     m_layers.push_back(new_layer);
   }
   std::unordered_map<weights *,weights *> old_to_new_weights;
-  for (weights *old_weights : other.m_weights) {
+  for (const auto& old_weights : other.m_weights) {
     weights *new_weights = old_weights->copy();
     old_to_new_weights[old_weights] = new_weights;
     m_weights.push_back(new_weights);
@@ -230,13 +232,13 @@ model& model::operator=(const model& other) {
   }
 
   // Fix pointers
-  for (Layer *old_layer : other.m_layers) {
+  for (const auto& old_layer : other.m_layers) {
     Layer *new_layer = old_to_new_layer[old_layer];
 
     // Fix layer pointers
     std::vector<Layer *> old_layer_pointers = old_layer->get_layer_pointers();
     std::vector<Layer *> new_layer_pointers;
-    for (Layer *old_layer_pointer : old_layer_pointers) {
+    for (const auto& old_layer_pointer : old_layer_pointers) {
       Layer *new_layer_pointer = old_to_new_layer[old_layer_pointer];
       new_layer_pointers.push_back(new_layer_pointer);
     }
@@ -245,7 +247,7 @@ model& model::operator=(const model& other) {
     // Fix weights pointers
     const std::vector<weights *> old_weights = old_layer->get_weights();
     std::vector<weights *> new_weights;
-    for (weights *old_weights_pointer : old_weights) {
+    for (const auto& old_weights_pointer : old_weights) {
       weights *new_weights_pointer = old_to_new_weights[old_weights_pointer];
       new_weights.push_back(new_weights_pointer);
     }
@@ -257,14 +259,14 @@ model& model::operator=(const model& other) {
   {
     std::vector<Layer *> old_layer_pointers = m_objective_function->get_layer_pointers();
     std::vector<Layer *> new_layer_pointers;
-    for (Layer *old_layer_pointer : old_layer_pointers) {
+    for (const auto& old_layer_pointer : old_layer_pointers) {
       Layer *new_layer_pointer = old_to_new_layer[old_layer_pointer];
       new_layer_pointers.push_back(new_layer_pointer);
     }
     m_objective_function->set_layer_pointers(new_layer_pointers);
     const std::vector<weights *> old_weights_pointers = m_objective_function->get_weights_pointers();
     std::vector<weights *> new_weights_pointers;
-    for (weights *old_weights_pointer : old_weights_pointers) {
+    for (const auto& old_weights_pointer : old_weights_pointers) {
       weights *new_weights_pointer = old_to_new_weights[old_weights_pointer];
       new_weights_pointers.push_back(new_weights_pointer);
     }
@@ -278,16 +280,16 @@ model::~model() {
   if (m_objective_function != nullptr) {
     delete m_objective_function;
   }
-  for (metrics::metric *metric : m_metrics) {
+  for (const auto& metric : m_metrics) {
     delete metric;
   }
-  for (lbann_callback *callback : m_callbacks) {
+  for (const auto& callback : m_callbacks) {
     delete callback;
   }
-  for (Layer *layer : m_layers) {
+  for (const auto& layer : m_layers) {
     delete layer;
   }
-  for (weights *w : m_weights) {
+  for (const auto& w : m_weights) {
     delete w;
   }
   if (m_default_optimizer != nullptr) {
@@ -330,13 +332,13 @@ void model::add_metric(metrics::metric *m) {
 void model::set_layers(std::vector<Layer*>& layers) {
 
   // Delete old layers
-  for (Layer *layer : m_layers) {
+  for (const auto& layer : m_layers) {
     delete layer;
   }
   m_layers.clear();
 
   // Add new layers
-  for (Layer* layer : layers) {
+  for (const auto& layer : layers) {
     add_layer(layer);
   }
 
@@ -400,7 +402,7 @@ void model::replace_weights(std::vector<weights*>& new_weights) {
   }
 
   // Fix weights pointers in layers
-  for (auto&& layer : m_layers) {
+  for (const auto& layer : m_layers) {
     std::vector<weights *> layer_weights = layer->get_weights();
     for (auto&& w : layer_weights) {
       w = old_to_new_weights[w];
@@ -416,7 +418,7 @@ void model::replace_weights(std::vector<weights*>& new_weights) {
   m_objective_function->set_weights_pointers(obj_weights);
 
   // Delete old weights
-  for (weights *w : old_weights) {
+  for (const auto& w : old_weights) {
     delete w;
   }
 
@@ -431,12 +433,25 @@ optimizer* model::create_optimizer() const {
 }
 
 bool model::is_execution_mode_valid(execution_mode mode) const {
-  for (const Layer *layer : m_layers) {
+  for (const auto& layer : m_layers) {
     const auto *input = dynamic_cast<const input_layer*>(layer);
     if (input != nullptr
         && !input->is_execution_mode_valid(mode)) {
       return false;
     }
+  }
+  return true;
+}
+
+bool model::is_topologically_sorted() const {
+  std::unordered_set<const Layer *> previous_layers;
+  for (const auto& layer : m_layers) {
+    for (const auto& parent : layer->get_parent_layers()) {
+      if (previous_layers.count(parent) == 0) {
+        return false;
+      }
+    }
+    previous_layers.insert(layer);
   }
   return true;
 }
@@ -456,6 +471,117 @@ std::string model::print_layer_description(const Layer* layer) const {
   return os.str();
 }
 
+void model::setup() {
+
+  // Setup layers
+  setup_layer_topology();
+  setup_layer_execution_order();
+  setup_layers();
+
+  // Setup weights
+  setup_weights();
+
+  // Setup objective function
+  m_objective_function->setup(*this);
+
+  // Set up callbacks
+  setup_callbacks();
+
+}
+
+void model::setup_layer_topology() {
+
+  // Perform breadth-first searches to find connected components
+  std::queue<const Layer *> layer_queue;
+  std::unordered_set<const Layer *> layer_set;
+  for (const auto& layer : m_layers) {
+    layer_queue.push(layer);
+    layer_set.insert(layer);
+  }
+  while (!layer_queue.empty()) {
+    const Layer *layer = layer_queue.front();
+    layer_queue.pop();
+    std::vector<const Layer *> relatives;
+    for (const auto& parent : layer->get_parent_layers()) {
+      relatives.push_back(parent);
+    }
+    for (const auto& child : layer->get_child_layers()) {
+      relatives.push_back(child);
+    }
+    for (const auto& relative : relatives) {
+      if (layer_set.count(relative) == 0) {
+        m_layers.push_back(const_cast<Layer *>(relative));
+        layer_queue.push(relative);
+        layer_set.insert(relative);
+      }
+    }
+  }
+
+  // Make sure parent and child relationships are reciprocated
+  for (const auto& layer : m_layers) {
+    for (const auto& parent : layer->get_parent_layers()) {
+      const_cast<Layer *>(parent)->add_child_layer(layer);
+    }
+    for (const auto& child : layer->get_child_layers()) {
+      const_cast<Layer *>(child)->add_parent_layer(layer);
+    }
+  }
+
+}
+
+void model::setup_layers() {
+  for (const auto& layer : m_layers) {
+    layer->set_model(this);
+    layer->setup();
+    layer->check_setup();
+    if (m_comm->am_world_master()) {
+      std::cout << "[" << std::setw(18) << layer->get_type() <<  "] Set up a layer with input " << std::setw(7) << layer->get_num_prev_neurons() << " and " << std::setw(7) << layer->get_num_neurons() << " neurons."  << std::endl;
+    }
+  }
+}
+
+void model::setup_weights() {
+
+  // List of used and unused weights
+  std::unordered_set<weights *> weights_set(m_weights.begin(),
+                                            m_weights.end());
+  std::set<weights *> unused_weights(m_weights.begin(),
+                                     m_weights.end());
+
+  // Find weights used by layers
+  for (const auto& layer : m_layers) {
+    for (const auto& w : layer->get_weights()) {
+      if (weights_set.count(w) == 0) {
+        m_weights.push_back(w);
+        weights_set.insert(w);
+      }
+      unused_weights.erase(w);
+    }
+  }
+
+  // Find weights used by objective function
+  for (const auto& w : m_objective_function->get_weights_pointers()) {
+    if (weights_set.count(w) == 0) {
+      m_weights.push_back(w);
+      weights_set.insert(w);
+    }
+    unused_weights.erase(w);
+  }
+
+  // Delete unused weights
+  for (const auto& w : unused_weights) {
+    m_weights.erase(std::remove(m_weights.begin(), m_weights.end(), w),
+                    m_weights.end());
+  }
+
+}
+
+void model::setup_callbacks() {
+  for (const auto& cb : m_callbacks) {
+    cb->setup(this);
+  }
+}
+
 ////////////////////////////////////////////////////////////
 // Evaluation and training
 ////////////////////////////////////////////////////////////
@@ -473,7 +599,7 @@ void model::evaluate(execution_mode mode) {
   }
 
   // Evaluate on all mini-batches
-  setup_epoch(mode);
+  reset_epoch(mode);
   do_evaluate_begin_cbs(mode);
   while (!evaluate_mini_batch(mode)) {}
   do_evaluate_end_cbs(mode);
@@ -488,7 +614,7 @@ void model::train(int num_epochs) {
     if (get_terminate_training()) { break; }
 
     // Setup epoch
-    setup_epoch(execution_mode::training);
+    reset_epoch(execution_mode::training);
     ++m_current_epoch;
 
     // Train on mini-batches
@@ -503,15 +629,15 @@ void model::train(int num_epochs) {
   do_train_end_cbs();
 }
 
-void model::setup_epoch(execution_mode mode) {
+void model::reset_epoch(execution_mode mode) {
   set_execution_mode(mode);
   m_objective_function->set_model(this);
   m_objective_function->clear_history();
-  for (auto&& m : m_metrics) {
+  for (const auto& m : m_metrics) {
     m->set_model(this);
     m->reset_metric();
   }
-  for (auto&& l : m_layers) {
+  for (const auto& l : m_layers) {
     l->set_model(this);
   }
 }
@@ -547,14 +673,14 @@ bool model::train_mini_batch() {
 }
 
 void model::clear_error_signals() {
-  for (Layer *layer : m_layers) {
+  for (const auto& layer : m_layers) {
     layer->clear_error_signal();
   }
 }
 
 void model::forward_prop(execution_mode mode) {
   do_model_forward_prop_begin_cbs(mode);
-  for (Layer *layer : m_layers) {
+  for (const auto& layer : m_layers) {
     do_layer_forward_prop_begin_cbs(mode, layer);
     layer->forward_prop();
     do_layer_forward_prop_end_cbs(mode, layer);
@@ -575,7 +701,7 @@ void model::backward_prop() {
 
 void model::update_weights() {
   do_model_optimize_begin_cbs();
-  for (weights* w : m_weights) {
+  for (const auto& w : m_weights) {
     optimizer* opt = w->get_optimizer();
     if (opt != nullptr) {
       do_weight_optimize_begin_cbs(w);
@@ -598,26 +724,20 @@ bool model::update_layers() {
 // Callbacks
 ////////////////////////////////////////////////////////////
 
-void model::setup_callbacks() {
-  for (auto&& cb : m_callbacks) {
-    cb->setup(this);
-  }
-}
-
 void model::do_train_begin_cbs() {
-  for (auto&& cb : m_callbacks) {
+  for (const auto& cb : m_callbacks) {
     cb->on_train_begin(this);
   }
 }
 
 void model::do_train_end_cbs() {
-  for (auto&& cb : m_callbacks) {
+  for (const auto& cb : m_callbacks) {
     cb->on_train_end(this);
   }
 }
 
 void model::do_evaluate_begin_cbs(execution_mode mode) {
-  for (auto&& cb : m_callbacks) {
+  for (const auto& cb : m_callbacks) {
     switch (mode) {
     case execution_mode::validation:
       cb->on_validation_begin(this); break;
@@ -633,7 +753,7 @@ void model::do_evaluate_begin_cbs(execution_mode mode) {
 }
 
 void model::do_evaluate_end_cbs(execution_mode mode) {
-  for (auto&& cb : m_callbacks) {
+  for (const auto& cb : m_callbacks) {
     switch (mode) {
     case execution_mode::validation:
       cb->on_validation_end(this); break;
@@ -649,19 +769,19 @@ void model::do_evaluate_end_cbs(execution_mode mode) {
 }
 
 void model::do_epoch_begin_cbs() {
-  for (auto&& cb : m_callbacks) {
+  for (const auto& cb : m_callbacks) {
     cb->on_epoch_begin(this);
   }
 }
 
 void model::do_epoch_end_cbs() {
-  for (auto&& cb : m_callbacks) {
+  for (const auto& cb : m_callbacks) {
     cb->on_epoch_end(this);
   }
 }
 
 void model::do_batch_begin_cbs(execution_mode mode) {
-  for (auto&& cb : m_callbacks) {
+  for (const auto& cb : m_callbacks) {
     switch (mode) {
     case execution_mode::training:
       if (get_cur_step() % cb->get_batch_interval() == 0) {
@@ -682,7 +802,7 @@ void model::do_batch_begin_cbs(execution_mode mode) {
 }
 
 void model::do_batch_end_cbs(execution_mode mode) {
-  for (auto&& cb : m_callbacks) {
+  for (const auto& cb : m_callbacks) {
     switch (mode) {
     case execution_mode::training:
       if (get_cur_step() % cb->get_batch_interval() == 0) {
@@ -703,7 +823,7 @@ void model::do_batch_end_cbs(execution_mode mode) {
 }
 
 void model::do_model_forward_prop_begin_cbs(execution_mode mode) {
-  for (auto&& cb : m_callbacks) {
+  for (const auto& cb : m_callbacks) {
     switch (mode) {
     case execution_mode::training:
       if (get_cur_step() % cb->get_batch_interval() == 0) {
@@ -724,7 +844,7 @@ void model::do_model_forward_prop_begin_cbs(execution_mode mode) {
 }
 
 void model::do_model_forward_prop_end_cbs(execution_mode mode) {
-  for (auto&& cb : m_callbacks) {
+  for (const auto& cb : m_callbacks) {
     switch (mode) {
     case execution_mode::training:
       if (get_cur_step() % cb->get_batch_interval() == 0) {
@@ -745,7 +865,7 @@ void model::do_model_forward_prop_end_cbs(execution_mode mode) {
 }
 
 void model::do_layer_forward_prop_begin_cbs(execution_mode mode, Layer *l) {
-  for (auto&& cb : m_callbacks) {
+  for (const auto& cb : m_callbacks) {
     switch (mode) {
     case execution_mode::training:
       if (get_cur_step() % cb->get_batch_interval() == 0) {
@@ -766,7 +886,7 @@ void model::do_layer_forward_prop_begin_cbs(execution_mode mode, Layer *l) {
 }
 
 void model::do_layer_forward_prop_end_cbs(execution_mode mode, Layer *l) {
-  for (auto&& cb : m_callbacks) {
+  for (const auto& cb : m_callbacks) {
     switch (mode) {
     case execution_mode::training:
       if (get_cur_step() % cb->get_batch_interval() == 0) {
@@ -787,7 +907,7 @@ void model::do_layer_forward_prop_end_cbs(execution_mode mode, Layer *l) {
 }
 
 void model::do_model_backward_prop_begin_cbs() {
-  for (auto&& cb : m_callbacks) {
+  for (const auto& cb : m_callbacks) {
     if (get_cur_step() % cb->get_batch_interval() == 0) {
       cb->on_backward_prop_begin(this);
     }
@@ -795,7 +915,7 @@ void model::do_model_backward_prop_begin_cbs() {
 }
 
 void model::do_model_backward_prop_end_cbs() {
-  for (auto&& cb : m_callbacks) {
+  for (const auto& cb : m_callbacks) {
     if (get_cur_step() % cb->get_batch_interval() == 0) {
       cb->on_backward_prop_end(this);
     }
@@ -803,7 +923,7 @@ void model::do_model_backward_prop_end_cbs() {
 }
 
 void model::do_layer_backward_prop_begin_cbs(Layer *l) {
-  for (auto&& cb : m_callbacks) {
+  for (const auto& cb : m_callbacks) {
     if (get_cur_step() % cb->get_batch_interval() == 0) {
       cb->on_backward_prop_begin(this, l);
     }
@@ -811,7 +931,7 @@ void model::do_layer_backward_prop_begin_cbs(Layer *l) {
 }
 
 void model::do_layer_backward_prop_end_cbs(Layer *l) {
-  for (auto&& cb : m_callbacks) {
+  for (const auto& cb : m_callbacks) {
     if (get_cur_step() % cb->get_batch_interval() == 0) {
       cb->on_backward_prop_end(this, l);
     }
@@ -819,7 +939,7 @@ void model::do_layer_backward_prop_end_cbs(Layer *l) {
 }
 
 void model::do_model_optimize_begin_cbs() {
-  for (auto&& cb : m_callbacks) {
+  for (const auto& cb : m_callbacks) {
     if (get_cur_step() % cb->get_batch_interval() == 0) {
       cb->on_optimize_begin(this);
     }
@@ -827,7 +947,7 @@ void model::do_model_optimize_begin_cbs() {
 }
 
 void model::do_model_optimize_end_cbs() {
-  for (auto&& cb : m_callbacks) {
+  for (const auto& cb : m_callbacks) {
     if (get_cur_step() % cb->get_batch_interval() == 0) {
       cb->on_optimize_end(this);
     }
@@ -835,7 +955,7 @@ void model::do_model_optimize_end_cbs() {
 }
 
 void model::do_weight_optimize_begin_cbs(weights *w) {
-  for (auto&& cb : m_callbacks) {
+  for (const auto& cb : m_callbacks) {
     if (get_cur_step() % cb->get_batch_interval() == 0) {
       cb->on_optimize_begin(this, w);
     }
@@ -843,7 +963,7 @@ void model::do_weight_optimize_begin_cbs(weights *w) {
 }
 
 void model::do_weight_optimize_end_cbs(weights *w) {
-  for (auto&& cb : m_callbacks) {
+  for (const auto& cb : m_callbacks) {
     if (get_cur_step() % cb->get_batch_interval() == 0) {
       cb->on_optimize_end(this, w);
     }
@@ -855,7 +975,7 @@ void model::do_weight_optimize_end_cbs(weights *w) {
 ////////////////////////////////////////////////////////////
 
 void model::summarize_stats(lbann_summary& summarizer) {
-  for (Layer *layer : m_layers) {
+  for (const auto& layer : m_layers) {
     layer->summarize_stats(summarizer, get_cur_step());
   }
   summarizer.reduce_scalar("objective",
@@ -873,7 +993,7 @@ void model::summarize_stats(lbann_summary& summarizer) {
 }
 
 void model::summarize_matrices(lbann_summary& summarizer) {
-  for (Layer *layer : m_layers) {
+  for (const auto& layer : m_layers) {
     layer->summarize_matrices(summarizer, get_cur_step());
   }
 }

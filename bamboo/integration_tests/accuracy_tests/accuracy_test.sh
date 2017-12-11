@@ -133,13 +133,13 @@ if [[ ${ITERATIVE} == 1 ]]
             MODEL_NUM=$(( ${i} * ${MPIRANK} / ${PROCSPERMODEL} ))
 	    FILE_NAME="res_${MODEL}_${MODEL_NUM}_${EPOCHS}.txt"
 	    echo "Now submitting ${MODEL} running a ${i} node job with ${MODEL_NUM} models."
-	    salloc -N${i} -p${PARTITION} srun -n${RANK} ${EXECUTABLE} ${CMD} | grep "external validation categorical accuracy" | sed 's/^.*accuracy: //g;s/%//g' >> "${FILE_NAME}"
+	    salloc -N${i} -p${PARTITION} srun -n${RANK} ${EXECUTABLE} ${CMD} | grep "test categorical accuracy" | sed 's/^Model [0-9]* test categorical accuracy : \([^%]*\)%$/\1/'
 	done    
 else
     RANK=$(( ${NODECOUNT} * ${MPIRANK} ))
     MODEL_NUM=$(( ${NODECOUNT} * ${MPIRANK} / ${PROCSPERMODEL} ))
     FILE_NAME="res_${MODEL}_${MODEL_NUM}_${EPOCHS}.txt"
     echo "Now submitting ${MODEL} running a ${NODECOUNT} node job with ${MODEL_NUM}"
-    salloc -N${NODECOUNT} -p${PARTITION} srun -n${RANK} ${EXECUTABLE} ${CMD} | grep "external validation categorical accuracy" | sed 's/^.*accuracy: //g;s/%//g' >> "${FILE_NAME}"
+    salloc -N${NODECOUNT} -p${PARTITION} srun -n${RANK} ${EXECUTABLE} ${CMD} | grep "test categorical accuracy" | sed 's/^Model [0-9]* test categorical accuracy : \([^%]*\)%$/\1/'
 
 fi
