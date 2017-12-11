@@ -157,14 +157,17 @@ class Layer {
     return m_using_gpus;
   }
 
-  /// Following functions tell whether current layer is a fan-out layer; default is false
-  virtual bool is_fan_out_layer() const {
-    return m_max_num_child_layers != 1 && m_max_num_child_layers != 0;
+  /** Get maximum number of parent layers.
+   *  A negative value indicates no limit.
+   */
+  inline int get_max_num_parent_layers() const {
+    return m_max_num_parent_layers;
   }
-
-  /// Following functions tell whether current layer is a fan-in layer; default is false
-  virtual bool is_fan_in_layer() const {
-    return m_max_num_parent_layers != 1 && m_max_num_parent_layers != 0;
+  /** Get maximum number of child layers.
+   *  A negative value indicates no limit.
+   */
+  inline int get_max_num_child_layers() const {
+    return m_max_num_child_layers;
   }
 
   /** Return the model that owns this layer. */
