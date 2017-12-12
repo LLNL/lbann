@@ -494,7 +494,7 @@ void model::evaluate(execution_mode mode) {
 
 void model::train(int num_epochs) {
   do_train_begin_cbs();
-  for (int epoch = 0; epoch < num_epochs; ++epoch) {
+  for (int epoch = m_current_epoch; epoch < num_epochs; ++epoch) {
 
     // Stop if training has been terminated
     if (get_terminate_training()) { break; }
@@ -510,7 +510,6 @@ void model::train(int num_epochs) {
 
     // Evaluate on validation set
     evaluate(execution_mode::validation);
-
   }
   do_train_end_cbs();
 }
@@ -891,7 +890,7 @@ void model::summarize_matrices(lbann_summary& summarizer) {
 ////////////////////////////////////////////////////////////
 // Checkpointing
 ////////////////////////////////////////////////////////////
-#if 0 
+#if 0
 
 /** \brief Returns true if a checkpoint should be taken, false otherwise */
 bool model::need_checkpoint() {
@@ -1142,6 +1141,11 @@ struct lbann_model_header {
   uint32_t terminate_training;
   uint64_t current_epoch;
   uint64_t current_step;
+  uint64_t current_validation_step;
+  uint64_t current_testing_step;
+  //  int m_max_mini_batch_size;
+  /** Size of the current mini-batch in the model. */
+  //  int m_current_mini_batch_size;
   uint32_t current_phase;
 };
 
@@ -1152,6 +1156,8 @@ bool model::save_to_checkpoint_shared(persist& p) {
     p.write_uint32(persist_type::train, "terminate_training", (uint32_t) m_terminate_training);
     p.write_uint64(persist_type::train, "current_epoch",      (uint64_t) m_current_epoch);
     p.write_uint64(persist_type::train, "current_step",       (uint64_t) m_current_step);
+    p.write_uint64(persist_type::train, "current_validataion_step",       (uint64_t) m_current_validation_step);
+    p.write_uint64(persist_type::train, "current_testing_step",       (uint64_t) m_current_testing_step);
     p.write_uint32(persist_type::train, "current_phase",      (uint32_t) m_current_phase);
   }
   //for (weights *w : m_weights) {
@@ -1169,6 +1175,8 @@ bool model::load_from_checkpoint_shared(persist& p) {
     p.read_uint32(persist_type::train, "terminate_training", &header.terminate_training);
     p.read_uint64(persist_type::train, "current_epoch",      &header.current_epoch);
     p.read_uint64(persist_type::train, "current_step",       &header.current_step);
+    p.read_uint64(persist_type::train, "current_validation_step",       &header.current_validation_step);
+    p.read_uint64(persist_type::train, "current_testing_step",       &header.current_testing_step);
     p.read_uint32(persist_type::train, "current_phase",      &header.current_phase);
   }
 
@@ -1181,6 +1189,8 @@ bool model::load_from_checkpoint_shared(persist& p) {
   m_terminate_training = (bool)           header.terminate_training;
   m_current_epoch      = (int)            header.current_epoch;
   m_current_step       = (int)            header.current_step;
+  m_current_validation_step = (int)       header.current_validation_step;
+  m_current_testing_step = (int)          header.current_testing_step;
   m_current_phase      =                  header.current_phase;
   //for (weights *w : m_weights) {
   //  w->loadFromCheckpointShared(p);

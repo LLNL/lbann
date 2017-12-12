@@ -344,9 +344,6 @@ bool generic_data_reader::saveToCheckpointShared(persist& p, const char *name) c
     snprintf(fieldname, sizeof(fieldname), "%s_data_indices", name);
     p.write_int32_contig(persist_type::train, fieldname, &m_shuffled_indices[0], (uint64_t) size);
 
-
-
-     // Everything below is just things I have tried saving to see if they have any impact. Don't think any do
     snprintf(fieldname, sizeof(fieldname), "%s_stride_to_last_mini_batch", name);
     p.write_uint64(persist_type::train, fieldname, (uint64_t) m_stride_to_last_mini_batch);
 
@@ -371,7 +368,7 @@ bool generic_data_reader::saveToCheckpointShared(persist& p, const char *name) c
     snprintf(fieldname, sizeof(fieldname), "%s_reset_mini_batch_index", name);
     p.write_uint64(persist_type::train, fieldname, (uint64_t) m_reset_mini_batch_index);
     //printf("%d\n", m_current_mini_batch_idx);
-    printf("%d\n", m_current_pos);
+    printf("My current position is %d\n", m_current_pos);
     //printf("%d\n", m_shuffled_indices[0]);
     //printf("%d\n", m_model_offset);
   }
