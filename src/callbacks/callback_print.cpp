@@ -147,6 +147,15 @@ void lbann_callback_print::report_results(model *m) {
                   << "objective function : " << obj_fn_list[i]
                   << std::endl;
       }
+      if (num_models > 1) {
+        const double avg_obj_fn = (std::accumulate(obj_fn_list.begin(),
+                                                   obj_fn_list.end(),
+                                                   0.0)
+                                   / num_models);
+        std::cout << "World average " << mode_string << " "
+                  << "objective function : " << avg_obj_fn
+                  << std::endl;
+      }
     } else {
       comm->intermodel_gather(obj_fn, comm->get_world_master());
     }
@@ -161,6 +170,16 @@ void lbann_callback_print::report_results(model *m) {
           std::cout << "Model " << i << " " << mode_string << " "
                     << metric->name() << " : " 
                     << score_list[i] << metric->display_unit()
+                    << std::endl;
+        }
+        if (num_models > 1) {
+          const double avg_score = (std::accumulate(score_list.begin(),
+                                                   score_list.end(),
+                                                   0.0)
+                                    / num_models);
+          std::cout << "World average " << mode_string << " "
+                    << metric->name() << " : "
+                    << avg_score << metric->display_unit()
                     << std::endl;
         }
       } else {

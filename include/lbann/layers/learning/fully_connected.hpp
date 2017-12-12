@@ -154,7 +154,6 @@ class fully_connected_layer : public learning_layer {
     m_bias_weights_v = other.m_bias_weights_v->Copy();
     m_matrix_weights_gradient = other.m_matrix_weights_gradient->Copy();
     m_bias_weights_gradient = other.m_bias_weights_gradient->Copy();
-    setup_views();  // Update views.
 #ifdef __LIB_CUDNN
     if (m_cudnn != nullptr) {
       m_matrix_weights_gradient_d = m_cudnn->copy(other.m_matrix_weights_gradient_d,
@@ -195,7 +194,6 @@ class fully_connected_layer : public learning_layer {
     COPY_MATRIX(other.m_matrix_weights_gradient, m_matrix_weights_gradient);
     COPY_MATRIX(other.m_bias_weights_gradient, m_bias_weights_gradient);
   #undef COPY_MATRIX
-    setup_views();  // Update views.
   #ifdef __LIB_CUDNN
     if (m_cudnn != nullptr) {
       m_cudnn->deallocate_on_gpus(m_matrix_weights_gradient_d);
@@ -326,12 +324,6 @@ class fully_connected_layer : public learning_layer {
 
   }
 
-  void setup_views() override {
-    learning_layer::setup_views();
-    this->m_weights[0]->get_values_view(*m_matrix_weights_v);
-    this->m_weights[1]->get_values_view(*m_bias_weights_v);
-  }
-
   void setup_gpu() override {
     learning_layer::setup_gpu();
 #ifndef __LIB_CUDNN
@@ -359,17 +351,22 @@ class fully_connected_layer : public learning_layer {
                                                  CUDNN_TENSOR_NCHW,
                                                  cudnn::get_cudnn_data_type(),
                                                  1, 1, 1,
-                                                 m_bias_weights_v->Height()));
+                                                 m_num_neurons));
     FORCE_CHECK_CUDNN(cudnnCreateTensorDescriptor(&m_activations_desc));
     FORCE_CHECK_CUDNN(cudnnSetTensor4dDescriptor(m_activations_desc,
                                                  CUDNN_TENSOR_NCHW,
                                                  cudnn::get_cudnn_data_type(),
                                                  1, m_mini_batch_size_per_gpu, 1,
-                                                 m_bias_weights_v->Height()));
+                                                 m_num_neurons));
 
 #endif // __LIB_CUDNN
   }
 
+  void fp_set_std_matrix_view() override {
+    learning_layer::fp_set_std_matrix_view();
+    this->m_weights[0]->get_values_view(*m_matrix_weights_v);
+    this->m_weights[1]->get_values_view(*m_bias_weights_v);
+  }
 
   void fp_compute() override {
     if(this->m_using_gpus) {
