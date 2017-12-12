@@ -119,6 +119,7 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
   model *model = nullptr; //d hysom bad namimg! should fix
   try {
     std::stringstream err;
+    options *opts = options::get();
 
     // Optionally over-ride some values in prototext
     get_cmdline_overrides(comm, pb);
