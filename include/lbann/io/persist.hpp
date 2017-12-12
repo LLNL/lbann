@@ -58,10 +58,10 @@ class persist {
   int get_rank() const {
     return m_rank;
   }
-  void open_checkpoint(const char *dir);
+  void open_checkpoint(const char *dir, bool per_rank);
   void close_checkpoint();
 
-  void open_restart(const char *dir);
+  void open_restart(const char *dir, bool per_rank);
   void close_restart();
 
   uint64_t get_bytes() const {
@@ -85,6 +85,9 @@ class persist {
 
   bool write_float(persist_type type, const char *name, float  val);
   bool read_float (persist_type type, const char *name, float *val);
+
+  bool write_string(persist_type type, const char *name, const char *val, int str_length);
+  bool read_string (persist_type type, const char *name, char *val, int str_length);
 
   bool write_double(persist_type type, const char *name, double  val);
   bool read_double (persist_type type, const char *name, double *val);

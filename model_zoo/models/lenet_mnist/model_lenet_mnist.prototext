@@ -45,7 +45,7 @@ model {
     checkpoint {
       checkpoint_dir: "test"
       checkpoint_epochs: 1
-      checkpoint_steps: 500 
+      checkpoint_per_rank: true 
       #checkpoint_secs: 7  
     }
   }

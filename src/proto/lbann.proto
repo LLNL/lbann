@@ -190,15 +190,9 @@ message Model {
   // for complete list, see: lbann/include/lbann/callbacks
   repeated Callback callback = 20;
 
-  //checkpointing
-  string checkpoint_dir = 30;
-  int64 checkpoint_epochs = 31;
-  int64 checkpoint_steps = 32;
-  double checkpoint_secs = 33;
-
-  int64 random_seed = 34;
+  int64 random_seed = 30;
   // If true, models will have their model rank mixed into their random seed.
-  bool random_init_models_differently = 35;
+  bool random_init_models_differently = 31;
 
   // For Siamese model
   message Siamese {
@@ -518,6 +512,7 @@ message CallbackCheckpoint {
   int64 checkpoint_epochs = 2;
   int64 checkpoint_steps = 3;
   double checkpoint_secs = 4;
+  bool checkpoint_per_rank = 5;
 }
 
 //========================================================================

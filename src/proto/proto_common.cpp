@@ -1584,7 +1584,7 @@ void init_callbacks(
 	          << "> to dir: " << c.checkpoint_dir() << std::endl;
       }
       lbann_callback_checkpoint *checkpoint_cb = new
-        lbann_callback_checkpoint(c.checkpoint_dir(), c.checkpoint_epochs(), c.checkpoint_steps(), c.checkpoint_secs());
+        lbann_callback_checkpoint(c.checkpoint_dir(), c.checkpoint_epochs(), c.checkpoint_steps(), c.checkpoint_secs(), c.checkpoint_per_rank());
       model->add_callback(checkpoint_cb);
     }
   }
