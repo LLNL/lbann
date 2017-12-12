@@ -44,17 +44,17 @@ if (LBANN_SB_BUILD_CUB)
 endif ()
 
 # Elemental is *SO* complicated.
-if (LBANN_SB_BUILD_Elemental OR LBANN_SB_BUILD_Hydrogen)
+if (LBANN_SB_BUILD_Elemental OR LBANN_SB_BUILD_HYDROGEN)
   option(LBANN_SB_BUILD_OpenBLAS "Pull and build OpenBLAS from Github" OFF)
 
   if (LBANN_SB_BUILD_OpenBLAS)
     add_subdirectory(OpenBLAS)
   endif ()
 
-  if (NOT LBANN_SB_BUILD_Hydrogen)
-    add_subdirectory(elemental)
-  else ()
+  if (LBANN_SB_BUILD_HYDROGEN)
     add_subdirectory(hydrogen)
+  else ()
+    add_subdirectory(elemental)
   endif ()
 endif ()
 
