@@ -27,8 +27,8 @@
 //                          3-channel color image
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CV_COLORIZE_HPP
-#define LBANN_CV_COLORIZE_HPP
+#ifndef LBANN_CV_COLORIZER_HPP
+#define LBANN_CV_COLORIZER_HPP
 
 #include "cv_transform.hpp"
 
@@ -78,4 +78,4 @@ class cv_colorizer : public cv_transform {
 } // end of namespace lbann
 #endif // __LIB_OPENCV
 
-#endif // LBANN_CV_COLORIZE_HPP
+#endif // LBANN_CV_COLORIZER_HPP

@@ -100,7 +100,7 @@ class cv_cropper : public cv_transform {
    */
   bool determine_transform(const cv::Mat& image) override;
 
-  /// Cropping is irreversible.
+  /// Cropping is irreversible. Thus, this has no effect.
   bool determine_inverse_transform() override { return false; }
 
   /**
