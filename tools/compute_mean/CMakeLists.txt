@@ -36,10 +36,6 @@ endif()
 include_directories(SYSTEM ${OpenCV_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR})
 link_directories(${OpenCV_LIB_DIR})
 
-list (APPEND Elemental_DIR ${LBANN_BUILD_DIR})
-find_package(Elemental REQUIRED HINTS ${Elemental_DIR}/CMake/elemental)
-message(STATUS "Elemental_DIR: ${Elemental_DIR}")
-
 
 find_package(MPI REQUIRED)
 message(STATUS "Found MPI: ${MPI_CXX_COMPILER} ${MPI_C_COMPILER} ${MPI_Fortran_COMPILER}")
@@ -57,6 +53,7 @@ file(GLOB COMPUTE_MEAN_SRCS
      lbann/utils/random.cpp
      ${LBANN_DIR}/src/data_readers/cv_augmenter.cpp
      ${LBANN_DIR}/src/data_readers/cv_colorizer.cpp
+     ${LBANN_DIR}/src/data_readers/cv_decolorizer.cpp
      ${LBANN_DIR}/src/data_readers/cv_normalizer.cpp
      ${LBANN_DIR}/src/data_readers/cv_process.cpp
      ${LBANN_DIR}/src/data_readers/cv_process_patches.cpp
