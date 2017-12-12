@@ -261,7 +261,7 @@ class local_response_normalization_layer : public regularizer_layer {
     ////////////////////////////////////////////////////////////////
     // activations(i) = prev_activations(i) / scale_factor(i) ^ beta
     // scale_factor(i)
-    //   = k + alpha / window_width * sum( prev_activations(j) ^ 2 )
+    //   = k + alpha * sum( prev_activations(j) ^ 2 )
     // Note: The sum is over entries in the normalization window.
     ////////////////////////////////////////////////////////////////
 
