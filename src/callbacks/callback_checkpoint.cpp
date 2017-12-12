@@ -58,21 +58,21 @@ bool lbann_callback_checkpoint::need_checkpoint(model *m) {
     return false;
   }
   // assume that we won't checkpoint
-  int flag = 0;
+  bool checkpoint_now = false;
   lbann_comm *comm = m->get_comm();
   // if at start of epoch and evenly divide
-  if (flag == 0 && m_checkpoint_epochs > 0) {
+  if (!checkpoint_now && m_checkpoint_epochs > 0) {
     if (at_epoch_start()) {
-      flag = (int) (m->get_cur_epoch() % m_checkpoint_epochs == 0);
+      checkpoint_now = (m->get_cur_epoch() > 0) && (m->get_cur_epoch() % m_checkpoint_epochs == 0);
     }
   }
   // if our current step is evenly divisable by checkpoint steps,
   // take a checkpoint
-  if (flag == 0 && m_checkpoint_steps > 0) {
-    flag = (int) (m->get_cur_step() % m_checkpoint_steps == 0);
+  if (!checkpoint_now && m_checkpoint_steps > 0) {
+    checkpoint_now = (m->get_cur_step() > 0) && (m->get_cur_step() % m_checkpoint_steps == 0);
   }
   // check the clock if time-based checkpoint is enabled
-  if (flag == 0 && m_checkpoint_secs != 0.0) {
+  if (!checkpoint_now && m_checkpoint_secs != 0.0) {
     // have rank 0 determine whether we should checkpoint
     // to avoid issues with clock skew, we rely on rank 0 to make decision
     if (comm->am_world_master()) {
@@ -81,12 +81,14 @@ bool lbann_callback_checkpoint::need_checkpoint(model *m) {
       // compute time next checkpoint is due
       double next = m_checkpoint_last + m_checkpoint_secs;
       // determine whether it's time for a checkpoint
-      flag = (current >= next);
+      checkpoint_now = (current >= next);
     }
-    // get flag from rank 0
+    // get checkpoint_now from rank 0
+    int flag = checkpoint_now ? 1 : 0;
     MPI_Bcast(&flag, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    checkpoint_now = (bool) flag;
   }
-  return (bool)flag;
+  return checkpoint_now;
 }
 
 static bool write_latest(const char *dir, const char *name, int epoch, int train) {
