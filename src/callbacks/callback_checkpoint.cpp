@@ -97,8 +97,9 @@ static bool write_latest(const char *dir, const char *name, int epoch, int train
   // open the file for writing
   int fd = openwrite(filename);
   if (fd != -1) {
-    write_uint32(fd, "epoch", (uint32_t)epoch);
-    write_uint32(fd, "train", (uint32_t)train);
+    char field[256];
+    sprintf(field, "epoch=%d step=%d\n", epoch, train);
+    write_string(fd, "shared.last", field, strlen(field));
     // close our file
     closewrite(fd, filename);
   }
@@ -116,15 +117,12 @@ static bool read_latest(const char *dir, const char *name, int *epochLast, int *
   int fd = openread(filename);
   if (fd != -1) {
     // read epoch from file
-    uint32_t epoch;
-    read_uint32(fd, "epoch", &epoch);
-    *epochLast = (int) epoch;
-    // read epoch from file
-    uint32_t train;
-    read_uint32(fd, "train", &train);
-    *trainLast = train;
+    char field[256];
+    read_string(fd, "shared.last", field, sizeof(field));
+    int ret = sscanf(field, "epoch=%d step=%d\n", epochLast, trainLast);
     // close our file
     closeread(fd, filename);
+    if(ret != 2) { return false; }
   }
   return true;
 }
@@ -171,7 +169,7 @@ bool lbann_callback_checkpoint::checkpointShared(model *m) {
   // write epoch number to current file, we do this at the end so as to only update
   // this file when we know we have a new valid checkpoint
   if (comm->am_world_master()) {
-    write_latest(dir, "shared.last", epoch, step);
+    write_latest(dir, "last.shared.checkpoint", epoch, step);
   }
   // stop timer and report cost
   MPI_Barrier(MPI_COMM_WORLD);
@@ -201,7 +199,7 @@ bool lbann_callback_checkpoint::restartShared(model *m) {
   int epoch, step;
   lbann_comm *comm = m->get_comm();
   if (comm->am_world_master()) {
-    read_latest(dir, "shared.last", &epoch, &step);
+    read_latest(dir, "last.shared.checkpoint", &epoch, &step);
   }
   MPI_Bcast(&epoch, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&step,  1, MPI_INT, 0, MPI_COMM_WORLD);

@@ -500,3 +500,26 @@ bool lbann::write_double(int fd, const char *name, double val) {
 bool lbann::read_double(int fd, const char *name, double *val) {
   return lbann::read_bytes(fd, name, val, sizeof(double));
 }
+
+bool lbann::write_string(int fd, const char *name, const char *buf, size_t size) {
+  if (fd > 0) {
+    ssize_t rc = write(fd, buf, size);
+    printf("I think that the size of the buffer is %ld\n", size);
+    if (rc != (ssize_t) size) {
+      throw lbann_exception(std::string("Failed to write: ") + name);
+      return false;
+    }
+  }
+  return true;
+}
+
+bool lbann::read_string(int fd, const char *name, char *buf, size_t size) {
+  if (fd > 0) {
+    ssize_t rc = read(fd, buf, size);
+    if (rc <= 0) {
+      throw lbann_exception(std::string("Failed to read: ") + name);
+      return false;
+    }
+  }
+  return true;
+}

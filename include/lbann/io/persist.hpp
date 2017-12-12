@@ -117,6 +117,9 @@ bool read_float (int fd, const char *name, float *val);
 bool write_double(int fd, const char *name, double  val);
 bool read_double (int fd, const char *name, double *val);
 
+bool write_string(int fd, const char *name, const char *buf, size_t size);
+bool read_string(int fd, const char *name, char *buf, size_t size);
+
 } // namespace lbann
 
 #endif // LBANN_PERSIST_H
