@@ -190,9 +190,6 @@ class base_convolution_layer : public learning_layer {
 
   #endif // __LIB_CUDNN
 
-    // Update views
-    setup_views();
-
   }
 
   base_convolution_layer& operator=(const base_convolution_layer& other) {
@@ -246,9 +243,6 @@ class base_convolution_layer : public learning_layer {
     }
 
   #endif // __LIB_CUDNN
-
-    // Update views
-    setup_views();
 
     return *this;
   }
@@ -337,26 +331,6 @@ class base_convolution_layer : public learning_layer {
 
   }
 
-  void setup_views() override {
-    learning_layer::setup_views();
-    if ((m_weights.size() < 1u) || (this->m_weights[0] == nullptr)) {
-      std::stringstream err;
-      err << __FILE__ << ' ' << __LINE__ << " :: " << m_name
-          << " base_convolution_layer::setup_views() uninitialized kernel weights";
-      throw lbann_exception(err.str());
-    }
-    this->m_weights[0]->get_values_view(*m_kernel_weights_v);
-    if (m_bias_scaling_factor != DataType(0)) {
-      if ((m_weights.size() < 2u) || (this->m_weights[1] == nullptr)) {
-        std::stringstream err;
-        err << __FILE__ << ' ' << __LINE__ << " :: " << m_name
-            << " base_convolution_layer::setup_views() uninitialized bias weights";
-        throw lbann_exception(err.str());
-      }
-      this->m_weights[1]->get_values_view(*m_bias_weights_v);
-    }
-  }
-
   /// Initialize GPU objects
   void setup_gpu() override {
     learning_layer::setup_gpu();
@@ -403,6 +377,29 @@ class base_convolution_layer : public learning_layer {
   }
 
  protected:
+
+  void fp_set_std_matrix_view() override {
+    learning_layer::fp_set_std_matrix_view();
+    if (m_weights.size() < 1 || this->m_weights[0] == nullptr) {
+      std::stringstream err;
+      err << __FILE__ << ' ' << __LINE__ << " :: "
+          << "uninitialized kernel weights";
+      throw lbann_exception(err.str());
+    } else {
+      this->m_weights[0]->get_values_view(*m_kernel_weights_v);
+    }
+    if (m_bias_scaling_factor != DataType(0)) {
+      if (m_weights.size() < 2 || this->m_weights[1] == nullptr) {
+        std::stringstream err;
+        err << __FILE__ << ' ' << __LINE__ << " :: "
+            << "uninitialized bias weights";
+        throw lbann_exception(err.str());
+      } else {
+        this->m_weights[1]->get_values_view(*m_bias_weights_v);
+      }
+    }
+    
+  }
 
   /** Convolution with cuDNN. */
   void apply_convolution_cudnn(bool during_forward_prop) {

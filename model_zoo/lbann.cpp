@@ -168,8 +168,11 @@ int main(int argc, char *argv[]) {
       #endif // __LIB_CUDNN
       std::cout << std::endl;
     }
+
     // Display how the OpenMP threads are provisioned
-    display_omp_setup();
+    if (opts->has_string("print_affinity")) {
+      display_omp_setup();
+    }
 
     // Initialize data readers
     //@todo: code not in place for correctly handling image preprocessing

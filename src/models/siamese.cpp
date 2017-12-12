@@ -35,91 +35,105 @@ siamese_model::siamese_model(lbann_comm *comm,
                              objective_function *obj_fn,
                              optimizer *default_optimizer,
                              int num_heads)
-  : dag_model(comm, mini_batch_size, obj_fn, default_optimizer),
+  : directed_acyclic_graph_model(comm, mini_batch_size, obj_fn, default_optimizer),
     m_num_heads(num_heads) {}
 
-void siamese_model::setup() {
+void siamese_model::setup_layer_topology() {
 
-  // Sort layers topologically
-  topologically_sort_layers();
+  /** @todo Handle case where heads have already been initialized. */
+  m_follower_to_master_layer.clear();
 
+  // Initialize network with master head
+  directed_acyclic_graph_model::setup_layer_topology();
+  setup_layer_execution_order();
+  
   // Determine layers in master head
   int heads_start = m_layers.size();
   int heads_end = -1;
   for (size_t i = 0; i < m_layers.size(); ++i) {
-    if (m_layers[i]->is_fan_out_layer()) {
+    if (m_layers[i]->get_max_num_child_layers() < 0
+        || m_layers[i]->get_max_num_child_layers() > 1) {
       heads_start = i + 1;
       break;
     }
   }
   for (int i = m_layers.size() - 1; i >= 0; --i) {
-    if (m_layers[i]->is_fan_in_layer()) {
+    if (m_layers[i]->get_max_num_parent_layers() < 0
+        || m_layers[i]->get_max_num_parent_layers() > 1) {
       heads_end = i;
       break;
     }
   }
   if (heads_start > heads_end) {
-    throw lbann_exception("siamese_model: siamese models must have a fan-out layer before a fan-in layer");
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "siamese models must have a fan-out layer before a fan-in layer "
+        << "(found fan-out layer at position " << heads_start - 1
+        << " and fan-in layer at position " << heads_end << ")";
+    throw lbann_exception(err.str());
   }
   std::vector<Layer*> master_head(m_layers.begin() + heads_start,
                                   m_layers.begin() + heads_end);
-  const int master_head_end = heads_end;
 
   // Construct map from follower layers to master layers
-  std::unordered_map<Layer*,Layer*> follower_to_master_layer;
-  for (Layer* master_layer : m_layers) {
-    follower_to_master_layer[master_layer] = master_layer;
+  for (const auto& layer : m_layers) {
+    m_follower_to_master_layer[layer] = layer;
   }
 
-  // Duplicate heads
+  // Duplicate master head
   for (int i = 1; i < m_num_heads; ++i) {
-    std::string name_suffix = "_" + std::to_string(i);
+    std::string name_suffix = "_head" + std::to_string(i);
 
     // Construct map from master layers to follower layers
     std::unordered_map<Layer*,Layer*> master_to_follower_layer;
-    for (Layer* master_layer : m_layers) {
+    for (const auto& master_layer : m_layers) {
       master_to_follower_layer[master_layer] = master_layer;
     }
 
-    // Duplicate layers in master head
+    // Construct follower head by copying layers in master head
     std::vector<Layer*> follower_head;
-    for (Layer* master_layer : master_head) {
-      
-      // Create copy of master layer
+    for (const auto& master_layer : master_head) {
       Layer* follower_layer = master_layer->copy();
       follower_layer->set_name(follower_layer->get_name() + name_suffix);
       follower_head.push_back(follower_layer);
-
-      // Add new layer to layer maps
       master_to_follower_layer[master_layer] = follower_layer;
-      follower_to_master_layer[follower_layer] = master_layer;
-
-      // Add layer to model
-      m_layers.insert(m_layers.begin() + heads_end, follower_layer);
-      heads_end++;
-
+      m_follower_to_master_layer[follower_layer] = master_layer;
     }
 
     // Fix pointers in follower head
-    for (Layer* follower_layer : follower_head) {
-      std::vector<Layer*> master_layer_pointers = follower_layer->get_layer_pointers();
-      std::vector<Layer*> follower_layer_pointers;
-      for (Layer* master_layer_pointer : master_layer_pointers) {
-        Layer* follower_layer_pointer = master_to_follower_layer[master_layer_pointer];
-        follower_layer_pointers.push_back(follower_layer_pointer);
+    for (const auto& follower_layer : follower_head) {
+      auto layer_pointers = follower_layer->get_layer_pointers();
+      for (auto& layer_pointer : layer_pointers) {
+        layer_pointer = master_to_follower_layer[layer_pointer];
       }
-      follower_layer->set_layer_pointers(follower_layer_pointers);
+      follower_layer->set_layer_pointers(layer_pointers);
     }
 
     // Fix pointers at start and end of head
     m_layers[heads_start-1]->add_child_layer(follower_head.front());
     m_layers[heads_end]->add_parent_layer(follower_head.back());
 
+    // Add follower head to model
+    m_layers.insert(m_layers.begin() + heads_end,
+                    follower_head.begin(),
+                    follower_head.end());
+    heads_end += follower_head.size();
+
   }
 
-  // Setup layers before heads
-  for (int i = 0; i < heads_start; ++i) {
-    Layer* layer = m_layers[i];
+  // Rename layers in master head
+  for (const auto& layer : master_head) {
+    layer->set_name(layer->get_name() + "_head0");
+  }
+
+  // Make sure all parent/child relationships are reciprocated
+  directed_acyclic_graph_model::setup_layer_topology();
+
+}
+
+void siamese_model::setup_layers() {
+  for (const auto& layer : m_layers) {
+    layer->set_weights(m_follower_to_master_layer[layer]->get_weights());
     layer->set_model(this);
     layer->setup();
     layer->check_setup();
@@ -127,48 +141,6 @@ void siamese_model::setup() {
       std::cout << print_layer_description(layer) << std::endl;
     }
   }
-
-  // Setup master head
-  for (int i = heads_start; i < master_head_end; ++i) {
-    Layer* layer = m_layers[i];
-    layer->set_model(this);
-    layer->setup();
-    layer->check_setup();
-    if (m_comm->am_world_master()) {
-      std::cout << print_layer_description(layer) << std::endl;
-    }
-  }
-
-  // Setup follower heads
-  for (int i = master_head_end; i < heads_end; ++i) {
-    Layer* layer = m_layers[i];
-    Layer* master_layer = follower_to_master_layer[layer];
-    layer->set_weights(master_layer->get_weights());
-    layer->set_model(this);
-    layer->setup();
-    layer->check_setup();
-    if (m_comm->am_world_master()) {
-      std::cout << print_layer_description(layer) << std::endl;
-    }
-  }
-
-  // Setup layers after heads
-  for (size_t i = heads_end; i < m_layers.size(); ++i) {
-    Layer* layer = m_layers[i];
-    layer->set_model(this);
-    layer->setup();
-    layer->check_setup();
-    if (m_comm->am_world_master()) {
-      std::cout << print_layer_description(layer) << std::endl;
-    }
-  }
-
-  // Setup objective function
-  m_objective_function->setup(*this);
-
-  // Set up callbacks
-  setup_callbacks();
-
 }
 
 }  // namespace lbann

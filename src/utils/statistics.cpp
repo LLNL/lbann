@@ -87,12 +87,12 @@ void entrywise_mean_and_stdev(const AbsDistMat& data,
       sqsum += val * val;
     }
   }
-  sum = El::mpi::AllReduce(sum, data.DistComm());
-  sqsum = El::mpi::AllReduce(sqsum, data.DistComm());
+  DataType sum_sqsum[2] = {sum, sqsum};  // Pack to do one allreduce.
+  El::mpi::AllReduce(sum_sqsum, 2, data.DistComm());
 
   // Compute mean and standard deviation
-  mean = sum / size;
-  const DataType var = std::max(sqsum / size - mean * mean, DataType(0));
+  mean = sum_sqsum[0] / size;
+  const DataType var = std::max(sum_sqsum[1] / size - mean * mean, DataType(0));
   stdev = std::sqrt(var);
 
 }
