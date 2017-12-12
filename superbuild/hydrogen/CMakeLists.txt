@@ -38,3 +38,6 @@ ExternalProject_Add(hydrogen
   -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
   -DHydrogen_GENERAL_LAPACK_FALLBACK=ON
   )
+
+set(HYDROGEN_DIR ${HYDROGEN_CMAKE_INSTALL_PREFIX}
+  CACHE INTERNAL "The install prefix of Hydrogen.")
