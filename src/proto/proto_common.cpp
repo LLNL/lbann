@@ -2309,6 +2309,8 @@ void print_help(lbann::lbann_comm *comm)
        "      <string> must be: data_parallel or model_parallel\n"
        "      note: this will be applied to all layers, metrics (and others)\n"
        "            that take DATA_PARALLEL or MODEL_PARALLEL as a template parameter\n"
+       "  --print_affinity\n"
+       "      display information on how OpenMP threads are provisioned\n"
        "\n"
        "DataReaders:\n"
        "  --data_filedir_train=<string>   --data_filedir_test=<string>\n"
