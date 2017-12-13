@@ -493,19 +493,27 @@ void Layer::setup_pointers() {
   // Check if the number of parents/children are valid
   if(m_max_num_parent_layers >= 0
      && (int)m_parent_layers.size() > m_max_num_parent_layers) {
-    throw lbann_exception(
-      std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
-      "Layer " + m_name + ": too many parent layers (" +
-      std::to_string(m_max_num_parent_layers) + " < " + std::to_string(m_parent_layers.size()) +
-      ") {" + get_layer_names(m_parent_layers) + " } ");
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "layer " << m_name << " has too many parent layers "
+        << "(found ";
+    for (const auto& parent : m_parent_layers) {
+      err << parent->get_name() << ", ";
+    }
+    err << "but only " << m_max_num_parent_layers << " parent layers are allowed)";
+    throw lbann_exception(err.str());
   }
   if(m_max_num_child_layers >= 0
      && (int)m_child_layers.size() > m_max_num_child_layers) {
-    throw lbann_exception(
-      std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
-      "Layer " + m_name + ": too many child layers (" +
-      std::to_string(m_max_num_child_layers) + " < " + std::to_string(m_child_layers.size()) +
-      ") {" + get_layer_names(m_child_layers) + "}");
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "layer " << m_name << " has too many child layers "
+        << "(found ";
+    for (const auto& child : m_child_layers) {
+      err << child->get_name() << ", ";
+    }
+    err << "but only " << m_max_num_child_layers << " child layers are allowed)";
+    throw lbann_exception(err.str());
   }
 }
 
@@ -605,7 +613,19 @@ void Layer::setup_gpu() {
 #endif // __LIB_CUDNN
 }
 
-void Layer::check_setup() {}
+void Layer::check_setup() {
+  if (m_num_neurons <= 0) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "layer " << m_name << " has invalid output dimensions "
+        << "(" << m_neuron_dims[0];
+    for (size_t i = 1; i < m_neuron_dims.size(); ++i) {
+      err << "x" << m_neuron_dims[i];
+    }
+    err << ")";
+    throw lbann_exception(err.str());
+  }
+}
 
 void Layer::replace_weights(Layer* other_layer) {
   if (other_layer == nullptr) {

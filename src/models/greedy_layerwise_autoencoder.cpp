@@ -63,8 +63,8 @@ greedy_layerwise_autoencoder::~greedy_layerwise_autoencoder() {
   if (m_reconstruction != nullptr) delete m_reconstruction;
 }
 
-void greedy_layerwise_autoencoder::setup() {
-  sequential_model::setup();
+void greedy_layerwise_autoencoder::setup_layer_topology() {
+  sequential_model::setup_layer_topology();
 
   // Divide model into sections
   // Note: first half are encoder sections and second half are decoder
@@ -142,7 +142,7 @@ void greedy_layerwise_autoencoder::train(int num_epochs) {
     set_phase(phase);
     for (int epoch = 0; epoch < num_epochs / m_num_phases; ++epoch) {
       if (get_terminate_training()) { goto train_end; }
-      setup_epoch(execution_mode::training);
+      reset_epoch(execution_mode::training);
       m_current_epoch++;
       do_epoch_begin_cbs();
       while (!train_mini_batch()) {}
@@ -336,55 +336,5 @@ void greedy_layerwise_autoencoder::backward_prop() {
 
   do_model_backward_prop_end_cbs();
 }
-
-#if 0
-struct lbann_model_greedy_layerwise_autoencoder_header {
-  uint32_t phase_index; //should be m_current_phase??
-  uint32_t have_mirror;
-};
-
-bool greedy_layerwise_autoencoder::save_to_checkpoint_shared(persist& p) {
-  // have rank 0 write record whether we have a mirror layer inserted
-  // we do this first, because we need to insert it again when reading back
-  if (p.get_rank() == 0) {
-    p.write_uint32(persist_type::train, "gla_phase_index", (uint32_t) m_current_phase);
-    p.write_uint32(persist_type::train, "gla_have_mirror", (uint32_t) m_have_mirror);
-  }
-
-  // write parameters from base class first
-  sequential_model::save_to_checkpoint_shared(p);
-
-  return true;
-}
-
-bool greedy_layerwise_autoencoder::load_from_checkpoint_shared(persist& p) {
-  // have rank 0 read whether we have a mirror layer inserted
-  struct lbann_model_greedy_layerwise_autoencoder_header header;
-  if (p.get_rank() == 0) {
-    p.read_uint32(persist_type::train, "gla_phase_index", &header.phase_index);
-    p.read_uint32(persist_type::train, "gla_have_mirror", &header.have_mirror);
-  }
-
-  // TODO: this assumes homogeneous processors
-  // broadcast state from rank 0
-  MPI_Bcast(&header, sizeof(header), MPI_BYTE, 0, MPI_COMM_WORLD);
-
-  // insert the mirror layer if needed
-  uint32_t phase_index = header.phase_index;
-  uint32_t have_mirror = header.have_mirror;
-  if (have_mirror) {
-    // note that this calls setup on the layers,
-    // and setup reinitializes a bunch of values like data reader positions
-    // and optimization layer cache values that we'll overwrite
-    // in load_from_checkpoint_shared below
-    insert_mirror(phase_index);
-  }
-
-  // read parameters from base class first
-  sequential_model::load_from_checkpoint_shared(p);
-
-  return true;
-}
-#endif
 
 }  // namespace lbann

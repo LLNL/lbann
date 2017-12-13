@@ -41,10 +41,15 @@ def run_lbann(model_name, reader_name, optimizer_name, output_file_name, executa
 def get_performance(output_file_name):
   output_file = open(output_file_name, 'r')
   performance_dict = {}
+
   for line in output_file:
-    m = re.match('(Model [0-9]+) Epoch time: ([0-9]+(\.[0-9]+)*)s; Mean minibatch time: ([0-9]+(\.[0-9]+)*)s; Min: ([0-9]+(\.[0-9]+)*)s; Max: ([0-9]+(\.[0-9]+)*)s; Stdev: ([0-9]+(\.[0-9]+)*)s', line)
+
+    # Check if line is reporting model results
+    m = re.match('^(Model [0-9][0-9]*)', line)
     if m:
-      model = m.group(1)
+      model = m.group()
+
+      # Add model to dictionary if needed
       if model not in performance_dict.keys():
         performance_dict[model] = {
           'accuracies' : [],
@@ -53,25 +58,27 @@ def get_performance(output_file_name):
           'mins' : [],
           'maxs' : [],
           'stdevs' : []
-        }
-      performance_dict[model]['epoch_times'].append(float(m.group(2)))
-      performance_dict[model]['mean_minibatch_times'].append(float(m.group(4)))
-      performance_dict[model]['mins'].append(float(m.group(6)))
-      performance_dict[model]['maxs'].append(float(m.group(8)))
-      performance_dict[model]['stdevs'].append(float(m.group(10)))
-    a = re.match('(Model [0-9]+) @[0-9]+ testing steps external validation categorical accuracy: ([0-9]+(\.[0-9]+)*)', line)
-    if a:
-      model = a.group(1)
-      if model not in performance_dict.keys():
-        performance_dict[model] = {
-          'accuracies' : [],
-          'epoch_times' : [],
-          'mean_minibatch_times' : [],
-          'mins' : [],
-          'maxs' : [],
-          'stdevs' : []
-        }
-      performance_dict[model]['accuracies'].append(float(a.group(2)))
+          }
+
+      # Check if line reports epoch run time
+      m = re.match('training epoch [0-9]* run time : ([^s]*)s', line)
+      if m:
+        performance_dict[model]['epoch_times'].append(float(m.group(1)))
+
+      # Check if line reports mini-batch time statistics
+      m = re.match('training epoch [0-9]* mini-batch time statistics : '
+                   '([^s ]*)s? mean, ([^s ]*)s? min, ([^s ]*)s? max, ([^s ]*)s? stdev', line)
+      if m:
+        performance_dict[model]['mean_minibatch_times'].append(float(m.group(1)))
+        performance_dict[model]['mins'].append(float(m.group(2)))
+        performance_dict[model]['maxs'].append(float(m.group(3)))
+        performance_dict[model]['stdevs'].append(float(m.group(4)))
+
+      # Check if line reports test accuracy
+      m = re.match('test categorical accuracy : ([^%]*)%', line)
+      if m:
+        performance_dict[model]['accuracies'].append(float(a.group(1)))
+
   output_file.close()
   return performance_dict
 

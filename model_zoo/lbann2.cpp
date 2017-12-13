@@ -119,6 +119,7 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
   model *model = nullptr; //d hysom bad namimg! should fix
   try {
     std::stringstream err;
+    options *opts = options::get();
 
     // Optionally over-ride some values in prototext
     get_cmdline_overrides(comm, pb);
@@ -219,7 +220,9 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
       std::cout << std::endl;
     }
     // Display how the OpenMP threads are provisioned
-    display_omp_setup();
+    if (opts->has_string("print_affinity")) {
+      display_omp_setup();
+    }
 
     // Initialize data readers
     //@todo: code not in place for correctly handling image preprocessing

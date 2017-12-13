@@ -13,6 +13,7 @@ add_sources(data_reader.cpp
             image_preprocessor.cpp
             cv_augmenter.cpp
             cv_colorizer.cpp
+            cv_decolorizer.cpp
             cv_normalizer.cpp
             cv_process.cpp
             cv_process_patches.cpp

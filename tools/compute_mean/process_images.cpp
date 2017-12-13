@@ -48,6 +48,7 @@ void setup_preprocessor(const params& mp, lbann::cv_process& pp, int& mean_extra
 
   // Initialize the image processor
   const cropper_params& cp = mp.get_cropper_params();
+  unsigned int n_ch = 3u;
 
   if (cp.m_is_set) { // If cropper parameters are given
     // Setup a cropper
@@ -57,17 +58,23 @@ void setup_preprocessor(const params& mp, lbann::cv_process& pp, int& mean_extra
     transform_idx ++;
   }
 
+  if (mp.to_enable_decolorizer()) { // Set up a decolorizer
+    std::unique_ptr<lbann::cv_decolorizer> decolorizer(new(lbann::cv_decolorizer));
+    pp.add_transform(std::move(decolorizer));
+    n_ch = 1u;
+    transform_idx ++;
+  }
+
   if (mp.to_enable_colorizer()) { // Set up a colorizer
     std::unique_ptr<lbann::cv_colorizer> colorizer(new(lbann::cv_colorizer));
     pp.add_transform(std::move(colorizer));
+    n_ch = 3u;
     transform_idx ++;
   }
 
   if (mp.to_enable_mean_extractor()) { // set up a mean extractor
     mean_extractor_idx = transform_idx;
     std::unique_ptr<lbann::cv_mean_extractor> mean_extractor(new(lbann::cv_mean_extractor));
-    // TODO: better logic is required to determine the fixed number of channels
-    const unsigned int n_ch = 3u; //(mp.to_enable_colorizer()? 3u : 1u);
     if (cp.m_is_set) {
       mean_extractor->set(cp.m_crop_sz.first, cp.m_crop_sz.second, n_ch, mp.get_mean_batch_size());
     } else {
