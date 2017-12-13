@@ -884,9 +884,8 @@ struct lbann_model_header {
   uint64_t current_step;
   uint64_t current_validation_step;
   uint64_t current_testing_step;
-  //  int m_max_mini_batch_size;
-  /** Size of the current mini-batch in the model. */
-  //  int m_current_mini_batch_size;
+  uint32_t max_mini_batch_size;
+  uint32_t current_mini_batch_size;
   uint32_t current_phase;
 };
 
@@ -899,6 +898,8 @@ bool model::save_to_checkpoint_shared(persist& p) {
     p.write_uint64(persist_type::train, "current_step",       (uint64_t) m_current_step);
     p.write_uint64(persist_type::train, "current_validataion_step",       (uint64_t) m_current_validation_step);
     p.write_uint64(persist_type::train, "current_testing_step",       (uint64_t) m_current_testing_step);
+    p.write_uint32(persist_type::train, "max_mini_batch_size",      (uint32_t) m_max_mini_batch_size);
+    p.write_uint32(persist_type::train, "current_mini_batch_size",      (uint32_t) m_current_mini_batch_size);
     p.write_uint32(persist_type::train, "current_phase",      (uint32_t) m_current_phase);
   }
   return true;
@@ -915,6 +916,8 @@ bool model::load_from_checkpoint_shared(persist& p) {
     p.read_uint64(persist_type::train, "current_step",       &header.current_step);
     p.read_uint64(persist_type::train, "current_validation_step",       &header.current_validation_step);
     p.read_uint64(persist_type::train, "current_testing_step",       &header.current_testing_step);
+    p.read_uint32(persist_type::train, "max_mini_batch_size",      &header.max_mini_batch_size);
+    p.read_uint32(persist_type::train, "current_mini_batch_size",      &header.current_mini_batch_size);
     p.read_uint32(persist_type::train, "current_phase",      &header.current_phase);
   }
 
@@ -929,6 +932,8 @@ bool model::load_from_checkpoint_shared(persist& p) {
   m_current_step       = (int)            header.current_step;
   m_current_validation_step = (int)       header.current_validation_step;
   m_current_testing_step = (int)          header.current_testing_step;
+  m_max_mini_batch_size = (int)           header.max_mini_batch_size;
+  m_current_mini_batch_size = (int)       header.current_mini_batch_size;
   m_current_phase      =                  header.current_phase;
   return true;
 }
