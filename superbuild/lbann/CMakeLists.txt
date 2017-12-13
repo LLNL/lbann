@@ -23,11 +23,31 @@ create_cmake_arguments(
   REMOVE_PKG_NAME
   VARIABLES ${LBANN_VARIABLES})
 
-set(LBANN_URL "https://github.com/llnl/lbann"
-  CACHE STRING "The URL from which to clone LBANN")
+option(LBANN_SB_CLONE_CLEAN_LBANN "Will pull a clean LBANN repository." OFF)
 
-set(LBANN_TAG "develop"
-  CACHE STRING "The git tag or hash to checkout for LBANN")
+if (LBANN_SB_CLONE_CLEAN_LBANN)
+
+  set(LBANN_URL "https://github.com/llnl/lbann"
+    CACHE STRING "The URL from which to clone LBANN")
+
+  set(LBANN_TAG "develop"
+    CACHE STRING "The git tag or hash to checkout for LBANN")
+
+  set(LBANN_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/src)
+
+  set(_git_repo_tag GIT_REPOSITORY)
+  set(_git_tag_tag GIT_TAG)
+
+else ()
+
+  unset(LBANN_URL CACHE)
+  unset(LBANN_TAG CACHE)
+  unset(_git_repo_tag)
+  unset(_git_tag_tag)
+
+  get_filename_component(LBANN_SOURCE_DIR ${CMAKE_SOURCE_DIR}/.. REALPATH)
+
+endif ()
 
 # Build the dependency set
 if (TARGET CNPY)
@@ -54,8 +74,8 @@ ExternalProject_Add(LBANN
   PREFIX ${CMAKE_CURRENT_BINARY_DIR}
   TMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/tmp
   STAMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/stamp
-  GIT_REPOSITORY ${LBANN_URL}
-  GIT_TAG ${LBANN_TAG}
+  ${_git_repo_tag} ${LBANN_URL}
+  ${_git_tag_tag} ${LBANN_TAG}
   DEPENDS ${_LBANN_DEPENDS}
   SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/src
   BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/build
