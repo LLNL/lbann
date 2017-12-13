@@ -1,4 +1,5 @@
 enable_language(C)
+enable_language(CXX)
 
 # Handle the clone mechanism. First URL
 set(PROTOBUF_URL "https://github.com/google/protobuf.git"

@@ -2,6 +2,7 @@
 # to specify the commit.
 
 enable_language(C)
+enable_language(CXX)
 
 # Match the CNPY default
 option(CNPY_ENABLE_STATIC "Enable the CNPY static linkage." ON)

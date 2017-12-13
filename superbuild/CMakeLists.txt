@@ -14,8 +14,7 @@ message("\nWelcome to the LBANN SuperBuild system.\n\n"
   "  6. You should probably use a real package manager instead (e.g., Spack)\n\n"
   "Good luck!\n\n")
 
-# At this time, we only enable CXX, LBANN's primary language.
-project(LBANN_SuperBuild CXX)
+project(LBANN_SuperBuild NONE)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 

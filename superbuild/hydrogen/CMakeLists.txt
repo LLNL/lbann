@@ -1,4 +1,5 @@
 enable_language(C)
+enable_language(CXX)
 
 # FIXME: Currently a NOOP because CUDA+Hydrogen is not done yet.
 option(HYDROGEN_USE_CUBLAS "Apply the cuBLAS patch to hydrogen. WARNING: NOOP"

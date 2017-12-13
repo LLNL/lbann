@@ -1,4 +1,5 @@
 enable_language(C)
+enable_language(CXX)
 enable_language(Fortran)# FIXME: Really??
 
 # Add all the OpenCV options; this is just for the GUI, of course

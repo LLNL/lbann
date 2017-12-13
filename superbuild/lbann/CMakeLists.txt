@@ -1,3 +1,5 @@
+enable_language(CXX)
+
 # Add all the LBANN options; this is just for the GUI, of course
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
 include(AddLBANNOptions)
