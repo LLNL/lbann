@@ -309,6 +309,13 @@ class model {
   virtual std::string print_layer_description(const Layer* layer) const;
   /** Check if the layer execution order is topologically sorted. */
   virtual bool is_topologically_sorted() const;
+  /** Remap pointers.
+   *  Layer and weights pointers are remapped using the provided
+   *  maps. If a pointer is not a key in the corresponding map, the
+   *  pointer is not changed.
+   */
+  virtual void remap_pointers(const std::unordered_map<Layer *,Layer *>& layer_map,
+                              const std::unordered_map<weights *,weights *>& weights_map);
 
   /** Set up topology of layer graph.
    *  Called in setup function. All layers in connected component of
