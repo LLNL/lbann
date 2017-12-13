@@ -66,8 +66,8 @@ class objective_function_term {
    */
   virtual void differentiate() = 0;
 
-  virtual bool saveToCheckpointShared(lbann::persist& p);
-  virtual bool loadFromCheckpointShared(lbann::persist& p);
+  virtual bool save_to_checkpoint_shared(lbann::persist& p);
+  virtual bool load_from_checkpoint_shared(lbann::persist& p);
   
 
   /** Get list of pointers to layers. */

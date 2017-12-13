@@ -242,11 +242,11 @@ bool sequential_model::save_to_checkpoint_shared(persist& p) {
   }
 
   for (size_t l = 0; l < m_layers.size(); l++) {
-    if (! m_layers[l]->saveToCheckpointShared(p)) {
+    if (! m_layers[l]->save_to_checkpoint_shared(p)) {
       return false;
     }
   }
-  //m_objective_function->saveToCheckpointShared(p);
+  //m_objective_function->save_to_checkpoint_shared(p);
   return true;
 }
 
@@ -277,11 +277,11 @@ bool sequential_model::load_from_checkpoint_shared(persist& p) {
   }
   // read in each layer
   for (size_t l = 0; l < m_layers.size(); l++) {
-    if (! m_layers[l]->loadFromCheckpointShared(p)) {
+    if (! m_layers[l]->load_from_checkpoint_shared(p)) {
       return false;
     }
   }
-  //m_objective_function->loadFromCheckpointShared(p);
+  //m_objective_function->load_from_checkpoint_shared(p);
   return true;
 }
 

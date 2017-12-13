@@ -73,13 +73,13 @@ class loss_function : public objective_function_term {
                                      const AbsDistMat& ground_truth,
                                      AbsDistMat& gradient) = 0;
 
-  bool saveToCheckpointShared(lbann::persist& p) override; 
+  bool save_to_checkpoint_shared(lbann::persist& p) override; 
   //  char l_name[512];
   //  sprintf(l_name, "gradient_loss_func_%lldx%lld", m_gradient->Height(), m_gradient->Width());
   //  p.write_distmat(persist_type::model, l_name, (DistMat *)m_gradient);
   //  return true;
   //}
-  bool loadFromCheckpointShared(lbann::persist& p) override;
+  bool load_from_checkpoint_shared(lbann::persist& p) override;
   //  char l_name[512];
   //  sprintf(l_name, "gradient_loss_func%lldx%lld.bin", m_gradient->Height(), m_gradient->Width());
   //  p.read_distmat(persist_type::model, l_name, (DistMat *)m_gradient);

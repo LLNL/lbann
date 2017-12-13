@@ -95,7 +95,7 @@ class objective_function {
     m_gradient_time = 0.0;
   }
 
-  bool saveToCheckpointShared(lbann::persist& p); //{
+  bool save_to_checkpoint_shared(lbann::persist& p); //{
     //for (objective_function_term* term : m_terms) {
     //  term->get_objective_function()->saveToCheckpointShared(p);
     //}
@@ -103,7 +103,7 @@ class objective_function {
 
   //}
 
-  bool loadFromCheckpointShared(lbann::persist& p);// {
+  bool load_from_checkpoint_shared(lbann::persist& p);// {
     //for (objective_function_term* term : m_terms) {
     //  term->get_objective_function()->loadFromCheckpointShared(p);
     //}

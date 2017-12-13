@@ -491,7 +491,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   //************************************************************************
 
   // save state of IO to a checkpoint
-  bool saveToCheckpointShared(persist& p) const override {
+  bool save_to_checkpoint_shared(persist& p) const override {
     // save state of data readers from input layer
     data_reader_map_t::const_iterator it;
 
@@ -528,7 +528,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
       p.write_uint64(persist_type::train, "reader_validate_total",
                      (uint64_t) m_validation_dataset.get_total_samples());
     }
-    io_layer::saveToCheckpointShared(p);
+    //io_layer::save_to_checkpoint_shared(p);
 
     return true;
   }
@@ -543,7 +543,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   };
 
   // reload state of IO from a checkpoint
-  bool loadFromCheckpointShared(persist& p) override {
+  bool load_from_checkpoint_shared(persist& p) override {
     // save state of data readers from input layer
     data_reader_map_t::const_iterator it;
 

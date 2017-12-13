@@ -657,14 +657,14 @@ bool Layer::loadFromCheckpoint(int fd, const char *filename, size_t *bytes) {
   return true;
 }
 
-bool Layer::saveToCheckpointShared(persist& p) const {
+bool Layer::save_to_checkpoint_shared(persist& p) const {
   //for (weights *w : m_weights) {
   //  w->saveToCheckpointShared(p);  
   //}
   return true;
 }
 
-bool Layer::loadFromCheckpointShared(persist& p) {
+bool Layer::load_from_checkpoint_shared(persist& p) {
   //for (weights *w : m_weights) {
   //  w->loadFromCheckpointShared(p);
   //}
