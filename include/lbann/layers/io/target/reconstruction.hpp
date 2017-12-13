@@ -116,13 +116,6 @@ class reconstruction_layer : public target_layer {
     //Copy prev (decoder) activations for greedy layer wise training
     El::Copy(*original_layer_act_v,*this->m_activations_v);
 
-    // Compute metrics
-    const int curr_mini_batch_size = this->m_model->get_current_mini_batch_size();
-    for (auto&& m : this->m_model->get_metrics()) {
-      double num_errors = m->compute_metric(*this->m_prev_activations_v, *original_layer_act_v);
-      m->record_error(num_errors, curr_mini_batch_size);
-    }
-
   }
 
   void bp_compute() override {}

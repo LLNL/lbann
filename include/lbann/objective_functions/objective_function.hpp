@@ -92,7 +92,7 @@ class objective_function {
 
   /** Get the time spent computing the value. */
   double get_value_time() const { return m_value_time; }
-  /** Get the itme spent computing the gradient. */
+  /** Get the time spent computing the gradient. */
   double get_gradient_time() const { return m_gradient_time; }
   /** Reset time counters. */
   void reset_counters() {

@@ -27,7 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/callback_ltfb.hpp"
-#include "lbann/metrics/metric_categorical_accuracy.hpp"
+#include "lbann/metrics/categorical_accuracy.hpp"
 #include <typeinfo>
 #include <typeindex>
 
@@ -152,21 +152,12 @@ void lbann_callback_ltfb::exchange(model *m, int partner) {
 
 double lbann_callback_ltfb::evaluate(model *m) {
   m->evaluate(execution_mode::validation);
-  m->set_execution_mode(execution_mode::training);  // Reset execution mode.
-  double acc = 0;
-  const std::type_info& ca_model_type = typeid(
-    metrics::categorical_accuracy<data_layout::MODEL_PARALLEL>);
-  const std::type_info& ca_data_type = typeid(
-    metrics::categorical_accuracy<data_layout::DATA_PARALLEL>);
-  for (auto&& metric : m->get_metrics()) {
-    const std::type_info& m_type = typeid(*metric);
-    if (std::type_index(ca_model_type) == std::type_index(m_type) ||
-        std::type_index(ca_data_type) == std::type_index(m_type)) {
-      acc = metric->report_metric(execution_mode::validation);
-      break;
+  for (const auto& met : m->get_metrics()) {
+    if (dynamic_cast<categorical_accuracy_metric*>(met) != nullptr) {
+      return met->get_history_mean_value();
     }
   }
-  return acc;
+  return 0.0;
 }
 
 void lbann_callback_ltfb::replace_with_remote(model *m) {

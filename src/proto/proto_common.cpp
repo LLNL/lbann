@@ -1683,12 +1683,10 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
   for (int j=0; j<m.metric_size(); j++) {
     const lbann_data::Metric &metric = m.metric(j);
     if (metric.has_categorical_accuracy()) {
-      if (layout == data_layout::MODEL_PARALLEL) {
-        model->add_metric(new metrics::categorical_accuracy<data_layout::MODEL_PARALLEL>(comm));
-      } else {
-        model->add_metric(new metrics::categorical_accuracy<data_layout::DATA_PARALLEL>(comm));
-      }
-    } else if (metric.has_mean_squared_error()) {
+      model->add_metric(new categorical_accuracy_metric(comm));
+    } 
+#if 0
+else if (metric.has_mean_squared_error()) {
       if (layout == data_layout::MODEL_PARALLEL) {
         model->add_metric(new metrics::mean_squared_error<data_layout::MODEL_PARALLEL>(comm));
       } else {
@@ -1708,6 +1706,7 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
         model->add_metric(new metrics::top_k_categorical_accuracy<data_layout::DATA_PARALLEL>(a.top_k(), comm));
       }
     }
+#endif
   }
 
   //set checkpoint values
