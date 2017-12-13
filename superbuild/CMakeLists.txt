@@ -17,6 +17,8 @@ message("\nWelcome to the LBANN SuperBuild system.\n\n"
 # At this time, we only enable CXX, LBANN's primary language.
 project(LBANN_SuperBuild CXX)
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
+
 option(LBANN_SB_BUILD_CNPY "Pull and build CNPY from Github" OFF)
 
 option(LBANN_SB_BUILD_CUB "Pull CUB from Github" OFF)
@@ -35,6 +37,8 @@ option(LBANN_SB_BUILD_PROTOBUF "Pull and build Google Protobuf from Github" OFF)
 #
 # Add the TPL subdirectories
 #
+include(LBANNSuperBuildCreateCMakeArguments)
+
 if (LBANN_SB_BUILD_CNPY)
   add_subdirectory(cnpy)
 endif ()
@@ -62,8 +66,8 @@ if (LBANN_SB_BUILD_JPEG_TURBO)
   add_subdirectory(jpeg-turbo)
 endif ()
 
-if (LBANN_SB_BUILD_OpenCV)
-  add_subdirectory(OpenCV)
+if (LBANN_SB_BUILD_OPENCV)
+  add_subdirectory(opencv)
 endif ()
 
 if (LBANN_SB_BUILD_PROTOBUF)
