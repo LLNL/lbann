@@ -1,8 +1,8 @@
 enable_language(CXX)
 
 # Add all the LBANN options; this is just for the GUI, of course
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
-include(AddLBANNOptions)
+#list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
+#include(AddLBANNOptions)
 
 set(LBANN_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
   CACHE PATH "The installation destination of LBANN")
@@ -52,21 +52,27 @@ endif ()
 # Build the dependency set
 if (TARGET CNPY)
   set(_LBANN_DEPENDS "${_LBANN_DEPENDS}" CNPY)
+  list(APPEND LBANN_CMAKE_ARGS "-DCNPY_DIR=${CNPY_DIR}")
 endif ()
 if (TARGET CUB)
   set(_LBANN_DEPENDS "${_LBANN_DEPENDS}" CUB)
+  list(APPEND LBANN_CMAKE_ARGS "-DCUB_DIR=${CUB_DIR}")
 endif ()
 if (TARGET ELEMENTAL)
   set(_LBANN_DEPENDS "${_LBANN_DEPENDS}" ELEMENTAL)
+  list(APPEND LBANN_CMAKE_ARGS "-DElemental_DIR=${ELEMENTAL_DIR}")
 endif ()
 if (TARGET HYDROGEN)
   set(_LBANN_DEPENDS "${_LBANN_DEPENDS}" HYDROGEN)
+  list(APPEND LBANN_CMAKE_ARGS "-DHydrogen_DIR=${HYDROGEN_DIR}")
 endif ()
 if (TARGET OPENCV)
   set(_LBANN_DEPENDS "${_LBANN_DEPENDS}" OPENCV)
+  list(APPEND LBANN_CMAKE_ARGS "-DOpenCV_DIR=${OPENCV_DIR}")
 endif ()
 if (TARGET PROTOBUF)
   set(_LBANN_DEPENDS "${_LBANN_DEPENDS}" PROTOBUF)
+  list(APPEND LBANN_CMAKE_ARGS "-DProtobuf_DIR=${PROTOBUF_DIR}")
 endif ()
 
 include(ExternalProject)
@@ -77,7 +83,7 @@ ExternalProject_Add(LBANN
   ${_git_repo_tag} ${LBANN_URL}
   ${_git_tag_tag} ${LBANN_TAG}
   DEPENDS ${_LBANN_DEPENDS}
-  SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/src
+  SOURCE_DIR ${LBANN_SOURCE_DIR}
   BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/build
   INSTALL_DIR ${LBANN_CMAKE_INSTALL_PREFIX}
   CMAKE_ARGS
