@@ -25,7 +25,9 @@ function (create_cmake_arguments)
       string(REGEX REPLACE "^${_CREATEARGS_PACKAGE_NAME}_\(.+\)" "\\1"
         _CMAKE_ARG_NAME ${_variable})
     else ()
-      set(_CMAKE_ARG_NAME ${_variable})
+      # Handle CMake options
+      string(REGEX REPLACE "${_CREATEARGS_PACKAGE_NAME}_\(CMAKE_.+\)" "\\1"
+        _CMAKE_ARG_NAME ${_variable})
     endif ()
 
     # Check the variable's type, if possible.
