@@ -246,6 +246,8 @@ class Layer {
   std::vector<weights*> get_weights() { return m_weights; }
   /** Set list of pointers to weights. */
   void set_weights(std::vector<weights*> w) { m_weights = w; }
+  /** Replace weights with another Layer's weights*/
+  void replace_weights(Layer* other_layer);
 
  protected:
 

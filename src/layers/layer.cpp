@@ -607,6 +607,19 @@ void Layer::setup_gpu() {
 
 void Layer::check_setup() {}
 
+void Layer::replace_weights(Layer* other_layer) {
+  if (other_layer == nullptr) {
+    throw lbann_exception("Layer::replace_weighhts: Attempted to add null pointer as a replacement layer.");
+  }
+  
+  const std::vector<weights *> other_layer_weights = other_layer->get_weights();
+  for (size_t i = 0; i < m_weights.size(); ++i) {
+    m_weights[i]->set_values(other_layer_weights[i]->get_values());
+  }
+
+}
+
+
 bool Layer::saveToCheckpoint(int fd, const char *filename, size_t *bytes) const {
   //writeDist(fd, filename, *m_weights, bytes);
 

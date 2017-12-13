@@ -114,9 +114,6 @@ class model {
   /** Replace the model's weights. */
   void replace_weights(std::vector<weights *>& w);
   
-  /** Replace layer at a given index. */
-  void replace_layer(size_t index, Layer* new_layer);
-
   /** Return the model's weights. */
   const std::vector<weights *>& get_weights() const { return m_weights; }
 

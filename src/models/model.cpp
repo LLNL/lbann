@@ -342,40 +342,6 @@ void model::set_layers(std::vector<Layer*>& layers) {
 
 }
 
-void model::replace_layer(size_t index, Layer* other_layer) {
-  if (other_layer == nullptr) {
-    throw lbann_exception("model: Attempted to add null pointer as a replacement layer.");
-  }
-  //copy the other layer to layer at index
-  m_layers[index] = other_layer->copy(); 
- 
-  
-  // Fix layer pointers
-  //@todo: generalize to non sequential model
-  m_layers[index+1]->clear_parent_layers();
-  if(index > 0) m_layers[index-1]->clear_child_layers();
-
-  std::vector<Layer *> other_layer_pointers = other_layer->get_layer_pointers();
-  std::vector<Layer *> this_layer_pointers;
-  for (Layer *other_layer_pointer : other_layer_pointers) {
-    this_layer_pointers.push_back(other_layer_pointer);
-  }
-  
-  m_layers[index]->set_layer_pointers(this_layer_pointers);
-   
-  m_layers[index+1]->add_parent_layer(m_layers[index]);
-  if(index > 0) m_layers[index-1]->add_child_layer(m_layers[index]);
-  
-  // Fix weights pointers
-  const std::vector<weights *> other_weights = other_layer->get_weights();
-  std::vector<weights *> this_weights;     
-  for (weights *other_weights_pointer : other_weights) {
-    this_weights.push_back(other_weights_pointer);
-   }
-   m_layers[index]->set_weights(this_weights);
-
-}
-
 void model::replace_weights(std::vector<weights*>& new_weights) {
 
   // Check that number of weights is valid
