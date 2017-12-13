@@ -902,6 +902,10 @@ bool model::save_to_checkpoint_shared(persist& p) {
     p.write_uint32(persist_type::train, "current_mini_batch_size",      (uint32_t) m_current_mini_batch_size);
     p.write_uint32(persist_type::train, "current_phase",      (uint32_t) m_current_phase);
   }
+
+  for (metrics::metric *m : m_metrics) {
+    m->save_to_checkpoint_shared(p);
+  }
   return true;
 }
 
@@ -935,6 +939,10 @@ bool model::load_from_checkpoint_shared(persist& p) {
   m_max_mini_batch_size = (int)           header.max_mini_batch_size;
   m_current_mini_batch_size = (int)       header.current_mini_batch_size;
   m_current_phase      =                  header.current_phase;
+
+  for (metrics::metric *m : m_metrics) {
+    m->load_from_checkpoint_shared(p);
+  }
   return true;
 }
 

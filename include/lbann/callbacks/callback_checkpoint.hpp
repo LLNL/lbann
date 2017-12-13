@@ -45,7 +45,7 @@ class lbann_callback_checkpoint : public lbann_callback {
  * @param checkpoint_steps interval to checkpoint
  * @param checkpoint_secs interval to checkpoint
  */
-  lbann_callback_checkpoint(std::string checkpoint_dir, int checkpoint_epochs, int checkpoint_steps, int checkpoint_secs) : 
+  lbann_callback_checkpoint(std::string checkpoint_dir, int checkpoint_epochs, int checkpoint_steps, int checkpoint_secs) :
     lbann_callback(), m_checkpoint_dir(checkpoint_dir), m_checkpoint_epochs(checkpoint_epochs), m_checkpoint_steps(checkpoint_steps), m_checkpoint_secs(checkpoint_secs) {}
   lbann_callback_checkpoint(const lbann_callback_checkpoint&) = default;
   lbann_callback_checkpoint& operator=(const lbann_callback_checkpoint&) = default;
@@ -69,7 +69,7 @@ class lbann_callback_checkpoint : public lbann_callback {
   inline void set_checkpoint_secs(double secs){
     m_checkpoint_secs= secs;
   }
-  
+
   bool need_checkpoint(model *m);
   bool checkpointShared(model *m);
   bool restartShared(model *m);
@@ -81,7 +81,7 @@ class lbann_callback_checkpoint : public lbann_callback {
   int m_checkpoint_steps;
   double m_checkpoint_secs;
   double m_checkpoint_last;
-  bool m_epoch_end; 
+  bool m_epoch_end;
 };
 
 }  // namespace lbann
