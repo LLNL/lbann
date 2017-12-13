@@ -85,7 +85,7 @@ class fully_connected_layer : public learning_layer {
   /** Activations matrix cuDNN descriptor*/
   cudnnTensorDescriptor_t m_activations_desc;
 
-#endif // __LIB_CUNN
+#endif // LBANN_HAS_CUDNN
 
   /**
    * Do layout-dependent forward propagation computation of the weights.

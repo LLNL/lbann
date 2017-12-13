@@ -311,6 +311,6 @@ std::vector<DataType*> weights::get_values_gpu() {
   }
   return m_values_d;
 }
-#endif // __LIB_CUDN
+#endif // LBANN_HAS_CUDNN
 
 }  // namespace lbann

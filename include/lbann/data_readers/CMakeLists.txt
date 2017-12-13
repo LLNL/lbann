@@ -3,6 +3,7 @@ set_full_path(THIS_DIR_HEADERS
   compound_data_reader.hpp
   cv_augmenter.hpp
   cv_colorizer.hpp
+  cv_decolorizer.hpp
   cv_cropper.hpp
   cv_mean_extractor.hpp
   cv_normalizer.hpp
