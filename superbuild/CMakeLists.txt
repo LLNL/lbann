@@ -34,6 +34,8 @@ option(LBANN_SB_BUILD_OPENCV "Pull and build OpenCV from Github" OFF)
 
 option(LBANN_SB_BUILD_PROTOBUF "Pull and build Google Protobuf from Github" OFF)
 
+option(LBANN_SB_BUILD_LBANN "Pull and build LBANN from Github" OFF)
+
 #
 # Add the TPL subdirectories
 #
@@ -78,6 +80,6 @@ endif ()
 # Build LBANN using the above dependencies.
 #
 
-# This also catches all the <TPL>_DIR flags passed in to find the TPLs
-# that are not built here.
-#add_subdirectory(LBANN)
+if (LBANN_SB_BUILD_LBANN)
+  add_subdirectory(lbann)
+endif ()
