@@ -194,12 +194,12 @@ AbsDistMat& optimizer::get_gradient() {
     El::Zero(*m_staging);
     m_gpu_gradient_is_nonzero = false;
   }
-  
+
 #endif // __LIB_CUDNN
 
   // Return full gradient
   return *m_gradient;
-  
+
 }
 
 #if __LIB_CUDNN
@@ -253,7 +253,7 @@ std::vector<DataType*> optimizer::get_gradient_gpu() {
     m_cudnn->clear_on_gpus(m_staging_d, height, width);
     m_cpu_gradient_is_nonzero = false;
   }
-  
+
   // Return full gradient
   return m_gradient_d;
 
@@ -452,7 +452,11 @@ void optimizer::step_compute_gpu(std::vector<DataType*> values_d,
   m_cudnn->broadcast_to_gpus(values_d, m_weights->m_values->LockedMatrix());
 }
 #endif // __LIB_CUDNN
+
 bool optimizer::saveToCheckpointShared(persist& p, std::string m_name) {
+  //  m_learning_rate;
+  /** Running count of the time spent in step(). */
+  //  double m_step_time = 0.0;
     return true;
 }
 
