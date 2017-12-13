@@ -117,9 +117,9 @@ DataType categorical_accuracy_metric::evaluate_compute(const AbsDistMat& predict
     prediction_values_local(0, col) = max_val;
     m_prediction_indices[col] = max_index;
   }
-  get_comm()->allreduce(*m_prediction_values,
-                        m_prediction_values->RedundantComm(),
-                        El::mpi::MAX);
+  get_comm().allreduce(*m_prediction_values,
+                       m_prediction_values->RedundantComm(),
+                       El::mpi::MAX);
 
   // Find first index corresponding to maximum prediction matrix values
   #pragma omp parallel for
@@ -132,10 +132,10 @@ DataType categorical_accuracy_metric::evaluate_compute(const AbsDistMat& predict
       m_prediction_indices[col] = height;
     }
   }
-  get_comm()->allreduce(m_prediction_indices.data(),
-                        local_width,
-                        m_prediction_values->RedundantComm(),
-                        El::mpi::MIN);
+  get_comm().allreduce(m_prediction_indices.data(),
+                       local_width,
+                       m_prediction_values->RedundantComm(),
+                       El::mpi::MIN);
 
   // Count number of correct predictions
   int correct_predictions = 0;
@@ -143,12 +143,12 @@ DataType categorical_accuracy_metric::evaluate_compute(const AbsDistMat& predict
     const int global_row = m_prediction_indices[col];
     if (ground_truth.IsLocalRow(global_row)) {
       const int row = ground_truth.LocalRow(global_row);
-      if (ground_truth_local(row, col) == DataType(1)) {
+      if (ground_truth_local(row, col) != DataType(0)) {
         ++correct_predictions;
       }
     }
   }
-  correct_predictions = get_comm()->model_allreduce(correct_predictions);
+  correct_predictions = get_comm().model_allreduce(correct_predictions);
 
   // Return percentage of correct predictions
   return correct_predictions * DataType(100) / width;

@@ -106,7 +106,7 @@ class metric {
  protected:
 
   /** Get LBANN communicator. */
-  lbann_comm *get_comm() { return m_comm; }
+  lbann_comm& get_comm() { return *m_comm; }
 
   /** Computation to evaluate the metric function. */
   virtual DataType evaluate_compute(const AbsDistMat& prediction,

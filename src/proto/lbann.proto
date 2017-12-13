@@ -275,9 +275,10 @@ message GroupLassoWeightRegularization {
 message Metric {
   // a Metric should contain exactly one of the following
   CategoricalAccuracy categorical_accuracy = 1;
-  MeanSquaredError mean_squared_error = 2;
-  TopKCategoricalAccuracy top_k_categorical_accuracy = 3;
-  PearsonCorrelation pearson_correlation = 4;
+  TopKCategoricalAccuracy top_k_categorical_accuracy = 2;
+  MeanSquaredError mean_squared_error = 3;
+  MeanAbsoluteDeviation mean_absolute_deviation = 4;
+  PearsonCorrelation pearson_correlation = 5;
 }
 
 message CategoricalAccuracy {

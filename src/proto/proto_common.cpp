@@ -1685,28 +1685,19 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
     if (metric.has_categorical_accuracy()) {
       model->add_metric(new categorical_accuracy_metric(comm));
     } 
-#if 0
-else if (metric.has_mean_squared_error()) {
-      if (layout == data_layout::MODEL_PARALLEL) {
-        model->add_metric(new metrics::mean_squared_error<data_layout::MODEL_PARALLEL>(comm));
-      } else {
-        model->add_metric(new metrics::mean_squared_error<data_layout::DATA_PARALLEL>(comm));
-      }
-    } else if (metric.has_pearson_correlation()) {
-      if (layout == data_layout::MODEL_PARALLEL) {
-        model->add_metric(new metrics::pearson_correlation<data_layout::MODEL_PARALLEL>(comm));
-      } else {
-        model->add_metric(new metrics::pearson_correlation<data_layout::DATA_PARALLEL>(comm));
-      }
-    } else if (metric.has_top_k_categorical_accuracy()) {
+    if (metric.has_top_k_categorical_accuracy()) {
       const lbann_data::TopKCategoricalAccuracy &a = metric.top_k_categorical_accuracy();
-      if (layout == data_layout::MODEL_PARALLEL) {
-        model->add_metric(new metrics::top_k_categorical_accuracy<data_layout::MODEL_PARALLEL>(a.top_k(), comm));
-      } else {
-        model->add_metric(new metrics::top_k_categorical_accuracy<data_layout::DATA_PARALLEL>(a.top_k(), comm));
-      }
+      model->add_metric(new top_k_categorical_accuracy_metric(a.top_k(), comm));
     }
-#endif
+    if (metric.has_mean_squared_error()) {
+      model->add_metric(new mean_squared_error_metric(comm));
+    }
+    if (metric.has_mean_absolute_deviation()) {
+      model->add_metric(new mean_absolute_deviation_metric(comm));
+    }
+    if (metric.has_pearson_correlation()) {
+      model->add_metric(new pearson_correlation_metric(comm));
+    }
   }
 
   //set checkpoint values
