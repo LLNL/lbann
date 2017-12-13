@@ -50,11 +50,11 @@ if (LBANN_SB_BUILD_CUB)
 endif ()
 
 # Elemental is *SO* complicated.
-if (LBANN_SB_BUILD_Elemental OR LBANN_SB_BUILD_HYDROGEN)
+if (LBANN_SB_BUILD_ELEMENTAL OR LBANN_SB_BUILD_HYDROGEN)
   option(LBANN_SB_BUILD_OpenBLAS "Pull and build OpenBLAS from Github" OFF)
 
-  if (LBANN_SB_BUILD_OpenBLAS)
-    add_subdirectory(OpenBLAS)
+  if (LBANN_SB_BUILD_OPENBLAS)
+    add_subdirectory(openblas)
   endif ()
 
   if (LBANN_SB_BUILD_HYDROGEN)
