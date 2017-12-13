@@ -89,6 +89,9 @@ class persist {
   bool write_double(persist_type type, const char *name, double  val);
   bool read_double (persist_type type, const char *name, double *val);
 
+  bool write_datatype(persist_type type, const char *name, DataType  val);
+  bool read_datatype (persist_type type, const char *name, DataType *val);
+
  private:
   int get_fd(persist_type type) const;
 };

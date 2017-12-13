@@ -396,6 +396,14 @@ bool lbann::persist::read_double(persist_type type, const char *name, double *va
   return read_bytes(type, name, val, sizeof(double));
 }
 
+bool lbann::persist::write_datatype(persist_type type, const char *name, DataType val) {
+  return write_bytes(type, name, &val, sizeof(DataType));
+}
+
+bool lbann::persist::read_datatype(persist_type type, const char *name, DataType *val) {
+  return read_bytes(type, name, val, sizeof(DataType));
+}
+
 int lbann::persist::get_fd(persist_type type) const {
   int fd = -1;
   if (type == persist_type::train) {
@@ -504,7 +512,6 @@ bool lbann::read_double(int fd, const char *name, double *val) {
 bool lbann::write_string(int fd, const char *name, const char *buf, size_t size) {
   if (fd > 0) {
     ssize_t rc = write(fd, buf, size);
-    printf("I think that the size of the buffer is %ld\n", size);
     if (rc != (ssize_t) size) {
       throw lbann_exception(std::string("Failed to write: ") + name);
       return false;
