@@ -72,7 +72,7 @@ if (TARGET OPENCV)
 endif ()
 if (TARGET PROTOBUF)
   set(_LBANN_DEPENDS "${_LBANN_DEPENDS}" PROTOBUF)
-  list(APPEND LBANN_CMAKE_ARGS "-DProtobuf_DIR=${PROTOBUF_DIR}")
+  list(APPEND LBANN_CMAKE_ARGS "-DPROTOBUF_DIR=${PROTOBUF_DIR}")
 endif ()
 
 include(ExternalProject)
