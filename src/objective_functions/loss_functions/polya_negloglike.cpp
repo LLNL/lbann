@@ -103,8 +103,8 @@ polya_negloglike::~polya_negloglike() {
   if (m_lgamma_alpha_level_count_sums != nullptr) delete m_lgamma_alpha_level_count_sums;
 }
 
-void polya_negloglike::setup(objective_function& obj_fn) {
-  loss_function::setup(obj_fn);
+void polya_negloglike::setup(model& m) {
+  loss_function::setup(m);
 
   const El::DistData dist(*m_gradient);
   if (dist.colDist == El::MC && dist.rowDist == El::MR) {
@@ -126,8 +126,8 @@ void polya_negloglike::setup(objective_function& obj_fn) {
 
 }
 
-DataType polya_negloglike::evaluate(const AbsDistMat& predictions,
-                                    const AbsDistMat& ground_truth) {
+DataType polya_negloglike::evaluate_compute(const AbsDistMat& predictions,
+                                            const AbsDistMat& ground_truth) {
 
   // Initialize workspace
   m_counts->Resize(1, predictions.Width());
@@ -167,10 +167,10 @@ DataType polya_negloglike::evaluate(const AbsDistMat& predictions,
     lgamma_alpha_sums_local(0, col) = lgamma_alpha_sum;
     lgamma_alpha_level_count_sums_local(0, col) = lgamma_alpha_level_count_sum;
   }
-  get_comm()->allreduce(*m_counts, m_counts->RedundantComm());
-  get_comm()->allreduce(*m_alpha_sums, m_alpha_sums->RedundantComm());
-  get_comm()->allreduce(*m_lgamma_alpha_sums, m_lgamma_alpha_sums->RedundantComm());
-  get_comm()->allreduce(*m_lgamma_alpha_level_count_sums,
+  get_comm().allreduce(*m_counts, m_counts->RedundantComm());
+  get_comm().allreduce(*m_alpha_sums, m_alpha_sums->RedundantComm());
+  get_comm().allreduce(*m_lgamma_alpha_sums, m_lgamma_alpha_sums->RedundantComm());
+  get_comm().allreduce(*m_lgamma_alpha_level_count_sums,
                         m_lgamma_alpha_level_count_sums->RedundantComm());
 
   // Compute mean objective function value across mini-batch
@@ -181,13 +181,13 @@ DataType polya_negloglike::evaluate(const AbsDistMat& predictions,
                   - lgamma_alpha_level_count_sums_local(0, col)
                   + lgamma_alpha_sums_local(0, col));
   }
-  return get_comm()->allreduce(local_sum / width, m_counts->DistComm());
+  return get_comm().allreduce(local_sum / width, m_counts->DistComm());
 
 }
 
-void polya_negloglike::differentiate(const AbsDistMat& predictions,
-                                     const AbsDistMat& ground_truth,
-                                     AbsDistMat& gradient) {
+void polya_negloglike::differentiate_compute(const AbsDistMat& predictions,
+                                             const AbsDistMat& ground_truth,
+                                             AbsDistMat& gradient) {
 
   // Local matrices
   const Mat& predictions_local = predictions.LockedMatrix();

@@ -25,7 +25,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/objective_functions/loss_functions/loss_function.hpp"
-#include "lbann/objective_functions/objective_function.hpp"
 #include "lbann/models/model.hpp"
 
 namespace lbann {
@@ -66,8 +65,8 @@ void loss_function::set_target_layer(target_layer *layer) {
   }
 }
 
-void loss_function::setup(objective_function& obj_fn) {
-  objective_function_term::setup(obj_fn);
+void loss_function::setup(model& m) {
+  objective_function_term::setup(m);
   
   // Check that loss function has one target layer and no weights
   // Note: if target layer is not specified, choose the latest target
@@ -80,8 +79,7 @@ void loss_function::setup(objective_function& obj_fn) {
     throw lbann_exception(err.str());
   }
   if (m_layers.empty()) {
-    std::vector<Layer*> layers
-      = this->m_objective_function->get_model()->get_layers();
+    std::vector<Layer*> layers = m.get_layers();
     for (int i = layers.size() - 1; i >= 0; --i) {
       if (dynamic_cast<target_layer*>(layers[i]) != nullptr) {
         m_layers.push_back(layers[i]);
@@ -113,21 +111,21 @@ void loss_function::setup(objective_function& obj_fn) {
 
 }
 
-DataType loss_function::compute_value() {
+DataType loss_function::evaluate() {
   if (m_scale_factor == DataType(0)) { return DataType(0); }
   auto *target = (target_layer*) m_layers[0];
   const AbsDistMat& prediction = target->get_prediction();
   const AbsDistMat& ground_truth = target->get_ground_truth();
-  return m_scale_factor * evaluate(prediction, ground_truth);
+  return m_scale_factor * evaluate_compute(prediction, ground_truth);
 }
 
-void loss_function::compute_gradient() {
+void loss_function::differentiate() {
   if (m_scale_factor == DataType(0)) { return; }
   auto *target = (target_layer*) m_layers[0];
   const AbsDistMat& prediction = target->get_prediction();
   const AbsDistMat& ground_truth = target->get_ground_truth();
   El::Zeros(*m_gradient, prediction.Height(), prediction.Width());
-  differentiate(prediction, ground_truth, *m_gradient);
+  differentiate_compute(prediction, ground_truth, *m_gradient);
   target->add_to_error_signal(*m_gradient, m_scale_factor);
 }
 

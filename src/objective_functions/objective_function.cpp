@@ -30,29 +30,23 @@
 
 namespace lbann {
 
-objective_function::objective_function() 
-  : m_model(nullptr) {}
-
 objective_function::objective_function(const objective_function& other)
-  : m_model(other.m_model),
-    m_history(other.m_history),
+  : m_history(other.m_history),
     m_value_time(other.m_value_time),
     m_gradient_time(other.m_gradient_time) {
-  for (objective_function_term *term : other.m_terms) {
-    m_terms.push_back(term->copy());
-    m_terms.back()->set_objective_function(this);
+  m_terms = other.m_terms;
+  for (auto& term : m_terms) {
+    term = term->copy();
   }
 }
 
 objective_function& objective_function::operator=(const objective_function& other) {
-  m_model = other.m_model;
-  for (objective_function_term *term : m_terms) {
+  for (const auto& term : m_terms) {
     if (term != nullptr) { delete term; }
   }
-  m_terms.clear();
-  for (objective_function_term *term : other.m_terms) {
-    m_terms.push_back(term->copy());
-    m_terms.back()->set_objective_function(this);
+  m_terms = other.m_terms;
+  for (auto& term : m_terms) {
+    term = term->copy();
   }
   m_history = other.m_history;
   m_value_time = other.m_value_time;
@@ -61,13 +55,12 @@ objective_function& objective_function::operator=(const objective_function& othe
 }
 
 objective_function::~objective_function() {
-  for (objective_function_term *term : m_terms) {
+  for (const auto& term : m_terms) {
     if (term != nullptr) { delete term; }
   }
 }
 
 void objective_function::setup(model& m) {
-  m_model = &m;
   for (objective_function_term *term : m_terms) {
     if (term == nullptr) {
       std::stringstream err;
@@ -75,25 +68,25 @@ void objective_function::setup(model& m) {
           << "a term in the objective function is a null pointer";
       throw lbann_exception(err.str());
     }
-    term->setup(*this);
+    term->setup(m);
   }
 }
 
-DataType objective_function::compute_value() {
+DataType objective_function::evaluate() {
   double value_start = get_time();
-  auto value = DataType(0);
-  for (objective_function_term *term : m_terms) {
-    value += term->compute_value();
+  DataType value = DataType(0);
+  for (const auto& term : m_terms) {
+    value += term->evaluate();
   }
   m_history.push_back(value);
   m_value_time += get_time() - value_start;
   return value;
 }
 
-void objective_function::compute_gradient() {
+void objective_function::differentiate() {
   double gradient_start = get_time();
-  for (objective_function_term *term : m_terms) {
-    term->compute_gradient();
+  for (const auto& term : m_terms) {
+    term->differentiate();
   }
   m_gradient_time += get_time() - gradient_start;
 }

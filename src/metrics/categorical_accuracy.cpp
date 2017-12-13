@@ -56,7 +56,7 @@ categorical_accuracy_metric::~categorical_accuracy_metric() {
   if (m_prediction_values != nullptr) delete m_prediction_values;
 }
 
-void categorical_accuracy_metric::setup(model* m) {
+void categorical_accuracy_metric::setup(model& m) {
   metric::setup(m);
   const El::DistData dist_data(get_target_layer().get_prediction());
   if (dist_data.colDist == El::MC
@@ -73,7 +73,7 @@ void categorical_accuracy_metric::setup(model* m) {
         << "rowDist=" << dist_data.rowDist << ")";
     throw lbann_exception(err.str());
   }
-  m_prediction_values->Resize(1, m->get_max_mini_batch_size());
+  m_prediction_values->Resize(1, m.get_max_mini_batch_size());
   m_prediction_indices.resize(m_prediction_values->LocalWidth());
 }
 

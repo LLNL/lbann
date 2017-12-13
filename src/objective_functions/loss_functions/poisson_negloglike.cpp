@@ -28,8 +28,8 @@
 
 namespace lbann {
 
-DataType poisson_negloglike::evaluate(const AbsDistMat& predictions,
-                                      const AbsDistMat& ground_truth) {
+DataType poisson_negloglike::evaluate_compute(const AbsDistMat& predictions,
+                                              const AbsDistMat& ground_truth) {
 
   // Local matrices
   const Mat& predictions_local = predictions.LockedMatrix();
@@ -54,13 +54,13 @@ DataType poisson_negloglike::evaluate(const AbsDistMat& predictions,
   }
 
   // Compute mean objective function value across mini-batch
-  return get_comm()->allreduce(sum / width, predictions.DistComm());
+  return get_comm().allreduce(sum / width, predictions.DistComm());
 
 }
 
-void poisson_negloglike::differentiate(const AbsDistMat& predictions,
-                                       const AbsDistMat& ground_truth,
-                                       AbsDistMat& gradient) {
+void poisson_negloglike::differentiate_compute(const AbsDistMat& predictions,
+                                               const AbsDistMat& ground_truth,
+                                               AbsDistMat& gradient) {
 
   // Local matrices
   const Mat& predictions_local = predictions.LockedMatrix();

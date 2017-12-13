@@ -25,7 +25,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/objective_functions/weight_regularization/l2.hpp"
-#include "lbann/objective_functions/objective_function.hpp"
 #include "lbann/models/model.hpp"
 #ifdef __LIB_CUDNN
 #include "lbann/utils/cublas_wrapper.hpp"
@@ -34,8 +33,8 @@
 
 namespace lbann {
 
-void l2_weight_regularization::setup(objective_function& obj_fn) {
-  objective_function_term::setup(obj_fn);
+void l2_weight_regularization::setup(model& m) {
+  objective_function_term::setup(m);
 
   // Check that term has no layer pointers
   if (!m_layers.empty()) {
@@ -47,7 +46,7 @@ void l2_weight_regularization::setup(objective_function& obj_fn) {
 
   // Add all weights in model if no weights pointers are provided
   if (m_weights.empty()) {
-    for (weights* w : m_objective_function->get_model()->get_weights()) {
+    for (weights* w : m.get_weights()) {
       if (w->get_optimizer() != nullptr) {
         m_weights.push_back(w);
       }
@@ -82,7 +81,7 @@ DataType l2_weight_regularization::local_squared_l2_norm(const Mat& mat) const {
   return sqsum;
 }
 
-DataType l2_weight_regularization::compute_value() {
+DataType l2_weight_regularization::evaluate() {
   if (m_scale_factor == DataType(0)) { return DataType(0); }
   auto value = DataType(0);
   for (weights* w : m_weights) {
@@ -99,13 +98,13 @@ DataType l2_weight_regularization::compute_value() {
       // Further optimization: Can batch allreduces on the same communicator.
       const AbsDistMat& values = w->get_values();
       DataType local_norm = local_squared_l2_norm(values.LockedMatrix());
-      value += get_comm()->allreduce(local_norm, values.DistComm());
+      value += get_comm().allreduce(local_norm, values.DistComm());
     }
   }
   return m_scale_factor * value;
 }
 
-void l2_weight_regularization::compute_gradient() {
+void l2_weight_regularization::differentiate() {
   if (m_scale_factor == DataType(0)) { return; }
   for (weights* w : m_weights) {
     optimizer* opt = w->get_optimizer();

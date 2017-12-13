@@ -28,8 +28,8 @@
 
 namespace lbann {
 
-DataType mean_absolute_deviation::evaluate(const AbsDistMat& predictions,
-                                           const AbsDistMat& ground_truth) {
+DataType mean_absolute_deviation_loss::evaluate_compute(const AbsDistMat& predictions,
+                                                        const AbsDistMat& ground_truth) {
 
   // Local matrices
   const Mat& predictions_local = predictions.LockedMatrix();
@@ -54,14 +54,14 @@ DataType mean_absolute_deviation::evaluate(const AbsDistMat& predictions,
   }
   
   // Compute mean objective function value across mini-batch
-  return get_comm()->allreduce(sum / (height * width),
-                               predictions.DistComm());
+  return get_comm().allreduce(sum / (height * width),
+                              predictions.DistComm());
 
 }
 
-void mean_absolute_deviation::differentiate(const AbsDistMat& predictions,
-                                            const AbsDistMat& ground_truth,
-                                            AbsDistMat& gradient) {
+void mean_absolute_deviation_loss::differentiate_compute(const AbsDistMat& predictions,
+                                                         const AbsDistMat& ground_truth,
+                                                         AbsDistMat& gradient) {
 
   // Local matrices
   const Mat& predictions_local = predictions.LockedMatrix();

@@ -54,8 +54,8 @@ cross_entropy_with_uncertainty::~cross_entropy_with_uncertainty() {
   if (m_prediction_sums != nullptr) delete m_prediction_sums;
 }
 
-void cross_entropy_with_uncertainty::setup(objective_function& obj_fn) {
-  loss_function::setup(obj_fn);
+void cross_entropy_with_uncertainty::setup(model& m) {
+  loss_function::setup(m);
 
   const El::DistData dist(*m_gradient);
   if (dist.colDist == El::MC && dist.rowDist == El::MR) {
@@ -71,8 +71,8 @@ void cross_entropy_with_uncertainty::setup(objective_function& obj_fn) {
 
 }
 
-DataType cross_entropy_with_uncertainty::evaluate(const AbsDistMat& predictions,
-                                                  const AbsDistMat& ground_truth) {
+DataType cross_entropy_with_uncertainty::evaluate_compute(const AbsDistMat& predictions,
+                                                          const AbsDistMat& ground_truth) {
 
   // Initialize workspace
   m_prediction_sums->Resize(1, predictions.Width());
@@ -98,7 +98,7 @@ DataType cross_entropy_with_uncertainty::evaluate(const AbsDistMat& predictions,
     }
     prediction_sums_local(0, col) = pred_sum;
   }
-  get_comm()->allreduce(*m_prediction_sums,
+  get_comm().allreduce(*m_prediction_sums,
                         m_prediction_sums->RedundantComm());
 
   // Compute mean objective function value
@@ -106,14 +106,14 @@ DataType cross_entropy_with_uncertainty::evaluate(const AbsDistMat& predictions,
   for (int col = 0; col < local_width; ++col) {
     local_sum += -std::log(prediction_sums_local(0, col));
   }
-  return get_comm()->allreduce(local_sum / width,
-                               m_prediction_sums->DistComm());
+  return get_comm().allreduce(local_sum / width,
+                              m_prediction_sums->DistComm());
 
 }
 
-void cross_entropy_with_uncertainty::differentiate(const AbsDistMat& predictions,
-                                                   const AbsDistMat& ground_truth,
-                                                   AbsDistMat& gradient) {
+void cross_entropy_with_uncertainty::differentiate_compute(const AbsDistMat& predictions,
+                                                           const AbsDistMat& ground_truth,
+                                                           AbsDistMat& gradient) {
 
   // Local matrices
   const Mat& ground_truth_local = ground_truth.LockedMatrix();

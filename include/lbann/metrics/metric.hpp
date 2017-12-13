@@ -67,7 +67,7 @@ class metric {
   virtual std::string get_unit() const { return ""; }
 
   /** Setup metric. */
-  virtual void setup(model *m);
+  virtual void setup(model& m);
   
   /** Evaluate the metric value. */
   DataType evaluate();

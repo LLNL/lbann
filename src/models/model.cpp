@@ -93,7 +93,6 @@ model::model(const model& other) :
   m_weights            = other.m_weights;
   if (m_objective_function != nullptr) {
     m_objective_function = m_objective_function->copy();
-    m_objective_function->set_model(this);
   }
   for (auto& m : m_metrics) {
     m = m->copy();
@@ -185,7 +184,6 @@ model& model::operator=(const model& other) {
   m_weights            = other.m_weights;
   if (m_objective_function != nullptr) {
     m_objective_function = m_objective_function->copy();
-    m_objective_function->set_model(this);
   }
   for (auto& m : m_metrics) {
     m = m->copy();
@@ -441,7 +439,7 @@ void model::setup() {
 
   // Setup metrics
   for (const auto& m : m_metrics) {
-    m->setup(this);
+    m->setup(*this);
   }
 
   // Set up callbacks
@@ -587,7 +585,6 @@ void model::train(int num_epochs) {
 
 void model::reset_epoch(execution_mode mode) {
   set_execution_mode(mode);
-  m_objective_function->set_model(this);
   m_objective_function->clear_history();
   for (const auto& m : m_metrics) {
     m->clear_history();
@@ -600,7 +597,7 @@ void model::reset_epoch(execution_mode mode) {
 bool model::evaluate_mini_batch(execution_mode mode) {
   do_batch_begin_cbs(mode);
   forward_prop(mode);
-  m_objective_function->compute_value();
+  m_objective_function->evaluate();
   for (const auto& m : m_metrics) {
     m->evaluate();
   }
@@ -614,14 +611,14 @@ bool model::train_mini_batch() {
 
   // Forward prop step
   forward_prop(execution_mode::training);
-  m_objective_function->compute_value();
+  m_objective_function->evaluate();
   for (const auto& m : m_metrics) {
     m->evaluate();
   }
 
   // Backward prop step
   clear_error_signals();
-  m_objective_function->compute_gradient();
+  m_objective_function->differentiate();
   backward_prop();
 
   // Update step

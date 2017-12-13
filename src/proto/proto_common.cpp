@@ -1580,11 +1580,11 @@ objective_function *init_objective_function(lbann_data::ObjectiveFunction obj_fn
   objective_function *obj_fn = new objective_function();
   for (int j=0; j<obj_fn_params.mean_squared_error_size(); j++) {
     const lbann_data::MeanSquaredError &params = obj_fn_params.mean_squared_error(j);
-    obj_fn->add_term(new mean_squared_error(params.scale_factor()));
+    obj_fn->add_term(new mean_squared_error_loss(params.scale_factor()));
   }
   for (int j=0; j<obj_fn_params.mean_absolute_deviation_size(); j++) {
     const lbann_data::MeanAbsoluteDeviation &params = obj_fn_params.mean_absolute_deviation(j);
-    obj_fn->add_term(new mean_absolute_deviation(params.scale_factor()));
+    obj_fn->add_term(new mean_absolute_deviation_loss(params.scale_factor()));
   }
   for (int j=0; j<obj_fn_params.cross_entropy_size(); j++) {
     const lbann_data::CrossEntropy &params = obj_fn_params.cross_entropy(j);

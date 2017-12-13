@@ -58,7 +58,7 @@ class categorical_accuracy_metric : public metric {
   std::string get_unit() const { return "%"; }
 
   /** Setup metric. */
-  virtual void setup(model *m) override;
+  virtual void setup(model& m) override;
 
  protected:
 

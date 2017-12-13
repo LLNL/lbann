@@ -34,11 +34,11 @@ metric::metric(lbann_comm *comm)
   : m_comm(comm),
     m_target_layer(nullptr) {}
 
-void metric::setup(model *m) {
+void metric::setup(model& m) {
 
   // Set target layer if needed
   if (m_target_layer == nullptr) {
-    std::vector<Layer*> layers = m->get_layers();
+    std::vector<Layer*> layers = m.get_layers();
     for (int i = layers.size() - 1; i >= 0; --i) {
       const target_layer *target = dynamic_cast<const target_layer*>(layers[i]);
       if (target != nullptr) {

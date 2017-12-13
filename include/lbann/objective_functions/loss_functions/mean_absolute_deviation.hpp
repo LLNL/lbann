@@ -31,24 +31,28 @@
 
 namespace lbann {
 
-/** Mean absolution deviation loss function. */
-class mean_absolute_deviation : public loss_function {
+/** Mean absolution deviation loss function.
+ *  Not to be confused with mean_absolute_deviation_metric.
+ */
+class mean_absolute_deviation_loss : public loss_function {
  public:
   /** Default constructor. */
-  mean_absolute_deviation(DataType scale_factor = DataType(1)) 
+  mean_absolute_deviation_loss(DataType scale_factor = DataType(1)) 
     : loss_function(scale_factor) {}
 
   /** Copy constructor. */
-  mean_absolute_deviation(const mean_absolute_deviation& other) = default;
+  mean_absolute_deviation_loss(const mean_absolute_deviation_loss& other) = default;
   /** Copy assignment operator. */
-  mean_absolute_deviation& operator=(const mean_absolute_deviation& other) = default;
+  mean_absolute_deviation_loss& operator=(const mean_absolute_deviation_loss& other) = default;
   /** Destructor. */
-  ~mean_absolute_deviation() override = default;
+  ~mean_absolute_deviation_loss() override = default;
   /** Copy function. */
-  mean_absolute_deviation* copy() const override { return new mean_absolute_deviation(*this); }
+  mean_absolute_deviation_loss* copy() const override {
+    return new mean_absolute_deviation_loss(*this);
+  }
 
   /** Get the name of the objective function term. */
-  std::string name() const override { return "mean_absolute_deviation"; }
+  std::string name() const override { return "mean absolute deviation"; }
 
   /** Compute the mean absolute deviation objective function.
    *  Given a prediction \f$\hat{y}\f$ and ground truth \f$y\f$, the
@@ -59,15 +63,15 @@ class mean_absolute_deviation : public loss_function {
    *  This function updates the objective function value with the mean
    *  value of the mean absolute deviation across the mini-batch.
    */
-  DataType evaluate(const AbsDistMat& prediction,
-                    const AbsDistMat& ground_truth) override;
+  DataType evaluate_compute(const AbsDistMat& prediction,
+                            const AbsDistMat& ground_truth) override;
 
   /** Compute the mean absolution deviation gradient.
    *  The gradient is w.r.t. the prediction vector.
    */
-  void differentiate(const AbsDistMat& prediction,
-                     const AbsDistMat& ground_truth,
-                     AbsDistMat& gradient) override;
+  void differentiate_compute(const AbsDistMat& prediction,
+                             const AbsDistMat& ground_truth,
+                             AbsDistMat& gradient) override;
 
 };
 
