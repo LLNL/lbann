@@ -30,7 +30,6 @@
 #define LBANN_LAYER_LOCAL_RESPONSE_NORMALIZATION_HPP_INCLUDED
 
 #include <vector>
-#include "lbann/base.hpp"
 #include "lbann/layers/regularizers/regularizer.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/utils/exception.hpp"

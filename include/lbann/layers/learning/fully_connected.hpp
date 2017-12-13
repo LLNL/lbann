@@ -39,7 +39,6 @@
 #ifdef __LIB_CUDNN
 #include "lbann/layers/learning/fully_connected_cuda.hpp"
 #include "lbann/utils/cublas_wrapper.hpp"
-#include "lbann/base.hpp"
 #endif // __LIB_CUDNN
 #include <string>
 #include <sstream>

@@ -29,7 +29,6 @@
 #ifndef LBANN_LAYER_NOISE_HPP_INCLUDED
 #define LBANN_LAYER_NOISE_HPP_INCLUDED
 
-#include "lbann/base.hpp"
 #include "lbann/layers/transform/transform.hpp"
 #include "lbann/utils/exception.hpp"
 

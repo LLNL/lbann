@@ -30,7 +30,6 @@
 #define LBANN_LAYER_UNPOOLING_HPP_INCLUDED
 
 #include <vector>
-#include "lbann/base.hpp"
 #include "lbann/layers/transform/pooling.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/utils/exception.hpp"
