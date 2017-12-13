@@ -34,16 +34,22 @@
 namespace lbann {
 
 cv_decolorizer::cv_decolorizer(const cv_decolorizer& rhs)
-  : cv_transform(rhs), m_color(rhs.m_color) {}
+  : cv_transform(rhs), m_color(rhs.m_color), m_pick_1ch(rhs.m_pick_1ch) {}
 
 cv_decolorizer& cv_decolorizer::operator=(const cv_decolorizer& rhs) {
   cv_transform::operator=(rhs);
   m_color = rhs.m_color;
+  m_pick_1ch = rhs.m_pick_1ch;
   return *this;
 }
 
 cv_decolorizer *cv_decolorizer::clone() const {
   return (new cv_decolorizer(*this));
+}
+
+void cv_decolorizer::set(const bool pick_1ch) {
+  m_pick_1ch = pick_1ch;
+  reset();
 }
 
 bool cv_decolorizer::determine_transform(const cv::Mat& image) {
@@ -58,18 +64,18 @@ bool cv_decolorizer::apply(cv::Mat& image) {
   m_enabled = false; // turn off as the transform is applied once
 
   if (m_color) {
-  #if 0
-    // Drop all the channels but one.
-    const int Nch = image.channels();
-    std::vector<cv::Mat> channels(Nch);
-    cv::split(image, channels);
-    image = channels[1 % Nch];
-  #else
-    // Compute a new channel by the linear combination of all channels
-    cv::Mat image_dst;
-    cv::cvtColor(image, image_dst, cv::COLOR_BGR2GRAY);
-    image = image_dst;
-  #endif
+    if (m_pick_1ch) {
+      // Drop all the channels but one.
+      const int Nch = image.channels();
+      std::vector<cv::Mat> channels(Nch);
+      cv::split(image, channels);
+      image = channels[1 % Nch];
+    } else {
+      // Compute a new channel by the linear combination of all channels
+      cv::Mat image_dst;
+      cv::cvtColor(image, image_dst, cv::COLOR_BGR2GRAY);
+      image = image_dst;
+    }
   }
 
   return true;

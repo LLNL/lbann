@@ -39,16 +39,18 @@ class cv_decolorizer : public cv_transform {
  protected:
   // --- state variables ---
   bool m_color; ///< whether an image is color or not
+  /// Method to used: either pick one channel, or mix BGR channels (default)
+  bool m_pick_1ch;
 
  public:
-  cv_decolorizer() : cv_transform(), m_color(false) {}
+  cv_decolorizer() : cv_transform(), m_color(false), m_pick_1ch(false) {}
   cv_decolorizer(const cv_decolorizer& rhs);
   cv_decolorizer& operator=(const cv_decolorizer& rhs);
   cv_decolorizer *clone() const override;
 
   ~cv_decolorizer() override {}
 
-  void set() { reset(); }
+  void set(const bool pick_1ch);
   void reset() override {
     m_enabled = false;
     m_color = false;

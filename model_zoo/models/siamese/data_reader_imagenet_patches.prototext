@@ -29,6 +29,11 @@ data_reader {
         resized_height: 512
       }
 
+#      decolorizer {
+#        disable: false
+#        pick_1ch: true
+#      }
+
       colorizer {
         disable: false
       }
@@ -56,7 +61,7 @@ data_reader {
         patch_gap: 48
         patch_jitter: 7
         centering_mode: 1
-        ca_correction_mode: 2
+        ca_correction_mode: 0
       }
     }
   }
@@ -87,6 +92,11 @@ data_reader {
         resized_height: 512
       }
 
+#      decolorizer {
+#        disable: false
+#        pick_1ch: true
+#      }
+
       colorizer {
         disable: false
       }
@@ -114,7 +124,7 @@ data_reader {
         patch_gap: 48
         patch_jitter: 7
         centering_mode: 1
-        ca_correction_mode: 2
+        ca_correction_mode: 0
       }
     }
   }
