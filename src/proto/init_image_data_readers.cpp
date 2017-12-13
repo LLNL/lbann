@@ -35,7 +35,7 @@
 using namespace lbann;
 
 void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool master,
-                             std::shared_ptr<cv_process>& pp, int& width, int& height) {
+                             std::shared_ptr<cv_process>& pp, int& width, int& height, int& channels) {
 // Currently we set width and height for image_data_reader here considering the transform
 // pipeline. image_data_reader reports the final dimension of data to the child layer based
 // on these information.
@@ -121,6 +121,20 @@ void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool mas
     }
   }
 
+  // set up a decolorizer
+  if (pb_preprocessor.has_decolorizer()) {
+    const lbann_data::ImagePreprocessor::Decolorizer& pb_decolorizer = pb_preprocessor.decolorizer();
+    if  (!pb_decolorizer.disable()) {
+      const std::string decolorizer_name = ((pb_decolorizer.name() == "")? "default_decolorizer" : pb_decolorizer.name());
+      // If every image in the dataset is a color image, this is not needed
+      std::unique_ptr<lbann::cv_decolorizer> decolorizer(new(lbann::cv_decolorizer));
+      decolorizer->set_name(decolorizer_name);
+      pp->add_transform(std::move(decolorizer));
+      channels = 1;
+      if (master) std::cout << "image processor: " << decolorizer_name << " decolorizer is set" << std::endl;
+    }
+  }
+
   // set up a colorizer
   if (pb_preprocessor.has_colorizer()) {
     const lbann_data::ImagePreprocessor::Colorizer& pb_colorizer = pb_preprocessor.colorizer();
@@ -130,12 +144,14 @@ void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool mas
       std::unique_ptr<lbann::cv_colorizer> colorizer(new(lbann::cv_colorizer));
       colorizer->set_name(colorizer_name);
       pp->add_transform(std::move(colorizer));
+      channels = 3;
       if (master) std::cout << "image processor: " << colorizer_name << " colorizer is set" << std::endl;
     }
   } else { // For backward compatibility. TODO: will be deprecated
     if (!pb_preprocessor.no_colorize()) {
       std::unique_ptr<lbann::cv_colorizer> colorizer(new(lbann::cv_colorizer));
       pp->add_transform(std::move(colorizer));
+      channels = 3;
       if (master) std::cout << "image processor: colorizer is set (deprecated syntax)" << std::endl;
     }
   }
@@ -240,9 +256,10 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
 
   // final size of image
   int width = 0, height = 0;
+  int channels = 3;
 
   // setup preprocessor
-  init_image_preprocessor(pb_readme, master, pp, width, height);
+  init_image_preprocessor(pb_readme, master, pp, width, height, channels);
 
   if (name == "imagenet_patches") {
     std::shared_ptr<cv_process_patches> ppp = std::dynamic_pointer_cast<cv_process_patches>(pp);
@@ -259,12 +276,12 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
   auto* image_data_reader_ptr = dynamic_cast<image_data_reader*>(reader);
   if (!image_data_reader_ptr && master) {
     std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: invalid image data reade pointer";
+    err << __FILE__ << " " << __LINE__ << " :: invalid image data reader pointer";
     throw lbann_exception(err.str());
   }
 
   // configure the data reader
-  image_data_reader_ptr->set_input_params(width, height, 3, n_labels);
+  image_data_reader_ptr->set_input_params(width, height, channels, n_labels);
 }
 
 

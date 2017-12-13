@@ -30,37 +30,6 @@
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/protobuf_utils.hpp"
 
-#if 0
-
-#include <time.h>
-#include <dlfcn.h>
-#include <string.h>
-
-extern "C" {
-void __cyg_profile_func_enter (void *, void *) __attribute__((no_instrument_function));
-void __cyg_profile_func_exit (void *, void *) __attribute__((no_instrument_function));
-
-int depth = -1;
-Dl_info info;
-
-void __cyg_profile_func_enter (void *func,  void *caller)
-{
- depth++;
-  dladdr(func, &info);
-  if (strstr(info.dli_fname, "liblbann.so") != nullptr) {
-    printf("%d %s\n", depth, info.dli_sname);
-  }  
-}
-
-void __cyg_profile_func_exit (void *func, void *caller)
-{
- depth--;
-}
-
-}
-#endif
-
-//===================================================================
 
 using namespace lbann;
 
@@ -199,8 +168,11 @@ int main(int argc, char *argv[]) {
       #endif // LBANN_HAS_CUDNN
       std::cout << std::endl;
     }
+
     // Display how the OpenMP threads are provisioned
-    display_omp_setup();
+    if (opts->has_string("print_affinity")) {
+      display_omp_setup();
+    }
 
     // Initialize data readers
     //@todo: code not in place for correctly handling image preprocessing

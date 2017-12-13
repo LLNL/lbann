@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
         for(size_t l1=0; l1 < layers1.size(); l1++) {
            if(layers2[l2]->get_name() == layers1[l1]->get_name()){
              if(master) std::cout << "Model 1 Layer " << layers1[l1]->get_name(); 
-             model_2->replace_layer(l2,layers1[l1]);
+             layers2[l2]->replace_weights(layers1[l1]);
              if(master) std::cout << " copied to Model2 Layer " << std::endl;
            }
          }
@@ -119,6 +119,7 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
   model *model = nullptr; //d hysom bad namimg! should fix
   try {
     std::stringstream err;
+    options *opts = options::get();
 
     // Optionally over-ride some values in prototext
     get_cmdline_overrides(comm, pb);
@@ -219,7 +220,9 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
       std::cout << std::endl;
     }
     // Display how the OpenMP threads are provisioned
-    display_omp_setup();
+    if (opts->has_string("print_affinity")) {
+      display_omp_setup();
+    }
 
     // Initialize data readers
     //@todo: code not in place for correctly handling image preprocessing

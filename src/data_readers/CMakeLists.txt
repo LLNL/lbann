@@ -3,6 +3,7 @@ set_full_path(THIS_DIR_SOURCES
   cv_augmenter.cpp
   cv_colorizer.cpp
   cv_cropper.cpp
+  cv_decolorizer.cpp
   cv_mean_extractor.cpp
   cv_normalizer.cpp
   cv_process.cpp

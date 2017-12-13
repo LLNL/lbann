@@ -56,6 +56,7 @@ BUILD_SUFFIX=
 SEQ_INIT=OFF
 WITH_CUDA=
 WITH_TOPO_AWARE=ON
+INSTRUMENT=
 
 # In case that autoconf fails during on-demand buid on surface, try the newer
 # version of autoconf installed under '/p/lscratche/brainusr/autoconf/bin'
@@ -105,6 +106,7 @@ Options:
   ${C}--install-lbann${N}         Install LBANN headers and dynamic library into the build directory.
   ${C}--build${N}                 Specify alternative build directory; default is <lbann_home>/build.
   ${C}--suffix${N}                Specify suffix for build directory. If you are, e.g, building on surface, your build will be <someplace>/surface.llnl.gov, regardless of your choice of compiler or other flags. This option enables you to specify, e.g: --suffix gnu_debug, in which case your build will be in the directory <someplace>/surface.llnl.gov.gnu_debug
+  ${C}--instrument${N}            Use -finstrument-functions flag, for profiling stack traces
   ${C}--use-nccl${N}              Use NCCL library
   ${C}--disable-cuda${N}          Disable CUDA
   ${C}--disable-topo-aware${N}    Disable topological-aware configuration (no HWLOC)
@@ -221,6 +223,10 @@ while :; do
             ;;
         --disable-topo-aware)
             WITH_TOPO_AWARE=OFF
+            ;;
+        --instrument)
+            INSTRUMENT="-finstrument-functions -ldl"
+            #INSTRUMENT="-finstrument-functions -finstrument-functions-exclude-file-list=download,python,/lib64,/gcc -ldl"
             ;;
         -?*)
             # Unknown option
@@ -375,8 +381,8 @@ fi
 # Add compiler optimization flags
 if [ "${BUILD_TYPE}" == "Release" ]; then
     if [ "${COMPILER}" == "gnu" ]; then
-        C_FLAGS="${C_FLAGS} -O3"
-        CXX_FLAGS="${CXX_FLAGS} -O3"
+        C_FLAGS="${C_FLAGS} -O3 ${INSTRUMENT}"
+        CXX_FLAGS="${CXX_FLAGS} -O3 ${INSTRUMENT}"
         Fortran_FLAGS="${Fortran_FLAGS} -O3"
         if [ "${CLUSTER}" == "catalyst" ]; then
             C_FLAGS="${C_FLAGS} -march=ivybridge -mtune=ivybridge"
@@ -398,11 +404,13 @@ if [ "${BUILD_TYPE}" == "Release" ]; then
     fi
 else 
     if [ "${COMPILER}" == "gnu" ]; then
-        C_FLAGS="${C_FLAGS} -g"
-        CXX_FLAGS="${CXX_FLAGS} -g"
+        C_FLAGS="${C_FLAGS} -g ${INSTRUMENT}"
+        CXX_FLAGS="${CXX_FLAGS} -g ${INSTRUMENT}"
         Fortran_FLAGS="${Fortran_FLAGS} -g"
     fi
 fi
+
+
 
 # Set environment variables
 export CC=${C_COMPILER}

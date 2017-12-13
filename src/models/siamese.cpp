@@ -51,19 +51,26 @@ void siamese_model::setup_layer_topology() {
   int heads_start = m_layers.size();
   int heads_end = -1;
   for (size_t i = 0; i < m_layers.size(); ++i) {
-    if (m_layers[i]->is_fan_out_layer()) {
+    if (m_layers[i]->get_max_num_child_layers() < 0
+        || m_layers[i]->get_max_num_child_layers() > 1) {
       heads_start = i + 1;
       break;
     }
   }
   for (int i = m_layers.size() - 1; i >= 0; --i) {
-    if (m_layers[i]->is_fan_in_layer()) {
+    if (m_layers[i]->get_max_num_parent_layers() < 0
+        || m_layers[i]->get_max_num_parent_layers() > 1) {
       heads_end = i;
       break;
     }
   }
   if (heads_start > heads_end) {
-    throw lbann_exception("siamese_model: siamese models must have a fan-out layer before a fan-in layer");
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "siamese models must have a fan-out layer before a fan-in layer "
+        << "(found fan-out layer at position " << heads_start - 1
+        << " and fan-in layer at position " << heads_end << ")";
+    throw lbann_exception(err.str());
   }
   std::vector<Layer*> master_head(m_layers.begin() + heads_start,
                                   m_layers.begin() + heads_end);
@@ -75,7 +82,7 @@ void siamese_model::setup_layer_topology() {
 
   // Duplicate master head
   for (int i = 1; i < m_num_heads; ++i) {
-    std::string name_suffix = "_" + std::to_string(i);
+    std::string name_suffix = "_head" + std::to_string(i);
 
     // Construct map from master layers to follower layers
     std::unordered_map<Layer*,Layer*> master_to_follower_layer;
@@ -112,6 +119,11 @@ void siamese_model::setup_layer_topology() {
                     follower_head.end());
     heads_end += follower_head.size();
 
+  }
+
+  // Rename layers in master head
+  for (const auto& layer : master_head) {
+    layer->set_name(layer->get_name() + "_head0");
   }
 
   // Make sure all parent/child relationships are reciprocated

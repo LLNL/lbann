@@ -31,8 +31,6 @@
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/comm.hpp"
 
-extern void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool master,
-                                    std::shared_ptr<lbann::cv_process>& pp, int& width, int& height);
 extern void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool master, lbann::generic_data_reader* &reader);
 extern void init_generic_preprocessor(const lbann_data::Reader& pb_readme, const bool master, lbann::generic_data_reader* reader);
 extern void init_org_image_data_reader(const lbann_data::Reader& pb_readme, const bool master, lbann::generic_data_reader* &reader);

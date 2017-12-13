@@ -57,18 +57,29 @@ void lbann_callback_timer::timing_end(model *m) {
 
   // Compute minibatch statistics
   const int num_batches = m_batch_times.size();
-  const double mean = (std::accumulate(m_batch_times.begin(),
-                                       m_batch_times.end(),
-                                       0.0)
-                       / num_batches);
-  const auto& minmax = std::minmax_element(m_batch_times.begin(), m_batch_times.end());
-  const double sqmean = (std::inner_product(m_batch_times.begin(),
+  double batch_time_mean = std::nan("");
+  double batch_time_min = std::nan("");
+  double batch_time_max = std::nan("");
+  double batch_time_stdev = std::nan("");
+  if (num_batches > 0) {
+    batch_time_mean = std::accumulate(m_batch_times.begin(),
+                                      m_batch_times.end(),
+                                      0.0);
+    batch_time_mean /= num_batches;
+    batch_time_min = *std::min_element(m_batch_times.begin(),
+                                       m_batch_times.end());
+    batch_time_max = *std::max_element(m_batch_times.begin(),
+                                       m_batch_times.end());
+  }
+  if (num_batches > 1) {
+    const double sqsum = std::inner_product(m_batch_times.begin(),
                                             m_batch_times.end(),
                                             m_batch_times.begin(),
-                                            0.0)
-                         / num_batches);
-  const double var = std::max(sqmean - mean * mean, 0.0);
-  const double stdev = std::sqrt(var * num_batches / (num_batches - 1));
+                                            0.0);
+    double var = sqsum / num_batches - batch_time_mean * batch_time_mean;
+    var = num_batches * var / (num_batches - 1);
+    batch_time_stdev = std::sqrt(std::max(var, 0.0));
+  }
 
   // Get string for execution mode
   std::string mode_string;
@@ -101,16 +112,16 @@ void lbann_callback_timer::timing_end(model *m) {
     std::vector<double> stdev_list(num_models);
     if (comm->am_world_master()) {
       comm->intermodel_gather(run_time, run_time_list);
-      comm->intermodel_gather(mean, mean_list);
-      comm->intermodel_gather(*(minmax.first), min_list);
-      comm->intermodel_gather(*(minmax.second), max_list);
-      comm->intermodel_gather(stdev, stdev_list);
+      comm->intermodel_gather(batch_time_mean, mean_list);
+      comm->intermodel_gather(batch_time_min, min_list);
+      comm->intermodel_gather(batch_time_max, max_list);
+      comm->intermodel_gather(batch_time_stdev, stdev_list);
     } else {
       comm->intermodel_gather(run_time, comm->get_intermodel_master());
-      comm->intermodel_gather(mean, comm->get_intermodel_master());
-      comm->intermodel_gather(*(minmax.first), comm->get_intermodel_master());
-      comm->intermodel_gather(*(minmax.second), comm->get_intermodel_master());
-      comm->intermodel_gather(stdev, comm->get_intermodel_master());
+      comm->intermodel_gather(batch_time_mean, comm->get_intermodel_master());
+      comm->intermodel_gather(batch_time_min, comm->get_intermodel_master());
+      comm->intermodel_gather(batch_time_max, comm->get_intermodel_master());
+      comm->intermodel_gather(batch_time_stdev, comm->get_intermodel_master());
     }
 
     // Print results
@@ -122,11 +133,31 @@ void lbann_callback_timer::timing_end(model *m) {
       }
       for (int i = 0; i < num_models; ++i) {
         std::cout << "Model " << i << " " << mode_string << " "
-                  << "mini-batch time statistics : "
-                  << mean_list[i] << "s mean, "
-                  << min_list[i] << "s min, "
-                  << max_list[i] << "s max, "
-                  << stdev_list[i] << "s stdev" << std::endl;
+                  << "mini-batch time statistics : ";
+        if (std::isnan(mean_list[i])) {
+          std::cout << "N/A";
+        } else {
+          std::cout << mean_list[i] << "s";
+        }
+        std::cout << " mean, ";
+        if (std::isnan(max_list[i])) {
+          std::cout << "N/A";
+        } else {
+          std::cout << max_list[i] << "s";
+        }
+        std::cout << " max, ";
+        if (std::isnan(min_list[i])) {
+          std::cout << "N/A";
+        } else {
+          std::cout << min_list[i] << "s";
+        }
+        std::cout << " min, ";
+        if (std::isnan(stdev_list[i])) {
+          std::cout << "N/A";
+        } else {
+          std::cout << stdev_list[i] << "s";
+        }
+        std::cout << " stdev" << std::endl;
       }
 
     }

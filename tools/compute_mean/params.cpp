@@ -40,7 +40,6 @@ bool params::set(int argc, char *argv[]) {
 
   m_data_path_file = argv[++aidx];
   m_enable_cropper = true;
-  m_enable_colorizer = true;
 
   cp.m_is_set = true;
   cp.m_crop_sz.first = atoi(argv[++aidx]);

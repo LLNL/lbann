@@ -74,6 +74,11 @@ message ImagePreprocessor {
     double shear_range = 8;
   }
 
+  message Decolorizer {
+    string name = 1;
+    bool disable = 2;
+  }
+
   message Colorizer {
     string name = 1;
     bool disable = 2;
@@ -107,10 +112,11 @@ message ImagePreprocessor {
 
   Cropper cropper = 5;
   Augmenter augmenter = 6;
-  Colorizer colorizer = 7;
-  Normalizer normalizer = 8;
-  Noiser noiser = 9;
-  PatchExtractor patch_extractor = 10;
+  Decolorizer decolorizer = 7;
+  Colorizer colorizer = 8;
+  Normalizer normalizer = 9;
+  Noiser noiser = 10;
+  PatchExtractor patch_extractor = 11;
 
   // For backward compatibility. TODO: will be deprecated
   bool scale = 12;

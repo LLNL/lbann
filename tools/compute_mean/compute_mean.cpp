@@ -31,6 +31,7 @@
 #include "params.hpp"
 #include "image_list.hpp"
 #include "process_images.hpp"
+#include "lbann/utils/random.hpp"
 
 int main(int argc, char *argv[]) {
   using namespace tools_compute_mean;
@@ -50,6 +51,8 @@ int main(int argc, char *argv[]) {
     ms.finalize();
     return 0;
   }
+  mp.set_out_ext(".JPEG");
+  lbann::init_random(mp.get_seed() + ms.get_my_rank());
 
   // Load the image list
   image_list img_list(mp.get_data_path_file(), mp.to_write_cropped(), ms);

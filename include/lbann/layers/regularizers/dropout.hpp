@@ -102,7 +102,7 @@ class dropout : public regularizer_layer {
       const int height = this->m_activations_v->Height();
       const int width = this->m_activations_v->Width();
       m_mask->Resize(height, width);
-#ifdef LBANN_PROCDET_DROPOUT
+#ifdef LBANN_SEQUENTIAL_CONSISTENCY
       bernoulli_fill_procdet(*m_mask, height, width, m_keep_prob);
       *m_mask *= scale;
 #else
@@ -113,7 +113,7 @@ class dropout : public regularizer_layer {
                          std::bernoulli_distribution dist(m_keep_prob);
                          return dist(gen) ? scale : DataType(0);
                        }));
-#endif // LBANN_PROCDET_DROPOUT
+#endif // LBANN_SEQUENTIAL_CONSISTENCY
 
       // Apply mask matrix to get activations
       El::Hadamard(*this->m_prev_activations_v, *m_mask, *this->m_activations_v);

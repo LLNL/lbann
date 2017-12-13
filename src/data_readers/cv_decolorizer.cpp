@@ -23,72 +23,69 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// cv_colorizer .cpp .hpp - transform a non-color (grayscale) image into a
-//                          3-channel color image
+// cv_decolorizer .cpp .hpp - transform a color image into a single-channel
+//                            monochrome image
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_readers/cv_colorizer.hpp"
+#include "lbann/data_readers/cv_decolorizer.hpp"
 #include "lbann/utils/mild_exception.hpp"
 
-#ifdef LBANN_HAS_OPENCV
+#ifdef __LIB_OPENCV
 namespace lbann {
 
-cv_colorizer::cv_colorizer(const cv_colorizer& rhs)
-  : cv_transform(rhs), m_gray(rhs.m_gray) {}
+cv_decolorizer::cv_decolorizer(const cv_decolorizer& rhs)
+  : cv_transform(rhs), m_color(rhs.m_color) {}
 
-cv_colorizer& cv_colorizer::operator=(const cv_colorizer& rhs) {
+cv_decolorizer& cv_decolorizer::operator=(const cv_decolorizer& rhs) {
   cv_transform::operator=(rhs);
-  m_gray = rhs.m_gray;
+  m_color = rhs.m_color;
   return *this;
 }
 
-cv_colorizer *cv_colorizer::clone() const {
-  return (new cv_colorizer(*this));
+cv_decolorizer *cv_decolorizer::clone() const {
+  return (new cv_decolorizer(*this));
 }
 
-bool cv_colorizer::determine_transform(const cv::Mat& image) {
+bool cv_decolorizer::determine_transform(const cv::Mat& image) {
   //reset(); // redundant here
-  // enable colorizing transform if the given image is in grayscale
-  m_enabled = m_gray = (!image.empty() && (image.channels() == 1));
+  // enable decolorizing transform if the given image is a color image
+  m_enabled = m_color = (!image.empty() && (image.channels() > 1));
   //_LBANN_SILENT_EXCEPTION(image.empty(), "", false); // redundant
   return m_enabled;
 }
 
-bool cv_colorizer::determine_inverse_transform() {
-  // Enable inverse transform only if grayscale to color transform has been applied
-  m_enabled = m_gray;
-  // indicate that the current image is a color image
-  m_gray = false;
-  return m_enabled;
-}
-
-bool cv_colorizer::apply(cv::Mat& image) {
+bool cv_decolorizer::apply(cv::Mat& image) {
   m_enabled = false; // turn off as the transform is applied once
 
-  if (!m_gray) { // apply the inverse transform from color to gray
+  if (m_color) {
+  #if 0
+    // Drop all the channels but one.
+    const int Nch = image.channels();
+    std::vector<cv::Mat> channels(Nch);
+    cv::split(image, channels);
+    image = channels[1 % Nch];
+  #else
+    // Compute a new channel by the linear combination of all channels
     cv::Mat image_dst;
     cv::cvtColor(image, image_dst, cv::COLOR_BGR2GRAY);
     image = image_dst;
-  } else { // apply the transform from gray to color
-    cv::Mat image_dst;
-    cv::cvtColor(image, image_dst, cv::COLOR_GRAY2BGR);
-    image = image_dst;
+  #endif
   }
 
   return true;
 }
 
-std::string cv_colorizer::get_description() const {
+std::string cv_decolorizer::get_description() const {
   std::stringstream os;
   os << get_type() + ":" << std::endl;
   return os.str();
 }
 
-std::ostream& cv_colorizer::print(std::ostream& os) const {
+std::ostream& cv_decolorizer::print(std::ostream& os) const {
   os << get_description()
-     << " - " << (m_gray? "grayscale" : "color") << std::endl;
+     << " - " << (m_color? "color" : "grayscale") << std::endl;
   return os;
 }
 
 } // end of namespace lbann
-#endif // LBANN_HAS_OPENCV
+#endif // __LIB_OPENCV

@@ -67,7 +67,7 @@ def get_performance(output_file_name):
 
       # Check if line reports mini-batch time statistics
       m = re.match('training epoch [0-9]* mini-batch time statistics : '
-                   '([^s]*)s mean, ([^s]*)s min, ([^s]*)s max, ([^s]*)s stdev', line)
+                   '([^s ]*)s? mean, ([^s ]*)s? min, ([^s ]*)s? max, ([^s ]*)s? stdev', line)
       if m:
         performance_dict[model]['mean_minibatch_times'].append(float(m.group(1)))
         performance_dict[model]['mins'].append(float(m.group(2)))

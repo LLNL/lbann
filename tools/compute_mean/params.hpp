@@ -53,6 +53,8 @@ class params {
   bool m_enable_cropper;
   /// Whether to write cropped result. The default is false.
   bool m_write_cropped;
+  /// Whether to enable decolorizer. The default is false.
+  bool m_enable_decolorizer;
   /// Whether to enable colorizer. The default is true.
   bool m_enable_colorizer;
   /// Whether to enable mean_extractor. The default is true.
@@ -85,15 +87,21 @@ class params {
    */
   unsigned int report_freq;
 
+  /// Seed for the random number generator
+  int rng_seed;
+
 
  public:
   params(void)
     : m_enable_cropper(true),
       m_write_cropped(false),
+      m_enable_decolorizer(false),
       m_enable_colorizer(true),
       m_enable_mean_extractor(true),
       m_mean_batch_size(1024u),
-      m_out_ext(".png"), report_freq(10) {}
+      m_out_ext(".png"),
+      report_freq(10),
+      rng_seed(42) {}
 
   bool set(int argc, char *argv[]);
   static std::string show_help(std::string name);
@@ -103,6 +111,9 @@ class params {
   }
   bool to_write_cropped() const {
     return m_write_cropped;
+  }
+  bool to_enable_decolorizer() const {
+    return m_enable_decolorizer;
   }
   bool to_enable_colorizer() const {
     return m_enable_colorizer;
@@ -131,6 +142,10 @@ class params {
   float get_report_freq() const {
     const float f = report_freq/100.0;
     return ((f == 0.0 || f >= 1.0)? 1.0 : f);
+  }
+  /// Return the seed for random number generator
+  int get_seed() const {
+    return rng_seed;
   }
 };
 
