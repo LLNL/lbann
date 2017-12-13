@@ -24,20 +24,45 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/objective_functions/objective_function_term.hpp"
-#include "lbann/models/model.hpp"
+#ifndef LBANN_METRIC_MEAN_SQUARED_ERROR_HPP
+#define LBANN_METRIC_MEAN_SQUARED_ERROR_HPP
+
+#include "lbann/metrics/metric.hpp"
 
 namespace lbann {
 
-objective_function_term::objective_function_term(DataType scale_factor)
-  : m_scale_factor(scale_factor) {
-  if (m_scale_factor == DataType(0)) {
-    m_scale_factor = DataType(1);
-  }
-}
+/** Mean squared error metric.
+ *  Not to be confused with mean_squared_error_loss.
+ */
+class mean_squared_error_metric : public metric {
 
-void objective_function_term::setup(model& m) {
-  m_comm = m.get_comm();
-}
+ public:
+
+  /** Constructor. */
+  mean_squared_error_metric(lbann_comm *comm) : metric(comm) {}
+
+  /** Copy constructor. */
+  mean_squared_error_metric(const mean_squared_error_metric& other) = default;
+  /** Copy assignment operator. */
+  mean_squared_error_metric& operator=(const mean_squared_error_metric& other) = default;
+  /** Destructor. */
+  virtual ~mean_squared_error_metric() = default;
+  /** Copy function. */
+  mean_squared_error_metric* copy() const override {
+    return new mean_squared_error_metric(*this);
+  }
+
+  /** Return a string name for this metric. */
+  std::string name() const override { return "mean squared error"; }
+
+ protected:
+
+  /** Computation to evaluate the metric function. */
+  DataType evaluate_compute(const AbsDistMat& prediction,
+                            const AbsDistMat& ground_truth) override;
+
+};
 
 }  // namespace lbann
+
+#endif  // LBANN_METRIC_MEAN_SQUARED_ERROR_HPP

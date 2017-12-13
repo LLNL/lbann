@@ -24,20 +24,39 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/objective_functions/objective_function_term.hpp"
-#include "lbann/models/model.hpp"
+#include "lbann/metrics/mean_squared_error.hpp"
 
 namespace lbann {
 
-objective_function_term::objective_function_term(DataType scale_factor)
-  : m_scale_factor(scale_factor) {
-  if (m_scale_factor == DataType(0)) {
-    m_scale_factor = DataType(1);
-  }
-}
+DataType mean_squared_error_metric::evaluate_compute(const AbsDistMat& prediction,
+                                                     const AbsDistMat& ground_truth) {
 
-void objective_function_term::setup(model& m) {
-  m_comm = m.get_comm();
+  // Get matrix dimensions
+  const int height = prediction.Height();
+  const int width = prediction.Width();
+  const int local_height = prediction.LocalHeight();
+  const int local_width = prediction.LocalWidth();
+  
+  // Get local matrices
+  const Mat& prediction_local = prediction.LockedMatrix();
+  const Mat& ground_truth_local = ground_truth.LockedMatrix();
+
+  // Compute sum of squared errors
+  DataType sum = 0;
+  #pragma omp parallel for reduction(+:sum) collapse(2)
+  for(El::Int col = 0; col < local_width; ++col) {
+    for(El::Int row = 0; row < local_height; ++row) {
+      const DataType true_val = ground_truth_local(row, col);
+      const DataType pred_val = prediction_local(row, col);
+      const DataType error = true_val - pred_val;
+      sum += error * error;
+    }
+  }
+  
+  // Compute mean value across mini-batch
+  return get_comm().allreduce(sum / (height * width),
+                              prediction.DistComm());
+
 }
 
 }  // namespace lbann

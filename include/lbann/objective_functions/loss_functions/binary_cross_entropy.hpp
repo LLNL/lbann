@@ -48,7 +48,7 @@ class binary_cross_entropy : public loss_function {
   binary_cross_entropy* copy() const override { return new binary_cross_entropy(*this); }
 
   /** Get the name of the objective function term. */
-  std::string name() const override { return "binary_cross_entropy"; }
+  std::string name() const override { return "binary cross entropy"; }
 
   /** Compute the binary cross entropy objective function.
    *  Given a prediction \f$\hat{y}\f$ and ground truth \f$yf$, the
@@ -59,8 +59,8 @@ class binary_cross_entropy : public loss_function {
    *  This function updates the objective function value with the mean
    *  value of the binary cross entropy across the mini-batch.
    */
-  DataType evaluate(const AbsDistMat& prediction,
-                    const AbsDistMat& ground_truth) override;
+  DataType evaluate_compute(const AbsDistMat& prediction,
+                            const AbsDistMat& ground_truth) override;
 
   /** Compute the gradient of the binary cross entropy objective function.
    *  Given a prediction \f$\hat{y}\f$ and ground truth \f$y\f$, the
@@ -69,9 +69,9 @@ class binary_cross_entropy : public loss_function {
    *    \nabla_{\hat{y}} CE(\hat{y}, y) = -y/\hat{y}  + (1-y)/(1-\hat{y}) 
    *    \f]
    */
-  void differentiate(const AbsDistMat& prediction,
-                     const AbsDistMat& ground_truth,
-                     AbsDistMat& gradient) override;
+  void differentiate_compute(const AbsDistMat& prediction,
+                             const AbsDistMat& ground_truth,
+                             AbsDistMat& gradient) override;
 
 };
 

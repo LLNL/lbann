@@ -48,7 +48,7 @@ class poisson_negloglike : public loss_function {
   poisson_negloglike* copy() const override { return new poisson_negloglike(*this); }
 
   /** Get the name of the objective function term. */
-  std::string name() const override { return "poisson_negloglike"; }
+  std::string name() const override { return "Poisson negative log-likelihood"; }
 
   /** Compute the Poisson negative log-likelihood objective function.
    *  Given a prediction \f$\hat{y}\f$ and ground truth \f$y\f$, the
@@ -59,8 +59,8 @@ class poisson_negloglike : public loss_function {
    *  This function updates the objective function value with the mean
    *  value of the Poisson negative log-likelihood across the mini-batch.
    */
-  DataType evaluate(const AbsDistMat& prediction,
-                    const AbsDistMat& ground_truth) override;
+  DataType evaluate_compute(const AbsDistMat& prediction,
+                            const AbsDistMat& ground_truth) override;
 
   /** Compute the gradient of the Poisson negative log-likelihood objective function.
    *  Given a prediction \f$\hat{y}\f$ and ground truth \f$y\f$, the
@@ -69,9 +69,9 @@ class poisson_negloglike : public loss_function {
    *    \nabla_y Pois_nll(\hat{y},y) = 1 - y/\hat{y}
    *    \f]
    */
-  void differentiate(const AbsDistMat& prediction,
-                     const AbsDistMat& ground_truth,
-                     AbsDistMat& gradient) override;
+  void differentiate_compute(const AbsDistMat& prediction,
+                             const AbsDistMat& ground_truth,
+                             AbsDistMat& gradient) override;
 
 };
 

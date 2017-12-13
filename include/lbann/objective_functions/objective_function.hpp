@@ -36,7 +36,7 @@ class objective_function {
  public:
 
   /** Default constructor. */
-  objective_function();
+  objective_function() {}
 
   /** Copy constructor. */
   objective_function(const objective_function& other);
@@ -58,15 +58,15 @@ class objective_function {
   /** Setup objective function. */
   void setup(model& m);
   
-  /** Compute the objective function value.
+  /** Evaluate the objective function.
    *  The result is stored in history.
    */
-  DataType compute_value();
+  DataType evaluate();
   
   /** Compute the objective function gradient.
    *  The gradient is with respect to the objective function inputs
    */
-  void compute_gradient();
+  void differentiate();
 
   /** Get history of objective function values. */
   std::vector<DataType> get_history() const { return m_history; }
@@ -75,11 +75,6 @@ class objective_function {
 
   /** Get mean objective function value in history. */
   DataType get_history_mean_value() const;
-
-  /** Get model that owns this objective function. */
-  model* get_model() const { return m_model; }
-  /** Set model that owns this objective function. */
-  void set_model(model* m) { m_model = m; }
 
   /** Get list of pointers to layers. */
   std::vector<Layer*> get_layer_pointers() const;
@@ -92,7 +87,7 @@ class objective_function {
 
   /** Get the time spent computing the value. */
   double get_value_time() const { return m_value_time; }
-  /** Get the itme spent computing the gradient. */
+  /** Get the time spent computing the gradient. */
   double get_gradient_time() const { return m_gradient_time; }
   /** Reset time counters. */
   void reset_counters() {
@@ -101,9 +96,6 @@ class objective_function {
   }
 
  private:
-
-  /** Pointer to model that owns this objective function. */
-  model* m_model;
 
   /** List of objective function terms. */
   std::vector<objective_function_term*> m_terms;

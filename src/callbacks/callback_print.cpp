@@ -161,29 +161,36 @@ void lbann_callback_print::report_results(model *m) {
     }
 
     // Report score for each metric
-    for (const auto& metric : m->get_metrics()) {
-      const double score = metric->report_metric(m->get_execution_mode());
+    for (const auto& met : m->get_metrics()) {
+      const double score = met->get_history_mean_value();
+      const int num_samples = met->get_history_num_samples();
       if (comm->am_world_master()) {
         std::vector<double> score_list(comm->get_num_models());
+        std::vector<int> num_samples_list(comm->get_num_models());
         comm->intermodel_gather(score, score_list);
+        comm->intermodel_gather(num_samples, num_samples_list);
         for (int i = 0; i < num_models; ++i) {
           std::cout << "Model " << i << " " << mode_string << " "
-                    << metric->name() << " : " 
-                    << score_list[i] << metric->display_unit()
+                    << met->name() << " : " 
+                    << score_list[i] << met->get_unit()
                     << std::endl;
         }
         if (num_models > 1) {
-          const double avg_score = (std::accumulate(score_list.begin(),
-                                                   score_list.end(),
-                                                   0.0)
-                                    / num_models);
-          std::cout << "World average " << mode_string << " "
-                    << metric->name() << " : "
-                    << avg_score << metric->display_unit()
+          const double avg_score = (std::inner_product(score_list.begin(),
+                                                       score_list.end(),
+                                                       num_samples_list.begin(),
+                                                       0.0)
+                                    / std::accumulate(num_samples_list.begin(),
+                                                      num_samples_list.end(),
+                                                      0));
+          std::cout << "World " << mode_string << " "
+                    << met->name() << " : "
+                    << avg_score << met->get_unit()
                     << std::endl;
         }
       } else {
         comm->intermodel_gather(score, comm->get_intermodel_master());
+        comm->intermodel_gather(num_samples, comm->get_intermodel_master());
       }
     }
 

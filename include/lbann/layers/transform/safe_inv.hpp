@@ -23,31 +23,33 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// noise.hpp - Noise layer
+// safe_inv.hpp - Safe inversion layer
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYER_NOISE_HPP_INCLUDED
-#define LBANN_LAYER_NOISE_HPP_INCLUDED
+#ifndef LBANN_LAYER_SAFE_INV_HPP_INCLUDED
+#define LBANN_LAYER_SAFE_INV_HPP_INCLUDED
 
+#include "lbann/base.hpp"
 #include "lbann/layers/transform/transform.hpp"
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
 /**
- * Add synthetic (Gaussian) noise to input data (the layer below)
- * @param noise_factor controls the noise level
+ * Safe inversion (reciprocal) of unpooling layer
+ * y = (x == DataType(0)) ? (Datatype(0)) : (DataType(1)/x);
+ * Reference: https://arxiv.org.abs/1606.06582
+ *   
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
-class noise_layer : public transform_layer {
+class safe_inv_layer : public transform_layer {
  private:
 
  public:
   /// Constructor
-  noise_layer(lbann_comm *comm,
-              float noise_factor=0.5f,
+  safe_inv_layer(lbann_comm *comm,
               cudnn::cudnn_manager *cudnn = nullptr)
-    : transform_layer(comm), m_noise_factor(noise_factor) {
+    : transform_layer(comm){
 
     // Setup the data distribution
     initialize_distributed_matrices();
@@ -62,17 +64,15 @@ class noise_layer : public transform_layer {
 
   }
 
-  noise_layer(const noise_layer& other) :
-    transform_layer(other),
-    m_noise_factor(other.m_noise_factor) { }
+  safe_inv_layer(const safe_inv_layer& other) :
+    transform_layer(other) { }
 
-  noise_layer& operator=(const noise_layer& other) {
+  safe_inv_layer& operator=(const safe_inv_layer& other) {
     transform_layer::operator=(other);
-    m_noise_factor = other.m_noise_factor;
     return *this;
   }
 
-  ~noise_layer() override {
+  ~safe_inv_layer() override {
   #ifdef LBANN_HAS_CUDNN
     // GPU memory for activations is a copy of previous layer's activations
     this->m_error_signal_d.clear();
@@ -82,14 +82,13 @@ class noise_layer : public transform_layer {
   /** Returns description of ctor params */
   std::string get_description() const override {
     std::stringstream s;
-     s << "noise_layer  noise_factor: " << m_noise_factor
-       << " dataLayout: " << this->get_data_layout_string(get_data_layout());
+     s << " dataLayout: " << this->get_data_layout_string(get_data_layout());
      return s.str();
   }
 
-  noise_layer* copy() const override { return new noise_layer(*this); }
+  safe_inv_layer* copy() const override { return new safe_inv_layer(*this); }
 
-  std::string get_type() const override { return "noise"; }
+  std::string get_type() const override { return "safe_inv"; }
 
   virtual inline void initialize_distributed_matrices() {
     transform_layer::initialize_distributed_matrices<T_layout>();
@@ -100,7 +99,7 @@ class noise_layer : public transform_layer {
   void setup_gpu() override {
     transform_layer::setup_gpu();
   #ifndef LBANN_HAS_CUDNN
-    throw lbann_exception("noise_layer: cuDNN not detected");
+    throw lbann_exception("safe_inv_layer: cuDNN not detected");
   #else
     m_copy_bp_output_from_gpus = true;
 
@@ -108,8 +107,6 @@ class noise_layer : public transform_layer {
   }
 
   protected:
-  /** noise factor */
-  float m_noise_factor;
 
   void fp_compute() override {
     if(this->m_using_gpus) {
@@ -121,34 +118,27 @@ class noise_layer : public transform_layer {
 
   void bp_compute() override {
     if(this->m_using_gpus) {
-      throw lbann_exception("noise_layer: cuDNN not implemented");
+      throw lbann_exception("safe_inv_layer: cuDNN not implemented");
     } else {
       El::LockedView(*this->m_error_signal_v, *this->m_prev_error_signal_v);
     }
   }
 
   void fp_compute_cudnn() {
-    throw lbann_exception("noise_layer: cuDNN not implemented");
+    throw lbann_exception("safe_inv_layer: cuDNN not implemented");
   }
 
   void fp_compute_cpu() {
     El::Copy(*this->m_prev_activations_v, *this->m_activations_v);
-    AbsDistMat* noise_mat = this->m_activations_v->Construct(this->m_activations_v->Grid(),
-                                                             this->m_activations_v->Root());
-    El::Gaussian(*noise_mat, this->m_activations_v->Height(), 
-                 this->m_activations_v->Width(),
-                 DataType(0), DataType(1));
-    El::Axpy(m_noise_factor,*noise_mat,*this->m_activations_v);
     
-    //@todo - clip to min and max of input entry
-    auto clip = [&](const DataType& z) { 
-         return std::max(DataType(0), std::min(z,DataType(1)));
+    auto inv = [&](const DataType& z) { 
+         return (z == DataType(0)) ? (DataType(0)) : (DataType(1)/z);
     };
-    EntrywiseMap(*this->m_activations_v, El::MakeFunction(clip));
+    EntrywiseMap(*this->m_activations_v, El::MakeFunction(inv));
   }
 
 };
 
 }  // namespace lbann
 
-#endif  // LBANN_LAYER_NOISE_HPP_INCLUDED
+#endif  // LBANN_LAYER_SAFE_INV_HPP_INCLUDED

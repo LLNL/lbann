@@ -48,30 +48,30 @@ class loss_function : public objective_function_term {
   void set_target_layer(target_layer* layer);
 
   /** Setup objective function term. */
-  void setup(objective_function& obj_fn) override;
+  virtual void setup(model& m) override;
   
-  /** Get the value of the objective function term. */
-  DataType compute_value() override;
+  /** Evaluate the objective function term. */
+  DataType evaluate() override;
 
   /** Compute the gradient of the objective function term.
    *  The gradient is computed w.r.t. the objective function term
    *  inputs.
    */
-  void compute_gradient() override;
+  void differentiate() override;
 
   /** Evaluate the loss function.
    *  This should not include the scale factor.
    */
-  virtual DataType evaluate(const AbsDistMat& prediction,
-                            const AbsDistMat& ground_truth) = 0;
+  virtual DataType evaluate_compute(const AbsDistMat& prediction,
+                                    const AbsDistMat& ground_truth) = 0;
 
   /** Compute the loss function gradient.
    *  The gradient should be w.r.t. the prediction vector. This should
    *  not include the scale factor.
    */
-  virtual void differentiate(const AbsDistMat& prediction,
-                             const AbsDistMat& ground_truth,
-                             AbsDistMat& gradient) = 0;
+  virtual void differentiate_compute(const AbsDistMat& prediction,
+                                     const AbsDistMat& ground_truth,
+                                     AbsDistMat& gradient) = 0;
 
  protected:
 

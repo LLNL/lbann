@@ -88,7 +88,7 @@ class model {
   }
 
   /** Register a new metric for the model. */
-  void add_metric(metrics::metric *m);
+  void add_metric(metric *m);
 
   /** Construct an instance of the default optimizer.
    *  If there is no default optimizer, a null pointer is returned.
@@ -101,7 +101,7 @@ class model {
   }
 
   /** Return the model's metrics. */
-  virtual const std::vector<metrics::metric *>& get_metrics() const {
+  virtual const std::vector<metric *>& get_metrics() const {
     return m_metrics;
   }
 
@@ -291,11 +291,10 @@ class model {
   optimizer *m_default_optimizer;
 
   /** List of model metrics.
-   *  A metric is a function that is used to judge the performance of your model.
-   *  A metric function is similar to an objective function, except that the
-   *  results from evaluating a metric are not used when training the model.
+   *  A metric can be used to evaluate the performance of the model
+   *  without affecting the training process.
    */
-  std::vector<metrics::metric *> m_metrics;
+  std::vector<metric *> m_metrics;
 
   /** List of layers in model.
    *  The list is in execution order for forward propagation.
@@ -310,6 +309,13 @@ class model {
   virtual std::string print_layer_description(const Layer* layer) const;
   /** Check if the layer execution order is topologically sorted. */
   virtual bool is_topologically_sorted() const;
+  /** Remap pointers.
+   *  Layer and weights pointers are remapped using the provided
+   *  maps. If a pointer is not a key in the corresponding map, the
+   *  pointer is not changed.
+   */
+  virtual void remap_pointers(const std::unordered_map<Layer *,Layer *>& layer_map,
+                              const std::unordered_map<weights *,weights *>& weights_map);
 
   /** Set up topology of layer graph.
    *  Called in setup function. All layers in connected component of
@@ -331,10 +337,6 @@ class model {
    *  weights are deleted.
    */
   virtual void setup_weights();
-  /** Set up callbacks.
-   *  Called in setup function.
-   */
-  virtual void setup_callbacks();
 
   /** Reset model for an epoch. */
   virtual void reset_epoch(execution_mode mode);

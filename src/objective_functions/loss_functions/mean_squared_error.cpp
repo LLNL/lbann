@@ -28,8 +28,8 @@
 
 namespace lbann {
 
-DataType mean_squared_error::evaluate(const AbsDistMat& predictions,
-                                      const AbsDistMat& ground_truth) {
+DataType mean_squared_error_loss::evaluate_compute(const AbsDistMat& predictions,
+                                                   const AbsDistMat& ground_truth) {
 
   // Local matrices
   const Mat& predictions_local = predictions.LockedMatrix();
@@ -54,14 +54,14 @@ DataType mean_squared_error::evaluate(const AbsDistMat& predictions,
   }
   
   // Compute mean objective function value across mini-batch
-  return get_comm()->allreduce(sum / (height * width),
-                               predictions.DistComm());
+  return get_comm().allreduce(sum / (height * width),
+                              predictions.DistComm());
 
 }
 
-void mean_squared_error::differentiate(const AbsDistMat& predictions,
-                                       const AbsDistMat& ground_truth,
-                                       AbsDistMat& gradient) {
+void mean_squared_error_loss::differentiate_compute(const AbsDistMat& predictions,
+                                                    const AbsDistMat& ground_truth,
+                                                    AbsDistMat& gradient) {
 
   // Local matrices
   const Mat& predictions_local = predictions.LockedMatrix();

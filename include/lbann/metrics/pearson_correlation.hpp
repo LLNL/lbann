@@ -24,20 +24,43 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/objective_functions/objective_function_term.hpp"
-#include "lbann/models/model.hpp"
+#ifndef LBANN_METRIC_PEARSON_CORRELATION_HPP
+#define LBANN_METRIC_PEARSON_CORRELATION_HPP
+
+#include "lbann/metrics/metric.hpp"
 
 namespace lbann {
 
-objective_function_term::objective_function_term(DataType scale_factor)
-  : m_scale_factor(scale_factor) {
-  if (m_scale_factor == DataType(0)) {
-    m_scale_factor = DataType(1);
-  }
-}
+/** Pearson correlation metric. */
+class pearson_correlation_metric : public metric {
 
-void objective_function_term::setup(model& m) {
-  m_comm = m.get_comm();
-}
+ public:
+
+  /** Constructor. */
+  pearson_correlation_metric(lbann_comm *comm) : metric(comm) {}
+
+  /** Copy constructor. */
+  pearson_correlation_metric(const pearson_correlation_metric& other) = default;
+  /** Copy assignment operator. */
+  pearson_correlation_metric& operator=(const pearson_correlation_metric& other) = default;
+  /** Destructor. */
+  virtual ~pearson_correlation_metric() = default;
+  /** Copy function. */
+  pearson_correlation_metric* copy() const override {
+    return new pearson_correlation_metric(*this);
+  }
+
+  /** Return a string name for this metric. */
+  std::string name() const override { return "Pearson correlation"; }
+
+ protected:
+
+  /** Computation to evaluate the metric function. */
+  DataType evaluate_compute(const AbsDistMat& prediction,
+                            const AbsDistMat& ground_truth) override;
+
+};
 
 }  // namespace lbann
+
+#endif  // LBANN_METRIC_PEARSON_CORRELATION_HPP

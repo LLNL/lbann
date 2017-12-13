@@ -1580,11 +1580,11 @@ objective_function *init_objective_function(lbann_data::ObjectiveFunction obj_fn
   objective_function *obj_fn = new objective_function();
   for (int j=0; j<obj_fn_params.mean_squared_error_size(); j++) {
     const lbann_data::MeanSquaredError &params = obj_fn_params.mean_squared_error(j);
-    obj_fn->add_term(new mean_squared_error(params.scale_factor()));
+    obj_fn->add_term(new mean_squared_error_loss(params.scale_factor()));
   }
   for (int j=0; j<obj_fn_params.mean_absolute_deviation_size(); j++) {
     const lbann_data::MeanAbsoluteDeviation &params = obj_fn_params.mean_absolute_deviation(j);
-    obj_fn->add_term(new mean_absolute_deviation(params.scale_factor()));
+    obj_fn->add_term(new mean_absolute_deviation_loss(params.scale_factor()));
   }
   for (int j=0; j<obj_fn_params.cross_entropy_size(); j++) {
     const lbann_data::CrossEntropy &params = obj_fn_params.cross_entropy(j);
@@ -1683,30 +1683,20 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
   for (int j=0; j<m.metric_size(); j++) {
     const lbann_data::Metric &metric = m.metric(j);
     if (metric.has_categorical_accuracy()) {
-      if (layout == data_layout::MODEL_PARALLEL) {
-        model->add_metric(new metrics::categorical_accuracy<data_layout::MODEL_PARALLEL>(comm));
-      } else {
-        model->add_metric(new metrics::categorical_accuracy<data_layout::DATA_PARALLEL>(comm));
-      }
-    } else if (metric.has_mean_squared_error()) {
-      if (layout == data_layout::MODEL_PARALLEL) {
-        model->add_metric(new metrics::mean_squared_error<data_layout::MODEL_PARALLEL>(comm));
-      } else {
-        model->add_metric(new metrics::mean_squared_error<data_layout::DATA_PARALLEL>(comm));
-      }
-    } else if (metric.has_pearson_correlation()) {
-      if (layout == data_layout::MODEL_PARALLEL) {
-        model->add_metric(new metrics::pearson_correlation<data_layout::MODEL_PARALLEL>(comm));
-      } else {
-        model->add_metric(new metrics::pearson_correlation<data_layout::DATA_PARALLEL>(comm));
-      }
-    } else if (metric.has_top_k_categorical_accuracy()) {
+      model->add_metric(new categorical_accuracy_metric(comm));
+    } 
+    if (metric.has_top_k_categorical_accuracy()) {
       const lbann_data::TopKCategoricalAccuracy &a = metric.top_k_categorical_accuracy();
-      if (layout == data_layout::MODEL_PARALLEL) {
-        model->add_metric(new metrics::top_k_categorical_accuracy<data_layout::MODEL_PARALLEL>(a.top_k(), comm));
-      } else {
-        model->add_metric(new metrics::top_k_categorical_accuracy<data_layout::DATA_PARALLEL>(a.top_k(), comm));
-      }
+      model->add_metric(new top_k_categorical_accuracy_metric(a.top_k(), comm));
+    }
+    if (metric.has_mean_squared_error()) {
+      model->add_metric(new mean_squared_error_metric(comm));
+    }
+    if (metric.has_mean_absolute_deviation()) {
+      model->add_metric(new mean_absolute_deviation_metric(comm));
+    }
+    if (metric.has_pearson_correlation()) {
+      model->add_metric(new pearson_correlation_metric(comm));
     }
   }
 
@@ -1872,6 +1862,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
 
     reader->set_absolute_sample_count( readme.absolute_sample_count() );
     reader->set_use_percent( readme.percent_of_data_to_use() );
+    reader->set_first_n( readme.first_n() );
 
     if (set_up_generic_preprocessor) {
       init_generic_preprocessor(readme, master, reader);

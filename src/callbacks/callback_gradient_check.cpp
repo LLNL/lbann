@@ -73,7 +73,7 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
   for (auto layer : layers) {
     layer->clear_error_signal();
   }
-  m->get_objective_function()->compute_gradient();
+  m->get_objective_function()->differentiate();
   for (int l = layers.size() - 1; l > 0; --l) {
     layers[l]->back_prop();
   }
@@ -181,7 +181,7 @@ DataType lbann_callback_gradient_check::compute_objective_function(model *m) {
   for (size_t l = 1; l < layers.size(); l++) {
     layers[l]->forward_prop();
   }
-  return obj_fn->compute_value();
+  return obj_fn->evaluate();
 }
 
 }  // namespace lbann

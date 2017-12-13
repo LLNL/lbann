@@ -26,6 +26,7 @@ message Reader {
   string label_filename = 7;
   double validation_percent = 9;
   int64 absolute_sample_count = 11;
+  int64 first_n = 200;
   double percent_of_data_to_use = 12;
   ImagePreprocessor image_preprocessor = 13;
   int32 num_labels = 99; //for imagenet
@@ -77,6 +78,7 @@ message ImagePreprocessor {
   message Decolorizer {
     string name = 1;
     bool disable = 2;
+    bool pick_1ch = 3;
   }
 
   message Colorizer {
@@ -275,9 +277,10 @@ message GroupLassoWeightRegularization {
 message Metric {
   // a Metric should contain exactly one of the following
   CategoricalAccuracy categorical_accuracy = 1;
-  MeanSquaredError mean_squared_error = 2;
-  TopKCategoricalAccuracy top_k_categorical_accuracy = 3;
-  PearsonCorrelation pearson_correlation = 4;
+  TopKCategoricalAccuracy top_k_categorical_accuracy = 2;
+  MeanSquaredError mean_squared_error = 3;
+  MeanAbsoluteDeviation mean_absolute_deviation = 4;
+  PearsonCorrelation pearson_correlation = 5;
 }
 
 message CategoricalAccuracy {

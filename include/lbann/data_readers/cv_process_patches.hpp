@@ -65,7 +65,7 @@ class cv_process_patches : public cv_process {
   unsigned int get_when_to_extract() const { return m_when_to_extract; }
   bool is_self_labeling() const { return m_self_label; }
   unsigned int get_num_labels() const { return m_pd.get_num_labels(); }
-  virtual unsigned int get_patch_label() const { return m_pd.get_current_patch_idx(); }
+  virtual unsigned int get_patch_label() const { return m_pd.get_last_label(); }
   unsigned int get_num_patches() const { return m_pd.get_num_patches(); }
   std::vector<unsigned int> get_data_dims() const {
     return {m_pd.get_num_patches(), m_pd.get_patch_width(), m_pd.get_patch_height()};

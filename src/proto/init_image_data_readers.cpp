@@ -129,6 +129,7 @@ void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool mas
       // If every image in the dataset is a color image, this is not needed
       std::unique_ptr<lbann::cv_decolorizer> decolorizer(new(lbann::cv_decolorizer));
       decolorizer->set_name(decolorizer_name);
+      decolorizer->set(pb_decolorizer.pick_1ch());
       pp->add_transform(std::move(decolorizer));
       channels = 1;
       if (master) std::cout << "image processor: " << decolorizer_name << " decolorizer is set" << std::endl;

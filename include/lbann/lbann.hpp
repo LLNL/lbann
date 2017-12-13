@@ -155,11 +155,11 @@
 #include "lbann/objective_functions/weight_regularization/group_lasso.hpp"
 
 /// Metrics
-#include "lbann/metrics/metric_categorical_accuracy.hpp"
-#include "lbann/metrics/metric_top_k_categorical_accuracy.hpp"
-#include "lbann/metrics/metric_mean_absolute_deviation.hpp"
-#include "lbann/metrics/metric_mean_squared_error.hpp"
-#include "lbann/metrics/metric_pearson_correlation.hpp"
+#include "lbann/metrics/categorical_accuracy.hpp"
+#include "lbann/metrics/top_k_categorical_accuracy.hpp"
+#include "lbann/metrics/mean_squared_error.hpp"
+#include "lbann/metrics/mean_absolute_deviation.hpp"
+#include "lbann/metrics/pearson_correlation.hpp"
 
 /// Utilities, exceptions, etc.
 #include "lbann/utils/exception.hpp"

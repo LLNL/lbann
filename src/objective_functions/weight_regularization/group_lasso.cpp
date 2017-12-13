@@ -25,13 +25,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/objective_functions/weight_regularization/group_lasso.hpp"
-#include "lbann/objective_functions/objective_function.hpp"
 #include "lbann/models/model.hpp"
 
 namespace lbann {
 
-void group_lasso_weight_regularization::setup(objective_function& obj_fn) {
-  objective_function_term::setup(obj_fn);
+void group_lasso_weight_regularization::setup(model& m) {
+  objective_function_term::setup(m);
 
   // Check that term has no layer pointers
   if (!m_layers.empty()) {
@@ -43,7 +42,7 @@ void group_lasso_weight_regularization::setup(objective_function& obj_fn) {
 
   // Add all weights in model if no weights pointers are provided
   if (m_weights.empty()) {
-    for (weights* w : m_objective_function->get_model()->get_weights()) {
+    for (weights* w : m.get_weights()) {
       if (w->get_optimizer() != nullptr) {
         m_weights.push_back(w);
       }
@@ -52,7 +51,7 @@ void group_lasso_weight_regularization::setup(objective_function& obj_fn) {
 
 }
 
-DataType group_lasso_weight_regularization::compute_value() {
+DataType group_lasso_weight_regularization::evaluate() {
   if (m_scale_factor == DataType(0)) { return DataType(0); }
   DataType value = DataType(0);
   Mat sqsums;
@@ -75,7 +74,7 @@ DataType group_lasso_weight_regularization::compute_value() {
       }
       sqsums(0, col) = sqsum;
     }
-    get_comm()->allreduce(sqsums.Buffer(), local_width, sqsums.Buffer(),
+    get_comm().allreduce(sqsums.Buffer(), local_width, sqsums.Buffer(),
                           values.ColComm());
 
     // Compute group lasso term
@@ -83,13 +82,13 @@ DataType group_lasso_weight_regularization::compute_value() {
     for (int col = 0; col < local_width; ++col) {
       w_sum += std::sqrt(sqsums(0, col));
     }
-    value += get_comm()->allreduce(w_sum, values.RowComm());
+    value += get_comm().allreduce(w_sum, values.RowComm());
     
   }
   return m_scale_factor * value;
 }
 
-void group_lasso_weight_regularization::compute_gradient() {
+void group_lasso_weight_regularization::differentiate() {
   if (m_scale_factor == DataType(0)) { return; }
   Mat sqsums;
   AbsDistMat* gradient;
@@ -112,8 +111,8 @@ void group_lasso_weight_regularization::compute_gradient() {
       }
       sqsums(0, col) = sqsum;
     }
-    get_comm()->allreduce(sqsums.Buffer(), local_width, sqsums.Buffer(),
-                          values.ColComm());
+    get_comm().allreduce(sqsums.Buffer(), local_width, sqsums.Buffer(),
+                         values.ColComm());
 
     // Compute gradient
     gradient = values.Copy();

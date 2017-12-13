@@ -26,44 +26,108 @@
 
 #include "lbann/metrics/metric.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/layers/io/target/target_layer.hpp"
 
 namespace lbann {
 
-namespace metrics {
+metric::metric(lbann_comm *comm) 
+  : m_comm(comm),
+    m_target_layer(nullptr) {}
 
-statistics *metric::get_statistics(execution_mode mode) {
-  statistics *stats;
+void metric::setup(model& m) {
 
-  switch(mode) {
-  case execution_mode::training:
-    stats = &m_training_stats;
-    break;
-  case execution_mode::validation:
-    stats = &m_validation_stats;
-    break;
-  case execution_mode::testing:
-    stats = &m_testing_stats;
-    break;
-  default:
-    throw lbann_exception("Invalid execution mode");
-  };
-  return stats;
+  // Set target layer if needed
+  if (m_target_layer == nullptr) {
+    std::vector<Layer*> layers = m.get_layers();
+    for (int i = layers.size() - 1; i >= 0; --i) {
+      const target_layer *target = dynamic_cast<const target_layer*>(layers[i]);
+      if (target != nullptr) {
+        m_target_layer = target;
+        break;
+      }
+    }
+    if (m_target_layer == nullptr) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "could not setup metric with target layer";
+      throw lbann_exception(err.str());
+    }
+  }
+
 }
 
-void metric::record_error(double error, long num_samples) {
-  statistics *stats = get_statistics(m_model->get_execution_mode());
-  stats->m_error_per_epoch += error;
-  stats->m_samples_per_epoch += num_samples;
-  //assumes record_error is called per step (iterations)
-  stats->m_iterations_per_epoch++;
-  return;
+DataType metric::evaluate() {
+
+  // Check if target layer pointer has been setup
+  if (m_target_layer == nullptr) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "attempted to evaluate metric without setting a target layer";
+    throw lbann_exception(err.str());
+  }
+
+  // Evaluate objective function
+  const DataType value = evaluate_compute(m_target_layer->get_prediction(),
+                                          m_target_layer->get_ground_truth());
+
+  // Record result in history
+  m_history_values.push_back(value);
+  const int mini_batch_size = m_target_layer->get_prediction().Width();
+  m_history_mini_batch_sizes.push_back(mini_batch_size);
+
+  // Return result
+  return value;
+
 }
 
-void metric::reset_metric() {
-  statistics *stats = get_statistics(m_model->get_execution_mode());
-  stats->reset_stats();
+int metric::get_history_num_samples() const {
+  return std::accumulate(m_history_mini_batch_sizes.begin(),
+                         m_history_mini_batch_sizes.end(),
+                         0);
 }
 
-}  // namespace metrics
+void metric::clear_history() {
+  m_history_values.clear();
+  m_history_mini_batch_sizes.clear();
+}
+
+DataType metric::get_history_mean_value() const {
+  if (m_history_values.size() == 0) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "attempted to get mean metric value with no history";
+    throw lbann_exception(err.str());
+  }
+  return (std::inner_product(m_history_values.begin(),
+                             m_history_values.end(),
+                             m_history_mini_batch_sizes.begin(),
+                             DataType(0))
+          / get_history_num_samples());
+}
+
+const target_layer& metric::get_target_layer() const {
+  if (m_target_layer == nullptr) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "attempted to access target layer before it is set";
+    throw lbann_exception(err.str());
+  } 
+  return *m_target_layer;
+}
+
+std::vector<Layer*> metric::get_layer_pointers() const {
+  return std::vector<Layer*>(1, const_cast<target_layer *>(m_target_layer));
+}
+
+void metric::set_layer_pointers(std::vector<Layer*> layers) {
+  if (layers.size() != 1) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "attempted to set layer pointers with an invalid number of pointers "
+        << "(expected 1, found " << layers.size() << ")";
+    throw lbann_exception(err.str());
+  }
+  m_target_layer = dynamic_cast<const target_layer *>(layers[0]);
+}
 
 }  // namespace lbann

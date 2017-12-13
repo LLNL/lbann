@@ -31,7 +31,6 @@
 
 #include <vector>
 #include "lbann/layers/learning/base_convolution.hpp"
-#include "lbann/base.hpp"
 #include "lbann/layers/layer.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/utils/exception.hpp"

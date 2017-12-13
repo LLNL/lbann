@@ -82,21 +82,16 @@ class target_layer : public io_layer {
     }
   }
 
-  void setup_data() override {
-    io_layer::setup_data();
-    std::stringstream err;
-
+  void check_setup() override {
+    io_layer::check_setup();
     if(this->m_num_prev_neurons != this->m_num_neurons) {
+      std::stringstream err;
       err << __FILE__ << " " << __LINE__ 
-          << " :: " << get_type() << " this->m_num_prev_neurons != this->m_num_neurons; this->m_num_prev_neurons= " << this->m_num_prev_neurons << " this->m_num_neurons= " << this->m_num_neurons << std::endl;
+          << "input and output dimensions do not match "
+          << "(" << this->m_num_prev_neurons << " input neurons, "
+          << this->m_num_neurons << " output neurons)";
       throw lbann_exception(err.str());
     }
-
-    for (auto&& m : this->m_model->get_metrics()) {
-      m->setup(this->m_num_neurons,
-               this->m_model->get_max_mini_batch_size());
-    }
-
   }
 
   // lbann::generic_data_reader *set_training_data_reader(generic_data_reader *data_reader, bool shared_data_reader) {
@@ -107,13 +102,6 @@ class target_layer : public io_layer {
   //   return io_layer::set_testing_data_reader(data_reader);
   // }
 
-  void fp_set_std_matrix_view() override {
-    int cur_mini_batch_size = this->m_model->get_current_mini_batch_size();
-    Layer::fp_set_std_matrix_view();
-    for (auto&& m : this->m_model->get_metrics()) {
-      m->fp_set_std_matrix_view(cur_mini_batch_size);
-    }
-  }
   //************************************************************************
   // Helper functions to access the data readers
   //************************************************************************
@@ -212,6 +200,8 @@ class target_layer : public io_layer {
 
   AbsDistMat& get_prediction() { return *this->m_prev_activations_v; }
   AbsDistMat& get_ground_truth() { return *this->m_activations_v; }
+  const AbsDistMat& get_prediction() const { return *this->m_prev_activations_v; }
+  const AbsDistMat& get_ground_truth() const { return *this->m_activations_v; }
 
   std::vector<Layer*> get_layer_pointers() override {
     std::vector<Layer*> layers = io_layer::get_layer_pointers();

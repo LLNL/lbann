@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_METRIC_HPP
-#define LBANN_METRIC_HPP
+#ifndef LBANN_METRIC_HPP_INCLUDED
+#define LBANN_METRIC_HPP_INCLUDED
 
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
@@ -33,96 +33,100 @@
 
 namespace lbann {
 
-// Forward-declare this.
+// Forward declarations
 class model;
+class Layer;
+class target_layer;
 
-namespace metrics {
-
-class statistics {
- public:
-  statistics() {}
-  statistics(const statistics& other) = default;
-  statistics& operator=(const statistics& other) = default;
-  ~statistics() {}
-
-  void reset_stats() {
-    m_total_error += m_error_per_epoch;
-    m_total_num_samples += m_samples_per_epoch;
-    m_error_per_epoch = 0;
-    m_samples_per_epoch = 0;
-    m_iterations_per_epoch = 0;
-  }
-
-  /// Error is accumulated as a double -- this works for both sum of
-  /// squared errors and categorical errors
-  double m_error_per_epoch = 0.0;
-  long m_samples_per_epoch = 0;
-  long m_iterations_per_epoch = 0;
-
-  double m_total_error = 0.0;
-  long m_total_num_samples = 0;
-};
-
-/**
- * A metric is used to judge the performance of a model. These are similar to an
- * objective function, but metrics are not used to train the model.
+/** Abstract base class for metric functions.
+ *  A metric function can be used to evaluate the performance of a
+ *  model without affecting the training process.
  */
 class metric {
+
  public:
-  /// Constructor
-  metric(lbann_comm *comm) :
-    m_comm(comm) {
-  }
 
-  // m_comm and the model pointer are not changed-- copy by value.
+  /** Constructor. */
+  metric(lbann_comm *comm);
+
+  /** Copy constructor. */
   metric(const metric& other) = default;
+  /** Copy assignment operator. */
   metric& operator=(const metric& other) = default;
-
-  /// Destructor
-  virtual ~metric() {};
-
+  /** Destructor. */
+  virtual ~metric() = default;
+  /** Copy function. */
   virtual metric* copy() const = 0;
-
-  virtual void setup(int num_neurons, int mini_batch_size) {}
-  virtual void fp_set_std_matrix_view(int cur_mini_batch_size) {}
-  virtual double compute_metric(AbsDistMat& predictions_v, AbsDistMat& groundtruth_v) {
-    return 0.0;
-  }
-  virtual double report_metric(execution_mode mode) {
-    return 0.0;
-  }
-  virtual double report_lifetime_metric(execution_mode mode) {
-    return 0.0;
-  }
-
-  statistics *get_statistics(execution_mode mode);
-
-  void record_error(double error, long num_samples);
-  void reset_metric();
-
-  /** Get model. */
-  model *get_model() { return m_model; }
-  /** Set model. */
-  void set_model(model *m) { m_model = m; }
 
   /** Return a string name for this metric. */
   virtual std::string name() const = 0;
-  /** Return a display unit, e.g. %, for this metric. */
-  virtual std::string display_unit() const { return ""; }
+  /** Return a display unit for this metric.
+   *  Default is an empty string. This is overriden if the metric has
+   *  units, e.g. "%" or "sec".
+   */
+  virtual std::string get_unit() const { return ""; }
+
+  /** Setup metric. */
+  virtual void setup(model& m);
+  
+  /** Evaluate the metric value. */
+  DataType evaluate();
+
+  /** Get history of metric values. */
+  std::vector<DataType> get_history_values() const {
+    return m_history_values;
+  }
+  /** Get history of mini-batch sizes. */
+  std::vector<int> get_history_mini_batch_sizes() const {
+    return m_history_mini_batch_sizes;
+  }
+  /** Get total number of samples in history.
+   *  This is the sum of mini-batch sizes in history.
+   */
+  int get_history_num_samples() const;
+  /** Clear history of metric values. */
+  void clear_history();
+
+  /** Get mean metric value in history.
+   *  If mini-batch sizes are not identical, the mean is over the
+   *  sample values rather than over the mini-batch mean values.
+   */
+  DataType get_history_mean_value() const;
+
+  /** Set pointer to target layer. */
+  void set_target_layer(const target_layer *target) { m_target_layer = target; }
+  /** Get target layer. */
+  const target_layer& get_target_layer() const;
+
+  /** Get list of pointers to layers. */
+  std::vector<Layer*> get_layer_pointers() const;
+  /** Set list of pointers to layers. */
+  void set_layer_pointers(std::vector<Layer*> layers);
 
  protected:
-  statistics m_training_stats;
-  statistics m_validation_stats;
-  statistics m_testing_stats;
 
+  /** Get LBANN communicator. */
+  lbann_comm& get_comm() { return *m_comm; }
+
+  /** Computation to evaluate the metric function. */
+  virtual DataType evaluate_compute(const AbsDistMat& prediction,
+                                    const AbsDistMat& ground_truth) = 0;
+
+ private:
+
+  /** LBANN communicator. */
   lbann_comm *m_comm;
 
-  model *m_model;
+  /** Pointer to target layer. */
+  const target_layer *m_target_layer;
+
+  /** History of metric values. */
+  std::vector<DataType> m_history_values;
+  /** History of mini-batch sizes. */
+  std::vector<int> m_history_mini_batch_sizes;
 
 };
 
-}  // namespace metrics
-
 }  // namespace lbann
 
-#endif  // LBANN_METRIC_HPP
+#endif  // LBANN_METRIC_HPP_INCLUDED

@@ -30,7 +30,6 @@
 #define LBANN_LAYER_SUM_HPP_INCLUDED
 
 #include <vector>
-#include "lbann/base.hpp"
 #include "lbann/layers/transform/transform.hpp"
 #include "lbann/utils/exception.hpp"
 

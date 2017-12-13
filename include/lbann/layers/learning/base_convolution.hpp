@@ -32,7 +32,6 @@
 #include <vector>
 #include <omp.h>
 #include "lbann/layers/learning/learning.hpp"
-#include "lbann/base.hpp"
 #include "lbann/layers/layer.hpp"
 #include "lbann/weights/initializer.hpp"
 #include "lbann/weights/fan_in_fan_out_initializers.hpp"
