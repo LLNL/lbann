@@ -453,14 +453,18 @@ void optimizer::step_compute_gpu(std::vector<DataType*> values_d,
 }
 #endif // __LIB_CUDNN
 
-bool optimizer::saveToCheckpointShared(persist& p, std::string m_name) {
+//************************************************************************
+// Checkpointing
+//************************************************************************
+
+bool optimizer::save_to_checkpoint_shared(persist& p, std::string m_name) {
   //  m_learning_rate;
   /** Running count of the time spent in step(). */
   //  double m_step_time = 0.0;
     return true;
 }
 
-bool optimizer::loadFromCheckpointShared(persist& p, std::string m_name) {
+bool optimizer::load_from_checkpoint_shared(persist& p, std::string m_name) {
   return true;
 }
 }  // namespace lbann

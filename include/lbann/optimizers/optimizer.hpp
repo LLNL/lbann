@@ -83,7 +83,7 @@ class optimizer {
    */
   std::vector<DataType*> get_gradient_gpu();
 #endif // __LIB_CUDNN
-  
+
   /** Clear gradient matrix. */
   void clear_gradient();
   /** Add to the gradient matrix. */
@@ -135,12 +135,10 @@ class optimizer {
     m_step_time = 0.0;
   }
 
-  virtual bool saveToCheckpointShared(persist& p, std::string m_name);
-  virtual bool loadFromCheckpointShared(persist& p, std::string m_name);
  protected:
 
   lbann_comm *m_comm;
- 
+
   /** cuDNN manager. */
   cudnn::cudnn_manager* m_cudnn;
 
@@ -185,6 +183,12 @@ class optimizer {
   /** Running count of the time spent in step(). */
   double m_step_time = 0.0;
 
+//************************************************************************
+// Checkpointing
+//************************************************************************
+ public:
+  virtual bool save_to_checkpoint_shared(persist& p, std::string m_name);
+  virtual bool load_from_checkpoint_shared(persist& p, std::string m_name);
 };
 
 } // namespace lbann

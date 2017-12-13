@@ -313,7 +313,7 @@ std::vector<DataType*> weights::get_values_gpu() {
 }
 #endif // __LIB_CUDN
 
-bool weights::saveToCheckpointShared(lbann::persist& p)
+bool weights::save_to_checkpoint_shared(lbann::persist& p)
 {
   // define name to store our parameters
   char l_name[512];
@@ -323,12 +323,12 @@ bool weights::saveToCheckpointShared(lbann::persist& p)
   p.write_distmat(persist_type::model, l_name, (DistMat*)m_values);
   //
   // if saving training state, also write out state of optimizer
-  m_optimizer->saveToCheckpointShared(p, l_name);
+  m_optimizer->save_to_checkpoint_shared(p, l_name);
 
   return true;
 }
 
-bool weights::loadFromCheckpointShared(lbann::persist& p)
+bool weights::load_from_checkpoint_shared(lbann::persist& p)
 {
   // define name to store our parameters
   char l_name[512], f_name[512];
@@ -339,7 +339,7 @@ bool weights::loadFromCheckpointShared(lbann::persist& p)
   p.read_distmat(persist_type::model, f_name, (DistMat*)m_values);
 
   // if loading training state, read in state of optimizer
-  m_optimizer->loadFromCheckpointShared(p, l_name);
+  m_optimizer->load_from_checkpoint_shared(p, l_name);
 
   return true;
 }

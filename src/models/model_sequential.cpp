@@ -238,7 +238,7 @@ bool sequential_model::save_to_checkpoint_shared(persist& p) {
   // write out details for each layer
 
   for (weights *w : m_weights) {
-    w->saveToCheckpointShared(p);
+    w->save_to_checkpoint_shared(p);
   }
 
   for (size_t l = 0; l < m_layers.size(); l++) {
@@ -273,7 +273,7 @@ bool sequential_model::load_from_checkpoint_shared(persist& p) {
 
   // TODO: check that each layer type matches what we'd expect
   for (weights *w : m_weights) {
-    w->loadFromCheckpointShared(p);
+    w->load_from_checkpoint_shared(p);
   }
   // read in each layer
   for (size_t l = 0; l < m_layers.size(); l++) {

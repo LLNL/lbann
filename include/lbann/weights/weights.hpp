@@ -127,8 +127,8 @@ class weights {
   std::vector<DataType*> get_values_gpu();
 #endif // __LIB_CUDNN
 
-  bool saveToCheckpointShared(persist& p);
-  bool loadFromCheckpointShared(persist& p);
+  bool save_to_checkpoint_shared(persist& p);
+  bool load_from_checkpoint_shared(persist& p);
  protected:
 
   /** Weights name.
@@ -140,7 +140,7 @@ class weights {
   lbann_comm* m_comm;
   /** cuDNN manager. */
   cudnn::cudnn_manager* m_cudnn;
-  
+
   /** Height of weights matrix. */
   int m_height;
   /** Width of weights matrix. */
