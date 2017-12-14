@@ -80,8 +80,6 @@ function (create_cmake_arguments)
       set(_variable_done TRUE)
     endif ()
 
-    message("${_variable} ==> ${_CMAKE_ARG_NAME} (${_CMAKE_ARG_TYPE})")
-
     # Add the variable to the CMake line
     if (NOT ${_CMAKE_ARG_TYPE} STREQUAL "UNINITIALIZED")
       list(APPEND _output_string

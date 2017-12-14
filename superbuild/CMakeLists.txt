@@ -4,14 +4,10 @@ message("\nWelcome to the LBANN SuperBuild system.\n\n"
   "This attempts to fill the shoes of a real package manager by building "
   "LBANN's dependencies, as well as LBANN itself.\n\n"
   "A few notes before we begin:\n"
-  "  1. Options controlling the superbuild start with LBANN_SB_*\n"
-  "  2. Options controlling a package \"PKG\" are prefixed with <PKG>_*\n"
-  "  3. If PKG has options PKG_OPTION already, DO NOT add an extra PKG_.\n"
-  "     i.e., you don't need LBANN_LBANN_ENABLE_CUDA, just LBANN_ENABLE_CUDA.\n"
-  "  4. DO prefix CMAKE_ options with PKG_ if you want to change CMake "
-  "     setting on a per-project basis. E.g., PKG_CMAKE_INSTALL_PREFIX\n"
-  "  5. Non-CMake packages should use PKG_INSTALL_PREFIX\n"
-  "  6. You should probably use a real package manager instead (e.g., Spack)\n\n"
+  "  1. Read the README.md file.\n"
+  "  2. Actually read the README.md file.\n"
+  "  3. See 1 and 2.\n"
+  "  4. You should probably use a real package manager instead (e.g., Spack)\n\n"
   "Good luck!\n\n")
 
 project(LBANN_SuperBuild NONE)
