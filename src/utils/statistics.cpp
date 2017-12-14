@@ -87,12 +87,12 @@ void entrywise_mean_and_stdev(const AbsDistMat& data,
       sqsum += val * val;
     }
   }
-  sum = El::mpi::AllReduce(sum, data.DistComm());
-  sqsum = El::mpi::AllReduce(sqsum, data.DistComm());
+  DataType sum_sqsum[2] = {sum, sqsum};  // Pack to do one allreduce.
+  El::mpi::AllReduce(sum_sqsum, 2, data.DistComm());
 
   // Compute mean and standard deviation
-  mean = sum / size;
-  const DataType var = std::max(sqsum / size - mean * mean, DataType(0));
+  mean = sum_sqsum[0] / size;
+  const DataType var = std::max(sum_sqsum[1] / size - mean * mean, DataType(0));
   stdev = std::sqrt(var);
 
 }
@@ -141,7 +141,7 @@ void columnwise_mean_and_stdev(const AbsDistMat& data,
   El::DistData data_dist(data), means_dist(means), stdevs_dist(stdevs);
   if(means_dist.colDist != El::STAR
       || means_dist.rowDist != data_dist.rowDist
-    || stdevs_dist.colDist != El::STAR
+      || stdevs_dist.colDist != El::STAR
       || stdevs_dist.rowDist != data_dist.rowDist) {
     throw lbann_exception("columnwise_mean_and_stdev: invalid matrix format");
   }
@@ -262,9 +262,9 @@ void rowwise_mean_and_stdev(const AbsDistMat& data,
 #ifdef LBANN_DEBUG
   El::DistData data_dist(data), means_dist(means), stdevs_dist(stdevs);
   if(means_dist.colDist != data_dist.colDist
-     || means_dist.rowDist != El::STAR
+      || means_dist.rowDist != El::STAR
       || stdevs_dist.colDist != data_dist.colDist
-     || stdevs_dist.rowDist != El::STAR) {
+      || stdevs_dist.rowDist != El::STAR) {
     throw lbann_exception("rowwise_mean_and_stdev: invalid matrix format");
   }
 #endif // #ifdef LBANN_DEBUG

@@ -65,11 +65,11 @@ bool cv_colorizer::determine_inverse_transform() {
 bool cv_colorizer::apply(cv::Mat& image) {
   m_enabled = false; // turn off as the transform is applied once
 
-  if (!m_gray) { // color
+  if (!m_gray) { // apply the inverse transform from color to gray
     cv::Mat image_dst;
     cv::cvtColor(image, image_dst, cv::COLOR_BGR2GRAY);
     image = image_dst;
-  } else { // gray
+  } else { // apply the transform from gray to color
     cv::Mat image_dst;
     cv::cvtColor(image, image_dst, cv::COLOR_GRAY2BGR);
     image = image_dst;

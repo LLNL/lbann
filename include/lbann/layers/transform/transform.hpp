@@ -23,33 +23,26 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_layer .h .cpp - Parent class for all layer types
+// transform .hpp - Base class for transform layers
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_LAYER_TRANSFORM_HPP_INCLUDED
 #define LBANN_LAYER_TRANSFORM_HPP_INCLUDED
 
 #include "lbann/layers/layer.hpp"
-#include <string>
-#include <vector>
 
 namespace lbann {
 
-  //template <data_layout T_layout>
-class transform : public Layer {
-
+class transform_layer : public Layer {
  public:
-  transform(lbann_comm *comm)
-    : Layer(comm) {}
-
-  transform(const transform&) = default;
-  transform& operator=(const transform&) = default;
-
-  ~transform() override = default;
-
-  template<data_layout T_layout> inline void initialize_distributed_matrices() {
-    Layer::initialize_distributed_matrices<T_layout>();
-  }
+  /** Constructor. */
+  transform_layer(lbann_comm *comm) : Layer(comm) {}
+  /** Copy constructor. */
+  transform_layer(const transform_layer&) = default;
+  /** Copy assignment operator. */
+  transform_layer& operator=(const transform_layer&) = default;
+  /** Destructor. */
+  virtual ~transform_layer() override = default;
 };
 
 }  // namespace lbann

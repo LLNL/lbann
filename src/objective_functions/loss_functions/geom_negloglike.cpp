@@ -28,8 +28,8 @@
 
 namespace lbann {
 
-DataType geom_negloglike::evaluate(const AbsDistMat& predictions,
-                                   const AbsDistMat& ground_truth) {
+DataType geom_negloglike::evaluate_compute(const AbsDistMat& predictions,
+                                           const AbsDistMat& ground_truth) {
 
   // Local matrices
   const Mat& predictions_local = predictions.LockedMatrix();
@@ -42,31 +42,24 @@ DataType geom_negloglike::evaluate(const AbsDistMat& predictions,
 
   // Compute sum of terms
   DataType sum = 0;
-  const int block_size = std::max((int) (64 / sizeof(DataType)), 1);
-  #pragma omp parallel for reduction(+:sum) collapse(2)
+#pragma omp parallel for reduction(+:sum) collapse(2)
   for (int col = 0; col < local_width; ++col) {
-    for (int block_start = 0; block_start < local_height; block_start += block_size) {
-      DataType block_sum = 0;
-      const int block_end = std::min(block_start + block_size, local_height);
-      for (int row = block_start; row < block_end; ++row) {
-        const DataType true_val = ground_truth_local(row, col);
-        const DataType pred_val = predictions_local(row, col);
-        block_sum += (- true_val * std::log(DataType(1) - pred_val)
-                      - std::log(pred_val));
-      }
-      sum += block_sum;
+    for (int row = 0; row < local_height; ++row) {
+      const DataType true_val = ground_truth_local(row, col);
+      const DataType pred_val = predictions_local(row, col);
+      sum += (- true_val * std::log(DataType(1) - pred_val)
+              - std::log(pred_val));
     }
   }
 
   // Compute mean objective function value across mini-batch
-  lbann_comm* comm = m_objective_function->get_model()->get_comm();
-  return comm->allreduce(sum / width, predictions.DistComm());
+  return get_comm().allreduce(sum / width, predictions.DistComm());
 
 }
 
-void geom_negloglike::differentiate(const AbsDistMat& predictions,
-                                    const AbsDistMat& ground_truth,
-                                    AbsDistMat& gradient) {
+void geom_negloglike::differentiate_compute(const AbsDistMat& predictions,
+                                            const AbsDistMat& ground_truth,
+                                            AbsDistMat& gradient) {
 
   // Local matrices
   const Mat& predictions_local = predictions.LockedMatrix();

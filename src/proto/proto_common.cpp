@@ -676,6 +676,13 @@ void add_layers(
           conv_strides.push_back(i);
         }
 
+        int num_neurons;
+        if (layer.num_neurons_from_data_reader()) {
+          num_neurons = data_readers[execution_mode::training]->get_linearized_data_size();
+        } else {
+          num_neurons = ell.num_output_channels();
+        }
+
         if (layout == data_layout::MODEL_PARALLEL and master) {
           err << __FILE__ << " " << __LINE__ << " :: deconvolution "
               << "does not support MODEL_PARALLEL layouts";
@@ -684,7 +691,7 @@ void add_layers(
           d = new deconvolution_layer<data_layout::DATA_PARALLEL>(
             comm,
             ell.num_dims(),
-            ell.num_output_channels(),
+            num_neurons/*ell.num_output_channels()*/,
             conv_dims,
             conv_pads,
             conv_strides,
@@ -1565,6 +1572,21 @@ void init_callbacks(
         lbann_callback_optimizerwise_adaptive_learning_rate(c.scale(), weights_list);
       model->add_callback(owalr_cb);
     }
+
+
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: checkpoint
+    //////////////////////////////////////////////////////////////////
+    if (callback.has_checkpoint()) {
+      const lbann_data::CallbackCheckpoint& c = callback.checkpoint();
+      if (master) {
+        std::cout << "checkpoint saving on interval <epoch:" << c.checkpoint_epochs() << " steps:" << c.checkpoint_steps() << " secs:" << c.checkpoint_secs()  
+	          << "> to dir: " << c.checkpoint_dir() << std::endl;
+      }
+      lbann_callback_checkpoint *checkpoint_cb = new
+        lbann_callback_checkpoint(c.checkpoint_dir(), c.checkpoint_epochs(), c.checkpoint_steps(), c.checkpoint_secs(), c.checkpoint_per_rank());
+      model->add_callback(checkpoint_cb);
+    }
   }
 
 }
@@ -1573,11 +1595,11 @@ objective_function *init_objective_function(lbann_data::ObjectiveFunction obj_fn
   objective_function *obj_fn = new objective_function();
   for (int j=0; j<obj_fn_params.mean_squared_error_size(); j++) {
     const lbann_data::MeanSquaredError &params = obj_fn_params.mean_squared_error(j);
-    obj_fn->add_term(new mean_squared_error(params.scale_factor()));
+    obj_fn->add_term(new mean_squared_error_loss(params.scale_factor()));
   }
   for (int j=0; j<obj_fn_params.mean_absolute_deviation_size(); j++) {
     const lbann_data::MeanAbsoluteDeviation &params = obj_fn_params.mean_absolute_deviation(j);
-    obj_fn->add_term(new mean_absolute_deviation(params.scale_factor()));
+    obj_fn->add_term(new mean_absolute_deviation_loss(params.scale_factor()));
   }
   for (int j=0; j<obj_fn_params.cross_entropy_size(); j++) {
     const lbann_data::CrossEntropy &params = obj_fn_params.cross_entropy(j);
@@ -1603,9 +1625,17 @@ objective_function *init_objective_function(lbann_data::ObjectiveFunction obj_fn
     const lbann_data::PolyaNegLogLike &params = obj_fn_params.polya_negloglike(j);
     obj_fn->add_term(new polya_negloglike(params.scale_factor()));
   }
+  for (int j=0; j<obj_fn_params.l1_weight_regularization_size(); j++) {
+    const lbann_data::L1WeightRegularization &params = obj_fn_params.l1_weight_regularization(j);
+    obj_fn->add_term(new l1_weight_regularization(params.scale_factor()));
+  }
   for (int j=0; j<obj_fn_params.l2_weight_regularization_size(); j++) {
     const lbann_data::L2WeightRegularization &params = obj_fn_params.l2_weight_regularization(j);
     obj_fn->add_term(new l2_weight_regularization(params.scale_factor()));
+  }
+  for (int j=0; j<obj_fn_params.group_lasso_weight_regularization_size(); j++) {
+    const lbann_data::GroupLassoWeightRegularization &params = obj_fn_params.group_lasso_weight_regularization(j);
+    obj_fn->add_term(new group_lasso_weight_regularization(params.scale_factor()));
   }
   return obj_fn;
 }
@@ -1630,9 +1660,9 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
     model = new sequential_model(comm, mini_batch_size, obj_fn, default_optimizer);
     if (master) std::cout << "instantiating sequential_model\n";
   }
-  else if (name == "dag_model") {
-    model = new dag_model(comm, mini_batch_size, obj_fn, default_optimizer);
-    if (master) std::cout << "instantiating dag_model\n";
+  else if (name == "directed_acyclic_graph_model") {
+    model = new directed_acyclic_graph_model(comm, mini_batch_size, obj_fn, default_optimizer);
+    if (master) std::cout << "instantiating directed_acyclic_graph_model\n";
   } else if(name == "siamese_model") {
     if (m.has_siamese()) {
       const lbann_data::Model::Siamese& siamese = m.siamese();
@@ -1668,38 +1698,28 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
   for (int j=0; j<m.metric_size(); j++) {
     const lbann_data::Metric &metric = m.metric(j);
     if (metric.has_categorical_accuracy()) {
-      if (layout == data_layout::MODEL_PARALLEL) {
-        model->add_metric(new metrics::categorical_accuracy<data_layout::MODEL_PARALLEL>(comm));
-      } else {
-        model->add_metric(new metrics::categorical_accuracy<data_layout::DATA_PARALLEL>(comm));
-      }
-    } else if (metric.has_mean_squared_error()) {
-      if (layout == data_layout::MODEL_PARALLEL) {
-        model->add_metric(new metrics::mean_squared_error<data_layout::MODEL_PARALLEL>(comm));
-      } else {
-        model->add_metric(new metrics::mean_squared_error<data_layout::DATA_PARALLEL>(comm));
-      }
-    } else if (metric.has_pearson_correlation()) {
-      if (layout == data_layout::MODEL_PARALLEL) {
-        model->add_metric(new metrics::pearson_correlation<data_layout::MODEL_PARALLEL>(comm));
-      } else {
-        model->add_metric(new metrics::pearson_correlation<data_layout::DATA_PARALLEL>(comm));
-      }
-    } else if (metric.has_top_k_categorical_accuracy()) {
+      model->add_metric(new categorical_accuracy_metric(comm));
+    } 
+    if (metric.has_top_k_categorical_accuracy()) {
       const lbann_data::TopKCategoricalAccuracy &a = metric.top_k_categorical_accuracy();
-      if (layout == data_layout::MODEL_PARALLEL) {
-        model->add_metric(new metrics::top_k_categorical_accuracy<data_layout::MODEL_PARALLEL>(a.top_k(), comm));
-      } else {
-        model->add_metric(new metrics::top_k_categorical_accuracy<data_layout::DATA_PARALLEL>(a.top_k(), comm));
-      }
+      model->add_metric(new top_k_categorical_accuracy_metric(a.top_k(), comm));
+    }
+    if (metric.has_mean_squared_error()) {
+      model->add_metric(new mean_squared_error_metric(comm));
+    }
+    if (metric.has_mean_absolute_deviation()) {
+      model->add_metric(new mean_absolute_deviation_metric(comm));
+    }
+    if (metric.has_pearson_correlation()) {
+      model->add_metric(new pearson_correlation_metric(comm));
     }
   }
 
   //set checkpoint values
-  model->set_checkpoint_dir(m.checkpoint_dir());
-  model->set_checkpoint_epochs(m.checkpoint_epochs());
-  model->set_checkpoint_steps(m.checkpoint_steps());
-  model->set_checkpoint_secs(m.checkpoint_secs());
+  //model->set_checkpoint_dir(m.checkpoint_dir());
+  //model->set_checkpoint_epochs(m.checkpoint_epochs());
+  //model->set_checkpoint_steps(m.checkpoint_steps());
+  //model->set_checkpoint_secs(m.checkpoint_secs());
 
   return model;
 }
@@ -1802,6 +1822,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       auto paths = glob(readme.data_file_pattern());
       std::vector<generic_data_reader*> npy_readers;
       for (const auto path : paths) {
+        if(master) { std::cout << "Loading file: " << path << std::endl; }
         if (readme.format() == "numpy") {
           auto *reader_numpy = new numpy_reader(false);
           reader_numpy->set_data_filename(path);
@@ -1856,6 +1877,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
 
     reader->set_absolute_sample_count( readme.absolute_sample_count() );
     reader->set_use_percent( readme.percent_of_data_to_use() );
+    reader->set_first_n( readme.first_n() );
 
     if (set_up_generic_preprocessor) {
       init_generic_preprocessor(readme, master, reader);
@@ -2024,6 +2046,24 @@ void set_data_readers_filenames(std::string which, lbann_data::LbannPB& p)
   }
 }
 
+void set_data_readers_percent(lbann_data::LbannPB& p)
+{
+  options *opts = options::get();
+  double percent = opts->get_float("data_reader_percent");
+  if (percent <= 0 || percent > 1.0) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << " --data_reader_percent=<float> must be > 0 and <= 1.0";
+      throw lbann_exception(err.str());
+  }
+  lbann_data::DataReader *readers = p.mutable_data_reader();
+  int size = readers->reader_size();
+  for (int j=0; j<size; j++) {
+    lbann_data::Reader *r = readers->mutable_reader(j);
+    r->set_percent_of_data_to_use( percent );
+  }  
+}
+
 void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
 {
   bool master = comm->am_world_master();
@@ -2064,6 +2104,9 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
   if (opts->has_string("data_filedir_test") or opts->has_string("data_filename_test")
       or opts->has_string("label_filename_test")) {
     set_data_readers_filenames("test", p);
+  }
+  if (opts->has_string("data_reader_percent")) {
+    set_data_readers_percent(p);
   }
 
   if (opts->has_string("image_dir")) {
@@ -2272,11 +2315,14 @@ void print_help(lbann::lbann_comm *comm)
        "      <string> must be: data_parallel or model_parallel\n"
        "      note: this will be applied to all layers, metrics (and others)\n"
        "            that take DATA_PARALLEL or MODEL_PARALLEL as a template parameter\n"
+       "  --print_affinity\n"
+       "      display information on how OpenMP threads are provisioned\n"
        "\n"
        "DataReaders:\n"
        "  --data_filedir_train=<string>   --data_filedir_test=<string>\n"
        "  --data_filename_train=<string>  --data_filename_test=<string>\n"
        "  --label_filename_train=<string> --label_filename_test=<string>\n"
+       "  --data_reader_percent=<float>\n"
        "\n"
        "Callbacks:\n"
        "  --image_dir=<string>\n"

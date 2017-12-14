@@ -28,8 +28,7 @@
 
 #include "lbann/data_readers/cv_augmenter.hpp"
 #include "lbann/utils/mild_exception.hpp"
-#include <ostream>
-#include <iostream>
+#include "lbann/utils/random.hpp"
 
 #ifdef __LIB_OPENCV
 namespace lbann {

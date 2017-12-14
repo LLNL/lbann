@@ -156,6 +156,15 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
 
   /**
+   * Read the first 'n' samples. If nonzero, this over-rides
+   * set_absolute_sample_count, set_use_percent. The intent
+   * is to use this for testing. A problem with set_absolute_sample_count
+   * and set_use_percent is that the entire data set is read in, then
+   * a subset is selected
+   */
+  void set_first_n(int n);
+
+  /**
    * Sets the absolute number of data samples that will be used for training or
    * testing.
    */
@@ -583,6 +592,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   size_t m_absolute_sample_count;
   double m_validation_percent;
   double m_use_percent;
+  int m_first_n;
   std::string m_role;
 
   bool m_master;

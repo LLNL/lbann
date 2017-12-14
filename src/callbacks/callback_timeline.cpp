@@ -35,11 +35,11 @@ namespace lbann {
 void lbann_callback_timeline::on_train_begin(model *m) {
   // Set up layers and weights.
   for (const auto& l : m->get_layers()) {
-    m_fp_times.emplace(l->get_name(), 0);
-    m_bp_times.emplace(l->get_name(), 0);
+    m_fp_times.emplace(l->get_name(), std::vector<std::pair<double,double>>());
+    m_bp_times.emplace(l->get_name(), std::vector<std::pair<double,double>>());
   }
   for (const auto& w : m->get_weights()) {
-    m_opt_times.emplace(w->get_name(), 0);
+    m_opt_times.emplace(w->get_name(), std::vector<std::pair<double,double>>());
   }
   // Ensure the model is synchronized at the start.
   m->get_comm()->model_barrier();
@@ -52,21 +52,21 @@ void lbann_callback_timeline::on_train_end(model *m) {
     std::to_string(m->get_comm()->get_rank_in_model()) + ".txt";
   std::ofstream f(path);
   for (const auto& kv : m_fp_times) {
-    const std::string name = "fp-" + kv.first;
+    const std::string layer_name = "fp-" + kv.first;
     for (const auto& time : kv.second) {
-      f << name << ":" << time.first << ":" << time.second << '\n';
+      f << layer_name << ":" << time.first << ":" << time.second << '\n';
     }
   }
   for (const auto& kv : m_bp_times) {
-    const std::string name = "bp-" + kv.first;
+    const std::string layer_name = "bp-" + kv.first;
     for (const auto& time : kv.second) {
-      f << name << ":" << time.first << ":" << time.second << '\n';
+      f << layer_name << ":" << time.first << ":" << time.second << '\n';
     }
   }
   for (const auto& kv : m_opt_times) {
-    const std::string name = "opt-" + kv.first;
+    const std::string weights_name = "opt-" + kv.first;
     for (const auto& time : kv.second) {
-      f << name << ":" << time.first << ":" << time.second << '\n';
+      f << weights_name << ":" << time.first << ":" << time.second << '\n';
     }
   }
 }

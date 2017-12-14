@@ -49,10 +49,10 @@ class polya_negloglike : public loss_function {
   }
 
   /** Get the name of the objective function term. */
-  std::string name() const override { return "polya_negloglike"; }
+  std::string name() const override { return "Polya negative log-likelihood"; }
 
   /** Setup term. */
-  void setup(objective_function& obj_fn) override;
+  void setup(model& m) override;
 
   /** Compute the Polya negative log-likelihood objective function.
    *  Given the parameters \f$(\alpha_1,\dots,\alpha_K)\f$ of the predicted Polya distribution, the ground truth
@@ -65,8 +65,8 @@ class polya_negloglike : public loss_function {
    *  the predictions and ground truth matrices should have
    *  non-negative entries.
    */
-  DataType evaluate(const AbsDistMat& prediction,
-                    const AbsDistMat& ground_truth) override;
+  DataType evaluate_compute(const AbsDistMat& prediction,
+                            const AbsDistMat& ground_truth) override;
 
   /** Compute the gradient of the Polya negative log-likelihood objective function.
    *  Given the parameters \f$(\alpha_1,\dots,\alpha_K)\f$ of the predicted Polya distribution, the ground 
@@ -77,9 +77,9 @@ class polya_negloglike : public loss_function {
    *    \nabla_{alpha_i} Poly_nll(\vec{\alpha}, \vec{k}) = -\Psi(\sum_{i=1}^K \alpha_i) + \Psi(n + \sum_{i=1}^K \alpha_i) - \Psi(k_i + \alpha_i) + \Psi(\alpha_i)
    *    \f]
    */
-  void differentiate(const AbsDistMat& prediction,
-                     const AbsDistMat& ground_truth,
-                     AbsDistMat& gradient) override;
+  void differentiate_compute(const AbsDistMat& prediction,
+                             const AbsDistMat& ground_truth,
+                             AbsDistMat& gradient) override;
 
  private:
   AbsDistMat* m_counts;

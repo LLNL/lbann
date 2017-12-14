@@ -28,7 +28,7 @@
 #ifndef LBANN_MODEL_GREEDY_LAYERWISE_AUTOENCODER_HPP
 #define LBANN_MODEL_GREEDY_LAYERWISE_AUTOENCODER_HPP
 
-#include "lbann/models/model_sequential.hpp"
+#include "lbann/models/sequential.hpp"
 
 namespace lbann {
 
@@ -56,19 +56,8 @@ class greedy_layerwise_autoencoder : public sequential_model {
   /** Get model name. */
   std::string name() const override { return "greedy layerwise autoencoder"; }
 
-  /** Setup greedy layerwise autoencoder. */
-  void setup() override;
-
   /** Train greedy layerwise autoencoder. */
   void train(int num_epochs) override;
-
-#if 0
-  /// Save model to shared checkpoint
-  bool save_to_checkpoint_shared(persist& p) override;
-
-  /// Restore model from shared checkpoint
-  bool load_from_checkpoint_shared(persist& p) override;
-#endif // 0
 
  protected:
 
@@ -87,6 +76,11 @@ class greedy_layerwise_autoencoder : public sequential_model {
   std::vector<int> m_sections;
   /** Reconstruction layer for training phases. */
   Layer* m_reconstruction;
+
+  /** Set up topology of layer graph.
+   *  Called in setup function. Determine model sections.
+   */
+  void setup_layer_topology() override;
 
   /** Set the greedy layerwise autoencoder to a training phase.
    *  During a phase, an encoder and decoder section of the model are

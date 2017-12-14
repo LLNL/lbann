@@ -30,7 +30,6 @@
 #define LBANN_LAYER_SPLIT_HPP_INCLUDED
 
 #include <vector>
-#include "lbann/base.hpp"
 #include "lbann/layers/transform/transform.hpp"
 #include "lbann/utils/exception.hpp"
 
@@ -38,14 +37,14 @@ namespace lbann {
 
 /// Split layer
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
-class split_layer : public transform {
+class split_layer : public transform_layer {
  private:
 
  public:
   /// Constructor
   split_layer(lbann_comm *comm,
               cudnn::cudnn_manager *cudnn = nullptr)
-    : transform(comm) {
+    : transform_layer(comm) {
 
     // Setup the data distribution
     initialize_distributed_matrices();
@@ -88,12 +87,12 @@ class split_layer : public transform {
   std::string get_type() const override { return "split"; }
 
   virtual inline void initialize_distributed_matrices() {
-    transform::initialize_distributed_matrices<T_layout>();
+    transform_layer::initialize_distributed_matrices<T_layout>();
   }
   data_layout get_data_layout() const override { return T_layout; }
 
   void setup_gpu() override {
-    transform::setup_gpu();
+    transform_layer::setup_gpu();
   #ifndef __LIB_CUDNN
     throw lbann_exception("split_layer: cuDNN not detected");
   #else

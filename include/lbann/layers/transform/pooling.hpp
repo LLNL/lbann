@@ -31,7 +31,6 @@
 
 #include <utility>
 #include <vector>
-#include "lbann/base.hpp"
 #include "lbann/layers/transform/transform.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/utils/exception.hpp"
@@ -45,7 +44,7 @@ class unpooling_layer;
 
 /// Pooling layer
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
-class pooling_layer : public transform {
+class pooling_layer : public transform_layer {
  private:
 
   /// Pooling mode
@@ -99,7 +98,7 @@ class pooling_layer : public transform {
                 std::vector<int> pool_strides,
                 pool_mode pool_mode,
                 cudnn::cudnn_manager *cudnn = nullptr)
-    : transform(comm),
+    : transform_layer(comm),
       m_pool_mode(pool_mode),
       m_pool_dims(std::move(pool_dims)),
       m_pool_pads(std::move(pool_pads)),
@@ -131,7 +130,7 @@ class pooling_layer : public transform {
   }
 
   pooling_layer(const pooling_layer& other) :
-    transform(other),
+    transform_layer(other),
     m_pool_mode(other.m_pool_mode),
     m_pool_dims(other.m_pool_dims),
     m_pool_pads(other.m_pool_pads),
@@ -145,7 +144,7 @@ class pooling_layer : public transform {
   }
 
   pooling_layer& operator=(const pooling_layer& other){
-    transform::operator=(other);
+    transform_layer::operator=(other);
     m_pool_mode = other.m_pool_mode;
     m_pool_dims = other.m_pool_dims;
     m_pool_pads = other.m_pool_pads;
@@ -200,7 +199,7 @@ class pooling_layer : public transform {
   void setup_dims() override {
 
     // Initialize previous neuron tensor dimensions
-    transform::setup_dims();
+    transform_layer::setup_dims();
 
     // Initialize neuron tensor dimensions
     for(int i=0; i<this->m_num_neuron_dims-1; ++i) {
@@ -218,7 +217,7 @@ class pooling_layer : public transform {
 
   /// Initialize GPU objects
   void setup_gpu() override {
-    transform::setup_gpu();
+    transform_layer::setup_gpu();
   #ifndef __LIB_CUDNN
     throw lbann_exception("lbann_layer_pooling: cuDNN not detected");
   #else
@@ -507,11 +506,11 @@ class pooling_layer : public transform {
 };
 
 template<> inline void pooling_layer<data_layout::MODEL_PARALLEL>::initialize_distributed_matrices() {
-  transform::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>();
+  transform_layer::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>();
 }
 
 template<> inline void pooling_layer<data_layout::DATA_PARALLEL>::initialize_distributed_matrices() {
-  transform::initialize_distributed_matrices<data_layout::DATA_PARALLEL>();
+  transform_layer::initialize_distributed_matrices<data_layout::DATA_PARALLEL>();
 }
 
 }  // namespace lbann

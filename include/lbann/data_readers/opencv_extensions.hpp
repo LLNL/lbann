@@ -40,7 +40,7 @@ template<int T> class cv_depth_type {};
 #define _def_cv_depth_translation(_CV_TYPE_, _NATIVE_TYPE_) \
 template<> struct cv_depth_type<_CV_TYPE_>  { \
  public: \
-  typedef _NATIVE_TYPE_ standard_type; \
+  using standard_type =  _NATIVE_TYPE_; \
 }
 
 /// cv_depth_type<CV_8U> maps to uint8_t
@@ -84,6 +84,7 @@ struct cv_image_type {
     return cv::DataType<_T_>::depth;
   }
 };
+
 
 template<typename T>
 struct depth_normalization {

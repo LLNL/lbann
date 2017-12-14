@@ -45,11 +45,6 @@ void protobuf_utils::parse_prototext_filenames_from_command_line(
   std::vector<std::string> readers;
   for (int k=1; k<argc; k++) {
     std::string s(argv[k]);
-    size_t equal_sign = s.find("=");
-    if (equal_sign == std::string::npos) {
-      std::cerr << "badly formed cmd line param; missing '=': " << s << std::endl;
-      exit(1);
-    }
     if (s[0] != '-' or s[1] != '-') {
       std::cerr << "badly formed cmd line param; must begin with '--': " << s << std::endl;
       exit(1);
@@ -61,19 +56,23 @@ void protobuf_utils::parse_prototext_filenames_from_command_line(
           << "possibly you left out '{' or '}' or both ??\n";
       throw lbann_exception(err.str());    
     }
-    std::string which = s.substr(2, equal_sign-2);
-    std::string fn = s.substr(equal_sign+1);
-    if (which == "loadme") {
-      models.push_back(fn);
-    }
-    if (which == "model") {
-      models.push_back(fn);
-    }
-    if (which == "reader") {
-      readers.push_back(fn);
-    }
-    if (which == "optimizer") {
-      optimizers.push_back(fn);
+
+    size_t equal_sign = s.find("=");
+    if (equal_sign != std::string::npos) {
+      std::string which = s.substr(2, equal_sign-2);
+      std::string fn = s.substr(equal_sign+1);
+      if (which == "loadme") {
+        models.push_back(fn);
+      }
+      if (which == "model") {
+        models.push_back(fn);
+      }
+      if (which == "reader") {
+        readers.push_back(fn);
+      }
+      if (which == "optimizer") {
+        optimizers.push_back(fn);
+      }
     }
   }
 
@@ -153,28 +152,44 @@ void protobuf_utils::load_prototext(
         throw lbann_exception(err.str());    
       }
     }
-    //verify_prototext(master, models);
+    verify_prototext(master, models_out);
 }
 
 void protobuf_utils::verify_prototext(bool master, const std::vector<lbann_data::LbannPB *> &models) {
   if (master) {
     std::cout << "protobuf_utils::verify_prototext; starting verify for " << models.size() << " models\n";
   }
-  for (auto t : models) {
-    const lbann_data::DataReader &d_reader = t->data_reader();
-    int num_readers = d_reader.reader_size();
-    if (master) std::cerr << "num readers: " << num_readers << " has_reader? " << t->has_data_reader() << std::endl;
+  for (size_t j=0; j<models.size(); j++) {
+    bool is_good = true;
+    lbann_data::LbannPB *t = models[j];
+    if (! t->has_data_reader()) {
+      is_good = false;
+      if (master) {
+        std::cerr << "model #" << j << " is missing data_reader\n";
+      }
+    }
+    if (! t->has_model()) {
+      is_good = false;
+      if (master) {
+        std::cerr << "model #" << j << " is missing model\n";
+      }
+    }
     if (! t->has_optimizer()) {
+      is_good = false;
+      if (master) {
+        std::cerr << "model #" << j << " is missing optimizer\n";
+      }
+    }
+
+    if (! is_good) {
       if (master) {
         std::stringstream err;
         err << __FILE__ << __LINE__ << " :: "
-            << " loaded model is missing an Optimizer";
+            << " prototext is missing reader, optimizer, and/or model;\n"
+            << " please check your command line\n";
         throw lbann_exception(err.str());    
       }
     }
-    //const lbann_data::Optimizer &opt_params = t.optimizer();
-    //int num_optimizers = 0;
-
   }
 }
 

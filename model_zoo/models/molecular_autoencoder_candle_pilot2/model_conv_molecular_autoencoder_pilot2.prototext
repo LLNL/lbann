@@ -1,7 +1,7 @@
 model {
   name: "sequential_model"
   data_layout: "data_parallel"
-  mini_batch_size: 128
+  mini_batch_size: 256
   block_size: 256
   num_epochs: 4
   num_parallel_readers: 1
@@ -15,6 +15,7 @@ model {
 
   objective_function {
     mean_squared_error {}
+    l2_weight_regularization {
       scale_factor: 0.0005
     }
   }
@@ -60,7 +61,7 @@ model {
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
-      num_output_channels: 12
+      num_output_channels: 20
       conv_dims: "12 20"
       conv_pads: "0 0"
       conv_strides: "12 20"
@@ -80,7 +81,53 @@ model {
     }
   }
 
+  #############
+  # CONVOLUTION 1
+  #############
+  layer {
+    name: "fc1"
+    data_layout: "data_parallel"
+    fully_connected {
+      num_neurons: 12
+      weight_initialization: "he_normal"
+      has_bias: true
+    }
+  }
+
+  ######
+  # RELU 1
+  ######
+  layer {
+    name: "relu2"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+
 #DECODER
+
+  #################
+  # FULLY_CONNECTED decode1
+  #################
+  layer {
+    name: "decode1"
+    data_layout: "data_parallel"
+    fully_connected {
+      num_neurons: 20
+      weight_initialization: "glorot_uniform"
+      has_bias: true
+    }
+  }
+
+  #######
+  # RELU relu10
+  #######
+  layer {
+    name: "relu10"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
 
   #############
   # DECONVOLUTION 1
@@ -88,9 +135,9 @@ model {
   layer {
     name: "deconv1"
     data_layout: "data_parallel"
+    num_neurons_from_data_reader: true
     deconvolution {
       num_dims: 2
-      num_output_channels: 3040
       conv_dims: "12 20"
       conv_pads: "0 0"
       conv_strides: "12 20"
@@ -103,13 +150,13 @@ model {
   # SIGMOID sigmoid
   #######
   layer {
-    name: "sigmoid"
+    name: "relu20"
     data_layout: "data_parallel"
     sigmoid {
     }
   }
 
-  
+
   #################
   # RECONSTRUCTION
   #################

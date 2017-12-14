@@ -68,15 +68,26 @@ int main(int argc, char *argv[]) {
     }
 
     // Train model
-    if (master) std::cerr << "\nSTARTING train - 1\n\n";
+    if (master)  std::cerr << "\nSTARTING train - model 1\n\n";
     const lbann_data::Model pb_model = pbs[0]->model();
     model_1->train( pb_model.num_epochs() );
     model_1->evaluate(execution_mode::testing);
 
     if (model_2 != nullptr) {
-      if (master) std::cerr << "\nSTARTING train - 2\n\n";
+      const auto layers1 = model_1->get_layers();
+      const auto layers2 = model_2->get_layers();
+      for(size_t l2=0; l2 < layers2.size(); l2++) {
+        for(size_t l1=0; l1 < layers1.size(); l1++) {
+           if(layers2[l2]->get_name() == layers1[l1]->get_name()){
+             if(master) std::cout << "Model 1 Layer " << layers1[l1]->get_name(); 
+             layers2[l2]->replace_weights(layers1[l1]);
+             if(master) std::cout << " copied to Model2 Layer " << std::endl;
+           }
+         }
+       }
+                
+      if (master) std::cerr << "\n STARTING train - model 2\n\n";
       const lbann_data::Model pb_model_2 = pbs[1]->model();
-      //move or copy stuph from model to model_2?
       model_2->train( pb_model_2.num_epochs() );
       model_2->evaluate(execution_mode::testing);
     }
@@ -108,19 +119,7 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
   model *model = nullptr; //d hysom bad namimg! should fix
   try {
     std::stringstream err;
-
-#if 0
-    lbann_data::LbannPB pb;
-    read_prototext_file(model_fn, pb, master);
-    lbann_data::LbannPB pb_reader;
-    read_prototext_file(reader_fn, pb_reader, master);
-    pb.MergeFrom(pb_reader);
-    std::string prototext_opt_fn;
-    lbann_data::LbannPB pb_optimizer;
-    read_prototext_file(optimizer_fn, pb_optimizer, master);
-    pb.MergeFrom(pb_optimizer);
-
-#endif
+    options *opts = options::get();
 
     // Optionally over-ride some values in prototext
     get_cmdline_overrides(comm, pb);
@@ -221,7 +220,9 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
       std::cout << std::endl;
     }
     // Display how the OpenMP threads are provisioned
-    display_omp_setup();
+    if (opts->has_string("print_affinity")) {
+      display_omp_setup();
+    }
 
     // Initialize data readers
     //@todo: code not in place for correctly handling image preprocessing

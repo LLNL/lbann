@@ -70,7 +70,44 @@ class sgd : public optimizer {
   void step_compute_gpu(std::vector<DataType*> values_d,
                         std::vector<DataType*> gradient_d) override;
 #endif // __LIB_CUDNN
+  bool save_to_checkpoint_shared(persist& p, std::string m_name) override {
+    optimizer::save_to_checkpoint_shared(p, m_name);
+    char l_name[512];
+    if (p.get_rank() == 0) {
+      sprintf(l_name, "%s_learning_rate", m_name.c_str());
+      p.write_float(persist_type::train, l_name, m_learning_rate);
 
+      sprintf(l_name, "%s_momentum", m_name.c_str());
+      p.write_float(persist_type::train, l_name, m_momentum);
+
+    }
+    //sprintf(l_name, "gradient_sgd_%s", m_name.c_str());
+    //p.write_distmat(persist_type::train, l_name, (DistMat *)m_gradient);
+    sprintf(l_name, "%s_velocity_sgd", m_name.c_str());
+    p.write_distmat(persist_type::train, l_name, (DistMat *)m_velocity);
+    return true;
+
+  }
+
+  bool load_from_checkpoint_shared(persist& p, std::string m_name) override  {
+    //optimizer::load_from_checkpoint_shared(p, m_name);
+    char l_name[512];
+    if (p.get_rank() == 0) {
+      sprintf(l_name, "%s_learning_rate", m_name.c_str());
+      p.read_float(persist_type::train, l_name, &m_learning_rate);
+
+      sprintf(l_name, "%s_momentum", m_name.c_str());
+      p.read_float(persist_type::train, l_name, &m_momentum);
+
+    }
+    MPI_Bcast(&m_learning_rate, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&m_momentum, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    //sprintf(l_name, "gradient_sgd_%s.bin", m_name.c_str());
+    //p.read_distmat(persist_type::train, l_name, (DistMat *)m_gradient);
+    sprintf(l_name, "%s_velocity_sgd.bin", m_name.c_str());
+    p.read_distmat(persist_type::train, l_name, (DistMat *)m_velocity);
+    return true;
+   }
  private:
 
   /** Momentum. */
@@ -82,7 +119,7 @@ class sgd : public optimizer {
 
 #ifdef __LIB_CUDNN
   /** GPU memory for velocity. */
-  std::vector<DataType*> m_velocity_d;  
+  std::vector<DataType*> m_velocity_d;
 #endif // __LIB_CUDNN
 
 };

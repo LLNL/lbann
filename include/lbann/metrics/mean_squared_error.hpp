@@ -22,56 +22,50 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// model_dag .hpp .cpp - Directed acyclic graph neural network models
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_MODEL_DAG_HPP
-#define LBANN_MODEL_DAG_HPP
+#ifndef LBANN_METRIC_MEAN_SQUARED_ERROR_HPP
+#define LBANN_METRIC_MEAN_SQUARED_ERROR_HPP
 
-#include "lbann/models/model.hpp"
-#include "lbann/layers/layer.hpp"
+#include "lbann/metrics/metric.hpp"
 
 namespace lbann {
 
-/** Directed acyclic graph neural network model. */
-class dag_model : public model {
+/** Mean squared error metric.
+ *  Not to be confused with mean_squared_error_loss.
+ */
+class mean_squared_error_metric : public metric {
+
  public:
 
   /** Constructor. */
-  dag_model(lbann_comm *comm,
-            int max_mini_batch_size,
-            objective_function *obj_fn,
-            optimizer *default_optimizer);
+  mean_squared_error_metric(lbann_comm *comm) : metric(comm) {}
 
   /** Copy constructor. */
-  dag_model(const dag_model& other) = default;
-
+  mean_squared_error_metric(const mean_squared_error_metric& other) = default;
   /** Copy assignment operator. */
-  dag_model& operator=(const dag_model& other) = default;
-
+  mean_squared_error_metric& operator=(const mean_squared_error_metric& other) = default;
   /** Destructor. */
-  ~dag_model() override = default;
+  virtual ~mean_squared_error_metric() = default;
+  /** Copy function. */
+  mean_squared_error_metric* copy() const override {
+    return new mean_squared_error_metric(*this);
+  }
 
-  /** Create copy. */
-  dag_model* copy() const override { return new dag_model(*this); }
-
-  /** Setup model. */
-  void setup() override;
-
-  /** Get model name. */
-  std::string name() const override { return "dag_model"; }
+  /** Return a string name for this metric. */
+  std::string name() const override { return "mean squared error"; }
 
  protected:
 
-  /** Apply topological sort to list of layers.
-   *  A topologically sorted ordering allows us to traverse a directed
-   *  acyclic graph without violating dependencies.
+  /** Computation to evaluate the metric function.
+   *  This returns the sum of metric values across the mini-batch, not
+   *  the mean value.
    */
-  void topologically_sort_layers();
+  double evaluate_compute(const AbsDistMat& prediction,
+                          const AbsDistMat& ground_truth) override;
 
 };
 
 }  // namespace lbann
 
-#endif  // LBANN_MODEL_DAG_HPP
+#endif  // LBANN_METRIC_MEAN_SQUARED_ERROR_HPP

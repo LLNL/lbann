@@ -70,7 +70,7 @@ void lbann_callback_checknan::on_batch_end(model *m) {
       ss << name() << ": "
          << "[" << std::to_string(m->get_comm()->get_rank_in_world()) << "]: "
          << "error in weights of " << w->get_name() << " "
-         << "(step=" << std::to_string(m->get_cur_step()) << ")";
+         << "(step=" << std::to_string(m->get_cur_step()-1) << ")";
       throw lbann_exception(ss.str());
     }
   }

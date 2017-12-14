@@ -60,19 +60,6 @@ class sequential_model : public model {
   /** Get model name. */
   std::string name() const override { return "sequential_model"; }
 
-  /** Setup sequential model. */
-  void setup() override;
-
-#if 0
-  /// Save model to file
-  /** @todo This is old and likely broken */
-  bool save_to_file(const std::string file_dir);
-  /// Load model from file
-  /** @todo This is old and likely broken */
-  bool load_from_file(const std::string file_dir);
-
-  /// Save model to checkpoint
-  /** @todo This is old and likely broken */
   bool save_to_checkpoint(int fd, const char *filename, size_t *bytes);
   /// Load model from checkpoint
   /** @todo This is old and likely broken */
@@ -80,7 +67,14 @@ class sequential_model : public model {
 
   bool save_to_checkpoint_shared(persist& p) override;
   bool load_from_checkpoint_shared(persist& p) override;
-#endif // 0
+
+ protected:
+
+  /** Set up topology of layer graph.
+   *  Called in setup function. Parent/child relationships are
+   *  established between adjacent layers.
+   */
+  virtual void setup_layer_topology() override;
 
 };
 

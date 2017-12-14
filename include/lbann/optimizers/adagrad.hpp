@@ -63,6 +63,37 @@ class adagrad : public optimizer {
   /** Perform the computation in an optimization step. */
   void step_compute(AbsDistMat& values, const AbsDistMat& gradient) override;
 
+  /// Set parameters to optimize and initialize optimizer
+  void setup(AbsDistMat *parameters) ;
+  /// Update parameters using objective function gradient
+  void update(const AbsDistMat *gradient) ;
+  std::string name() const { return "adagrad"; }
+
+  bool save_to_checkpoint_shared(persist& p, std::string m_name) override {
+    char l_name[512];
+    if (p.get_rank() == 0) {
+      sprintf(l_name, "%s_learning_rate", m_name.c_str());
+      p.write_float(persist_type::train, l_name, m_learning_rate);
+    }
+    sprintf(l_name, "%s_cache_adagrad", m_name.c_str());
+    p.write_distmat(persist_type::train, l_name, (DistMat *)m_cache);
+    return true;
+
+  }
+
+  bool load_from_checkpoint_shared(persist& p, std::string m_name) override {
+    char l_name[512];
+    if (p.get_rank() == 0) {
+      sprintf(l_name, "%s_learning_rate", m_name.c_str());
+      p.read_float(persist_type::train, l_name, &m_learning_rate);
+    }
+    MPI_Bcast(&m_learning_rate, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    sprintf(l_name, "%s_cache_adagrad.bin", m_name.c_str());
+    p.read_distmat(persist_type::train, l_name, (DistMat *)m_cache);
+    return true;
+
+  }
+
  private:
 
   /** Small factor to avoid division by zero. */

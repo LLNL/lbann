@@ -48,6 +48,7 @@ struct main_params {
   bool m_enable_cropper;
   bool m_enable_augmenter;
   bool m_enable_colorizer;
+  bool m_enable_decolorizer;
   bool m_enable_mean_extractor;
   bool m_enable_normalizer;
   unsigned int m_mean_batch_size;
@@ -58,6 +59,7 @@ struct main_params {
       m_enable_cropper(true),
       m_enable_augmenter(false),
       m_enable_colorizer(false),
+      m_enable_decolorizer(false),
       m_enable_mean_extractor(true),
       m_enable_normalizer(false),
       m_mean_batch_size(1024u),
@@ -82,6 +84,7 @@ int main(int argc, char *argv[]) {
   mp.m_enable_cropper = true;
   mp.m_enable_augmenter = static_cast<bool>(atoi(argv[8]));
   mp.m_enable_colorizer = false;
+  mp.m_enable_decolorizer = true;
   mp.m_enable_normalizer = static_cast<bool>(atoi(argv[9]));
   mp.m_mean_batch_size = atoi(argv[7]);
   mp.m_enable_mean_extractor = (mp.m_mean_batch_size > 0);
@@ -221,6 +224,12 @@ bool test_image_io(const std::string filename,
     if (mp.m_enable_colorizer) { // Set up a colorizer
       std::unique_ptr<lbann::cv_colorizer> colorizer(new(lbann::cv_colorizer));
       pp.add_transform(std::move(colorizer));
+      transform_idx ++;
+    }
+
+    if (mp.m_enable_decolorizer) { // Set up a colorizer
+      std::unique_ptr<lbann::cv_decolorizer> decolorizer(new(lbann::cv_decolorizer));
+      pp.add_transform(std::move(decolorizer));
       transform_idx ++;
     }
 

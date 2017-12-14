@@ -157,14 +157,17 @@ class Layer {
     return m_using_gpus;
   }
 
-  /// Following functions tell whether current layer is a fan-out layer; default is false
-  virtual bool is_fan_out_layer() const {
-    return m_max_num_child_layers != 1 && m_max_num_child_layers != 0;
+  /** Get maximum number of parent layers.
+   *  A negative value indicates no limit.
+   */
+  inline int get_max_num_parent_layers() const {
+    return m_max_num_parent_layers;
   }
-
-  /// Following functions tell whether current layer is a fan-in layer; default is false
-  virtual bool is_fan_in_layer() const {
-    return m_max_num_parent_layers != 1 && m_max_num_parent_layers != 0;
+  /** Get maximum number of child layers.
+   *  A negative value indicates no limit.
+   */
+  inline int get_max_num_child_layers() const {
+    return m_max_num_child_layers;
   }
 
   /** Return the model that owns this layer. */
@@ -180,8 +183,8 @@ class Layer {
   virtual bool saveToCheckpoint(int fd, const char *filename, size_t *bytes) const;
   virtual bool loadFromCheckpoint(int fd, const char *filename, size_t *bytes);
 
-  virtual bool saveToCheckpointShared(persist& p) const;
-  virtual bool loadFromCheckpointShared(persist& p);
+  virtual bool save_to_checkpoint_shared(persist& p) const;
+  virtual bool load_from_checkpoint_shared(persist& p);
 
   /** Get forward propagation output, as seen by next layer. */
   virtual void get_fp_output(AbsDistMat& fp_output, const Layer* next_layer = nullptr) const;
@@ -246,6 +249,8 @@ class Layer {
   std::vector<weights*> get_weights() { return m_weights; }
   /** Set list of pointers to weights. */
   void set_weights(std::vector<weights*> w) { m_weights = w; }
+  /** Replace weights with another Layer's weights*/
+  void replace_weights(Layer* other_layer);
 
  protected:
 

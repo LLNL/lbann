@@ -47,15 +47,36 @@ sequential_model::sequential_model(lbann_comm *comm,
                                    optimizer* default_optimizer)
   : model(comm, mini_batch_size, obj_fn, default_optimizer) {}
 
+void sequential_model::remove(int index) {
+  if (m_layers[index]) {
+    delete m_layers[index];
+  }
+  m_layers.erase(m_layers.begin() + index);
+}
+
+void sequential_model::insert(int index, Layer *layer) {
+  m_layers.insert(m_layers.begin() + index, layer);
+}
+
+Layer *sequential_model::swap(int index, Layer *layer) {
+  Layer *tmp = m_layers[index];
+  m_layers[index] = layer;
+  return tmp;
+}
+
 void sequential_model::setup() {
+  setup_subset(0, m_layers.size());
+}
+
+void sequential_model::setup_subset(int start_index, int end_index) {
 
   // Setup each layer
-  for (size_t l = 0; l < m_layers.size(); ++l) {
-    m_layers[l]->set_model(this);
+  for (int l=start_index; l<end_index; ++l) {
+    m_layers[l]->set_neural_network_model(this); /// Provide a reverse point from each layer to the model
     if (l > 0) {
       m_layers[l]->add_parent_layer(m_layers[l-1]);
     }
-    if (l < m_layers.size() - 1) {
+    if (l < end_index - 1) {
       m_layers[l]->add_child_layer(m_layers[l+1]);
     }
     m_layers[l]->setup();
@@ -70,6 +91,14 @@ void sequential_model::setup() {
 
   // Set up callbacks
   setup_callbacks();
+}
+
+int sequential_model::num_previous_neurons() {
+  if (m_layers.size() == 0) {
+    return -1;
+  }
+  Layer *prev_layer = m_layers.back();
+  return prev_layer->get_num_neurons();
 }
 
 #if 0
@@ -140,10 +169,9 @@ bool sequential_model::load_from_file(const string file_dir) {
     printf("Loaded parameters from %s (%f secs)\n", dir, secs);
     fflush(stdout);
   }
-
   return true;
 }
-
+#endif
 bool sequential_model::save_to_checkpoint(int fd, const char *filename, size_t *bytes) {
   // write number of layers (we'll check this on read)
   int layers = m_layers.size();
@@ -157,10 +185,10 @@ bool sequential_model::save_to_checkpoint(int fd, const char *filename, size_t *
   *bytes += write_rc;
 
   // write out details for each layer
-  for (size_t l = 1; l < m_layers.size(); l++)
+  /*for (size_t l = 1; l < m_layers.size(); l++)
     if (!m_layers[l]->saveToCheckpoint(fd, filename, bytes)) {
       return false;
-    }
+    }*/
 
   return true;
 }
@@ -181,11 +209,11 @@ bool sequential_model::load_from_checkpoint(int fd, const char *filename, size_t
     // error!
   }
 
-  for (size_t l = 1; l < m_layers.size(); l++) {
+  /*for (size_t l = 1; l < m_layers.size(); l++) {
     if (! m_layers[l]->loadFromCheckpoint(fd, filename, bytes)) {
       return false;
     }
-  }
+  }*/
 
   return true;
 }
@@ -207,14 +235,18 @@ bool sequential_model::save_to_checkpoint_shared(persist& p) {
 
     // TODO: record each layer type and size (to be checked when read back)
   }
-
   // write out details for each layer
+
+  for (weights *w : m_weights) {
+    w->save_to_checkpoint_shared(p);
+  }
+
   for (size_t l = 0; l < m_layers.size(); l++) {
-    if (! m_layers[l]->saveToCheckpointShared(p)) {
+    if (! m_layers[l]->save_to_checkpoint_shared(p)) {
       return false;
     }
   }
-
+  //m_objective_function->save_to_checkpoint_shared(p);
   return true;
 }
 
@@ -240,16 +272,17 @@ bool sequential_model::load_from_checkpoint_shared(persist& p) {
   }
 
   // TODO: check that each layer type matches what we'd expect
-
+  for (weights *w : m_weights) {
+    w->load_from_checkpoint_shared(p);
+  }
   // read in each layer
   for (size_t l = 0; l < m_layers.size(); l++) {
-    if (! m_layers[l]->loadFromCheckpointShared(p)) {
+    if (! m_layers[l]->load_from_checkpoint_shared(p)) {
       return false;
     }
   }
-
+  //m_objective_function->load_from_checkpoint_shared(p);
   return true;
 }
-#endif // 0
 
 }  // namespace lbann
