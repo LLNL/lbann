@@ -100,52 +100,16 @@ model::model(const model& other) :
   for (auto& cb : m_callbacks) {
     cb = cb->copy();
   }
-  std::unordered_map<Layer *,Layer *> old_to_new_layer;
+  std::unordered_map<Layer *,Layer *> layer_map;
   for (auto& l : m_layers) {
-    l = old_to_new_layer[l] = l->copy();
+    l = layer_map[l] = l->copy();
     l->set_model(this);
   }
-  std::unordered_map<weights *,weights *> old_to_new_weights;
+  std::unordered_map<weights *,weights *> weights_map;
   for (auto& w : m_weights) {
-    w = old_to_new_weights[w] = w->copy();
+    w = weights_map[w] = w->copy();
   }
-
-  // Fix pointers in objective function
-  if (m_objective_function != nullptr) {
-    auto layer_pointers = m_objective_function->get_layer_pointers();
-    for (auto& layer_pointer : layer_pointers) {
-      layer_pointer = old_to_new_layer[layer_pointer];
-    }
-    m_objective_function->set_layer_pointers(layer_pointers);
-    auto weights_pointers = m_objective_function->get_weights_pointers();
-    for (auto& weights_pointer : weights_pointers) {
-      weights_pointer = old_to_new_weights[weights_pointer];
-    }
-    m_objective_function->set_weights_pointers(weights_pointers);
-  }
-
-  // Fix pointers in metrics
-  for (const auto& m : m_metrics) {
-    auto layer_pointers = m->get_layer_pointers();
-    for (auto& layer_pointer : layer_pointers) {
-      layer_pointer = old_to_new_layer[layer_pointer];
-    }
-    m->set_layer_pointers(layer_pointers);
-  }
-
-  // Fix pointers in layers
-  for (const auto& l : m_layers) {
-    auto layer_pointers = l->get_layer_pointers();
-    for (auto& layer_pointer : layer_pointers) {
-      layer_pointer = old_to_new_layer[layer_pointer];
-    }
-    l->set_layer_pointers(layer_pointers);
-    auto weights_pointers = l->get_weights();
-    for (auto& weights_pointer : weights_pointers) {
-      weights_pointer = old_to_new_weights[weights_pointer];
-    }
-    l->set_weights(weights_pointers);
-  }
+  remap_pointers(layer_map, weights_map);
 
 }
 
@@ -191,52 +155,16 @@ model& model::operator=(const model& other) {
   for (auto& cb : m_callbacks) {
     cb = cb->copy();
   }
-  std::unordered_map<Layer *,Layer *> old_to_new_layer;
+  std::unordered_map<Layer *,Layer *> layer_map;
   for (auto& l : m_layers) {
-    l = old_to_new_layer[l] = l->copy();
+    l = layer_map[l] = l->copy();
     l->set_model(this);
   }
-  std::unordered_map<weights *,weights *> old_to_new_weights;
+  std::unordered_map<weights *,weights *> weights_map;
   for (auto& w : m_weights) {
-    w = old_to_new_weights[w] = w->copy();
+    w = weights_map[w] = w->copy();
   }
-
-  // Fix pointers in objective function
-  if (m_objective_function != nullptr) {
-    auto layer_pointers = m_objective_function->get_layer_pointers();
-    for (auto& layer_pointer : layer_pointers) {
-      layer_pointer = old_to_new_layer[layer_pointer];
-    }
-    m_objective_function->set_layer_pointers(layer_pointers);
-    auto weights_pointers = m_objective_function->get_weights_pointers();
-    for (auto& weights_pointer : weights_pointers) {
-      weights_pointer = old_to_new_weights[weights_pointer];
-    }
-    m_objective_function->set_weights_pointers(weights_pointers);
-  }
-
-  // Fix pointers in metrics
-  for (const auto& m : m_metrics) {
-    auto layer_pointers = m->get_layer_pointers();
-    for (auto& layer_pointer : layer_pointers) {
-      layer_pointer = old_to_new_layer[layer_pointer];
-    }
-    m->set_layer_pointers(layer_pointers);
-  }
-
-  // Fix pointers in layers
-  for (const auto& l : m_layers) {
-    auto layer_pointers = l->get_layer_pointers();
-    for (auto& layer_pointer : layer_pointers) {
-      layer_pointer = old_to_new_layer[layer_pointer];
-    }
-    l->set_layer_pointers(layer_pointers);
-    auto weights_pointers = l->get_weights();
-    for (auto& weights_pointer : weights_pointers) {
-      weights_pointer = old_to_new_weights[weights_pointer];
-    }
-    l->set_weights(weights_pointers);
-  }
+  remap_pointers(layer_map, weights_map);
 
   return *this;
 }
@@ -251,7 +179,7 @@ model::~model() {
 }
 
 ////////////////////////////////////////////////////////////
-// Initialization
+// Model specification
 ////////////////////////////////////////////////////////////
 
 void model::add_layer(Layer *l) {
@@ -311,30 +239,12 @@ void model::replace_weights(std::vector<weights*>& new_weights) {
   // Replace weights in list
   std::vector<weights *> old_weights(m_weights.begin(),
                                      m_weights.begin() + new_weights.size());
-  std::unordered_map<weights *,weights *> old_to_new_weights;
+  std::unordered_map<weights *,weights *> weights_map;
+  std::unordered_map<Layer *,Layer *> layer_map;
   for (size_t i = 0; i < new_weights.size(); ++i) {
-    old_to_new_weights[old_weights[i]] = new_weights[i];
-    m_weights[i] = new_weights[i];
+    m_weights[i] = weights_map[old_weights[i]] = new_weights[i];
   }
-  for (size_t i = new_weights.size(); i < old_weights.size(); ++i) {
-    old_to_new_weights[m_weights[i]] = m_weights[i];
-  }
-
-  // Fix weights pointers in layers
-  for (const auto& layer : m_layers) {
-    std::vector<weights *> layer_weights = layer->get_weights();
-    for (auto&& w : layer_weights) {
-      w = old_to_new_weights[w];
-    }
-    layer->set_weights(layer_weights);
-  }
-
-  // Fix weights pointers in objective function
-  std::vector<weights *> obj_weights = m_objective_function->get_weights_pointers();
-  for (auto&& w : obj_weights) {
-    w = old_to_new_weights[w];
-  }
-  m_objective_function->set_weights_pointers(obj_weights);
+  remap_pointers(layer_map, weights_map);
 
   // Delete old weights
   for (const auto& w : old_weights) {
@@ -389,6 +299,62 @@ std::string model::print_layer_description(const Layer* layer) const {
   }
   return os.str();
 }
+
+void model::remap_pointers(const std::unordered_map<Layer *,Layer *>& layer_map,
+                           const std::unordered_map<weights *,weights *>& weights_map) {
+
+  // Fix pointers in objective function
+  if (m_objective_function != nullptr) {
+    auto layer_pointers = m_objective_function->get_layer_pointers();
+    for (auto& layer_pointer : layer_pointers) {
+      if (layer_map.count(layer_pointer) > 0) {
+        layer_pointer = layer_map.at(layer_pointer);
+      }
+    }
+    m_objective_function->set_layer_pointers(layer_pointers);
+    auto weights_pointers = m_objective_function->get_weights_pointers();
+    for (auto& weights_pointer : weights_pointers) {
+      if (weights_map.count(weights_pointer) > 0) {
+        weights_pointer = weights_map.at(weights_pointer);
+      }
+    }
+    m_objective_function->set_weights_pointers(weights_pointers);
+  }
+
+  // Fix pointers in metrics
+  for (const auto& m : m_metrics) {
+    auto layer_pointers = m->get_layer_pointers();
+    for (auto& layer_pointer : layer_pointers) {
+      if (layer_map.count(layer_pointer) > 0) {
+        layer_pointer = layer_map.at(layer_pointer);
+      }
+    }
+    m->set_layer_pointers(layer_pointers);
+  }
+
+  // Fix pointers in layers
+  for (const auto& l : m_layers) {
+    auto layer_pointers = l->get_layer_pointers();
+    for (auto& layer_pointer : layer_pointers) {
+      if (layer_map.count(layer_pointer) > 0) {
+        layer_pointer = layer_map.at(layer_pointer);
+      }
+    }
+    l->set_layer_pointers(layer_pointers);
+    auto weights_pointers = l->get_weights();
+    for (auto& weights_pointer : weights_pointers) {
+      if (weights_map.count(weights_pointer) > 0) {
+        weights_pointer = weights_map.at(weights_pointer);
+      }
+    }
+    l->set_weights(weights_pointers);
+  }
+  
+}
+
+////////////////////////////////////////////////////////////
+// Setup
+////////////////////////////////////////////////////////////
 
 void model::setup() {
 

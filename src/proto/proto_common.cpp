@@ -1862,6 +1862,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
 
     reader->set_absolute_sample_count( readme.absolute_sample_count() );
     reader->set_use_percent( readme.percent_of_data_to_use() );
+    reader->set_first_n( readme.first_n() );
 
     if (set_up_generic_preprocessor) {
       init_generic_preprocessor(readme, master, reader);
