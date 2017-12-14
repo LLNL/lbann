@@ -57,3 +57,23 @@ subpackages. The syntax for achieving this is described here.
 
 - `LBANN_SB_FWD_<PKG>_<OPTION>`. These options are forwarded to
   `<PKG>` as `-D<OPTION>:<ARG_TYPE>=${LBANN_SB_FWD_<PKG>_<OPTION>}`.
+
+Some subpackages (e.g., Protobuf) are not CMake packages. There is not
+(yet) a uniform way to forward options to these
+packages. `<PKG>_CMAKE_INSTALL_PREFIX` gets forwarded to the prefix
+mechanism of the underlying build system and
+`<PKG>_CMAKE_{C,CXX,Fortran}_COMPILER` gets forwarded to the compiler
+setting mechanism of the underlying build system. Other options are
+documented on a per-package basis.
+
+## Sample invocation of CMake
+
+A sample invocation of CMake that builds a CPU-based LBANN build with
+all default options is:
+
+```
+cd $LBANN_HOME
+mkdir build
+cmake $LBANN_HOME/superbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/path/to/install -DLBANN_SB_BUILD_CNPY=ON -DLBANN_SB_BUILD_HYDROGEN=ON -DLBANN_SB_BUILD_OPENCV=ON -DLBANN_SB_BUILD_PROTOBUF=ON -DLBANN_SB_BUILD_LBANN=ON -DCMAKE_C_COMPILER=$(which clang) -DCMAKE_CXX_COMPILER=$(which clang++) -DCMAKE_Fortran_COMPILER=$(which gfortran)
+```
+
