@@ -351,10 +351,10 @@ int main(int argc, char *argv[]) {
     dnn.setup();
 
     // set checkpoint directory and checkpoint interval
-    dnn.set_checkpoint_dir(trainParams.ParameterDir);
-    dnn.set_checkpoint_epochs(trainParams.CkptEpochs);
-    dnn.set_checkpoint_steps(trainParams.CkptSteps);
-    dnn.set_checkpoint_secs(trainParams.CkptSecs);
+    //dnn.set_checkpoint_dir(trainParams.ParameterDir);
+    //dnn.set_checkpoint_epochs(trainParams.CkptEpochs);
+    //dnn.set_checkpoint_steps(trainParams.CkptSteps);
+    //dnn.set_checkpoint_secs(trainParams.CkptSecs);
 
     // restart model from checkpoint if we have one
     // dnn.restartShared();

@@ -61,7 +61,7 @@ bool lbann_callback_checkpoint::need_checkpoint(model *m) {
   lbann_comm *comm = m->get_comm();
   // if at start of epoch and evenly divide
   if (!checkpoint_now && m_checkpoint_epochs > 0) {
-    if (at_epoch_start()) {
+    if (m_epoch_end) {
       checkpoint_now = (m->get_cur_epoch() > 0) && (m->get_cur_epoch() % m_checkpoint_epochs == 0);
     }
   }
@@ -87,6 +87,7 @@ bool lbann_callback_checkpoint::need_checkpoint(model *m) {
     MPI_Bcast(&flag, 1, MPI_INT, 0, MPI_COMM_WORLD);
     checkpoint_now = (bool) flag;
   }
+  m_epoch_end = false;
   return checkpoint_now;
 }
 
