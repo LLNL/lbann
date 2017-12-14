@@ -26,7 +26,8 @@ Arguments that are processed by the SuperBuild are prefixed with
   ELEMENTAL, HYDROGEN, JPEG_TURBO, LBANN, OPENBLAS, OPENCV,
   PROTOBUF`. Enables the build of `<PKG>` as a subproject.
 
-- `LBANN_SB_FWD_*`. See (#passing-options-to-superbuild-subpackages).
+- `LBANN_SB_FWD_*`. See [Passing options to SuperBuild
+  Subpackages](#passing-options-to-superbuild-subpackages)).
 
 - `LBANN_SB_CLONE_CLEAN_LBANN`. If `ON`, the SuperBuild will clone a
   fresh git repository and use that for the build. If `OFF` (default),
