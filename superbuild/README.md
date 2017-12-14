@@ -14,7 +14,8 @@ is to build third-party library dependencies of LBANN as well as LBANN
 itself. The build system is exclusive by default; i.e., packages,
 including LBANN, will not be built unless required. If a third-party
 library is not built by this project, it must be provided via a
-forwarded argument (see (#passing-options-to-superbuild-subpackages)).
+forwarded argument (see [Passing options to SuperBuild
+Subpackages](#passing-options-to-superbuild-subpackages)).
 
 ## SuperBuild CMake Options
 
