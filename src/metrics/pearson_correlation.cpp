@@ -29,8 +29,8 @@
 
 namespace lbann {
 
-DataType pearson_correlation_metric::evaluate_compute(const AbsDistMat& prediction,
-                                                      const AbsDistMat& ground_truth) {
+double pearson_correlation_metric::evaluate_compute(const AbsDistMat& prediction,
+                                                    const AbsDistMat& ground_truth) {
 
     double corr = 0.0;
 
@@ -69,7 +69,7 @@ DataType pearson_correlation_metric::evaluate_compute(const AbsDistMat& predicti
     //Compute correlation
     corr = corr_mean/(pred_std*true_std);
 
-    return corr / prediction.Width();
+    return corr;
 
 }
 
