@@ -435,6 +435,10 @@ std::string generic_data_reader::get_label_filename() const {
   return m_label_fn;
 }
 
+void generic_data_reader::set_first_n(int n) {
+  m_first_n = n;
+}
+
 void generic_data_reader::set_absolute_sample_count(size_t s) {
   m_absolute_sample_count = s;
 }
