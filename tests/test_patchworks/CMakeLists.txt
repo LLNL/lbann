@@ -51,6 +51,7 @@ file(GLOB PATCHWORKS_SRCS ${LBANN_DIR}/src/data_readers/patchworks/*.cpp
                           ${LBANN_DIR}/src/data_readers/image_utils.cpp
                           ${LBANN_DIR}/src/data_readers/cv_augmenter.cpp
                           ${LBANN_DIR}/src/data_readers/cv_colorizer.cpp
+                          ${LBANN_DIR}/src/data_readers/cv_decolorizer.cpp
                           ${LBANN_DIR}/src/data_readers/cv_normalizer.cpp
                           ${LBANN_DIR}/src/data_readers/cv_process.cpp
                           ${LBANN_DIR}/src/data_readers/cv_process_patches.cpp

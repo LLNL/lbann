@@ -28,7 +28,6 @@
 #ifndef LBANN_LAYER_FULLY_CONNECTED_CUDA_HPP_INCLUDED
 #define LBANN_LAYER_FULLY_CONNECTED_CUDA_HPP_INCLUDED
 
-#include "lbann/base.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
 
 namespace lbann {

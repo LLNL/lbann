@@ -70,8 +70,8 @@ class model {
   /** Return the model's name. */
   virtual std::string name() const = 0;
 
-  /** Initialize the model. */
-  virtual void setup() {}
+  /** Set up the model. */
+  virtual void setup();
 
   /** Add layer to model. */
   virtual void add_layer(Layer *layer);
@@ -88,7 +88,7 @@ class model {
   }
 
   /** Register a new metric for the model. */
-  void add_metric(metrics::metric *m);
+  void add_metric(metric *m);
 
   /** Construct an instance of the default optimizer.
    *  If there is no default optimizer, a null pointer is returned.
@@ -101,7 +101,7 @@ class model {
   }
 
   /** Return the model's metrics. */
-  virtual const std::vector<metrics::metric *>& get_metrics() const {
+  virtual const std::vector<metric *>& get_metrics() const {
     return m_metrics;
   }
 
@@ -111,9 +111,9 @@ class model {
   /** Return the model's layers. */
   virtual const std::vector<Layer *>& get_layers() const { return m_layers; }
 
-  /** Set the model's weights. */
-  void set_weights(std::vector<weights *>& w);
-
+  /** Replace the model's weights. */
+  void replace_weights(std::vector<weights *>& w);
+  
   /** Return the model's weights. */
   const std::vector<weights *>& get_weights() const { return m_weights; }
 
@@ -291,11 +291,10 @@ class model {
   optimizer *m_default_optimizer;
 
   /** List of model metrics.
-   *  A metric is a function that is used to judge the performance of your model.
-   *  A metric function is similar to an objective function, except that the
-   *  results from evaluating a metric are not used when training the model.
+   *  A metric can be used to evaluate the performance of the model
+   *  without affecting the training process.
    */
-  std::vector<metrics::metric *> m_metrics;
+  std::vector<metric *> m_metrics;
 
   /** List of layers in model.
    *  The list is in execution order for forward propagation.
@@ -304,13 +303,43 @@ class model {
   /** List of weights in model. */
   std::vector<weights *> m_weights;
 
-  /** Check if the model (and all layers') execution mode valid. */
+  /** Check if the model execution mode is valid. */
   virtual bool is_execution_mode_valid(execution_mode mode) const;
   /** Print out the description of a layer set up. */
   virtual std::string print_layer_description(const Layer* layer) const;
+  /** Check if the layer execution order is topologically sorted. */
+  virtual bool is_topologically_sorted() const;
+  /** Remap pointers.
+   *  Layer and weights pointers are remapped using the provided
+   *  maps. If a pointer is not a key in the corresponding map, the
+   *  pointer is not changed.
+   */
+  virtual void remap_pointers(const std::unordered_map<Layer *,Layer *>& layer_map,
+                              const std::unordered_map<weights *,weights *>& weights_map);
 
-  /** Setup model for an epoch. */
-  virtual void setup_epoch(execution_mode mode);
+  /** Set up topology of layer graph.
+   *  Called in setup function. All layers in connected component of
+   *  layer graph are added to the model and all parent/child
+   *  relationships between layers are reciprocated.
+   */
+  virtual void setup_layer_topology();
+  /** Set up layer execution order.
+   *  Called in setup function.
+   */
+  virtual void setup_layer_execution_order() {}
+  /** Set up layers.
+   *  Called in setup function.
+   */
+  virtual void setup_layers();
+  /** Set up weights.
+   *  Called in setup function. All weights being used by layers or
+   *  the objective function are added to the model and all unused
+   *  weights are deleted.
+   */
+  virtual void setup_weights();
+
+  /** Reset model for an epoch. */
+  virtual void reset_epoch(execution_mode mode);
   /** Evaluate model on a mini-batch */
   virtual bool evaluate_mini_batch(execution_mode mode);
   /** Train model on a mini-batch. */
@@ -331,8 +360,6 @@ class model {
   // Callbacks
   ////////////////////////////////////////////////////////////
 
-  /** Setup callbacks. */
-  virtual void setup_callbacks();
   /** Execute callbacks at start of training. */
   virtual void do_train_begin_cbs();
   /** Execute callbacks at end of training. */

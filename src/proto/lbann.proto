@@ -26,6 +26,7 @@ message Reader {
   string label_filename = 7;
   double validation_percent = 9;
   int64 absolute_sample_count = 11;
+  int64 first_n = 200;
   double percent_of_data_to_use = 12;
   ImagePreprocessor image_preprocessor = 13;
   int32 num_labels = 99; //for imagenet
@@ -74,6 +75,12 @@ message ImagePreprocessor {
     double shear_range = 8;
   }
 
+  message Decolorizer {
+    string name = 1;
+    bool disable = 2;
+    bool pick_1ch = 3;
+  }
+
   message Colorizer {
     string name = 1;
     bool disable = 2;
@@ -107,10 +114,11 @@ message ImagePreprocessor {
 
   Cropper cropper = 5;
   Augmenter augmenter = 6;
-  Colorizer colorizer = 7;
-  Normalizer normalizer = 8;
-  Noiser noiser = 9;
-  PatchExtractor patch_extractor = 10;
+  Decolorizer decolorizer = 7;
+  Colorizer colorizer = 8;
+  Normalizer normalizer = 9;
+  Noiser noiser = 10;
+  PatchExtractor patch_extractor = 11;
 
   // For backward compatibility. TODO: will be deprecated
   bool scale = 12;
@@ -204,34 +212,37 @@ message Model {
 //========================================================================
 
 message ObjectiveFunction {
-  repeated MeanSquaredError mean_squared_error = 2;
-  repeated MeanAbsoluteDeviation mean_absolute_deviation = 5;
-  repeated CrossEntropy cross_entropy = 1;
-  repeated BinaryCrossEntropy binary_cross_entropy = 3;
-  repeated CrossEntropyWithUncertainty cross_entropy_with_uncertainty = 4;
-  repeated GeomNegLogLike geom_negloglike = 6;
-  repeated PoissonNegLogLike poisson_negloglike = 7;
-  repeated PolyaNegLogLike polya_negloglike = 8;
-  repeated L2WeightRegularization l2_weight_regularization = 9;
-}
-
-message CrossEntropy {
-  double scale_factor = 1;
+  repeated MeanSquaredError mean_squared_error = 10;
+  repeated MeanAbsoluteDeviation mean_absolute_deviation = 11;
+  repeated CrossEntropy cross_entropy = 12;
+  repeated BinaryCrossEntropy binary_cross_entropy = 13;
+  repeated CrossEntropyWithUncertainty cross_entropy_with_uncertainty = 14;
+  repeated GeomNegLogLike geom_negloglike = 15;
+  repeated PoissonNegLogLike poisson_negloglike = 16;
+  repeated PolyaNegLogLike polya_negloglike = 17;
+  repeated L1WeightRegularization l1_weight_regularization = 20;
+  repeated L2WeightRegularization l2_weight_regularization = 21;
+  repeated GroupLassoWeightRegularization group_lasso_weight_regularization = 22;
 }
 
 message MeanSquaredError {
   double scale_factor = 1;
 }
 
+message MeanAbsoluteDeviation {
+  double scale_factor = 1;
+}
+
+message CrossEntropy {
+  double scale_factor = 1;
+}
+
+
 message BinaryCrossEntropy {
   double scale_factor = 1;
 }
 
 message CrossEntropyWithUncertainty {
-  double scale_factor = 1;
-}
-
-message MeanAbsoluteDeviation {
   double scale_factor = 1;
 }
 
@@ -247,7 +258,15 @@ message PolyaNegLogLike {
   double scale_factor = 1;
 }
 
+message L1WeightRegularization {
+  double scale_factor = 1;
+}
+
 message L2WeightRegularization {
+  double scale_factor = 1;
+}
+
+message GroupLassoWeightRegularization {
   double scale_factor = 1;
 }
 
@@ -258,9 +277,10 @@ message L2WeightRegularization {
 message Metric {
   // a Metric should contain exactly one of the following
   CategoricalAccuracy categorical_accuracy = 1;
-  MeanSquaredError mean_squared_error = 2;
-  TopKCategoricalAccuracy top_k_categorical_accuracy = 3;
-  PearsonCorrelation pearson_correlation = 4;
+  TopKCategoricalAccuracy top_k_categorical_accuracy = 2;
+  MeanSquaredError mean_squared_error = 3;
+  MeanAbsoluteDeviation mean_absolute_deviation = 4;
+  PearsonCorrelation pearson_correlation = 5;
 }
 
 message CategoricalAccuracy {

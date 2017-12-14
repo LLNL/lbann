@@ -25,19 +25,19 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/objective_functions/objective_function_term.hpp"
+#include "lbann/models/model.hpp"
 
 namespace lbann {
 
 objective_function_term::objective_function_term(DataType scale_factor)
-  : m_objective_function(nullptr),
-    m_scale_factor(scale_factor) {
+  : m_scale_factor(scale_factor) {
   if (m_scale_factor == DataType(0)) {
     m_scale_factor = DataType(1);
   }
 }
 
-void objective_function_term::setup(objective_function& obj_fn) {
-  m_objective_function = &obj_fn;
+void objective_function_term::setup(model& m) {
+  m_comm = m.get_comm();
 }
 
 }  // namespace lbann

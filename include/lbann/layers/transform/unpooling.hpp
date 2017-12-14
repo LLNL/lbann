@@ -30,7 +30,6 @@
 #define LBANN_LAYER_UNPOOLING_HPP_INCLUDED
 
 #include <vector>
-#include "lbann/base.hpp"
 #include "lbann/layers/transform/pooling.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/utils/exception.hpp"
@@ -40,7 +39,7 @@ namespace lbann {
 
 /// Unpooling layer
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
-class unpooling_layer : public transform {
+class unpooling_layer : public transform_layer {
  private:
  
   /// Corresponding pooling layer
@@ -51,7 +50,7 @@ class unpooling_layer : public transform {
   /// Constructor
   unpooling_layer(lbann_comm *comm,
                   pooling_layer<T_layout>* p_layer)
-    : transform(comm),
+    : transform_layer(comm),
       m_pooling_layer(p_layer) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "unpooling only supports DATA_PARALLEL");
@@ -78,14 +77,14 @@ class unpooling_layer : public transform {
   std::string get_type() const override { return "unpooling"; }
 
   virtual inline void initialize_distributed_matrices() {
-    transform::initialize_distributed_matrices<T_layout>();
+    transform_layer::initialize_distributed_matrices<T_layout>();
   }
   data_layout get_data_layout() const override { return T_layout; }
 
   void setup_dims() override {
 
     // Initialize previous neuron tensor dimensions
-    transform::setup_dims();
+    transform_layer::setup_dims();
 
     // Check that previous neuron tensor is valid
     if(this->m_num_prev_neurons != m_pooling_layer->m_num_neurons
@@ -227,7 +226,7 @@ class unpooling_layer : public transform {
   }
 
   std::vector<Layer*> get_layer_pointers() override {
-    std::vector<Layer*> layers = transform::get_layer_pointers();
+    std::vector<Layer*> layers = transform_layer::get_layer_pointers();
     layers.push_back((Layer*) m_pooling_layer);
     return layers;
   }
@@ -241,17 +240,17 @@ class unpooling_layer : public transform {
       throw lbann_exception(err.str());
     }
     layers.pop_back();
-    transform::set_layer_pointers(layers);
+    transform_layer::set_layer_pointers(layers);
   }
 
 };
 
 template<> inline void unpooling_layer<data_layout::MODEL_PARALLEL>::initialize_distributed_matrices() {
-  transform::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>();
+  transform_layer::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>();
 }
 
 template<> inline void unpooling_layer<data_layout::DATA_PARALLEL>::initialize_distributed_matrices() {
-  transform::initialize_distributed_matrices<data_layout::DATA_PARALLEL>();
+  transform_layer::initialize_distributed_matrices<data_layout::DATA_PARALLEL>();
 }
 
 }  // namespace lbann

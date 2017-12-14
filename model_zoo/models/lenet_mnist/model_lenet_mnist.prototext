@@ -57,12 +57,12 @@ model {
       amt: 0.1
     }
   }
-  # callback {
-  #   imcomm {
-  #     intermodel_comm_method: "normal"
-  #     all_optimizers: true
-  #   }
-  # }
+  callback {
+    imcomm {
+      intermodel_comm_method: "normal"
+      all_optimizers: true
+    }
+  }
   # callback {
   #   dump_mb_indices {
   #     basename: "debug_alexnet/"
@@ -74,12 +74,12 @@ model {
   #     layers: "data"
   #   }
   # }
-  callback {
-    gradient_check {
-      verbose: false
-      fail_on_error: false
-    }
-  }
+  # callback {
+  #   gradient_check {
+  #     verbose: false
+  #     fail_on_error: false
+  #   }
+  # }
 
   ###################################################
   # Layers

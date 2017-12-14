@@ -31,7 +31,6 @@
 
 #include <utility>
 #include <vector>
-#include "lbann/base.hpp"
 #include "lbann/layers/transform/transform.hpp"
 #include "lbann/utils/exception.hpp"
 
@@ -39,7 +38,7 @@ namespace lbann {
 
 /// Slice layer
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
-class slice_layer : public transform {
+class slice_layer : public transform_layer {
  private:
 
   /** Tensor dimension to slice. */
@@ -65,7 +64,7 @@ class slice_layer : public transform {
               int slice_axis,
               std::vector<int> slice_points,
               cudnn::cudnn_manager *cudnn = nullptr)
-    : transform(comm),
+    : transform_layer(comm),
       m_slice_axis(slice_axis),
       m_slice_points(std::move(slice_points)) {
 
@@ -86,14 +85,14 @@ class slice_layer : public transform {
   }
 
   slice_layer(const slice_layer& other) :
-    transform(other) {
+    transform_layer(other) {
     m_fp_output = other.m_fp_output->Copy();
     m_input_slice_v = other.m_input_slice_v->Copy();
     m_output_slice_v = other.m_output_slice_v->Copy();
   }
 
   slice_layer& operator=(const slice_layer& other) {
-    transform::operator=(other);
+    transform_layer::operator=(other);
     if(m_fp_output)      delete m_fp_output;
     if(m_input_slice_v)  delete m_input_slice_v;
     if(m_output_slice_v) delete m_output_slice_v;
@@ -141,7 +140,7 @@ class slice_layer : public transform {
     std::stringstream err;
 
     // Initialize previous neuron tensor dimensions
-    transform::setup_dims();
+    transform_layer::setup_dims();
 
     // Set first and last slice points if needed
     if(m_slice_points.size() == m_child_layers.size() - 1) {
@@ -166,7 +165,7 @@ class slice_layer : public transform {
   }
 
   void setup_gpu() override {
-    transform::setup_gpu();
+    transform_layer::setup_gpu();
   #ifndef __LIB_CUDNN
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: slice_layer: cuDNN not detected";
@@ -372,7 +371,7 @@ class slice_layer : public transform {
                                        next_layer)
                              - this->m_child_layers.begin());
     if(child_index >= (int) this->m_child_layers.size()) {
-      transform::get_fp_output(fp_output, next_layer);
+      transform_layer::get_fp_output(fp_output, next_layer);
     }
 
     // Split the activations tensor into slices of width 1 along the
@@ -437,7 +436,7 @@ class slice_layer : public transform {
                                        next_layer)
                              - this->m_child_layers.begin());
     if(child_index >= (int) this->m_child_layers.size()) {
-      transform::get_gpu_fp_output(output_dv, output_d, next_layer);
+      transform_layer::get_gpu_fp_output(output_dv, output_d, next_layer);
     }
 
     // Split the activations tensor into slices of width 1 along the
@@ -513,7 +512,7 @@ class slice_layer : public transform {
 
 /// Matrices should be in MC,MR distributions
 template<> inline void slice_layer<data_layout::MODEL_PARALLEL>::initialize_distributed_matrices() {
-  transform::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>();
+  transform_layer::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>();
   m_fp_output = new DistMat(this->m_comm->get_model_grid());
   m_input_slice_v = new DistMat(this->m_comm->get_model_grid());
   m_output_slice_v = new DistMat(this->m_comm->get_model_grid());
@@ -521,7 +520,7 @@ template<> inline void slice_layer<data_layout::MODEL_PARALLEL>::initialize_dist
 
 /// Matrices should be in Star,VC distributions
 template<> inline void slice_layer<data_layout::DATA_PARALLEL>::initialize_distributed_matrices() {
-  transform::initialize_distributed_matrices<data_layout::DATA_PARALLEL>();
+  transform_layer::initialize_distributed_matrices<data_layout::DATA_PARALLEL>();
   m_fp_output = new StarVCMat(this->m_comm->get_model_grid());
   m_input_slice_v = new StarVCMat(this->m_comm->get_model_grid());
   m_output_slice_v = new StarVCMat(this->m_comm->get_model_grid());

@@ -53,6 +53,14 @@ class lbann_callback_timeline : public lbann_callback {
   std::string name() const override { return "timeline"; }
   void on_train_begin(model *m) override;
   void on_train_end(model *m) override;
+
+  using lbann_callback::on_forward_prop_begin;
+  using lbann_callback::on_forward_prop_end;
+  using lbann_callback::on_backward_prop_begin;
+  using lbann_callback::on_backward_prop_end;
+  using lbann_callback::on_optimize_begin;
+  using lbann_callback::on_optimize_end;
+
   void on_forward_prop_begin(model *m, Layer *l) override;
   void on_forward_prop_end(model *m, Layer *l) override;
   void on_backward_prop_begin(model *m, Layer *l) override;

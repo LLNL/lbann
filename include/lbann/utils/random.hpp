@@ -123,7 +123,7 @@ void gaussian_fill(AbsDistMat& mat, El::Int m, El::Int n, DataType mean = 0.0f,
 /**
  * Make mat into an m x n matrix where each entry is an indepenent Bernoulli
  * random variable with parameter p.
- * This makes the same gaurantees as gaussian_fill.
+ * This makes the same guarantees as gaussian_fill.
  */
 void bernoulli_fill(AbsDistMat& mat, El::Int m, El::Int n, double p = 0.5);
 /**

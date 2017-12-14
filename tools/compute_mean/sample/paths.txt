@@ -1,0 +1,4 @@
+/p/lscratchh/brainusr/datasets/ILSVRC2012/original/train/
+#/p/lscratchh/brainusr/datasets/ILSVRC2012/original/labels/train.txt
+shortlist.txt
+out

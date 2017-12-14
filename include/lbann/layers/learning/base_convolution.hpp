@@ -32,7 +32,6 @@
 #include <vector>
 #include <omp.h>
 #include "lbann/layers/learning/learning.hpp"
-#include "lbann/base.hpp"
 #include "lbann/layers/layer.hpp"
 #include "lbann/weights/initializer.hpp"
 #include "lbann/weights/fan_in_fan_out_initializers.hpp"
@@ -47,7 +46,7 @@ namespace lbann {
 /** Base convolution layer.
  *  Parent class for convolution and deconvolution layers.
  */
-class base_convolution_layer : public learning {
+class base_convolution_layer : public learning_layer {
 
  protected:
 
@@ -108,7 +107,7 @@ class base_convolution_layer : public learning {
                          std::vector<int> conv_strides,
                          bool has_bias,
                          cudnn::cudnn_manager *cudnn)
-    : learning(comm) {
+    : learning_layer(comm) {
 
     if (conv_dims.size() == 1) {
       conv_dims.resize(num_data_dims, conv_dims[0]);
@@ -154,7 +153,7 @@ class base_convolution_layer : public learning {
   }
 
   base_convolution_layer(const base_convolution_layer& other) :
-    learning(other),
+    learning_layer(other),
     m_kernel_dims(other.m_kernel_dims),
     m_conv_pads(other.m_conv_pads),
     m_conv_strides(other.m_conv_strides),
@@ -190,13 +189,10 @@ class base_convolution_layer : public learning {
 
   #endif // __LIB_CUDNN
 
-    // Update views
-    setup_views();
-
   }
 
   base_convolution_layer& operator=(const base_convolution_layer& other) {
-    learning::operator=(other);
+    learning_layer::operator=(other);
     m_kernel_dims = other.m_kernel_dims;
     m_conv_pads = other.m_conv_pads;
     m_conv_strides = other.m_conv_strides;
@@ -247,9 +243,6 @@ class base_convolution_layer : public learning {
 
   #endif // __LIB_CUDNN
 
-    // Update views
-    setup_views();
-
     return *this;
   }
 
@@ -284,7 +277,7 @@ class base_convolution_layer : public learning {
 
 
   template<data_layout T_layout> void initialize_distributed_matrices() {
-    learning::initialize_distributed_matrices<T_layout>();
+    learning_layer::initialize_distributed_matrices<T_layout>();
     m_kernel_weights_gradient = new StarMat(this->m_comm->get_model_grid());
     m_bias_weights_gradient = new StarMat(this->m_comm->get_model_grid());
     m_kernel_weights_v = new StarMat(this->m_comm->get_model_grid());
@@ -295,7 +288,7 @@ class base_convolution_layer : public learning {
    *  The kernel weights are setup in the convolution and
    *  deconvolution classes. */
   void setup_data() override {
-    learning::setup_data();
+    learning_layer::setup_data();
 
     // Initialize default weights if none are provided
     if (this->m_weights.size() > 2) {
@@ -337,29 +330,9 @@ class base_convolution_layer : public learning {
 
   }
 
-  void setup_views() override {
-    learning::setup_views();
-    if ((m_weights.size() < 1u) || (this->m_weights[0] == nullptr)) {
-      std::stringstream err;
-      err << __FILE__ << ' ' << __LINE__ << " :: " << m_name
-          << " base_convolution_layer::setup_views() uninitialized kernel weights";
-      throw lbann_exception(err.str());
-    }
-    this->m_weights[0]->get_values_view(*m_kernel_weights_v);
-    if (m_bias_scaling_factor != DataType(0)) {
-      if ((m_weights.size() < 2u) || (this->m_weights[1] == nullptr)) {
-        std::stringstream err;
-        err << __FILE__ << ' ' << __LINE__ << " :: " << m_name
-            << " base_convolution_layer::setup_views() uninitialized bias weights";
-        throw lbann_exception(err.str());
-      }
-      this->m_weights[1]->get_values_view(*m_bias_weights_v);
-    }
-  }
-
   /// Initialize GPU objects
   void setup_gpu() override {
-    learning::setup_gpu();
+    learning_layer::setup_gpu();
   #ifndef __LIB_CUDNN
     throw lbann_exception("base_convolution_layer: cuDNN not detected");
   #else
@@ -403,6 +376,29 @@ class base_convolution_layer : public learning {
   }
 
  protected:
+
+  void fp_set_std_matrix_view() override {
+    learning_layer::fp_set_std_matrix_view();
+    if (m_weights.size() < 1 || this->m_weights[0] == nullptr) {
+      std::stringstream err;
+      err << __FILE__ << ' ' << __LINE__ << " :: "
+          << "uninitialized kernel weights";
+      throw lbann_exception(err.str());
+    } else {
+      this->m_weights[0]->get_values_view(*m_kernel_weights_v);
+    }
+    if (m_bias_scaling_factor != DataType(0)) {
+      if (m_weights.size() < 2 || this->m_weights[1] == nullptr) {
+        std::stringstream err;
+        err << __FILE__ << ' ' << __LINE__ << " :: "
+            << "uninitialized bias weights";
+        throw lbann_exception(err.str());
+      } else {
+        this->m_weights[1]->get_values_view(*m_bias_weights_v);
+      }
+    }
+    
+  }
 
   /** Convolution with cuDNN. */
   void apply_convolution_cudnn(bool during_forward_prop) {

@@ -49,10 +49,10 @@ class cross_entropy_with_uncertainty : public loss_function {
   }
 
   /** Get the name of the objective function term. */
-  std::string name() const override { return "cross_entropy_with_uncertainty"; }
+  std::string name() const override { return "cross entropy with uncertainty"; }
 
   /** Setup cross entropy term. */
-  void setup(objective_function& obj_fn) override;
+  void setup(model& m) override;
 
   /** Compute the cross entropy objective function.
    *  Given a predicted distribution \f$y\f$ and ground truth
@@ -65,8 +65,8 @@ class cross_entropy_with_uncertainty : public loss_function {
    *  the predictions matrix should have non-negative entries that add up 
    *  to one.
    */
-  DataType evaluate(const AbsDistMat& prediction,
-                    const AbsDistMat& ground_truth) override;
+  DataType evaluate_compute(const AbsDistMat& prediction,
+                            const AbsDistMat& ground_truth) override;
 
   /** Compute the gradient of the cross entropy objective function.
    *  Given a predicted distribution \f$y\f$ and ground truth
@@ -76,9 +76,9 @@ class cross_entropy_with_uncertainty : public loss_function {
    *    \nabla_y CE (y,\hat{y}) = - \hat{y} . / y
    *    \f]
    */
-  void differentiate(const AbsDistMat& prediction,
-                     const AbsDistMat& ground_truth,
-                     AbsDistMat& gradient) override;
+  void differentiate_compute(const AbsDistMat& prediction,
+                             const AbsDistMat& ground_truth,
+                             AbsDistMat& gradient) override;
 
  private:
   /** Workspace. */

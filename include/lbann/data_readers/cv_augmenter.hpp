@@ -30,7 +30,6 @@
 #define LBANN_CV_AUGMENTER_HPP
 
 #include "cv_transform.hpp"
-#include "lbann/utils/random.hpp"
 #include <iostream>
 #include <ostream>
 #include <cstring>
@@ -94,7 +93,7 @@ class cv_augmenter : public cv_transform {
    */
   bool determine_transform(const cv::Mat& image) override;
 
-  /// Augmentation is irreversible.
+  /// Augmentation is irreversible. Thus, this has no effect.
   bool determine_inverse_transform() override { return false; }
 
   /**

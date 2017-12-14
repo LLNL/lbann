@@ -39,7 +39,6 @@
 #ifdef __LIB_CUDNN
 #include "lbann/layers/learning/fully_connected_cuda.hpp"
 #include "lbann/utils/cublas_wrapper.hpp"
-#include "lbann/base.hpp"
 #endif // __LIB_CUDNN
 #include <string>
 #include <sstream>
@@ -49,7 +48,7 @@ namespace lbann {
 enum class device {CPU, CUDA};
 
 template <data_layout T_layout>
-class fully_connected_layer : public learning {
+class fully_connected_layer : public learning_layer {
  private:
 
   /** Scaling factor for bias term. 
@@ -106,7 +105,7 @@ class fully_connected_layer : public learning {
                         weights* weight = nullptr,
                         bool has_bias = true,
                         cudnn::cudnn_manager *cudnn = nullptr)
-    : learning(comm) {
+    : learning_layer(comm) {
 
     // Setup the data distribution
     initialize_distributed_matrices();
@@ -148,13 +147,12 @@ class fully_connected_layer : public learning {
   }
 
   fully_connected_layer(const fully_connected_layer& other) :
-    learning(other),
+    learning_layer(other),
     m_bias_scaling_factor(other.m_bias_scaling_factor) {
     m_matrix_weights_v = other.m_matrix_weights_v->Copy();
     m_bias_weights_v = other.m_bias_weights_v->Copy();
     m_matrix_weights_gradient = other.m_matrix_weights_gradient->Copy();
     m_bias_weights_gradient = other.m_bias_weights_gradient->Copy();
-    setup_views();  // Update views.
 #ifdef __LIB_CUDNN
     if (m_cudnn != nullptr) {
       m_matrix_weights_gradient_d = m_cudnn->copy(other.m_matrix_weights_gradient_d,
@@ -173,7 +171,7 @@ class fully_connected_layer : public learning {
   }
 
   fully_connected_layer& operator=(const fully_connected_layer& other) {
-    learning::operator=(other);
+    learning_layer::operator=(other);
     m_bias_scaling_factor = other.m_bias_scaling_factor;
 
     // Copy matrices
@@ -195,7 +193,6 @@ class fully_connected_layer : public learning {
     COPY_MATRIX(other.m_matrix_weights_gradient, m_matrix_weights_gradient);
     COPY_MATRIX(other.m_bias_weights_gradient, m_bias_weights_gradient);
   #undef COPY_MATRIX
-    setup_views();  // Update views.
   #ifdef __LIB_CUDNN
     if (m_cudnn != nullptr) {
       m_cudnn->deallocate_on_gpus(m_matrix_weights_gradient_d);
@@ -253,7 +250,7 @@ class fully_connected_layer : public learning {
     const std::vector<int> neuron_dims = this->m_neuron_dims;
 
     // Initialize previous neuron tensor dimensions
-    learning::setup_dims();
+    learning_layer::setup_dims();
 
     // Initialize neuron tensor dimensions
     this->m_num_neurons = num_neurons;
@@ -262,7 +259,7 @@ class fully_connected_layer : public learning {
   }
 
   void setup_data() override {
-    learning::setup_data();
+    learning_layer::setup_data();
 
     // Initialize default weights if none are provided
     if (this->m_weights.size() > 2) {
@@ -326,14 +323,8 @@ class fully_connected_layer : public learning {
 
   }
 
-  void setup_views() override {
-    learning::setup_views();
-    this->m_weights[0]->get_values_view(*m_matrix_weights_v);
-    this->m_weights[1]->get_values_view(*m_bias_weights_v);
-  }
-
   void setup_gpu() override {
-    learning::setup_gpu();
+    learning_layer::setup_gpu();
 #ifndef __LIB_CUDNN
     throw lbann_exception("fully_connected_layer: CUDA not detected");
 #else
@@ -359,17 +350,22 @@ class fully_connected_layer : public learning {
                                                  CUDNN_TENSOR_NCHW,
                                                  cudnn::get_cudnn_data_type(),
                                                  1, 1, 1,
-                                                 m_bias_weights_v->Height()));
+                                                 m_num_neurons));
     FORCE_CHECK_CUDNN(cudnnCreateTensorDescriptor(&m_activations_desc));
     FORCE_CHECK_CUDNN(cudnnSetTensor4dDescriptor(m_activations_desc,
                                                  CUDNN_TENSOR_NCHW,
                                                  cudnn::get_cudnn_data_type(),
                                                  1, m_mini_batch_size_per_gpu, 1,
-                                                 m_bias_weights_v->Height()));
+                                                 m_num_neurons));
 
 #endif // __LIB_CUDNN
   }
 
+  void fp_set_std_matrix_view() override {
+    learning_layer::fp_set_std_matrix_view();
+    this->m_weights[0]->get_values_view(*m_matrix_weights_v);
+    this->m_weights[1]->get_values_view(*m_bias_weights_v);
+  }
 
   void fp_compute() override {
     if(this->m_using_gpus) {
@@ -491,7 +487,7 @@ class fully_connected_layer : public learning {
 };
 
 template<> inline void fully_connected_layer<data_layout::MODEL_PARALLEL>::initialize_distributed_matrices() {
-  learning::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>();
+  learning_layer::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>();
   m_matrix_weights_gradient = new DistMat(this->m_comm->get_model_grid());
   m_bias_weights_gradient = new El::DistMatrix<DataType,El::MC,El::STAR>(this->m_comm->get_model_grid());
   m_matrix_weights_v = new DistMat(this->m_comm->get_model_grid());
@@ -499,7 +495,7 @@ template<> inline void fully_connected_layer<data_layout::MODEL_PARALLEL>::initi
 }
 
 template<> inline void fully_connected_layer<data_layout::DATA_PARALLEL>::initialize_distributed_matrices() {
-  learning::initialize_distributed_matrices<data_layout::DATA_PARALLEL>();
+  learning_layer::initialize_distributed_matrices<data_layout::DATA_PARALLEL>();
   m_matrix_weights_gradient = new StarMat(this->m_comm->get_model_grid());
   m_bias_weights_gradient = new StarMat(this->m_comm->get_model_grid());
   m_matrix_weights_v = new StarMat(this->m_comm->get_model_grid());

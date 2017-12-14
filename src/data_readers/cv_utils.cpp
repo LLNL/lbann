@@ -101,20 +101,21 @@ std::ostream& operator<<(std::ostream& os, const cv_transform& tr) {
 }
 
 double cv_utils::get_depth_normalizing_factor(const int cv_depth) {
-  switch (cv_depth) {
-    case CV_8U : return depth_normalization<uint8_t>::factor();
-    case CV_8S : return depth_normalization<int8_t>::factor();
-    case CV_16U: return depth_normalization<uint16_t>::factor();
-    case CV_16S: return depth_normalization<int16_t>::factor();
-    case CV_32S: return depth_normalization<int32_t>::factor();
-    case CV_32F: return depth_normalization<float>::factor();
-    case CV_64F: return depth_normalization<double>::factor();
-  }
-
+  _SWITCH_CV_FUNC_1PARAM(cv_depth, depth_norm_factor, );
   std::stringstream err;
-  err << __FILE__ << " " << __LINE__ << " :: cv_utils::get_depth_type: invalid depth code";
+  err << __FILE__ << " " << __LINE__ << " :: cv_utils::get_depth_normalizing_factor(): invalid depth code";
   throw lbann_exception(err.str());
   return 1.0;
 }
+
+double cv_utils::get_depth_denormalizing_factor(const int cv_depth) {
+  _SWITCH_CV_FUNC_1PARAM(cv_depth, depth_norm_inverse_factor, );
+  std::stringstream err;
+  err << __FILE__ << " " << __LINE__ << " :: cv_utils::get_depth_denormalizing_factor(): invalid depth code";
+  throw lbann_exception(err.str());
+  return 1.0;
+}
+
 } // end of namespace lbann
+
 #endif // __LIB_OPENCV
