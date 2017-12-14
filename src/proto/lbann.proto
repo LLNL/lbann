@@ -26,6 +26,7 @@ message Reader {
   string label_filename = 7;
   double validation_percent = 9;
   int64 absolute_sample_count = 11;
+  int64 first_n = 200;
   double percent_of_data_to_use = 12;
   ImagePreprocessor image_preprocessor = 13;
   int32 num_labels = 99; //for imagenet
