@@ -5,14 +5,6 @@ enable_language(CXX)
 option(HYDROGEN_USE_CUBLAS "Apply the cuBLAS patch to hydrogen. WARNING: NOOP"
   OFF)
 
-# Handle the clone mechanism. First URL
-set(HYDROGEN_URL "https://github.com/llnl/elemental.git"
-  CACHE STRING "The URL from which to clone Hydrogen")
-
-# ... then the tag.
-set(HYDROGEN_TAG "hydrogen"
-  CACHE STRING "The git tag or hash to checkout for Hydrogen")
-
 # Where to install Hydrogen
 set(HYDROGEN_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
   CACHE PATH "The installation location of Hydrogen.")
@@ -20,6 +12,29 @@ set(HYDROGEN_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
 # The build type for Hydrogen
 set(HYDROGEN_CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}"
   CACHE STRING "The build type for Hydrogen.")
+
+# Get the list of HYDROGEN variables
+get_property(HYDROGEN_VARIABLES DIRECTORY PROPERTY VARIABLES)
+list(FILTER HYDROGEN_VARIABLES INCLUDE REGEX "^HYDROGEN_.*\|^Hydrogen_.*")
+
+create_cmake_arguments(
+  OUTPUT_VARIABLE HYDROGEN_CMAKE_ARGS
+  PACKAGE_NAME HYDROGEN
+  SKIP_VARS_WITH_PREFIXES "LBANN_SB"
+  EXTRA_REMOVE_PREFIXES "LBANN_SB_FWD_HYDROGEN"
+  VARIABLES ${HYDROGEN_VARIABLES})
+
+# Set the generator
+set(HYDROGEN_CMAKE_GENERATOR "${CMAKE_GENERATOR}"
+  CACHE STRING "The generator used by CMake for Hydrogen.")
+
+# Handle the clone mechanism. First URL
+set(HYDROGEN_URL "https://github.com/llnl/elemental.git"
+  CACHE STRING "The URL from which to clone Hydrogen")
+
+# ... then the tag.
+set(HYDROGEN_TAG "hydrogen"
+  CACHE STRING "The git tag or hash to checkout for Hydrogen")
 
 include(ExternalProject)
 ExternalProject_Add(hydrogen
@@ -33,7 +48,7 @@ ExternalProject_Add(hydrogen
   INSTALL_DIR ${HYDROGEN_CMAKE_INSTALL_PREFIX}
   USES_TERMINAL_BUILD 1
   CMAKE_ARGS
-  -G${CMAKE_GENERATOR}
+  -G${HYDROGEN_CMAKE_GENERATOR}
   -DCMAKE_INSTALL_PREFIX=${HYDROGEN_CMAKE_INSTALL_PREFIX}
   -DCMAKE_BUILD_TYPE=${HYDROGEN_CMAKE_BUILD_TYPE}
   -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
