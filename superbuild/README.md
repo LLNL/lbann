@@ -66,6 +66,14 @@ mechanism of the underlying build system and
 setting mechanism of the underlying build system. Other options are
 documented on a per-package basis.
 
+## A note about CUDA support
+
+If your preferred host compiler for NVCC is not set in your
+environment, CMake will probably get it wrong. If you build a package
+with CUDA using NVCC, you should be sure to pass in
+`CMAKE_CUDA_HOST_COMPILER` or set
+`CMAKE_CUDA_FLAGS=-ccbin=/path/to/host/compiler`.
+
 ## Sample invocation of CMake
 
 A sample invocation of CMake that builds a CPU-based LBANN build with
