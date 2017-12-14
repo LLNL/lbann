@@ -74,6 +74,7 @@ all default options is:
 ```
 cd $LBANN_HOME
 mkdir build
+cd build
 cmake $LBANN_HOME/superbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/path/to/install -DLBANN_SB_BUILD_CNPY=ON -DLBANN_SB_BUILD_HYDROGEN=ON -DLBANN_SB_BUILD_OPENCV=ON -DLBANN_SB_BUILD_PROTOBUF=ON -DLBANN_SB_BUILD_LBANN=ON -DCMAKE_C_COMPILER=$(which clang) -DCMAKE_CXX_COMPILER=$(which clang++) -DCMAKE_Fortran_COMPILER=$(which gfortran)
 ```
 
