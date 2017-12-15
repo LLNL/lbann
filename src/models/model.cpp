@@ -519,7 +519,7 @@ void model::reset_epoch(execution_mode mode) {
   set_execution_mode(mode);
   m_objective_function->clear_history();
   for (const auto& m : m_metrics) {
-    m->clear_history();
+    m->reset_statistics(mode);
   }
   for (const auto& l : m_layers) {
     l->set_model(this);
@@ -531,7 +531,7 @@ bool model::evaluate_mini_batch(execution_mode mode) {
   forward_prop(mode);
   m_objective_function->evaluate();
   for (const auto& m : m_metrics) {
-    m->evaluate();
+    m->evaluate(mode);
   }
   const bool finished = update_layers();
   do_batch_end_cbs(mode);
@@ -545,7 +545,7 @@ bool model::train_mini_batch() {
   forward_prop(execution_mode::training);
   m_objective_function->evaluate();
   for (const auto& m : m_metrics) {
-    m->evaluate();
+    m->evaluate(execution_mode::training);
   }
 
   // Backward prop step

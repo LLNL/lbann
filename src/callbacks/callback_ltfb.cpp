@@ -154,7 +154,7 @@ double lbann_callback_ltfb::evaluate(model *m) {
   m->evaluate(execution_mode::validation);
   for (const auto& met : m->get_metrics()) {
     if (dynamic_cast<categorical_accuracy_metric*>(met) != nullptr) {
-      return met->get_history_mean_value();
+      return met->get_mean_value(execution_mode::validation);
     }
   }
   return 0.0;

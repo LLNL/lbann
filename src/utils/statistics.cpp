@@ -324,4 +324,59 @@ void rowwise_mean_and_stdev(const AbsDistMat& data,
 
 }
 
+void columnwise_covariance(const AbsDistMat& data1,
+                           const AbsDistMat& data2,
+                           const AbsDistMat& means1,
+                           const AbsDistMat& means2,
+                           AbsDistMat& covs) {
+
+  // Check matrix formats and dimensions are valid
+  El::DistData data1_dist(data1), data2_dist(data2),
+    means1_dist(means1), means2_dist(means2), covs_dist(covs);
+  if(data1_dist != data2_dist
+     || means1_dist.colDist != El::STAR
+     || means1_dist.rowDist != data1_dist.rowDist
+     || means1_dist != means2_dist
+     || means1_dist != covs_dist) {
+    throw lbann_exception("columnwise_covariance: invalid matrix format");
+  }
+  if(data1.Height() != data2.Height() || data1.Width() != data2.Width()) {
+    throw lbann_exception("columnwise_covariance: data matrix dimensions don't match");
+  }
+
+  // Matrix dimensions
+  const El::Int height = data1.Height();
+  const El::Int width = data1.Width();
+  const El::Int local_height = data1.LocalHeight();
+  const El::Int local_width = data1.LocalWidth();
+
+  // Initialize covariance
+  covs.Resize(1, width);
+
+  // Local matrices
+  const Mat& local_data1 = data1.LockedMatrix();
+  const Mat& local_data2 = data2.LockedMatrix();
+  const Mat& local_means1 = means1.LockedMatrix();
+  const Mat& local_means2 = means2.LockedMatrix();
+  Mat& local_covs = covs.Matrix();
+
+  // Accumulate sum and divide to get covariance
+  #pragma omp parallel for
+  for(El::Int col = 0; col < local_width; ++col) {
+    DataType sum = 0;
+    const DataType mean1 = local_means1(0, col);
+    const DataType mean2 = local_means2(0, col);
+    for(El::Int row = 0; row < local_height; ++row) {
+      const DataType val1 = local_data1(row, col);
+      const DataType val2 = local_data2(row, col);
+      sum += (val1 - mean1) * (val2 - mean2);
+    }
+    local_covs(0, col) = sum;
+  }
+  AllReduce(covs, covs.RedundantComm(), El::mpi::SUM);
+  local_covs *= DataType(1) / height;
+
+}
+
+
 }
