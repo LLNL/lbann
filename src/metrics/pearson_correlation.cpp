@@ -32,44 +32,52 @@ namespace lbann {
 double pearson_correlation_metric::evaluate_compute(const AbsDistMat& prediction,
                                                     const AbsDistMat& ground_truth) {
 
-    double corr = 0.0;
+  // Initialize matrices
+  const int height = prediction.Height();
+  const int local_height = prediction.LocalHeight();
+  const int local_width = prediction.LocalWidth();
+  const Mat& prediction_local = prediction.LockedMatrix();
+  const Mat& ground_truth_local = ground_truth.LockedMatrix();
 
-    // Compute mean and stdev
-    DataType pred_mean = 0;
-    DataType pred_std = 0;
-    DataType true_mean = 0;
-    DataType true_std = 0;
-    DataType corr_mean = 0;
-    DataType corr_std = 0;
+  // Initialize workspace to compute column-wise statistics
+  std::vector<double> means(5 * local_width, 0.0);
+  double *pred_means    = &means[0 * local_width];
+  double *pred_sqmeans  = &means[1 * local_width];
+  double *true_means    = &means[2 * local_width];
+  double *true_sqmeans  = &means[3 * local_width];
+  double *product_means = &means[4 * local_width];
 
-    entrywise_mean_and_stdev(prediction,pred_mean, pred_std);
-    entrywise_mean_and_stdev(ground_truth,true_mean, true_std);
-    
-    //Compute covariance 
-    auto sub_pred_mean = [&](const DataType& z) {return z - pred_mean;};
-    auto sub_true_mean = [&](const DataType& z) {return z - true_mean;};
-     
-    AbsDistMat* fsp = prediction.Construct(prediction.Grid(),
-                                               prediction.Root());
-    AbsDistMat* fst = ground_truth.Construct(ground_truth.Grid(),
-                                               ground_truth.Root());
-    
-    Copy(prediction,*fsp);
-    Copy(ground_truth,*fst);
-    
-    El::EntrywiseMap(*fsp, El::MakeFunction(sub_pred_mean));
-    El::EntrywiseMap(*fst, El::MakeFunction(sub_true_mean));
-    
-    AbsDistMat* covariance_mat = ground_truth.Construct(ground_truth.Grid(),
-                                               ground_truth.Root());
+  // Accumulate sums for statistics
+  #pragma omp parallel for
+  for (int col = 0; col < local_width; ++col) {
+    for (int row = 0; row < local_height; ++row) {
+      const double pred_val = prediction_local(row, col);
+      const double true_val = ground_truth_local(row, col);
+      pred_means[col]    += pred_val;
+      pred_sqmeans[col]  += pred_val * pred_val;
+      true_means[col]    += true_val;
+      true_sqmeans[col]  += true_val * true_val;
+      product_means[col] += pred_val * true_val;
+    }
+  }
+  get_comm().allreduce(means.data(),
+                       means.size(),
+                       prediction.ColComm());
+  for (auto& x : means) {
+    x /= height;
+  }
 
-    El::Hadamard(*fsp,*fst, *covariance_mat);
-
-    entrywise_mean_and_stdev(*covariance_mat, corr_mean, corr_std);
-    //Compute correlation
-    corr = corr_mean/(pred_std*true_std);
-
-    return corr;
+  // Compute Pearson correlation of each column
+  double local_sum = 0.0;
+  for (int col = 0; col < local_width; ++col) {
+    const double pred_mean = pred_means[col];
+    const double pred_var  = std::max(pred_sqmeans[col] - pred_mean * pred_mean, 0.0);
+    const double true_mean = true_means[col];
+    const double true_var  = std::max(true_sqmeans[col] - true_mean * true_mean, 0.0);
+    const double cov       = product_means[col] - pred_mean * true_mean;
+    local_sum += cov / std::sqrt(pred_var * true_var);
+  }
+  return get_comm().allreduce(local_sum, prediction.RowComm());
 
 }
 
