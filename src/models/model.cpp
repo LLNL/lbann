@@ -479,7 +479,7 @@ void model::evaluate(execution_mode mode) {
 
 void model::train(int num_epochs) {
   do_train_begin_cbs();
-  for (int epoch = m_current_epoch; epoch < num_epochs; ++epoch) {
+  for (int epoch = 0; epoch < num_epochs; ++epoch) {
 
     // Stop if training has been terminated
     if (get_terminate_training()) { break; }
