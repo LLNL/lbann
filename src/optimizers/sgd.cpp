@@ -181,4 +181,40 @@ void sgd::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
 
 }
 
+////////////////////////////////////////////////////////////
+// Checkpointing
+////////////////////////////////////////////////////////////
+
+  bool sgd::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
+    optimizer::save_to_checkpoint_shared(p, name_prefix);
+    
+    if(p.get_rank() == 0){
+      pack_scalars(p);
+    }
+
+    char l_name[512];
+    sprintf(l_name, "%s_optimizer_velocity_%lldx%lld", name_prefix.c_str(), m_velocity->Height(), m_velocity->Width());
+    p.write_distmat(persist_type::train, l_name, (DistMat *)m_velocity);
+    
+    return true;
+  }
+
+  bool sgd::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
+    optimizer::load_from_checkpoint_shared(p, name_prefix);
+    struct packing_header header;
+    if (p.get_rank() == 0) {
+      unpack_scalars(p, &header);
+    }
+    
+    MPI_Bcast(&header, sizeof(header), MPI_BYTE, 0, MPI_COMM_WORLD);
+
+    unpack_header(header);
+    char l_name[512];
+    
+    sprintf(l_name, "%s_optimizer_velocity_%lldx%lld.bin", name_prefix.c_str(), m_velocity->Height(), m_velocity->Width());
+    p.read_distmat(persist_type::train, l_name, (DistMat *)m_velocity);
+    
+    return true;
+  }
+
 }  // namespace lbann

@@ -70,44 +70,7 @@ class sgd : public optimizer {
   void step_compute_gpu(std::vector<DataType*> values_d,
                         std::vector<DataType*> gradient_d) override;
 #endif // __LIB_CUDNN
-  bool save_to_checkpoint_shared(persist& p, std::string m_name) override {
-    optimizer::save_to_checkpoint_shared(p, m_name);
-    char l_name[512];
-    if (p.get_rank() == 0) {
-      sprintf(l_name, "%s_learning_rate", m_name.c_str());
-      p.write_float(persist_type::train, l_name, m_learning_rate);
-
-      sprintf(l_name, "%s_momentum", m_name.c_str());
-      p.write_float(persist_type::train, l_name, m_momentum);
-
-    }
-    //sprintf(l_name, "gradient_sgd_%s", m_name.c_str());
-    //p.write_distmat(persist_type::train, l_name, (DistMat *)m_gradient);
-    sprintf(l_name, "%s_velocity_sgd", m_name.c_str());
-    p.write_distmat(persist_type::train, l_name, (DistMat *)m_velocity);
-    return true;
-
-  }
-
-  bool load_from_checkpoint_shared(persist& p, std::string m_name) override  {
-    //optimizer::load_from_checkpoint_shared(p, m_name);
-    char l_name[512];
-    if (p.get_rank() == 0) {
-      sprintf(l_name, "%s_learning_rate", m_name.c_str());
-      p.read_float(persist_type::train, l_name, &m_learning_rate);
-
-      sprintf(l_name, "%s_momentum", m_name.c_str());
-      p.read_float(persist_type::train, l_name, &m_momentum);
-
-    }
-    MPI_Bcast(&m_learning_rate, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&m_momentum, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
-    //sprintf(l_name, "gradient_sgd_%s.bin", m_name.c_str());
-    //p.read_distmat(persist_type::train, l_name, (DistMat *)m_gradient);
-    sprintf(l_name, "%s_velocity_sgd.bin", m_name.c_str());
-    p.read_distmat(persist_type::train, l_name, (DistMat *)m_velocity);
-    return true;
-   }
+ 
  private:
 
   /** Momentum. */
@@ -116,6 +79,42 @@ class sgd : public optimizer {
   bool m_nesterov;
   /** Velocity term for momentum SGD. */
   AbsDistMat* m_velocity;
+  
+
+//************************************************************************
+// Checkpointing
+//************************************************************************
+
+  struct packing_header {
+    DataType momentum;
+    DataType learning_rate;
+  };
+
+  bool pack_scalars(persist& p) {
+    p.write_datatype(persist_type::train, "learning_rate", m_learning_rate);
+    p.write_datatype(persist_type::train, "momentum", m_momentum);
+    return true;
+  }
+
+  bool unpack_scalars(persist& p, struct packing_header *header){
+    p.read_datatype(persist_type::train, "learning_rate", &m_learning_rate);
+    p.read_datatype(persist_type::train, "momentum",  &m_momentum);
+    
+    if(header != nullptr){
+      header->momentum = m_momentum;
+      header-> learning_rate = m_learning_rate;
+    }
+   
+  return true;
+  }
+  
+  void unpack_header(struct packing_header& header){
+    m_learning_rate = header.learning_rate;
+    m_momentum = header.momentum;
+  }
+  
+  bool save_to_checkpoint_shared(persist& p, std::string m_name) override;
+  bool load_from_checkpoint_shared(persist& p, std::string m_name) override;
 
 #ifdef __LIB_CUDNN
   /** GPU memory for velocity. */
