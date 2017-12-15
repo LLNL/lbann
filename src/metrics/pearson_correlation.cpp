@@ -25,59 +25,133 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/metrics/pearson_correlation.hpp"
+#include "lbann/layers/io/target/target_layer.hpp"
 #include "lbann/utils/statistics.hpp"
 
 namespace lbann {
 
+pearson_correlation_metric::pearson_correlation_metric(lbann_comm* comm)
+  : metric(comm),
+    m_prediction_means(nullptr),
+    m_prediction_stdevs(nullptr),
+    m_ground_truth_means(nullptr),
+    m_ground_truth_stdevs(nullptr),
+    m_covariances(nullptr) {}
+
+pearson_correlation_metric::pearson_correlation_metric(const pearson_correlation_metric& other)
+  : metric(other),
+    m_prediction_means(other.m_prediction_means),
+    m_prediction_stdevs(other.m_prediction_stdevs),
+    m_ground_truth_means(other.m_ground_truth_means),
+    m_ground_truth_stdevs(other.m_ground_truth_stdevs),
+    m_covariances(other.m_covariances) {
+  if (m_prediction_means != nullptr) {
+    m_prediction_means = m_prediction_means->Copy();
+  }
+  if (m_prediction_stdevs != nullptr) {
+    m_prediction_stdevs = m_prediction_stdevs->Copy();
+  }
+  if (m_ground_truth_means != nullptr) {
+    m_ground_truth_means = m_ground_truth_means->Copy();
+  }
+  if (m_ground_truth_stdevs != nullptr) {
+    m_ground_truth_stdevs = m_ground_truth_stdevs->Copy();
+  }
+  if (m_covariances != nullptr) {
+    m_covariances = m_covariances->Copy();
+  }
+}
+
+pearson_correlation_metric& pearson_correlation_metric::operator=(const pearson_correlation_metric& other) {
+  metric::operator=(other);
+  if (m_prediction_means != nullptr)    delete m_prediction_means;
+  if (m_prediction_stdevs != nullptr)   delete m_prediction_stdevs;
+  if (m_ground_truth_means != nullptr)  delete m_ground_truth_means;
+  if (m_ground_truth_stdevs != nullptr) delete m_ground_truth_stdevs;
+  if (m_covariances != nullptr)         delete m_covariances;
+  m_prediction_means    = other.m_prediction_means;
+  m_prediction_stdevs   = other.m_prediction_stdevs;
+  m_ground_truth_means  = other.m_ground_truth_means;
+  m_ground_truth_stdevs = other.m_ground_truth_stdevs;
+  m_covariances         = other.m_covariances;
+  if (m_prediction_means != nullptr) {
+    m_prediction_means = m_prediction_means->Copy();
+  }
+  if (m_prediction_stdevs != nullptr) {
+    m_prediction_stdevs = m_prediction_stdevs->Copy();
+  }
+  if (m_ground_truth_means != nullptr) {
+    m_ground_truth_means = m_ground_truth_means->Copy();
+  }
+  if (m_ground_truth_stdevs != nullptr) {
+    m_ground_truth_stdevs = m_ground_truth_stdevs->Copy();
+  }
+  if (m_covariances != nullptr) {
+    m_covariances = m_covariances->Copy();
+  }
+  return *this;
+}
+
+pearson_correlation_metric::~pearson_correlation_metric() {
+  if (m_prediction_means != nullptr)    delete m_prediction_means;
+  if (m_prediction_stdevs != nullptr)   delete m_prediction_stdevs;
+  if (m_ground_truth_means != nullptr)  delete m_ground_truth_means;
+  if (m_ground_truth_stdevs != nullptr) delete m_ground_truth_stdevs;
+  if (m_covariances != nullptr)         delete m_covariances;
+}
+
+void pearson_correlation_metric::setup(model& m) {
+  metric::setup(m);
+  const El::DistData dist_data(get_target_layer().get_prediction());
+  if (dist_data.colDist == El::MC
+      && dist_data.rowDist == El::MR) {
+    m_prediction_means    = new StarMRMat(*dist_data.grid, dist_data.root);
+    m_prediction_stdevs   = new StarMRMat(*dist_data.grid, dist_data.root);
+    m_ground_truth_means  = new StarMRMat(*dist_data.grid, dist_data.root);
+    m_ground_truth_stdevs = new StarMRMat(*dist_data.grid, dist_data.root);
+    m_covariances         = new StarMRMat(*dist_data.grid, dist_data.root);
+  } else if (dist_data.colDist == El::STAR
+             && dist_data.rowDist == El::VC) {
+    m_prediction_means    = new StarVCMat(*dist_data.grid, dist_data.root);
+    m_prediction_stdevs   = new StarVCMat(*dist_data.grid, dist_data.root);
+    m_ground_truth_means  = new StarVCMat(*dist_data.grid, dist_data.root);
+    m_ground_truth_stdevs = new StarVCMat(*dist_data.grid, dist_data.root);
+    m_covariances         = new StarVCMat(*dist_data.grid, dist_data.root);
+  } else {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "prediction matrix has invalid distribution "
+        << "(colDist=" << dist_data.colDist << ","
+        << "rowDist=" << dist_data.rowDist << ")";
+    throw lbann_exception(err.str());
+  }
+  m_prediction_means->Resize(1, m.get_max_mini_batch_size());
+  m_prediction_stdevs->Resize(1, m.get_max_mini_batch_size());
+  m_ground_truth_means->Resize(1, m.get_max_mini_batch_size());
+  m_ground_truth_stdevs->Resize(1, m.get_max_mini_batch_size());
+  m_covariances->Resize(1, m.get_max_mini_batch_size());
+}
+
 double pearson_correlation_metric::evaluate_compute(const AbsDistMat& prediction,
                                                     const AbsDistMat& ground_truth) {
 
-  // Initialize matrices
-  const int height = prediction.Height();
-  const int local_height = prediction.LocalHeight();
-  const int local_width = prediction.LocalWidth();
-  const Mat& prediction_local = prediction.LockedMatrix();
-  const Mat& ground_truth_local = ground_truth.LockedMatrix();
-
-  // Initialize workspace to compute column-wise statistics
-  std::vector<double> means(5 * local_width, 0.0);
-  double *pred_means    = &means[0 * local_width];
-  double *pred_sqmeans  = &means[1 * local_width];
-  double *true_means    = &means[2 * local_width];
-  double *true_sqmeans  = &means[3 * local_width];
-  double *product_means = &means[4 * local_width];
-
-  // Accumulate sums for statistics
-  #pragma omp parallel for
-  for (int col = 0; col < local_width; ++col) {
-    for (int row = 0; row < local_height; ++row) {
-      const double pred_val = prediction_local(row, col);
-      const double true_val = ground_truth_local(row, col);
-      pred_means[col]    += pred_val;
-      pred_sqmeans[col]  += pred_val * pred_val;
-      true_means[col]    += true_val;
-      true_sqmeans[col]  += true_val * true_val;
-      product_means[col] += pred_val * true_val;
-    }
-  }
-  get_comm().allreduce(means.data(),
-                       means.size(),
-                       prediction.ColComm());
-  for (auto& x : means) {
-    x /= height;
-  }
+  // Compute means, standard deviations, and covariances
+  columnwise_mean_and_stdev(prediction, *m_prediction_means, *m_prediction_stdevs);
+  columnwise_mean_and_stdev(ground_truth, *m_ground_truth_means, *m_ground_truth_stdevs);
+  columnwise_covariance(prediction, ground_truth,
+                        *m_prediction_means, *m_ground_truth_means,
+                        *m_covariances);
 
   // Compute Pearson correlation of each column
+  // Note: Pearson(x,y) = cov(x,y) / ( stdev(x) * stdev(y) )
   double local_sum = 0.0;
-  for (int col = 0; col < local_width; ++col) {
-    const double pred_mean = pred_means[col];
-    const double pred_var  = std::max(pred_sqmeans[col] - pred_mean * pred_mean, 0.0);
-    const double true_mean = true_means[col];
-    const double true_var  = std::max(true_sqmeans[col] - true_mean * true_mean, 0.0);
-    const double cov       = product_means[col] - pred_mean * true_mean;
-    local_sum += cov / std::sqrt(pred_var * true_var);
+  for (int col = 0; col < m_covariances->LocalWidth(); ++col) {
+    const double pred_stdev = m_prediction_stdevs->GetLocal(0, col);
+    const double true_stdev = m_ground_truth_stdevs->GetLocal(0, col);
+    const double cov        = m_covariances->GetLocal(0, col);
+    local_sum += cov / (pred_stdev * true_stdev);
   }
-  return get_comm().allreduce(local_sum, prediction.RowComm());
+  return get_comm().allreduce(local_sum, m_covariances->DistComm());
 
 }
 

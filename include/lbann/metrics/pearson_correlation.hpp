@@ -37,14 +37,14 @@ class pearson_correlation_metric : public metric {
  public:
 
   /** Constructor. */
-  pearson_correlation_metric(lbann_comm *comm) : metric(comm) {}
+  pearson_correlation_metric(lbann_comm *comm);
 
   /** Copy constructor. */
-  pearson_correlation_metric(const pearson_correlation_metric& other) = default;
+  pearson_correlation_metric(const pearson_correlation_metric& other);
   /** Copy assignment operator. */
-  pearson_correlation_metric& operator=(const pearson_correlation_metric& other) = default;
+  pearson_correlation_metric& operator=(const pearson_correlation_metric& other);
   /** Destructor. */
-  virtual ~pearson_correlation_metric() = default;
+  virtual ~pearson_correlation_metric();
   /** Copy function. */
   pearson_correlation_metric* copy() const override {
     return new pearson_correlation_metric(*this);
@@ -52,6 +52,9 @@ class pearson_correlation_metric : public metric {
 
   /** Return a string name for this metric. */
   std::string name() const override { return "Pearson correlation"; }
+
+  /** Setup metric. */
+  virtual void setup(model& m) override;
 
  protected:
 
@@ -61,6 +64,19 @@ class pearson_correlation_metric : public metric {
    */
   double evaluate_compute(const AbsDistMat& prediction,
                           const AbsDistMat& ground_truth) override;
+
+ private:
+
+  /** Column-wise means of prediction matrix. */
+  AbsDistMat *m_prediction_means;
+  /** Column-wise standard deviations of prediction matrix. */
+  AbsDistMat *m_prediction_stdevs;
+  /** Column-wise means of ground truth matrix. */
+  AbsDistMat *m_ground_truth_means;
+  /** Column-wise standard deviations of ground truth matrix. */
+  AbsDistMat *m_ground_truth_stdevs;
+  /** Column-wise covariance between prediction and ground truth matrices. */
+  AbsDistMat *m_covariances;
 
 };
 
