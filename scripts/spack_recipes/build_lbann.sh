@@ -94,9 +94,11 @@ CLUSTER=`hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g'`
 ARCH=`uname -m`
 
 PLATFORM=
+FEATURE=
 if [ "${GPU}" == "1" -o "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" ]; then
   PLATFORM="+gpu"
   EL_VER="${EL_VER}+cublas"
+  FEATURE="_gpu"
 fi
 
 C_FLAGS=
@@ -107,7 +109,7 @@ DIST=
 case ${BUILD_TYPE} in
   Release)
     DIST=rel
-    # Don't use the march=native flag for gcc and intel compilers since that 
+    # Don't use the march=native flag for gcc and intel compilers since that
     # wouldn't allow spack to differentiate between optimization sets
     # C_FLAGS="${C_FLAGS} -march=native"
     # CXX_FLAGS="${CXX_FLAGS} -march=native"
@@ -180,7 +182,7 @@ SPEC="spack spec ${SPACK_OPTIONS}"
 CMD="spack setup ${SPACK_SETUP_FLAGS} ${SPACK_OPTIONS}"
 
 # Create a directory for the build
-DIR="${CLUSTER}_${COMPILER}_${ARCH}_${MPI}_${BLAS}_${DIST}"
+DIR="${CLUSTER}_${COMPILER}_${ARCH}${FEATURE}_${MPI}_${BLAS}_${DIST}"
 DIR=${DIR//@/-}
 DIR=${DIR// /-}
 
