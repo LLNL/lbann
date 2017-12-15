@@ -220,7 +220,7 @@ void model::replace_weights(std::vector<weights*>& new_weights) {
         << "(expected at most " << m_weights.size() << ", found " << new_weights.size() << ")";
     throw lbann_exception(err.str());
   }
-  
+
   // Replace weights in list
   std::vector<weights *> old_weights(m_weights.begin(),
                                      m_weights.begin() + new_weights.size());
@@ -334,7 +334,7 @@ void model::remap_pointers(const std::unordered_map<Layer *,Layer *>& layer_map,
     }
     l->set_weights(weights_pointers);
   }
-  
+
 }
 
 ////////////////////////////////////////////////////////////
@@ -479,18 +479,19 @@ void model::evaluate(execution_mode mode) {
 
 void model::train(int num_epochs) {
   do_train_begin_cbs();
-  for (int epoch = 0; epoch < num_epochs; ++epoch) {
+  for (int epoch = m_current_epoch; epoch < num_epochs; ++epoch) {
 
     // Stop if training has been terminated
     if (get_terminate_training()) { break; }
 
     // Setup epoch
     reset_epoch(execution_mode::training);
-    ++m_current_epoch;
 
     // Train on mini-batches
     do_epoch_begin_cbs();
     while (!train_mini_batch()) {}
+    // Once the epoch is complete, Increase the count
+    ++m_current_epoch;
     do_epoch_end_cbs();
 
     // Evaluate on validation set
@@ -518,6 +519,16 @@ bool model::evaluate_mini_batch(execution_mode mode) {
     m->evaluate(mode);
   }
   const bool finished = update_layers();
+  switch(m_execution_mode) {
+  case execution_mode::validation:
+    ++m_current_validation_step;
+    break;
+  case execution_mode::testing:
+    ++m_current_testing_step;
+    break;
+  default:
+    throw lbann_exception("Illegal execution mode in evaluate mini-batch function");
+  }
   do_batch_end_cbs(mode);
   return finished;
 }
@@ -541,8 +552,8 @@ bool model::train_mini_batch() {
   update_weights();
   const bool finished = update_layers();
 
-  do_batch_end_cbs(execution_mode::training);
   ++m_current_step;
+  do_batch_end_cbs(execution_mode::training);
   return finished;
 }
 
@@ -755,7 +766,7 @@ void model::do_layer_forward_prop_begin_cbs(execution_mode mode, Layer *l) {
       err << __FILE__ << " " << __LINE__ << " :: "
           << "invalid execution mode";
       throw lbann_exception(err.str());
-    }      
+    }
   }
 }
 
@@ -776,7 +787,7 @@ void model::do_layer_forward_prop_end_cbs(execution_mode mode, Layer *l) {
       err << __FILE__ << " " << __LINE__ << " :: "
           << "invalid execution mode";
       throw lbann_exception(err.str());
-    }      
+    }
   }
 }
 
