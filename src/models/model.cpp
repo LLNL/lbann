@@ -470,11 +470,14 @@ void model::evaluate(execution_mode mode) {
   }
 
   // Evaluate on all mini-batches
-  reset_epoch(mode);
+  reset_mode_and_model(mode);
   do_evaluate_begin_cbs(mode);
   while (!evaluate_mini_batch(mode)) {}
   do_evaluate_end_cbs(mode);
-
+  /// @todo BVE - We need to make the objective function work across
+  /// execution modes while saving state so that an LTFB round does
+  /// not interfere with the training objective function
+  reset_epoch_statistics(mode);
 }
 
 void model::train(int num_epochs) {
@@ -485,7 +488,7 @@ void model::train(int num_epochs) {
     if (get_terminate_training()) { break; }
 
     // Setup epoch
-    reset_epoch(execution_mode::training);
+    reset_mode_and_model(execution_mode::training);
 
     // Train on mini-batches
     do_epoch_begin_cbs();
@@ -493,6 +496,7 @@ void model::train(int num_epochs) {
     // Once the epoch is complete, Increase the count
     ++m_current_epoch;
     do_epoch_end_cbs();
+    reset_epoch_statistics(execution_mode::training);
 
     // Evaluate on validation set
     evaluate(execution_mode::validation);
@@ -500,14 +504,20 @@ void model::train(int num_epochs) {
   do_train_end_cbs();
 }
 
-void model::reset_epoch(execution_mode mode) {
+// At the start of the epoch, set the execution mode and make sure
+// that each layer points to this model
+void model::reset_mode_and_model(execution_mode mode) {
   set_execution_mode(mode);
+  for (const auto& l : m_layers) {
+    l->set_model(this);
+  }
+}
+
+// At the end of the epoch, clean up the objective function and metrics
+void model::reset_epoch_statistics(execution_mode mode) {
   m_objective_function->clear_history();
   for (const auto& m : m_metrics) {
     m->reset_statistics(mode);
-  }
-  for (const auto& l : m_layers) {
-    l->set_model(this);
   }
 }
 

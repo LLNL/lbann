@@ -57,7 +57,7 @@ class model {
         int mini_batch_size,
         objective_function *obj_fn,
         optimizer* default_optimizer = nullptr);
-  
+
   /** Copy constructor. */
   model(const model& other);
   /** Copy assignment operator. */
@@ -113,7 +113,7 @@ class model {
 
   /** Replace the model's weights. */
   void replace_weights(std::vector<weights *>& w);
-  
+
   /** Return the model's weights. */
   const std::vector<weights *>& get_weights() const { return m_weights; }
 
@@ -130,7 +130,7 @@ class model {
   inline int get_cur_step() const {
     return m_current_step;  /// @todo This should be renamed to get_cur_training step and replaced with one that returns the current based on execution mode
   }
-  
+
   /** Get the current validation step for the model. */
   inline int get_cur_validation_step() const {
     return m_current_validation_step;
@@ -240,7 +240,7 @@ class model {
   /** Current callbacks to process. */
   std::vector<lbann_callback *> m_callbacks;
 
-  /** Default optimizer. 
+  /** Default optimizer.
    *  If a layer needs to construct an optimizer during setup, it will
    *  make a copy of the default optimizer.
    */
@@ -294,8 +294,10 @@ class model {
    */
   virtual void setup_weights();
 
-  /** Reset model for an epoch. */
-  virtual void reset_epoch(execution_mode mode);
+  /** Reset model pointer and execution mode. */
+  virtual void reset_mode_and_model(execution_mode mode);
+  /** Reset model statistics for an epoch. */
+  virtual void reset_epoch_statistics(execution_mode mode);
   /** Evaluate model on a mini-batch */
   virtual bool evaluate_mini_batch(execution_mode mode);
   /** Train model on a mini-batch. */
