@@ -7,4 +7,4 @@ import common
 common.build_and_submit_slurm_script( 
    'model_alexnet.prototext', 
    '../../data_readers/data_reader_imagenet.prototext',
-   '../../optimizers/opt_adagrad.prototext' )
+   '../../optimizers/opt_sgd.prototext' )
