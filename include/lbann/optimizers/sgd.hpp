@@ -87,29 +87,24 @@ class sgd : public optimizer {
 
   struct packing_header {
     DataType momentum;
-    DataType learning_rate;
   };
 
   bool pack_scalars(persist& p) {
-    p.write_datatype(persist_type::train, "learning_rate", m_learning_rate);
     p.write_datatype(persist_type::train, "momentum", m_momentum);
     return true;
   }
 
   bool unpack_scalars(persist& p, struct packing_header *header){
-    p.read_datatype(persist_type::train, "learning_rate", &m_learning_rate);
     p.read_datatype(persist_type::train, "momentum",  &m_momentum);
     
     if(header != nullptr){
       header->momentum = m_momentum;
-      header-> learning_rate = m_learning_rate;
     }
    
   return true;
   }
   
   void unpack_header(struct packing_header& header){
-    m_learning_rate = header.learning_rate;
     m_momentum = header.momentum;
   }
   

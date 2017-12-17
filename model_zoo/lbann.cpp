@@ -194,7 +194,6 @@ int main(int argc, char *argv[]) {
     // restart model from checkpoint if we have one
     //@todo
     
-    int epochs = pb_model->num_epochs() - model->get_cur_epoch();
     if (comm->am_world_master()) {
       std::cout << std::endl;
       if (default_optimizer != nullptr) {
@@ -230,7 +229,7 @@ int main(int argc, char *argv[]) {
 #endif
 
       // Train model
-      model->train(epochs);
+      model->train(pb_model->num_epochs());
 
       // Evaluate model on test set
       model->evaluate(execution_mode::testing);
