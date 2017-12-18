@@ -87,7 +87,7 @@ class deconvolution_layer : public base_convolution_layer {
                              cudnn) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "convolution only supports DATA_PARALLEL");
-    
+
     // Setup the data distribution
     initialize_distributed_matrices();
 
