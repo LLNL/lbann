@@ -91,6 +91,22 @@ class convolution_layer : public base_convolution_layer {
         }
       }
     }
+    for (size_t h=0; h<this->m_neuron_dims.size(); h++) {
+      if (h == 0) { s << " - Acts="; }
+      s << this->m_neuron_dims[h] ;
+      if (h == 0) { s << "c x "; }
+      if (this->m_neuron_dims.size() == 2) {
+        if (h == 1) { s << "w "; }
+      }else if (this->m_neuron_dims.size() == 3) {
+        if (h == 1) { s << "w x "; }
+        if (h == 2) { s << "h"; }
+      }else {
+        if (h > 1) {
+          s << " ";
+        }
+      }
+    }
+
     return s.str();;
   }
 
@@ -129,7 +145,7 @@ class convolution_layer : public base_convolution_layer {
                              cudnn) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "convolution only supports DATA_PARALLEL");
-    
+
     // Setup the data distribution
     initialize_distributed_matrices();
 
@@ -176,6 +192,7 @@ class convolution_layer : public base_convolution_layer {
     }
   #endif
 
+    // (W - F + 2P) / S + 1
     // Initialize neuron tensor dimensions
     this->m_neuron_dims[0] = this->m_kernel_dims[0];
     for(int i=0; i<this->m_num_neuron_dims-1; ++i) {
