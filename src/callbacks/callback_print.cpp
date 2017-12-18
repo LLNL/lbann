@@ -162,8 +162,8 @@ void lbann_callback_print::report_results(model *m) {
 
     // Report score for each metric
     for (const auto& met : m->get_metrics()) {
-      const double score = met->get_history_mean_value();
-      const int num_samples = met->get_history_num_samples();
+      const double score = met->get_mean_value(m->get_execution_mode());
+      const int num_samples = met->get_statistics_num_samples(m->get_execution_mode());
       if (comm->am_world_master()) {
         std::vector<double> score_list(comm->get_num_models());
         std::vector<int> num_samples_list(comm->get_num_models());

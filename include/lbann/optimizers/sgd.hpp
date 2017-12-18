@@ -80,9 +80,40 @@ class sgd : public optimizer {
   /** Velocity term for momentum SGD. */
   AbsDistMat* m_velocity;
 
+
+//************************************************************************
+// Checkpointing
+//************************************************************************
+
+  struct packing_header {
+    DataType momentum;
+  };
+
+  bool pack_scalars(persist& p) {
+    p.write_datatype(persist_type::train, "momentum", m_momentum);
+    return true;
+  }
+
+  bool unpack_scalars(persist& p, struct packing_header *header){
+    p.read_datatype(persist_type::train, "momentum",  &m_momentum);
+
+    if(header != nullptr){
+      header->momentum = m_momentum;
+    }
+
+  return true;
+  }
+
+  void unpack_header(struct packing_header& header){
+    m_momentum = header.momentum;
+  }
+
+  bool save_to_checkpoint_shared(persist& p, std::string m_name) override;
+  bool load_from_checkpoint_shared(persist& p, std::string m_name) override;
+
 #ifdef LBANN_HAS_CUDNN
   /** GPU memory for velocity. */
-  std::vector<DataType*> m_velocity_d;  
+  std::vector<DataType*> m_velocity_d;
 #endif // LBANN_HAS_CUDNN
 
 };

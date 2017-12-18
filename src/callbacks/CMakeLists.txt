@@ -4,6 +4,7 @@ set_full_path(THIS_DIR_SOURCES
   callback_check_init.cpp
   callback_check_reconstruction_error.cpp
   callback_checknan.cpp
+  callback_checkpoint.cpp
   callback_checksmall.cpp
   callback_debug.cpp
   callback_debug_io.cpp

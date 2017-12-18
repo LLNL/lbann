@@ -56,7 +56,7 @@ class adam : public optimizer {
   ~adam() override;
   /** Create a copy. */
   adam* copy() const override { return new adam(*this); }
-  
+
   /** Returns the optimizer name. */
   std::string get_type() const override { return "adam"; }
   /** Get a human-readable description of the optimizer. */
@@ -92,10 +92,60 @@ class adam : public optimizer {
 
 #ifdef LBANN_HAS_CUDNN
   /** GPU memory for first moment estimates. */
-  std::vector<DataType*> m_moment1_d;  
+  std::vector<DataType*> m_moment1_d;
   /** GPU memory for second moment estimates. */
-  std::vector<DataType*> m_moment2_d;  
+  std::vector<DataType*> m_moment2_d;
 #endif // LBANN_HAS_CUDNN
+
+//************************************************************************
+// Checkpointing
+//************************************************************************
+ private:
+  /* struct used to serialize mode fields in file and MPI transfer */
+  struct packing_header {
+    DataType beta1;
+    DataType beta2;
+    DataType eps;
+    DataType current_beta1;
+    DataType current_beta2;
+  };
+
+  bool pack_scalars(persist& p) {
+    p.write_datatype(persist_type::train, "beta1", m_beta1);
+    p.write_datatype(persist_type::train, "beta2", m_beta2);
+    p.write_datatype(persist_type::train, "eps",   m_eps);
+    p.write_datatype(persist_type::train, "current_beta1", m_current_beta1);
+    p.write_datatype(persist_type::train, "current_beta2", m_current_beta2);
+    return true;
+  }
+
+  bool unpack_scalars(persist& p, struct packing_header *header) {
+    p.read_datatype(persist_type::train, "beta1", &m_beta1);
+    p.read_datatype(persist_type::train, "beta2", &m_beta2);
+    p.read_datatype(persist_type::train, "eps",   &m_eps);
+    p.read_datatype(persist_type::train, "current_beta1", &m_current_beta1);
+    p.read_datatype(persist_type::train, "current_beta2", &m_current_beta2);
+
+    if(header != nullptr) {
+      header->beta1 = m_beta1;
+      header->beta2 = m_beta2;
+      header->eps = m_eps;
+      header->current_beta1 = m_current_beta1;
+      header->current_beta2 = m_current_beta2;
+    }
+    return true;
+  }
+
+  void unpack_header(struct packing_header& header) {
+    m_beta1 = header.beta1;
+    m_beta2 = header.beta2;
+    m_eps = header.eps;
+    m_current_beta1 = header.current_beta1;
+    m_current_beta2 = header.current_beta2;
+  }
+
+  bool save_to_checkpoint_shared(persist& p, std::string m_name) override;
+  bool load_from_checkpoint_shared(persist& p, std::string m_name) override;
 
 };
 

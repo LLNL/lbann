@@ -63,8 +63,17 @@ class adagrad : public optimizer {
   /** Perform the computation in an optimization step. */
   void step_compute(AbsDistMat& values, const AbsDistMat& gradient) override;
 
+  /// Set parameters to optimize and initialize optimizer
+  void setup(AbsDistMat *parameters) ;
+  /// Update parameters using objective function gradient
+  void update(const AbsDistMat *gradient) ;
+  std::string name() const { return "adagrad"; }
+
  private:
 
+  bool save_to_checkpoint_shared(persist& p, std::string m_name) override;
+  bool load_from_checkpoint_shared(persist& p, std::string m_name) override;
+  
   /** Small factor to avoid division by zero. */
   DataType m_eps;
   /** AdaGrad cache. */

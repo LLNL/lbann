@@ -115,4 +115,28 @@ void adagrad::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
   }
 }
 
+////////////////////////////////////////////////////////////
+// Checkpointing
+////////////////////////////////////////////////////////////
+
+  bool adagrad::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
+    optimizer::save_to_checkpoint_shared(p, name_prefix);
+
+    char l_name[512];
+    sprintf(l_name, "%s_optimizer_cache_%lldx%lld", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
+    p.write_distmat(persist_type::train, l_name, (DistMat *)m_cache);
+    
+    return true;
+  }
+
+  bool adagrad::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
+    optimizer::load_from_checkpoint_shared(p, name_prefix);
+    char l_name[512];
+    
+    sprintf(l_name, "%s_optimizer_cache_%lldx%lld.bin", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
+    p.read_distmat(persist_type::train, l_name, (DistMat *)m_cache);
+    
+    return true;
+  }
+
 }  // namespace lbann

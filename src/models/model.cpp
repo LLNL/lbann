@@ -60,11 +60,6 @@ model::model(lbann_comm *comm,
     m_effective_mini_batch_size(mini_batch_size),
     m_current_phase(0),
     m_comm(comm),
-    m_checkpoint_dir(""),
-    m_checkpoint_epochs(0),
-    m_checkpoint_steps(0),
-    m_checkpoint_secs(0.0),
-    m_checkpoint_last(get_time()),
     m_default_optimizer(default_optimizer) {}
 
 model::model(const model& other) :
@@ -78,12 +73,7 @@ model::model(const model& other) :
   m_current_mini_batch_size(other.m_current_mini_batch_size),
   m_effective_mini_batch_size(other.m_effective_mini_batch_size),
   m_current_phase(other.m_current_phase),
-  m_comm(other.m_comm),
-  m_checkpoint_dir(other.m_checkpoint_dir),
-  m_checkpoint_epochs(other.m_checkpoint_epochs),
-  m_checkpoint_steps(other.m_checkpoint_steps),
-  m_checkpoint_secs(other.m_checkpoint_secs),
-  m_checkpoint_last(other.m_checkpoint_last) {
+  m_comm(other.m_comm) {
 
   // Deep copies
   m_objective_function = other.m_objective_function;
@@ -134,11 +124,6 @@ model& model::operator=(const model& other) {
   m_effective_mini_batch_size = other.m_effective_mini_batch_size;
   m_current_phase = other.m_current_phase;
   m_comm = other.m_comm;
-  m_checkpoint_dir = other.m_checkpoint_dir;
-  m_checkpoint_epochs = other.m_checkpoint_epochs;
-  m_checkpoint_steps = other.m_checkpoint_steps;
-  m_checkpoint_secs = other.m_checkpoint_secs;
-  m_checkpoint_last = other.m_checkpoint_last;
 
   // Deep copies
   m_objective_function = other.m_objective_function;
@@ -235,7 +220,7 @@ void model::replace_weights(std::vector<weights*>& new_weights) {
         << "(expected at most " << m_weights.size() << ", found " << new_weights.size() << ")";
     throw lbann_exception(err.str());
   }
-  
+
   // Replace weights in list
   std::vector<weights *> old_weights(m_weights.begin(),
                                      m_weights.begin() + new_weights.size());
@@ -349,7 +334,7 @@ void model::remap_pointers(const std::unordered_map<Layer *,Layer *>& layer_map,
     }
     l->set_weights(weights_pointers);
   }
-  
+
 }
 
 ////////////////////////////////////////////////////////////
@@ -427,7 +412,7 @@ void model::setup_layers() {
     layer->setup();
     layer->check_setup();
     if (m_comm->am_world_master()) {
-      std::cout << "[" << std::setw(18) << layer->get_type() <<  "] Set up a layer with input " << std::setw(7) << layer->get_num_prev_neurons() << " and " << std::setw(7) << layer->get_num_neurons() << " neurons."  << std::endl;
+      std::cout << print_layer_description(layer) << std::endl;
     }
   }
 }
@@ -485,44 +470,54 @@ void model::evaluate(execution_mode mode) {
   }
 
   // Evaluate on all mini-batches
-  reset_epoch(mode);
+  reset_mode_and_model(mode);
   do_evaluate_begin_cbs(mode);
   while (!evaluate_mini_batch(mode)) {}
   do_evaluate_end_cbs(mode);
-
+  /// @todo BVE - We need to make the objective function work across
+  /// execution modes while saving state so that an LTFB round does
+  /// not interfere with the training objective function
+  reset_epoch_statistics(mode);
 }
 
 void model::train(int num_epochs) {
   do_train_begin_cbs();
-  for (int epoch = 0; epoch < num_epochs; ++epoch) {
+  for (int epoch = m_current_epoch; epoch < num_epochs; ++epoch) {
 
     // Stop if training has been terminated
     if (get_terminate_training()) { break; }
 
     // Setup epoch
-    reset_epoch(execution_mode::training);
-    ++m_current_epoch;
+    reset_mode_and_model(execution_mode::training);
 
     // Train on mini-batches
     do_epoch_begin_cbs();
     while (!train_mini_batch()) {}
+    // Once the epoch is complete, Increase the count
+    ++m_current_epoch;
     do_epoch_end_cbs();
+    reset_epoch_statistics(execution_mode::training);
 
     // Evaluate on validation set
     evaluate(execution_mode::validation);
-
   }
   do_train_end_cbs();
 }
 
-void model::reset_epoch(execution_mode mode) {
+// At the start of the epoch, set the execution mode and make sure
+// that each layer points to this model
+void model::reset_mode_and_model(execution_mode mode) {
   set_execution_mode(mode);
-  m_objective_function->clear_history();
-  for (const auto& m : m_metrics) {
-    m->clear_history();
-  }
   for (const auto& l : m_layers) {
     l->set_model(this);
+  }
+}
+
+// At the end of the epoch, clean up the objective function and metrics
+void model::reset_epoch_statistics(execution_mode mode) {
+  m_objective_function->clear_history();
+  for (const auto& m : m_metrics) {
+    m->reset_statistics(mode);
   }
 }
 
@@ -531,9 +526,19 @@ bool model::evaluate_mini_batch(execution_mode mode) {
   forward_prop(mode);
   m_objective_function->evaluate();
   for (const auto& m : m_metrics) {
-    m->evaluate();
+    m->evaluate(mode);
   }
   const bool finished = update_layers();
+  switch(m_execution_mode) {
+  case execution_mode::validation:
+    ++m_current_validation_step;
+    break;
+  case execution_mode::testing:
+    ++m_current_testing_step;
+    break;
+  default:
+    throw lbann_exception("Illegal execution mode in evaluate mini-batch function");
+  }
   do_batch_end_cbs(mode);
   return finished;
 }
@@ -545,7 +550,7 @@ bool model::train_mini_batch() {
   forward_prop(execution_mode::training);
   m_objective_function->evaluate();
   for (const auto& m : m_metrics) {
-    m->evaluate();
+    m->evaluate(execution_mode::training);
   }
 
   // Backward prop step
@@ -557,8 +562,8 @@ bool model::train_mini_batch() {
   update_weights();
   const bool finished = update_layers();
 
-  do_batch_end_cbs(execution_mode::training);
   ++m_current_step;
+  do_batch_end_cbs(execution_mode::training);
   return finished;
 }
 
@@ -771,7 +776,7 @@ void model::do_layer_forward_prop_begin_cbs(execution_mode mode, Layer *l) {
       err << __FILE__ << " " << __LINE__ << " :: "
           << "invalid execution mode";
       throw lbann_exception(err.str());
-    }      
+    }
   }
 }
 
@@ -792,7 +797,7 @@ void model::do_layer_forward_prop_end_cbs(execution_mode mode, Layer *l) {
       err << __FILE__ << " " << __LINE__ << " :: "
           << "invalid execution mode";
       throw lbann_exception(err.str());
-    }      
+    }
   }
 }
 
@@ -892,256 +897,16 @@ void model::summarize_matrices(lbann_summary& summarizer) {
 // Checkpointing
 ////////////////////////////////////////////////////////////
 
-#if 0
-
-/** \brief Returns true if a checkpoint should be taken, false otherwise */
-bool model::need_checkpoint() {
-  /* TODO: since we're using clocks, this requires a bcast for each call,
-   * we could use number of samples processed to make a local decision */
-
-  // if none of our checkpoint conditions are set, assume we're not checkpointing
-  if (m_checkpoint_epochs == 0 &&
-      m_checkpoint_steps  == 0 &&
-      m_checkpoint_secs   == 0.0) {
-    return false;
-  }
-
-  // assume that we won't checkpoint
-  int flag = 0;
-
-  // if at start of epoch and evenly divide
-  if (flag == 0 && m_checkpoint_epochs > 0) {
-    if (at_epoch_start()) {
-      flag = (int) (m_current_epoch % m_checkpoint_epochs == 0);
-    }
-  }
-
-  // if our current step is evenly divisable by checkpoint steps,
-  // take a checkpoint
-  if (flag == 0 && m_checkpoint_steps > 0) {
-    flag = (int) (m_current_step % m_checkpoint_steps == 0);
-  }
-
-  // check the clock if time-based checkpoint is enabled
-  if (flag == 0 && m_checkpoint_secs != 0.0) {
-    // have rank 0 determine whether we should checkpoint
-    // to avoid issues with clock skew, we rely on rank 0 to make decision
-    if (m_comm->am_world_master()) {
-      // get the current time
-      double current = MPI_Wtime();
-
-      // compute time next checkpoint is due
-      double next = m_checkpoint_last + m_checkpoint_secs;
-
-      // determine whether it's time for a checkpoint
-      flag = (current >= next);
-    }
-
-    // get flag from rank 0
-    MPI_Bcast(&flag, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  }
-
-  return (bool)flag;
-}
-
-/** \brief Writes a "latest" file which records epoch number and sample offset for the most recent checkpoint */
-static bool write_latest(const char *dir, const char *name, int epoch, int train) {
-  // define filename
-  char filename[1024];
-  sprintf(filename, "%s/%s", dir, name);
-
-  // open the file for writing
-  int fd = openwrite(filename);
-  if (fd != -1) {
-    write_uint32(fd, "epoch", (uint32_t)epoch);
-    write_uint32(fd, "train", (uint32_t)train);
-
-    // close our file
-    closewrite(fd, filename);
-  }
-
-  return true;
-}
-
-/** \brief Reads the "latest" file and returns the epoch number and sample offset for most recent checkpoint */
-static bool read_latest(const char *dir, const char *name, int *epochLast, int *trainLast) {
-  // assume we don't have a file, we'll return -1 in that case
-  *epochLast = -1;
-  *trainLast = -1;
-
-  // define filename
-  char filename[1024];
-  sprintf(filename, "%s/%s", dir, name);
-
-  // open the file for reading
-  int fd = openread(filename);
-  if (fd != -1) {
-    // read epoch from file
-    uint32_t epoch;
-    read_uint32(fd, "epoch", &epoch);
-    *epochLast = (int) epoch;
-
-    // read epoch from file
-    uint32_t train;
-    read_uint32(fd, "train", &train);
-    *trainLast = train;
-
-    // close our file
-    closeread(fd, filename);
-  }
-
-  return true;
-}
-
-struct lbann_checkpoint {
-  int epoch; // current epoch number
-  int step;  // current offset into list of training example indices array
-  float learning_rate; // current learning rate
-};
-
-//bool model::checkpointShared(TrainingParams& trainParams)
-bool model::checkpointShared() {
-  // if the checkpoint directory is not defined, bail
-  if (m_checkpoint_dir.length() == 0) {
-    return false;
-  }
-
-  // time how long this takes
-  Timer timer;
-
-  // get checkpoint directory
-  const char *dir = m_checkpoint_dir.c_str();
-
-  // read current epoch and step counters from model
-  int epoch = m_current_epoch;
-  int step  = m_current_step;
-
-  // let user know we're saving a checkpoint
-  MPI_Barrier(MPI_COMM_WORLD);
-  if (m_comm->am_world_master()) {
-    timer.Start();
-    printf("Checkpoint: epoch %d step %d ...\n", epoch, step);
-    fflush(stdout);
-  }
-
-  // create top level directory
-  //const char* dir = trainParams.ParameterDir.c_str();
-  makedir(dir);
-
-  // create subdirectory for this epoch
-  char epochdir[1024];
-  snprintf(epochdir, sizeof(epochdir), "%s/shared.epoch.%d.step.%d", dir, epoch, step);
-
-  // start our checkpoint
-  persist p;
-  p.open_checkpoint(epochdir);
-
-  // call virtual function to checkpoint model state
-  this->save_to_checkpoint_shared(p);
-
-  // close our checkpoint
-  p.close_checkpoint();
-
-  uint64_t bytes_count = p.get_bytes();
-
-  // write epoch number to current file, we do this at the end so as to only update
-  // this file when we know we have a new valid checkpoint
-  if (m_comm->am_world_master()) {
-    write_latest(dir, "shared.last", epoch, step);
-  }
-
-  // stop timer and report cost
-  MPI_Barrier(MPI_COMM_WORLD);
-  if (m_comm->am_world_master()) {
-    double secs = timer.Stop();
-    double bw = 0.0;
-    if (secs > 0.0) {
-      bw = ((double) bytes_count) / (secs * 1024.0 * 1024.0);
-    }
-    printf("Checkpoint complete: Epoch=%d Step=%d (%f secs, %llu bytes, %f MB/sec)\n",
-           epoch, step, secs, (unsigned long long) bytes_count, bw
-          );
-    fflush(stdout);
-  }
-
-  // saved a checkpoint, update our last checkpoint time
-  m_checkpoint_last = MPI_Wtime();
-
-  return true;
-}
-
-bool model::restartShared() {
-  // if the checkpoint directory is not defined, bail
-  if (m_checkpoint_dir.length() == 0) {
-    return false;
-  }
-
-  // get top level directory
-  const char *dir = m_checkpoint_dir.c_str();
-
-  // read epoch number from current file
-  int epoch, step;
-  if (m_comm->am_world_master()) {
-    read_latest(dir, "shared.last", &epoch, &step);
-  }
-  MPI_Bcast(&epoch, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&step,  1, MPI_INT, 0, MPI_COMM_WORLD);
-
-  // if we couldn't find the latest epoch, just return
-  if (epoch < 0) {
-    return false;
-  }
-
-  // time how long this takes
-  Timer timer;
-
-  // let user know we're restarting from a checkpoint
-  MPI_Barrier(MPI_COMM_WORLD);
-  if (m_comm->am_world_master()) {
-    timer.Start();
-    printf("Restart: epoch %d ...\n", epoch);
-    fflush(stdout);
-  }
-
-  // get subdirectory for this epoch
-  char epochdir[1024];
-  sprintf(epochdir, "%s/shared.epoch.%d.step.%d", dir, epoch, step);
-
-  // open our checkpoint
-  persist p;
-  p.open_restart(epochdir);
-
-  // call virtual function to restore model from checkpoint
-  this->load_from_checkpoint_shared(p);
-
-  // close our checkpoint
-  p.close_restart();
-
-  uint64_t bytes_count = p.get_bytes();
-
-  // let user know we've completed reading our restart
-  MPI_Barrier(MPI_COMM_WORLD);
-  if (m_comm->am_world_master()) {
-    double secs = timer.Stop();
-    double bw = 0.0;
-    if (secs > 0.0) {
-      bw = ((double) bytes_count) / (secs * 1024.0 * 1024.0);
-    }
-    printf("Restart complete: Epoch=%d Step=%d (%f secs, %llu bytes, %f MB/sec)\n",
-           epoch, step, secs, (unsigned long long) bytes_count, bw
-          );
-    fflush(stdout);
-  }
-
-  return true;
-}
-
 /* struct used to serialize mode fields in file and MPI transfer */
 struct lbann_model_header {
   uint32_t execution_mode;
   uint32_t terminate_training;
   uint64_t current_epoch;
   uint64_t current_step;
+  uint64_t current_validation_step;
+  uint64_t current_testing_step;
+  uint32_t max_mini_batch_size;
+  uint32_t current_mini_batch_size;
   uint32_t current_phase;
 };
 
@@ -1152,9 +917,16 @@ bool model::save_to_checkpoint_shared(persist& p) {
     p.write_uint32(persist_type::train, "terminate_training", (uint32_t) m_terminate_training);
     p.write_uint64(persist_type::train, "current_epoch",      (uint64_t) m_current_epoch);
     p.write_uint64(persist_type::train, "current_step",       (uint64_t) m_current_step);
+    p.write_uint64(persist_type::train, "current_validataion_step",       (uint64_t) m_current_validation_step);
+    p.write_uint64(persist_type::train, "current_testing_step",       (uint64_t) m_current_testing_step);
+    p.write_uint32(persist_type::train, "max_mini_batch_size",      (uint32_t) m_max_mini_batch_size);
+    p.write_uint32(persist_type::train, "current_mini_batch_size",      (uint32_t) m_current_mini_batch_size);
     p.write_uint32(persist_type::train, "current_phase",      (uint32_t) m_current_phase);
   }
 
+  for (const auto& m : m_metrics) {
+    m->save_to_checkpoint_shared(p);
+  }
   return true;
 }
 
@@ -1167,6 +939,10 @@ bool model::load_from_checkpoint_shared(persist& p) {
     p.read_uint32(persist_type::train, "terminate_training", &header.terminate_training);
     p.read_uint64(persist_type::train, "current_epoch",      &header.current_epoch);
     p.read_uint64(persist_type::train, "current_step",       &header.current_step);
+    p.read_uint64(persist_type::train, "current_validation_step",       &header.current_validation_step);
+    p.read_uint64(persist_type::train, "current_testing_step",       &header.current_testing_step);
+    p.read_uint32(persist_type::train, "max_mini_batch_size",      &header.max_mini_batch_size);
+    p.read_uint32(persist_type::train, "current_mini_batch_size",      &header.current_mini_batch_size);
     p.read_uint32(persist_type::train, "current_phase",      &header.current_phase);
   }
 
@@ -1179,11 +955,16 @@ bool model::load_from_checkpoint_shared(persist& p) {
   m_terminate_training = (bool)           header.terminate_training;
   m_current_epoch      = (int)            header.current_epoch;
   m_current_step       = (int)            header.current_step;
+  m_current_validation_step = (int)       header.current_validation_step;
+  m_current_testing_step = (int)          header.current_testing_step;
+  m_max_mini_batch_size = (int)           header.max_mini_batch_size;
+  m_current_mini_batch_size = (int)       header.current_mini_batch_size;
   m_current_phase      =                  header.current_phase;
 
+  for (const auto& m : m_metrics) {
+    m->load_from_checkpoint_shared(p);
+  }
   return true;
 }
-
-#endif // 0
 
 }  // namespace lbann
