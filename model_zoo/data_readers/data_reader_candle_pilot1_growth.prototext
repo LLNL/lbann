@@ -1,9 +1,12 @@
 data_reader {
   reader {
-    name: "csv"
+    #name: "csv"
+    name: "merge_features"
+    format: "csv"
     role: "train"
     shuffle: true
-    data_filename: "/p/lscratchf/allen99/anlftp/ftp.mcs.anl.gov/pub/candle/public/benchmarks/P1B3.v2/logcon4/growth1.train.LC.NCI_H226.csv.X.1"
+    #data_filename: "/p/lscratchf/allen99/anlftp/ftp.mcs.anl.gov/pub/candle/public/benchmarks/P1B3.v2/logcon4/growth1.train.LC.NCI_H226.csv.X.1"
+    data_file_pattern: "/p/lscratchf/allen99/anlftp/ftp.mcs.anl.gov/pub/candle/public/benchmarks/P1B3.v2/logcon4/growth1.train.LC.NCI_H226.csv.X.1"
     label_filename: "/p/lscratchf/allen99/anlftp/ftp.mcs.anl.gov/pub/candle/public/benchmarks/P1B3.v2/logcon4/growth1.train.LC.NCI_H226.csv.y.2"
     validation_percent: 0.1
     absolute_sample_count: 0
@@ -11,13 +14,16 @@ data_reader {
     #label_col: 6
     num_labels: 2 
     separator: '\t'
-    disable_labels: false 
+    disable_labels: true 
   }
   reader {
-    name: "csv"
+    #name: "csv"
+    name: "merge_features"
+    format: "csv"
     role: "test"
     shuffle: true
-    data_filename: "/p/lscratchf/allen99/anlftp/ftp.mcs.anl.gov/pub/candle/public/benchmarks/P1B3.v2/logcon4/growth1.train.LC.NCI_H226.csv.X.1"
+    #data_filename: "/p/lscratchf/allen99/anlftp/ftp.mcs.anl.gov/pub/candle/public/benchmarks/P1B3.v2/logcon4/growth1.train.LC.NCI_H226.csv.X.1"
+    data_file_pattern: "/p/lscratchf/allen99/anlftp/ftp.mcs.anl.gov/pub/candle/public/benchmarks/P1B3.v2/logcon4/growth1.train.LC.NCI_H226.csv.X.1"
     label_filename: "/p/lscratchf/allen99/anlftp/ftp.mcs.anl.gov/pub/candle/public/benchmarks/P1B3.v2/logcon4/growth1.train.LC.NCI_H226.csv.y.2"
     validation_percent: 1.0
     absolute_sample_count: 0
@@ -25,6 +31,6 @@ data_reader {
     num_labels: 2 
     percent_of_data_to_use: 1.0
     separator: '\t'
-    disable_labels: false 
+    disable_labels: true 
   }
 }
