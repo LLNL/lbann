@@ -89,24 +89,24 @@ class optimizer {
   /** Add to the gradient matrix. */
   void add_to_gradient(const AbsDistMat& gradient,
                        DataType scale = DataType(1));
-  /** Allreduce and add to gradient matrix.
+  /**
    *  The input is added to a staging matrix. When the gradient is
    *  needed, an allreduce is applied over the redundant communicator
    *  of the gradient matrix and the result is added to the gradient.
    */
-  void allreduce_and_add_to_gradient(const AbsDistMat& gradient,
-                                     DataType scale = DataType(1));
+  void stage_gradient_for_accumulation(const AbsDistMat& gradient,
+                                       DataType scale = DataType(1));
 #ifdef __LIB_CUDNN
   /** Add to the gradient matrix on GPU. */
   void add_to_gradient_gpu(std::vector<DataType*>& gradient,
                            DataType scale = DataType(1));
-  /** Allreduce and add to gradient matrix on GPU.
+  /**
    *  The input is added to a staging matrix. When the gradient is
    *  needed, an allreduce is applied over the redundant communicator
    *  of the gradient matrix and the result is added to the gradient.
    */
-  void allreduce_and_add_to_gradient_gpu(std::vector<DataType*>& gradient,
-                                         DataType scale = DataType(1));
+  void stage_gradient_for_accumulation_gpu(std::vector<DataType*>& gradient,
+                                           DataType scale = DataType(1));
 #endif // __LIB_CUDNN
 
   /** Setup optimizer. */

@@ -308,8 +308,8 @@ void optimizer::add_to_gradient(const AbsDistMat& gradient,
   }
 }
 
-void optimizer::allreduce_and_add_to_gradient(const AbsDistMat& gradient,
-                                              DataType scale) {
+void optimizer::stage_gradient_for_accumulation(const AbsDistMat& gradient,
+                                                DataType scale) {
   if (!is_initialized()) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
@@ -351,8 +351,8 @@ void optimizer::add_to_gradient_gpu(std::vector<DataType*>& gradient,
   }
 }
 
-void optimizer::allreduce_and_add_to_gradient_gpu(std::vector<DataType*>& gradient,
-                                                  DataType scale) {
+void optimizer::stage_gradient_for_accumulation_gpu(std::vector<DataType*>& gradient,
+                                                    DataType scale) {
   if (!is_initialized()) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "

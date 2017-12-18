@@ -616,8 +616,9 @@ class base_convolution_layer : public learning_layer {
                                                  m_bias_cudnn_desc,
                                                  m_bias_weights_gradient_d[i]));
       }
-      bias_optimizer->allreduce_and_add_to_gradient_gpu(m_bias_weights_gradient_d,
-                                                        m_bias_scaling_factor / mini_batch_size);
+      bias_optimizer->stage_gradient_for_accumulation_gpu(
+        m_bias_weights_gradient_d,
+        m_bias_scaling_factor / mini_batch_size);
     }
 
     // Compute kernel gradient
@@ -689,8 +690,9 @@ class base_convolution_layer : public learning_layer {
       }
 
       // Add gradient contribution
-      kernel_optimizer->allreduce_and_add_to_gradient_gpu(m_kernel_weights_gradient_d,
-                                                          one / mini_batch_size);
+      kernel_optimizer->stage_gradient_for_accumulation_gpu(
+        m_kernel_weights_gradient_d,
+        one / mini_batch_size);
       
     }
 
@@ -891,8 +893,9 @@ class base_convolution_layer : public learning_layer {
         }
         bias_weights_gradient_local(channel, 0) = m_bias_scaling_factor * sum;
       }
-      bias_optimizer->allreduce_and_add_to_gradient(*m_bias_weights_gradient,
-                                                    DataType(1) / mini_batch_size);
+      bias_optimizer->stage_gradient_for_accumulation(
+        *m_bias_weights_gradient,
+        DataType(1) / mini_batch_size);
     }
 
     // Stop early if kernel is not being optimized
@@ -949,8 +952,9 @@ class base_convolution_layer : public learning_layer {
     }
 
     // Scale and accumulate gradients
-    kernel_optimizer->allreduce_and_add_to_gradient(*m_kernel_weights_gradient,
-                                                    DataType(1) / mini_batch_size);
+    kernel_optimizer->stage_gradient_for_accumulation(
+      *m_kernel_weights_gradient,
+      DataType(1) / mini_batch_size);
 
   }
 
