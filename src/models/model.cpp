@@ -235,7 +235,7 @@ void model::replace_weights(std::vector<weights*>& new_weights) {
         << "(expected at most " << m_weights.size() << ", found " << new_weights.size() << ")";
     throw lbann_exception(err.str());
   }
-  
+
   // Replace weights in list
   std::vector<weights *> old_weights(m_weights.begin(),
                                      m_weights.begin() + new_weights.size());
@@ -349,7 +349,7 @@ void model::remap_pointers(const std::unordered_map<Layer *,Layer *>& layer_map,
     }
     l->set_weights(weights_pointers);
   }
-  
+
 }
 
 ////////////////////////////////////////////////////////////
@@ -427,7 +427,7 @@ void model::setup_layers() {
     layer->setup();
     layer->check_setup();
     if (m_comm->am_world_master()) {
-      std::cout << "[" << std::setw(18) << layer->get_type() <<  "] Set up a layer with input " << std::setw(7) << layer->get_num_prev_neurons() << " and " << std::setw(7) << layer->get_num_neurons() << " neurons."  << std::endl;
+      std::cout << print_layer_description(layer) << std::endl;
     }
   }
 }
@@ -771,7 +771,7 @@ void model::do_layer_forward_prop_begin_cbs(execution_mode mode, Layer *l) {
       err << __FILE__ << " " << __LINE__ << " :: "
           << "invalid execution mode";
       throw lbann_exception(err.str());
-    }      
+    }
   }
 }
 
@@ -792,7 +792,7 @@ void model::do_layer_forward_prop_end_cbs(execution_mode mode, Layer *l) {
       err << __FILE__ << " " << __LINE__ << " :: "
           << "invalid execution mode";
       throw lbann_exception(err.str());
-    }      
+    }
   }
 }
 
