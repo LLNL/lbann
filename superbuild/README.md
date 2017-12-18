@@ -51,7 +51,9 @@ subpackages. The syntax for achieving this is described here.
   forwarded with the `<PKG>_` prefix removed, i.e., as
   `-D<OPTION>:<ARG_TYPE>=${<PKG>_<OPTION>}`.
 
-- `<PKG>_<CMAKE_OPTION>`. These options are stripped of the `<PKG>_`
+- `<PKG>_<CMAKE_OPTION>`. `<CMAKE_OPTION>` is any option that starts
+  with the word `CMAKE`, e.g., `CMAKE_C_COMIPLER` or
+  `CMAKE_BUILD_TYPE`. These options are stripped of the `<PKG>_`
   prefix and forwarded, i.e.,
   `-D<CMAKE_OPTION>:<ARG_TYPE>=${<PKG>_<CMAKE_OPTION>}`.
 
