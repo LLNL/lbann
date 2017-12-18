@@ -332,12 +332,12 @@ class softmax_layer : public activation_layer {
     return Layer::loadFromCheckpoint(fd, filename, bytes);
   }
 
-  bool saveToCheckpointShared(lbann::persist& p) const override {
-    return Layer::saveToCheckpointShared(p);
+  bool save_to_checkpoint_shared(lbann::persist& p) const override {
+    return Layer::save_to_checkpoint_shared(p);
   }
 
-  bool loadFromCheckpointShared(lbann::persist& p) override {
-    return Layer::loadFromCheckpointShared(p);
+  bool load_from_checkpoint_shared(lbann::persist& p) override {
+    return Layer::load_from_checkpoint_shared(p);
   }
 };
 

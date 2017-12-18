@@ -191,11 +191,9 @@ int main(int argc, char *argv[]) {
     add_layers(model, data_readers, cudnn, pb);
     init_callbacks(comm, model, data_readers, pb);
     model->setup();
-
     // restart model from checkpoint if we have one
     //@todo
-    //model->restartShared();
-
+    
     if (comm->am_world_master()) {
       std::cout << std::endl;
       if (default_optimizer != nullptr) {

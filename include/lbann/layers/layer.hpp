@@ -183,8 +183,8 @@ class Layer {
   virtual bool saveToCheckpoint(int fd, const char *filename, size_t *bytes) const;
   virtual bool loadFromCheckpoint(int fd, const char *filename, size_t *bytes);
 
-  virtual bool saveToCheckpointShared(persist& p) const;
-  virtual bool loadFromCheckpointShared(persist& p);
+  virtual bool save_to_checkpoint_shared(persist& p) const;
+  virtual bool load_from_checkpoint_shared(persist& p);
 
   /** Get forward propagation output, as seen by next layer. */
   virtual void get_fp_output(AbsDistMat& fp_output, const Layer* next_layer = nullptr) const;
