@@ -96,9 +96,14 @@ ARCH=`uname -m`
 PLATFORM=
 FEATURE=
 if [ "${GPU}" == "1" -o "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" ]; then
-  PLATFORM="+gpu"
+  if [ "${CLUSTER}" == "flash" ]; then
+    PLATFORM="+gpu ^cuda@7.5 ^cudnn@5.1"
+    FEATURE="_gpu_cuda-7.5_cudnn-5.1"
+  else
+    PLATFORM="+gpu"
+    FEATURE="_gpu"
+  fi
   EL_VER="${EL_VER}+cublas"
-  FEATURE="_gpu"
 fi
 
 C_FLAGS=
