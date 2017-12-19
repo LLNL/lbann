@@ -139,20 +139,25 @@ cudnn_manager::~cudnn_manager() {
   free_work_spaces();
 
   // Destroy cuDNN handles
-  // Do not use FORCE_CHECK_{CUDA |CUDNN | CUBLAS} in the
-  // destructor -- this could thrown an exception and destructors are
+  // Use a try-catch block for FORCE_CHECK_{CUDA |CUDNN | CUBLAS} in the
+  // destructor -- these could thrown an exception and destructors are
   // considered to be noexcept by default
-  for(size_t i=0u; i<m_gpus.size(); ++i) {
-    cudaSetDevice(m_gpus[i]);
-    if(m_streams[i]) {
-      cudaStreamDestroy(m_streams[i]);
+  try {
+    for(size_t i=0u; i<m_gpus.size(); ++i) {
+      FORCE_CHECK_CUDA(cudaSetDevice(m_gpus[i]));
+      if(m_streams[i]) {
+        FORCE_CHECK_CUDA(cudaStreamDestroy(m_streams[i]));
+      }
+      if(m_handles[i]) {
+        FORCE_CHECK_CUDNN(cudnnDestroy(m_handles[i]));
+      }
+      if(m_cublas_handles[i]) {
+        FORCE_CHECK_CUBLAS(cublasDestroy(m_cublas_handles[i]));
+      }
     }
-    if(m_handles[i]) {
-      cudnnDestroy(m_handles[i]);
-    }
-    if(m_cublas_handles[i]) {
-      cublasDestroy(m_cublas_handles[i]);
-    }
+  }catch(const std::exception& e) {
+    std::cerr << "~cudnn_manager: try ... catch " << e.what() << std::endl;
+    std::terminate();
   }
 
   /// NCCL clear
