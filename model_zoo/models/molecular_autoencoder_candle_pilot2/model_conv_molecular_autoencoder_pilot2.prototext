@@ -1,7 +1,7 @@
 model {
   name: "sequential_model"
   data_layout: "data_parallel"
-  mini_batch_size: 32
+  mini_batch_size: 1024
   block_size: 256
   num_epochs: 4
   num_parallel_readers: 1
