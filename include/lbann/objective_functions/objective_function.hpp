@@ -95,6 +95,22 @@ class objective_function {
     m_gradient_time = 0.0;
   }
 
+  bool save_to_checkpoint_shared(lbann::persist& p); //{
+    //for (objective_function_term* term : m_terms) {
+    //  term->get_objective_function()->saveToCheckpointShared(p);
+    //}
+    //return true;
+
+  //}
+
+  bool load_from_checkpoint_shared(lbann::persist& p);// {
+    //for (objective_function_term* term : m_terms) {
+    //  term->get_objective_function()->loadFromCheckpointShared(p);
+    //}
+
+   //return true;
+   //}
+
  private:
 
   /** List of objective function terms. */

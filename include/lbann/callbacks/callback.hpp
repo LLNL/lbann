@@ -73,19 +73,19 @@ class lbann_callback {
   virtual void on_phase_end(model *m) {}
   /** Called at the beginning of each epoch. */
   virtual void on_epoch_begin(model *m) {}
-  /** Called at the end of each epoch. */
+  /** Called immediate after the end of each epoch. */
   virtual void on_epoch_end(model *m) {}
   /** Called at the beginning of a (mini-)batch. */
   virtual void on_batch_begin(model *m) {}
-  /** Called at the end of a (mini-)batch. */
+  /** Called immediately after the end of a (mini-)batch. */
   virtual void on_batch_end(model *m) {}
   /** Called at the beginning of testing. */
   virtual void on_test_begin(model *m) {}
-  /** Called at the end of testing. */
+  /** Called immediately after the end of testing. */
   virtual void on_test_end(model *m) {}
   /** Called at the beginning of validation. */
   virtual void on_validation_begin(model *m) {}
-  /** Called at the end of validation. */
+  /** Called immediately after the end of validation. */
   virtual void on_validation_end(model *m) {}
   /** Called when a model begins forward propagation. */
   virtual void on_forward_prop_begin(model *m) {}

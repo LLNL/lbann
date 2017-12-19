@@ -57,7 +57,7 @@ class model {
         int mini_batch_size,
         objective_function *obj_fn,
         optimizer* default_optimizer = nullptr);
-  
+
   /** Copy constructor. */
   model(const model& other);
   /** Copy assignment operator. */
@@ -113,7 +113,7 @@ class model {
 
   /** Replace the model's weights. */
   void replace_weights(std::vector<weights *>& w);
-  
+
   /** Return the model's weights. */
   const std::vector<weights *>& get_weights() const { return m_weights; }
 
@@ -130,7 +130,7 @@ class model {
   inline int get_cur_step() const {
     return m_current_step;  /// @todo This should be renamed to get_cur_training step and replaced with one that returns the current based on execution mode
   }
-  
+
   /** Get the current validation step for the model. */
   inline int get_cur_validation_step() const {
     return m_current_validation_step;
@@ -198,44 +198,11 @@ class model {
   /** Evaluate model. */
   virtual void evaluate(execution_mode mode);
 
-  /** Set checkpoint values */
-  inline void set_checkpoint_dir(std::string dir)   {
-    m_checkpoint_dir    = dir;
-  }
-  inline void set_checkpoint_epochs(int epochs) {
-    m_checkpoint_epochs = epochs;
-  }
-  inline void set_checkpoint_steps(int steps)   {
-    m_checkpoint_steps  = steps;
-  }
-  inline void set_checkpoint_secs(double secs)      {
-    m_checkpoint_secs   = secs;
-  }
-
-#if 0
-  /** Return true if about to start a new training epoch
-   */
-  virtual bool at_epoch_start() {
-    return true;
-  }
-
-  /** Returns true if a checkpoint should be taken, false otherwise */
-  bool need_checkpoint();
-
   /** Checkpoint model to given file descriptor, return number of bytes written */
   virtual bool save_to_checkpoint_shared(persist& p);
   /** Restore model by reading checkpoint from given file descriptor, return number of bytes read */
   virtual bool load_from_checkpoint_shared(persist& p);
 
-  /*! Top-level call to start checkpoint.  This creates the persist object
-   *  and then calls the model's save_to_checkpoint_shared() virtual function */
-  bool checkpointShared();
-
-  /*! Top-level call to restart.  This creates the persist object
-   *  and then calls the model's load_from_checkpoint_shared() virtual function */
-  bool restartShared();
-
-#endif // 0
 
  protected:
 
@@ -273,18 +240,7 @@ class model {
   /** Current callbacks to process. */
   std::vector<lbann_callback *> m_callbacks;
 
-  /** Directory where we should save checkpoints */
-  std::string m_checkpoint_dir;
-  /** Number of training steps to elapse between checkpoints */
-  int m_checkpoint_epochs;
-  /** Number of training steps to elapse between checkpoints */
-  int m_checkpoint_steps;
-  /** Number of seconds to elapse between checkpoints (checkpoint interval) */
-  double m_checkpoint_secs;
-  /** Timestamp of last checkpoint */
-  double m_checkpoint_last;
-
-  /** Default optimizer. 
+  /** Default optimizer.
    *  If a layer needs to construct an optimizer during setup, it will
    *  make a copy of the default optimizer.
    */
@@ -338,8 +294,10 @@ class model {
    */
   virtual void setup_weights();
 
-  /** Reset model for an epoch. */
-  virtual void reset_epoch(execution_mode mode);
+  /** Reset model pointer and execution mode. */
+  virtual void reset_mode_and_model(execution_mode mode);
+  /** Reset model statistics for an epoch. */
+  virtual void reset_epoch_statistics(execution_mode mode);
   /** Evaluate model on a mini-batch */
   virtual bool evaluate_mini_batch(execution_mode mode);
   /** Train model on a mini-batch. */

@@ -93,12 +93,12 @@ bool data_reader_merge_features::fetch_datum(Mat& X, int data_id, int mb_idx,
 
 bool data_reader_merge_features::fetch_label(Mat& Y, int data_id, int mb_idx,
                                              int tid) {
-  return m_label_reader->fetch_datum(Y, data_id, mb_idx, tid);
+  return m_label_reader->fetch_label(Y, data_id, mb_idx, tid);
 }
 
 bool data_reader_merge_features::fetch_response(Mat& Y, int data_id, int mb_idx,
                                                 int tid) {
-  return m_label_reader->fetch_datum(Y, data_id, mb_idx, tid);
+  return m_label_reader->fetch_response(Y, data_id, mb_idx, tid);
 }
 
 }  // namespace lbann

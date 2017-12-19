@@ -58,10 +58,10 @@ class persist {
   int get_rank() const {
     return m_rank;
   }
-  void open_checkpoint(const char *dir);
+  void open_checkpoint(const char *dir, bool per_rank);
   void close_checkpoint();
 
-  void open_restart(const char *dir);
+  void open_restart(const char *dir, bool per_rank);
   void close_restart();
 
   uint64_t get_bytes() const {
@@ -86,8 +86,14 @@ class persist {
   bool write_float(persist_type type, const char *name, float  val);
   bool read_float (persist_type type, const char *name, float *val);
 
+  bool write_string(persist_type type, const char *name, const char *val, int str_length);
+  bool read_string (persist_type type, const char *name, char *val, int str_length);
+
   bool write_double(persist_type type, const char *name, double  val);
   bool read_double (persist_type type, const char *name, double *val);
+
+  bool write_datatype(persist_type type, const char *name, DataType  val);
+  bool read_datatype (persist_type type, const char *name, DataType *val);
 
  private:
   int get_fd(persist_type type) const;
@@ -116,6 +122,9 @@ bool read_float (int fd, const char *name, float *val);
 
 bool write_double(int fd, const char *name, double  val);
 bool read_double (int fd, const char *name, double *val);
+
+bool write_string(int fd, const char *name, const char *buf, size_t size);
+bool read_string(int fd, const char *name, char *buf, size_t size);
 
 } // namespace lbann
 
