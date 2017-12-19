@@ -39,57 +39,10 @@ directed_acyclic_graph_model::directed_acyclic_graph_model(lbann_comm *comm,
   : model(comm, mini_batch_size, obj_fn, default_optimizer) {}
 
 void directed_acyclic_graph_model::setup_layer_execution_order() {
-  /* Note: This topological sort must be deterministic so that it
-   * produces identical orderings when applied on different MPI
-   * processes.
-   */
-
-  // Check if execution order is already valid
-  if (is_topologically_sorted()) {
-    return;
-  }
-
-  // Initialize data structures for topological sort
-  std::stack<const Layer*> sorted_stack;
-  std::stack<const Layer*> search_stack;
-  std::unordered_map<const Layer*,bool> is_sorted;
-  std::unordered_map<const Layer*,bool> is_visited;
-  for (const auto& layer : m_layers) {
-    is_sorted[layer] = false;
-    is_visited[layer] = false;
-    search_stack.push(layer);
-  }
-
-  // Perform depth-first searches until DAG has been traversed
-  while (!search_stack.empty()) {
-    const Layer* layer = search_stack.top();
-    search_stack.pop();
-    if (!is_sorted[layer]) {
-      if (is_visited[layer]) {
-        // Move search layer to sorted stack if we have visited already
-        sorted_stack.push(layer);
-        is_sorted[layer] = true;
-      } else {
-        // Visit search layer by adding children to search stack
-        search_stack.push(layer);
-        is_visited[layer] = true;
-        for (const auto& child_layer : layer->get_child_layers()) {
-          if (is_visited[child_layer] && !is_sorted[child_layer]) {
-            throw lbann_exception("model_dag: detected a cycle in network graph");
-          }
-          search_stack.push(child_layer);
-        }
-      }
-    }
-  }
-
-  // Record topologically sorted ordering
-  m_layers.clear();
-  while (!sorted_stack.empty()) {
-    m_layers.push_back(const_cast<Layer*>(sorted_stack.top()));
-    sorted_stack.pop();
-  }
-  
+  model::setup_layer_execution_order();
+  const auto& layer_graph = construct_layer_graph();
+  const auto& sorted_order = graph::topological_sort(layer_graph);
+  permute_layers(sorted_order);
 }
 
 }  // namespace lbann
