@@ -86,7 +86,7 @@ class target_layer : public io_layer {
     io_layer::check_setup();
     if(this->m_num_prev_neurons != this->m_num_neurons) {
       std::stringstream err;
-      err << __FILE__ << " " << __LINE__ 
+      err << __FILE__ << " " << __LINE__
           << "input and output dimensions do not match "
           << "(" << this->m_num_prev_neurons << " input neurons, "
           << this->m_num_neurons << " output neurons)";
@@ -213,7 +213,7 @@ class target_layer : public io_layer {
     paired_input_layer = dynamic_cast<input_layer*>(layers.back());
     if (paired_input_layer == nullptr) {
       std::stringstream err;
-      err << __FILE__ << " " << __LINE__ 
+      err << __FILE__ << " " << __LINE__
           << " :: lbann_target_layer: invalid layer pointer used to set paired input layer";
       throw lbann_exception(err.str());
     }
