@@ -144,7 +144,10 @@ class deconvolution_layer : public base_convolution_layer {
     // Initialize previous neuron tensor dimensions
     base_convolution_layer::setup_dims();
 
-    // Initialize convolution kernel dimensions
+    // Initialize deconvolution kernel dimensions
+    // Note that unlike the convolutional kernel, the previous layer's
+    // number of channels is now the leading position -- keep in mind
+    // that deconvolution is the transpose of a convolution
     this->m_kernel_dims.insert(this->m_kernel_dims.begin(),
                                this->m_prev_neuron_dims[0]);
 
