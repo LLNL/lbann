@@ -308,8 +308,9 @@ class model {
   virtual bool is_execution_mode_valid(execution_mode mode) const;
   /** Print out the description of a layer set up. */
   virtual std::string print_layer_description(const Layer* layer) const;
-  /** Represent the layer graph as an adjacency list. */
-  virtual std::vector<std::set<int>> construct_layer_graph() const;
+  /** Construct a layer graph. */
+  virtual void construct_layer_graph(std::set<int>& nodes,
+                                     std::map<int,std::set<int>>& edges) const;
   /** Reorder layers. */
   virtual void permute_layers(const std::vector<int>& permutation);
 

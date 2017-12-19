@@ -272,19 +272,22 @@ bool model::is_execution_mode_valid(execution_mode mode) const {
   return true;
 }
 
-std::vector<std::set<int>> model::construct_layer_graph() const {
+void model::construct_layer_graph(std::set<int>& nodes,
+                                  std::map<int,std::set<int>>& edges) const {
+  nodes.clear();
+  edges.clear();
   const int num_layers = m_layers.size();
   std::unordered_map<const Layer *,int> layer_indices;
-  for (int i = 0; i < num_layers; ++i) {
-    layer_indices[m_layers[i]] = i;
+  for (int node = 0; node < num_layers; ++node) {
+    nodes.insert(node);
+    layer_indices[m_layers[node]] = node;
   }
   std::vector<std::set<int>> layer_graph(num_layers);
   for (int node = 0; node < num_layers; ++node) {
     for (const auto& child : m_layers[node]->get_child_layers()) {
-      layer_graph[node].insert(layer_indices[child]);
+      edges[node].insert(layer_indices[child]);
     }
   }
-  return layer_graph;
 }
 
 void model::permute_layers(const std::vector<int>& permutation) {

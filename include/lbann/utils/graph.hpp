@@ -26,52 +26,72 @@
 
 #include <vector>
 #include <set>
+#include <map>
 
 namespace lbann {
 namespace graph {
 
-/** Check whether a graph is valid.
- *  The input is interpreted as an adjaceny list for a directed graph.
+/** Get nodes adjacent to a given node. */
+std::set<int> get_neighbors(int node,
+                            const std::map<int,std::set<int>>& edges);
+
+/** Check whether a graph is a closure.
+ *  A closure is a set of nodes with no edges to nodes outside the
+ *  set.
  */
-bool is_valid(const std::vector<std::set<int>>& graph);
+bool is_closure(const std::set<int>& nodes,
+                const std::map<int,std::set<int>>& edges);
 
 /** Check whether a graph is topologically sorted.
- *  The input is interpreted as an adjaceny list for a directed graph.
+ *  A topologically sorted graph has no edges going from a node to an
+ *  earlier node. The graph must be a directed acyclic graph.
  */
-bool is_topologically_sorted(const std::vector<std::set<int>>& graph);
+bool is_topologically_sorted(const std::set<int>& nodes,
+                             const std::map<int,std::set<int>>& edges);
 
-/** Check whether a graph is cyclic.
- *  The input is interpreted as an adjaceny list for a directed graph.
- */
-bool is_cyclic(const std::vector<std::set<int>>& graph);
-
+/** Check whether a directed graph is cyclic. */
+bool is_cyclic(const std::set<int>& nodes,
+               const std::map<int,std::set<int>>& edges);
 
 /** Construct the transpose of a graph.
- *  The input is interpreted as an adjaceny list for a directed graph.
+ *  Reverses the direction of edges in the graph and returns the new
+ *  set of edges.
  */
-std::vector<std::set<int>> transpose(const std::vector<std::set<int>>& graph);
+std::map<int,std::set<int>> transpose(const std::set<int>& nodes,
+                                      const std::map<int,std::set<int>>& edges);
+
+/** Construct an induced subgraph.
+ *  Removes edges to nodes outside the set of nodes and returns the
+ *  new set of edges.
+ */
+std::map<int,std::set<int>> induce_subgraph(const std::set<int>& nodes,
+                                            const std::map<int,std::set<int>>& edges);
 
 /** Perform a depth-first search starting from a given root node.
- *  The input is interpreted as an adjaceny list for a directed
- *  graph. The search order is deterministic.
+ *  The search order is deterministic.
  */
-std::vector<int> depth_first_search(const std::vector<std::set<int>>& graph,
+std::vector<int> depth_first_search(const std::map<int,std::set<int>>& edges,
                                     int root);
 
 /** Topologically sort a graph.
- *  The input is interpreted as an adjaceny list for a directed
- *  graph. The sort is deterministic.
+ *  A topologically sorted graph has no edges going from a node to an
+ *  earlier node. The sort is deterministic and does not affect graphs
+ *  that are already topologically sorted.
  */
-std::vector<int> topological_sort(const std::vector<std::set<int>>& graph);
+std::vector<int> topological_sort(const std::set<int>& nodes,
+                                  const std::map<int,std::set<int>>& edges);
 
 /** Construct the condensation of a graph.
- *  In other words, we determine the strongly connected components of
- *  the graph, i.e. sets of nodes that are reachable from each node in
- *  the set. The input is interpreted as an adjaceny list for a
- *  directed graph. The condensation graph is topologically sorted.
+ *  The condensation of a graph is constructed by determining the
+ *  strongly connected components, i.e. sets of nodes that are
+ *  reachable from all nodes in the set, and coalescing them into
+ *  single nodes. The condensation is a DAG and will be topologically
+ *  sorted.
  */
-void condensation(const std::vector<std::set<int>>& graph,
-                  std::vector<std::set<int>>& condensation_nodes,
+void condensation(const std::set<int>& nodes,
+                  const std::map<int,std::set<int>>& edges,
+                  std::map<int,std::set<int>>& components,
+                  std::set<int>& condensation_nodes,
                   std::vector<std::set<int>>& condensation_edges);
 
 }
