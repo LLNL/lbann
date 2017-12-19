@@ -44,7 +44,7 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus, bool nc
   : comm(_comm) {
 
   // Indicate whether NCCL is used
-#ifdef __LIB_NCCL  
+#ifdef __LIB_NCCL
   m_nccl_used = nccl_used;
 #else
   if (nccl_used) {
@@ -139,19 +139,22 @@ cudnn_manager::~cudnn_manager() {
   free_work_spaces();
 
   // Destroy cuDNN handles
+  // Do not use FORCE_CHECK_{CUDA |CUDNN | CUBLAS} in the
+  // destructor -- this could thrown an exception and destructors are
+  // considered to be noexcept by default
   for(size_t i=0u; i<m_gpus.size(); ++i) {
-    FORCE_CHECK_CUDA(cudaSetDevice(m_gpus[i]));
+    cudaSetDevice(m_gpus[i]);
     if(m_streams[i]) {
-      FORCE_CHECK_CUDA(cudaStreamDestroy(m_streams[i]));
+      cudaStreamDestroy(m_streams[i]);
     }
     if(m_handles[i]) {
-      FORCE_CHECK_CUDNN(cudnnDestroy(m_handles[i]));
+      cudnnDestroy(m_handles[i]);
     }
     if(m_cublas_handles[i]) {
-      FORCE_CHECK_CUBLAS(cublasDestroy(m_cublas_handles[i]));
+      cublasDestroy(m_cublas_handles[i]);
     }
   }
-    
+
   /// NCCL clear
   if(m_nccl_used){
       nccl_destroy();
@@ -648,7 +651,7 @@ std::vector<DataType*> cudnn_manager::copy(const std::vector<DataType*>& gpu_dat
   return output_gpu_data;
 }
 
-void cudnn_manager::pin_matrix(AbsDistMat& mat) {  
+void cudnn_manager::pin_matrix(AbsDistMat& mat) {
 
   // Get local matrix
   Mat& mat_local = mat.Matrix();
@@ -669,7 +672,7 @@ void cudnn_manager::pin_matrix(AbsDistMat& mat) {
 
   // clear the error status
   cudaGetLastError();
-  
+
   // Allocate pinned memory on host
   const size_t buffer_size = local_height * local_width * sizeof(DataType);
   DataType* pinned_buffer;
@@ -750,7 +753,7 @@ void cudnn_manager::unpin_matrix(AbsDistMat& mat) {
 void cudnn_manager::check_error() {
   synchronize();
   for(int i=0; i<m_num_gpus; ++i) {
-    CHECK_CUDA(cudaSetDevice(m_gpus[i]));    
+    CHECK_CUDA(cudaSetDevice(m_gpus[i]));
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess) {
       std::cerr << "CUDA error: " << cudaGetErrorString(err) << "\n";
@@ -786,9 +789,9 @@ void cudnn_manager::nccl_setup() {
   MPI_Comm mpicomm = model_comm.comm;
 
   /**
-  Not sure if we can use Elemental's broadcast for new date type 'ncclUniqeId'. 
+  Not sure if we can use Elemental's broadcast for new date type 'ncclUniqeId'.
   For that reason, raw MPI_Bcast is used instead.
-  
+
   El::mpi::Broadcast(&ncclId, 1, 0, model_comm); */
 
   /// todo@ check if we can use Elemental's broadcast
@@ -797,7 +800,7 @@ void cudnn_manager::nccl_setup() {
   if (nProcs == 1) {
     int gpuArray = 0;
     NCCLCHECK(ncclCommInitAll(&(m_nccl_comm[0]), 1, &gpuArray));
-  } 
+  }
   else {
     if(num_gpus_assigned > 1) NCCLCHECK(ncclGroupStart());
     for(int i=0; i<num_gpus_assigned; i++){
