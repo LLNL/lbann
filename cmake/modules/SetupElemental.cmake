@@ -20,10 +20,13 @@ else ()
   if (Elemental_FOUND)
     set(HYDROGEN_LIBRARIES "${Elemental_LIBRARIES}")
     message(STATUS "Found Elemental: {Elemental_DIR}")
+
+    if (TARGET El)
+      set_property(TARGET El PROPERTY
+        INTERFACE_INCLUDE_DIRECTORIES ${Elemental_INCLUDE_DIRS})
+    endif ()
   else ()
     message(FATAL_ERROR "Neither Hydrogen nor Elemental was found! "
       "Try setting Hydrogen_DIR or Elemental_DIR and try again!")
   endif (Elemental_FOUND)
 endif (Hydrogen_FOUND)
-
-message("\n\nHYDROGEN_LIBRARIES = ${HYDROGEN_LIBRARIES}\n\n")
