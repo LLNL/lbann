@@ -1644,10 +1644,13 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
   if (name == "sequential_model") {
     model = new sequential_model(comm, mini_batch_size, obj_fn, default_optimizer);
     if (master) std::cout << "instantiating sequential_model\n";
-  }
-  else if (name == "directed_acyclic_graph_model") {
+  } else if (name == "directed_acyclic_graph_model") {
     model = new directed_acyclic_graph_model(comm, mini_batch_size, obj_fn, default_optimizer);
     if (master) std::cout << "instantiating directed_acyclic_graph_model\n";
+  } else if (name == "recurrent_model") {
+    const lbann_data::Model::Recurrent& recurrent = m.recurrent();
+    model = new recurrent_model(comm, mini_batch_size, obj_fn, default_optimizer, recurrent.unroll_depth());
+    if (master) std::cout << "instantiating recurrent_model\n";
   } else if(name == "siamese_model") {
     if (m.has_siamese()) {
       const lbann_data::Model::Siamese& siamese = m.siamese();
@@ -1841,7 +1844,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
     } else if (name == "synthetic") {
       reader = new data_reader_synthetic(readme.num_samples(), readme.num_features(), shuffle);
     } else if (name == "ascii") {
-      reader = new ascii_reader(5, shuffle);
+      reader = new ascii_reader(p.model().recurrent().unroll_depth(), shuffle);
     } else {
       if (master) {
         err << __FILE__ << " " << __LINE__ << " :: unknown name for data reader: "

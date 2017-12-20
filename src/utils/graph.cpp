@@ -26,23 +26,26 @@
 
 #include "lbann/utils/graph.hpp"
 #include "lbann/utils/exception.hpp"
-#include <stack>
-#include <unordered_map>
 #include <algorithm>
-
-namespace {
-
-int top_and_pop_stack(std::stack<int>& stack) {
-  const int top = stack.top();
-  stack.pop();
-  return top;
-}
-
-}
+#include <stack>
+#include <queue>
+#include <unordered_map>
 
 namespace lbann {
 namespace graph {
 
+void print(const std::set<int>& nodes,
+           const std::map<int,std::set<int>>& edges,
+           std::ostream& os) {
+  for (const auto& node : nodes) {
+    os << "node " << node << " neighbors :";
+    for (const auto& neighbor : get_neighbors(node, edges)) {
+      os << " " << neighbor;
+    }
+    os << "\n";
+  }
+}
+  
 std::set<int> get_neighbors(int node,
                             const std::map<int,std::set<int>>& edges) {
   if (edges.count(node) > 0) {
@@ -102,7 +105,8 @@ bool is_cyclic(const std::set<int>& nodes,
     search_stack.push(*it);
   }
   while (!search_stack.empty()) {
-    const auto& node = top_and_pop_stack(search_stack);
+    const auto& node = search_stack.top();
+    search_stack.pop();
     if (!is_sorted[node]) {
       if (is_visited[node]) {
         is_sorted[node] = true;
@@ -151,8 +155,35 @@ std::map<int,std::set<int>> induce_subgraph(const std::set<int>& nodes,
   return induced_edges;
 }
 
-std::vector<int> depth_first_search(const std::map<int,std::set<int>>& edges,
-                                    int root) {
+std::vector<int> breadth_first_search(int root,
+                                      const std::map<int,std::set<int>>& edges) {
+
+  // Initialize data structures
+  std::unordered_map<int,bool> is_visited;
+  std::vector<int> sorted_nodes;
+  std::queue<int> search_queue;
+  search_queue.push(root);
+
+  // Visit nodes until search queue is exhausted
+  while (!search_queue.empty()) {
+    const auto& node = search_queue.front();
+    search_queue.pop();
+    for (const auto& neighbor : get_neighbors(node, edges)) {
+      if (!is_visited[neighbor]) {
+        is_visited[neighbor] = true;
+        sorted_nodes.push_back(neighbor);
+        search_queue.push(neighbor);
+      }
+    }
+  }
+
+  // Return list of sorted nodes
+  return sorted_nodes;
+
+}
+
+std::vector<int> depth_first_search(int root,
+                                    const std::map<int,std::set<int>>& edges) {
 
   // Initialize data structures
   std::unordered_map<int,bool> is_visited, is_sorted;
@@ -162,7 +193,8 @@ std::vector<int> depth_first_search(const std::map<int,std::set<int>>& edges,
 
   // Visit nodes until search stack is exhausted
   while (!search_stack.empty()) {
-    const auto& node = top_and_pop_stack(search_stack);
+    const auto& node = search_stack.top();
+    search_stack.pop();
     if (!is_sorted[node]) {
       if (is_visited[node]) {
         // Add node to sorted list if we have already visited
@@ -212,7 +244,7 @@ std::vector<int> topological_sort(const std::set<int>& nodes,
   std::unordered_map<int,bool> is_sorted;
   for (const auto& root : nodes) {
     if (!is_sorted[root]) {
-      const auto& dfs = depth_first_search(edges, root);
+      const auto& dfs = depth_first_search(root, edges);
       for (const auto& node : dfs) {
         if (!is_sorted[node]) {
           is_sorted[node] = true;
@@ -225,7 +257,8 @@ std::vector<int> topological_sort(const std::set<int>& nodes,
   // Reverse DFS post-order is topologically sorted
   std::vector<int> sorted_nodes;
   while (!sorted_stack.empty()) {
-    sorted_nodes.push_back(top_and_pop_stack(sorted_stack));
+    sorted_nodes.push_back(sorted_stack.top());
+    sorted_stack.pop();
   }
   return sorted_nodes;
   
@@ -244,15 +277,16 @@ void condensation(const std::set<int>& nodes,
   std::map<int,std::set<int>> unsorted_condensation_edges;
 
   // Find strongly connected components with Kosaraju's algorithm
-  // Note: First sort nodes by DFS post-order. Then, perform DFS on
-  // graph transpose in reverse DFS post-order. Each DFS determines a
-  // strongly connected component.
+  // Note: First sort nodes by DFS post-order. Then, pick root nodes
+  // in DFS post-order and perform DFS on graph transpose. The first
+  // DFS that visits a node determines the strongly connected
+  // component it belongs to.
   const auto& transpose_edges = transpose(nodes, edges);
   std::stack<int> dfs_stack;
   std::unordered_map<int,bool> is_sorted, is_condensed;
   for (const auto& root : nodes) {
     if (!is_sorted[root]) {
-      for (const auto& node : depth_first_search(edges, root)) {
+      for (const auto& node : depth_first_search(root, edges)) {
         if (!is_sorted[node]) {
           is_sorted[node] = true;
           dfs_stack.push(node);
@@ -261,14 +295,17 @@ void condensation(const std::set<int>& nodes,
     }
   }
   while (!dfs_stack.empty()) {
-    const auto& root = top_and_pop_stack(dfs_stack);
+    const auto& root = dfs_stack.top();
+    dfs_stack.pop();
     if (!is_condensed[root]) {
       const int index = unsorted_condensation_nodes.size();
       unsorted_condensation_nodes.insert(index);
-      for (const auto& node : depth_first_search(transpose_edges, root)) {
-        is_condensed[node] = true;
-        unsorted_component_assignments[node] = index;
-        unsorted_components[index].insert(node);
+      for (const auto& node : depth_first_search(root, transpose_edges)) {
+        if (!is_condensed[node]) {
+          is_condensed[node] = true;
+          unsorted_component_assignments[node] = index;
+          unsorted_components[index].insert(node);
+        }
       }
     }
   }
@@ -287,20 +324,22 @@ void condensation(const std::set<int>& nodes,
   // Topologically sort condensation
   const auto& sorted_to_unsorted = topological_sort(unsorted_condensation_nodes,
                                                     unsorted_condensation_edges);
+
+  // Record sorted condensation to output
+  components.clear();
+  condensation_nodes.clear();
+  condensation_edges.clear();
+  for (size_t i = 0; i < unsorted_condensation_nodes.size(); ++i) {
+    condensation_nodes.insert(i);
+  }
   std::unordered_map<int,int> unsorted_to_sorted;
   for (const auto& component : condensation_nodes) {
     const auto& unsorted_component = sorted_to_unsorted[component];
     unsorted_to_sorted[unsorted_component] = component;
   }
-
-  // Record topologically sorted condensation to output
-  components.clear();
-  condensation_nodes.clear();
-  condensation_edges.clear();
   for (const auto& unsorted_component : unsorted_condensation_nodes) {
     const auto& component = unsorted_to_sorted[unsorted_component];
     components[component] = unsorted_components[unsorted_component];
-    condensation_nodes.insert(component);
     for (const auto& neighbor_unsorted_component : unsorted_condensation_edges[unsorted_component]) {
       condensation_edges[component].insert(unsorted_to_sorted[neighbor_unsorted_component]);
     }

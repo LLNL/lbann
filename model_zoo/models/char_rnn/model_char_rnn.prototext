@@ -1,5 +1,5 @@
 model {
-  name: "directed_acyclic_graph_model"
+  name: "recurrent_model"
   data_layout: "data_parallel"
   mini_batch_size: 256
   block_size: 256
@@ -8,6 +8,9 @@ model {
   procs_per_model: 0
   use_cudnn: true
   num_gpus: -1
+  recurrent {
+    unroll_depth : 2
+   }
 
   ###################################################
   # Objective function
@@ -40,379 +43,77 @@ model {
   # Data
   layer {
     name: "data_concat"
-    children: "data"
     input_distributed_minibatch {}
     data_layout: "model_parallel"
   }
   layer {
     parents: "data_concat"
     name: "data"
-    children: "rnn1_input_1 rnn1_input_2 rnn1_input_3 rnn1_input_4 rnn1_input_5"
     slice {
-      slice_points: "0 128 256 384 512 640"
+      slice_points: "0 128 256"
     }
     data_layout: "model_parallel"
   }
 
-  # rnn1_1
+  # rnn1
   layer {
     parents: "data"
-    name: "rnn1_input_1"
-    children: "rnn1_sum_1"
+    name: "rnn1_input"
     fully_connected {
       num_neurons: 256
-      weight_initialization: "glorot_normal"
       has_bias: true
     }
-    linked_layers: "rnn1_input_1"
     data_layout: "model_parallel"
   }
-  # layer {
-  #   parents: "rnn1_0"
-  #   name: "rnn1_context_1"
-  #   children: "rnn1_sum_1"
-  #   fully_connected {
-  #     num_neurons: 256
-  #     weight_initialization: "glorot_normal"
-  #     has_bias: true
-  #   }
-  #   linked_layers: "rnn1_context_1"
-  #   data_layout: "model_parallel"
-  # }
   layer {
-    # parents: "rnn1_input_1 rnn1_context_1"
-    parents: "rnn1_input_1"
-    name: "rnn1_sum_1"
-    children: "rnn1_act_1"
+    parents: "rnn1"
+    name: "rnn1_context"
+    fully_connected {
+      num_neurons: 256
+      has_bias: true
+    }
+    data_layout: "model_parallel"
+  }
+  layer {
+    parents: "rnn1_input rnn1_context"
+    name: "rnn1_sum"
     sum {}
-    linked_layers: "rnn1_sum_1"
     data_layout: "model_parallel"
   }
   layer {
-    parents: "rnn1_sum_1"
-    name: "rnn1_act_1"
-    children: "rnn1_1"
+    parents: "rnn1_sum"
+    name: "rnn1_act"
     tanh {}
-    linked_layers: "rnn1_act_1"
     data_layout: "model_parallel"
   }
   layer {
-    parents: "rnn1_act_1"
-    name: "rnn1_1"
-    children: "decode_1 rnn1_context_2"
+    parents: "rnn1_act"
+    name: "rnn1"
     split {}
-    linked_layers: "rnn1_1"
-    data_layout: "model_parallel"
-  }
-
-  # rnn1_2
-  layer {
-    parents: "data"
-    name: "rnn1_input_2"
-    children: "rnn1_sum_2"
-    fully_connected {
-      num_neurons: 256
-      weight_initialization: "glorot_normal"
-      has_bias: true
-    }
-    linked_layers: "rnn1_input_1"
-    data_layout: "model_parallel"
-  }
-  layer {
-    parents: "rnn1_1"
-    name: "rnn1_context_2"
-    children: "rnn1_sum_2"
-    fully_connected {
-      num_neurons: 256
-      weight_initialization: "glorot_normal"
-      has_bias: true
-    }
-    linked_layers: "rnn1_context_2"
-    data_layout: "model_parallel"
-  }
-  layer {
-    parents: "rnn1_input_2 rnn1_context_2"
-    name: "rnn1_sum_2"
-    children: "rnn1_act_2"
-    sum {}
-    linked_layers: "rnn1_sum_1"
-    data_layout: "model_parallel"
-  }
-  layer {
-    parents: "rnn1_sum_2"
-    name: "rnn1_act_2"
-    children: "rnn1_2"
-    tanh {}
-    linked_layers: "rnn1_act_1"
-    data_layout: "model_parallel"
-  }
-  layer {
-    parents: "rnn1_act_2"
-    name: "rnn1_2"
-    children: "decode_2 rnn1_context_3"
-    split {}
-    linked_layers: "rnn1_1"
-    data_layout: "model_parallel"
-  }
-
-  # rnn1_3
-  layer {
-    parents: "data"
-    name: "rnn1_input_3"
-    children: "rnn1_sum_3"
-    fully_connected {
-      num_neurons: 256
-      weight_initialization: "glorot_normal"
-      has_bias: true
-    }
-    linked_layers: "rnn1_input_1"
-    data_layout: "model_parallel"
-  }
-  layer {
-    parents: "rnn1_2"
-    name: "rnn1_context_3"
-    children: "rnn1_sum_3"
-    fully_connected {
-      num_neurons: 256
-      weight_initialization: "glorot_normal"
-      has_bias: true
-    }
-    linked_layers: "rnn1_context_3"
-    data_layout: "model_parallel"
-  }
-  layer {
-    parents: "rnn1_input_3 rnn1_context_3"
-    name: "rnn1_sum_3"
-    children: "rnn1_act_3"
-    sum {}
-    linked_layers: "rnn1_sum_1"
-    data_layout: "model_parallel"
-  }
-  layer {
-    parents: "rnn1_sum_3"
-    name: "rnn1_act_3"
-    children: "rnn1_3"
-    tanh {}
-    linked_layers: "rnn1_act_1"
-    data_layout: "model_parallel"
-  }
-  layer {
-    parents: "rnn1_act_3"
-    name: "rnn1_3"
-    children: "decode_3 rnn1_context_4"
-    split {}
-    linked_layers: "rnn1_1"
-    data_layout: "model_parallel"
-  }
-
-  # rnn1_4
-  layer {
-    parents: "data"
-    name: "rnn1_input_4"
-    children: "rnn1_sum_4"
-    fully_connected {
-      num_neurons: 256
-      weight_initialization: "glorot_normal"
-      has_bias: true
-    }
-    linked_layers: "rnn1_input_1"
-    data_layout: "model_parallel"
-  }
-  layer {
-    parents: "rnn1_3"
-    name: "rnn1_context_4"
-    children: "rnn1_sum_4"
-    fully_connected {
-      num_neurons: 256
-      weight_initialization: "glorot_normal"
-      has_bias: true
-    }
-    linked_layers: "rnn1_context_4"
-    data_layout: "model_parallel"
-  }
-  layer {
-    parents: "rnn1_input_4 rnn1_context_4"
-    name: "rnn1_sum_4"
-    children: "rnn1_act_4"
-    sum {}
-    linked_layers: "rnn1_sum_1"
-    data_layout: "model_parallel"
-  }
-  layer {
-    parents: "rnn1_sum_4"
-    name: "rnn1_act_4"
-    children: "rnn1_4"
-    tanh {}
-    linked_layers: "rnn1_act_1"
-    data_layout: "model_parallel"
-  }
-  layer {
-    parents: "rnn1_act_4"
-    name: "rnn1_4"
-    children: "decode_4 rnn1_context_5"
-    split {}
-    linked_layers: "rnn1_1"
-    data_layout: "model_parallel"
-  }
-
-  # rnn1_5
-  layer {
-    parents: "data"
-    name: "rnn1_input_5"
-    children: "rnn1_sum_5"
-    fully_connected {
-      num_neurons: 256
-      weight_initialization: "glorot_normal"
-      has_bias: true
-    }
-    linked_layers: "rnn1_input_1"
-    data_layout: "model_parallel"
-  }
-  layer {
-    parents: "rnn1_4"
-    name: "rnn1_context_5"
-    children: "rnn1_sum_5"
-    fully_connected {
-      num_neurons: 256
-      weight_initialization: "glorot_normal"
-      has_bias: true
-    }
-    linked_layers: "rnn1_context_5"
-    data_layout: "model_parallel"
-  }
-  layer {
-    parents: "rnn1_input_5 rnn1_context_5"
-    name: "rnn1_sum_5"
-    children: "rnn1_act_5"
-    sum {}
-    linked_layers: "rnn1_sum_1"
-    data_layout: "model_parallel"
-  }
-  layer {
-    parents: "rnn1_sum_5"
-    name: "rnn1_act_5"
-    children: "rnn1_5"
-    tanh {}
-    linked_layers: "rnn1_act_1"
-    data_layout: "model_parallel"
-  }
-  layer {
-    parents: "rnn1_act_5"
-    name: "rnn1_5"
-    # children: "decode_5 rnn1_context_6"
-    children: "decode_5"
-    split {}
-    linked_layers: "rnn1_1"
     data_layout: "model_parallel"
   }
 
   # Decode
   layer {
-    parents: "rnn1_1"
-    name: "decode_1"
-    children: "prob_1"
+    parents: "rnn1"
+    name: "decode"
     fully_connected {
       num_neurons: 128
-      weight_initialization: "glorot_normal"
       has_bias: false
     }
-    linked_layers: "decode_1"
     data_layout: "model_parallel"
   }
   layer {
-    parents: "decode_1"
-    name: "prob_1"
-    children: "prob_concat"
+    parents: "decode"
+    name: "prob"
     softmax {}
-    linked_layers: "prob_1"
-    data_layout: "model_parallel"
-  }
-  layer {
-    parents: "rnn1_2"
-    name: "decode_2"
-    children: "prob_2"
-    fully_connected {
-      num_neurons: 128
-      weight_initialization: "glorot_normal"
-      has_bias: false
-    }
-    linked_layers: "decode_1"
-    data_layout: "model_parallel"
-  }
-  layer {
-    parents: "decode_2"
-    name: "prob_2"
-    children: "prob_concat"
-    softmax {}
-    linked_layers: "prob_1"
-    data_layout: "model_parallel"
-  }
-  layer {
-    parents: "rnn1_3"
-    name: "decode_3"
-    children: "prob_3"
-    fully_connected {
-      num_neurons: 128
-      weight_initialization: "glorot_normal"
-      has_bias: false
-    }
-    linked_layers: "decode_1"
-    data_layout: "model_parallel"
-  }
-  layer {
-    parents: "decode_3"
-    name: "prob_3"
-    children: "prob_concat"
-    softmax {}
-    linked_layers: "prob_1"
-    data_layout: "model_parallel"
-  }
-  layer {
-    parents: "rnn1_4"
-    name: "decode_4"
-    children: "prob_4"
-    fully_connected {
-      num_neurons: 128
-      weight_initialization: "glorot_normal"
-      has_bias: false
-    }
-    linked_layers: "decode_1"
-    data_layout: "model_parallel"
-  }
-  layer {
-    parents: "decode_4"
-    name: "prob_4"
-    children: "prob_concat"
-    softmax {}
-    linked_layers: "prob_1"
-    data_layout: "model_parallel"
-  }
-  layer {
-    parents: "rnn1_5"
-    name: "decode_5"
-    children: "prob_5"
-    fully_connected {
-      num_neurons: 128
-      weight_initialization: "glorot_normal"
-      has_bias: false
-    }
-    linked_layers: "decode_1"
-    data_layout: "model_parallel"
-  }
-  layer {
-    parents: "decode_5"
-    name: "prob_5"
-    children: "prob_concat"
-    softmax {}
-    linked_layers: "prob_1"
     data_layout: "model_parallel"
   }
 
   # Evaluate
   layer {
-    parents: "prob_1 prob_2 prob_3 prob_4 prob_5"
+    parents: "prob"
     name: "prob_concat"
-    children: "eval"
     concatenation {}
     data_layout: "model_parallel"
   }

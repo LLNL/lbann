@@ -24,12 +24,18 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <iostream>
 #include <vector>
 #include <set>
 #include <map>
 
 namespace lbann {
 namespace graph {
+
+/** Print the nodes and edges of a graph to an output stream. */
+void print(const std::set<int>& nodes,
+           const std::map<int,std::set<int>>& edges,
+           std::ostream& os = std::cout);
 
 /** Get nodes adjacent to a given node. */
 std::set<int> get_neighbors(int node,
@@ -67,11 +73,18 @@ std::map<int,std::set<int>> transpose(const std::set<int>& nodes,
 std::map<int,std::set<int>> induce_subgraph(const std::set<int>& nodes,
                                             const std::map<int,std::set<int>>& edges);
 
-/** Perform a depth-first search starting from a given root node.
+/** Perform a breadth-first search starting from a given root node.
  *  The search order is deterministic.
  */
-std::vector<int> depth_first_search(const std::map<int,std::set<int>>& edges,
-                                    int root);
+std::vector<int> breadth_first_search(int root,
+                                      const std::map<int,std::set<int>>& edges);
+
+/** Perform a depth-first search starting from a given root node.
+ *  A depth-first search post-order is returned. The search order is
+ *  deterministic.
+ */
+std::vector<int> depth_first_search(int root,
+                                    const std::map<int,std::set<int>>& edges);
 
 /** Topologically sort a graph.
  *  A topologically sorted graph has no edges going from a node to an

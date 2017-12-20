@@ -39,8 +39,9 @@ recurrent_model::recurrent_model(lbann_comm *comm,
                                  objective_function *obj_fn,
                                  optimizer *default_optimizer,
                                  int unroll_depth)
-  : model(comm, mini_batch_size, obj_fn, default_optimizer),
-    m_unroll_depth(unroll_depth) {}
+  : model(comm, mini_batch_size, obj_fn, default_optimizer) {
+  m_unroll_depth = std::max(unroll_depth, 1);
+}
 
 void recurrent_model::setup_layer_topology() {
   model::setup_layer_topology();
@@ -50,20 +51,29 @@ void recurrent_model::setup_layer_topology() {
 
   // We expect starting with input layer and ending with target layer
   /// @todo Design a more general interface
-  if (m_layers.size() < 2) {
+  if (m_layers.size() < 4) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
-        << "expected the first layer to be an input layer and the last "
-        << "to be a target layer";
+        << "expected the first layer to be an input layer, "
+        << "the second to be a slice layer, "
+        << "the second to last to be a concatenation layer "
+        << "and the last to be a target layer";
     throw lbann_exception(err.str());
   }
-  input_layer *input = dynamic_cast<input_layer *>(m_layers.front());
-  target_layer *target = dynamic_cast<target_layer *>(m_layers.back());
-  if (input == nullptr || target == nullptr) {
+  auto&& input         = *(m_layers.begin());
+  auto&& input_slice   = *(m_layers.begin() + 1);
+  auto&& target_concat = *(m_layers.end() - 2);
+  auto&& target        = *(m_layers.end() - 1);
+  if (dynamic_cast<input_layer *>(m_layers.front()) == nullptr
+      || input_slice->get_type() != "slice"
+      || target_concat->get_type() != "concatenation"
+      || dynamic_cast<target_layer *>(m_layers.back()) == nullptr) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
-        << "expected the first layer to be an input layer and the last "
-        << "to be a target layer";
+        << "expected the first layer to be an input layer, "
+        << "the second to be a slice layer, "
+        << "the second to last to be a concatenation layer "
+        << "and the last to be a target layer";
     throw lbann_exception(err.str());
   }
 
@@ -71,20 +81,24 @@ void recurrent_model::setup_layer_topology() {
   m_previous_roll_layer.clear();
   m_next_roll_layer.clear();
   m_previous_roll_layer[input] = input;
+  m_previous_roll_layer[input_slice] = input_slice;
+  m_previous_roll_layer[target_concat] = target_concat;
   m_previous_roll_layer[target] = target;
   m_next_roll_layer[input] = input;
+  m_next_roll_layer[input_slice] = input_slice;
+  m_next_roll_layer[target_concat] = target_concat;
   m_next_roll_layer[target] = target;
   std::vector<Layer *> input_children, target_parents;
-  for (const auto& child : input->get_child_layers()) {
+  for (const auto& child : input_slice->get_child_layers()) {
     input_children.push_back(const_cast<Layer *>(child));
   }
-  for (const auto& parent : target->get_parent_layers()) {
+  for (const auto& parent : target_concat->get_parent_layers()) {
     target_parents.push_back(const_cast<Layer *>(parent));
   }
 
   // Unroll network to desired depth
-  std::vector<Layer *> first_roll_layers(&m_layers.front() + 1,
-                                           &m_layers.back() - 1);
+  std::vector<Layer *> first_roll_layers(m_layers.begin() + 2,
+                                         m_layers.end() - 2);
   std::vector<Layer *> previous_roll_layers = first_roll_layers;
   for (int i = 1; i < m_unroll_depth; ++i) {
     const std::string name_suffix = "_" + std::to_string(i);
@@ -111,15 +125,15 @@ void recurrent_model::setup_layer_topology() {
     // Fix pointers in input and target layers
     for (auto& child : input_children) {
       child = m_next_roll_layer[child];
-      input->add_child_layer(child);
+      input_slice->add_child_layer(child);
     }
     for (auto& parent : target_parents) {
       parent = m_next_roll_layer[parent];
-      target->add_parent_layer(parent);
+      target_concat->add_parent_layer(parent);
     }
 
     // Add current roll layers to model
-    m_layers.insert(m_layers.end() - 1,
+    m_layers.insert(m_layers.end() - 2,
                     current_roll_layers.begin(),
                     current_roll_layers.end());
     previous_roll_layers = current_roll_layers;
@@ -146,6 +160,17 @@ void recurrent_model::setup_layer_topology() {
         if (m_previous_roll_layer[parent] != nullptr) {
           parent = m_previous_roll_layer[parent];
         } else {
+          if (parent->get_num_neurons() <= 0) {
+            std::stringstream err;
+            err << __FILE__ << " " << __LINE__ << " :: "
+                << layer->get_name() << " has ambiguous neuron "
+                << "dimensions since it depends on "
+                << parent->get_name() << ", which does not have "
+                << "specified neuron dimensions. Consider inserting a "
+                << "reshape layer after " << parent->get_name()
+                << "to explicitly specify neuron dimensions.";
+            throw lbann_exception(err.str());
+          }
           Layer *placeholder;
           switch (parent->get_data_layout()) {
           case data_layout::DATA_PARALLEL:
@@ -214,10 +239,10 @@ void recurrent_model::setup_layer_topology() {
   }
 
   // Add placeholder layers to model
-  m_layers.insert(m_layers.begin() + 1,
+  m_layers.insert(m_layers.begin() + 2,
                   placeholder_parents.begin(),
                   placeholder_parents.end());
-  m_layers.insert(m_layers.end() - 1,
+  m_layers.insert(m_layers.end() - 2,
                   placeholder_children.begin(),
                   placeholder_children.end());
 
@@ -230,6 +255,7 @@ void recurrent_model::setup_layer_execution_order() {
   std::set<int> nodes;
   std::map<int,std::set<int>> edges;
   construct_layer_graph(nodes, edges);
+  const auto& edges_transpose = graph::transpose(nodes, edges);
 
   // Return immediately if no recurrence is detected
   if (!graph::is_cyclic(nodes, edges)) {
@@ -253,8 +279,9 @@ void recurrent_model::setup_layer_execution_order() {
     // such nodes.
     int input_node = -1;
     for (const auto& node : component_nodes) {
-      for (const auto& neighbor : edges[node]) {
-        if (!component_nodes.count(neighbor)) {
+      const auto& parents = graph::get_neighbors(node, edges_transpose);
+      for (const auto& parent : parents) {
+        if (!component_nodes.count(parent)) {
           if (input_node != node && input_node >= 0) {
             std::stringstream err;
             err << __FILE__ << " " << __LINE__ << " :: "
@@ -274,7 +301,7 @@ void recurrent_model::setup_layer_execution_order() {
     auto&& component_edges = graph::induce_subgraph(component_nodes,
                                                     edges);
     for (const auto& node
-           : graph::depth_first_search(component_edges, input_node)) {
+           : graph::depth_first_search(input_node, component_edges)) {
       component_edges[node].erase(input_node);
     }
     if (graph::is_cyclic(component_nodes, component_edges)) {
