@@ -9,6 +9,14 @@ set(Hydrogen_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
 set(Hydrogen_CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}"
   CACHE STRING "The build type for Hydrogen.")
 
+if (TARGET OPENBLAS)
+  list(APPEND _HYDROGEN_DEPENDS OPENBLAS)
+  set(Hydrogen_USE_OpenBLAS ON
+    CACHE BOOL "Whether to use OpenBLAS in Hydrogen")
+  set(LBANN_SB_FWD_HYDROGEN_OpenBLAS_DIR "${OPENBLAS_DIR}"
+    CACHE STRING "The path to OpenBLAS for Hydrogen.")
+endif ()
+
 # Get the list of HYDROGEN variables
 get_property(HYDROGEN_VARIABLES DIRECTORY PROPERTY VARIABLES)
 list(FILTER HYDROGEN_VARIABLES INCLUDE REGEX "^HYDROGEN_.*\|^Hydrogen_.*\|^LBANN_SB_FWD_HYDROGEN_.*")
@@ -33,6 +41,7 @@ set(Hydrogen_URL "https://github.com/llnl/elemental.git"
 set(Hydrogen_TAG "hydrogen"
   CACHE STRING "The git tag or hash to checkout for Hydrogen")
 
+
 include(ExternalProject)
 ExternalProject_Add(hydrogen
   PREFIX ${CMAKE_CURRENT_BINARY_DIR}
@@ -40,6 +49,7 @@ ExternalProject_Add(hydrogen
   STAMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/stamp
   GIT_REPOSITORY ${Hydrogen_URL}
   GIT_TAG ${Hydrogen_TAG}
+  DEPENDS ${_HYDROGEN_DEPENDS}
   SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/src
   BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/build
   INSTALL_DIR ${Hydrogen_CMAKE_INSTALL_PREFIX}
