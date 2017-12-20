@@ -8,12 +8,14 @@
 # Hydrogen, this file is no longer necessary as it's just one
 # find_package() line.
 
-find_package(Hydrogen NO_MODULE)
+find_package(Hydrogen NO_MODULE
+  PATH_SUFFIXES lib/cmake/hydrogen)
 
 if (Hydrogen_FOUND)
   message(STATUS "Found Hydrogen: ${Hydrogen_DIR}")
 else ()
-  find_package(Elemental NO_MODULE)
+  find_package(Elemental NO_MODULE
+    PATH_SUFFIXES lib/cmake/elemental)
 
   if (Elemental_FOUND)
     set(HYDROGEN_LIBRARIES "${Elemental_LIBRARIES}")
@@ -23,3 +25,5 @@ else ()
       "Try setting Hydrogen_DIR or Elemental_DIR and try again!")
   endif (Elemental_FOUND)
 endif (Hydrogen_FOUND)
+
+message("\n\nHYDROGEN_LIBRARIES = ${HYDROGEN_LIBRARIES}\n\n")
