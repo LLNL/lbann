@@ -148,13 +148,13 @@ void pilot2_molecular_reader::fetch_molecule(Mat& X, int data_id, int idx,
     float *data = m_features.data<float>() + frame_offset +
       intra_frame_data_id * m_num_features;
     for (int i = 0; i < m_num_features; ++i) {
-      X(m_num_features * idx + i, mb_idx) = data[i];
+      X(m_num_features * idx + i, mb_idx) = scale_data<float>(i, data[i]);
     }
   } else if (m_features.word_size == 8) {
     double *data = m_features.data<double>() + frame_offset +
       intra_frame_data_id * m_num_features;
     for (int i = 0; i < m_num_features; ++i) {
-      X(m_num_features * idx + i, mb_idx) = data[i];
+      X(m_num_features * idx + i, mb_idx) = scale_data<double>(i, data[i]);
     }
   }
 }
