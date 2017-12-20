@@ -450,7 +450,7 @@ class fully_connected_layer : public learning_layer {
     if(m_bias_scaling_factor != DataType(0) && bias_optimizer != nullptr) {
       El::RowSum(this->m_prev_error_signal_v->LockedMatrix(),
                  m_bias_weights_gradient->Matrix());
-      bias_optimizer->allreduce_and_add_to_gradient(
+      bias_optimizer->stage_gradient_for_accumulation(
         *m_bias_weights_gradient,
         m_bias_scaling_factor / this->m_model->get_current_mini_batch_size());
     }
@@ -473,7 +473,7 @@ class fully_connected_layer : public learning_layer {
                                     m_mini_batch_size_per_gpu,
                                     DataType(1),
                                     m_bias_weights_gradient_d);
-      bias_optimizer->allreduce_and_add_to_gradient_gpu(
+      bias_optimizer->stage_gradient_for_accumulation_gpu(
         m_bias_weights_gradient_d,
         m_bias_scaling_factor / this->m_model->get_current_mini_batch_size());
     }
@@ -584,7 +584,7 @@ fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_weights<device::CP
              this->m_prev_activations_v->LockedMatrix(),
              DataType(0),
              m_matrix_weights_gradient->Matrix());
-    matrix_optimizer->allreduce_and_add_to_gradient(
+    matrix_optimizer->stage_gradient_for_accumulation(
       *m_matrix_weights_gradient,
       DataType(1) / this->m_model->get_current_mini_batch_size());
   }
@@ -635,7 +635,7 @@ fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_weights<device::CU
                                 this->m_matrix_weights_gradient_d[i],
                                 this->m_matrix_weights_gradient->Height()));
     }
-    matrix_optimizer->allreduce_and_add_to_gradient_gpu(
+    matrix_optimizer->stage_gradient_for_accumulation_gpu(
       m_matrix_weights_gradient_d,
       DataType(1) / this->m_model->get_current_mini_batch_size());
   }
