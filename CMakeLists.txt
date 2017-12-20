@@ -82,8 +82,8 @@ option(${UPPER_PROJECT_NAME}_WITH_SOFTMAX_CUDA
 
 option(${UPPER_PROJECT_NAME}_VERBOSE "Enable verbose output" OFF)
 
-option(${UPPER_PROJECT_NAME}_SEQUENTIAL_INITIALIZE
-  "Sequentially consistent initialize" OFF)
+option(${UPPER_PROJECT_NAME}_SEQUENTIAL_INITIALIZATION
+  "Sequentially consistent initialization" OFF)
 
 # FIXME what if "fp16"?
 set(${UPPER_PROJECT_NAME}_DATATYPE "float"
