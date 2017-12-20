@@ -36,6 +36,7 @@
 /// Models
 #include "lbann/models/sequential.hpp"
 #include "lbann/models/directed_acyclic_graph.hpp"
+#include "lbann/models/recurrent.hpp"
 #include "lbann/models/greedy_layerwise_autoencoder.hpp"
 #include "lbann/models/siamese.hpp"
 
@@ -68,6 +69,7 @@
 #include "lbann/layers/transform/sum.hpp"
 #include "lbann/layers/transform/slice.hpp"
 #include "lbann/layers/transform/concatenation.hpp"
+#include "lbann/layers/transform/constant.hpp"
 #include "lbann/layers/transform/noise.hpp"
 
 /// Regularization layers.

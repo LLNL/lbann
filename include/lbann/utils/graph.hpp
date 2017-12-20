@@ -92,7 +92,7 @@ void condensation(const std::set<int>& nodes,
                   const std::map<int,std::set<int>>& edges,
                   std::map<int,std::set<int>>& components,
                   std::set<int>& condensation_nodes,
-                  std::vector<std::set<int>>& condensation_edges);
+                  std::map<int,std::set<int>>& condensation_edges);
 
 }
 }
