@@ -1,40 +1,36 @@
 enable_language(C)
 enable_language(CXX)
 
-# FIXME: Currently a NOOP because CUDA+Hydrogen is not done yet.
-option(HYDROGEN_USE_CUBLAS "Apply the cuBLAS patch to hydrogen. WARNING: NOOP"
-  OFF)
-
 # Where to install Hydrogen
-set(HYDROGEN_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
+set(Hydrogen_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
   CACHE PATH "The installation location of Hydrogen.")
 
 # The build type for Hydrogen
-set(HYDROGEN_CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}"
+set(Hydrogen_CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}"
   CACHE STRING "The build type for Hydrogen.")
 
 # Get the list of HYDROGEN variables
 get_property(HYDROGEN_VARIABLES DIRECTORY PROPERTY VARIABLES)
 list(FILTER HYDROGEN_VARIABLES INCLUDE REGEX "^HYDROGEN_.*\|^Hydrogen_.*\|^LBANN_SB_FWD_HYDROGEN_.*")
-list(FILTER HYDROGEN_VARIABLES EXCLUDE REGEX "HYDROGEN_URL\|HYDROGEN_TAG\|HYDROGEN_CMAKE_GENERATOR")
+list(FILTER HYDROGEN_VARIABLES EXCLUDE REGEX "Hydrogen_URL\|Hydrogen_TAG\|Hydrogen_CMAKE_GENERATOR")
 
 create_cmake_arguments(
   OUTPUT_VARIABLE HYDROGEN_CMAKE_ARGS
   PACKAGE_NAME Hydrogen
   SKIP_VARS_WITH_PREFIXES "LBANN_SB"
-  EXTRA_REMOVE_PREFIXES "LBANN_SB_FWD_HYDROGEN"
+  EXTRA_REMOVE_PREFIXES "LBANN_SB_FWD_HYDROGEN" "LBANN_SB_FWD_Hydrogen"
   VARIABLES ${HYDROGEN_VARIABLES})
 
 # Set the generator
-set(HYDROGEN_CMAKE_GENERATOR "${CMAKE_GENERATOR}"
+set(Hydrogen_CMAKE_GENERATOR "${CMAKE_GENERATOR}"
   CACHE STRING "The generator used by CMake for Hydrogen.")
 
 # Handle the clone mechanism. First URL
-set(HYDROGEN_URL "https://github.com/llnl/elemental.git"
+set(Hydrogen_URL "https://github.com/llnl/elemental.git"
   CACHE STRING "The URL from which to clone Hydrogen")
 
 # ... then the tag.
-set(HYDROGEN_TAG "hydrogen"
+set(Hydrogen_TAG "hydrogen"
   CACHE STRING "The git tag or hash to checkout for Hydrogen")
 
 include(ExternalProject)
@@ -42,14 +38,14 @@ ExternalProject_Add(hydrogen
   PREFIX ${CMAKE_CURRENT_BINARY_DIR}
   TMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/tmp
   STAMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/stamp
-  GIT_REPOSITORY ${HYDROGEN_URL}
-  GIT_TAG ${HYDROGEN_TAG}
+  GIT_REPOSITORY ${Hydrogen_URL}
+  GIT_TAG ${Hydrogen_TAG}
   SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/src
   BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/build
-  INSTALL_DIR ${HYDROGEN_CMAKE_INSTALL_PREFIX}
+  INSTALL_DIR ${Hydrogen_CMAKE_INSTALL_PREFIX}
   USES_TERMINAL_BUILD 1
   CMAKE_ARGS
-  -G${HYDROGEN_CMAKE_GENERATOR}
+  -G${Hydrogen_CMAKE_GENERATOR}
   -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
   -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
   ${HYDROGEN_CMAKE_ARGS}
