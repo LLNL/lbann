@@ -14,7 +14,7 @@ if (TARGET OPENBLAS)
   list(APPEND _HYDROGEN_DEPENDS OPENBLAS)
   set(Hydrogen_USE_OpenBLAS ON
     CACHE BOOL "Whether to use OpenBLAS in Hydrogen")
-  set(LBANN_SB_FWD_HYDROGEN_OpenBLAS_DIR "${OPENBLAS_DIR}"
+  set(LBANN_SB_FWD_HYDROGEN_OpenBLAS_DIR "${OPENBLAS_DIR}/lib/cmake/openblas"
     CACHE STRING "The path to OpenBLAS for Hydrogen.")
 endif ()
 
