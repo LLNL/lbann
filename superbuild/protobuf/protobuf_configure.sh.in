@@ -12,7 +12,7 @@ fi
 test -f @CMAKE_CURRENT_BINARY_DIR@/build/Makefile
 
 if [ $? -ne 0 ] ; then
-    @CMAKE_CURRENT_BINARY_DIR@/src/configure --prefix=@PROTOBUF_INSTALL_PREFIX@ \
+    @CMAKE_CURRENT_BINARY_DIR@/src/configure --prefix=@PROTOBUF_CMAKE_INSTALL_PREFIX@ \
      CC=@CMAKE_C_COMPILER@ CXX=@CMAKE_CXX_COMPILER@ \
      CXX_FOR_BUILD=@CMAKE_CXX_COMPILER@
 fi
