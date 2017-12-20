@@ -10,6 +10,7 @@ set(Hydrogen_CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}"
   CACHE STRING "The build type for Hydrogen.")
 
 if (TARGET OPENBLAS)
+  set(_hydrogen_depends_tag DEPENDS)
   list(APPEND _HYDROGEN_DEPENDS OPENBLAS)
   set(Hydrogen_USE_OpenBLAS ON
     CACHE BOOL "Whether to use OpenBLAS in Hydrogen")
@@ -49,7 +50,7 @@ ExternalProject_Add(HYDROGEN
   STAMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/stamp
   GIT_REPOSITORY ${Hydrogen_URL}
   GIT_TAG ${Hydrogen_TAG}
-  DEPENDS ${_HYDROGEN_DEPENDS}
+  ${_hydrogen_depends_tag} ${_HYDROGEN_DEPENDS}
   SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/src
   BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/build
   INSTALL_DIR ${Hydrogen_CMAKE_INSTALL_PREFIX}
