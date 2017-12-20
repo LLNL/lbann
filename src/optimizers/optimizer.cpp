@@ -63,6 +63,9 @@ optimizer::optimizer(const optimizer& other)
     m_gpu_staging_is_nonzero(other.m_gpu_staging_is_nonzero)
     #endif // __LIB_CUDNN
     , m_step_time(other.m_step_time)
+    #ifdef LBANN_NBALLREDUCE_GRADIENT
+    , m_allreduce_started(other.m_allreduce_started)
+    #endif  // LBANN_NBALLREDUCE_GRADIENT
 {
   if (m_gradient != nullptr) { m_gradient = m_gradient->Copy(); }
   if (m_staging != nullptr)  { m_staging = m_staging->Copy(); }
@@ -82,6 +85,9 @@ optimizer& optimizer::operator=(const optimizer& other) {
   m_weights = other.m_weights;
   m_learning_rate = other.m_learning_rate;
   m_step_time = other.m_step_time;
+  #ifdef LBANN_NBALLREDUCE_GRADIENT
+  m_allreduce_started = other.m_allreduce_started;
+  #endif  // LBANN_NBALLREDUCE_GRADIENT
 
   // Copy matrices
   #define COPY_MATRIX(src, dst)                 \
@@ -159,8 +165,17 @@ AbsDistMat& optimizer::get_gradient() {
 
   // Accumulate CPU allreduce staging matrix
   if (m_cpu_staging_is_nonzero) {
-    m_comm->allreduce(*m_staging,
-                      m_staging->RedundantComm());
+#ifdef LBANN_NBALLREDUCE_GRADIENT
+    if (m_allreduce_started) {
+      // Complete in-progress non-blocking allreduce.
+      m_comm->wait(m_allreduce_req);
+      m_allreduce_started = false;
+    } else {
+      m_comm->allreduce(*m_staging, m_staging->RedundantComm());
+    }
+#else
+    m_comm->allreduce(*m_staging, m_staging->RedundantComm());
+#endif  // LBANN_NBALLREDUCE_GRADIENT
     add_to_gradient(*m_staging);
     El::Zero(*m_staging);
     m_cpu_staging_is_nonzero = false;
@@ -319,6 +334,19 @@ void optimizer::stage_gradient_for_accumulation(const AbsDistMat& gradient,
   if (scale != DataType(0)) {
     El::Axpy(scale, gradient, *m_staging);
     m_cpu_staging_is_nonzero = true;
+#ifdef LBANN_NBALLREDUCE_GRADIENT
+    // TODO: Does not handle case where weights are shared and this is called
+    // multiple times.
+    if (m_allreduce_started) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "attempted to start non-blocking allreduce twice";
+      throw lbann_exception(err.str());
+    }
+    m_comm->nb_allreduce(*m_staging, m_staging->RedundantComm(),
+                         m_allreduce_req);
+    m_allreduce_started = true;
+#endif  // LBANN_NBALLREDUCE_GRADIENT
   }
 }
 

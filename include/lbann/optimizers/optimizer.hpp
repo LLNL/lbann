@@ -183,6 +183,13 @@ class optimizer {
   /** Running count of the time spent in step(). */
   double m_step_time = 0.0;
 
+#ifdef LBANN_NBALLREDUCE_GRADIENT
+  /** The request for non-blocking allreduces. */
+  El::mpi::Request<DataType> m_allreduce_req;
+  /** Whether a non-blocking allreduce was started. */
+  bool m_allreduce_started = false;
+#endif  // LBANN_NBALLREDUCE_GRADIENT
+
 };
 
 } // namespace lbann
