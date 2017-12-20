@@ -38,10 +38,12 @@ include(LBANNSuperBuildCreateCMakeArguments)
 
 if (LBANN_SB_BUILD_CNPY)
   add_subdirectory(cnpy)
+  list(APPEND _BUILD_PKGS CNPY)
 endif ()
 
 if (LBANN_SB_BUILD_CUB)
   add_subdirectory(cub)
+  list(APPEND _BUILD_PKGS cub)
 endif ()
 
 # Elemental is *SO* complicated.
@@ -50,25 +52,31 @@ if (LBANN_SB_BUILD_ELEMENTAL OR LBANN_SB_BUILD_HYDROGEN)
 
   if (LBANN_SB_BUILD_OPENBLAS)
     add_subdirectory(openblas)
+    list(APPEND _BUILD_PKGS OpenBLAS)
   endif ()
 
   if (LBANN_SB_BUILD_HYDROGEN)
     add_subdirectory(hydrogen)
+    list(APPEND _BUILD_PKGS Hydrogen)
   else ()
     add_subdirectory(elemental)
+    list(APPEND _BUILD_PKGS Elemental)
   endif ()
 endif ()
 
 if (LBANN_SB_BUILD_JPEG_TURBO)
   add_subdirectory(jpeg-turbo)
+  list(APPEND _BUILD_PKGS jpeg-turbo)
 endif ()
 
 if (LBANN_SB_BUILD_OPENCV)
   add_subdirectory(opencv)
+  list(APPEND _BUILD_PKGS OpenCV)
 endif ()
 
 if (LBANN_SB_BUILD_PROTOBUF)
   add_subdirectory(protobuf)
+  list(APPEND _BUILD_PKGS Protobuf)
 endif ()
 
 #
@@ -77,4 +85,17 @@ endif ()
 
 if (LBANN_SB_BUILD_LBANN)
   add_subdirectory(lbann)
+  list(APPEND _BUILD_PKGS LBANN)
 endif ()
+
+message("-----------------------------------------------------------------\n")
+message("LBANN SuperBuild will build the following packages:\n")
+foreach (pkg ${_BUILD_PKGS})
+  string(TOUPPER "${pkg}" pkg_upper)
+  if (NOT ${pkg_upper}_CMAKE_INSTALL_PREFIX)
+    message("  -- ${pkg} (${${pkg}_CMAKE_INSTALL_PREFIX})")
+  else()
+    message("  -- ${pkg} (${${pkg_upper}_CMAKE_INSTALL_PREFIX})")
+  endif ()
+endforeach ()
+message("\n-----------------------------------------------------------------\n")

@@ -43,7 +43,7 @@ set(Hydrogen_TAG "hydrogen"
 
 
 include(ExternalProject)
-ExternalProject_Add(hydrogen
+ExternalProject_Add(HYDROGEN
   PREFIX ${CMAKE_CURRENT_BINARY_DIR}
   TMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/tmp
   STAMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/stamp
@@ -61,5 +61,5 @@ ExternalProject_Add(hydrogen
   ${HYDROGEN_CMAKE_ARGS}
   )
 
-set(HYDROGEN_DIR ${HYDROGEN_CMAKE_INSTALL_PREFIX}
+set(HYDROGEN_DIR ${Hydrogen_CMAKE_INSTALL_PREFIX}
   CACHE INTERNAL "The install prefix of Hydrogen.")

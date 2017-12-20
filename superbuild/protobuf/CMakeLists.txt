@@ -10,7 +10,7 @@ set(PROTOBUF_TAG "3.2.x"
   CACHE STRING "The git tag or hash to checkout for PROTOBUF")
 
 # Where to install PROTOBUF
-set(PROTOBUF_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
+set(PROTOBUF_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
   CACHE PATH "The installation location of PROTOBUF.")
 
 # The number of jobs to use when running 'make' for protobuf
@@ -43,5 +43,5 @@ ExternalProject_Add(PROTOBUF
   USES_TERMINAL_BUILD 1
   )
 
-set(PROTOBUF_DIR ${PROTOBUF_INSTALL_PREFIX}
+set(PROTOBUF_DIR ${PROTOBUF_CMAKE_INSTALL_PREFIX}
   CACHE INTERNAL "The install prefix of Protobuf.")
