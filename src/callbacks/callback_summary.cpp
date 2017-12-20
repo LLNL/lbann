@@ -46,7 +46,7 @@ void lbann_callback_summary::on_train_begin(model *m) {
 
 void lbann_callback_summary::on_batch_end(model *m) {
   m->summarize_stats(*m_summarizer);
-  if (m->get_cur_step() % m_mat_interval == 0) {
+  if (m_mat_interval > 0 && m->get_cur_step() % m_mat_interval == 0) {
     m->summarize_matrices(*m_summarizer);
   }
   lbann_comm *comm = m->get_comm();

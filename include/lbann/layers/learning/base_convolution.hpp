@@ -59,7 +59,7 @@ class base_convolution_layer : public learning_layer {
 
   /** Size of convolutional kernel. */
   int m_kernel_size;
-  
+
   /** Scaling factor for bias term.
    *  If the scaling factor is zero, bias is not applied.
    */
@@ -111,7 +111,7 @@ class base_convolution_layer : public learning_layer {
 
     if (conv_dims.size() == 1) {
       conv_dims.resize(num_data_dims, conv_dims[0]);
-    } 
+    }
     if (conv_pads.size() == 1) {
       conv_pads.resize(num_data_dims, conv_pads[0]);
     }
@@ -119,11 +119,11 @@ class base_convolution_layer : public learning_layer {
       conv_strides.resize(num_data_dims, conv_strides[0]);
     }
     if ((int)conv_dims.size() != num_data_dims
-        && (int)conv_pads.size() != num_data_dims
-        && (int)conv_strides.size() != num_data_dims) {
+        || (int)conv_pads.size() != num_data_dims
+        || (int)conv_strides.size() != num_data_dims) {
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
-          << "invalid number of convolution parameters " 
+          << "invalid number of convolution parameters "
           << "(expected " << num_data_dims << " parameters, "
           << "conv_dims has " << conv_dims.size() << ", "
           << "conv_pads has " << conv_pads.size() << ", "
@@ -320,7 +320,7 @@ class base_convolution_layer : public learning_layer {
       cast_initializer->set_fan_in(m_kernel_size / this->m_neuron_dims[0]);
       cast_initializer->set_fan_out(m_kernel_size / this->m_prev_neuron_dims[0]);
     }
-    
+
     // Initialize bias
     this->m_weights[1]->setup(this->m_neuron_dims[0], 1,
                               El::STAR, El::STAR);
@@ -397,7 +397,7 @@ class base_convolution_layer : public learning_layer {
         this->m_weights[1]->get_values_view(*m_bias_weights_v);
       }
     }
-    
+
   }
 
   /** Convolution with cuDNN. */
@@ -616,8 +616,9 @@ class base_convolution_layer : public learning_layer {
                                                  m_bias_cudnn_desc,
                                                  m_bias_weights_gradient_d[i]));
       }
-      bias_optimizer->allreduce_and_add_to_gradient_gpu(m_bias_weights_gradient_d,
-                                                        m_bias_scaling_factor / mini_batch_size);
+      bias_optimizer->stage_gradient_for_accumulation_gpu(
+        m_bias_weights_gradient_d,
+        m_bias_scaling_factor / mini_batch_size);
     }
 
     // Compute kernel gradient
@@ -635,7 +636,7 @@ class base_convolution_layer : public learning_layer {
           work_space_size = this->m_cudnn->get_work_space_size(i);
         }
         void *work_space = this->m_cudnn->get_work_space(i);
-      
+
         // Determine algorithm and compute kernel gradient
         cudnnConvolutionBwdFilterAlgo_t kernel_gradient_cudnn_algorithm
           = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0;
@@ -689,9 +690,9 @@ class base_convolution_layer : public learning_layer {
       }
 
       // Add gradient contribution
-      kernel_optimizer->allreduce_and_add_to_gradient_gpu(m_kernel_weights_gradient_d,
-                                                          one / mini_batch_size);
-      
+      kernel_optimizer->stage_gradient_for_accumulation_gpu(
+        m_kernel_weights_gradient_d,
+        one / mini_batch_size);
     }
 
   #endif // LBANN_HAS_CUDNN
@@ -713,7 +714,7 @@ class base_convolution_layer : public learning_layer {
     }
     else {
       input = this->m_prev_error_signal_v;
-      output = this->m_error_signal_v;      
+      output = this->m_error_signal_v;
       input_dims = this->m_neuron_dims;
       output_dims = this->m_prev_neuron_dims;
       output_size = this->m_num_prev_neurons;
@@ -891,8 +892,9 @@ class base_convolution_layer : public learning_layer {
         }
         bias_weights_gradient_local(channel, 0) = m_bias_scaling_factor * sum;
       }
-      bias_optimizer->allreduce_and_add_to_gradient(*m_bias_weights_gradient,
-                                                    DataType(1) / mini_batch_size);
+      bias_optimizer->stage_gradient_for_accumulation(
+        *m_bias_weights_gradient,
+        DataType(1) / mini_batch_size);
     }
 
     // Stop early if kernel is not being optimized
@@ -949,8 +951,9 @@ class base_convolution_layer : public learning_layer {
     }
 
     // Scale and accumulate gradients
-    kernel_optimizer->allreduce_and_add_to_gradient(*m_kernel_weights_gradient,
-                                                    DataType(1) / mini_batch_size);
+    kernel_optimizer->stage_gradient_for_accumulation(
+      *m_kernel_weights_gradient,
+      DataType(1) / mini_batch_size);
 
   }
 

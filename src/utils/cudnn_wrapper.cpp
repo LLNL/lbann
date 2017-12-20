@@ -137,27 +137,39 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus, bool nc
 }
 
 cudnn_manager::~cudnn_manager() {
-    // Free work spaces
-    free_work_spaces();
+  // Free work spaces
+  free_work_spaces();
 
-    // Destroy cuDNN handles
+  // Destroy cuDNN handles
+  // Use a try-catch block for FORCE_CHECK_{CUDA |CUDNN | CUBLAS} in the
+  // destructor -- these could thrown an exception and destructors are
+  // considered to be noexcept by default
+  try
+  {
     for(size_t i=0u; i<m_gpus.size(); ++i) {
-        FORCE_CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-        if(m_streams[i]) {
-            FORCE_CHECK_CUDA(cudaStreamDestroy(m_streams[i]));
-        }
-        if(m_handles[i]) {
-            FORCE_CHECK_CUDNN(cudnnDestroy(m_handles[i]));
-        }
-        if(m_cublas_handles[i]) {
-            FORCE_CHECK_CUBLAS(cublasDestroy(m_cublas_handles[i]));
-        }
+      FORCE_CHECK_CUDA(cudaSetDevice(m_gpus[i]));
+      if(m_streams[i]) {
+        FORCE_CHECK_CUDA(cudaStreamDestroy(m_streams[i]));
+      }
+      if(m_handles[i]) {
+        FORCE_CHECK_CUDNN(cudnnDestroy(m_handles[i]));
+      }
+      if(m_cublas_handles[i]) {
+        FORCE_CHECK_CUBLAS(cublasDestroy(m_cublas_handles[i]));
+      }
     }
+  }
+  catch(const std::exception& e)
+  {
+    std::cerr << "~cudnn_manager: try ... catch " << e.what() << std::endl;
+    std::terminate();
+  }
 
-    /// NCCL clear
-    if(m_nccl_used){
-        nccl_destroy();
-    }
+  /// NCCL clear
+  if(m_nccl_used)
+  {
+      nccl_destroy();
+  }
 }
 
 void cudnn_manager::cudnn_manager::allocate_on_gpus(std::vector<DataType *>& gpu_data,

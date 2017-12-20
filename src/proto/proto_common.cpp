@@ -440,16 +440,33 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     else if (layer.has_reshape()) {
       const lbann_data::Reshape &ell = layer.reshape();
-      int i;
-      std::stringstream s(ell.dims());
+      int i, num_dims;
       std::vector<int> dims;
-      while (s >> i) {
-        dims.push_back(i);
+      if (layer.num_neurons_from_data_reader()) {
+        if(ell.reshape_to_flattened_conv_format()) {
+          dims.push_back(1);
+          num_dims = 2;
+        }else {
+          num_dims = 1;
+        }
+        dims.push_back(data_readers[execution_mode::training]->get_linearized_data_size());
+
+        if(ell.num_dims() != 0 || ell.dims() != "") {
+          err << __FILE__ << " " << __LINE__ << " :: reshape illegal combination using"
+              << "num_neurons_from_data_reader flag with num_dims or dims fields";
+          throw lbann_exception(err.str());
+        }
+      } else {
+        std::stringstream s(ell.dims());
+        while (s >> i) {
+          dims.push_back(i);
+        }
+        num_dims = ell.num_dims();
       }
       if (layout == data_layout::MODEL_PARALLEL) {
-        d = new reshape_layer<data_layout::MODEL_PARALLEL>(comm, ell.num_dims(), dims.data());
+        d = new reshape_layer<data_layout::MODEL_PARALLEL>(comm, num_dims, dims.data());
       } else {
-        d = new reshape_layer<data_layout::DATA_PARALLEL>(comm, ell.num_dims(), dims.data());
+        d = new reshape_layer<data_layout::DATA_PARALLEL>(comm, num_dims, dims.data());
       }
     }
 
@@ -1699,7 +1716,7 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
     const lbann_data::Metric &metric = m.metric(j);
     if (metric.has_categorical_accuracy()) {
       model->add_metric(new categorical_accuracy_metric(comm));
-    } 
+    }
     if (metric.has_top_k_categorical_accuracy()) {
       const lbann_data::TopKCategoricalAccuracy &a = metric.top_k_categorical_accuracy();
       model->add_metric(new top_k_categorical_accuracy_metric(a.top_k(), comm));
@@ -2076,7 +2093,7 @@ void set_data_readers_percent(lbann_data::LbannPB& p)
   for (int j=0; j<size; j++) {
     lbann_data::Reader *r = readers->mutable_reader(j);
     r->set_percent_of_data_to_use( percent );
-  }  
+  }
 }
 
 void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)

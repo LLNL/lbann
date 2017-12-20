@@ -589,11 +589,15 @@ class batch_normalization : public regularizer_layer {
     }
     optimizer* scale_optimizer = m_weights[0]->get_optimizer();
     if (scale_optimizer != nullptr) {
-      scale_optimizer->allreduce_and_add_to_gradient_gpu(m_scale_gradient_d, DataType(1) / mini_batch_size);
+      scale_optimizer->stage_gradient_for_accumulation_gpu(
+        m_scale_gradient_d,
+        DataType(1) / mini_batch_size);
     }
     optimizer* bias_optimizer = m_weights[1]->get_optimizer();
     if (bias_optimizer != nullptr) {
-      bias_optimizer->allreduce_and_add_to_gradient_gpu(m_bias_gradient_d, DataType(1) / mini_batch_size);
+      bias_optimizer->stage_gradient_for_accumulation_gpu(
+        m_bias_gradient_d,
+        DataType(1) / mini_batch_size);
     }
 
     // Compute error signal
@@ -818,11 +822,15 @@ class batch_normalization : public regularizer_layer {
     }
     optimizer* scale_optimizer = m_weights[0]->get_optimizer();
     if (scale_optimizer != nullptr) {
-      scale_optimizer->allreduce_and_add_to_gradient(*m_scale_gradient, DataType(1) / mini_batch_size);
+      scale_optimizer->stage_gradient_for_accumulation(
+        *m_scale_gradient,
+        DataType(1) / mini_batch_size);
     }
     optimizer* bias_optimizer = m_weights[1]->get_optimizer();
     if (bias_optimizer != nullptr) {
-      bias_optimizer->allreduce_and_add_to_gradient(*m_bias_gradient, DataType(1) / mini_batch_size);
+      bias_optimizer->stage_gradient_for_accumulation(
+        *m_bias_gradient,
+        DataType(1) / mini_batch_size);
     }
     
     // Compute error signal
