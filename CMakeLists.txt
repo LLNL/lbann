@@ -54,7 +54,7 @@ else ()
     CACHE STRING "LBANN's version string")
 endif (GIT_REPO)
 
-if (LINUX)
+if (CMAKE_HOST_SYSTEM_NAME MATCHES "Linux")
   set(LBANN_GNU_LINUX TRUE)
 endif ()
 #
