@@ -1,4 +1,4 @@
-import pytest, re, subprocess
+import os, pytest, re, subprocess
 
 def pytest_addoption(parser):
     cluster = re.sub('[0-9]+', '', subprocess.check_output('hostname'.split()).strip())
