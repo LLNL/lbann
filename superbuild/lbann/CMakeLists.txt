@@ -10,6 +10,22 @@ set(LBANN_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
 set(LBANN_CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}"
   CACHE STRING "The build type for LBANN.")
 
+# Fixes an RPATH issue with LBANN in which all packages get installed
+# to the same prefix
+#
+# FIXME: Not sure how this will work if CMAKE_INSTALL_LIBDIR is set
+# manually for LBANN
+if (LINUX)
+  set(_SB_PKGS CNPY CUB ELEMENTAL
+    HYDROGEN JPEG_TURBO OPENBLAS OPENCV PROTOBUF)
+  foreach(_pkg ${_SB_PKGS})
+    if (${_pkg}_CMAKE_INSTALL_PREFIX STREQUAL LBANN_CMAKE_INSTALL_PREFIX)
+      set(LBANN_CMAKE_INSTALL_RPATH "${LBANN_CMAKE_INSTALL_PREFIX}/lib")
+      break()
+    endif ()  
+  endforeach ()
+endif ()
+
 # Get the list of LBANN variables
 get_property(LBANN_VARIABLES DIRECTORY PROPERTY VARIABLES)
 list(FILTER LBANN_VARIABLES INCLUDE REGEX "^LBANN_.*")
