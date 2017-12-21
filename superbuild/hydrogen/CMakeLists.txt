@@ -1,6 +1,12 @@
 enable_language(C)
 enable_language(CXX)
 
+option(Hydrogen_USE_64BIT_INTS
+  "Hydrogen use 64-bit internal indices" ON)
+
+option(Hydrogen_USE_64BIT_BLAS_INTS
+  "Hydrogen use 64-bit integers in BLAS calls" OFF)
+
 # Where to install Hydrogen
 set(Hydrogen_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
   CACHE PATH "The installation location of Hydrogen.")

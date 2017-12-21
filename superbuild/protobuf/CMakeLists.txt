@@ -14,7 +14,7 @@ set(PROTOBUF_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
   CACHE PATH "The installation location of PROTOBUF.")
 
 # The number of jobs to use when running 'make' for protobuf
-set(PROTOBUF_MAKE_JOBS ""
+set(PROTOBUF_MAKE_JOBS "8"
   CACHE INTERNAL "The number of make jobs to run. Max by default.")
 
 include(ExternalProject)
