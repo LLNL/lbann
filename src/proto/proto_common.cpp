@@ -440,16 +440,33 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     else if (layer.has_reshape()) {
       const lbann_data::Reshape &ell = layer.reshape();
-      int i;
-      std::stringstream s(ell.dims());
+      int i, num_dims;
       std::vector<int> dims;
-      while (s >> i) {
-        dims.push_back(i);
+      if (layer.num_neurons_from_data_reader()) {
+        if(ell.reshape_to_flattened_conv_format()) {
+          dims.push_back(1);
+          num_dims = 2;
+        }else {
+          num_dims = 1;
+        }
+        dims.push_back(data_readers[execution_mode::training]->get_linearized_data_size());
+
+        if(ell.num_dims() != 0 || ell.dims() != "") {
+          err << __FILE__ << " " << __LINE__ << " :: reshape illegal combination using"
+              << "num_neurons_from_data_reader flag with num_dims or dims fields";
+          throw lbann_exception(err.str());
+        }
+      } else {
+        std::stringstream s(ell.dims());
+        while (s >> i) {
+          dims.push_back(i);
+        }
+        num_dims = ell.num_dims();
       }
       if (layout == data_layout::MODEL_PARALLEL) {
-        d = new reshape_layer<data_layout::MODEL_PARALLEL>(comm, ell.num_dims(), dims.data());
+        d = new reshape_layer<data_layout::MODEL_PARALLEL>(comm, num_dims, dims.data());
       } else {
-        d = new reshape_layer<data_layout::DATA_PARALLEL>(comm, ell.num_dims(), dims.data());
+        d = new reshape_layer<data_layout::DATA_PARALLEL>(comm, num_dims, dims.data());
       }
     }
 
@@ -1572,6 +1589,21 @@ void init_callbacks(
         lbann_callback_optimizerwise_adaptive_learning_rate(c.scale(), weights_list);
       model->add_callback(owalr_cb);
     }
+
+
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: checkpoint
+    //////////////////////////////////////////////////////////////////
+    if (callback.has_checkpoint()) {
+      const lbann_data::CallbackCheckpoint& c = callback.checkpoint();
+      if (master) {
+        std::cout << "checkpoint saving on interval <epoch:" << c.checkpoint_epochs() << " steps:" << c.checkpoint_steps() << " secs:" << c.checkpoint_secs()  
+	          << "> to dir: " << c.checkpoint_dir() << std::endl;
+      }
+      lbann_callback_checkpoint *checkpoint_cb = new
+        lbann_callback_checkpoint(c.checkpoint_dir(), c.checkpoint_epochs(), c.checkpoint_steps(), c.checkpoint_secs(), c.checkpoint_per_rank());
+      model->add_callback(checkpoint_cb);
+    }
   }
 
 }
@@ -1687,7 +1719,7 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
     const lbann_data::Metric &metric = m.metric(j);
     if (metric.has_categorical_accuracy()) {
       model->add_metric(new categorical_accuracy_metric(comm));
-    } 
+    }
     if (metric.has_top_k_categorical_accuracy()) {
       const lbann_data::TopKCategoricalAccuracy &a = metric.top_k_categorical_accuracy();
       model->add_metric(new top_k_categorical_accuracy_metric(a.top_k(), comm));
@@ -1704,10 +1736,10 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
   }
 
   //set checkpoint values
-  model->set_checkpoint_dir(m.checkpoint_dir());
-  model->set_checkpoint_epochs(m.checkpoint_epochs());
-  model->set_checkpoint_steps(m.checkpoint_steps());
-  model->set_checkpoint_secs(m.checkpoint_secs());
+  //model->set_checkpoint_dir(m.checkpoint_dir());
+  //model->set_checkpoint_epochs(m.checkpoint_epochs());
+  //model->set_checkpoint_steps(m.checkpoint_steps());
+  //model->set_checkpoint_secs(m.checkpoint_secs());
 
   return model;
 }
@@ -1806,7 +1838,8 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
     } else if (name == "pilot2_molecular_reader") {
       pilot2_molecular_reader* reader_pilot2_molecular = new pilot2_molecular_reader(readme.num_neighbors(), readme.max_neighborhood(), shuffle);
       reader = reader_pilot2_molecular;
-    } else if (name == "merge_samples") {
+    } else if (name == "merge_samples" || name == "merge_features") {
+      //TODO: verify how much of wildcard conflict with label file, label file should be loaded separately
       auto paths = glob(readme.data_file_pattern());
       std::vector<generic_data_reader*> npy_readers;
       for (const auto path : paths) {
@@ -1839,8 +1872,20 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
           throw lbann_exception(err.str());
         }
       }
-      data_reader_merge_samples* merged_reader = new data_reader_merge_samples(npy_readers, shuffle);
-      reader = merged_reader;
+      if(name == "merge_samples") {
+        data_reader_merge_samples* merged_samples = new data_reader_merge_samples(npy_readers, shuffle);
+        reader = merged_samples;
+      }else {
+        //create label file
+        auto* label_csv = new csv_reader(shuffle); 
+        label_csv->set_data_filename(readme.label_filename());
+        label_csv->disable_labels(false); 
+        label_csv->set_has_header(readme.has_header()); //use same as parent file
+        label_csv->set_label_col(0); //assume there is only one label file and the column and is label column
+        data_reader_merge_features* merged_features = new data_reader_merge_features(npy_readers,label_csv, shuffle);
+        reader = merged_features;
+      }
+  
     } else if (name == "synthetic") {
       reader = new data_reader_synthetic(readme.num_samples(), readme.num_features(), shuffle);
     } else if (name == "ascii") {
@@ -1856,7 +1901,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
     if (readme.data_filename() != "") {
       reader->set_data_filename( readme.data_filename() );
     }
-    if (readme.label_filename() != "") {
+    if (readme.label_filename() != "" && name != "merge_features") { //label_file set differently for merge_features
       reader->set_label_filename( readme.label_filename() );
     }
     if (readme.data_filedir() != "") {
@@ -1916,6 +1961,8 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
         (*(numpy_reader *)reader_validation) = (*(numpy_reader *)reader);
       } else if (name == "merge_samples") {
         reader_validation = new data_reader_merge_samples(*(data_reader_merge_samples *)reader);
+      } else if (name == "merge_features") {
+        reader_validation = new data_reader_merge_features(*(data_reader_merge_features *)reader);
       } else if (name == "cifar10") {
         reader_validation = new cifar10_reader(shuffle);
         (*(cifar10_reader *)reader_validation) = (*(cifar10_reader *)reader);
@@ -2049,7 +2096,7 @@ void set_data_readers_percent(lbann_data::LbannPB& p)
   for (int j=0; j<size; j++) {
     lbann_data::Reader *r = readers->mutable_reader(j);
     r->set_percent_of_data_to_use( percent );
-  }  
+  }
 }
 
 void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)

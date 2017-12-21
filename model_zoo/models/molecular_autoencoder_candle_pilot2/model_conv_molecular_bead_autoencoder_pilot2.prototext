@@ -1,7 +1,7 @@
 model {
   name: "sequential_model"
   data_layout: "data_parallel"
-  mini_batch_size: 1024
+  mini_batch_size: 32
   block_size: 256
   num_epochs: 4
   num_parallel_readers: 1
@@ -69,14 +69,53 @@ model {
   # CONVOLUTION 1
   #############
   layer {
+    name: "bead_conv1"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 1
+      num_output_channels: 512
+      conv_dims: "20"
+      conv_pads: "0"
+      conv_strides: "20"
+      weight_initialization: "he_normal"
+      has_bias: true
+      has_vectors: true
+    }
+  }
+
+  layer {
+    name: "bead_batch_norm1"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+
+  ######
+  # RELU 1
+  ######
+  layer {
+    name: "bead_relu1"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+
+  #############
+  # CONVOLUTION 1
+  #############
+  layer {
     name: "mol_conv1"
     data_layout: "data_parallel"
     convolution {
       num_dims: 1
       num_output_channels: 1024
-      conv_dims: "240"
+      conv_dims: "12"
       conv_pads: "0"
-      conv_strides: "240"
+      conv_strides: "12"
       weight_initialization: "he_normal"
       has_bias: true
       has_vectors: true
@@ -192,10 +231,10 @@ model {
 #    num_neurons_from_data_reader: true
     deconvolution {
       num_dims: 1
-      num_output_channels: 1
-      conv_dims: "240"
+      num_output_channels: 512
+      conv_dims: "12"
       conv_pads: "0"
-      conv_strides: "240"
+      conv_strides: "12"
       has_bias: true
       has_vectors: true
     }
@@ -203,6 +242,45 @@ model {
 
   layer {
     name: "batch_norm4"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+
+  ######
+  # RELU 1
+  ######
+  layer {
+    name: "dc_mol_relu1"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+
+  #############
+  # CONVOLUTION 1
+  #############
+  layer {
+    name: "dc_bead_conv1"
+    data_layout: "data_parallel"
+    deconvolution {
+      num_dims: 1
+      num_output_channels: 1
+      conv_dims: "20"
+      conv_pads: "0"
+      conv_strides: "20"
+      weight_initialization: "he_normal"
+      has_bias: true
+      has_vectors: true
+    }
+  }
+
+  layer {
+    name: "dc_bead_batch_norm1"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9

@@ -77,8 +77,8 @@ void categorical_accuracy_metric::setup(model& m) {
   m_prediction_indices.resize(m_prediction_values->LocalWidth());
 }
 
-DataType categorical_accuracy_metric::evaluate_compute(const AbsDistMat& prediction,
-                                                       const AbsDistMat& ground_truth) {
+double categorical_accuracy_metric::evaluate_compute(const AbsDistMat& prediction,
+                                                     const AbsDistMat& ground_truth) {
 
   // Get matrix dimensions
   const int height = prediction.Height();
@@ -108,7 +108,7 @@ DataType categorical_accuracy_metric::evaluate_compute(const AbsDistMat& predict
       max_index = -1;
     }
     for (int row = 1; row < local_height; ++row) {
-      const DataType pred_val = prediction_local(row, col);
+      const double pred_val = prediction_local(row, col);
       if (pred_val > max_val) {
         max_val = pred_val;
         max_index = row;
@@ -151,7 +151,7 @@ DataType categorical_accuracy_metric::evaluate_compute(const AbsDistMat& predict
   correct_predictions = get_comm().model_allreduce(correct_predictions);
 
   // Return percentage of correct predictions
-  return correct_predictions * DataType(100) / width;
+  return correct_predictions * 100;
 
 }
 

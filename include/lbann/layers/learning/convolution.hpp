@@ -75,6 +75,11 @@ class convolution_layer : public base_convolution_layer {
 
   std::string get_topo_description() const override {
     std::stringstream s;
+    // Get the topo description from any parent class
+    std::string str = base_convolution_layer::get_topo_description();
+    s << str << " - ";
+
+    // Display the topology of the kernel
     for (size_t h=0; h<this->m_kernel_dims.size(); h++) {
       if (h == 0) { s << "C="; }
       s << this->m_kernel_dims[h] ;
@@ -129,7 +134,7 @@ class convolution_layer : public base_convolution_layer {
                              cudnn) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "convolution only supports DATA_PARALLEL");
-    
+
     // Setup the data distribution
     initialize_distributed_matrices();
 

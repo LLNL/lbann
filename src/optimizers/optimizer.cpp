@@ -63,6 +63,9 @@ optimizer::optimizer(const optimizer& other)
     m_gpu_staging_is_nonzero(other.m_gpu_staging_is_nonzero)
     #endif // __LIB_CUDNN
     , m_step_time(other.m_step_time)
+    #ifdef LBANN_NBALLREDUCE_GRADIENT
+    , m_allreduce_started(other.m_allreduce_started)
+    #endif  // LBANN_NBALLREDUCE_GRADIENT
 {
   if (m_gradient != nullptr) { m_gradient = m_gradient->Copy(); }
   if (m_staging != nullptr)  { m_staging = m_staging->Copy(); }
@@ -82,6 +85,9 @@ optimizer& optimizer::operator=(const optimizer& other) {
   m_weights = other.m_weights;
   m_learning_rate = other.m_learning_rate;
   m_step_time = other.m_step_time;
+  #ifdef LBANN_NBALLREDUCE_GRADIENT
+  m_allreduce_started = other.m_allreduce_started;
+  #endif  // LBANN_NBALLREDUCE_GRADIENT
 
   // Copy matrices
   #define COPY_MATRIX(src, dst)                 \
@@ -159,8 +165,17 @@ AbsDistMat& optimizer::get_gradient() {
 
   // Accumulate CPU allreduce staging matrix
   if (m_cpu_staging_is_nonzero) {
-    m_comm->allreduce(*m_staging,
-                      m_staging->RedundantComm());
+#ifdef LBANN_NBALLREDUCE_GRADIENT
+    if (m_allreduce_started) {
+      // Complete in-progress non-blocking allreduce.
+      m_comm->wait(m_allreduce_req);
+      m_allreduce_started = false;
+    } else {
+      m_comm->allreduce(*m_staging, m_staging->RedundantComm());
+    }
+#else
+    m_comm->allreduce(*m_staging, m_staging->RedundantComm());
+#endif  // LBANN_NBALLREDUCE_GRADIENT
     add_to_gradient(*m_staging);
     El::Zero(*m_staging);
     m_cpu_staging_is_nonzero = false;
@@ -194,12 +209,12 @@ AbsDistMat& optimizer::get_gradient() {
     El::Zero(*m_staging);
     m_gpu_gradient_is_nonzero = false;
   }
-  
+
 #endif // __LIB_CUDNN
 
   // Return full gradient
   return *m_gradient;
-  
+
 }
 
 #if __LIB_CUDNN
@@ -253,7 +268,7 @@ std::vector<DataType*> optimizer::get_gradient_gpu() {
     m_cudnn->clear_on_gpus(m_staging_d, height, width);
     m_cpu_gradient_is_nonzero = false;
   }
-  
+
   // Return full gradient
   return m_gradient_d;
 
@@ -308,8 +323,8 @@ void optimizer::add_to_gradient(const AbsDistMat& gradient,
   }
 }
 
-void optimizer::allreduce_and_add_to_gradient(const AbsDistMat& gradient,
-                                              DataType scale) {
+void optimizer::stage_gradient_for_accumulation(const AbsDistMat& gradient,
+                                                DataType scale) {
   if (!is_initialized()) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
@@ -319,6 +334,19 @@ void optimizer::allreduce_and_add_to_gradient(const AbsDistMat& gradient,
   if (scale != DataType(0)) {
     El::Axpy(scale, gradient, *m_staging);
     m_cpu_staging_is_nonzero = true;
+#ifdef LBANN_NBALLREDUCE_GRADIENT
+    // TODO: Does not handle case where weights are shared and this is called
+    // multiple times.
+    if (m_allreduce_started) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "attempted to start non-blocking allreduce twice";
+      throw lbann_exception(err.str());
+    }
+    m_comm->nb_allreduce(*m_staging, m_staging->RedundantComm(),
+                         m_allreduce_req);
+    m_allreduce_started = true;
+#endif  // LBANN_NBALLREDUCE_GRADIENT
   }
 }
 
@@ -351,8 +379,8 @@ void optimizer::add_to_gradient_gpu(std::vector<DataType*>& gradient,
   }
 }
 
-void optimizer::allreduce_and_add_to_gradient_gpu(std::vector<DataType*>& gradient,
-                                                  DataType scale) {
+void optimizer::stage_gradient_for_accumulation_gpu(std::vector<DataType*>& gradient,
+                                                    DataType scale) {
   if (!is_initialized()) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
@@ -453,4 +481,21 @@ void optimizer::step_compute_gpu(std::vector<DataType*> values_d,
 }
 #endif // __LIB_CUDNN
 
+//************************************************************************
+// Checkpointing
+//************************************************************************
+
+bool optimizer::save_to_checkpoint_shared(persist& p, std::string m_name) {
+  //  m_learning_rate;
+  /** Running count of the time spent in step(). */
+  //  double m_step_time = 0.0;
+  p.write_datatype(persist_type::train, "learning_rate", m_learning_rate);
+  return true;
+}
+
+bool optimizer::load_from_checkpoint_shared(persist& p, std::string m_name) {
+  p.read_datatype(persist_type::train, "learning_rate", &m_learning_rate);
+  MPI_Bcast(&m_learning_rate, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+  return true;
+}
 }  // namespace lbann

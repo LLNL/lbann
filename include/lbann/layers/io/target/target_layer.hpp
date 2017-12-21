@@ -86,7 +86,7 @@ class target_layer : public io_layer {
     io_layer::check_setup();
     if(this->m_num_prev_neurons != this->m_num_neurons) {
       std::stringstream err;
-      err << __FILE__ << " " << __LINE__ 
+      err << __FILE__ << " " << __LINE__
           << "input and output dimensions do not match "
           << "(" << this->m_num_prev_neurons << " input neurons, "
           << this->m_num_neurons << " output neurons)";
@@ -213,7 +213,7 @@ class target_layer : public io_layer {
     paired_input_layer = dynamic_cast<input_layer*>(layers.back());
     if (paired_input_layer == nullptr) {
       std::stringstream err;
-      err << __FILE__ << " " << __LINE__ 
+      err << __FILE__ << " " << __LINE__
           << " :: lbann_target_layer: invalid layer pointer used to set paired input layer";
       throw lbann_exception(err.str());
     }
@@ -235,17 +235,17 @@ class target_layer : public io_layer {
     return Layer::loadFromCheckpoint(fd, filename, bytes);
   }
 
-  bool saveToCheckpointShared(persist& p) const override {
+  bool save_to_checkpoint_shared(persist& p) const override {
     // rank 0 writes softmax cost to file
     if (p.get_rank() == 0) {
       // p.write_double(persist_type::train, "aggregate cost", (double) aggregate_cost);
       // p.write_uint64(persist_type::train, "num backprop steps", (uint64_t) num_backprop_steps);
     }
 
-    return true;
+    return Layer::save_to_checkpoint_shared(p);
   }
 
-  bool loadFromCheckpointShared(persist& p) override {
+  bool load_from_checkpoint_shared(persist& p) override {
     // rank 0 writes softmax cost to file
     // if (p.get_rank() == 0) {
     //     double dval;
@@ -261,8 +261,8 @@ class target_layer : public io_layer {
     // MPI_Bcast(&aggregate_cost, 1, DataTypeMPI, 0, MPI_COMM_WORLD);
     // MPI_Bcast(&num_backprop_steps, 1, MPI_LONG, 0, MPI_COMM_WORLD);
 
-    //return Layer::loadFromCheckpointShared(dir, bytes);
-    return true;
+    return Layer::load_from_checkpoint_shared(p);
+    //return true;
   }
 };
 

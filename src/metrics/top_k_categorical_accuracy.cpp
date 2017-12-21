@@ -32,8 +32,8 @@ top_k_categorical_accuracy_metric::top_k_categorical_accuracy_metric(int top_k,
                                                                      lbann_comm *comm) 
   : metric(comm), m_top_k(top_k) {}
 
-DataType top_k_categorical_accuracy_metric::evaluate_compute(const AbsDistMat& prediction,
-                                                             const AbsDistMat& ground_truth) {
+double top_k_categorical_accuracy_metric::evaluate_compute(const AbsDistMat& prediction,
+                                                           const AbsDistMat& ground_truth) {
     // This first computes the top k predictions within each column locally,
     // then each column master gathers these, computes the global top k, and
     // determines if an error was made.
@@ -74,7 +74,7 @@ DataType top_k_categorical_accuracy_metric::evaluate_compute(const AbsDistMat& p
       std::vector<top_k_ele> global_top_k(
         m_top_k * local_width * col_comm_size);
       get_comm().gather((DataType*) local_top_k.data(), 2*local_top_k.size(),
-                     (DataType*) global_top_k.data(), col_comm);
+                        (DataType*) global_top_k.data(), col_comm);
       // Compute the global top k elements in each column.
       std::vector<El::Int> global_indices(m_top_k * col_comm_size);
       std::iota(global_indices.begin(), global_indices.end(), 0);
@@ -111,7 +111,7 @@ DataType top_k_categorical_accuracy_metric::evaluate_compute(const AbsDistMat& p
     }
     num_errors = get_comm().model_allreduce(num_errors);
     const int mini_batch_size = prediction.Width();
-    return (mini_batch_size - num_errors) * DataType(100) / mini_batch_size;
+    return (mini_batch_size - num_errors) * 100;
 }
 
 }  // namespace lbann

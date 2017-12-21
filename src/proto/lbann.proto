@@ -190,15 +190,9 @@ message Model {
   // for complete list, see: lbann/include/lbann/callbacks
   repeated Callback callback = 20;
 
-  //checkpointing
-  string checkpoint_dir = 30;
-  int64 checkpoint_epochs = 31;
-  int64 checkpoint_steps = 32;
-  double checkpoint_secs = 33;
-
-  int64 random_seed = 34;
+  int64 random_seed = 30;
   // If true, models will have their model rank mixed into their random seed.
-  bool random_init_models_differently = 35;
+  bool random_init_models_differently = 31;
 
   // Recurrent model parameters
   message Recurrent {
@@ -381,6 +375,7 @@ message Callback {
    CallbackDebugIO debug_io = 25;
    CallbackMinibatchSchedule minibatch_schedule = 26;
    CallbackOptimizerwiseAdaptiveLearningRate optimizerwise_adaptive_learning_rate = 27;
+   CallbackCheckpoint checkpoint = 28;
 }
 
 message CallbackLTFB {
@@ -515,6 +510,15 @@ message CallbackGradientCheck {
   double step_size = 1;
   bool verbose = 2;
   bool fail_on_error = 3;
+}
+
+
+message CallbackCheckpoint {
+  string checkpoint_dir = 1;
+  int64 checkpoint_epochs = 2;
+  int64 checkpoint_steps = 3;
+  double checkpoint_secs = 4;
+  bool checkpoint_per_rank = 5;
 }
 
 //========================================================================
@@ -732,6 +736,7 @@ message InputPartitionedMiniBatch {
 message Reshape {
   int64 num_dims = 1;
   string dims = 2; //should be space-separated list of ints, e.g, "2 6 7"
+  bool reshape_to_flattened_conv_format = 3;
 }
 
 message Pooling {

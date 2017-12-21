@@ -53,7 +53,7 @@ weights::weights(lbann_comm* comm,
 
 }
 
-weights::weights(const weights& other) 
+weights::weights(const weights& other)
   : m_name(other.m_name),
     m_comm(other.m_comm),
     m_cudnn(other.m_cudnn),
@@ -165,7 +165,7 @@ void weights::setup(int height,
       throw lbann_exception(err.str());
     }
   }
-  
+
   // Initialize weights matrix
   m_height = height;
   m_width = width;
@@ -244,7 +244,7 @@ const AbsDistMat& weights::get_values() {
 }
 
 void weights::set_values(const AbsDistMat& values) {
-  
+
   // Check if weights matrix has been setup
   if (m_values == nullptr) {
     std::stringstream err;
@@ -312,5 +312,36 @@ std::vector<DataType*> weights::get_values_gpu() {
   return m_values_d;
 }
 #endif // __LIB_CUDN
+
+bool weights::save_to_checkpoint_shared(lbann::persist& p)
+{
+  // define name to store our parameters
+  char l_name[512];
+  sprintf(l_name, "weights_%s_%lldx%lld", m_name.c_str(), m_values->Height(), m_values->Width());
+
+  // write out our weights to the model file
+  p.write_distmat(persist_type::model, l_name, (DistMat*)m_values);
+  //
+  // if saving training state, also write out state of optimizer
+  m_optimizer->save_to_checkpoint_shared(p, l_name);
+
+  return true;
+}
+
+bool weights::load_from_checkpoint_shared(lbann::persist& p)
+{
+  // define name to store our parameters
+  char l_name[512], f_name[512];
+  sprintf(l_name, "weights_%s_%lldx%lld", m_name.c_str(), m_values->Height(), m_values->Width());
+  sprintf(f_name, "%s.bin", l_name);
+
+  // read our weights from model file
+  p.read_distmat(persist_type::model, f_name, (DistMat*)m_values);
+
+  // if loading training state, read in state of optimizer
+  m_optimizer->load_from_checkpoint_shared(p, l_name);
+
+  return true;
+}
 
 }  // namespace lbann

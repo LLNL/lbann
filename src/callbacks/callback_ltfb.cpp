@@ -71,7 +71,7 @@ void lbann_callback_ltfb::setup(model *m) {
   m_remote_model = m->copy();
 }
 
-void lbann_callback_ltfb::on_batch_end(model *m) {
+void lbann_callback_ltfb::on_batch_begin(model *m) {
   if (m->get_cur_step() % m_round_size != 0 ||
       m->get_cur_step() == 0) {
     return;  // Not the end of a round.
@@ -154,7 +154,7 @@ double lbann_callback_ltfb::evaluate(model *m) {
   m->evaluate(execution_mode::validation);
   for (const auto& met : m->get_metrics()) {
     if (dynamic_cast<categorical_accuracy_metric*>(met) != nullptr) {
-      return met->get_history_mean_value();
+      return met->get_mean_value(execution_mode::validation);
     }
   }
   return 0.0;

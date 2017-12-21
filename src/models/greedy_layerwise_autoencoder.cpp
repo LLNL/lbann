@@ -40,7 +40,7 @@ greedy_layerwise_autoencoder::greedy_layerwise_autoencoder(lbann_comm *comm,
     m_phase(-1), m_num_phases(0), m_reconstruction(nullptr) {}
 
 greedy_layerwise_autoencoder::greedy_layerwise_autoencoder(
-  const greedy_layerwise_autoencoder& other) 
+  const greedy_layerwise_autoencoder& other)
   : sequential_model(other),
     m_phase(0),
     m_num_phases(other.m_num_phases),
@@ -142,19 +142,20 @@ void greedy_layerwise_autoencoder::train(int num_epochs) {
     set_phase(phase);
     for (int epoch = 0; epoch < num_epochs / m_num_phases; ++epoch) {
       if (get_terminate_training()) { goto train_end; }
-      reset_epoch(execution_mode::training);
-      m_current_epoch++;
+      reset_mode_and_model(execution_mode::training);
       do_epoch_begin_cbs();
       while (!train_mini_batch()) {}
       evaluate(execution_mode::validation);
+      m_current_epoch++;
       do_epoch_end_cbs();
+      reset_epoch_statistics(execution_mode::training);
     }
   }
 
  train_end:
   restore_sequential_model();
   do_train_end_cbs();
-}    
+}
 
 void greedy_layerwise_autoencoder::set_phase(int phase) {
 
@@ -199,7 +200,7 @@ void greedy_layerwise_autoencoder::set_phase(int phase) {
   decoder_parents[0] = m_layers[encoder_end-1];
   decoder_children[0] = m_reconstruction;
   m_reconstruction->add_parent_layer(m_layers[decoder_end-1]);
-  
+
   // Set objective function to reconstruction layer
   for (auto term : m_objective_function->get_terms()) {
     auto* loss = dynamic_cast<loss_function*>(term);
@@ -239,7 +240,7 @@ void greedy_layerwise_autoencoder::restore_sequential_model() {
       loss->set_target_layer((target_layer*) m_layers.back());
     }
   }
-  
+
 }
 
 void greedy_layerwise_autoencoder::clear_error_signals() {
