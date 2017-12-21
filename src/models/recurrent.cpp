@@ -299,12 +299,11 @@ void recurrent_model::setup_layer_execution_order() {
       }
     }
 
-    // Induce subgraph on SCC and break cycles containing input node
+    // Induce subgraph on SCC and delete edges toward input node
     // Note: Execution order is ambiguous if this subgraph is cyclic.
     auto&& component_edges = graph::induce_subgraph(component_nodes,
                                                     edges);
-    for (const auto& node
-           : graph::depth_first_search(input_node, component_edges)) {
+    for (const auto& node : component_nodes) {
       component_edges[node].erase(input_node);
     }
     if (graph::is_cyclic(component_nodes, component_edges)) {
