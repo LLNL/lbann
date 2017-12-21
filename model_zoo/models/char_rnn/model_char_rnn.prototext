@@ -9,7 +9,7 @@ model {
   use_cudnn: true
   num_gpus: -1
   recurrent {
-    unroll_depth : 2
+    unroll_depth : 5
    }
 
   ###################################################
@@ -17,7 +17,7 @@ model {
   ###################################################
 
   objective_function {
-    cross_entropy {}
+    mean_squared_error {}
     l2_weight_regularization {
       scale_factor: 0.0005
     }
@@ -50,7 +50,7 @@ model {
     parents: "data_concat"
     name: "data"
     slice {
-      slice_points: "0 128 256"
+      slice_points: "0 128 256 384 512 640"
     }
     data_layout: "model_parallel"
   }

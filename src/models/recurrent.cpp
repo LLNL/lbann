@@ -60,10 +60,10 @@ void recurrent_model::setup_layer_topology() {
         << "and the last to be a target layer";
     throw lbann_exception(err.str());
   }
-  auto&& input         = *(m_layers.begin());
-  auto&& input_slice   = *(m_layers.begin() + 1);
-  auto&& target_concat = *(m_layers.end() - 2);
-  auto&& target        = *(m_layers.end() - 1);
+  auto input         = *(m_layers.begin());
+  auto input_slice   = *(m_layers.begin() + 1);
+  auto target_concat = *(m_layers.end() - 2);
+  auto target        = *(m_layers.end() - 1);
   if (dynamic_cast<input_layer *>(m_layers.front()) == nullptr
       || input_slice->get_type() != "slice"
       || target_concat->get_type() != "concatenation"
@@ -97,17 +97,15 @@ void recurrent_model::setup_layer_topology() {
   }
 
   // Unroll network to desired depth
-  std::vector<Layer *> first_roll_layers(m_layers.begin() + 2,
-                                         m_layers.end() - 2);
-  std::vector<Layer *> previous_roll_layers = first_roll_layers;
-  for (int i = 1; i < m_unroll_depth; ++i) {
-    const std::string name_suffix = "_" + std::to_string(i);
-
+  std::vector<Layer *> previous_roll_layers(m_layers.begin() + 2,
+                                            m_layers.end() - 2);
+  const int roll_size = previous_roll_layers.size();
+  for (int roll = 1; roll < m_unroll_depth; ++roll) {
+    
     // Construct current roll by copying layers from previous roll
     std::vector<Layer *> current_roll_layers;
     for (const auto& previous_layer : previous_roll_layers) {
-      auto&& current_layer = previous_layer->copy();
-      current_layer->set_name(current_layer->get_name() + name_suffix);
+      Layer *current_layer = previous_layer->copy();
       current_roll_layers.push_back(current_layer);
       m_previous_roll_layer[current_layer] = previous_layer;
       m_next_roll_layer[previous_layer] = current_layer;
@@ -140,9 +138,14 @@ void recurrent_model::setup_layer_topology() {
 
   }
 
-  // Rename layers in first roll
-  for (const auto& layer : first_roll_layers) {
-    layer->set_name(layer->get_name() + "_0");
+  // Rename layers
+  for (int roll = 0; roll < m_unroll_depth; ++roll) {
+    const std::string name_suffix = "_" + std::to_string(roll);
+    const int roll_start = 2 + roll * roll_size;
+    const int roll_end = 2 + (roll + 1) * roll_size;
+    for (int i = roll_start; i < roll_end; ++i) {
+      m_layers[i]->set_name(m_layers[i]->get_name() + name_suffix);
+    }
   }
 
   // Fix pointers between adjacent rolls
