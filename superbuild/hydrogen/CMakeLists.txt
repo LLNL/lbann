@@ -1,5 +1,6 @@
 enable_language(C)
 enable_language(CXX)
+enable_language(Fortran)
 
 # Where to install Hydrogen
 set(Hydrogen_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
@@ -59,6 +60,7 @@ ExternalProject_Add(HYDROGEN
   -G${Hydrogen_CMAKE_GENERATOR}
   -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
   -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+  -DCMAKE_Fortran_COMPILER=${CMAKE_Fortran_COMPILER}
   ${HYDROGEN_CMAKE_ARGS}
   )
 
