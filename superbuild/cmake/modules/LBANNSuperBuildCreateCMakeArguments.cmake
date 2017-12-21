@@ -32,7 +32,7 @@ function (create_cmake_arguments)
     # Check the variable's type, if possible.
     get_property(_CMAKE_ARG_TYPE CACHE ${_variable} PROPERTY TYPE)
 
-    if (${_CMAKE_ARG_TYPE} STREQUAL "STATIC"
+    if (_CMAKE_ARG_TYPE AND ${_CMAKE_ARG_TYPE} STREQUAL "STATIC"
         OR ${_CMAKE_ARG_TYPE} STREQUAL "INTERNAL")
       continue()
     endif ()
