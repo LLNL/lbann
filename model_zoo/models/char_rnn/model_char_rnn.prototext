@@ -43,8 +43,8 @@ model {
   # Data
   layer {
     name: "data_concat"
-    input_distributed_minibatch {}
-    data_layout: "model_parallel"
+    input_partitioned_minibatch {}
+    data_layout: "data_parallel"
   }
   layer {
     parents: "data_concat"
@@ -120,10 +120,10 @@ model {
   layer {
     parents: "prob_concat"
     name: "eval"
-    target_distributed_minibatch {
+    target_partitioned_minibatch {
       shared_data_reader: true
     }
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
   }
 
 }
