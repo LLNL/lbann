@@ -82,8 +82,8 @@ option(${UPPER_PROJECT_NAME}_WITH_SOFTMAX_CUDA
 
 option(${UPPER_PROJECT_NAME}_VERBOSE "Enable verbose output" OFF)
 
-option(${UPPER_PROJECT_NAME}_SEQUENTIAL_INITIALIZE
-  "Sequentially consistent initialize" OFF)
+option(${UPPER_PROJECT_NAME}_SEQUENTIAL_INITIALIZATION
+  "Sequentially consistent initialization" OFF)
 
 # FIXME what if "fp16"?
 set(${UPPER_PROJECT_NAME}_DATATYPE "float"
@@ -122,7 +122,7 @@ endif ()
 set(LBANN_TOPO_AWARE ${${UPPER_PROJECT_NAME}_WITH_TOPO_AWARE})
 
 # Enable parallel random matrix generation, if possible
-if (${UPPER_PROJECT_NAME}_SEQUENTIAL_INITIALIZE)
+if (${UPPER_PROJECT_NAME}_SEQUENTIAL_INITIALIZATION)
   set(LBANN_SEQUENTIAL_CONSISTENCY TRUE)
   set(LBANN_PROCDET_DROPOUT TRUE)
   set(LBANN_PARALLEL_RANDOM_MATRICES FALSE)
@@ -172,7 +172,7 @@ if (LBANN_HAS_CUDA)
 
   set(LBANN_HAS_CUDNN ${CUDNN_FOUND})
 
-  if (LBANN_WITH_NCCL2)
+  if (LBANN_WITH_NCCL)
     find_package(NCCL 2.0.0 REQUIRED)
     set(LBANN_HAS_NCCL2 ${NCCL_FOUND})
     if (NOT LBANN_HAS_NCCL2)
@@ -181,9 +181,9 @@ if (LBANN_HAS_CUDA)
         "CNPY is now disabled. "
         "Try specifying CNPY_DIR as the root of a CNPY install. "
         "Alternatively, build with LBANN_WITH_CNPY=OFF.")
-      set(LBANN_WITH_NCCL2 OFF)
+      set(LBANN_WITH_NCCL OFF)
     endif (NOT LBANN_HAS_NCCL2)
-  endif (LBANN_WITH_NCCL2)
+  endif (LBANN_WITH_NCCL)
 endif (LBANN_HAS_CUDA)
 
 # Other optional dependencies

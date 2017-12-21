@@ -1,5 +1,6 @@
 enable_language(C)
 enable_language(CXX)
+enable_language(Fortran)
 
 option(Hydrogen_USE_64BIT_INTS
   "Hydrogen use 64-bit internal indices" ON)
@@ -65,6 +66,7 @@ ExternalProject_Add(HYDROGEN
   -G${Hydrogen_CMAKE_GENERATOR}
   -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
   -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+  -DCMAKE_Fortran_COMPILER=${CMAKE_Fortran_COMPILER}
   ${HYDROGEN_CMAKE_ARGS}
   )
 
