@@ -56,7 +56,7 @@ class top_k_categorical_accuracy_metric : public metric {
   /** Return a string name for this metric. */
   std::string name() const override { return "top-" + std::to_string(m_top_k) +  " categorical accuracy"; }
   /** Return "%" as a display unit. */
-  std::string get_unit() const { return "%"; }
+  std::string get_unit() const override { return "%"; }
 
  protected:
 
