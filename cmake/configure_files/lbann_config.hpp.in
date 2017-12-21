@@ -10,6 +10,8 @@
 /* Defined if LBANN is linked to HWLOC */
 #cmakedefine LBANN_TOPO_AWARE
 
+#cmakedefine LBANN_GNU_LINUX
+
 #cmakedefine LBANN_HAS_OPENCV
 #cmakedefine LBANN_HAS_TBINF
 #cmakedefine LBANN_HAS_CNPY
