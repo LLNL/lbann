@@ -114,12 +114,20 @@ bool cv_process::add_transform(std::unique_ptr<cv_transform> tr) {
   return true;
 }
 
-bool cv_process::add_normalizer(std::unique_ptr<cv_normalizer> tr) {
+bool cv_process::add_normalizer(std::unique_ptr<cv_transform> tr) {
   if (!tr || m_is_normalizer_set) return false;
   m_is_normalizer_set = true;
   m_normalizer_idx = m_transforms.size();
   m_transforms.push_back(std::move(tr));
   return true;
+}
+
+bool cv_process::add_normalizer(std::unique_ptr<cv_normalizer> tr) {
+  return add_normalizer(std::move(tr));
+}
+
+bool cv_process::add_normalizer(std::unique_ptr<cv_subtractor> tr) {
+  return add_normalizer(std::move(tr));
 }
 
 /// Allow read-only access to a particular transform indexed by idx

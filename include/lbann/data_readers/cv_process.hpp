@@ -32,6 +32,7 @@
 
 #include "cv_transform.hpp"
 #include "cv_normalizer.hpp"
+#include "cv_subtractor.hpp"
 #include "cv_augmenter.hpp"
 #include "cv_colorizer.hpp"
 #include "cv_decolorizer.hpp"
@@ -68,6 +69,8 @@ class cv_process {
   inline bool is_normalizer_last() const {
     return (m_is_normalizer_set && ((m_normalizer_idx+1) == m_transforms.size()));
   }
+
+  bool add_normalizer(std::unique_ptr<cv_transform> tr);
 
  public:
   cv_process()
@@ -125,6 +128,7 @@ class cv_process {
 
   /// Add a normalizing tranform
   bool add_normalizer(std::unique_ptr<cv_normalizer> tr);
+  bool add_normalizer(std::unique_ptr<cv_subtractor> tr);
 
   /// Allow access to the list of transforms registered
   const std::vector<std::unique_ptr<cv_transform> >& get_transforms() const {

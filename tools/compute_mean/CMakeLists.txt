@@ -53,12 +53,13 @@ file(GLOB COMPUTE_MEAN_SRCS
      lbann/utils/random.cpp
      ${LBANN_DIR}/src/data_readers/cv_augmenter.cpp
      ${LBANN_DIR}/src/data_readers/cv_colorizer.cpp
+     ${LBANN_DIR}/src/data_readers/cv_cropper.cpp
      ${LBANN_DIR}/src/data_readers/cv_decolorizer.cpp
+     ${LBANN_DIR}/src/data_readers/cv_mean_extractor.cpp
      ${LBANN_DIR}/src/data_readers/cv_normalizer.cpp
      ${LBANN_DIR}/src/data_readers/cv_process.cpp
      ${LBANN_DIR}/src/data_readers/cv_process_patches.cpp
-     ${LBANN_DIR}/src/data_readers/cv_cropper.cpp
-     ${LBANN_DIR}/src/data_readers/cv_mean_extractor.cpp
+     ${LBANN_DIR}/src/data_readers/cv_subtractor.cpp
      ${LBANN_DIR}/src/data_readers/cv_utils.cpp
      ${LBANN_DIR}/src/data_readers/patchworks/patchworks.cpp
      ${LBANN_DIR}/src/data_readers/patchworks/patchworks_patch_descriptor.cpp

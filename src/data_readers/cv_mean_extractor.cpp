@@ -125,9 +125,7 @@ bool cv_mean_extractor::determine_transform(const cv::Mat& image) {
    
     m_enabled = true;
   } else {
-    m_enabled = ((m_avg.cols == image.cols) &&
-                 (m_avg.rows == image.rows) &&
-                 (m_avg.channels() == image.channels()));
+    m_enabled = check_if_cv_Mat_has_same_shape(image, m_avg);
   }
   return m_enabled;
 }

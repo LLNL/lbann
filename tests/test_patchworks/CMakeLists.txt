@@ -56,6 +56,7 @@ file(GLOB PATCHWORKS_SRCS ${LBANN_DIR}/src/data_readers/patchworks/*.cpp
                           ${LBANN_DIR}/src/data_readers/cv_process.cpp
                           ${LBANN_DIR}/src/data_readers/cv_process_patches.cpp
                           ${LBANN_DIR}/src/data_readers/cv_cropper.cpp
+                          ${LBANN_DIR}/src/data_readers/cv_subtractor.cpp
                           ${LBANN_DIR}/src/data_readers/cv_mean_extractor.cpp
                           ${LBANN_DIR}/src/data_readers/cv_utils.cpp)
 
