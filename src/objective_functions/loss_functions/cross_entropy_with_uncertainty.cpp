@@ -28,7 +28,7 @@
 
 namespace lbann {
 
-cross_entropy_with_uncertainty::cross_entropy_with_uncertainty(DataType scale_factor)
+cross_entropy_with_uncertainty::cross_entropy_with_uncertainty(EvalType scale_factor)
   : loss_function(scale_factor),
     m_prediction_sums(nullptr) {}
 
@@ -71,7 +71,7 @@ void cross_entropy_with_uncertainty::setup(model& m) {
 
 }
 
-DataType cross_entropy_with_uncertainty::evaluate_compute(const AbsDistMat& predictions,
+EvalType cross_entropy_with_uncertainty::evaluate_compute(const AbsDistMat& predictions,
                                                           const AbsDistMat& ground_truth) {
 
   // Initialize workspace
@@ -90,9 +90,9 @@ DataType cross_entropy_with_uncertainty::evaluate_compute(const AbsDistMat& pred
   // Compute sum of predictions
   #pragma omp parallel for
   for (int col = 0; col < local_width; ++col) {
-    DataType pred_sum = DataType(0);
+    EvalType pred_sum = EvalType(0);
     for (int row = 0; row < local_height; ++row) {
-      if (ground_truth_local(row, col) != DataType(0)) {
+      if (ground_truth_local(row, col) != EvalType(0)) {
         pred_sum += predictions_local(row, col);
       }
     }
@@ -102,7 +102,7 @@ DataType cross_entropy_with_uncertainty::evaluate_compute(const AbsDistMat& pred
                         m_prediction_sums->RedundantComm());
 
   // Compute mean objective function value
-  DataType local_sum = DataType(0);
+  EvalType local_sum = EvalType(0);
   for (int col = 0; col < local_width; ++col) {
     local_sum += -std::log(prediction_sums_local(0, col));
   }

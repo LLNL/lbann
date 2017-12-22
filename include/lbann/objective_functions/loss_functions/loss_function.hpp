@@ -36,7 +36,7 @@ namespace lbann {
 class loss_function : public objective_function_term {
  public:
   /** Default constructor. */
-  loss_function(DataType scale_factor = DataType(1));
+  loss_function(EvalType scale_factor = EvalType(1));
 
   /** Copy constructor. */
   loss_function(const loss_function& other);
@@ -51,7 +51,7 @@ class loss_function : public objective_function_term {
   virtual void setup(model& m) override;
   
   /** Evaluate the objective function term. */
-  DataType evaluate() override;
+  EvalType evaluate() override;
 
   /** Compute the gradient of the objective function term.
    *  The gradient is computed w.r.t. the objective function term
@@ -62,8 +62,8 @@ class loss_function : public objective_function_term {
   /** Evaluate the loss function.
    *  This should not include the scale factor.
    */
-  virtual DataType evaluate_compute(const AbsDistMat& prediction,
-                                    const AbsDistMat& ground_truth) = 0;
+  virtual double evaluate_compute(const AbsDistMat& prediction,
+                                  const AbsDistMat& ground_truth) = 0;
 
   /** Compute the loss function gradient.
    *  The gradient should be w.r.t. the prediction vector. This should

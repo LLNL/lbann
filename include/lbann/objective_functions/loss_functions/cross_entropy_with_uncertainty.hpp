@@ -35,7 +35,7 @@ namespace lbann {
 class cross_entropy_with_uncertainty : public loss_function {
  public:
   /** Default constructor. */
-  cross_entropy_with_uncertainty(DataType scale_factor = DataType(1));
+  cross_entropy_with_uncertainty(EvalType scale_factor = EvalType(1));
 
   /** Copy constructor. */
   cross_entropy_with_uncertainty(const cross_entropy_with_uncertainty& other);
@@ -65,7 +65,7 @@ class cross_entropy_with_uncertainty : public loss_function {
    *  the predictions matrix should have non-negative entries that add up 
    *  to one.
    */
-  DataType evaluate_compute(const AbsDistMat& prediction,
+  EvalType evaluate_compute(const AbsDistMat& prediction,
                             const AbsDistMat& ground_truth) override;
 
   /** Compute the gradient of the cross entropy objective function.

@@ -116,8 +116,9 @@ void lbann_callback_print::report_results(model *m) {
   lbann_comm *comm = m->get_comm();
 
   // Get string for execution mode
+  const execution_mode mode = m->get_execution_mode();
   std::string mode_string;
-  switch(m->get_execution_mode()) {
+  switch (mode) {
   case execution_mode::training:
     mode_string = "training epoch " + std::to_string(m->get_cur_epoch());
     break;
@@ -138,7 +139,7 @@ void lbann_callback_print::report_results(model *m) {
     const int num_models = comm->get_num_models();
 
     // Report objective function value
-    const double obj_fn = m->get_objective_function()->get_history_mean_value();
+    const double obj_fn = m->get_objective_function()->get_mean_value(mode);
     if (comm->am_world_master()) {
       std::vector<double> obj_fn_list(comm->get_num_models());
       comm->intermodel_gather(obj_fn, obj_fn_list);
@@ -162,8 +163,8 @@ void lbann_callback_print::report_results(model *m) {
 
     // Report score for each metric
     for (const auto& met : m->get_metrics()) {
-      const double score = met->get_mean_value(m->get_execution_mode());
-      const int num_samples = met->get_statistics_num_samples(m->get_execution_mode());
+      const double score = met->get_mean_value(mode);
+      const int num_samples = met->get_statistics_num_samples(mode);
       if (comm->am_world_master()) {
         std::vector<double> score_list(comm->get_num_models());
         std::vector<int> num_samples_list(comm->get_num_models());

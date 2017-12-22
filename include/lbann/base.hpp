@@ -32,16 +32,22 @@
 #include "El.hpp"
 #include "lbann/Elemental_extensions.hpp"
 
+// Datatype for numerical computation
+// Default: float
 #if LBANN_DATATYPE == 8
 typedef double DataType;
 #elif LBANN_DATATYPE == 4
 typedef float DataType;
 #else
-// Default to floats
 #define LBANN_DATATYPE 4
 typedef float DataType; 
 #endif
 
+// Datatype for model evaluation
+// Examples: timing, metrics, objective functions
+typedef double EvalType;
+
+// Elemental matrices
 typedef El::Grid EGrid;
 typedef El::Grid Grid;
 typedef El::Matrix<DataType> Mat;

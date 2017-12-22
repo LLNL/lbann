@@ -28,7 +28,7 @@
 
 namespace lbann {
 
-DataType binary_cross_entropy::evaluate_compute(const AbsDistMat& predictions,
+EvalType binary_cross_entropy::evaluate_compute(const AbsDistMat& predictions,
                                                 const AbsDistMat& ground_truth) {
 
   // Local matrices
@@ -41,16 +41,16 @@ DataType binary_cross_entropy::evaluate_compute(const AbsDistMat& predictions,
   const int local_width = predictions_local.Width();
 
   // Compute sum of cross entropy terms
-  DataType sum = 0;
+  EvalType sum = 0;
   #pragma omp parallel for reduction(+:sum) collapse(2)
   for (int col = 0; col < local_width; ++col) {
     for (int row = 0; row < local_height; ++row) {
-      const DataType true_val = ground_truth_local(row, col);
-      const DataType pred_val = predictions_local(row, col);
-      if (true_val == DataType(1)) {
+      const EvalType true_val = ground_truth_local(row, col);
+      const EvalType pred_val = predictions_local(row, col);
+      if (true_val == EvalType(1)) {
         sum += - std::log(pred_val);
-      } else if (true_val == DataType(0)) {
-        sum += - std::log(DataType(1) - pred_val);
+      } else if (true_val == EvalType(0)) {
+        sum += - std::log(EvalType(1) - pred_val);
       } else {
         std::stringstream err;
         err << __FILE__ << " " << __LINE__ << " :: "

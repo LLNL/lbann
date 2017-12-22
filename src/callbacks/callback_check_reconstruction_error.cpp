@@ -36,7 +36,7 @@ lbann_callback_check_reconstruction_error::lbann_callback_check_reconstruction_e
 
 
 void lbann_callback_check_reconstruction_error::on_epoch_end(model *m) {
-  double reconstr_error  = m->get_objective_function()->get_history_mean_value();
+  double reconstr_error  = m->get_objective_function()->get_mean_value(m->get_execution_mode());
   if( reconstr_error < m_max_error) {
     if (m->get_comm()->am_model_master()) {
       std::cout << "Reconstruction error " << reconstr_error << "is less than " <<  m_max_error << 
