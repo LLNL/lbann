@@ -100,7 +100,7 @@ bool test_patch(const int argc, char *argv[]) {
     image::write(sstr.str(), patches[i]);
   }
   std::cout << "the id of the last patch generated (label in case of paired patches): "
-            << pi.get_current_patch_idx() << std::endl;
+            << pi.get_last_label()+1 << std::endl;
 
   std::cout << pi;
  #if defined(HAVE_GTK) || defined(HAVE_CARBON)

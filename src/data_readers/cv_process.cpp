@@ -128,12 +128,14 @@ void cv_process::set_normalizer_info() {
 bool cv_process::add_normalizer(std::unique_ptr<cv_normalizer> tr) {
   if (!tr || m_is_normalizer_set) return false;
   set_normalizer_info();
+  m_transforms.push_back(std::move(tr));
   return true;
 }
 
 bool cv_process::add_normalizer(std::unique_ptr<cv_subtractor> tr) {
   if (!tr || m_is_normalizer_set) return false;
   set_normalizer_info();
+  m_transforms.push_back(std::move(tr));
   return true;
 }
 
