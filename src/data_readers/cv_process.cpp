@@ -97,7 +97,7 @@ void cv_process::reset() {
 }
 
 void cv_process::disable_normalizer() {
-  if (m_is_normalizer_set) {
+  if (fuse_normalizer_with_copying()) {
     m_transforms[m_normalizer_idx]->disable();
   }
 }
@@ -114,20 +114,27 @@ bool cv_process::add_transform(std::unique_ptr<cv_transform> tr) {
   return true;
 }
 
-bool cv_process::add_normalizer(std::unique_ptr<cv_transform> tr) {
-  if (!tr || m_is_normalizer_set) return false;
+bool cv_process::fuse_normalizer_with_copying() const {
+  return (m_is_normalizer_set &&
+          ((m_normalizer_idx+1) == m_transforms.size()) &&
+          (dynamic_cast<const cv_normalizer*>(m_transforms[m_normalizer_idx].get()) != nullptr));
+}
+
+void cv_process::set_normalizer_info() {
   m_is_normalizer_set = true;
   m_normalizer_idx = m_transforms.size();
-  m_transforms.push_back(std::move(tr));
-  return true;
 }
 
 bool cv_process::add_normalizer(std::unique_ptr<cv_normalizer> tr) {
-  return add_normalizer(std::move(tr));
+  if (!tr || m_is_normalizer_set) return false;
+  set_normalizer_info();
+  return true;
 }
 
 bool cv_process::add_normalizer(std::unique_ptr<cv_subtractor> tr) {
-  return add_normalizer(std::move(tr));
+  if (!tr || m_is_normalizer_set) return false;
+  set_normalizer_info();
+  return true;
 }
 
 /// Allow read-only access to a particular transform indexed by idx
@@ -167,7 +174,7 @@ std::vector<unsigned int> cv_process::get_data_dims() const {
  * Otherwise, it will be done during postprocessing as the rest of transforms in order.
  */
 void cv_process::determine_inverse_normalization() {
-  if (!m_is_normalizer_set || !is_normalizer_last()) {
+  if (!m_is_normalizer_set || !fuse_normalizer_with_copying()) {
     return;
   }
 
@@ -208,11 +215,12 @@ bool cv_process::preprocess(cv::Mat& image, unsigned int tr_start, unsigned int 
   // done after normalization, in which case we prefer in-place updating,
   // we implicitly apply it during copying between memory locations to avoid
   // redundant memory access overheads. For this reason, we treat normalization
-  // differently from other transforms.
+  // differently from other transforms. However, if a subtractor is used as a
+  // normalizer, it is treated as an ordinary transform.
 
-  const bool is_normalizer_the_last = is_normalizer_last();
+  const bool lazy_normalization = fuse_normalizer_with_copying();
   const unsigned int n_immediate_transforms 
-      = std::min((is_normalizer_the_last?
+      = std::min((lazy_normalization?
                   m_normalizer_idx : static_cast<unsigned int>(m_transforms.size())),
                  tr_end);
 
@@ -222,7 +230,7 @@ bool cv_process::preprocess(cv::Mat& image, unsigned int tr_start, unsigned int 
     }
   }
 
-  if (is_normalizer_the_last) {
+  if (lazy_normalization) {
     m_transforms[m_normalizer_idx]->determine_transform(image);
   }
 
@@ -238,9 +246,9 @@ bool cv_process::postprocess(cv::Mat& image) {
 
   bool ok = true;
 
-  const bool is_normalizer_the_last = is_normalizer_last();
+  const bool lazy_normalization = fuse_normalizer_with_copying();
   const unsigned int n_immediate_transforms 
-      = (is_normalizer_the_last? m_normalizer_idx : m_transforms.size());
+      = (lazy_normalization? m_normalizer_idx : m_transforms.size());
 
   // If normalizer is the last transform in the preprocessing pipeline, it will
   // be the first in the postprocessing. In addition, it has implicitly been
@@ -261,14 +269,14 @@ bool cv_process::postprocess(cv::Mat& image) {
 }
 
 std::vector<cv_normalizer::channel_trans_t> cv_process::get_transform_normalize() const {
-  return (m_is_normalizer_set?
+  return (fuse_normalizer_with_copying()?
           dynamic_cast<const cv_normalizer*>(m_transforms[m_normalizer_idx].get())->transform() :
           std::vector<cv_normalizer::channel_trans_t>());
 }
 
 std::vector<cv_normalizer::channel_trans_t> cv_process::get_transform_normalize(const unsigned int ch) const {
   std::vector<cv_normalizer::channel_trans_t> trans;
-  if (m_is_normalizer_set) {
+  if (fuse_normalizer_with_copying()) {
     trans = dynamic_cast<const cv_normalizer*>(m_transforms[m_normalizer_idx].get())->transform();
   }
 
