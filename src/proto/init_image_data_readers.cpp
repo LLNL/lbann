@@ -157,6 +157,20 @@ void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool mas
     }
   }
 
+  // set up a subtractor
+  if (pb_preprocessor.has_subtractor()) {
+    const lbann_data::ImagePreprocessor::Subtractor& pb_subtractor = pb_preprocessor.subtractor();
+    if  (!pb_subtractor.disable()) {
+      const std::string subtractor_name = ((pb_subtractor.name() == "")? "default_subtractor" : pb_subtractor.name());
+      // If every image in the dataset is a color image, this is not needed
+      std::unique_ptr<lbann::cv_subtractor> subtractor(new(lbann::cv_subtractor));
+      subtractor->set_name(subtractor_name);
+      subtractor->set(pb_subtractor.image_to_sub());
+      pp->add_normalizer(std::move(subtractor));
+      if (master) std::cout << "image processor: " << subtractor_name << " subtractor is set" << std::endl;
+    }
+  }
+
   // set up a normalizer
   if (pb_preprocessor.has_normalizer()) {
     const lbann_data::ImagePreprocessor::Normalizer& pb_normalizer = pb_preprocessor.normalizer();
