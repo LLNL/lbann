@@ -65,12 +65,10 @@ class cv_process {
   /// Array of transforms
   std::vector<std::unique_ptr<cv_transform> > m_transforms;
 
-  /// Check if the last transform registered in the list is a normalizer
-  inline bool is_normalizer_last() const {
-    return (m_is_normalizer_set && ((m_normalizer_idx+1) == m_transforms.size()));
-  }
+  /// Check if the last transform registered in the list is a normalizer and not a subtractor
+  bool fuse_normalizer_with_copying() const;
 
-  bool add_normalizer(std::unique_ptr<cv_transform> tr);
+  void set_normalizer_info();
 
  public:
   cv_process()
