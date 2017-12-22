@@ -257,17 +257,30 @@ bool model::is_execution_mode_valid(execution_mode mode) const {
   return true;
 }
 
-bool model::is_topologically_sorted() const {
-  std::unordered_set<const Layer *> previous_layers;
-  for (const auto& layer : m_layers) {
-    for (const auto& parent : layer->get_parent_layers()) {
-      if (previous_layers.count(parent) == 0) {
-        return false;
-      }
-    }
-    previous_layers.insert(layer);
+void model::construct_layer_graph(std::set<int>& nodes,
+                                  std::map<int,std::set<int>>& edges) const {
+  nodes.clear();
+  edges.clear();
+  const int num_layers = m_layers.size();
+  std::unordered_map<const Layer *,int> layer_indices;
+  for (int node = 0; node < num_layers; ++node) {
+    nodes.insert(node);
+    layer_indices[m_layers[node]] = node;
   }
-  return true;
+  std::vector<std::set<int>> layer_graph(num_layers);
+  for (int node = 0; node < num_layers; ++node) {
+    for (const auto& child : m_layers[node]->get_child_layers()) {
+      edges[node].insert(layer_indices[child]);
+    }
+  }
+}
+
+void model::permute_layers(const std::vector<int>& permutation) {
+  const auto original_layers = m_layers;
+  m_layers.clear();
+  for (const auto& i : permutation) {
+    m_layers.push_back(original_layers[i]);
+  }
 }
 
 std::string model::print_layer_description(const Layer* layer) const {
