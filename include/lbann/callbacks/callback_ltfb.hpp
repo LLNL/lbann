@@ -89,7 +89,7 @@ class lbann_callback_ltfb : public lbann_callback {
   /**
    * Evaluate a model on tournament data and return its accuracy.
    */
-  double evaluate(model *m);
+  EvalType evaluate(model *m);
   /**
    * Replace the local model m with the remote model data.
    */

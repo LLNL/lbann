@@ -69,22 +69,22 @@ class lbann_callback_timeline : public lbann_callback {
   void on_optimize_end(model *m, weights *w) override;
  private:
   /// Get time relative to the start time.
-  double get_rel_time() const { return get_time() - m_start_time; }
+  EvalType get_rel_time() const { return get_time() - m_start_time; }
 
   /// Directory to write output to.
   std::string m_outdir;
   /// Time training started; all times are relative to this.
-  double m_start_time = 0.0;
+  EvalType m_start_time = EvalType(0);
   /// Time the current layer's forward pass started.
-  double m_fp_start_time = 0.0;
+  EvalType m_fp_start_time = EvalType(0);
   /// Time the current layer's backward pass started.
-  double m_bp_start_time = 0.0;
+  EvalType m_bp_start_time = EvalType(0);
   /// Time the current weights' optimization pass started.
-  double m_opt_start_time = 0.0;
+  EvalType m_opt_start_time = EvalType(0);
   /// Store (relative) timing information.
-  std::unordered_map<std::string, std::vector<std::pair<double, double>>> m_fp_times;
-  std::unordered_map<std::string, std::vector<std::pair<double, double>>> m_bp_times;
-  std::unordered_map<std::string, std::vector<std::pair<double, double>>> m_opt_times;
+  std::unordered_map<std::string, std::vector<std::pair<EvalType, EvalType>>> m_fp_times;
+  std::unordered_map<std::string, std::vector<std::pair<EvalType, EvalType>>> m_bp_times;
+  std::unordered_map<std::string, std::vector<std::pair<EvalType, EvalType>>> m_opt_times;
 };
 
 }  // namespace lbann

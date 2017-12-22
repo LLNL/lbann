@@ -157,7 +157,7 @@ void lbann_callback_imcomm::on_backward_prop_end(model *m) {
     return;  // No point with only one model.
   }
   for (weights *w : m->get_weights()) {
-    double start_time = get_time();
+    EvalType start_time = get_time();
     imcomm_params& params = m_weights_params[w];
     if (params.ct == NONE) {
       continue;
@@ -193,13 +193,13 @@ void lbann_callback_imcomm::on_backward_prop_end(model *m) {
          + "imcomm: unknown comm type");
     }
     *local_gradients *= DataType(1) / comm->get_num_models();
-    double im_time = get_time() - start_time;
+    EvalType im_time = get_time() - start_time;
     do_summary(m, w, im_time);
   }
 }
 
 void lbann_callback_imcomm::do_summary(model *m, weights *w,
-                                       double im_time) {
+                                       EvalType im_time) {
   if (m_summarizer == nullptr) {
     return;
   }

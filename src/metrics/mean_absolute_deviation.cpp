@@ -28,8 +28,8 @@
 
 namespace lbann {
 
-double mean_absolute_deviation_metric::evaluate_compute(const AbsDistMat& prediction,
-                                                        const AbsDistMat& ground_truth) {
+EvalType mean_absolute_deviation_metric::evaluate_compute(const AbsDistMat& prediction,
+                                                          const AbsDistMat& ground_truth) {
 
   // Get matrix dimensions
   const int height = prediction.Height();
@@ -41,13 +41,13 @@ double mean_absolute_deviation_metric::evaluate_compute(const AbsDistMat& predic
   const Mat& ground_truth_local = ground_truth.LockedMatrix();
 
   // Compute sum of squared errors
-  double sum = 0;
+  EvalType sum = 0;
   #pragma omp parallel for reduction(+:sum) collapse(2)
   for(El::Int col = 0; col < local_width; ++col) {
     for(El::Int row = 0; row < local_height; ++row) {
-      const double true_val = ground_truth_local(row, col);
-      const double pred_val = prediction_local(row, col);
-      const double error = true_val - pred_val;
+      const EvalType true_val = ground_truth_local(row, col);
+      const EvalType pred_val = prediction_local(row, col);
+      const EvalType error = true_val - pred_val;
       sum += error >= DataType(0) ? error : - error;
     }
   }

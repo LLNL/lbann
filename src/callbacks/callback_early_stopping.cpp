@@ -37,7 +37,7 @@ lbann_callback_early_stopping::lbann_callback_early_stopping(int64_t patience) :
 /// continues to improve
 void lbann_callback_early_stopping::on_validation_end(model *m) {
   execution_mode mode = m->get_execution_mode();
-  double score = m->get_objective_function()->get_mean_value(mode);
+  EvalType score = m->get_objective_function()->get_mean_value(mode);
   if (score < m_last_score) {
     if (m->get_comm()->am_model_master()) {
       std::cout << "Model " << m->get_comm()->get_model_rank() <<

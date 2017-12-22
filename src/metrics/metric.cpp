@@ -30,12 +30,12 @@
 
 namespace lbann {
 
-void metric_statistics::add_value(double total_value, int num_samples) {
+void metric_statistics::add_value(EvalType total_value, int num_samples) {
   m_sum += total_value;
   m_num_samples += num_samples;
 }
 
-double metric_statistics::get_mean() const {
+EvalType metric_statistics::get_mean() const {
   if (m_num_samples == 0) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
@@ -57,12 +57,14 @@ bool metric_statistics::pack_scalars(persist& p) {
 }
 
 bool metric_statistics::unpack_scalars(persist& p, struct packing_header *header) {
+  double sum;
   uint64_t num_samples;
-  p.read_double(persist_type::train, "sum", &m_sum);
+  p.read_double(persist_type::train, "sum", &sum);
   p.read_uint64(persist_type::train, "num_samples", (uint64_t *) &num_samples);
+  m_sum = sum;
   m_num_samples = num_samples;
   if (header != nullptr) {
-    header->sum = m_sum;
+    header->sum = sum;
     header->num_samples = num_samples;
   }
   return true;
@@ -99,7 +101,7 @@ void metric::setup(model& m) {
 
 }
 
-double metric::evaluate(execution_mode mode) {
+EvalType metric::evaluate(execution_mode mode) {
 
   // Check if target layer pointer has been setup
   if (m_target_layer == nullptr) {
@@ -111,8 +113,8 @@ double metric::evaluate(execution_mode mode) {
 
   // Evaluate objective function
   const int mini_batch_size = m_target_layer->get_prediction().Width();
-  const double total_value = evaluate_compute(m_target_layer->get_prediction(),
-                                              m_target_layer->get_ground_truth());
+  const EvalType total_value = evaluate_compute(m_target_layer->get_prediction(),
+                                                m_target_layer->get_ground_truth());
 
   // Record result in statistics and return
   m_statistics[mode].add_value(total_value, mini_batch_size);
@@ -120,7 +122,7 @@ double metric::evaluate(execution_mode mode) {
 
 }
 
-double metric::get_mean_value(execution_mode mode) const {
+EvalType metric::get_mean_value(execution_mode mode) const {
   if (m_statistics.count(mode) == 0
       || m_statistics.at(mode).get_num_samples() == 0) {
     std::stringstream err;

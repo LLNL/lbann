@@ -1,30 +1,30 @@
+////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the LBANN Research Team (B. Van Essen, et al.) listed in
+// the CONTRIBUTORS file. <lbann-dev@llnl.gov>
+//
+// LLNL-CODE-697807.
+// All rights reserved.
+//
+// This file is part of LBANN: Livermore Big Artificial Neural Network
+// Toolkit. For details, see http://software.llnl.gov/LBANN or
+// https://github.com/LLNL/LBANN.
+//
+// Licensed under the Apache License, Version 2.0 (the "Licensee"); you
+// may not use this file except in compliance with the License.  You may
+// obtain a copy of the License at:
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the license.
+//
+// lbann_callback_checkpoint .hpp .cpp - Callback hooks to checkpoint model
 ////////////////////////////////////////////////////////////////////////////////
-////// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
-////// Produced at the Lawrence Livermore National Laboratory.
-////// Written by the LBANN Research Team (B. Van Essen, et al.) listed in
-////// the CONTRIBUTORS file. <lbann-dev@llnl.gov>
-//////
-////// LLNL-CODE-697807.
-////// All rights reserved.
-//////
-////// This file is part of LBANN: Livermore Big Artificial Neural Network
-////// Toolkit. For details, see http://software.llnl.gov/LBANN or
-////// https://github.com/LLNL/LBANN.
-//////
-////// Licensed under the Apache License, Version 2.0 (the "Licensee"); you
-////// may not use this file except in compliance with the License.  You may
-////// obtain a copy of the License at:
-//////
-////// http://www.apache.org/licenses/LICENSE-2.0
-//////
-////// Unless required by applicable law or agreed to in writing, software
-////// distributed under the License is distributed on an "AS IS" BASIS,
-////// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
-////// implied. See the License for the specific language governing
-////// permissions and limitations under the license.
-//////
-////// lbann_callback_checkpoint .hpp .cpp - Callback hooks to checkpoint model
-////////////////////////////////////////////////////////////////////////////////////
 
 
 #include "lbann/callbacks/callback_checkpoint.hpp"
@@ -76,9 +76,9 @@ bool lbann_callback_checkpoint::need_checkpoint(model *m) {
     // to avoid issues with clock skew, we rely on rank 0 to make decision
     if (comm->am_world_master()) {
       // get the current time
-      double current = MPI_Wtime();
+      EvalType current = MPI_Wtime();
       // compute time next checkpoint is due
-      double next = m_checkpoint_last + m_checkpoint_secs;
+      EvalType next = m_checkpoint_last + m_checkpoint_secs;
       // determine whether it's time for a checkpoint
       checkpoint_now = (current >= next);
     }
@@ -175,10 +175,10 @@ bool lbann_callback_checkpoint::checkpointShared(model *m) {
   // stop timer and report cost
   MPI_Barrier(MPI_COMM_WORLD);
   if (comm->am_world_master()) {
-    double secs = timer.Stop();
-    double bw = 0.0;
+    EvalType secs = timer.Stop();
+    EvalType bw = 0;
     if (secs > 0.0) {
-      bw = ((double) bytes_count) / (secs * 1024.0 * 1024.0);
+      bw = EvalType(bytes_count) / (secs * 1024.0 * 1024.0);
     }
     printf("Checkpoint complete: Epoch=%d Step=%d (%f secs, %llu bytes, %f MB/sec)\n",
            epoch, step, secs, (unsigned long long) bytes_count, bw
@@ -231,10 +231,10 @@ bool lbann_callback_checkpoint::restartShared(model *m) {
   // let user know we've completed reading our restart
   MPI_Barrier(MPI_COMM_WORLD);
   if (comm->am_world_master()) {
-    double secs = timer.Stop();
-    double bw = 0.0;
+    EvalType secs = timer.Stop();
+    EvalType bw = 0.0;
     if (secs > 0.0) {
-      bw = ((double) bytes_count) / (secs * 1024.0 * 1024.0);
+      bw = EvalType(bytes_count) / (secs * 1024.0 * 1024.0);
     }
     printf("Restart complete: Epoch=%d Step=%d (%f secs, %llu bytes, %f MB/sec)\n",
            epoch, step, secs, (unsigned long long) bytes_count, bw

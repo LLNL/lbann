@@ -86,8 +86,8 @@ void lbann_callback_ltfb::on_batch_begin(model *m) {
   exchange(m, partner);
   // Evaluate on tournament data.
   // Have to cast, assumes deep_neural_network.
-  double local_acc = evaluate(m);
-  double remote_acc = evaluate(m_remote_model);
+  EvalType local_acc = evaluate(m);
+  EvalType remote_acc = evaluate(m_remote_model);
   // If the remote is better, keep it.
   if (remote_acc > local_acc) {
     if (m_comm->am_model_master()) {
@@ -150,14 +150,14 @@ void lbann_callback_ltfb::exchange(model *m, int partner) {
   }
 }
 
-double lbann_callback_ltfb::evaluate(model *m) {
+EvalType lbann_callback_ltfb::evaluate(model *m) {
   m->evaluate(execution_mode::validation);
   for (const auto& met : m->get_metrics()) {
     if (dynamic_cast<categorical_accuracy_metric*>(met) != nullptr) {
       return met->get_mean_value(execution_mode::validation);
     }
   }
-  return 0.0;
+  return EvalType(0);
 }
 
 void lbann_callback_ltfb::replace_with_remote(model *m) {
