@@ -45,7 +45,7 @@ namespace tools_compute_mean {
 cv::Mat reduce_mean_images(const cv::Mat mean_image, const mpi_states& ms) {
   cv::Mat local_data;
 
-  if ((mean_image.depth() != CV_64F) && (mean_image.depth() != CV_32F)) {
+  if (!lbann::check_if_cv_Mat_is_float_type(mean_image)) {
     // convert non-floating point values to floating points
     const double alpha = lbann::cv_utils::get_depth_normalizing_factor(mean_image.depth());
     mean_image.convertTo(local_data, CV_64F, alpha, 0.0);

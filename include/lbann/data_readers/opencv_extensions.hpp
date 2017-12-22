@@ -103,6 +103,7 @@ struct depth_normalization {
     }
   }
 };
+
 template<>
 struct depth_normalization<void> {
   static double factor() {
@@ -112,6 +113,16 @@ struct depth_normalization<void> {
     return 1.0;
   }
 };
+
+inline bool check_if_cv_Mat_is_float_type(const cv::Mat& image) {
+  return ((image.depth() == CV_64F) || (image.depth() == CV_32F));
+}
+
+inline bool check_if_cv_Mat_has_same_shape(const cv::Mat& image1, const cv::Mat& image2) {
+  return ((image1.cols == image2.cols) &&
+          (image1.rows == image2.rows) &&
+          (image1.channels() == image2.channels())); 
+}
 
 } // end of namespace lbann
 
