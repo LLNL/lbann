@@ -35,7 +35,7 @@ namespace lbann {
 class group_lasso_weight_regularization : public objective_function_term {
  public:
   /** Default constructor. */
-  group_lasso_weight_regularization(DataType scale_factor = DataType(1))
+  group_lasso_weight_regularization(EvalType scale_factor = EvalType(1))
     : objective_function_term(scale_factor) {}
 
   /** Copy constructor. */
@@ -54,7 +54,7 @@ class group_lasso_weight_regularization : public objective_function_term {
   void setup(model& m) override;
   
   /** Get the value of the group lasso regularization term. */
-  DataType evaluate() override;
+  EvalType evaluate() override;
 
   /** Compute the gradient of the group lasso regularization term.
    *  The gradient is computed w.r.t. the weights.

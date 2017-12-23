@@ -35,7 +35,7 @@ namespace lbann {
 class geom_negloglike : public loss_function {
  public:
   /** Default constructor. */
-  geom_negloglike(DataType scale_factor = DataType(1)) 
+  geom_negloglike(EvalType scale_factor = EvalType(1)) 
     : loss_function(scale_factor) {}
 
   /** Copy constructor. */
@@ -59,7 +59,7 @@ class geom_negloglike : public loss_function {
    *  This function updates the objective function value with the mean
    *  value of the mean squared error across the mini-batch.
    */
-  DataType evaluate_compute(const AbsDistMat& prediction,
+  EvalType evaluate_compute(const AbsDistMat& prediction,
                             const AbsDistMat& ground_truth) override;
 
   /** Compute the gradient of the Geometric negative log-likelihood objective function.

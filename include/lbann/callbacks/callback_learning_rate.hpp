@@ -144,7 +144,7 @@ class lbann_callback_adaptive_learning_rate : public lbann_callback_learning_rat
   /** Current epoch. */
   int m_cur_epoch = -1;
   /** Last recorded score. */
-  double m_last_score = std::numeric_limits<double>::max();
+  EvalType m_last_score = std::numeric_limits<EvalType>::max();
   /** Current number of epochs without improvement. */
   int64_t m_wait = 0;
   /** Whether to adjust learning rate for current epoch. */

@@ -136,7 +136,7 @@ class lbann_callback_imcomm : public lbann_callback {
   }
 
   /** Summarize relevant statistics. */
-  void do_summary(model *m, weights *w, double im_time);
+  void do_summary(model *m, weights *w, EvalType im_time);
 };
 
 

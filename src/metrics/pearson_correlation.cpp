@@ -132,8 +132,8 @@ void pearson_correlation_metric::setup(model& m) {
   m_covariances->Resize(1, m.get_max_mini_batch_size());
 }
 
-double pearson_correlation_metric::evaluate_compute(const AbsDistMat& prediction,
-                                                    const AbsDistMat& ground_truth) {
+EvalType pearson_correlation_metric::evaluate_compute(const AbsDistMat& prediction,
+                                                      const AbsDistMat& ground_truth) {
 
   // Compute means, standard deviations, and covariances
   columnwise_mean_and_stdev(prediction, *m_prediction_means, *m_prediction_stdevs);
@@ -144,11 +144,11 @@ double pearson_correlation_metric::evaluate_compute(const AbsDistMat& prediction
 
   // Compute Pearson correlation of each column
   // Note: Pearson(x,y) = cov(x,y) / ( stdev(x) * stdev(y) )
-  double local_sum = 0.0;
+  EvalType local_sum = 0.0;
   for (int col = 0; col < m_covariances->LocalWidth(); ++col) {
-    const double pred_stdev = m_prediction_stdevs->GetLocal(0, col);
-    const double true_stdev = m_ground_truth_stdevs->GetLocal(0, col);
-    const double cov        = m_covariances->GetLocal(0, col);
+    const EvalType pred_stdev = m_prediction_stdevs->GetLocal(0, col);
+    const EvalType true_stdev = m_ground_truth_stdevs->GetLocal(0, col);
+    const EvalType cov        = m_covariances->GetLocal(0, col);
     local_sum += cov / (pred_stdev * true_stdev);
   }
   return get_comm().allreduce(local_sum, m_covariances->DistComm());

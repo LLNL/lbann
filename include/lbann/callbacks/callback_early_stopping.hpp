@@ -57,7 +57,7 @@ class lbann_callback_early_stopping : public lbann_callback {
   /** Number of epochs to wait for improvements. */
   int64_t m_patience;
   /** Last recorded score. */
-  double m_last_score = std::numeric_limits<double>::max();
+  EvalType m_last_score = std::numeric_limits<EvalType>::max();
   /** Current number of epochs without improvement. */
   int64_t m_wait = 0;
 };

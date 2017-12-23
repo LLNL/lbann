@@ -61,8 +61,8 @@ class mean_absolute_deviation_metric : public metric {
    *  This returns the sum of metric values across the mini-batch, not
    *  the mean value.
    */
-  double evaluate_compute(const AbsDistMat& prediction,
-                          const AbsDistMat& ground_truth) override;
+  EvalType evaluate_compute(const AbsDistMat& prediction,
+                            const AbsDistMat& ground_truth) override;
 
 };
 

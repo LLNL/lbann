@@ -181,7 +181,7 @@ DataType lbann_callback_gradient_check::compute_objective_function(model *m) {
   for (size_t l = 1; l < layers.size(); l++) {
     layers[l]->forward_prop();
   }
-  return obj_fn->evaluate();
+  return obj_fn->evaluate(m->get_execution_mode());
 }
 
 }  // namespace lbann

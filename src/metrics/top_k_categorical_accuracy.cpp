@@ -32,8 +32,8 @@ top_k_categorical_accuracy_metric::top_k_categorical_accuracy_metric(int top_k,
                                                                      lbann_comm *comm) 
   : metric(comm), m_top_k(top_k) {}
 
-double top_k_categorical_accuracy_metric::evaluate_compute(const AbsDistMat& prediction,
-                                                           const AbsDistMat& ground_truth) {
+EvalType top_k_categorical_accuracy_metric::evaluate_compute(const AbsDistMat& prediction,
+                                                             const AbsDistMat& ground_truth) {
     // This first computes the top k predictions within each column locally,
     // then each column master gathers these, computes the global top k, and
     // determines if an error was made.

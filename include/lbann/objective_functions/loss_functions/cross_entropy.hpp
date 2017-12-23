@@ -35,7 +35,7 @@ namespace lbann {
 class cross_entropy : public loss_function {
  public:
   /** Default constructor. */
-  cross_entropy(DataType scale_factor = DataType(1)) 
+  cross_entropy(EvalType scale_factor = EvalType(1))
     : loss_function(scale_factor) {}
 
   /** Copy constructor. */
@@ -61,7 +61,7 @@ class cross_entropy : public loss_function {
    *  the predictions and ground truth matrices should have
    *  non-negative entries that add up to one.
    */
-  DataType evaluate_compute(const AbsDistMat& prediction,
+  EvalType evaluate_compute(const AbsDistMat& prediction,
                             const AbsDistMat& ground_truth) override;
 
   /** Compute the gradient of the cross entropy objective function.

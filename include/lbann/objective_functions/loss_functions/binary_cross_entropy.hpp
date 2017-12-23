@@ -35,7 +35,7 @@ namespace lbann {
 class binary_cross_entropy : public loss_function {
  public:
   /** Default constructor. */
-  binary_cross_entropy(DataType scale_factor = DataType(1))
+  binary_cross_entropy(EvalType scale_factor = EvalType(1))
     : loss_function(scale_factor) {}
 
   /** Copy constructor. */
@@ -59,7 +59,7 @@ class binary_cross_entropy : public loss_function {
    *  This function updates the objective function value with the mean
    *  value of the binary cross entropy across the mini-batch.
    */
-  DataType evaluate_compute(const AbsDistMat& prediction,
+  EvalType evaluate_compute(const AbsDistMat& prediction,
                             const AbsDistMat& ground_truth) override;
 
   /** Compute the gradient of the binary cross entropy objective function.

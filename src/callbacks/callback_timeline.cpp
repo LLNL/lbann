@@ -35,11 +35,11 @@ namespace lbann {
 void lbann_callback_timeline::on_train_begin(model *m) {
   // Set up layers and weights.
   for (const auto& l : m->get_layers()) {
-    m_fp_times.emplace(l->get_name(), std::vector<std::pair<double,double>>());
-    m_bp_times.emplace(l->get_name(), std::vector<std::pair<double,double>>());
+    m_fp_times.emplace(l->get_name(), std::vector<std::pair<EvalType,EvalType>>());
+    m_bp_times.emplace(l->get_name(), std::vector<std::pair<EvalType,EvalType>>());
   }
   for (const auto& w : m->get_weights()) {
-    m_opt_times.emplace(w->get_name(), std::vector<std::pair<double,double>>());
+    m_opt_times.emplace(w->get_name(), std::vector<std::pair<EvalType,EvalType>>());
   }
   // Ensure the model is synchronized at the start.
   m->get_comm()->model_barrier();
@@ -76,7 +76,7 @@ void lbann_callback_timeline::on_forward_prop_begin(model *m, Layer *l) {
 }
 
 void lbann_callback_timeline::on_forward_prop_end(model *m, Layer *l) {
-  double end = get_rel_time();
+  EvalType end = get_rel_time();
   m_fp_times[l->get_name()].emplace_back(m_fp_start_time, end);
 }
 
@@ -85,7 +85,7 @@ void lbann_callback_timeline::on_backward_prop_begin(model *m, Layer *l) {
 }
 
 void lbann_callback_timeline::on_backward_prop_end(model *m, Layer *l) {
-  double end = get_rel_time();
+  EvalType end = get_rel_time();
   m_bp_times[l->get_name()].emplace_back(m_bp_start_time, end);
 }
 
@@ -94,7 +94,7 @@ void lbann_callback_timeline::on_optimize_begin(model *m, weights *w) {
 }
 
 void lbann_callback_timeline::on_optimize_end(model *m, weights *w) {
-  double end = get_rel_time();
+  EvalType end = get_rel_time();
   m_opt_times[w->get_name()].emplace_back(m_opt_start_time, end);
 }
 

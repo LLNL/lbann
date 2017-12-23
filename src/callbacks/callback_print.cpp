@@ -116,8 +116,9 @@ void lbann_callback_print::report_results(model *m) {
   lbann_comm *comm = m->get_comm();
 
   // Get string for execution mode
+  const execution_mode mode = m->get_execution_mode();
   std::string mode_string;
-  switch(m->get_execution_mode()) {
+  switch (mode) {
   case execution_mode::training:
     mode_string = "training epoch " + std::to_string(m->get_cur_epoch());
     break;
@@ -138,9 +139,9 @@ void lbann_callback_print::report_results(model *m) {
     const int num_models = comm->get_num_models();
 
     // Report objective function value
-    const double obj_fn = m->get_objective_function()->get_history_mean_value();
+    const EvalType obj_fn = m->get_objective_function()->get_mean_value(mode);
     if (comm->am_world_master()) {
-      std::vector<double> obj_fn_list(comm->get_num_models());
+      std::vector<EvalType> obj_fn_list(comm->get_num_models());
       comm->intermodel_gather(obj_fn, obj_fn_list);
       for (int i = 0; i < num_models; ++i) {
         std::cout << "Model " << i << " " << mode_string << " "
@@ -148,10 +149,10 @@ void lbann_callback_print::report_results(model *m) {
                   << std::endl;
       }
       if (num_models > 1) {
-        const double avg_obj_fn = (std::accumulate(obj_fn_list.begin(),
-                                                   obj_fn_list.end(),
-                                                   0.0)
-                                   / num_models);
+        const EvalType avg_obj_fn = (std::accumulate(obj_fn_list.begin(),
+                                                     obj_fn_list.end(),
+                                                     EvalType(0))
+                                     / num_models);
         std::cout << "World average " << mode_string << " "
                   << "objective function : " << avg_obj_fn
                   << std::endl;
@@ -162,10 +163,10 @@ void lbann_callback_print::report_results(model *m) {
 
     // Report score for each metric
     for (const auto& met : m->get_metrics()) {
-      const double score = met->get_mean_value(m->get_execution_mode());
-      const int num_samples = met->get_statistics_num_samples(m->get_execution_mode());
+      const EvalType score = met->get_mean_value(mode);
+      const int num_samples = met->get_statistics_num_samples(mode);
       if (comm->am_world_master()) {
-        std::vector<double> score_list(comm->get_num_models());
+        std::vector<EvalType> score_list(comm->get_num_models());
         std::vector<int> num_samples_list(comm->get_num_models());
         comm->intermodel_gather(score, score_list);
         comm->intermodel_gather(num_samples, num_samples_list);
@@ -176,13 +177,13 @@ void lbann_callback_print::report_results(model *m) {
                     << std::endl;
         }
         if (num_models > 1) {
-          const double avg_score = (std::inner_product(score_list.begin(),
-                                                       score_list.end(),
-                                                       num_samples_list.begin(),
-                                                       0.0)
-                                    / std::accumulate(num_samples_list.begin(),
-                                                      num_samples_list.end(),
-                                                      0));
+          const EvalType avg_score = (std::inner_product(score_list.begin(),
+                                                         score_list.end(),
+                                                         num_samples_list.begin(),
+                                                         EvalType(0))
+                                      / std::accumulate(num_samples_list.begin(),
+                                                        num_samples_list.end(),
+                                                        EvalType(0)));
           std::cout << "World " << mode_string << " "
                     << met->name() << " : "
                     << avg_score << met->get_unit()
