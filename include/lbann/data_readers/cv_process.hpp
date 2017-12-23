@@ -66,7 +66,7 @@ class cv_process {
   std::vector<std::unique_ptr<cv_transform> > m_transforms;
 
   /// Check if the last transform registered in the list is a normalizer and not a subtractor
-  bool fuse_normalizer_with_copying() const;
+  bool to_fuse_normalizer_with_copy() const;
 
   void set_normalizer_info();
 
@@ -116,7 +116,7 @@ class cv_process {
   std::vector<cv_normalizer::channel_trans_t> get_transform_normalize(const unsigned int ch) const;
 
   /// Turn off normalizer. This is useful to make sure it off after potential lazy application
-  void disable_normalizer();
+  void disable_lazy_normalizer();
 
   /// Turn off all transforms
   void disable_transforms();
@@ -147,7 +147,7 @@ class cv_process {
    */
   std::vector<unsigned int> get_data_dims() const;
 
-  void determine_inverse_normalization();
+  void determine_inverse_lazy_normalization();
 
   /// Execute a range of transforms [tr_strart, tr_end) on the given image in order
   bool preprocess(cv::Mat& image, unsigned int tr_start = 0u,

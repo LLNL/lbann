@@ -96,8 +96,8 @@ void cv_process::reset() {
     m_transform->reset();
 }
 
-void cv_process::disable_normalizer() {
-  if (fuse_normalizer_with_copying()) {
+void cv_process::disable_lazy_normalizer() {
+  if (to_fuse_normalizer_with_copy()) {
     m_transforms[m_normalizer_idx]->disable();
   }
 }
@@ -114,7 +114,7 @@ bool cv_process::add_transform(std::unique_ptr<cv_transform> tr) {
   return true;
 }
 
-bool cv_process::fuse_normalizer_with_copying() const {
+bool cv_process::to_fuse_normalizer_with_copy() const {
   return (m_is_normalizer_set &&
           ((m_normalizer_idx+1) == m_transforms.size()) &&
           (dynamic_cast<const cv_normalizer*>(m_transforms[m_normalizer_idx].get()) != nullptr));
@@ -175,8 +175,8 @@ std::vector<unsigned int> cv_process::get_data_dims() const {
  * normalization is done while copying data from El::Matrix<DataType> to cv::Mat format.
  * Otherwise, it will be done during postprocessing as the rest of transforms in order.
  */
-void cv_process::determine_inverse_normalization() {
-  if (!m_is_normalizer_set || !fuse_normalizer_with_copying()) {
+void cv_process::determine_inverse_lazy_normalization() {
+  if (!m_is_normalizer_set || !to_fuse_normalizer_with_copy()) {
     return;
   }
 
@@ -220,7 +220,7 @@ bool cv_process::preprocess(cv::Mat& image, unsigned int tr_start, unsigned int 
   // differently from other transforms. However, if a subtractor is used as a
   // normalizer, it is treated as an ordinary transform.
 
-  const bool lazy_normalization = fuse_normalizer_with_copying();
+  const bool lazy_normalization = to_fuse_normalizer_with_copy();
   const unsigned int n_immediate_transforms 
       = std::min((lazy_normalization?
                   m_normalizer_idx : static_cast<unsigned int>(m_transforms.size())),
@@ -248,7 +248,7 @@ bool cv_process::postprocess(cv::Mat& image) {
 
   bool ok = true;
 
-  const bool lazy_normalization = fuse_normalizer_with_copying();
+  const bool lazy_normalization = to_fuse_normalizer_with_copy();
   const unsigned int n_immediate_transforms 
       = (lazy_normalization? m_normalizer_idx : m_transforms.size());
 
@@ -271,14 +271,14 @@ bool cv_process::postprocess(cv::Mat& image) {
 }
 
 std::vector<cv_normalizer::channel_trans_t> cv_process::get_transform_normalize() const {
-  return (fuse_normalizer_with_copying()?
+  return (to_fuse_normalizer_with_copy()?
           dynamic_cast<const cv_normalizer*>(m_transforms[m_normalizer_idx].get())->transform() :
           std::vector<cv_normalizer::channel_trans_t>());
 }
 
 std::vector<cv_normalizer::channel_trans_t> cv_process::get_transform_normalize(const unsigned int ch) const {
   std::vector<cv_normalizer::channel_trans_t> trans;
-  if (fuse_normalizer_with_copying()) {
+  if (to_fuse_normalizer_with_copy()) {
     trans = dynamic_cast<const cv_normalizer*>(m_transforms[m_normalizer_idx].get())->transform();
   }
 
