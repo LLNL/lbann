@@ -94,14 +94,14 @@ bool cv_subtractor::determine_inverse_transform() {
 
 bool cv_subtractor::apply(cv::Mat& image) {
   m_enabled = false; // turn off as the transform is applied once
-  const double f = cv_utils::get_depth_normalizing_factor(image.depth());
-
   if (m_subtracted) { // inverse if applied already
+    const double f = cv_utils::get_depth_denormalizing_factor(CV_8U);
     cv::Mat image_sub;
-    cv::addWeighted(m_img_to_sub, 1.0, image, f, 0.0, image_sub, m_img_to_sub.depth());
+    cv::addWeighted(m_img_to_sub, f, image, 1.0, 0.0, image_sub, CV_8U);
     image = image_sub;
     m_subtracted = false;
   } else {
+    const double f = cv_utils::get_depth_normalizing_factor(image.depth());
     cv::Mat image_sub;
     cv::addWeighted(m_img_to_sub, -1.0, image, f, 0.0, image_sub, m_img_to_sub.depth());
     image = image_sub;

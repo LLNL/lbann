@@ -419,20 +419,17 @@ inline cv::Mat cv_utils::copy_buf_to_cvMat_with_full_info(
     std::vector<cv::Mat> channels(NCh);
 
     if (std::is_same<DataType, T>::value) {
-      for(size_t ch=0; ch < NCh; ++ch, Pixels += sz)
+      for(size_t ch=0; ch < NCh; ++ch, Pixels += sz) {
         channels[ch] = cv::Mat(Height, Width, CV_MAKETYPE(image.depth(),1),
                                const_cast<DataType *>(Pixels));
+      }
 
       cv::merge(channels, image);
-
+      const auto *iptr = reinterpret_cast<const T *>(image.data);
       auto *optr = reinterpret_cast<T *>(image.data);
 
-      for(size_t ch=0; ch < NCh; ++ch, optr += sz) {
-        cv_normalizer::
-        scale(reinterpret_cast<const T *>(image.datastart),
-              reinterpret_cast<const T *>(image.dataend),
-              optr, {trans[ch]});
-      }
+      cv_normalizer::
+      scale(iptr, iptr+sz*NCh, optr, trans);
     } else {
       for(size_t ch=0; ch < NCh; ++ch, Pixels += sz) {
         channels[ch] = cv::Mat(Height, Width, CV_MAKETYPE(image.depth(),1));
