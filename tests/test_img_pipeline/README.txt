@@ -34,7 +34,7 @@ build/imgpipe image_filename w h r rw rh bsz a n ni
 
     a: whether to use augmenter (0|1)
 
-    n: whether to use normalizer (0|1)
+    n: whether to use normalizer (0=none|1=channel-wise|2=pixel-wise)
 
    ni: The number of iterations.
        must be greater than 0
