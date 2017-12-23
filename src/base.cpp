@@ -41,6 +41,9 @@
 
 namespace lbann {
 
+//defined in: exception.cpp
+extern void set_lbann_exception_world_rank(int rank);
+
 lbann_comm* initialize(int& argc, char**& argv, int seed) {
   // Initialize Elemental.
   El::Initialize(argc, argv);
@@ -75,6 +78,7 @@ lbann_comm* initialize(int& argc, char**& argv, int seed) {
   // Initialize local random number generators.
   init_random(seed);
   init_data_seq_random(seed);
+  set_lbann_exception_world_rank(comm->get_rank_in_world());
   return comm;
 }
 
