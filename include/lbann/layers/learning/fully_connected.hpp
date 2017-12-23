@@ -376,7 +376,6 @@ class fully_connected_layer : public learning_layer {
   }
 
   void fp_compute_cpu() {  
-    throw lbann_exception("fully_connected: fake exception for testing");
     // Apply weight matrix
     m_weights[0]->get_values_view(*m_matrix_weights_v);
     fp_compute_weights<device::CPU>();
