@@ -48,7 +48,7 @@ set(Elemental_LIBS ${Elemental_LIBRARIES})
 
 file(GLOB PATCHWORKS_SRCS ${LBANN_DIR}/src/data_readers/patchworks/*.cpp
                           ${LBANN_DIR}/src/utils/random.cpp
-                          ${LBANN_DIR}/src/utils/exception.cpp
+                          ${LBANN_DIR}/src/utils/stack_trace.cpp
                           ${LBANN_DIR}/src/utils/options.cpp
                           ${LBANN_DIR}/src/data_readers/image_utils.cpp
                           ${LBANN_DIR}/src/data_readers/cv_augmenter.cpp
