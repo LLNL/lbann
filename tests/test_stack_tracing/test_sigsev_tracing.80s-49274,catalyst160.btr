@@ -1,0 +1,7 @@
+
+test_sigsev_tracing:49274 terminated with signal 11 at PC=2aaab8a7f4ab SP=7fffffffcfb8.  Backtrace:
+/usr/lib64/libpthread.so.0(raise+0x2b)[0x2aaab8a7f4ab]
+../../build/catalyst.llnl.gov/tests/test_stack_tracing/test_sigsev_tracing(_ZN1B22testme_class_B_sigsegvEv+0x1f)[0x40918f]
+../../build/catalyst.llnl.gov/tests/test_stack_tracing/test_sigsev_tracing(main+0x60)[0x404de0]
+/usr/lib64/libc.so.6(__libc_start_main+0xf5)[0x2aaab8cadc05]
+../../build/catalyst.llnl.gov/tests/test_stack_tracing/test_sigsev_tracing[0x404eb2]
