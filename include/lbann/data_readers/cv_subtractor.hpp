@@ -36,6 +36,19 @@
 #ifdef __LIB_OPENCV
 namespace lbann {
 
+/**
+ * Subtract channel values of an image from the corresponding values of another.
+ * The former is likely to carry pre-computed mean data per pixel and per channel.
+ * The latter is an input image. Both image needs to have the same size and the
+ * same number of channels. The subtracted result is represented in the scale
+ * between 0 and 1 (both inclusive).
+ * In the common current use case, a colorizer comes before a subtractor which is
+ * followed by a random cropper. In this scenario, the input images must be resized
+ * in advance to match the size of the mean image.
+ * In another scenario, where the random cropping is not used but resizing is done
+ * on-line, the subtractor can come after cropper without requiring the input images
+ * to be resized in advance.
+ */
 class cv_subtractor : public cv_transform {
  protected:
   // --- configuration variables ---

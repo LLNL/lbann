@@ -29,7 +29,12 @@
 
 #include "lbann/data_readers/cv_subtractor.hpp"
 #include "lbann/data_readers/cv_utils.hpp"
+#include "lbann/utils/exception.hpp"
 #include "lbann/utils/mild_exception.hpp"
+#include "lbann/utils/file_utils.hpp"
+#include <iostream>
+#include <fstream>
+#include <iterator>
 
 #ifdef __LIB_OPENCV
 namespace lbann {
@@ -50,9 +55,84 @@ cv_subtractor *cv_subtractor::clone() const {
   return (new cv_subtractor(*this));
 }
 
+/// Tokenize a string by a sequence of delimiter characters.
+static std::vector<int> get_tokens(const std::vector<char> delims, std::string str) {
+  std::vector<int> tokens;
+  size_t pos;
+
+  for (const auto d : delims) {
+    pos = str.find_first_of(d);
+    if (pos == std::string::npos) {
+      std::cerr << "Not able to split " << str << " by " << d << std::endl;
+      return std::vector<int>();
+    }
+    tokens.push_back(atoi(str.substr(0, pos).c_str()));
+    str = str.substr(pos+1, str.size());
+  }
+
+  return tokens;
+}
+
+/**
+ * Load an image in the file of the proprietary format.
+ * The file name describes the image configuration as:
+ *   *-(width)x(height)x(num_channels)-(opencv_depth_code).bin
+ * There is no header in the file. The file is a binary dump of an OpenCV cv::Mat data.
+ * For the better portability, an existing format can be used to carry image data.
+ */
+static cv::Mat read_binary_image_file(const std::string filename) {
+  std::ifstream file(filename, std::ios::binary);
+  if (!file.good()) {
+    return cv::Mat();
+  }
+
+  // Extract the information on the image from the file name
+  const std::vector<char> delims = {'-', 'x','x','-','.'};
+  std::vector<int> tokens = get_tokens(delims, filename);
+  if (tokens.size() != delims.size()) {
+    return cv::Mat();
+  }
+  const size_t image_byte_size
+    = tokens[1] * tokens[2] * tokens[3] * CV_ELEM_SIZE(tokens[4]);
+
+  file.unsetf(std::ios::skipws);
+
+  // Check file size
+  file.seekg(0, std::ios::end);
+  const size_t file_size = static_cast<size_t>(file.tellg());
+  if (image_byte_size != file_size) {
+    return cv::Mat();
+  }
+
+  // Construct an image data structure
+  cv::Mat image(tokens[1], tokens[2], CV_MAKETYPE(tokens[4], tokens[3]));
+
+  // Reset the file pointer
+  file.seekg(0, std::ios::beg);
+
+  // Load the image from the file
+  std::copy(std::istream_iterator<unsigned char>(file),
+            std::istream_iterator<unsigned char>(),
+            reinterpret_cast<unsigned char*>(image.data));
+
+  return image;
+}
+
 void cv_subtractor::set(const std::string name_of_img_to_sub, const int depth_code) {
-  // TODO: check extention and load appropriately
-  cv::Mat img_to_sub = cv::imread(name_of_img_to_sub);
+  cv::Mat img_to_sub;
+  std::string ext = get_ext_name(name_of_img_to_sub);
+  std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+  if (ext == "bin") {
+    img_to_sub = read_binary_image_file(name_of_img_to_sub);
+  } else { // let OpenCV handle
+    img_to_sub = cv::imread(name_of_img_to_sub);
+  }
+  if (img_to_sub.empty()) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: cv_subtractor: cannot load the image "
+        << name_of_img_to_sub << " to subtract.";
+    throw lbann_exception(err.str());
+  }
   set(img_to_sub, depth_code);
 }
 
@@ -120,7 +200,9 @@ std::string cv_subtractor::get_description() const {
 std::ostream& cv_subtractor::print(std::ostream& os) const {
   os << get_description()
      << " - configuration of the image to subtract: "
-     << m_img_to_sub.cols << 'x' << m_img_to_sub.rows << 'x' << m_img_to_sub.channels() << std::endl;
+     << m_img_to_sub.cols << 'x' << m_img_to_sub.rows
+     << 'x' << m_img_to_sub.channels()
+     << '-' << m_img_to_sub.depth() << std::endl;
   return os;
 }
 
