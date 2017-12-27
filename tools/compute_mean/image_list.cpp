@@ -55,9 +55,9 @@ image_list::image_list(const std::string data_path_file, const bool write_croppe
   }
 
   m_effective_num_ranks = ms.get_num_ranks();
-  m_root_data_path = add_delimiter(lines[0]);
+  m_root_data_path = lbann::add_delimiter(lines[0]);
   m_data_list = lines[1];
-  m_out_dir = add_delimiter(lines[2]);
+  m_out_dir = lbann::add_delimiter(lines[2]);
 
   load_list(ms);
   create_dirs(ms, write_cropped);
@@ -162,7 +162,7 @@ void image_list::load_list(const mpi_states& ms) {
 /// Create the root output directory under which the mean image will be stored.
 void image_list::create_dirs(const mpi_states& ms, const bool write_cropped) const {
   if (ms.is_root()) {
-    bool ok = create_dir(m_out_dir);
+    bool ok = lbann::create_dir(m_out_dir);
     if (!ok) {
       ms.abort("Could not create the out dir: " + m_out_dir);
     }
@@ -183,12 +183,12 @@ void image_list::create_subdirs(const mpi_states& ms) const {
   for (const auto& image_path : m_image_list) {
     std::string subdir;
     std::string basename;
-    parse_path(image_path, subdir, basename);
+    lbann::parse_path(image_path, subdir, basename);
     subdirs.insert(subdir);
   }
   for (const auto& subdir : subdirs) {
     //std::cout << "creating directory " + m_out_dir + subdir << std::endl;
-    bool ok = create_dir(m_out_dir + subdir);
+    bool ok = lbann::create_dir(m_out_dir + subdir);
     if (!ok) {
       ms.abort("Could not create the out dir: " + (m_out_dir + subdir));
     }
@@ -241,8 +241,8 @@ void image_list::split_list(const mpi_states& ms) {
 std::string image_list::get_image_name_with_new_ext(const size_t i, const std::string new_ext) const {
   std::string subdir;
   std::string basename;
-  parse_path(m_image_list.at(i), subdir, basename);
-  return (m_out_dir + subdir + get_basename_without_ext(basename) + new_ext);
+  lbann::parse_path(m_image_list.at(i), subdir, basename);
+  return (m_out_dir + subdir + lbann::get_basename_without_ext(basename) + new_ext);
 }
 
 

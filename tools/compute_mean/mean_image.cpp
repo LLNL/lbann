@@ -127,8 +127,8 @@ bool write_mean_image(const lbann::cv_process& pp, const int mean_extractor_idx,
   if (ms.is_root()) { // write binary image data (in the numeric format as is. e.g., floating point)
     cv::Mat global_mean  = divide_sum_image(global_sum, ms.get_effective_num_ranks(), local_mean.type());
     std::string image_name = out_dir + "mean-"
-                             + std::to_string(global_mean.rows) + 'x'
                              + std::to_string(global_mean.cols) + 'x'
+                             + std::to_string(global_mean.rows) + 'x'
                              + std::to_string(global_mean.channels()) + '-'
                              + std::to_string(global_mean.depth()) + ".bin";
 

@@ -32,25 +32,10 @@
 #include <iostream>
 #include <fstream>
 #include <iterator>
+#include "lbann/utils/file_utils.hpp"
 
 namespace tools_compute_mean {
 
-#define __DIR_DELIMITER "/"
-
-bool parse_path(const std::string& path, std::string& dir, std::string& basename);
-std::string get_ext_name(const std::string file_name);
-std::string get_basename_without_ext(const std::string file_name);
-std::string add_delimiter(const std::string dir);
-
-bool check_if_file_exists(const std::string& filename);
-bool create_dir(const std::string output_dir);
-
-
-/**
- * Read a binary file into a buffer.
- * T: type of the buf, which can be std::vector<unsigned char> for binary file
- *    std::string for text file.
- */
 template <typename T = std::vector<unsigned char> >
 inline bool read_file(const std::string filename, T& buf) {
   std::ifstream file(filename, std::ios::binary);
