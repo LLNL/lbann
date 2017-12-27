@@ -28,11 +28,29 @@
 #include "lbann/utils/file_utils.hpp"
 #include <algorithm>
 #include <fstream>
+//#include <iostream> // std::cerr
 
 namespace lbann {
 
 const std::string path_delimiter::characters = "/";
 
+
+std::vector<int> get_tokens(const std::vector<char> delims, std::string str) {
+  std::vector<int> tokens;
+  size_t pos;
+
+  for (const auto d : delims) {
+    pos = str.find_first_of(d);
+    if (pos == std::string::npos) {
+     // std::cerr << "Not able to split " << str << " by " << d << std::endl;
+      return std::vector<int>();
+    }
+    tokens.push_back(atoi(str.substr(0, pos).c_str()));
+    str = str.substr(pos+1, str.size());
+  }
+
+  return tokens;
+}
 
 /// Divide a given path into dir and basename.
 bool parse_path(const std::string& path, std::string& dir, std::string& basename) {
@@ -98,7 +116,7 @@ std::string add_delimiter(const std::string dir) {
 /// Return true if a file with the given name exists.
 bool check_if_file_exists(const std::string& filename) {
   std::ifstream ifile(filename);
-  return ifile;
+  return static_cast<bool>(ifile);
 }
 
 
