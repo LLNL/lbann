@@ -47,7 +47,7 @@ link_directories(${Elemental_DIR}/lib64)
 set(Elemental_LIBS ${Elemental_LIBRARIES})
 
 file(GLOB IMGPIPE_SRCS ${LBANN_DIR}/src/utils/random.cpp
-                       ${LBANN_DIR}/src/utils/exception.cpp
+                       ${LBANN_DIR}/src/utils/stack_trace.cpp
                        ${LBANN_DIR}/src/utils/options.cpp
                           ${LBANN_DIR}/src/data_readers/image_utils.cpp
                           ${LBANN_DIR}/src/data_readers/cv_augmenter.cpp
