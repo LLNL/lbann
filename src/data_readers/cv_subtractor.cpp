@@ -55,24 +55,6 @@ cv_subtractor *cv_subtractor::clone() const {
   return (new cv_subtractor(*this));
 }
 
-/// Tokenize a string by a sequence of delimiter characters.
-static std::vector<int> get_tokens(const std::vector<char> delims, std::string str) {
-  std::vector<int> tokens;
-  size_t pos;
-
-  for (const auto d : delims) {
-    pos = str.find_first_of(d);
-    if (pos == std::string::npos) {
-      std::cerr << "Not able to split " << str << " by " << d << std::endl;
-      return std::vector<int>();
-    }
-    tokens.push_back(atoi(str.substr(0, pos).c_str()));
-    str = str.substr(pos+1, str.size());
-  }
-
-  return tokens;
-}
-
 /**
  * Load an image in the file of the proprietary format.
  * The file name describes the image configuration as:
@@ -80,7 +62,7 @@ static std::vector<int> get_tokens(const std::vector<char> delims, std::string s
  * There is no header in the file. The file is a binary dump of an OpenCV cv::Mat data.
  * For the better portability, an existing format can be used to carry image data.
  */
-static cv::Mat read_binary_image_file(const std::string filename) {
+cv::Mat cv_subtractor::read_binary_image_file(const std::string filename) {
   std::ifstream file(filename, std::ios::binary);
   if (!file.good()) {
     return cv::Mat();

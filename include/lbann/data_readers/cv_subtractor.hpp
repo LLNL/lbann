@@ -48,6 +48,9 @@ namespace lbann {
  * In another scenario, where the random cropping is not used but resizing is done
  * on-line, the subtractor can come after cropper without requiring the input images
  * to be resized in advance.
+ * Alternatively, even a simpler approach is to use a mean image with uniform pixels.
+ * In this way, it does not need to know the size of input images, and is not impacted
+ * by random cropping or flipping augmentation.
  */
 class cv_subtractor : public cv_transform {
  protected:
@@ -69,6 +72,8 @@ class cv_subtractor : public cv_transform {
   cv_subtractor *clone() const override;
 
   ~cv_subtractor() override {}
+
+  static cv::Mat read_binary_image_file(const std::string filename);
 
   /**
    * Set the image to subtract from every input image.

@@ -45,6 +45,9 @@ struct path_delimiter {
   }
 };
 
+/// Tokenize a string by a sequence of delimiter characters.
+std::vector<int> get_tokens(const std::vector<char> delims, std::string str);
+
 bool parse_path(const std::string& path, std::string& dir, std::string& basename);
 std::string get_ext_name(const std::string file_name);
 std::string get_basename_without_ext(const std::string file_name);
