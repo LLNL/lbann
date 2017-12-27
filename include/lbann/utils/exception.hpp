@@ -31,20 +31,18 @@
 
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
+#include "lbann/utils/stack_trace.hpp"
 #include <iostream>
 #include <exception>
 
 namespace lbann {
 
-void print_lbann_exception_stack_trace(std::string m);
-
-void set_lbann_exception_world_rank(int rank);
-
 class lbann_exception : public std::exception {
  public:
   lbann_exception(const std::string m="my custom exception"):msg(m) { 
-    print_lbann_exception_stack_trace(msg);
+    stack_trace::print_lbann_exception_stack_trace(msg);
   }
+
   ~lbann_exception() override {}
   const char *what() const noexcept override {
     return msg.c_str();

@@ -9,7 +9,7 @@ add_sources(
   options.cpp
   omp_diagnostics.cpp
   protobuf_utils.cpp
-  exception.cpp
+  stack_trace.cpp
 )
 
 if(LBANN_HAS_CUDA)

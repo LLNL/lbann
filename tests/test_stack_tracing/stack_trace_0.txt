@@ -1,0 +1,16 @@
+
+**************************************************************************
+ Caught this signal: SIGSEGV
+ Note: see /usr/include/bits/signum.h for signal explanations
+ Am now attemptting to print the stack trace ...
+**************************************************************************
+
+**************************************************************************
+  >>>> lbann::stack_trace::print_stack_trace()
+  >>>> lbann::stack_trace::lbann_signal_handler(int)
+  >>>> dli_sname == NULL for: 0x2aaab8a7f5e0 backtrace message was:      /usr/lib64/libpthread.so.0(+0xf5e0) [0x2aaab8a7f5e0]
+  >>>> demangling failed for: raise
+  >>>> B::testme_class_B_sigsegv()
+  >>>> demangling failed for: main
+  >>>> demangling failed for: __libc_start_main
+  >>>> dli_sname == NULL for: 0x405132 backtrace message was:      /usr/workspace/wsb/hysom/TEST15/lbann/tests/test_stack_tracing/../../build/catalyst.llnl.gov/tests/test_stack_tracing/test_sigsev_tracing() [0x405132]
