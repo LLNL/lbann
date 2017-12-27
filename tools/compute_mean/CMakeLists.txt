@@ -60,7 +60,7 @@ file(GLOB COMPUTE_MEAN_DEPEND_SRCS
      ${LBANN_DIR}/src/data_readers/cv_process.cpp
      ${LBANN_DIR}/src/data_readers/cv_process_patches.cpp
      ${LBANN_DIR}/src/data_readers/cv_subtractor.cpp
-     ${LBANN_DIR}/src/data_readers/cv_utils.cpp
+     ${LBANN_DIR}/src/data_readers/cv_transform.cpp
      ${LBANN_DIR}/src/data_readers/patchworks/patchworks.cpp
      ${LBANN_DIR}/src/data_readers/patchworks/patchworks_patch_descriptor.cpp
      ${LBANN_DIR}/src/data_readers/patchworks/patchworks_ROI.cpp

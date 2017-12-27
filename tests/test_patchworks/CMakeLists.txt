@@ -61,6 +61,7 @@ file(GLOB PATCHWORKS_SRCS ${LBANN_DIR}/src/data_readers/patchworks/*.cpp
                           ${LBANN_DIR}/src/data_readers/cv_process.cpp
                           ${LBANN_DIR}/src/data_readers/cv_process_patches.cpp
                           ${LBANN_DIR}/src/data_readers/cv_subtractor.cpp
+                          ${LBANN_DIR}/src/data_readers/cv_transform.cpp
                           ${LBANN_DIR}/src/data_readers/cv_utils.cpp)
 
 add_executable(${PATCHWORKS_EXE} ${PATCHWORKS_SRCS} ${PATCHWORKS_TEST_SRCS} )

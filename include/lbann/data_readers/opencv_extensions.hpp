@@ -124,6 +124,26 @@ inline bool check_if_cv_Mat_has_same_shape(const cv::Mat& image1, const cv::Mat&
           (image1.channels() == image2.channels())); 
 }
 
+template<typename T>
+static double depth_norm_factor() {
+  return depth_normalization<T>::factor();
+}
+
+template<typename T>
+static double depth_norm_inverse_factor() {
+  return depth_normalization<T>::inverse_factor();
+}
+
+double get_depth_normalizing_factor(const int cv_depth);
+double get_depth_denormalizing_factor(const int cv_depth);
+
+/// returns the number of bytes that would be used for the image without compresstion and any header
+inline size_t image_data_amount(const cv::Mat& img) {
+  return static_cast<size_t>(CV_ELEM_SIZE(img.depth())*
+                             CV_MAT_CN(img.type())*
+                             img.cols*img.rows);
+}
+
 } // end of namespace lbann
 
 #define _SWITCH_CV_FUNC_KNOWN_TYPE_1PARAM(_SW_CH_,_T_,_FUNC_,_P1_) \
