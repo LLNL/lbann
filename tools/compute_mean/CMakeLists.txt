@@ -11,6 +11,8 @@ include(${LBANN_DIR}/cmake/OpenMP.cmake)
 
 set(COMPUTE_MEAN_EXE compute_mean)
 set(COMPUTE_MEAN_SRCS compute_mean.cpp)
+set(UNIFORM_MEAN_EXE uniform_mean)
+set(UNIFORM_MEAN_SRCS uniform_mean.cpp)
 set(WITH_OPENCL OFF)
 
 add_definitions(-Wall)
@@ -66,5 +68,12 @@ file(GLOB COMPUTE_MEAN_DEPEND_SRCS
      ${LBANN_DIR}/src/data_readers/patchworks/patchworks_ROI.cpp
      ${LBANN_DIR}/src/data_readers/patchworks/patchworks_stats.cpp)
 
+file(GLOB UNIFORM_MEAN_DEPEND_SRCS
+     lbann/utils/file_utils.cpp
+     ${LBANN_DIR}/src/data_readers/cv_transform.cpp
+     ${LBANN_DIR}/src/data_readers/cv_subtractor.cpp)
+
 add_executable(${COMPUTE_MEAN_EXE} ${COMPUTE_MEAN_SRCS} ${COMPUTE_MEAN_DEPEND_SRCS})
 target_link_libraries(${COMPUTE_MEAN_EXE} ${OpenCV_LIBS} ${Elemental_LIBS} ${MPI_CXX_LIBRARIES})
+add_executable(${UNIFORM_MEAN_EXE} ${UNIFORM_MEAN_SRCS} ${UNIFORM_MEAN_DEPEND_SRCS})
+target_link_libraries(${UNIFORM_MEAN_EXE} ${OpenCV_LIBS})
