@@ -242,10 +242,6 @@ configure_file(
 include(LBANNCMakeUtilities)
 add_subdirectory(include)
 add_subdirectory(src)
-add_subdirectory(model_zoo)
-add_subdirectory(model_zoo/tests)
-add_subdirectory(model_zoo/historical)
-add_subdirectory(tests)
 
 # Create the LBANN library
 add_library(lbann ${LBANN_SOURCES} ${LBANN_HEADERS} ${LBANN_CUDA_SOURCES})
@@ -298,7 +294,11 @@ if (LBANN_HAS_VTUNE)
   target_link_libraries(lbann PUBLIC dl)
 endif ()
 
-
+# Add the rest of the things
+add_subdirectory(model_zoo)
+add_subdirectory(model_zoo/tests)
+add_subdirectory(model_zoo/historical)
+add_subdirectory(tests)
 
 ################################################################
 # Install LBANN

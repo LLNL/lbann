@@ -9,7 +9,10 @@
 # find_package() line.
 
 find_package(Hydrogen NO_MODULE
-  PATH_SUFFIXES lib/cmake/hydrogen)
+  HINTS ${Hydrogen_DIR} ${HYDROGEN_DIR} $ENV{Hydrogen_DIR} $ENV{HYDROGEN_DIR}
+  PATH_SUFFIXES lib/cmake/hydrogen
+  NO_DEFUALT_PATH)
+find_package(Hydrogen NO_MODULE)
 
 if (Hydrogen_FOUND)
   message(STATUS "Found Hydrogen: ${Hydrogen_DIR}")
