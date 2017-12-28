@@ -20,9 +20,7 @@ if (CMAKE_HOST_SYSTEM_NAME MATCHES "Linux")
     HYDROGEN JPEG_TURBO OPENBLAS OPENCV PROTOBUF)
   foreach(_pkg ${_SB_PKGS})
     if (LBANN_SB_BUILD_${_pkg})
-      message("${_pkg} ==> ${${_pkg}_CMAKE_INSTALL_PREFIX}")
       if (_pkg STREQUAL "HYDROGEN")
-        message("${_pkg} ==> ${Hydrogen_CMAKE_INSTALL_PREFIX}")
         list(APPEND LBANN_CMAKE_INSTALL_RPATH "${${Hydrogen}_CMAKE_INSTALL_PREFIX}/lib")
       else ()
         list(APPEND LBANN_CMAKE_INSTALL_RPATH "${${_pkg}_CMAKE_INSTALL_PREFIX}/lib")
@@ -31,9 +29,6 @@ if (CMAKE_HOST_SYSTEM_NAME MATCHES "Linux")
   endforeach ()
 endif ()
 list(REMOVE_DUPLICATES LBANN_CMAKE_INSTALL_RPATH)
-set(LBANN_CMAKE_INSTALL_RPATH "${LBANN_CMAKE_INSTALL_RPATH}")
-
-message("LBANN_CMAKE_INSTALL_RPATH = ${LBANN_CMAKE_INSTALL_RPATH}")
 
 # Build the dependency set
 if (TARGET CNPY)
@@ -74,8 +69,6 @@ endif ()
 # Get the list of LBANN variables
 get_property(LBANN_VARIABLES DIRECTORY PROPERTY VARIABLES)
 list(FILTER LBANN_VARIABLES INCLUDE REGEX "^LBANN_.*")
-
-message("LBANN_VARIABLES = ${LBANN_VARIABLES}")
 
 create_cmake_arguments(
   OUTPUT_VARIABLE LBANN_CMAKE_ARGS
