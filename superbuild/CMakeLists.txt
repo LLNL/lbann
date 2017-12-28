@@ -88,7 +88,7 @@ if (LBANN_SB_BUILD_LBANN)
   list(APPEND _BUILD_PKGS LBANN)
 endif ()
 
-message("-----------------------------------------------------------------\n")
+message("\n-----------------------------------------------------------------\n")
 message("LBANN SuperBuild will build the following packages:\n")
 foreach (pkg ${_BUILD_PKGS})
   string(TOUPPER "${pkg}" pkg_upper)
