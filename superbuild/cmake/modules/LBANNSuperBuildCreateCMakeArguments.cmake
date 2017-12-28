@@ -24,10 +24,13 @@ function (create_cmake_arguments)
 
   # Short-circuit. IDK if is the best decision...
   if (${_CREATEARGS_OUTPUT_VARIABLE})
+    message(WARNING "Terminating early")
     return()
   endif ()
 
   foreach (_variable ${_CREATEARGS_VARIABLES})
+
+    message("${_variable} = ${${_variable}}")
 
     # Check the variable's type, if possible.
     get_property(_CMAKE_ARG_TYPE CACHE ${_variable} PROPERTY TYPE)
@@ -81,16 +84,19 @@ function (create_cmake_arguments)
     endif ()
 
     # Add the variable to the CMake line
+    if (${_variable} MATCHES ".*\;.*") # If it's a list
+      string(REPLACE ";" "|" ${_variable} "${${_variable}}")
+    endif ()
+
     if (NOT ${_CMAKE_ARG_TYPE} STREQUAL "UNINITIALIZED")
       list(APPEND _output_string
         "-D${_CMAKE_ARG_NAME}:${_CMAKE_ARG_TYPE}=${${_variable}}")
     else ()
       list(APPEND _output_string "-D${_CMAKE_ARG_NAME}=${${_variable}}")
     endif ()
-
   endforeach ()
 
   # Return
   set(${_CREATEARGS_OUTPUT_VARIABLE} ${_output_string} PARENT_SCOPE)
-
+  message("Final CMake output = ${_output_string}")
 endfunction(create_cmake_arguments)
