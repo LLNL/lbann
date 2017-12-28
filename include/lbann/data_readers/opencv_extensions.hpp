@@ -114,8 +114,13 @@ struct depth_normalization<void> {
   }
 };
 
+/// Checks if an OpenCV depth code corresponds to an integral type
+inline bool is_float(const int cv_depth) {
+  return ((cv_depth == CV_64F) || (cv_depth == CV_32F));
+}
+
 inline bool check_if_cv_Mat_is_float_type(const cv::Mat& image) {
-  return ((image.depth() == CV_64F) || (image.depth() == CV_32F));
+  return is_float(image.depth());
 }
 
 inline bool check_if_cv_Mat_has_same_shape(const cv::Mat& image1, const cv::Mat& image2) {
@@ -134,7 +139,9 @@ static double depth_norm_inverse_factor() {
   return depth_normalization<T>::inverse_factor();
 }
 
+/// Return the factor for unit scaling with the type indicated by the OpenCV depth
 double get_depth_normalizing_factor(const int cv_depth);
+/// Return the factor to inverse the unit scaling
 double get_depth_denormalizing_factor(const int cv_depth);
 
 /// returns the number of bytes that would be used for the image without compresstion and any header

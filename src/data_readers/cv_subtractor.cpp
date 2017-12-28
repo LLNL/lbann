@@ -62,27 +62,34 @@ cv_subtractor *cv_subtractor::clone() const {
  * For the better portability, an existing format can be used to carry image data.
  */
 cv::Mat cv_subtractor::read_binary_image_file(const std::string filename) {
+  std::vector<int> tokens;
+  { // Extract the information on the image from the file name
+    const std::vector<char> delims = {'-', 'x','x','-','.'};
+    std::string dir;
+    std::string basename;
+
+    parse_path(filename, dir, basename);
+    tokens = get_tokens(delims, basename);
+    if (tokens.size() != delims.size()) {
+      return cv::Mat();
+    }
+  }
+
   std::ifstream file(filename, std::ios::binary);
   if (!file.good()) {
     return cv::Mat();
   }
-
-  // Extract the information on the image from the file name
-  const std::vector<char> delims = {'-', 'x','x','-','.'};
-  std::vector<int> tokens = get_tokens(delims, filename);
-  if (tokens.size() != delims.size()) {
-    return cv::Mat();
-  }
-  const size_t image_byte_size
-    = tokens[1] * tokens[2] * tokens[3] * CV_ELEM_SIZE(tokens[4]);
-
   file.unsetf(std::ios::skipws);
 
-  // Check file size
-  file.seekg(0, std::ios::end);
-  const size_t file_size = static_cast<size_t>(file.tellg());
-  if (image_byte_size != file_size) {
-    return cv::Mat();
+  { // Check file size
+    const size_t image_byte_size
+      = tokens[1] * tokens[2] * tokens[3] * CV_ELEM_SIZE(tokens[4]);
+
+    file.seekg(0, std::ios::end);
+    const size_t file_size = static_cast<size_t>(file.tellg());
+    if (image_byte_size != file_size) {
+      return cv::Mat();
+    }
   }
 
   // Construct an image data structure
