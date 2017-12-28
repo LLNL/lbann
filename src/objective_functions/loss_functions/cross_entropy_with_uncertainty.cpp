@@ -28,7 +28,7 @@
 
 namespace lbann {
 
-cross_entropy_with_uncertainty::cross_entropy_with_uncertainty(DataType scale_factor)
+cross_entropy_with_uncertainty::cross_entropy_with_uncertainty(EvalType scale_factor)
   : loss_function(scale_factor),
     m_prediction_sums(nullptr) {}
 
@@ -54,8 +54,8 @@ cross_entropy_with_uncertainty::~cross_entropy_with_uncertainty() {
   if (m_prediction_sums != nullptr) delete m_prediction_sums;
 }
 
-void cross_entropy_with_uncertainty::setup(objective_function& obj_fn) {
-  loss_function::setup(obj_fn);
+void cross_entropy_with_uncertainty::setup(model& m) {
+  loss_function::setup(m);
 
   const El::DistData dist(*m_gradient);
   if (dist.colDist == El::MC && dist.rowDist == El::MR) {
@@ -71,8 +71,8 @@ void cross_entropy_with_uncertainty::setup(objective_function& obj_fn) {
 
 }
 
-DataType cross_entropy_with_uncertainty::evaluate(const AbsDistMat& predictions,
-                                                  const AbsDistMat& ground_truth) {
+EvalType cross_entropy_with_uncertainty::evaluate_compute(const AbsDistMat& predictions,
+                                                          const AbsDistMat& ground_truth) {
 
   // Initialize workspace
   m_prediction_sums->Resize(1, predictions.Width());
@@ -90,30 +90,30 @@ DataType cross_entropy_with_uncertainty::evaluate(const AbsDistMat& predictions,
   // Compute sum of predictions
   #pragma omp parallel for
   for (int col = 0; col < local_width; ++col) {
-    DataType pred_sum = DataType(0);
+    EvalType pred_sum = EvalType(0);
     for (int row = 0; row < local_height; ++row) {
-      if (ground_truth_local(row, col) != DataType(0)) {
+      if (ground_truth_local(row, col) != EvalType(0)) {
         pred_sum += predictions_local(row, col);
       }
     }
     prediction_sums_local(0, col) = pred_sum;
   }
-  get_comm()->allreduce(*m_prediction_sums,
+  get_comm().allreduce(*m_prediction_sums,
                         m_prediction_sums->RedundantComm());
 
   // Compute mean objective function value
-  DataType local_sum = DataType(0);
+  EvalType local_sum = EvalType(0);
   for (int col = 0; col < local_width; ++col) {
     local_sum += -std::log(prediction_sums_local(0, col));
   }
-  return get_comm()->allreduce(local_sum / width,
-                               m_prediction_sums->DistComm());
+  return get_comm().allreduce(local_sum / width,
+                              m_prediction_sums->DistComm());
 
 }
 
-void cross_entropy_with_uncertainty::differentiate(const AbsDistMat& predictions,
-                                                   const AbsDistMat& ground_truth,
-                                                   AbsDistMat& gradient) {
+void cross_entropy_with_uncertainty::differentiate_compute(const AbsDistMat& predictions,
+                                                           const AbsDistMat& ground_truth,
+                                                           AbsDistMat& gradient) {
 
   // Local matrices
   const Mat& ground_truth_local = ground_truth.LockedMatrix();

@@ -28,6 +28,7 @@
 #define LBANN_OBJECTIVE_FUNCTION_HPP_INCLUDED
 
 #include "lbann/objective_functions/objective_function_term.hpp"
+#include "lbann/metrics/metric.hpp"
 
 namespace lbann {
 
@@ -36,7 +37,7 @@ class objective_function {
  public:
 
   /** Default constructor. */
-  objective_function();
+  objective_function() {}
 
   /** Copy constructor. */
   objective_function(const objective_function& other);
@@ -58,28 +59,28 @@ class objective_function {
   /** Setup objective function. */
   void setup(model& m);
   
-  /** Compute the objective function value.
+  /** Evaluate the objective function.
    *  The result is stored in history.
    */
-  DataType compute_value();
+  EvalType evaluate(execution_mode mode);
   
   /** Compute the objective function gradient.
    *  The gradient is with respect to the objective function inputs
    */
-  void compute_gradient();
+  void differentiate();
 
-  /** Get history of objective function values. */
-  std::vector<DataType> get_history() const { return m_history; }
-  /** Clear history of objective function values. */
-  void clear_history() { m_history.clear(); }
+  /** Clear all statistics. */
+  void reset_statistics() { m_statistics.clear(); }
+  /** Clear statistics for an execution mode. */
+  void reset_statistics(execution_mode mode) { m_statistics.erase(mode); }
 
-  /** Get mean objective function value in history. */
-  DataType get_history_mean_value() const;
-
-  /** Get model that owns this objective function. */
-  model* get_model() const { return m_model; }
-  /** Set model that owns this objective function. */
-  void set_model(model* m) { m_model = m; }
+  /** Get mean objective function value.
+   *  The mean is over the mini-batches, even if the mini-batch sizes
+   *  are not identical.
+   */
+  EvalType get_mean_value(execution_mode mode) const;
+  /** Get number of samples for statistics. */
+  int get_statistics_num_samples(execution_mode mode) const;
 
   /** Get list of pointers to layers. */
   std::vector<Layer*> get_layer_pointers() const;
@@ -90,31 +91,44 @@ class objective_function {
   /** Set list of pointers to weights. */
   void set_weights_pointers(std::vector<weights*> w);
 
-  /** Get the time spent computing the value. */
-  double get_value_time() const { return m_value_time; }
-  /** Get the itme spent computing the gradient. */
-  double get_gradient_time() const { return m_gradient_time; }
+  /** Get the time spent evaluating the objective function. */
+  EvalType get_evaluation_time() const { return m_evaluation_time; }
+  /** Get the time spent computing the objective function gradient. */
+  EvalType get_differentiation_time() const { return m_differentiation_time; }
   /** Reset time counters. */
   void reset_counters() {
-    m_value_time = 0.0;
-    m_gradient_time = 0.0;
+    m_evaluation_time = 0.0;
+    m_differentiation_time = 0.0;
   }
 
- private:
+  bool save_to_checkpoint_shared(lbann::persist& p); //{
+    //for (objective_function_term* term : m_terms) {
+    //  term->get_objective_function()->saveToCheckpointShared(p);
+    //}
+    //return true;
 
-  /** Pointer to model that owns this objective function. */
-  model* m_model;
+  //}
+
+  bool load_from_checkpoint_shared(lbann::persist& p);// {
+    //for (objective_function_term* term : m_terms) {
+    //  term->get_objective_function()->loadFromCheckpointShared(p);
+    //}
+
+   //return true;
+   //}
+
+ private:
 
   /** List of objective function terms. */
   std::vector<objective_function_term*> m_terms;
 
-  /** History of objective function values. */
-  std::vector<DataType> m_history;
+  /** Objective funciton statistics. */
+  std::map<execution_mode,metric_statistics> m_statistics;
 
-  /** Time spent computing the value. */
-  double m_value_time = 0.0;
-  /** Time spent computing the gradient. */
-  double m_gradient_time = 0.0;
+  /** Time spent evaluating the objective function. */
+  EvalType m_evaluation_time = EvalType(0);
+  /** Time spent computing the objective function gradient. */
+  EvalType m_differentiation_time = EvalType(0);
 
 };
 

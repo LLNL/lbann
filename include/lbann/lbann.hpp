@@ -36,6 +36,7 @@
 /// Models
 #include "lbann/models/sequential.hpp"
 #include "lbann/models/directed_acyclic_graph.hpp"
+#include "lbann/models/recurrent.hpp"
 #include "lbann/models/greedy_layerwise_autoencoder.hpp"
 #include "lbann/models/siamese.hpp"
 
@@ -68,7 +69,9 @@
 #include "lbann/layers/transform/sum.hpp"
 #include "lbann/layers/transform/slice.hpp"
 #include "lbann/layers/transform/concatenation.hpp"
+#include "lbann/layers/transform/constant.hpp"
 #include "lbann/layers/transform/noise.hpp"
+#include "lbann/layers/transform/safe_inv.hpp"
 
 /// Regularization layers.
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
@@ -127,6 +130,7 @@
 #include "lbann/callbacks/callback_variable_minibatch.hpp"
 #include "lbann/callbacks/callback_gradient_check.hpp"
 #include "lbann/callbacks/callback_timeline.hpp"
+#include "lbann/callbacks/callback_checkpoint.hpp"
 
 /// Weights and weight initializers
 #include "lbann/weights/weights.hpp"
@@ -155,11 +159,11 @@
 #include "lbann/objective_functions/weight_regularization/group_lasso.hpp"
 
 /// Metrics
-#include "lbann/metrics/metric_categorical_accuracy.hpp"
-#include "lbann/metrics/metric_top_k_categorical_accuracy.hpp"
-#include "lbann/metrics/metric_mean_absolute_deviation.hpp"
-#include "lbann/metrics/metric_mean_squared_error.hpp"
-#include "lbann/metrics/metric_pearson_correlation.hpp"
+#include "lbann/metrics/categorical_accuracy.hpp"
+#include "lbann/metrics/top_k_categorical_accuracy.hpp"
+#include "lbann/metrics/mean_squared_error.hpp"
+#include "lbann/metrics/mean_absolute_deviation.hpp"
+#include "lbann/metrics/pearson_correlation.hpp"
 
 /// Utilities, exceptions, etc.
 #include "lbann/utils/exception.hpp"

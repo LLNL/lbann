@@ -40,6 +40,14 @@ model {
       mat_interval: 25
     }
   }
+
+  # callback {
+  #   checkpoint {
+  #     checkpoint_dir: "test"
+  #     checkpoint_epochs: 1
+  #     #checkpoint_secs: 7
+  #   }
+  # }
   # callback {
   #   debug {
   #     phase: "test"
@@ -57,12 +65,12 @@ model {
       amt: 0.1
     }
   }
-  # callback {
-  #   imcomm {
-  #     intermodel_comm_method: "normal"
-  #     all_optimizers: true
-  #   }
-  # }
+  callback {
+    imcomm {
+      intermodel_comm_method: "normal"
+      all_optimizers: true
+    }
+  }
   # callback {
   #   dump_mb_indices {
   #     basename: "debug_alexnet/"

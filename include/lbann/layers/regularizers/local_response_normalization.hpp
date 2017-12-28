@@ -30,7 +30,6 @@
 #define LBANN_LAYER_LOCAL_RESPONSE_NORMALIZATION_HPP_INCLUDED
 
 #include <vector>
-#include "lbann/base.hpp"
 #include "lbann/layers/regularizers/regularizer.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/utils/exception.hpp"
@@ -121,11 +120,12 @@ class local_response_normalization_layer : public regularizer_layer {
     return new local_response_normalization_layer(*this);
   }
 
-  std::string get_type() const override { return "local response normalization"; }
+  /// Use LRN rather than local response normalization for better formatting
+  std::string get_type() const override { return "LRN"; }
 
   std::string get_description() const override {
     return " LRN window width: " + std::to_string(m_window_width) + " alpha: " +
-      std::to_string(m_lrn_alpha) + " beta: " + std::to_string(m_lrn_beta) 
+      std::to_string(m_lrn_alpha) + " beta: " + std::to_string(m_lrn_beta)
       + " k: " + std::to_string(m_lrn_k)
       + " dataLayout: " + get_data_layout_string(get_data_layout());
   }
@@ -286,7 +286,7 @@ class local_response_normalization_layer : public regularizer_layer {
           for(int window_pos = window_start; window_pos <= window_end; ++window_pos) {
             for(int block_pos = 0; block_pos < block_size; ++block_pos) {
               const int index = block_start + block_pos + window_pos * num_per_channel;
-              const DataType prev_activations_entry 
+              const DataType prev_activations_entry
                 = prev_activations_buffer[index + sample * prev_activations_ldim];
               workspace[block_pos] += prev_activations_entry * prev_activations_entry;
             }
@@ -296,7 +296,7 @@ class local_response_normalization_layer : public regularizer_layer {
           for(int block_pos = 0; block_pos < block_size; ++block_pos) {
             workspace[block_pos] = 1 / (m_lrn_k + m_lrn_alpha * workspace[block_pos]);
           }
-          
+
           // Compute activations
           for(int block_pos = 0; block_pos < block_size; ++block_pos) {
             const int index = block_start + block_pos + channel * num_per_channel;
@@ -313,9 +313,9 @@ class local_response_normalization_layer : public regularizer_layer {
                 = prev_activations_entry * std::pow(scale_factor, m_lrn_beta);
             }
           }
-          
+
         }
-        
+
       }
     }
 
@@ -373,7 +373,7 @@ class local_response_normalization_layer : public regularizer_layer {
         const int block_size = std::min(max_block_size,
                                         num_per_channel - block_start);
         DataType workspace[max_block_size];
-        
+
         // Iterate through channels
         for(int channel = 0; channel < num_channels; ++channel) {
           const int window_start = std::max(channel - m_window_width / 2, 0);
@@ -384,7 +384,7 @@ class local_response_normalization_layer : public regularizer_layer {
           for(int window_pos = window_start; window_pos <= window_end; ++window_pos) {
             for(int block_pos = 0; block_pos < block_size; ++block_pos) {
               const int index = block_start + block_pos + window_pos * num_per_channel;
-              const DataType prev_activations_entry 
+              const DataType prev_activations_entry
                 = prev_activations_buffer[index + sample * prev_activations_ldim];
               workspace[block_pos] += prev_activations_entry * prev_activations_entry;
             }

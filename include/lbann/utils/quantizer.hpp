@@ -56,8 +56,8 @@ namespace lbann {
 class lbann_quantizer {
  public:
   /** We require that sizeof(DataType) <= sizeof(qtype) == sizeof(uqtype). */
-  typedef El::Unsigned uqtype;
-  typedef El::Int qtype;
+  using uqtype = El::Unsigned;
+  using qtype = El::Int;
   /**
    * This represents a quantized version of a matrix.
    * Each column is quantized separately. The first two entries are floats
@@ -66,10 +66,10 @@ class lbann_quantizer {
    * Quantization is by column to keep averages nice and because Elemental uses
    * column-major ordering.
    */
-  typedef El::Matrix<qtype> QuantizedMatrix;
-  typedef std::vector<uqtype> ThreshQuantized;
-  typedef std::vector<uint32_t> ThreshQuantized32;
-  typedef std::vector<uint64_t> ThreshQuantized64;
+  using QuantizedMatrix = El::Matrix<qtype>;
+  using ThreshQuantized = std::vector<uqtype>;
+  using ThreshQuantized32 = std::vector<uint32_t>;
+  using ThreshQuantized64 = std::vector<uint64_t>;
 
   /** Thresholds for use in adaptive quantization. */
   struct adaptive_thresholds {

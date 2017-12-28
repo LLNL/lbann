@@ -31,7 +31,6 @@
 
 #include <vector>
 #include "lbann/layers/learning/base_convolution.hpp"
-#include "lbann/base.hpp"
 #include "lbann/layers/layer.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/utils/exception.hpp"
@@ -88,7 +87,7 @@ class deconvolution_layer : public base_convolution_layer {
                              cudnn) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "convolution only supports DATA_PARALLEL");
-    
+
     // Setup the data distribution
     initialize_distributed_matrices();
 
@@ -145,7 +144,10 @@ class deconvolution_layer : public base_convolution_layer {
     // Initialize previous neuron tensor dimensions
     base_convolution_layer::setup_dims();
 
-    // Initialize convolution kernel dimensions
+    // Initialize deconvolution kernel dimensions
+    // Note that unlike the convolutional kernel, the previous layer's
+    // number of channels is now the leading position -- keep in mind
+    // that deconvolution is the transpose of a convolution
     this->m_kernel_dims.insert(this->m_kernel_dims.begin(),
                                this->m_prev_neuron_dims[0]);
 

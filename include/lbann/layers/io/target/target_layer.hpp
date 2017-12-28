@@ -82,21 +82,16 @@ class target_layer : public io_layer {
     }
   }
 
-  void setup_data() override {
-    io_layer::setup_data();
-    std::stringstream err;
-
+  void check_setup() override {
+    io_layer::check_setup();
     if(this->m_num_prev_neurons != this->m_num_neurons) {
-      err << __FILE__ << " " << __LINE__ 
-          << " :: " << get_type() << " this->m_num_prev_neurons != this->m_num_neurons; this->m_num_prev_neurons= " << this->m_num_prev_neurons << " this->m_num_neurons= " << this->m_num_neurons << std::endl;
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__
+          << "input and output dimensions do not match "
+          << "(" << this->m_num_prev_neurons << " input neurons, "
+          << this->m_num_neurons << " output neurons)";
       throw lbann_exception(err.str());
     }
-
-    for (auto&& m : this->m_model->get_metrics()) {
-      m->setup(this->m_num_neurons,
-               this->m_model->get_max_mini_batch_size());
-    }
-
   }
 
   // lbann::generic_data_reader *set_training_data_reader(generic_data_reader *data_reader, bool shared_data_reader) {
@@ -107,13 +102,6 @@ class target_layer : public io_layer {
   //   return io_layer::set_testing_data_reader(data_reader);
   // }
 
-  void fp_set_std_matrix_view() override {
-    int cur_mini_batch_size = this->m_model->get_current_mini_batch_size();
-    Layer::fp_set_std_matrix_view();
-    for (auto&& m : this->m_model->get_metrics()) {
-      m->fp_set_std_matrix_view(cur_mini_batch_size);
-    }
-  }
   //************************************************************************
   // Helper functions to access the data readers
   //************************************************************************
@@ -212,6 +200,8 @@ class target_layer : public io_layer {
 
   AbsDistMat& get_prediction() { return *this->m_prev_activations_v; }
   AbsDistMat& get_ground_truth() { return *this->m_activations_v; }
+  const AbsDistMat& get_prediction() const { return *this->m_prev_activations_v; }
+  const AbsDistMat& get_ground_truth() const { return *this->m_activations_v; }
 
   std::vector<Layer*> get_layer_pointers() override {
     std::vector<Layer*> layers = io_layer::get_layer_pointers();
@@ -223,7 +213,7 @@ class target_layer : public io_layer {
     paired_input_layer = dynamic_cast<input_layer*>(layers.back());
     if (paired_input_layer == nullptr) {
       std::stringstream err;
-      err << __FILE__ << " " << __LINE__ 
+      err << __FILE__ << " " << __LINE__
           << " :: lbann_target_layer: invalid layer pointer used to set paired input layer";
       throw lbann_exception(err.str());
     }
@@ -245,17 +235,17 @@ class target_layer : public io_layer {
     return Layer::loadFromCheckpoint(fd, filename, bytes);
   }
 
-  bool saveToCheckpointShared(persist& p) const override {
+  bool save_to_checkpoint_shared(persist& p) const override {
     // rank 0 writes softmax cost to file
     if (p.get_rank() == 0) {
       // p.write_double(persist_type::train, "aggregate cost", (double) aggregate_cost);
       // p.write_uint64(persist_type::train, "num backprop steps", (uint64_t) num_backprop_steps);
     }
 
-    return true;
+    return Layer::save_to_checkpoint_shared(p);
   }
 
-  bool loadFromCheckpointShared(persist& p) override {
+  bool load_from_checkpoint_shared(persist& p) override {
     // rank 0 writes softmax cost to file
     // if (p.get_rank() == 0) {
     //     double dval;
@@ -271,8 +261,8 @@ class target_layer : public io_layer {
     // MPI_Bcast(&aggregate_cost, 1, DataTypeMPI, 0, MPI_COMM_WORLD);
     // MPI_Bcast(&num_backprop_steps, 1, MPI_LONG, 0, MPI_COMM_WORLD);
 
-    //return Layer::loadFromCheckpointShared(dir, bytes);
-    return true;
+    return Layer::load_from_checkpoint_shared(p);
+    //return true;
   }
 };
 

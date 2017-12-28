@@ -71,6 +71,7 @@ model {
     slice {
       slice_axis: 0
       slice_points: "0 3 6"
+#      slice_points: "0 1 2"
     }
   }
 

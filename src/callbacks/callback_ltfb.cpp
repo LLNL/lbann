@@ -27,7 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/callback_ltfb.hpp"
-#include "lbann/metrics/metric_categorical_accuracy.hpp"
+#include "lbann/metrics/categorical_accuracy.hpp"
 #include <typeinfo>
 #include <typeindex>
 
@@ -71,7 +71,7 @@ void lbann_callback_ltfb::setup(model *m) {
   m_remote_model = m->copy();
 }
 
-void lbann_callback_ltfb::on_batch_end(model *m) {
+void lbann_callback_ltfb::on_batch_begin(model *m) {
   if (m->get_cur_step() % m_round_size != 0 ||
       m->get_cur_step() == 0) {
     return;  // Not the end of a round.
@@ -86,8 +86,8 @@ void lbann_callback_ltfb::on_batch_end(model *m) {
   exchange(m, partner);
   // Evaluate on tournament data.
   // Have to cast, assumes deep_neural_network.
-  double local_acc = evaluate(m);
-  double remote_acc = evaluate(m_remote_model);
+  EvalType local_acc = evaluate(m);
+  EvalType remote_acc = evaluate(m_remote_model);
   // If the remote is better, keep it.
   if (remote_acc > local_acc) {
     if (m_comm->am_model_master()) {
@@ -150,23 +150,14 @@ void lbann_callback_ltfb::exchange(model *m, int partner) {
   }
 }
 
-double lbann_callback_ltfb::evaluate(model *m) {
+EvalType lbann_callback_ltfb::evaluate(model *m) {
   m->evaluate(execution_mode::validation);
-  m->set_execution_mode(execution_mode::training);  // Reset execution mode.
-  double acc = 0;
-  const std::type_info& ca_model_type = typeid(
-    metrics::categorical_accuracy<data_layout::MODEL_PARALLEL>);
-  const std::type_info& ca_data_type = typeid(
-    metrics::categorical_accuracy<data_layout::DATA_PARALLEL>);
-  for (auto&& metric : m->get_metrics()) {
-    const std::type_info& m_type = typeid(*metric);
-    if (std::type_index(ca_model_type) == std::type_index(m_type) ||
-        std::type_index(ca_data_type) == std::type_index(m_type)) {
-      acc = metric->report_metric(execution_mode::validation);
-      break;
+  for (const auto& met : m->get_metrics()) {
+    if (dynamic_cast<categorical_accuracy_metric*>(met) != nullptr) {
+      return met->get_mean_value(execution_mode::validation);
     }
   }
-  return acc;
+  return EvalType(0);
 }
 
 void lbann_callback_ltfb::replace_with_remote(model *m) {

@@ -13,11 +13,14 @@ add_sources(data_reader.cpp
             image_preprocessor.cpp
             cv_augmenter.cpp
             cv_colorizer.cpp
+            cv_cropper.cpp
+            cv_decolorizer.cpp
+            cv_mean_extractor.cpp
             cv_normalizer.cpp
             cv_process.cpp
             cv_process_patches.cpp
-            cv_cropper.cpp
-            cv_mean_extractor.cpp
+            cv_subtractor.cpp
+            cv_transform.cpp
             cv_utils.cpp
             data_reader_numpy.cpp
             data_reader_synthetic.cpp

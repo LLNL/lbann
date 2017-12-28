@@ -65,7 +65,7 @@ class lbann_callback_ltfb : public lbann_callback {
   /**
    * Potentially run an LTFB round.
    */
-  void on_batch_end(model *m) override;
+  void on_batch_begin(model *m) override;
 
   std::string name() const override { return "ltfb"; }
  private:
@@ -89,7 +89,7 @@ class lbann_callback_ltfb : public lbann_callback {
   /**
    * Evaluate a model on tournament data and return its accuracy.
    */
-  double evaluate(model *m);
+  EvalType evaluate(model *m);
   /**
    * Replace the local model m with the remote model data.
    */

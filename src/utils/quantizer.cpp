@@ -480,7 +480,7 @@ void lbann_quantizer::intermodel_sum_adaptive_quantized(
   } else {
     // Check whether we can use 16-bit row indices.
     // Determine the column type (at compile time) based upon DataType.
-    typedef std::conditional<sizeof(DataType) <= 4, uint32_t, uint64_t>::type colT;
+    using colT = std::conditional<sizeof(DataType) <= 4, uint32_t, uint64_t>::type;
     if (mat.Height() > std::numeric_limits<int16_t>::max()) {
       intermodel_sum_adaptive_quantized_impl<colT, uint32_t>(
         comm, mat, qerror, proportion);

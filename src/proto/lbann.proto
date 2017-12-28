@@ -26,6 +26,7 @@ message Reader {
   string label_filename = 7;
   double validation_percent = 9;
   int64 absolute_sample_count = 11;
+  int64 first_n = 200;
   double percent_of_data_to_use = 12;
   ImagePreprocessor image_preprocessor = 13;
   int32 num_labels = 99; //for imagenet
@@ -74,6 +75,12 @@ message ImagePreprocessor {
     double shear_range = 8;
   }
 
+  message Decolorizer {
+    string name = 1;
+    bool disable = 2;
+    bool pick_1ch = 3;
+  }
+
   message Colorizer {
     string name = 1;
     bool disable = 2;
@@ -86,6 +93,12 @@ message ImagePreprocessor {
     bool subtract_mean = 4;
     bool unit_variance = 5;
     bool z_score = 6;
+  }
+
+  message Subtractor {
+    string name = 1;
+    bool disable = 2;
+    string image_to_sub = 3;
   }
 
   message PatchExtractor {
@@ -107,32 +120,34 @@ message ImagePreprocessor {
 
   Cropper cropper = 5;
   Augmenter augmenter = 6;
-  Colorizer colorizer = 7;
-  Normalizer normalizer = 8;
-  Noiser noiser = 9;
-  PatchExtractor patch_extractor = 10;
+  Decolorizer decolorizer = 7;
+  Colorizer colorizer = 8;
+  Subtractor subtractor = 9;
+  Normalizer normalizer = 10;
+  Noiser noiser = 11;
+  PatchExtractor patch_extractor = 12;
 
   // For backward compatibility. TODO: will be deprecated
-  bool scale = 12;
-  bool subtract_mean = 13;
-  bool unit_variance = 14;
-  bool z_score = 15;
-  bool horizontal_flip = 16;
-  bool vertical_flip = 17;
-  double rotation = 18;
-  double horizontal_shift = 19;
-  double vertical_shift = 20;
-  double shear_range = 21;
-  bool disable_augmentation = 22;
-  float noise_factor = 23;
-  bool no_colorize = 24; // not to use colorizer in cv_process
-  bool crop_first = 25;
-  uint32 crop_width = 26;
-  uint32 crop_height = 27;
-  bool crop_randomly = 28;
-  int32 resized_width = 29;
-  int32 resized_height = 30;
-  bool adaptive_interpolation = 31;
+  bool scale = 13;
+  bool subtract_mean = 14;
+  bool unit_variance = 15;
+  bool z_score = 16;
+  bool horizontal_flip = 17;
+  bool vertical_flip = 18;
+  double rotation = 19;
+  double horizontal_shift = 20;
+  double vertical_shift = 21;
+  double shear_range = 22;
+  bool disable_augmentation = 23;
+  float noise_factor = 24;
+  bool no_colorize = 25; // not to use colorizer in cv_process
+  bool crop_first = 26;
+  uint32 crop_width = 27;
+  uint32 crop_height = 28;
+  bool crop_randomly = 29;
+  int32 resized_width = 30;
+  int32 resized_height = 31;
+  bool adaptive_interpolation = 32;
 }
 
 // TODO: wrap El::Mat based normalization into a generic preprocessor
@@ -157,7 +172,7 @@ message GenericPreprocessor {
 //========================================================================
 
 message Model {
-  string name = 1; //sequential_model, dag_model, greedy_layerwise_autoencoder, siamese_model
+  string name = 1; //sequential_model, dag_model, recurrent_model, greedy_layerwise_autoencoder, siamese_model
   ObjectiveFunction objective_function = 2;
   repeated Metric metric = 5;
   string data_layout = 6;
@@ -182,21 +197,21 @@ message Model {
   // for complete list, see: lbann/include/lbann/callbacks
   repeated Callback callback = 20;
 
-  //checkpointing
-  string checkpoint_dir = 30;
-  int64 checkpoint_epochs = 31;
-  int64 checkpoint_steps = 32;
-  double checkpoint_secs = 33;
-
-  int64 random_seed = 34;
+  int64 random_seed = 30;
   // If true, models will have their model rank mixed into their random seed.
-  bool random_init_models_differently = 35;
+  bool random_init_models_differently = 31;
 
-  // For Siamese model
+  // Recurrent model parameters
+  message Recurrent {
+    uint32 unroll_depth = 1;
+  }
+  Recurrent recurrent = 36;
+
+  // Siamese model parameters
   message Siamese {
     uint32 num_heads = 1;
   }
-  Siamese siamese = 36;
+  Siamese siamese = 37;
 }
 
 //========================================================================
@@ -269,9 +284,10 @@ message GroupLassoWeightRegularization {
 message Metric {
   // a Metric should contain exactly one of the following
   CategoricalAccuracy categorical_accuracy = 1;
-  MeanSquaredError mean_squared_error = 2;
-  TopKCategoricalAccuracy top_k_categorical_accuracy = 3;
-  PearsonCorrelation pearson_correlation = 4;
+  TopKCategoricalAccuracy top_k_categorical_accuracy = 2;
+  MeanSquaredError mean_squared_error = 3;
+  MeanAbsoluteDeviation mean_absolute_deviation = 4;
+  PearsonCorrelation pearson_correlation = 5;
 }
 
 message CategoricalAccuracy {
@@ -366,6 +382,7 @@ message Callback {
    CallbackDebugIO debug_io = 25;
    CallbackMinibatchSchedule minibatch_schedule = 26;
    CallbackOptimizerwiseAdaptiveLearningRate optimizerwise_adaptive_learning_rate = 27;
+   CallbackCheckpoint checkpoint = 28;
 }
 
 message CallbackLTFB {
@@ -500,6 +517,15 @@ message CallbackGradientCheck {
   double step_size = 1;
   bool verbose = 2;
   bool fail_on_error = 3;
+}
+
+
+message CallbackCheckpoint {
+  string checkpoint_dir = 1;
+  int64 checkpoint_epochs = 2;
+  int64 checkpoint_steps = 3;
+  double checkpoint_secs = 4;
+  bool checkpoint_per_rank = 5;
 }
 
 //========================================================================
@@ -717,6 +743,7 @@ message InputPartitionedMiniBatch {
 message Reshape {
   int64 num_dims = 1;
   string dims = 2; //should be space-separated list of ints, e.g, "2 6 7"
+  bool reshape_to_flattened_conv_format = 3;
 }
 
 message Pooling {

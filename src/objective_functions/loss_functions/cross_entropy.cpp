@@ -28,8 +28,8 @@
 
 namespace lbann {
 
-DataType cross_entropy::evaluate(const AbsDistMat& predictions,
-                                 const AbsDistMat& ground_truth) {
+EvalType cross_entropy::evaluate_compute(const AbsDistMat& predictions,
+                                         const AbsDistMat& ground_truth) {
 
   // Local matrices
   const Mat& predictions_local = predictions.LockedMatrix();
@@ -41,25 +41,25 @@ DataType cross_entropy::evaluate(const AbsDistMat& predictions,
   const int local_width = predictions_local.Width();
 
   // Compute sum of cross entropy terms
-  DataType sum = 0;
+  EvalType sum = 0;
   #pragma omp parallel for reduction(+:sum) collapse(2)
   for (int col = 0; col < local_width; ++col) {
     for (int row = 0; row < local_height; ++row) {
-      const DataType true_val = ground_truth_local(row, col);
-      sum += (true_val != DataType(0) ?
+      const EvalType true_val = ground_truth_local(row, col);
+      sum += (true_val != EvalType(0) ?
               - true_val * std::log(predictions_local(row, col)) :
-              DataType(0));
+              EvalType(0));
     }
   }
 
   // Compute mean objective function value across mini-batch
-  return get_comm()->allreduce(sum / width, predictions.DistComm());
+  return get_comm().allreduce(sum / width, predictions.DistComm());
 
 }
 
-void cross_entropy::differentiate(const AbsDistMat& predictions,
-                                  const AbsDistMat& ground_truth,
-                                  AbsDistMat& gradient) {
+void cross_entropy::differentiate_compute(const AbsDistMat& predictions,
+                                          const AbsDistMat& ground_truth,
+                                          AbsDistMat& gradient) {
 
   // Local matrices
   const Mat& predictions_local = predictions.LockedMatrix();

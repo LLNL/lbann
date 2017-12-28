@@ -94,5 +94,19 @@ void rowwise_mean_and_stdev(const AbsDistMat& data,
                             AbsDistMat& means,
                             AbsDistMat& stdevs);
 
+/// Compute column-wise covariances
+/** @param data1   Input matrix in U,V format.
+ *  @param data2   Input matrix in U,V format.
+ *  @param means1  Column-wise mean vector for data1 in STAR,V format.
+ *  @param means2  Column-wise mean vector for data2 in STAR,V format.
+ *  @param cov     Covariance vector in STAR,V format. Output as a row
+ *                 vector with same number of columns as 'data1'.
+ */
+void columnwise_covariance(const AbsDistMat& data1,
+                           const AbsDistMat& data2,
+                           const AbsDistMat& means1,
+                           const AbsDistMat& means2,
+                           AbsDistMat& cov);
+
 } // end namespace
 #endif // LBANN_UTILS_STATISTICS_HPP

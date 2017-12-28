@@ -35,7 +35,7 @@ namespace lbann {
 class geom_negloglike : public loss_function {
  public:
   /** Default constructor. */
-  geom_negloglike(DataType scale_factor = DataType(1)) 
+  geom_negloglike(EvalType scale_factor = EvalType(1)) 
     : loss_function(scale_factor) {}
 
   /** Copy constructor. */
@@ -48,7 +48,7 @@ class geom_negloglike : public loss_function {
   geom_negloglike* copy() const override { return new geom_negloglike(*this); }
 
   /** Get the name of the objective function term. */
-  std::string name() const override { return "geom_negloglike"; }
+  std::string name() const override { return "geometric negative log-likelihood"; }
 
   /** Compute the Geometric negative log-likelihood objective function.
    *  Given a prediction \f$\hat{y}\f$ and ground truth \f$y\f$, the
@@ -59,8 +59,8 @@ class geom_negloglike : public loss_function {
    *  This function updates the objective function value with the mean
    *  value of the mean squared error across the mini-batch.
    */
-  DataType evaluate(const AbsDistMat& prediction,
-                    const AbsDistMat& ground_truth) override;
+  EvalType evaluate_compute(const AbsDistMat& prediction,
+                            const AbsDistMat& ground_truth) override;
 
   /** Compute the gradient of the Geometric negative log-likelihood objective function.
    *  Given a prediction \f$y\f$ and ground truth \f$\hat{y}\f$, the
@@ -69,9 +69,9 @@ class geom_negloglike : public loss_function {
    *    \nabla_{\hat{y}} \text{Geom}_{\text{nll}} (\hat{y},y) = y/(1-\hat{y}) + 1/\hat{y}
    *    \f]
    */
-  void differentiate(const AbsDistMat& prediction,
-                     const AbsDistMat& ground_truth,
-                     AbsDistMat& gradient) override;
+  void differentiate_compute(const AbsDistMat& prediction,
+                             const AbsDistMat& ground_truth,
+                             AbsDistMat& gradient) override;
 
 };
 

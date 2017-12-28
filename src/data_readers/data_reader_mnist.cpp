@@ -95,6 +95,10 @@ void mnist_reader::load() {
       " :: MNIST data reader: failed to open file: " + labelpath);
   }
 
+  if (is_master()) {
+    std::cerr << "read labels!\n";
+  }
+
   int magicnum1, numitems1;
   fread(&magicnum1, 4, 1, fplbl);
   fread(&numitems1, 4, 1, fplbl);
@@ -125,6 +129,12 @@ void mnist_reader::load() {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
       " :: MNIST data reader: numitems1 != numitems2");
+  }
+
+  if (m_first_n > 0) {
+    numitems1 = m_first_n > numitems1 ? numitems1 : m_first_n;
+    set_use_percent(1.0);
+    set_absolute_sample_count(0.0);
   }
 
   // set to array

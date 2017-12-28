@@ -31,24 +31,28 @@
 
 namespace lbann {
 
-/** Mean squared error loss function. */
-class mean_squared_error : public loss_function {
+/** Mean squared error loss function.
+ *  Not to be confused with mean_squared_error_metric.
+ */
+class mean_squared_error_loss : public loss_function {
  public:
   /** Default constructor. */
-  mean_squared_error(DataType scale_factor = DataType(1)) 
+  mean_squared_error_loss(EvalType scale_factor = EvalType(1)) 
     : loss_function(scale_factor) {}
 
   /** Copy constructor. */
-  mean_squared_error(const mean_squared_error& other) = default;
+  mean_squared_error_loss(const mean_squared_error_loss& other) = default;
   /** Copy assignment operator. */
-  mean_squared_error& operator=(const mean_squared_error& other) = default;
+  mean_squared_error_loss& operator=(const mean_squared_error_loss& other) = default;
   /** Destructor. */
-  ~mean_squared_error() override = default;
+  ~mean_squared_error_loss() override = default;
   /** Copy function. */
-  mean_squared_error* copy() const override { return new mean_squared_error(*this); }
+  mean_squared_error_loss* copy() const override {
+    return new mean_squared_error_loss(*this);
+  }
 
   /** Get the name of the objective function term. */
-  std::string name() const override { return "mean_squared_error"; }
+  std::string name() const override { return "mean squared error"; }
 
   /** Compute the mean squared error objective function.
    *  Given a prediction \f$\hat{y}\f$ and ground truth \f$y\f$, the
@@ -59,8 +63,8 @@ class mean_squared_error : public loss_function {
    *  This function updates the objective function value with the mean
    *  value of the mean absolute deviation across the mini-batch.
    */
-  DataType evaluate(const AbsDistMat& prediction,
-                    const AbsDistMat& ground_truth) override;
+  EvalType evaluate_compute(const AbsDistMat& prediction,
+                            const AbsDistMat& ground_truth) override;
 
   /** Compute the gradient of the mean squared error objective function.
    *  Given a prediction \f$y\f$ and ground truth \f$\hat{y}\f$, the
@@ -69,9 +73,9 @@ class mean_squared_error : public loss_function {
    *    \nabla_y MSE (y,\hat{y}) = \frac{2}{n} (y - \hat{y})
    *    \f]
    */
-  void differentiate(const AbsDistMat& prediction,
-                     const AbsDistMat& ground_truth,
-                     AbsDistMat& gradient) override;
+  void differentiate_compute(const AbsDistMat& prediction,
+                             const AbsDistMat& ground_truth,
+                             AbsDistMat& gradient) override;
 
 };
 

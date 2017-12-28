@@ -24,105 +24,152 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_METRIC_HPP
-#define LBANN_METRIC_HPP
+#ifndef LBANN_METRIC_HPP_INCLUDED
+#define LBANN_METRIC_HPP_INCLUDED
 
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/io/persist.hpp"
 
 namespace lbann {
 
-// Forward-declare this.
+// Forward declarations
 class model;
+class Layer;
+class target_layer;
 
-namespace metrics {
+/** Metric statistics. */
+struct metric_statistics {
+  /** Sum of metric values. */
+  EvalType m_sum;
+  /** Number of samples. */
+  int m_num_samples;
+  /** Default constructor. */
+  metric_statistics() { reset(); }
+  /** Move constructor. */
+  metric_statistics(metric_statistics& other) = default;
+  /** Copy constructor. */
+  metric_statistics(const metric_statistics& other) = default;
+  /** Move assignment operator. */
+  metric_statistics& operator=(metric_statistics& other) = default;
+  /** Copy assignment operator. */
+  metric_statistics& operator=(const metric_statistics& other) = default;
+  /** Destructor. */
+  ~metric_statistics() = default;
+  /** Add metric value to statistics. */
+  void add_value(EvalType value, int num_samples = 1);
+  /** Get mean metric value.
+   *  If mini-batch sizes are not identical, the mean is over the
+   *  sample values rather than over the mini-batch mean values.
+   */
+  EvalType get_mean() const;
+  /** Get number of samples. */
+  int get_num_samples() const { return m_num_samples; }
+  /** Reset statistics. */
+  void reset();
 
-class statistics {
- public:
-  statistics() {}
-  statistics(const statistics& other) = default;
-  statistics& operator=(const statistics& other) = default;
-  ~statistics() {}
+  //************************************************************************
+  // Checkpointing
+  //************************************************************************
+  /** struct used to serialize mode fields in file and MPI transfer */
+  struct packing_header {
+    double sum;
+    uint64_t num_samples;
+  };
+  bool pack_scalars(persist& p);
+  bool unpack_scalars(persist& p, struct packing_header *header);
+  void unpack_header(struct packing_header& header);
 
-  void reset_stats() {
-    m_total_error += m_error_per_epoch;
-    m_total_num_samples += m_samples_per_epoch;
-    m_error_per_epoch = 0;
-    m_samples_per_epoch = 0;
-    m_iterations_per_epoch = 0;
-  }
-
-  /// Error is accumulated as a double -- this works for both sum of
-  /// squared errors and categorical errors
-  double m_error_per_epoch = 0.0;
-  long m_samples_per_epoch = 0;
-  long m_iterations_per_epoch = 0;
-
-  double m_total_error = 0.0;
-  long m_total_num_samples = 0;
 };
 
-/**
- * A metric is used to judge the performance of a model. These are similar to an
- * objective function, but metrics are not used to train the model.
+/** Abstract base class for metric functions.
+ *  A metric function can be used to evaluate the performance of a
+ *  model without affecting the training process.
  */
 class metric {
+
  public:
-  /// Constructor
-  metric(lbann_comm *comm) :
-    m_comm(comm) {
-  }
 
-  // m_comm and the model pointer are not changed-- copy by value.
+  /** Constructor. */
+  metric(lbann_comm *comm);
+
+  /** Copy constructor. */
   metric(const metric& other) = default;
+  /** Copy assignment operator. */
   metric& operator=(const metric& other) = default;
-
-  /// Destructor
-  virtual ~metric() {};
-
+  /** Destructor. */
+  virtual ~metric() = default;
+  /** Copy function. */
   virtual metric* copy() const = 0;
-
-  virtual void setup(int num_neurons, int mini_batch_size) {}
-  virtual void fp_set_std_matrix_view(int cur_mini_batch_size) {}
-  virtual double compute_metric(AbsDistMat& predictions_v, AbsDistMat& groundtruth_v) {
-    return 0.0;
-  }
-  virtual double report_metric(execution_mode mode) {
-    return 0.0;
-  }
-  virtual double report_lifetime_metric(execution_mode mode) {
-    return 0.0;
-  }
-
-  statistics *get_statistics(execution_mode mode);
-
-  void record_error(double error, long num_samples);
-  void reset_metric();
-
-  /** Get model. */
-  model *get_model() { return m_model; }
-  /** Set model. */
-  void set_model(model *m) { m_model = m; }
 
   /** Return a string name for this metric. */
   virtual std::string name() const = 0;
-  /** Return a display unit, e.g. %, for this metric. */
-  virtual std::string display_unit() const { return ""; }
+  /** Return a display unit for this metric.
+   *  Default is an empty string. This is overriden if the metric has
+   *  units, e.g. "%" or "sec".
+   */
+  virtual std::string get_unit() const { return ""; }
+
+  /** Setup metric. */
+  virtual void setup(model& m);
+  
+  /** Evaluate the metric value. */
+  EvalType evaluate(execution_mode mode);
+
+  /** Clear all statistics. */
+  void reset_statistics() { m_statistics.clear(); }
+  /** Clear statistics for an execution mode. */
+  void reset_statistics(execution_mode mode) { m_statistics.erase(mode); }
+
+  /** Get mean metric value.
+   *  If mini-batch sizes are not identical, the mean is over the
+   *  sample values rather than over the mini-batch mean values.
+   */
+  EvalType get_mean_value(execution_mode mode) const;
+  /** Get number of samples for statistics. */
+  int get_statistics_num_samples(execution_mode mode) const;
+
+  /** Set pointer to target layer. */
+  void set_target_layer(const target_layer *target) { m_target_layer = target; }
+  /** Get target layer. */
+  const target_layer& get_target_layer() const;
+
+  /** Get list of pointers to layers. */
+  std::vector<Layer*> get_layer_pointers() const;
+  /** Set list of pointers to layers. */
+  void set_layer_pointers(std::vector<Layer*> layers);
+
+  /** Save metric state to checkpoint. */
+  virtual bool save_to_checkpoint_shared(persist& p);
+  /** Load metric state from checkpoint. */
+  virtual bool load_from_checkpoint_shared(persist& p);
 
  protected:
-  statistics m_training_stats;
-  statistics m_validation_stats;
-  statistics m_testing_stats;
 
+  /** Computation to evaluate the metric function.
+   *  This should return the sum of metric values across the
+   *  mini-batch, not the mean value.
+   */
+  virtual EvalType evaluate_compute(const AbsDistMat& prediction,
+                                    const AbsDistMat& ground_truth) = 0;
+
+  /** Get LBANN communicator. */
+  lbann_comm& get_comm() { return *m_comm; }
+
+ private:
+
+  /** LBANN communicator. */
   lbann_comm *m_comm;
 
-  model *m_model;
+  /** Pointer to target layer. */
+  const target_layer *m_target_layer;
+
+  /** Metric statistics. */
+  std::map<execution_mode,metric_statistics> m_statistics;
 
 };
 
-}  // namespace metrics
-
 }  // namespace lbann
 
-#endif  // LBANN_METRIC_HPP
+#endif  // LBANN_METRIC_HPP_INCLUDED

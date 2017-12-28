@@ -63,7 +63,9 @@ int main(int argc, char *argv[]) {
       return 0;
     }
 
-    std::stringstream err;
+    //must be called after opts->init(); must also specify "--catch-signals" 
+    //on cmd line
+    stack_trace::register_handler();
 
     std::vector<lbann_data::LbannPB *> pbs;
     protobuf_utils::load_prototext(master, argc, argv, pbs);
@@ -81,6 +83,7 @@ int main(int argc, char *argv[]) {
 
     // Set algorithmic blocksize
     if (pb_model->block_size() == 0 and master) {
+      std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: model does not provide a valid block size: " << pb_model->block_size();
       throw lbann_exception(err.str());
     }
@@ -191,11 +194,9 @@ int main(int argc, char *argv[]) {
     add_layers(model, data_readers, cudnn, pb);
     init_callbacks(comm, model, data_readers, pb);
     model->setup();
-
     // restart model from checkpoint if we have one
     //@todo
-    //model->restartShared();
-
+    
     if (comm->am_world_master()) {
       std::cout << std::endl;
       if (default_optimizer != nullptr) {

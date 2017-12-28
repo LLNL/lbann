@@ -33,6 +33,7 @@
 #include "lbann/comm.hpp"
 #include "lbann/layers/layer.hpp"
 #include "lbann/utils/summary.hpp"
+#include "lbann/utils/graph.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/objective_functions/objective_function.hpp"
@@ -57,7 +58,7 @@ class model {
         int mini_batch_size,
         objective_function *obj_fn,
         optimizer* default_optimizer = nullptr);
-  
+
   /** Copy constructor. */
   model(const model& other);
   /** Copy assignment operator. */
@@ -88,7 +89,7 @@ class model {
   }
 
   /** Register a new metric for the model. */
-  void add_metric(metrics::metric *m);
+  void add_metric(metric *m);
 
   /** Construct an instance of the default optimizer.
    *  If there is no default optimizer, a null pointer is returned.
@@ -101,7 +102,7 @@ class model {
   }
 
   /** Return the model's metrics. */
-  virtual const std::vector<metrics::metric *>& get_metrics() const {
+  virtual const std::vector<metric *>& get_metrics() const {
     return m_metrics;
   }
 
@@ -113,9 +114,6 @@ class model {
 
   /** Replace the model's weights. */
   void replace_weights(std::vector<weights *>& w);
-  
-  /** Replace layer at a given index. */
-  void replace_layer(size_t index, Layer* new_layer);
 
   /** Return the model's weights. */
   const std::vector<weights *>& get_weights() const { return m_weights; }
@@ -133,7 +131,7 @@ class model {
   inline int get_cur_step() const {
     return m_current_step;  /// @todo This should be renamed to get_cur_training step and replaced with one that returns the current based on execution mode
   }
-  
+
   /** Get the current validation step for the model. */
   inline int get_cur_validation_step() const {
     return m_current_validation_step;
@@ -201,44 +199,11 @@ class model {
   /** Evaluate model. */
   virtual void evaluate(execution_mode mode);
 
-  /** Set checkpoint values */
-  inline void set_checkpoint_dir(std::string dir)   {
-    m_checkpoint_dir    = dir;
-  }
-  inline void set_checkpoint_epochs(int epochs) {
-    m_checkpoint_epochs = epochs;
-  }
-  inline void set_checkpoint_steps(int steps)   {
-    m_checkpoint_steps  = steps;
-  }
-  inline void set_checkpoint_secs(double secs)      {
-    m_checkpoint_secs   = secs;
-  }
-
-#if 0
-  /** Return true if about to start a new training epoch
-   */
-  virtual bool at_epoch_start() {
-    return true;
-  }
-
-  /** Returns true if a checkpoint should be taken, false otherwise */
-  bool need_checkpoint();
-
   /** Checkpoint model to given file descriptor, return number of bytes written */
   virtual bool save_to_checkpoint_shared(persist& p);
   /** Restore model by reading checkpoint from given file descriptor, return number of bytes read */
   virtual bool load_from_checkpoint_shared(persist& p);
 
-  /*! Top-level call to start checkpoint.  This creates the persist object
-   *  and then calls the model's save_to_checkpoint_shared() virtual function */
-  bool checkpointShared();
-
-  /*! Top-level call to restart.  This creates the persist object
-   *  and then calls the model's load_from_checkpoint_shared() virtual function */
-  bool restartShared();
-
-#endif // 0
 
  protected:
 
@@ -276,29 +241,17 @@ class model {
   /** Current callbacks to process. */
   std::vector<lbann_callback *> m_callbacks;
 
-  /** Directory where we should save checkpoints */
-  std::string m_checkpoint_dir;
-  /** Number of training steps to elapse between checkpoints */
-  int m_checkpoint_epochs;
-  /** Number of training steps to elapse between checkpoints */
-  int m_checkpoint_steps;
-  /** Number of seconds to elapse between checkpoints (checkpoint interval) */
-  double m_checkpoint_secs;
-  /** Timestamp of last checkpoint */
-  double m_checkpoint_last;
-
-  /** Default optimizer. 
+  /** Default optimizer.
    *  If a layer needs to construct an optimizer during setup, it will
    *  make a copy of the default optimizer.
    */
   optimizer *m_default_optimizer;
 
   /** List of model metrics.
-   *  A metric is a function that is used to judge the performance of your model.
-   *  A metric function is similar to an objective function, except that the
-   *  results from evaluating a metric are not used when training the model.
+   *  A metric can be used to evaluate the performance of the model
+   *  without affecting the training process.
    */
-  std::vector<metrics::metric *> m_metrics;
+  std::vector<metric *> m_metrics;
 
   /** List of layers in model.
    *  The list is in execution order for forward propagation.
@@ -311,8 +264,19 @@ class model {
   virtual bool is_execution_mode_valid(execution_mode mode) const;
   /** Print out the description of a layer set up. */
   virtual std::string print_layer_description(const Layer* layer) const;
-  /** Check if the layer execution order is topologically sorted. */
-  virtual bool is_topologically_sorted() const;
+  /** Construct a layer graph. */
+  virtual void construct_layer_graph(std::set<int>& nodes,
+                                     std::map<int,std::set<int>>& edges) const;
+  /** Reorder layers. */
+  virtual void permute_layers(const std::vector<int>& permutation);
+
+  /** Remap pointers.
+   *  Layer and weights pointers are remapped using the provided
+   *  maps. If a pointer is not a key in the corresponding map, the
+   *  pointer is not changed.
+   */
+  virtual void remap_pointers(const std::unordered_map<Layer *,Layer *>& layer_map,
+                              const std::unordered_map<weights *,weights *>& weights_map);
 
   /** Set up topology of layer graph.
    *  Called in setup function. All layers in connected component of
@@ -334,13 +298,11 @@ class model {
    *  weights are deleted.
    */
   virtual void setup_weights();
-  /** Set up callbacks.
-   *  Called in setup function.
-   */
-  virtual void setup_callbacks();
 
-  /** Reset model for an epoch. */
-  virtual void reset_epoch(execution_mode mode);
+  /** Reset model pointer and execution mode. */
+  virtual void reset_mode_and_model(execution_mode mode);
+  /** Reset model statistics for an epoch. */
+  virtual void reset_epoch_statistics(execution_mode mode);
   /** Evaluate model on a mini-batch */
   virtual bool evaluate_mini_batch(execution_mode mode);
   /** Train model on a mini-batch. */

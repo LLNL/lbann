@@ -28,8 +28,8 @@
 
 namespace lbann {
 
-DataType poisson_negloglike::evaluate(const AbsDistMat& predictions,
-                                      const AbsDistMat& ground_truth) {
+EvalType poisson_negloglike::evaluate_compute(const AbsDistMat& predictions,
+                                              const AbsDistMat& ground_truth) {
 
   // Local matrices
   const Mat& predictions_local = predictions.LockedMatrix();
@@ -41,12 +41,12 @@ DataType poisson_negloglike::evaluate(const AbsDistMat& predictions,
   const int local_width = predictions_local.Width();
 
   // Compute sum of cross entropy terms
-  DataType sum = 0;
+  EvalType sum = 0;
   #pragma omp parallel for reduction(+:sum) collapse(2)
   for (int col = 0; col < local_width; ++col) {
     for (int row = 0; row < local_height; ++row) {
-      const DataType true_val = ground_truth_local(row, col);
-      const DataType pred_val = predictions_local(row, col);
+      const EvalType true_val = ground_truth_local(row, col);
+      const EvalType pred_val = predictions_local(row, col);
       sum += (pred_val
               - true_val * std::log(pred_val)
               + std::lgamma(true_val + 1)); // \f[\lambda - k\log(\lambda) + \log(k!)\f]
@@ -54,13 +54,13 @@ DataType poisson_negloglike::evaluate(const AbsDistMat& predictions,
   }
 
   // Compute mean objective function value across mini-batch
-  return get_comm()->allreduce(sum / width, predictions.DistComm());
+  return get_comm().allreduce(sum / width, predictions.DistComm());
 
 }
 
-void poisson_negloglike::differentiate(const AbsDistMat& predictions,
-                                       const AbsDistMat& ground_truth,
-                                       AbsDistMat& gradient) {
+void poisson_negloglike::differentiate_compute(const AbsDistMat& predictions,
+                                               const AbsDistMat& ground_truth,
+                                               AbsDistMat& gradient) {
 
   // Local matrices
   const Mat& predictions_local = predictions.LockedMatrix();

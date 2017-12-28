@@ -399,6 +399,14 @@ class lbann_comm {
     El::AllReduce(m, c, op);
     bytes_received += sizeof(DataType) * m.LocalHeight() * m.LocalWidth() * (El::mpi::Size(c) - 1);
   }
+  /** Non-blocking matrix allreduce. */
+  void nb_allreduce(AbsDistMat& m, const El::mpi::Comm c,
+                    El::mpi::Request<DataType>& req, El::mpi::Op op = El::mpi::SUM) {
+    bytes_sent += sizeof(DataType) * m.LocalHeight() * m.LocalWidth();
+    MPI_Iallreduce(MPI_IN_PLACE, m.Buffer(), m.LocalHeight()*m.LocalWidth(),
+                   El::mpi::TypeMap<DataType>(), op.op, c.comm, &req.backend);
+    bytes_received += sizeof(DataType) * m.LocalHeight() * m.LocalWidth() * (El::mpi::Size(c) - 1);
+  }
 
   /** Wait for a non-blocking request to complete. */
   template <typename T>

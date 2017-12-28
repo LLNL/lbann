@@ -1,0 +1,318 @@
+model {
+  name: "sequential_model"
+  data_layout: "data_parallel"
+  mini_batch_size: 32
+  block_size: 256
+  num_epochs: 4
+  num_parallel_readers: 1
+  procs_per_model: 0
+  use_cudnn: true
+  num_gpus: -1
+
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    mean_squared_error {}
+    l2_weight_regularization {
+      scale_factor: 0.0005
+    }
+  }
+
+  ###################################################
+  # Callbacks
+  ###################################################
+  callback {
+    print {
+      interval: 1
+    }
+  }
+  callback {
+    timer {
+    }
+  }
+  # callback {
+  #   save_images {
+  #     image_dir: "images_"
+  #     extension: "pgm"
+  #   }
+  # }
+
+  ###################################################
+  # start of layers
+  ###################################################
+
+  #######
+  # INPUT
+  #######
+  layer {
+    name: "data"
+    data_layout: "data_parallel"
+    input_partitioned_minibatch {
+    }
+  }
+
+  #######
+  # Flatten the data to 1d
+  ######
+  layer {
+    name: "reshape1"
+    data_layout: "data_parallel"
+    num_neurons_from_data_reader: true
+    reshape {
+      reshape_to_flattened_conv_format: true
+    }
+  }
+
+  #############
+  # CONVOLUTION 1
+  #############
+  layer {
+    name: "bead_conv1"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 1
+      num_output_channels: 512
+      conv_dims: "20"
+      conv_pads: "0"
+      conv_strides: "20"
+      weight_initialization: "he_normal"
+      has_bias: true
+      has_vectors: true
+    }
+  }
+
+  layer {
+    name: "bead_batch_norm1"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+
+  ######
+  # RELU 1
+  ######
+  layer {
+    name: "bead_relu1"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+
+  #############
+  # CONVOLUTION 1
+  #############
+  layer {
+    name: "mol_conv1"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 1
+      num_output_channels: 1024
+      conv_dims: "12"
+      conv_pads: "0"
+      conv_strides: "12"
+      weight_initialization: "he_normal"
+      has_bias: true
+      has_vectors: true
+    }
+  }
+
+  layer {
+    name: "batch_norm1"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+
+  ######
+  # RELU 1
+  ######
+  layer {
+    name: "mol_relu1"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+
+  #############
+  # FC 1
+  #############
+  layer {
+    name: "fc1"
+    data_layout: "data_parallel"
+    fully_connected {
+      num_neurons: 12
+      weight_initialization: "he_normal"
+      has_bias: true
+    }
+  }
+
+  layer {
+    name: "batch_norm2"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+
+  ######
+  # RELU 1
+  ######
+  layer {
+    name: "relu_fc1"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+
+#DECODER
+
+  #################
+  # FULLY_CONNECTED decode1
+  #################
+  layer {
+    name: "d_fc1"
+    data_layout: "data_parallel"
+    fully_connected {
+      num_neurons: 11264
+      weight_initialization: "glorot_uniform"
+      has_bias: true
+    }
+  }
+
+  layer {
+    name: "batch_norm3"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+
+  #######
+  # RELU relu10
+  #######
+  layer {
+    name: "d_relu_fc1"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+
+  layer {
+    name: "d_reshape1"
+    data_layout: "data_parallel"
+    reshape {
+      num_dims: 2
+      dims: "1024 11"
+    }
+  }
+
+  #############
+  # DECONVOLUTION 1
+  #############
+  layer {
+    name: "molecular_deconv1"
+    data_layout: "data_parallel"
+#    num_neurons_from_data_reader: true
+    deconvolution {
+      num_dims: 1
+      num_output_channels: 512
+      conv_dims: "12"
+      conv_pads: "0"
+      conv_strides: "12"
+      has_bias: true
+      has_vectors: true
+    }
+  }
+
+  layer {
+    name: "batch_norm4"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+
+  ######
+  # RELU 1
+  ######
+  layer {
+    name: "dc_mol_relu1"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+
+  #############
+  # CONVOLUTION 1
+  #############
+  layer {
+    name: "dc_bead_conv1"
+    data_layout: "data_parallel"
+    deconvolution {
+      num_dims: 1
+      num_output_channels: 1
+      conv_dims: "20"
+      conv_pads: "0"
+      conv_strides: "20"
+      weight_initialization: "he_normal"
+      has_bias: true
+      has_vectors: true
+    }
+  }
+
+  layer {
+    name: "dc_bead_batch_norm1"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+
+  #######
+  # ELU sigmoid
+  #######
+  layer {
+    name: "elu20"
+    data_layout: "data_parallel"
+    elu {
+    }
+  }
+
+
+  #################
+  # RECONSTRUCTION
+  #################
+  layer {
+    name: "reconstruction"
+    data_layout: "data_parallel"
+    reconstruction {
+      original_layer: "data"
+    }
+  }
+
+  ###################################################
+  # end of layers
+  ###################################################
+}

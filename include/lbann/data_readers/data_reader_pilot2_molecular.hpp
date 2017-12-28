@@ -58,6 +58,24 @@ class pilot2_molecular_reader : public generic_data_reader {
     return {m_num_neighbors + 1, (int) m_features.shape[2],
         (int) m_features.shape[3]};
   }
+
+  /// Data format is:
+  /// [Frames (2900), Molecules (3040), Beads (12), ['x', 'y', 'z',
+  /// 'CHOL', 'DPPC', 'DIPC', 'Head', 'Tail', 'BL1', 'BL2', 'BL3',
+  /// 'BL4', 'BL5', 'BL6', 'BL7', 'BL8', 'BL9', 'BL10', 'BL11',
+  /// 'BL12'] (20)]
+  template <class T>
+  T scale_data(int idx, T datum) {
+    T scaled_datum = datum;
+    if(idx >= 0 && idx <= 2) { /// x,y,z
+      scaled_datum /= position_scale_factor;
+    }
+    if(idx >= 8 && idx <= 19) {
+      scaled_datum /= bond_len_scale_factor;
+    }
+    return scaled_datum;
+  }
+
  protected:
   /// Fetch a molecule and its neighbors.
   bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
@@ -83,6 +101,9 @@ class pilot2_molecular_reader : public generic_data_reader {
   cnpy::NpyArray m_features;
   /// Neighbor information (adjacency matrix).
   cnpy::NpyArray m_neighbors;
+
+  DataType position_scale_factor = 350.0;
+  DataType bond_len_scale_factor = 10.0;
 };
 
 }  // namespace lbann

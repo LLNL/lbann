@@ -33,15 +33,12 @@
 
 namespace lbann {
 
-// Forward declaration
-class objective_function;
-
 /** Abstract class for objective function terms. */
 class objective_function_term {
  public:
 
   /** Default constructor. */
-  objective_function_term(DataType scale_factor = DataType(1));
+  objective_function_term(EvalType scale_factor = EvalType(1));
 
   /** Copy constructor. */
   objective_function_term(const objective_function_term& other) = default;
@@ -56,21 +53,22 @@ class objective_function_term {
   virtual std::string name() const = 0;
 
   /** Setup objective function term. */
-  virtual void setup(objective_function& obj_fn);
+  virtual void setup(model& m);
   
-  /** Compute the value of the objective function term.
+  /** Evaluate the objective function term.
    *  This should include the scaling factor.
    */
-  virtual DataType compute_value() = 0;
+  virtual EvalType evaluate() = 0;
   
   /** Compute the gradient of the objective function term.
    *  The gradient is computed w.r.t. the objective function term
    *  inputs. This should include the scaling factor.
    */
-  virtual void compute_gradient() = 0;
+  virtual void differentiate() = 0;
 
-  objective_function* get_objective_function() const { return m_objective_function; }
-  void set_objective_function(objective_function* obj_fn) { m_objective_function = obj_fn; }
+  virtual bool save_to_checkpoint_shared(lbann::persist& p);
+  virtual bool load_from_checkpoint_shared(lbann::persist& p);
+  
 
   /** Get list of pointers to layers. */
   std::vector<Layer*> get_layer_pointers() const { return m_layers; }
@@ -83,11 +81,8 @@ class objective_function_term {
 
  protected:
 
-  /** Pointer to full objective function. */
-  objective_function* m_objective_function;
-
   /** Scaling factor for objective function term. */
-  DataType m_scale_factor;
+  EvalType m_scale_factor;
 
   /** Layers used to compute objective function term. */
   std::vector<Layer*> m_layers;
@@ -95,7 +90,12 @@ class objective_function_term {
   std::vector<weights*> m_weights;
 
   /** Get LBANN communicator. */
-  lbann_comm* get_comm();
+  lbann_comm& get_comm() { return *m_comm; }
+
+ private:
+
+  /** LBANN communicator. */
+  lbann_comm* m_comm;
 
 };
 

@@ -35,7 +35,7 @@ namespace lbann {
 class cross_entropy : public loss_function {
  public:
   /** Default constructor. */
-  cross_entropy(DataType scale_factor = DataType(1)) 
+  cross_entropy(EvalType scale_factor = EvalType(1))
     : loss_function(scale_factor) {}
 
   /** Copy constructor. */
@@ -48,7 +48,7 @@ class cross_entropy : public loss_function {
   cross_entropy* copy() const override { return new cross_entropy(*this); }
 
   /** Get the name of the objective function term. */
-  std::string name() const override { return "cross_entropy"; }
+  std::string name() const override { return "cross entropy"; }
 
   /** Compute the cross entropy objective function.
    *  Given a predicted distribution \f$y\f$ and ground truth
@@ -61,8 +61,8 @@ class cross_entropy : public loss_function {
    *  the predictions and ground truth matrices should have
    *  non-negative entries that add up to one.
    */
-  DataType evaluate(const AbsDistMat& prediction,
-                    const AbsDistMat& ground_truth) override;
+  EvalType evaluate_compute(const AbsDistMat& prediction,
+                            const AbsDistMat& ground_truth) override;
 
   /** Compute the gradient of the cross entropy objective function.
    *  Given a predicted distribution \f$y\f$ and ground truth
@@ -72,9 +72,9 @@ class cross_entropy : public loss_function {
    *    \nabla_y CE (y,\hat{y}) = - \hat{y} . / y
    *    \f]
    */
-  void differentiate(const AbsDistMat& prediction,
-                     const AbsDistMat& ground_truth,
-                     AbsDistMat& gradient) override;
+  void differentiate_compute(const AbsDistMat& prediction,
+                             const AbsDistMat& ground_truth,
+                             AbsDistMat& gradient) override;
 
 };
 

@@ -28,8 +28,8 @@
 
 namespace lbann {
 
-DataType mean_absolute_deviation::evaluate(const AbsDistMat& predictions,
-                                           const AbsDistMat& ground_truth) {
+EvalType mean_absolute_deviation_loss::evaluate_compute(const AbsDistMat& predictions,
+                                                        const AbsDistMat& ground_truth) {
 
   // Local matrices
   const Mat& predictions_local = predictions.LockedMatrix();
@@ -42,26 +42,26 @@ DataType mean_absolute_deviation::evaluate(const AbsDistMat& predictions,
   const El::Int local_width = predictions_local.Width();
 
   // Compute sum of errors
-  DataType sum = 0;
+  EvalType sum = 0;
   #pragma omp parallel for reduction(+:sum) collapse(2)
   for(El::Int col = 0; col < local_width; ++col) {
     for(El::Int row = 0; row < local_height; ++row) {
-      const DataType true_val = ground_truth_local(row, col);
-      const DataType pred_val = predictions_local(row, col);
-      const DataType error = true_val - pred_val;
-      sum += error >= DataType(0) ? error : - error;
+      const EvalType true_val = ground_truth_local(row, col);
+      const EvalType pred_val = predictions_local(row, col);
+      const EvalType error = true_val - pred_val;
+      sum += error >= EvalType(0) ? error : - error;
     }
   }
   
   // Compute mean objective function value across mini-batch
-  return get_comm()->allreduce(sum / (height * width),
-                               predictions.DistComm());
+  return get_comm().allreduce(sum / (height * width),
+                              predictions.DistComm());
 
 }
 
-void mean_absolute_deviation::differentiate(const AbsDistMat& predictions,
-                                            const AbsDistMat& ground_truth,
-                                            AbsDistMat& gradient) {
+void mean_absolute_deviation_loss::differentiate_compute(const AbsDistMat& predictions,
+                                                         const AbsDistMat& ground_truth,
+                                                         AbsDistMat& gradient) {
 
   // Local matrices
   const Mat& predictions_local = predictions.LockedMatrix();

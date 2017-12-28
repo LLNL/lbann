@@ -197,7 +197,7 @@ int main(int argc, char *argv[]) {
     auto *obj_fn = new objective_function();
     obj_fn->add_term(new cross_entropy());
     sequential_model dnn(comm, trainParams.MBSize, obj_fn, default_optimizer);
-    dnn.add_metric(new metrics::categorical_accuracy<data_layout::MODEL_PARALLEL>(comm));
+    dnn.add_metric(new categorical_accuracy_metric(comm));
     std::map<execution_mode, generic_data_reader *> data_readers = {std::make_pair(execution_mode::training, mnist_trainset),
                                                            std::make_pair(execution_mode::validation, mnist_validation_set),
                                                            std::make_pair(execution_mode::testing, mnist_testset)
@@ -351,10 +351,10 @@ int main(int argc, char *argv[]) {
     dnn.setup();
 
     // set checkpoint directory and checkpoint interval
-    dnn.set_checkpoint_dir(trainParams.ParameterDir);
-    dnn.set_checkpoint_epochs(trainParams.CkptEpochs);
-    dnn.set_checkpoint_steps(trainParams.CkptSteps);
-    dnn.set_checkpoint_secs(trainParams.CkptSecs);
+    //dnn.set_checkpoint_dir(trainParams.ParameterDir);
+    //dnn.set_checkpoint_epochs(trainParams.CkptEpochs);
+    //dnn.set_checkpoint_steps(trainParams.CkptSteps);
+    //dnn.set_checkpoint_secs(trainParams.CkptSecs);
 
     // restart model from checkpoint if we have one
     // dnn.restartShared();

@@ -100,18 +100,37 @@ class Layer {
 
   /** Sets this layer's name; this is an arbitrary string, e.g, assigned in a prototext file. */
   void set_name(std::string name) { m_name = name; }
-  
+
   /** Returns a description of the parameters passed to the ctor */
-  virtual std::string get_description() const { 
+  virtual std::string get_description() const {
     return std::string {} + get_type() + " - DESCRIPTION NOT IMPLEMENTED FOR THIS LAYER\n"
      + " to get a description, you need to edit the class file by adding this method:\n"
      + " virtual std::string get_descrciption() const override";
   }
   /** Returns a description of the topology */
-  virtual std::string get_topo_description() const { return ""; };
+  virtual std::string get_topo_description() const {
+    std::stringstream s;
+    for (size_t h=0; h<this->m_neuron_dims.size(); h++) {
+      if (h == 0) { s << "Acts=["; }
+      s << this->m_neuron_dims[h] ;
+      if (h == 0 && this->m_neuron_dims.size() > 1) { s << "c x "; }
+      if (this->m_neuron_dims.size() == 2) {
+        if (h == 1) { s << "w "; }
+      }else if (this->m_neuron_dims.size() == 3) {
+        if (h == 1) { s << "w x "; }
+        if (h == 2) { s << "h"; }
+      }else {
+        if (h > 1) {
+          s << " ";
+        }
+      }
+    }
+    s << ", " << m_activations->Width() << "s]";
+    return s.str();;
+  }
 
   /** Returns a string description of the data_layout */
-  std::string get_data_layout_string(data_layout d) const; 
+  std::string get_data_layout_string(data_layout d) const;
 
   /** Return the number of neurons from previous layer. */
   inline int get_num_prev_neurons() const {
@@ -183,8 +202,8 @@ class Layer {
   virtual bool saveToCheckpoint(int fd, const char *filename, size_t *bytes) const;
   virtual bool loadFromCheckpoint(int fd, const char *filename, size_t *bytes);
 
-  virtual bool saveToCheckpointShared(persist& p) const;
-  virtual bool loadFromCheckpointShared(persist& p);
+  virtual bool save_to_checkpoint_shared(persist& p) const;
+  virtual bool load_from_checkpoint_shared(persist& p);
 
   /** Get forward propagation output, as seen by next layer. */
   virtual void get_fp_output(AbsDistMat& fp_output, const Layer* next_layer = nullptr) const;
@@ -213,7 +232,7 @@ class Layer {
 
   virtual void add_to_error_signal(const AbsDistMat& gradient,
                                    DataType scale = DataType(1)) {
-    bp_set_std_matrix_view();    
+    bp_set_std_matrix_view();
     El::Axpy(scale, gradient, *m_error_signal_v);
   }
 
@@ -249,6 +268,8 @@ class Layer {
   std::vector<weights*> get_weights() { return m_weights; }
   /** Set list of pointers to weights. */
   void set_weights(std::vector<weights*> w) { m_weights = w; }
+  /** Replace weights with another Layer's weights*/
+  void replace_weights(Layer* other_layer);
 
  protected:
 

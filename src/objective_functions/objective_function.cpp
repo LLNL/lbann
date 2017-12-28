@@ -30,44 +30,37 @@
 
 namespace lbann {
 
-objective_function::objective_function() 
-  : m_model(nullptr) {}
-
 objective_function::objective_function(const objective_function& other)
-  : m_model(other.m_model),
-    m_history(other.m_history),
-    m_value_time(other.m_value_time),
-    m_gradient_time(other.m_gradient_time) {
-  for (objective_function_term *term : other.m_terms) {
-    m_terms.push_back(term->copy());
-    m_terms.back()->set_objective_function(this);
+  : m_statistics(other.m_statistics),
+    m_evaluation_time(other.m_evaluation_time),
+    m_differentiation_time(other.m_differentiation_time) {
+  m_terms = other.m_terms;
+  for (auto& term : m_terms) {
+    term = term->copy();
   }
 }
 
 objective_function& objective_function::operator=(const objective_function& other) {
-  m_model = other.m_model;
-  for (objective_function_term *term : m_terms) {
+  for (const auto& term : m_terms) {
     if (term != nullptr) { delete term; }
   }
-  m_terms.clear();
-  for (objective_function_term *term : other.m_terms) {
-    m_terms.push_back(term->copy());
-    m_terms.back()->set_objective_function(this);
+  m_terms = other.m_terms;
+  for (auto& term : m_terms) {
+    term = term->copy();
   }
-  m_history = other.m_history;
-  m_value_time = other.m_value_time;
-  m_gradient_time = other.m_gradient_time;
+  m_statistics = other.m_statistics;
+  m_evaluation_time = other.m_evaluation_time;
+  m_differentiation_time = other.m_differentiation_time;
   return *this;
 }
 
 objective_function::~objective_function() {
-  for (objective_function_term *term : m_terms) {
+  for (const auto& term : m_terms) {
     if (term != nullptr) { delete term; }
   }
 }
 
 void objective_function::setup(model& m) {
-  m_model = &m;
   for (objective_function_term *term : m_terms) {
     if (term == nullptr) {
       std::stringstream err;
@@ -75,40 +68,46 @@ void objective_function::setup(model& m) {
           << "a term in the objective function is a null pointer";
       throw lbann_exception(err.str());
     }
-    term->setup(*this);
+    term->setup(m);
   }
 }
 
-DataType objective_function::compute_value() {
-  double value_start = get_time();
-  auto value = DataType(0);
-  for (objective_function_term *term : m_terms) {
-    value += term->compute_value();
+EvalType objective_function::evaluate(execution_mode mode) {
+  const auto start_time = get_time();
+  EvalType value = EvalType(0);
+  for (const auto& term : m_terms) {
+    value += term->evaluate();
   }
-  m_history.push_back(value);
-  m_value_time += get_time() - value_start;
+  m_statistics[mode].add_value(value, 1);
+  m_evaluation_time += get_time() - start_time;
   return value;
 }
 
-void objective_function::compute_gradient() {
-  double gradient_start = get_time();
-  for (objective_function_term *term : m_terms) {
-    term->compute_gradient();
+void objective_function::differentiate() {
+  const auto start_time = get_time();
+  for (const auto& term : m_terms) {
+    term->differentiate();
   }
-  m_gradient_time += get_time() - gradient_start;
+  m_differentiation_time += get_time() - start_time;
 }
 
-DataType objective_function::get_history_mean_value() const {
-  if (m_history.size() == 0) {
+EvalType objective_function::get_mean_value(execution_mode mode) const {
+  if (m_statistics.count(mode) == 0
+      || m_statistics.at(mode).get_num_samples() == 0) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to get mean objective function value with no history";
+        << "attempted to get mean objective function value with no samples for statistics";
     throw lbann_exception(err.str());
   }
-  return (std::accumulate(m_history.begin(),
-                          m_history.end(),
-                          DataType(0))
-          / m_history.size());
+  return m_statistics.at(mode).get_mean();
+}
+
+int objective_function::get_statistics_num_samples(execution_mode mode) const {
+  if (m_statistics.count(mode) == 0) {
+    return 0;
+  } else {
+    return m_statistics.at(mode).get_num_samples();
+  }
 }
 
 std::vector<Layer*> objective_function::get_layer_pointers() const {
@@ -164,5 +163,20 @@ void objective_function::set_weights_pointers(std::vector<weights*> w) {
     throw lbann_exception(err.str());
   }
 }
+
+bool objective_function::save_to_checkpoint_shared(lbann::persist& p) {
+  for (objective_function_term *term : m_terms) {
+    term->save_to_checkpoint_shared(p);
+  }
+  return true;
+}
+
+bool objective_function::load_from_checkpoint_shared(lbann::persist& p) {
+  for (objective_function_term *term : m_terms) {
+    term->load_from_checkpoint_shared(p);
+  }
+  return true;
+}
+
 
 }  // namespace lbann

@@ -110,7 +110,7 @@ bool lbann::image_utils::load_image(const std::string& filename,
   cv::Mat image = cv::imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
   bool ok = !image.empty() && pp.preprocess(image);
   ok = ok && cv_utils::copy_cvMat_to_buf(image, buf, pp);
-  pp.disable_normalizer();
+  pp.disable_lazy_normalizer();
 
   _LBANN_MILD_EXCEPTION(!ok, "Image preprocessing or copying failed.", false)
 
@@ -126,7 +126,7 @@ bool lbann::image_utils::load_image(const std::string& filename,
 bool lbann::image_utils::save_image(const std::string& filename,
                                     const int Width, const int Height, const int Type, cv_process& pp, const std::vector<uint8_t>& buf) {
 #ifdef __LIB_OPENCV
-  pp.determine_inverse_normalization();
+  pp.determine_inverse_lazy_normalization();
   cv::Mat image = cv_utils::copy_buf_to_cvMat(buf, Width, Height, Type, pp);
   bool ok = !image.empty() && pp.postprocess(image);
 
@@ -155,7 +155,7 @@ bool lbann::image_utils::load_image(const std::string& filename,
   // Disabling normalizer is needed because normalizer is not necessarily
   // called during preprocessing but implicitly applied during data copying to
   // reduce overhead.
-  pp.disable_normalizer();
+  pp.disable_lazy_normalizer();
 
   _LBANN_MILD_EXCEPTION(!ok, "Image preprocessing or copying failed.", false)
 
@@ -194,7 +194,7 @@ bool lbann::image_utils::load_image(const std::string& filename,
   // Disabling normalizer is needed because normalizer is not necessarily
   // called during preprocessing but implicitly applied during data copying to
   // reduce overhead.
-  pp.disable_normalizer();
+  pp.disable_lazy_normalizer();
 
   _LBANN_MILD_EXCEPTION(!ok, "Image preprocessing or copying failed.", false)
 
@@ -218,7 +218,7 @@ bool lbann::image_utils::load_image(const std::string& filename,
 bool lbann::image_utils::save_image(const std::string& filename,
                                     const int Width, const int Height, const int Type, cv_process& pp, const ::Mat& data) {
 #ifdef __LIB_OPENCV
-  pp.determine_inverse_normalization();
+  pp.determine_inverse_lazy_normalization();
   cv::Mat image = cv_utils::copy_buf_to_cvMat(data, Width, Height, Type, pp);
   bool ok = !image.empty() && pp.postprocess(image);
 
@@ -246,7 +246,7 @@ bool lbann::image_utils::import_image(cv::InputArray inbuf,
   cv::Mat image = cv::imdecode(inbuf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
   bool ok = !image.empty() && pp.preprocess(image);
   ok = ok && cv_utils::copy_cvMat_to_buf(image, data, pp);
-  pp.disable_normalizer();
+  pp.disable_lazy_normalizer();
 
   _LBANN_MILD_EXCEPTION(!ok, "Image preprocessing or copying failed.", false)
 
@@ -284,7 +284,7 @@ bool lbann::image_utils::import_image(cv::InputArray inbuf,
     ok = cv_utils::copy_cvMat_to_buf(patches[i], data[i], pp);
   }
 
-  pp.disable_normalizer();
+  pp.disable_lazy_normalizer();
 
   _LBANN_MILD_EXCEPTION(!ok, "Image preprocessing or copying failed.", false)
 
@@ -309,7 +309,7 @@ bool lbann::image_utils::import_image(cv::InputArray inbuf,
 bool lbann::image_utils::export_image(const std::string& fileExt, std::vector<uchar>& outbuf,
                                       const int Width, const int Height, const int Type, cv_process& pp, const ::Mat& data) {
 #ifdef __LIB_OPENCV
-  pp.determine_inverse_normalization();
+  pp.determine_inverse_lazy_normalization();
   cv::Mat image = cv_utils::copy_buf_to_cvMat(data, Width, Height, Type, pp);
   bool ok = !image.empty() && pp.postprocess(image);
 
@@ -319,7 +319,7 @@ bool lbann::image_utils::export_image(const std::string& fileExt, std::vector<uc
   const std::string ext = ((fileExt[0] != '.')? ("." + fileExt) : fileExt);
 
   static const size_t max_img_header_size = 1024;
-  const size_t capacity = cv_utils::image_data_amount(image) + max_img_header_size;
+  const size_t capacity = image_data_amount(image) + max_img_header_size;
 
   if (outbuf.size() < capacity) {
     //std::cout << "bytes reserved for the image: " << image_data_amount(image) << std::endl;

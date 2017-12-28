@@ -38,6 +38,7 @@
 #include "lbann/comm.hpp"
 #include "lbann/utils/random.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
+#include "lbann/utils/stack_trace.hpp"
 
 namespace lbann {
 
@@ -75,6 +76,11 @@ lbann_comm* initialize(int& argc, char**& argv, int seed) {
   // Initialize local random number generators.
   init_random(seed);
   init_data_seq_random(seed);
+
+  //initialization for stack tracing when a signal is raised
+  //or an lbann_exception thrown.
+  stack_trace::set_lbann_stack_trace_world_rank(comm->get_rank_in_world());
+
   return comm;
 }
 

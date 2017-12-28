@@ -46,7 +46,7 @@ void lbann_callback_summary::on_train_begin(model *m) {
 
 void lbann_callback_summary::on_batch_end(model *m) {
   m->summarize_stats(*m_summarizer);
-  if (m->get_cur_step() % m_mat_interval == 0) {
+  if (m_mat_interval > 0 && m->get_cur_step() % m_mat_interval == 0) {
     m->summarize_matrices(*m_summarizer);
   }
   lbann_comm *comm = m->get_comm();
@@ -68,10 +68,10 @@ void lbann_callback_summary::on_batch_end(model *m) {
 }
 
 void lbann_callback_summary::on_epoch_end(model *m) {
-  for (auto&& metric : m->get_metrics()) {
-    double train_score = metric->report_metric(execution_mode::training);
+  for (const auto& met : m->get_metrics()) {
+    EvalType train_score = met->get_mean_value(m->get_execution_mode());
     // Replace spaces with _ for consistency.
-    std::string metric_name = metric->name();
+    std::string metric_name = met->name();
     std::transform(metric_name.begin(), metric_name.end(), metric_name.begin(),
                    [] (char c) { return c == ' ' ? '_' : c; });
     std::string phase = "train_" + metric_name;
@@ -83,10 +83,10 @@ void lbann_callback_summary::on_epoch_end(model *m) {
 
 void lbann_callback_summary::on_test_end(model *m) {
   lbann_comm *comm = m->get_comm();
-  for (auto&& metric : m->get_metrics()) {
-    double test_score = metric->report_metric(execution_mode::testing);
+  for (auto&& met : m->get_metrics()) {
+    EvalType test_score = met->get_mean_value(m->get_execution_mode());
     // Replace spaces with _ for consistency.
-    std::string metric_name = metric->name();
+    std::string metric_name = met->name();
     std::transform(metric_name.begin(), metric_name.end(), metric_name.begin(),
                    [] (char c) { return c == ' ' ? '_' : c; });
     std::string phase = "test_" + metric_name;

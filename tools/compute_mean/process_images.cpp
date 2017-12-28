@@ -28,7 +28,6 @@
 #include <string>
 #include <vector>
 #include "process_images.hpp"
-#include "lbann/data_readers/cv_utils.hpp"
 #include "lbann/data_readers/cv_process.hpp"
 #include "file_utils.hpp"
 #include "mean_image.hpp"
@@ -48,6 +47,7 @@ void setup_preprocessor(const params& mp, lbann::cv_process& pp, int& mean_extra
 
   // Initialize the image processor
   const cropper_params& cp = mp.get_cropper_params();
+  unsigned int n_ch = 3u;
 
   if (cp.m_is_set) { // If cropper parameters are given
     // Setup a cropper
@@ -57,17 +57,23 @@ void setup_preprocessor(const params& mp, lbann::cv_process& pp, int& mean_extra
     transform_idx ++;
   }
 
+  if (mp.to_enable_decolorizer()) { // Set up a decolorizer
+    std::unique_ptr<lbann::cv_decolorizer> decolorizer(new(lbann::cv_decolorizer));
+    pp.add_transform(std::move(decolorizer));
+    n_ch = 1u;
+    transform_idx ++;
+  }
+
   if (mp.to_enable_colorizer()) { // Set up a colorizer
     std::unique_ptr<lbann::cv_colorizer> colorizer(new(lbann::cv_colorizer));
     pp.add_transform(std::move(colorizer));
+    n_ch = 3u;
     transform_idx ++;
   }
 
   if (mp.to_enable_mean_extractor()) { // set up a mean extractor
     mean_extractor_idx = transform_idx;
     std::unique_ptr<lbann::cv_mean_extractor> mean_extractor(new(lbann::cv_mean_extractor));
-    // TODO: better logic is required to determine the fixed number of channels
-    const unsigned int n_ch = 3u; //(mp.to_enable_colorizer()? 3u : 1u);
     if (cp.m_is_set) {
       mean_extractor->set(cp.m_crop_sz.first, cp.m_crop_sz.second, n_ch, mp.get_mean_batch_size());
     } else {
@@ -137,7 +143,7 @@ bool process_images(const image_list& img_list, const params& mp,
 
     if (mp.to_write_cropped()) { // Export the cropped image
 
-      const size_t capacity = lbann::cv_utils::image_data_amount(image) + max_img_header_size;
+      const size_t capacity = lbann::image_data_amount(image) + max_img_header_size;
       if (outbuf.size() < capacity) {
         //std::cout << "bytes reserved for the image: " << image_data_amount(image) << std::endl;
         outbuf.resize(capacity);

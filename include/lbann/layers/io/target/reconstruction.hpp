@@ -116,13 +116,6 @@ class reconstruction_layer : public target_layer {
     //Copy prev (decoder) activations for greedy layer wise training
     El::Copy(*original_layer_act_v,*this->m_activations_v);
 
-    // Compute metrics
-    const int curr_mini_batch_size = this->m_model->get_current_mini_batch_size();
-    for (auto&& m : this->m_model->get_metrics()) {
-      double num_errors = m->compute_metric(*this->m_prev_activations_v, *original_layer_act_v);
-      m->record_error(num_errors, curr_mini_batch_size);
-    }
-
   }
 
   void bp_compute() override {}
@@ -138,7 +131,8 @@ class reconstruction_layer : public target_layer {
 
   void summarize_stats(lbann_summary& summarizer, int step) override {
     std::string tag = this->m_name + "/ReconstructionCost";
-    summarizer.reduce_scalar(tag, this->m_model->get_objective_function()->get_history_mean_value(), step);
+    execution_mode mode = this->m_model->get_execution_mode();
+    summarizer.reduce_scalar(tag, this->m_model->get_objective_function()->get_mean_value(mode), step);
     // Skip target layer (for now).
     io_layer::summarize_stats(summarizer, step);
   }

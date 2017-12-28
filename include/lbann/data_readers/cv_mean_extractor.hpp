@@ -92,6 +92,7 @@ class cv_mean_extractor : public cv_transform {
   void reset() override;
 
   bool determine_transform(const cv::Mat& image) override;
+  /// The transform does not modify the image. Thus, this has no effect.
   bool determine_inverse_transform() override;
   bool apply(cv::Mat& image) override;
 
