@@ -1338,8 +1338,11 @@ void init_callbacks(
         }
         weights_list.insert(model_weights[name]);
       }
-      lbann_callback_adaptive_learning_rate *learn
-        = new lbann_callback_adaptive_learning_rate(c.step(), c.amt(), weights_list);
+      lbann_callback_step_learning_rate *learn
+        = new lbann_callback_step_learning_rate(c.step(), c.amt(), weights_list);
+      if (master) {
+        std::cout << "adding step learning rate callback\n";
+      }
       model->add_callback(learn);
     }
 
