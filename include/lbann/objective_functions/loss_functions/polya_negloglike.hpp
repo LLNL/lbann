@@ -35,7 +35,7 @@ namespace lbann {
 class polya_negloglike : public loss_function {
  public:
   /** Default constructor. */
-  polya_negloglike(DataType scale_factor = DataType(1));
+  polya_negloglike(EvalType scale_factor = EvalType(1));
 
   /** Copy constructor. */
   polya_negloglike(const polya_negloglike& other);
@@ -65,7 +65,7 @@ class polya_negloglike : public loss_function {
    *  the predictions and ground truth matrices should have
    *  non-negative entries.
    */
-  DataType evaluate_compute(const AbsDistMat& prediction,
+  EvalType evaluate_compute(const AbsDistMat& prediction,
                             const AbsDistMat& ground_truth) override;
 
   /** Compute the gradient of the Polya negative log-likelihood objective function.

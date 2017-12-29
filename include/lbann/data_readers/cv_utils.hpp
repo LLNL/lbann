@@ -41,8 +41,6 @@ namespace lbann {
 
 class cv_utils {
  public:
-  static size_t image_data_amount(const cv::Mat& img);
-
 
   // copy_cvMat_to_buf (with a tempoary buffer)
   template<typename T = uint8_t, int NCh = 3>
@@ -104,9 +102,6 @@ class cv_utils {
    *  otherwise.
    */
   static cv::Mat copy_buf_to_cvMat(const ::Mat& buf, const int Width, const int Height, const int Type, const cv_process& pp);
-
-  static double get_depth_normalizing_factor(const int cv_depth);
-  static double get_depth_denormalizing_factor(const int cv_depth);
 };
 
 
@@ -419,20 +414,17 @@ inline cv::Mat cv_utils::copy_buf_to_cvMat_with_full_info(
     std::vector<cv::Mat> channels(NCh);
 
     if (std::is_same<DataType, T>::value) {
-      for(size_t ch=0; ch < NCh; ++ch, Pixels += sz)
+      for(size_t ch=0; ch < NCh; ++ch, Pixels += sz) {
         channels[ch] = cv::Mat(Height, Width, CV_MAKETYPE(image.depth(),1),
                                const_cast<DataType *>(Pixels));
+      }
 
       cv::merge(channels, image);
-
+      const auto *iptr = reinterpret_cast<const T *>(image.data);
       auto *optr = reinterpret_cast<T *>(image.data);
 
-      for(size_t ch=0; ch < NCh; ++ch, optr += sz) {
-        cv_normalizer::
-        scale(reinterpret_cast<const T *>(image.datastart),
-              reinterpret_cast<const T *>(image.dataend),
-              optr, {trans[ch]});
-      }
+      cv_normalizer::
+      scale(iptr, iptr+sz*NCh, optr, trans);
     } else {
       for(size_t ch=0; ch < NCh; ++ch, Pixels += sz) {
         channels[ch] = cv::Mat(Height, Width, CV_MAKETYPE(image.depth(),1));
@@ -489,16 +481,6 @@ inline cv::Mat cv_utils::copy_buf_to_cvMat_with_known_type(
   return cv::Mat();
 }
 //vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-
-template<typename T>
-static double depth_norm_factor() {
-  return depth_normalization<T>::factor();
-}
-
-template<typename T>
-static double depth_norm_inverse_factor() {
-  return depth_normalization<T>::inverse_factor();
-}
 
 } // end of namespace lbann
 #endif // LBANN_HAS_OPENCV

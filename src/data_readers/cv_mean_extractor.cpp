@@ -27,7 +27,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/cv_mean_extractor.hpp"
-#include "lbann/data_readers/cv_utils.hpp"
 #include "lbann/utils/mild_exception.hpp"
 #include "lbann/utils/exception.hpp"
 
@@ -125,9 +124,7 @@ bool cv_mean_extractor::determine_transform(const cv::Mat& image) {
    
     m_enabled = true;
   } else {
-    m_enabled = ((m_avg.cols == image.cols) &&
-                 (m_avg.rows == image.rows) &&
-                 (m_avg.channels() == image.channels()));
+    m_enabled = check_if_cv_Mat_has_same_shape(image, m_avg);
   }
   return m_enabled;
 }
@@ -139,7 +136,7 @@ bool cv_mean_extractor::determine_inverse_transform() {
 
 bool cv_mean_extractor::apply(cv::Mat& image) {
   m_enabled = false; // turn off as the transform is applied once
-  const double f = cv_utils::get_depth_normalizing_factor(image.depth());
+  const double f = get_depth_normalizing_factor(image.depth());
   cv::addWeighted(m_sum, 1.0, image, f, 0.0, m_sum, m_type_code);
   if (++m_partial_cnt == m_batch_size) {
     m_partial_cnt = 0u;

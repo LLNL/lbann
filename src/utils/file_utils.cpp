@@ -25,25 +25,38 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "file_utils.hpp"
+#include "lbann/utils/file_utils.hpp"
 #include <algorithm>
+#include <fstream>
+//#include <iostream> // std::cerr
 
-namespace tools_compute_mean {
+namespace lbann {
 
-struct delimiter {
-  bool operator()(char ch) const {
-    return ch == (std::string(__DIR_DELIMITER))[0];
-    //return ch == '/';
-    //return ch == '\\' || ch == '/';
+const std::string path_delimiter::characters = "/";
+
+
+std::vector<int> get_tokens(const std::vector<char> delims, std::string str) {
+  std::vector<int> tokens;
+  size_t pos;
+
+  for (const auto d : delims) {
+    pos = str.find_first_of(d);
+    if (pos == std::string::npos) {
+     // std::cerr << "Not able to split " << str << " by " << d << std::endl;
+      return std::vector<int>();
+    }
+    tokens.push_back(atoi(str.substr(0, pos).c_str()));
+    str = str.substr(pos+1, str.size());
   }
-};
 
+  return tokens;
+}
 
 /// Divide a given path into dir and basename.
 bool parse_path(const std::string& path, std::string& dir, std::string& basename) {
-  std::string::const_iterator nb = std::find_if(path.rbegin(), path.rend(), delimiter()).base();
+  std::string::const_iterator nb =
+    std::find_if(path.rbegin(), path.rend(), path_delimiter()).base();
   dir =  std::string(path.begin(), nb);
-  //if (dir.size() == 0u) dir = "." + __DIR_DELIMITER;
   basename = std::string(nb, path.end());
   if (basename.empty()) {
     return false;
@@ -87,25 +100,23 @@ std::string get_basename_without_ext(const std::string file_name) {
  * If "" is given, it will do nothing
  */
 std::string add_delimiter(const std::string dir) {
-  if (dir == "") {
+  if (dir.empty()) {
     return "";
   }
   std::string new_dir(dir);
-  const std::string delim = std::string(__DIR_DELIMITER);
 
-  if ((new_dir.size()>0u) && (new_dir[new_dir.size()-1] != delim[delim.size()-1])) {
-    new_dir.append(__DIR_DELIMITER);
+  if (!path_delimiter::check(new_dir.back())) {
+    new_dir.append(path_delimiter::preferred());
   }
 
   return new_dir;
 }
 
-
+ 
 /// Return true if a file with the given name exists.
 bool check_if_file_exists(const std::string& filename) {
-  std::ifstream ifile(filename.c_str());
-  return ifile.good();
-  //return ifile; // C++11
+  std::ifstream ifile(filename);
+  return static_cast<bool>(ifile);
 }
 
 
@@ -132,11 +143,11 @@ bool check_if_dir_exists(const std::string& dirname) {
  */
 bool create_dir(const std::string dirname) {
   std::string dir = dirname;
-  if ((dir != "") && (dir.back() == (std::string(__DIR_DELIMITER))[0])) {
+  if (!dir.empty() && path_delimiter::check(dir.back())) {
     dir.pop_back();
   }
 
-  if (dir == "") {
+  if (dir.empty()) {
     return true;
   }
 
@@ -161,4 +172,4 @@ bool create_dir(const std::string dirname) {
   return true;
 }
 
-} // end of namespace tools_compute_mean
+} // end of namespace lbann

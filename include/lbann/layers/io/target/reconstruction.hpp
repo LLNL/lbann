@@ -131,7 +131,8 @@ class reconstruction_layer : public target_layer {
 
   void summarize_stats(lbann_summary& summarizer, int step) override {
     std::string tag = this->m_name + "/ReconstructionCost";
-    summarizer.reduce_scalar(tag, this->m_model->get_objective_function()->get_history_mean_value(), step);
+    execution_mode mode = this->m_model->get_execution_mode();
+    summarizer.reduce_scalar(tag, this->m_model->get_objective_function()->get_mean_value(mode), step);
     // Skip target layer (for now).
     io_layer::summarize_stats(summarizer, step);
   }

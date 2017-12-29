@@ -257,17 +257,30 @@ bool model::is_execution_mode_valid(execution_mode mode) const {
   return true;
 }
 
-bool model::is_topologically_sorted() const {
-  std::unordered_set<const Layer *> previous_layers;
-  for (const auto& layer : m_layers) {
-    for (const auto& parent : layer->get_parent_layers()) {
-      if (previous_layers.count(parent) == 0) {
-        return false;
-      }
-    }
-    previous_layers.insert(layer);
+void model::construct_layer_graph(std::set<int>& nodes,
+                                  std::map<int,std::set<int>>& edges) const {
+  nodes.clear();
+  edges.clear();
+  const int num_layers = m_layers.size();
+  std::unordered_map<const Layer *,int> layer_indices;
+  for (int node = 0; node < num_layers; ++node) {
+    nodes.insert(node);
+    layer_indices[m_layers[node]] = node;
   }
-  return true;
+  std::vector<std::set<int>> layer_graph(num_layers);
+  for (int node = 0; node < num_layers; ++node) {
+    for (const auto& child : m_layers[node]->get_child_layers()) {
+      edges[node].insert(layer_indices[child]);
+    }
+  }
+}
+
+void model::permute_layers(const std::vector<int>& permutation) {
+  const auto original_layers = m_layers;
+  m_layers.clear();
+  for (const auto& i : permutation) {
+    m_layers.push_back(original_layers[i]);
+  }
 }
 
 std::string model::print_layer_description(const Layer* layer) const {
@@ -474,9 +487,6 @@ void model::evaluate(execution_mode mode) {
   do_evaluate_begin_cbs(mode);
   while (!evaluate_mini_batch(mode)) {}
   do_evaluate_end_cbs(mode);
-  /// @todo BVE - We need to make the objective function work across
-  /// execution modes while saving state so that an LTFB round does
-  /// not interfere with the training objective function
   reset_epoch_statistics(mode);
 }
 
@@ -515,7 +525,7 @@ void model::reset_mode_and_model(execution_mode mode) {
 
 // At the end of the epoch, clean up the objective function and metrics
 void model::reset_epoch_statistics(execution_mode mode) {
-  m_objective_function->clear_history();
+  m_objective_function->reset_statistics(mode);
   for (const auto& m : m_metrics) {
     m->reset_statistics(mode);
   }
@@ -524,7 +534,7 @@ void model::reset_epoch_statistics(execution_mode mode) {
 bool model::evaluate_mini_batch(execution_mode mode) {
   do_batch_begin_cbs(mode);
   forward_prop(mode);
-  m_objective_function->evaluate();
+  m_objective_function->evaluate(mode);
   for (const auto& m : m_metrics) {
     m->evaluate(mode);
   }
@@ -548,7 +558,7 @@ bool model::train_mini_batch() {
 
   // Forward prop step
   forward_prop(execution_mode::training);
-  m_objective_function->evaluate();
+  m_objective_function->evaluate(execution_mode::training);
   for (const auto& m : m_metrics) {
     m->evaluate(execution_mode::training);
   }
@@ -874,15 +884,15 @@ void model::summarize_stats(lbann_summary& summarizer) {
     layer->summarize_stats(summarizer, get_cur_step());
   }
   summarizer.reduce_scalar("objective",
-                           m_objective_function->get_history_mean_value(),
+                           m_objective_function->get_mean_value(m_execution_mode),
                            get_cur_step());
   summarizer.reduce_scalar(
-    "objective_value_time",
-    m_objective_function->get_value_time(),
+    "objective_evaluation_time",
+    m_objective_function->get_evaluation_time(),
     get_cur_step());
   summarizer.reduce_scalar(
-    "objective_gradient_time",
-    m_objective_function->get_gradient_time(),
+    "objective_differentiation_time",
+    m_objective_function->get_differentiation_time(),
     get_cur_step());
   m_objective_function->reset_counters();
 }

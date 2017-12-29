@@ -82,7 +82,7 @@ bool cv_process_patches::preprocess(cv::Mat& image, std::vector<cv::Mat>& patche
   patches.clear();
 
   ok = cv_process::preprocess(image, 0u, m_when_to_extract);
-  ok = m_pd.extract_patches(image, patches);
+  ok = ok && m_pd.extract_patches(image, patches);
 
   for (size_t i=0u; ok && (i < patches.size()); ++i) {
     ok = cv_process::preprocess(patches[i], m_when_to_extract);

@@ -29,7 +29,7 @@
 
 namespace lbann {
 
-loss_function::loss_function(DataType scale_factor)
+loss_function::loss_function(EvalType scale_factor)
   : objective_function_term(scale_factor),
     m_gradient(nullptr) {}
 
@@ -111,8 +111,8 @@ void loss_function::setup(model& m) {
 
 }
 
-DataType loss_function::evaluate() {
-  if (m_scale_factor == DataType(0)) { return DataType(0); }
+EvalType loss_function::evaluate() {
+  if (m_scale_factor == EvalType(0)) { return EvalType(0); }
   auto *target = (target_layer*) m_layers[0];
   const AbsDistMat& prediction = target->get_prediction();
   const AbsDistMat& ground_truth = target->get_ground_truth();
@@ -120,13 +120,13 @@ DataType loss_function::evaluate() {
 }
 
 void loss_function::differentiate() {
-  if (m_scale_factor == DataType(0)) { return; }
+  if (m_scale_factor == EvalType(0)) { return; }
   auto *target = (target_layer*) m_layers[0];
   const AbsDistMat& prediction = target->get_prediction();
   const AbsDistMat& ground_truth = target->get_ground_truth();
   El::Zeros(*m_gradient, prediction.Height(), prediction.Width());
   differentiate_compute(prediction, ground_truth, *m_gradient);
-  target->add_to_error_signal(*m_gradient, m_scale_factor);
+  target->add_to_error_signal(*m_gradient, DataType(m_scale_factor));
 }
 
   bool loss_function::save_to_checkpoint_shared(persist& p)  {

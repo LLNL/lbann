@@ -49,7 +49,10 @@ void sequential_model::setup_layer_topology() {
   }
 
   // Make sure that execution order is valid
-  if (!is_topologically_sorted()) {
+  std::set<int> nodes;
+  std::map<int,std::set<int>> edges;
+  construct_layer_graph(nodes, edges);
+  if (!graph::is_topologically_sorted(nodes, edges)) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
         << "layer execution order is not topologically sorted";

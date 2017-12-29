@@ -10,7 +10,9 @@ include(${LBANN_DIR}/cmake/MPI.cmake)
 include(${LBANN_DIR}/cmake/OpenMP.cmake)
 
 set(COMPUTE_MEAN_EXE compute_mean)
-set(COMPUTE_MEAN_TEST_SRCS compute_mean.cpp)
+set(COMPUTE_MEAN_SRCS compute_mean.cpp)
+set(UNIFORM_MEAN_EXE uniform_mean)
+set(UNIFORM_MEAN_SRCS uniform_mean.cpp)
 set(WITH_OPENCL OFF)
 
 add_definitions(-Wall)
@@ -42,8 +44,7 @@ message(STATUS "Found MPI: ${MPI_CXX_COMPILER} ${MPI_C_COMPILER} ${MPI_Fortran_C
 include_directories(${MPI_CXX_INCLUDE_PATH})
 
 
-file(GLOB COMPUTE_MEAN_SRCS
-     file_utils.cpp
+file(GLOB COMPUTE_MEAN_DEPEND_SRCS
      mpi_states.cpp
      walltimes.cpp
      params.cpp
@@ -51,19 +52,28 @@ file(GLOB COMPUTE_MEAN_SRCS
      mean_image.cpp
      process_images.cpp
      lbann/utils/random.cpp
+     lbann/utils/file_utils.cpp
      ${LBANN_DIR}/src/data_readers/cv_augmenter.cpp
      ${LBANN_DIR}/src/data_readers/cv_colorizer.cpp
+     ${LBANN_DIR}/src/data_readers/cv_cropper.cpp
      ${LBANN_DIR}/src/data_readers/cv_decolorizer.cpp
+     ${LBANN_DIR}/src/data_readers/cv_mean_extractor.cpp
      ${LBANN_DIR}/src/data_readers/cv_normalizer.cpp
      ${LBANN_DIR}/src/data_readers/cv_process.cpp
      ${LBANN_DIR}/src/data_readers/cv_process_patches.cpp
-     ${LBANN_DIR}/src/data_readers/cv_cropper.cpp
-     ${LBANN_DIR}/src/data_readers/cv_mean_extractor.cpp
-     ${LBANN_DIR}/src/data_readers/cv_utils.cpp
+     ${LBANN_DIR}/src/data_readers/cv_subtractor.cpp
+     ${LBANN_DIR}/src/data_readers/cv_transform.cpp
      ${LBANN_DIR}/src/data_readers/patchworks/patchworks.cpp
      ${LBANN_DIR}/src/data_readers/patchworks/patchworks_patch_descriptor.cpp
      ${LBANN_DIR}/src/data_readers/patchworks/patchworks_ROI.cpp
      ${LBANN_DIR}/src/data_readers/patchworks/patchworks_stats.cpp)
 
-add_executable(${COMPUTE_MEAN_EXE} ${COMPUTE_MEAN_SRCS} ${COMPUTE_MEAN_TEST_SRCS} )
+file(GLOB UNIFORM_MEAN_DEPEND_SRCS
+     lbann/utils/file_utils.cpp
+     ${LBANN_DIR}/src/data_readers/cv_transform.cpp
+     ${LBANN_DIR}/src/data_readers/cv_subtractor.cpp)
+
+add_executable(${COMPUTE_MEAN_EXE} ${COMPUTE_MEAN_SRCS} ${COMPUTE_MEAN_DEPEND_SRCS})
 target_link_libraries(${COMPUTE_MEAN_EXE} ${OpenCV_LIBS} ${Elemental_LIBS} ${MPI_CXX_LIBRARIES})
+add_executable(${UNIFORM_MEAN_EXE} ${UNIFORM_MEAN_SRCS} ${UNIFORM_MEAN_DEPEND_SRCS})
+target_link_libraries(${UNIFORM_MEAN_EXE} ${OpenCV_LIBS})

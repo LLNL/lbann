@@ -38,7 +38,7 @@ class objective_function_term {
  public:
 
   /** Default constructor. */
-  objective_function_term(DataType scale_factor = DataType(1));
+  objective_function_term(EvalType scale_factor = EvalType(1));
 
   /** Copy constructor. */
   objective_function_term(const objective_function_term& other) = default;
@@ -58,7 +58,7 @@ class objective_function_term {
   /** Evaluate the objective function term.
    *  This should include the scaling factor.
    */
-  virtual DataType evaluate() = 0;
+  virtual EvalType evaluate() = 0;
   
   /** Compute the gradient of the objective function term.
    *  The gradient is computed w.r.t. the objective function term
@@ -82,7 +82,7 @@ class objective_function_term {
  protected:
 
   /** Scaling factor for objective function term. */
-  DataType m_scale_factor;
+  EvalType m_scale_factor;
 
   /** Layers used to compute objective function term. */
   std::vector<Layer*> m_layers;

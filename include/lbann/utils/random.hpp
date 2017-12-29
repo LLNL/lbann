@@ -33,8 +33,8 @@
 
 namespace lbann {
 
-typedef std::mt19937 rng_gen;  // Mersenne Twister
-typedef std::minstd_rand fast_rng_gen;  // Minimum standard, LC
+using rng_gen = std::mt19937;  // Mersenne Twister
+using fast_rng_gen = std::minstd_rand;  // Minimum standard, LC
 
 /**
  * Return a reference to the global LBANN random number generator.

@@ -52,6 +52,10 @@ using ColSumStarVCMat = El::DistMatrix<lbann::DataType, El::VC, El::STAR>;
 using BlockMat = El::BlockMatrix<lbann::DataType>;
 using ElMat = El::ElementalMatrix<lbann::DataType>;
 
+// Datatype for model evaluation
+// Examples: timing, metrics, objective functions
+using EvalType = double;
+
 /// Distributed matrix format
 enum class matrix_format {MC_MR, CIRC_CIRC, STAR_STAR, STAR_VC, MC_STAR, invalid};
 

@@ -105,10 +105,6 @@ void mnist_reader::load() {
   __swapEndianInt((unsigned int&)magicnum1);
   __swapEndianInt((unsigned int&)numitems1);
 
-  if (is_master()) {
-    std::cerr << "XX starting read images\n";
-  }
-
   // read images
   FILE *fpimg = fopen(imagepath.c_str(), "rb");
   if (!fpimg) {
@@ -116,29 +112,16 @@ void mnist_reader::load() {
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
       " :: MNIST data reader: failed to open file: " + imagepath);
   }
-  if (is_master()) {
-    std::cerr << "XX file opened!\n";
-  }
 
   int magicnum2, numitems2, imgwidth, imgheight;
   fread(&magicnum2, 4, 1, fpimg);
-  if (is_master()) {
-    std::cerr << "XX read, 1\n";
-  }
   fread(&numitems2, 4, 1, fpimg);
-    std::cerr << "XX read, 2\n";
   fread(&imgwidth, 4, 1, fpimg);
-    std::cerr << "XX read, 3\n";
   fread(&imgheight, 4, 1, fpimg);
-    std::cerr << "XX read, 4\n";
   __swapEndianInt((unsigned int&)magicnum2);
-    std::cerr << "XX swap 1\n";
   __swapEndianInt((unsigned int&)numitems2);
-    std::cerr << "XX swap 2\n";
   __swapEndianInt((unsigned int&)imgwidth);
-    std::cerr << "XX swap 3\n";
   __swapEndianInt((unsigned int&)imgheight);
-    std::cerr << "XX swap 4\n";
 
   if (numitems1 != numitems2) {
     fclose(fplbl);
@@ -157,7 +140,6 @@ void mnist_reader::load() {
   // set to array
   m_image_data.resize(numitems1);
   for (int n = 0; n < numitems1; n++) {
-if (n % 100 == 0) std::cerr << "XX read " << n << " of " << numitems1 << std::endl;
     m_image_data[n].resize(1+(imgwidth * imgheight));
     fread(&m_image_data[n][0], 1, 1, fplbl);
     fread(&m_image_data[n][1], imgwidth * imgheight, 1, fpimg);

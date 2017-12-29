@@ -33,19 +33,6 @@
 #ifdef LBANN_HAS_OPENCV
 namespace lbann {
 
-const constexpr char* const cv_transform::cv_flip_desc[];
-
-/** The mathematical constant (this is the way to get it in C++). */
-const float cv_transform::pi = static_cast<float>(std::acos(-1));
-
-
-/// returns the number of bytes that would be used for the image without compresstion and any header
-size_t cv_utils::image_data_amount(const cv::Mat& img) {
-  return static_cast<size_t>(CV_ELEM_SIZE(img.depth())*
-                             CV_MAT_CN(img.type())*
-                             img.cols*img.rows);
-}
-
 
 bool cv_utils::copy_cvMat_to_buf(const cv::Mat& image, std::vector<uint8_t>& buf, const cv_process& pp) {
   _LBANN_SILENT_EXCEPTION(image.empty(), "", false)
@@ -95,26 +82,12 @@ cv::Mat cv_utils::copy_buf_to_cvMat(const ::Mat& buf,
   return cv::Mat();
 }
 
+
 std::ostream& operator<<(std::ostream& os, const cv_transform& tr) {
   tr.print(os);
   return os;
 }
 
-double cv_utils::get_depth_normalizing_factor(const int cv_depth) {
-  _SWITCH_CV_FUNC_1PARAM(cv_depth, depth_norm_factor, );
-  std::stringstream err;
-  err << __FILE__ << " " << __LINE__ << " :: cv_utils::get_depth_normalizing_factor(): invalid depth code";
-  throw lbann_exception(err.str());
-  return 1.0;
-}
-
-double cv_utils::get_depth_denormalizing_factor(const int cv_depth) {
-  _SWITCH_CV_FUNC_1PARAM(cv_depth, depth_norm_inverse_factor, );
-  std::stringstream err;
-  err << __FILE__ << " " << __LINE__ << " :: cv_utils::get_depth_denormalizing_factor(): invalid depth code";
-  throw lbann_exception(err.str());
-  return 1.0;
-}
 
 } // end of namespace lbann
 #endif // LBANN_HAS_OPENCV

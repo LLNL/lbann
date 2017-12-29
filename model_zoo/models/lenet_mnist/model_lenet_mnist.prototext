@@ -41,13 +41,13 @@ model {
     }
   }
 
-  callback {
-    checkpoint {
-      checkpoint_dir: "test"
-      checkpoint_epochs: 1
-      #checkpoint_secs: 7  
-    }
-  }
+  # callback {
+  #   checkpoint {
+  #     checkpoint_dir: "test"
+  #     checkpoint_epochs: 1
+  #     #checkpoint_secs: 7
+  #   }
+  # }
   # callback {
   #   debug {
   #     phase: "test"

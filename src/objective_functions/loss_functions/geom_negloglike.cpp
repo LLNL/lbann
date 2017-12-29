@@ -28,7 +28,7 @@
 
 namespace lbann {
 
-DataType geom_negloglike::evaluate_compute(const AbsDistMat& predictions,
+EvalType geom_negloglike::evaluate_compute(const AbsDistMat& predictions,
                                            const AbsDistMat& ground_truth) {
 
   // Local matrices
@@ -41,13 +41,13 @@ DataType geom_negloglike::evaluate_compute(const AbsDistMat& predictions,
   const int local_width = predictions_local.Width();
 
   // Compute sum of terms
-  DataType sum = 0;
+  EvalType sum = EvalType(0);
 #pragma omp parallel for reduction(+:sum) collapse(2)
   for (int col = 0; col < local_width; ++col) {
     for (int row = 0; row < local_height; ++row) {
-      const DataType true_val = ground_truth_local(row, col);
-      const DataType pred_val = predictions_local(row, col);
-      sum += (- true_val * std::log(DataType(1) - pred_val)
+      const EvalType true_val = ground_truth_local(row, col);
+      const EvalType pred_val = predictions_local(row, col);
+      sum += (- true_val * std::log(EvalType(1) - pred_val)
               - std::log(pred_val));
     }
   }

@@ -37,7 +37,7 @@ namespace lbann {
 class mean_absolute_deviation_loss : public loss_function {
  public:
   /** Default constructor. */
-  mean_absolute_deviation_loss(DataType scale_factor = DataType(1)) 
+  mean_absolute_deviation_loss(EvalType scale_factor = EvalType(1)) 
     : loss_function(scale_factor) {}
 
   /** Copy constructor. */
@@ -63,7 +63,7 @@ class mean_absolute_deviation_loss : public loss_function {
    *  This function updates the objective function value with the mean
    *  value of the mean absolute deviation across the mini-batch.
    */
-  DataType evaluate_compute(const AbsDistMat& prediction,
+  EvalType evaluate_compute(const AbsDistMat& prediction,
                             const AbsDistMat& ground_truth) override;
 
   /** Compute the mean absolution deviation gradient.

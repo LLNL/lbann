@@ -28,7 +28,6 @@
 #include <string>
 #include <vector>
 #include "process_images.hpp"
-#include "lbann/data_readers/cv_utils.hpp"
 #include "lbann/data_readers/cv_process.hpp"
 #include "file_utils.hpp"
 #include "mean_image.hpp"
@@ -144,7 +143,7 @@ bool process_images(const image_list& img_list, const params& mp,
 
     if (mp.to_write_cropped()) { // Export the cropped image
 
-      const size_t capacity = lbann::cv_utils::image_data_amount(image) + max_img_header_size;
+      const size_t capacity = lbann::image_data_amount(image) + max_img_header_size;
       if (outbuf.size() < capacity) {
         //std::cout << "bytes reserved for the image: " << image_data_amount(image) << std::endl;
         outbuf.resize(capacity);
