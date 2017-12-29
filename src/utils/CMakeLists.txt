@@ -2,6 +2,7 @@
 set_full_path(THIS_DIR_SOURCES
   cudnn_wrapper.cpp
   file_utils.cpp
+  graph.cpp
   im2col.cpp
   omp_diagnostics.cpp
   options.cpp
