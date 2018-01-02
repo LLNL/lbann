@@ -1604,6 +1604,17 @@ void init_callbacks(
         lbann_callback_checkpoint(c.checkpoint_dir(), c.checkpoint_epochs(), c.checkpoint_steps(), c.checkpoint_secs(), c.checkpoint_per_rank());
       model->add_callback(checkpoint_cb);
     }
+
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: save_model
+    //////////////////////////////////////////////////////////////////
+    if (callback.has_save_model()) {
+      const lbann_data::CallbackSaveModel& c = callback.save_model();
+      std::string dir = c.dir();
+      std::string extension = c.extension();
+      lbann_callback_save_model *model_cb = new lbann_callback_save_model(dir, extension);
+      model->add_callback(model_cb);
+    }
   }
 
 }
