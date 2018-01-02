@@ -28,8 +28,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/cv_subtractor.hpp"
-#include "lbann/data_readers/cv_utils.hpp"
+#include "lbann/utils/exception.hpp"
 #include "lbann/utils/mild_exception.hpp"
+#include "lbann/utils/file_utils.hpp"
+#include <iostream>
+#include <fstream>
+#include <iterator>
 
 #ifdef __LIB_OPENCV
 namespace lbann {
@@ -50,16 +54,80 @@ cv_subtractor *cv_subtractor::clone() const {
   return (new cv_subtractor(*this));
 }
 
+/**
+ * Load an image in the file of the proprietary format.
+ * The file name describes the image configuration as:
+ *   *-(width)x(height)x(num_channels)-(opencv_depth_code).bin
+ * There is no header in the file. The file is a binary dump of an OpenCV cv::Mat data.
+ * For the better portability, an existing format can be used to carry image data.
+ */
+cv::Mat cv_subtractor::read_binary_image_file(const std::string filename) {
+  std::vector<int> tokens;
+  { // Extract the information on the image from the file name
+    const std::vector<char> delims = {'-', 'x','x','-','.'};
+    std::string dir;
+    std::string basename;
+
+    parse_path(filename, dir, basename);
+    tokens = get_tokens(delims, basename);
+    if (tokens.size() != delims.size()) {
+      return cv::Mat();
+    }
+  }
+
+  std::ifstream file(filename, std::ios::binary);
+  if (!file.good()) {
+    return cv::Mat();
+  }
+  file.unsetf(std::ios::skipws);
+
+  { // Check file size
+    const size_t image_byte_size
+      = tokens[1] * tokens[2] * tokens[3] * CV_ELEM_SIZE(tokens[4]);
+
+    file.seekg(0, std::ios::end);
+    const size_t file_size = static_cast<size_t>(file.tellg());
+    if (image_byte_size != file_size) {
+      return cv::Mat();
+    }
+  }
+
+  // Construct an image data structure
+  cv::Mat image(tokens[1], tokens[2], CV_MAKETYPE(tokens[4], tokens[3]));
+
+  // Reset the file pointer
+  file.seekg(0, std::ios::beg);
+
+  // Load the image from the file
+  std::copy(std::istream_iterator<unsigned char>(file),
+            std::istream_iterator<unsigned char>(),
+            reinterpret_cast<unsigned char*>(image.data));
+
+  return image;
+}
+
 void cv_subtractor::set(const std::string name_of_img_to_sub, const int depth_code) {
-  // TODO: check extention and load appropriately
-  cv::Mat img_to_sub = cv::imread(name_of_img_to_sub);
+  cv::Mat img_to_sub;
+  std::string ext = get_ext_name(name_of_img_to_sub);
+  std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+  if (ext == "bin") {
+    img_to_sub = read_binary_image_file(name_of_img_to_sub);
+  } else { // let OpenCV handle
+    img_to_sub = cv::imread(name_of_img_to_sub);
+  }
+  if (img_to_sub.empty()) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: cv_subtractor: cannot load the image "
+        << name_of_img_to_sub << " to subtract.";
+    throw lbann_exception(err.str());
+  }
   set(img_to_sub, depth_code);
 }
 
 void cv_subtractor::set(const cv::Mat& image, const int depth_code) {
   reset();
 
-  const double f = cv_utils::get_depth_normalizing_factor(image.depth());
+  const double f = get_depth_normalizing_factor(image.depth());
 
   // Make sure that the image is set as a floating point type image
   // Note that this is the only way to set m_img_to_sub. This means that
@@ -95,13 +163,13 @@ bool cv_subtractor::determine_inverse_transform() {
 bool cv_subtractor::apply(cv::Mat& image) {
   m_enabled = false; // turn off as the transform is applied once
   if (m_subtracted) { // inverse if applied already
-    const double f = cv_utils::get_depth_denormalizing_factor(CV_8U);
+    const double f = get_depth_denormalizing_factor(CV_8U);
     cv::Mat image_sub;
     cv::addWeighted(m_img_to_sub, f, image, 1.0, 0.0, image_sub, CV_8U);
     image = image_sub;
     m_subtracted = false;
   } else {
-    const double f = cv_utils::get_depth_normalizing_factor(image.depth());
+    const double f = get_depth_normalizing_factor(image.depth());
     cv::Mat image_sub;
     cv::addWeighted(m_img_to_sub, -1.0, image, f, 0.0, image_sub, m_img_to_sub.depth());
     image = image_sub;
@@ -120,7 +188,9 @@ std::string cv_subtractor::get_description() const {
 std::ostream& cv_subtractor::print(std::ostream& os) const {
   os << get_description()
      << " - configuration of the image to subtract: "
-     << m_img_to_sub.cols << 'x' << m_img_to_sub.rows << 'x' << m_img_to_sub.channels() << std::endl;
+     << m_img_to_sub.cols << 'x' << m_img_to_sub.rows
+     << 'x' << m_img_to_sub.channels()
+     << '-' << m_img_to_sub.depth() << std::endl;
   return os;
 }
 

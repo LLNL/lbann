@@ -23,47 +23,32 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_exception .hpp .cpp - LBANN exception class
+// cv_transform .cpp .hpp - base class for the transformation
+//                          on image data in opencv format
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_EXCEPTION_HPP_INCLUDED
-#define LBANN_EXCEPTION_HPP_INCLUDED
+#include "lbann/data_readers/cv_transform.hpp"
 
-#include "lbann/base.hpp"
-#include "lbann/comm.hpp"
-#include "lbann/utils/stack_trace.hpp"
-#include <iostream>
-#include <exception>
-
+#ifdef __LIB_OPENCV
 namespace lbann {
 
-class lbann_exception : public std::exception {
- public:
-  lbann_exception(const std::string m="my custom exception"):msg(m) { 
-    stack_trace::print_lbann_exception_stack_trace(msg);
-  }
+const constexpr char* const cv_transform::cv_flip_desc[];
 
-  ~lbann_exception() override {}
-  const char *what() const noexcept override {
-    return msg.c_str();
-  }
+/** The mathematical constant (this is the way to get it in C++). */
+const float cv_transform::pi = static_cast<float>(std::acos(-1));
 
- private:
-  std::string msg;
-};
-
-inline void lbann_report_exception( lbann_exception& e, lbann_comm *comm=nullptr, std::ostream& os=std::cerr) {
-  if( std::string(e.what()) != "" ) {
-    if(comm != nullptr) {
-      os << "LBANN: rank " << comm->get_rank_in_model() << " of model " << comm->get_model_rank() <<" caught error message:";
-    } else {
-      os << "LBANN: caught error message:";
-    }
-    os << "\t" << e.what() << std::endl;
-  }
-  El::mpi::Abort( El::mpi::COMM_WORLD, 1 );
-}
+double get_depth_normalizing_factor(const int cv_depth) {
+  _SWITCH_CV_FUNC_1PARAM(cv_depth, depth_norm_factor, );
+  // The caller must check the exception by detecting 0.0
+  return 0.0;
 }
 
+double get_depth_denormalizing_factor(const int cv_depth) {
+  _SWITCH_CV_FUNC_1PARAM(cv_depth, depth_norm_inverse_factor, );
+  // The caller must check the exception by detecting 0.0
+  return 0.0;
+}
 
-#endif // LBANN_EXCEPTION_HPP_INCLUDED
+} // end of namespace lbann
+
+#endif // __LIB_OPENCV

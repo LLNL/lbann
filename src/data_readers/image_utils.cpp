@@ -319,7 +319,7 @@ bool lbann::image_utils::export_image(const std::string& fileExt, std::vector<uc
   const std::string ext = ((fileExt[0] != '.')? ("." + fileExt) : fileExt);
 
   static const size_t max_img_header_size = 1024;
-  const size_t capacity = cv_utils::image_data_amount(image) + max_img_header_size;
+  const size_t capacity = image_data_amount(image) + max_img_header_size;
 
   if (outbuf.size() < capacity) {
     //std::cout << "bytes reserved for the image: " << image_data_amount(image) << std::endl;

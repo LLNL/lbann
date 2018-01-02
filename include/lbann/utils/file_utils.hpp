@@ -23,47 +23,38 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_exception .hpp .cpp - LBANN exception class
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_EXCEPTION_HPP_INCLUDED
-#define LBANN_EXCEPTION_HPP_INCLUDED
-
-#include "lbann/base.hpp"
-#include "lbann/comm.hpp"
-#include "lbann/utils/stack_trace.hpp"
-#include <iostream>
-#include <exception>
+#ifndef _LBANN_FILE_UTILS_HPP_
+#define _LBANN_FILE_UTILS_HPP_
+#include <string>
+#include <vector>
 
 namespace lbann {
 
-class lbann_exception : public std::exception {
- public:
-  lbann_exception(const std::string m="my custom exception"):msg(m) { 
-    stack_trace::print_lbann_exception_stack_trace(msg);
+struct path_delimiter {
+  static const std::string characters;
+  static std::string preferred() {
+    return std::string(1, characters[0]);
   }
-
-  ~lbann_exception() override {}
-  const char *what() const noexcept override {
-    return msg.c_str();
+  static bool check(const char ch) {
+    return (characters.find(ch) != std::string::npos);
   }
-
- private:
-  std::string msg;
+  bool operator()(const char ch) const {
+    return (characters.find(ch) != std::string::npos);
+  }
 };
 
-inline void lbann_report_exception( lbann_exception& e, lbann_comm *comm=nullptr, std::ostream& os=std::cerr) {
-  if( std::string(e.what()) != "" ) {
-    if(comm != nullptr) {
-      os << "LBANN: rank " << comm->get_rank_in_model() << " of model " << comm->get_model_rank() <<" caught error message:";
-    } else {
-      os << "LBANN: caught error message:";
-    }
-    os << "\t" << e.what() << std::endl;
-  }
-  El::mpi::Abort( El::mpi::COMM_WORLD, 1 );
-}
-}
+/// Tokenize a string by a sequence of delimiter characters.
+std::vector<int> get_tokens(const std::vector<char> delims, std::string str);
 
+bool parse_path(const std::string& path, std::string& dir, std::string& basename);
+std::string get_ext_name(const std::string file_name);
+std::string get_basename_without_ext(const std::string file_name);
+std::string add_delimiter(const std::string dir);
 
-#endif // LBANN_EXCEPTION_HPP_INCLUDED
+bool check_if_file_exists(const std::string& filename);
+bool create_dir(const std::string output_dir);
+
+} // end of namespace lbann
+#endif // _LBANN_FILE_UTILS_HPP_

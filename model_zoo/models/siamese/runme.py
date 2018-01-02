@@ -7,4 +7,4 @@ import common
 common.build_and_submit_slurm_script( 
    'model_siamese.prototext', 
    'data_reader_imagenet_patches.prototext',
-   '../../optimizers/opt_adagrad.prototext' )
+   '../../optimizers/opt_sgd.prototext' )

@@ -47,8 +47,9 @@ link_directories(${Elemental_DIR}/lib64)
 set(Elemental_LIBS ${Elemental_LIBRARIES})
 
 file(GLOB IMGPIPE_SRCS ${LBANN_DIR}/src/utils/random.cpp
-                       ${LBANN_DIR}/src/utils/exception.cpp
+                       ${LBANN_DIR}/src/utils/stack_trace.cpp
                        ${LBANN_DIR}/src/utils/options.cpp
+                          ${LBANN_DIR}/src/utils/file_utils.cpp
                           ${LBANN_DIR}/src/data_readers/image_utils.cpp
                           ${LBANN_DIR}/src/data_readers/cv_augmenter.cpp
                           ${LBANN_DIR}/src/data_readers/cv_colorizer.cpp
@@ -59,6 +60,7 @@ file(GLOB IMGPIPE_SRCS ${LBANN_DIR}/src/utils/random.cpp
                           ${LBANN_DIR}/src/data_readers/cv_cropper.cpp
                           ${LBANN_DIR}/src/data_readers/cv_mean_extractor.cpp
                           ${LBANN_DIR}/src/data_readers/cv_subtractor.cpp
+                          ${LBANN_DIR}/src/data_readers/cv_transform.cpp
                           ${LBANN_DIR}/src/data_readers/cv_utils.cpp
                           ${LBANN_DIR}/src/data_readers/patchworks/patchworks.cpp
                           ${LBANN_DIR}/src/data_readers/patchworks/patchworks_patch_descriptor.cpp

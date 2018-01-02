@@ -30,7 +30,6 @@
 #include <iostream>
 #include <set>
 #include "lbann/data_readers/opencv_extensions.hpp"
-#include "lbann/data_readers/cv_utils.hpp"
 #include "file_utils.hpp"
 #include "mean_image.hpp"
 
@@ -47,7 +46,7 @@ cv::Mat reduce_mean_images(const cv::Mat mean_image, const mpi_states& ms) {
 
   if (!lbann::check_if_cv_Mat_is_float_type(mean_image)) {
     // convert non-floating point values to floating points
-    const double alpha = lbann::cv_utils::get_depth_normalizing_factor(mean_image.depth());
+    const double alpha = lbann::get_depth_normalizing_factor(mean_image.depth());
     mean_image.convertTo(local_data, CV_64F, alpha, 0.0);
   } else if (!mean_image.isContinuous()) {
     // copy non-contiguous data into a contiguous memory block for easier
@@ -90,7 +89,7 @@ cv::Mat divide_sum_image(const cv::Mat& global_sum, const int num_ranks, const i
   }
 
   cv::Mat global_mean;
-  const double alpha = lbann::cv_utils::get_depth_denormalizing_factor(CV_MAT_DEPTH(type)) / num_ranks;
+  const double alpha = lbann::get_depth_denormalizing_factor(CV_MAT_DEPTH(type)) / num_ranks;
   global_sum.convertTo(global_mean, type, alpha, 0.0);
 
   return global_mean;
@@ -127,8 +126,8 @@ bool write_mean_image(const lbann::cv_process& pp, const int mean_extractor_idx,
   if (ms.is_root()) { // write binary image data (in the numeric format as is. e.g., floating point)
     cv::Mat global_mean  = divide_sum_image(global_sum, ms.get_effective_num_ranks(), local_mean.type());
     std::string image_name = out_dir + "mean-"
-                             + std::to_string(global_mean.rows) + 'x'
                              + std::to_string(global_mean.cols) + 'x'
+                             + std::to_string(global_mean.rows) + 'x'
                              + std::to_string(global_mean.channels()) + '-'
                              + std::to_string(global_mean.depth()) + ".bin";
 

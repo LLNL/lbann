@@ -20,6 +20,7 @@ add_sources(data_reader.cpp
             cv_process.cpp
             cv_process_patches.cpp
             cv_subtractor.cpp
+            cv_transform.cpp
             cv_utils.cpp
             data_reader_numpy.cpp
             data_reader_synthetic.cpp
