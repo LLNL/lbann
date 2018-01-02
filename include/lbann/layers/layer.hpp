@@ -37,6 +37,7 @@
 #include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/io/persist.hpp"
+#include <lbann.pb.h>
 #include <string>
 #include <vector>
 
@@ -204,6 +205,9 @@ class Layer {
 
   virtual bool save_to_checkpoint_shared(persist& p) const;
   virtual bool load_from_checkpoint_shared(persist& p);
+  
+  /** Write layer to proto file */
+  virtual void write_proto(lbann_data::Layer* proto) const;
 
   /** Get forward propagation output, as seen by next layer. */
   virtual void get_fp_output(AbsDistMat& fp_output, const Layer* next_layer = nullptr) const;

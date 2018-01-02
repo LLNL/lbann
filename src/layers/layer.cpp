@@ -672,6 +672,10 @@ bool Layer::load_from_checkpoint_shared(persist& p) {
   return true;
 }
 
+void Layer::write_proto(lbann_data::Layer* proto) const {
+  proto->set_name(get_name());
+}
+
 void Layer::fp_set_std_matrix_view() {
   int mini_batch_size = m_model->get_current_mini_batch_size();
   El::View(*m_activations_v, *m_activations, El::ALL, El::IR(0, mini_batch_size));

@@ -68,6 +68,8 @@ class sequential_model : public model {
   bool save_to_checkpoint_shared(persist& p) override;
   bool load_from_checkpoint_shared(persist& p) override;
 
+  /** Write model to proto file */
+  void write_proto(lbann_data::Model* proto) override;
  protected:
 
   /** Set up topology of layer graph.

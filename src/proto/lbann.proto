@@ -383,6 +383,7 @@ message Callback {
    CallbackMinibatchSchedule minibatch_schedule = 26;
    CallbackOptimizerwiseAdaptiveLearningRate optimizerwise_adaptive_learning_rate = 27;
    CallbackCheckpoint checkpoint = 28;
+   CallbackSaveModel save_model = 29;
 }
 
 message CallbackLTFB {
@@ -528,6 +529,12 @@ message CallbackCheckpoint {
   bool checkpoint_per_rank = 5;
 }
 
+
+message CallbackSaveModel {
+  string dir = 1;
+  string extension = 2;
+}
+
 //========================================================================
 // Weights
 //========================================================================
@@ -551,6 +558,10 @@ enum Imcomm {
 
 message Weights {
   string name = 1;
+  int64 height = 2;
+  int64 width = 3;
+  //@todo assume float above, add other datatype 
+  repeated float value = 4 [packed=true];
 
   Imcomm imcomm = 55;
 }
