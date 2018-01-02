@@ -11,6 +11,7 @@ add_sources(
   protobuf_utils.cpp
   stack_trace.cpp
   file_utils.cpp
+  stack_profiler.cpp
 )
 
 if(LBANN_HAS_CUDA)

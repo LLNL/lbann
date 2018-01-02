@@ -31,6 +31,8 @@
 
 #include "El.hpp"
 #include "lbann/Elemental_extensions.hpp"
+#include "lbann/utils/cyg_profile.hpp"
+
 
 // Datatype for numerical computation
 // Default: float

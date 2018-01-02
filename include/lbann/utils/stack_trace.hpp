@@ -33,11 +33,16 @@ namespace lbann {
 namespace stack_trace {
 
 /**
- * Default behaviour: when a signal is caught or an lbann exception
- * thrown, processes write to cerr. The cmd line option
+ * This module contains functions for printing a stack trace
+ * when either a signal is caught or an lbann exception is thrown.
+ * Default behavior: processes write to cerr. The cmd line option
  * "--stack_trace_to_file" will additionally cause each processor
  * to attempt to write its stack trace to
  *    "stack_trace_<rank_in_world>.txt"
+ *
+ * To use in your driver, you need to call register_handler() after
+ * the call to options::get()->init(), and also include the option
+ * --catch_signals on the command line
  */
 
 /** For internal use; made public for testing.
