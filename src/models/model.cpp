@@ -35,7 +35,6 @@
 #include <iomanip>
 #include <queue>
 #include <unordered_set>
-//#include "lbann_proto/lbanntt.pbxtt.h"
 #include <lbann.pb.h>
 
 #include "mpi.h"
