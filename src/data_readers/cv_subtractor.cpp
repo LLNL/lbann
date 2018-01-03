@@ -35,7 +35,7 @@
 #include <fstream>
 #include <iterator>
 
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
 namespace lbann {
 
 cv_subtractor::cv_subtractor(const cv_subtractor& rhs)
@@ -140,7 +140,7 @@ void cv_subtractor::set(const cv::Mat& image, const int depth_code) {
     if (check_if_cv_Mat_is_float_type(image)) {
       image.convertTo(m_img_to_sub, image.depth(), f, 0.0);
     } else {
-      image.convertTo(m_img_to_sub, cv_image_type<::DataType>::T(), f, 0.0);
+      image.convertTo(m_img_to_sub, cv_image_type<lbann::DataType>::T(), f, 0.0);
     }
   } else {
     image.convertTo(m_img_to_sub, depth_code, f, 0.0);
@@ -195,4 +195,4 @@ std::ostream& cv_subtractor::print(std::ostream& os) const {
 }
 
 } // end of namespace lbann
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV

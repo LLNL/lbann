@@ -33,7 +33,7 @@
 #include "cv_transform.hpp"
 #include "lbann/base.hpp"
 
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
 namespace lbann {
 
 /**
@@ -79,11 +79,11 @@ class cv_subtractor : public cv_transform {
    * Set the image to subtract from every input image.
    * In case that this image is not in a floating point type, it is converted to
    * one with the depth specified by depth_code.
-   */ 
-  void set(const cv::Mat& img, const int depth_code = cv_image_type<::DataType>::T());
+   */
+  void set(const cv::Mat& img, const int depth_code = cv_image_type<lbann::DataType>::T());
 
   /// Load and set the image to subtract from every input image.
-  void set(const std::string name_of_img, const int depth_code = cv_image_type<::DataType>::T());
+  void set(const std::string name_of_img, const int depth_code = cv_image_type<lbann::DataType>::T());
 
   void reset() override {
     m_enabled = false;
@@ -112,6 +112,6 @@ class cv_subtractor : public cv_transform {
 };
 
 } // end of namespace lbann
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV
 
 #endif // LBANN_CV_SUBTRACTOR_HPP
