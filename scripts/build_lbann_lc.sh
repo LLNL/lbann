@@ -226,7 +226,6 @@ while :; do
             ;;
         --instrument)
             INSTRUMENT="-finstrument-functions -ldl"
-            #INSTRUMENT="-finstrument-functions -finstrument-functions-exclude-file-list=download,python,/lib64,/gcc -ldl"
             ;;
         -?*)
             # Unknown option
@@ -410,6 +409,8 @@ else
     fi
 fi
 
+# Add flag for libldl: may be needed some compilers
+CXX_FLAGS="${CXX_FLAGS} -ldl}"
 
 
 # Set environment variables
