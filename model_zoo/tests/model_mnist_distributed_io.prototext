@@ -1,18 +1,18 @@
 
 model {
   name: "sequential_model"
-  metric {
-    categorical_accuracy {
-    }
-  }
   data_layout: "model_parallel"
   mini_batch_size: 10
   block_size: 256
   num_epochs: 20
   num_parallel_readers: 0
-  procs_per_model: 6
+  procs_per_model: 1
   use_cudnn: false
   num_gpus: -1
+
+  ###################################################
+  # Objective function
+  ###################################################
 
   objective_function {
     cross_entropy {}
@@ -20,6 +20,15 @@ model {
       scale_factor: 1e-4
     }
   }
+
+  ###################################################
+  # Metrics
+  ###################################################
+
+  metric {
+    categorical_accuracy {}
+  }
+
   ###################################################
   # Callbacks
   ###################################################
