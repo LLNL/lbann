@@ -41,7 +41,7 @@ namespace lbann {
  */
 class lbann_callback_check_reconstruction_error : public lbann_callback {
  public:
-  lbann_callback_check_reconstruction_error(double max_error = 1.0);
+  lbann_callback_check_reconstruction_error(EvalType max_error = EvalType(1));
   lbann_callback_check_reconstruction_error(const lbann_callback_check_reconstruction_error&) = default;
   lbann_callback_check_reconstruction_error& operator=(
     const lbann_callback_check_reconstruction_error&) = default;
@@ -53,7 +53,7 @@ class lbann_callback_check_reconstruction_error : public lbann_callback {
   std::string name() const override{ return "check reconstruction error"; }
  private:
   /** maximum error value, default is 1.0 */
-  double m_max_error;
+  EvalType m_max_error;
 };
 
 }  // namespace lbann

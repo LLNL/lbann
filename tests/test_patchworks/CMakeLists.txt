@@ -48,15 +48,20 @@ set(Elemental_LIBS ${Elemental_LIBRARIES})
 
 file(GLOB PATCHWORKS_SRCS ${LBANN_DIR}/src/data_readers/patchworks/*.cpp
                           ${LBANN_DIR}/src/utils/random.cpp
+                          ${LBANN_DIR}/src/utils/stack_trace.cpp
+                          ${LBANN_DIR}/src/utils/options.cpp
+                          ${LBANN_DIR}/src/utils/file_utils.cpp
                           ${LBANN_DIR}/src/data_readers/image_utils.cpp
                           ${LBANN_DIR}/src/data_readers/cv_augmenter.cpp
                           ${LBANN_DIR}/src/data_readers/cv_colorizer.cpp
+                          ${LBANN_DIR}/src/data_readers/cv_cropper.cpp
                           ${LBANN_DIR}/src/data_readers/cv_decolorizer.cpp
+                          ${LBANN_DIR}/src/data_readers/cv_mean_extractor.cpp
                           ${LBANN_DIR}/src/data_readers/cv_normalizer.cpp
                           ${LBANN_DIR}/src/data_readers/cv_process.cpp
                           ${LBANN_DIR}/src/data_readers/cv_process_patches.cpp
-                          ${LBANN_DIR}/src/data_readers/cv_cropper.cpp
-                          ${LBANN_DIR}/src/data_readers/cv_mean_extractor.cpp
+                          ${LBANN_DIR}/src/data_readers/cv_subtractor.cpp
+                          ${LBANN_DIR}/src/data_readers/cv_transform.cpp
                           ${LBANN_DIR}/src/data_readers/cv_utils.cpp)
 
 add_executable(${PATCHWORKS_EXE} ${PATCHWORKS_SRCS} ${PATCHWORKS_TEST_SRCS} )

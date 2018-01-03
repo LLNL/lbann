@@ -49,7 +49,10 @@ void sequential_model::setup_layer_topology() {
   }
 
   // Make sure that execution order is valid
-  if (!is_topologically_sorted()) {
+  std::set<int> nodes;
+  std::map<int,std::set<int>> edges;
+  construct_layer_graph(nodes, edges);
+  if (!graph::is_topologically_sorted(nodes, edges)) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
         << "layer execution order is not topologically sorted";
@@ -134,6 +137,24 @@ bool sequential_model::save_to_checkpoint_shared(persist& p) {
   }
   //m_objective_function->save_to_checkpoint_shared(p);
   return true;
+}
+
+void sequential_model::write_proto(lbann_data::Model* proto) {
+
+  model::write_proto(proto);
+  //Add layers
+  if (m_comm->am_world_master()) {
+    proto->set_name(name());
+    for(size_t l = 0; l < m_layers.size(); l++) {
+      auto layer_proto = proto->add_layer();
+      m_layers[l]->write_proto(layer_proto);
+    }
+  }
+  //Add weights
+  for (weights *w : m_weights) {
+    auto weight_proto = proto->add_weights();
+    w->write_proto(weight_proto);
+  }
 }
 
 bool sequential_model::load_from_checkpoint_shared(persist& p) {

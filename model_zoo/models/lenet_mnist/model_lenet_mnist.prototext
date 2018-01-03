@@ -41,13 +41,13 @@ model {
     }
   }
 
-  callback {
-    checkpoint {
-      checkpoint_dir: "test"
-      checkpoint_epochs: 1
-      #checkpoint_secs: 7  
-    }
-  }
+  # callback {
+  #   checkpoint {
+  #     checkpoint_dir: "test"
+  #     checkpoint_epochs: 1
+  #     #checkpoint_secs: 7
+  #   }
+  # }
   # callback {
   #   debug {
   #     phase: "test"
@@ -146,8 +146,8 @@ model {
       pool_pads_i: 0
       pool_strides_i: 2
       pool_mode: "max"
-    } 
-  } 
+    }
+  }
 
   layer {
     name: "ip1"
@@ -188,4 +188,3 @@ model {
   }
 
 }
-

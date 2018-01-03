@@ -258,6 +258,7 @@ add_subdirectory(model_zoo)
 add_subdirectory(model_zoo/tests)
 add_subdirectory(model_zoo/historical)
 add_subdirectory(tests)
+add_subdirectory(tests/test_stack_tracing)
 
 # Build LBANN source files
 # Note that CUDA sources are not included as they are not

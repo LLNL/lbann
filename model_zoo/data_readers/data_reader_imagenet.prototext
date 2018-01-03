@@ -12,6 +12,11 @@ data_reader {
     num_labels: 1000
 
     image_preprocessor {
+      subtractor {
+        disable: true
+        image_to_sub: "mean-256x256x3-6.bin"
+      }
+
       cropper {
         disable: false
         crop_width: 227
@@ -57,6 +62,11 @@ data_reader {
     num_labels: 1000
 
     image_preprocessor {
+      subtractor {
+        disable: true
+        image_to_sub: "mean-256x256x3-6.bin"
+      }
+
       cropper {
         disable: false
         crop_width: 227

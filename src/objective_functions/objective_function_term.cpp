@@ -29,10 +29,10 @@
 
 namespace lbann {
 
-objective_function_term::objective_function_term(DataType scale_factor)
+objective_function_term::objective_function_term(EvalType scale_factor)
   : m_scale_factor(scale_factor) {
-  if (m_scale_factor == DataType(0)) {
-    m_scale_factor = DataType(1);
+  if (m_scale_factor == EvalType(0)) {
+    m_scale_factor = EvalType(1);
   }
 }
 

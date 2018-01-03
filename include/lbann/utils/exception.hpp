@@ -31,13 +31,18 @@
 
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
+#include "lbann/utils/stack_trace.hpp"
 #include <iostream>
 #include <exception>
 
 namespace lbann {
+
 class lbann_exception : public std::exception {
  public:
-  lbann_exception(const std::string m="my custom exception"):msg(m) {}
+  lbann_exception(const std::string m="my custom exception"):msg(m) { 
+    stack_trace::print_lbann_exception_stack_trace(msg);
+  }
+
   ~lbann_exception() override {}
   const char *what() const noexcept override {
     return msg.c_str();
@@ -59,5 +64,6 @@ inline void lbann_report_exception( lbann_exception& e, lbann_comm *comm=nullptr
   El::mpi::Abort( El::mpi::COMM_WORLD, 1 );
 }
 }
+
 
 #endif // LBANN_EXCEPTION_HPP_INCLUDED

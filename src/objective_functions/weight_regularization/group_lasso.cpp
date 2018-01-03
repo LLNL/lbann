@@ -51,9 +51,9 @@ void group_lasso_weight_regularization::setup(model& m) {
 
 }
 
-DataType group_lasso_weight_regularization::evaluate() {
-  if (m_scale_factor == DataType(0)) { return DataType(0); }
-  DataType value = DataType(0);
+EvalType group_lasso_weight_regularization::evaluate() {
+  if (m_scale_factor == EvalType(0)) { return EvalType(0); }
+  EvalType value = EvalType(0);
   Mat sqsums;
   for (weights* w : m_weights) {
 
@@ -67,7 +67,7 @@ DataType group_lasso_weight_regularization::evaluate() {
     sqsums.Resize(1, local_width);
     #pragma omp parallel for
     for (int col = 0; col < local_width; ++col) {
-      DataType sqsum = DataType(0);
+      DataType sqsum = EvalType(0);
       for (int row = 0; row < local_height; ++row) {
         const DataType val = values_local(row, col);
         sqsum += val * val;
@@ -78,28 +78,28 @@ DataType group_lasso_weight_regularization::evaluate() {
                           values.ColComm());
 
     // Compute group lasso term
-    DataType w_sum = DataType(0);
+    EvalType w_sum = EvalType(0);
     for (int col = 0; col < local_width; ++col) {
       w_sum += std::sqrt(sqsums(0, col));
     }
     value += get_comm().allreduce(w_sum, values.RowComm());
-    
+
   }
   return m_scale_factor * value;
 }
 
-void group_lasso_weight_regularization::differentiate() {
-  if (m_scale_factor == DataType(0)) { return; }
+void group_lasso_weight_regularization::compute_weight_regularization() {
+  if (m_scale_factor == EvalType(0)) { return; }
   Mat sqsums;
   AbsDistMat* gradient;
   for (weights* w : m_weights) {
-    
+
     // Get matrices
     const AbsDistMat& values = w->get_values();
     const Mat& values_local = values.LockedMatrix();
     const int local_height = values_local.Height();
     const int local_width = values_local.Width();
-    
+
     // Compute sum of squares of each column
     sqsums.Resize(1, local_width);
     #pragma omp parallel for
@@ -129,7 +129,7 @@ void group_lasso_weight_regularization::differentiate() {
       for (int row = 0; row < local_height; ++row) {
         gradient_local(row, col) = values_local(row, col) * sqsums(0, col);
       }
-    }    
+    }
     w->get_optimizer()->add_to_gradient(*gradient, m_scale_factor);
     delete gradient;
 

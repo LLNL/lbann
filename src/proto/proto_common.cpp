@@ -1338,8 +1338,11 @@ void init_callbacks(
         }
         weights_list.insert(model_weights[name]);
       }
-      lbann_callback_adaptive_learning_rate *learn
-        = new lbann_callback_adaptive_learning_rate(c.step(), c.amt(), weights_list);
+      lbann_callback_step_learning_rate *learn
+        = new lbann_callback_step_learning_rate(c.step(), c.amt(), weights_list);
+      if (master) {
+        std::cout << "adding step learning rate callback\n";
+      }
       model->add_callback(learn);
     }
 
@@ -1604,6 +1607,17 @@ void init_callbacks(
         lbann_callback_checkpoint(c.checkpoint_dir(), c.checkpoint_epochs(), c.checkpoint_steps(), c.checkpoint_secs(), c.checkpoint_per_rank());
       model->add_callback(checkpoint_cb);
     }
+
+    //////////////////////////////////////////////////////////////////
+    // CALLBACK: save_model
+    //////////////////////////////////////////////////////////////////
+    if (callback.has_save_model()) {
+      const lbann_data::CallbackSaveModel& c = callback.save_model();
+      std::string dir = c.dir();
+      std::string extension = c.extension();
+      lbann_callback_save_model *model_cb = new lbann_callback_save_model(dir, extension);
+      model->add_callback(model_cb);
+    }
   }
 
 }
@@ -1676,10 +1690,13 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
   if (name == "sequential_model") {
     model = new sequential_model(comm, mini_batch_size, obj_fn, default_optimizer);
     if (master) std::cout << "instantiating sequential_model\n";
-  }
-  else if (name == "directed_acyclic_graph_model") {
+  } else if (name == "directed_acyclic_graph_model") {
     model = new directed_acyclic_graph_model(comm, mini_batch_size, obj_fn, default_optimizer);
     if (master) std::cout << "instantiating directed_acyclic_graph_model\n";
+  } else if (name == "recurrent_model") {
+    const lbann_data::Model::Recurrent& recurrent = m.recurrent();
+    model = new recurrent_model(comm, mini_batch_size, obj_fn, default_optimizer, recurrent.unroll_depth());
+    if (master) std::cout << "instantiating recurrent_model\n";
   } else if(name == "siamese_model") {
     if (m.has_siamese()) {
       const lbann_data::Model::Siamese& siamese = m.siamese();
@@ -1886,7 +1903,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
     } else if (name == "synthetic") {
       reader = new data_reader_synthetic(readme.num_samples(), readme.num_features(), shuffle);
     } else if (name == "ascii") {
-      reader = new ascii_reader(5, shuffle);
+      reader = new ascii_reader(p.model().recurrent().unroll_depth(), shuffle);
     } else {
       if (master) {
         err << __FILE__ << " " << __LINE__ << " :: unknown name for data reader: "
@@ -1968,7 +1985,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
         reader_validation = new data_reader_synthetic(shuffle);
         */
       } else if (name == "ascii") {
-        reader_validation = new ascii_reader(5, shuffle);
+        reader_validation = new ascii_reader(p.model().recurrent().unroll_depth(), shuffle);
         (*(ascii_reader *)reader_validation) = (*(ascii_reader *)reader);
       }
 

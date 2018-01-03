@@ -24,4 +24,5 @@ add_sources(
   callback_gradient_check.cpp
   callback_timeline.cpp
   callback_checkpoint.cpp
+  callback_save_model.cpp
 )

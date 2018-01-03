@@ -33,12 +33,14 @@
 #include "lbann/comm.hpp"
 #include "lbann/layers/layer.hpp"
 #include "lbann/utils/summary.hpp"
+#include "lbann/utils/graph.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/objective_functions/objective_function.hpp"
 #include "lbann/metrics/metric.hpp"
 #include "lbann/weights/weights.hpp"
 #include "lbann/optimizers/optimizer.hpp"
+#include <lbann.pb.h>
 #include <vector>
 #include <string>
 #include <unordered_map>
@@ -203,6 +205,9 @@ class model {
   /** Restore model by reading checkpoint from given file descriptor, return number of bytes read */
   virtual bool load_from_checkpoint_shared(persist& p);
 
+  /** Write model to proto file */
+  virtual void write_proto(lbann_data::Model* proto);
+
 
  protected:
 
@@ -263,8 +268,12 @@ class model {
   virtual bool is_execution_mode_valid(execution_mode mode) const;
   /** Print out the description of a layer set up. */
   virtual std::string print_layer_description(const Layer* layer) const;
-  /** Check if the layer execution order is topologically sorted. */
-  virtual bool is_topologically_sorted() const;
+  /** Construct a layer graph. */
+  virtual void construct_layer_graph(std::set<int>& nodes,
+                                     std::map<int,std::set<int>>& edges) const;
+  /** Reorder layers. */
+  virtual void permute_layers(const std::vector<int>& permutation);
+
   /** Remap pointers.
    *  Layer and weights pointers are remapped using the provided
    *  maps. If a pointer is not a key in the corresponding map, the

@@ -52,6 +52,32 @@ void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool mas
   width = pb_preprocessor.raw_width();
   height = pb_preprocessor.raw_height();
 
+  // set up a subtractor
+  if (pb_preprocessor.has_subtractor()) {
+    if (pb_preprocessor.has_colorizer()) {
+      const lbann_data::ImagePreprocessor::Colorizer& pb_colorizer = pb_preprocessor.colorizer();
+      if  (!pb_colorizer.disable()) {
+        const std::string colorizer_name = ((pb_colorizer.name() == "")? "default_colorizer" : pb_colorizer.name());
+        // If every image in the dataset is a color image, this is not needed
+        std::unique_ptr<lbann::cv_colorizer> colorizer(new(lbann::cv_colorizer));
+        colorizer->set_name(colorizer_name);
+        pp->add_transform(std::move(colorizer));
+        channels = 3;
+        if (master) std::cout << "image processor: " << colorizer_name << " colorizer is set" << std::endl;
+      }
+    }
+    const lbann_data::ImagePreprocessor::Subtractor& pb_subtractor = pb_preprocessor.subtractor();
+    if  (!pb_subtractor.disable()) {
+      const std::string subtractor_name = ((pb_subtractor.name() == "")? "default_subtractor" : pb_subtractor.name());
+      // If every image in the dataset is a color image, this is not needed
+      std::unique_ptr<lbann::cv_subtractor> subtractor(new(lbann::cv_subtractor));
+      subtractor->set_name(subtractor_name);
+      subtractor->set(pb_subtractor.image_to_sub());
+      pp->add_normalizer(std::move(subtractor));
+      if (master) std::cout << "image processor: " << subtractor_name << " subtractor is set" << std::endl;
+    }
+  }
+
   // set up a cropper
   if (pb_preprocessor.has_cropper()) {
     const lbann_data::ImagePreprocessor::Cropper& pb_cropper = pb_preprocessor.cropper();
@@ -140,6 +166,7 @@ void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool mas
   if (pb_preprocessor.has_colorizer()) {
     const lbann_data::ImagePreprocessor::Colorizer& pb_colorizer = pb_preprocessor.colorizer();
     if  (!pb_colorizer.disable()) {
+     if (!pb_preprocessor.has_subtractor()) {
       const std::string colorizer_name = ((pb_colorizer.name() == "")? "default_colorizer" : pb_colorizer.name());
       // If every image in the dataset is a color image, this is not needed
       std::unique_ptr<lbann::cv_colorizer> colorizer(new(lbann::cv_colorizer));
@@ -147,6 +174,7 @@ void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool mas
       pp->add_transform(std::move(colorizer));
       channels = 3;
       if (master) std::cout << "image processor: " << colorizer_name << " colorizer is set" << std::endl;
+     }
     }
   } else { // For backward compatibility. TODO: will be deprecated
     if (!pb_preprocessor.no_colorize()) {

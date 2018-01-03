@@ -44,7 +44,7 @@ double digamma(double x) {
 
 namespace lbann {
 
-polya_negloglike::polya_negloglike(DataType scale_factor)
+polya_negloglike::polya_negloglike(EvalType scale_factor)
   : loss_function(scale_factor),
     m_counts(nullptr),
     m_alpha_sums(nullptr),
@@ -126,7 +126,7 @@ void polya_negloglike::setup(model& m) {
 
 }
 
-DataType polya_negloglike::evaluate_compute(const AbsDistMat& predictions,
+EvalType polya_negloglike::evaluate_compute(const AbsDistMat& predictions,
                                             const AbsDistMat& ground_truth) {
 
   // Initialize workspace
@@ -174,7 +174,7 @@ DataType polya_negloglike::evaluate_compute(const AbsDistMat& predictions,
                         m_lgamma_alpha_level_count_sums->RedundantComm());
 
   // Compute mean objective function value across mini-batch
-  DataType local_sum = DataType(0);
+  EvalType local_sum = EvalType(0);
   for (int col = 0; col < local_width; ++col) {
     local_sum += (- std::lgamma(alpha_sums_local(0, col))
                   + std::lgamma(counts_local(0, col) + alpha_sums_local(0, col))

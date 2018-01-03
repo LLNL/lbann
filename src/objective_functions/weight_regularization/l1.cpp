@@ -51,9 +51,9 @@ void l1_weight_regularization::setup(model& m) {
 
 }
 
-DataType l1_weight_regularization::evaluate() {
-  if (m_scale_factor == DataType(0)) { return DataType(0); }
-  DataType value = DataType(0);
+EvalType l1_weight_regularization::evaluate() {
+  if (m_scale_factor == EvalType(0)) { return EvalType(0); }
+  EvalType value = EvalType(0);
   for (weights* w : m_weights) {
 
     // Get matrices
@@ -63,12 +63,12 @@ DataType l1_weight_regularization::evaluate() {
     const int local_width = values_local.Width();
 
     // Compute L1 regularization term
-    DataType sum = 0;
+    EvalType sum = 0;
     #pragma omp parallel for reduction(+:sum) collapse(2)
     for (int col = 0; col < local_width; ++col) {
       for (int row = 0; row < local_height; ++row) {
-        const DataType val = values_local(row, col);
-        sum += val >= DataType(0) ? val : - val;
+        const EvalType val = values_local(row, col);
+        sum += val >= EvalType(0) ? val : - val;
       }
     }
     value += get_comm().allreduce(sum, values.DistComm());
@@ -77,11 +77,11 @@ DataType l1_weight_regularization::evaluate() {
   return m_scale_factor * value;
 }
 
-void l1_weight_regularization::differentiate() {
-  if (m_scale_factor == DataType(0)) { return; }
+void l1_weight_regularization::compute_weight_regularization() {
+  if (m_scale_factor == EvalType(0)) { return; }
   AbsDistMat* gradient;
   for (weights* w : m_weights) {
-    
+
     // Get matrices
     const AbsDistMat& values = w->get_values();
     const Mat& values_local = values.LockedMatrix();
@@ -104,7 +104,7 @@ void l1_weight_regularization::differentiate() {
           grad = DataType(0);
         }
       }
-    }    
+    }
     w->get_optimizer()->add_to_gradient(*gradient, m_scale_factor);
     delete gradient;
 

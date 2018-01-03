@@ -42,7 +42,7 @@ class target_layer;
 /** Metric statistics. */
 struct metric_statistics {
   /** Sum of metric values. */
-  double m_sum;
+  EvalType m_sum;
   /** Number of samples. */
   int m_num_samples;
   /** Default constructor. */
@@ -58,12 +58,12 @@ struct metric_statistics {
   /** Destructor. */
   ~metric_statistics() = default;
   /** Add metric value to statistics. */
-  void add_value(double value, int num_samples = 1);
+  void add_value(EvalType value, int num_samples = 1);
   /** Get mean metric value.
    *  If mini-batch sizes are not identical, the mean is over the
    *  sample values rather than over the mini-batch mean values.
    */
-  double get_mean() const;
+  EvalType get_mean() const;
   /** Get number of samples. */
   int get_num_samples() const { return m_num_samples; }
   /** Reset statistics. */
@@ -115,7 +115,7 @@ class metric {
   virtual void setup(model& m);
   
   /** Evaluate the metric value. */
-  double evaluate(execution_mode mode);
+  EvalType evaluate(execution_mode mode);
 
   /** Clear all statistics. */
   void reset_statistics() { m_statistics.clear(); }
@@ -126,7 +126,7 @@ class metric {
    *  If mini-batch sizes are not identical, the mean is over the
    *  sample values rather than over the mini-batch mean values.
    */
-  double get_mean_value(execution_mode mode) const;
+  EvalType get_mean_value(execution_mode mode) const;
   /** Get number of samples for statistics. */
   int get_statistics_num_samples(execution_mode mode) const;
 
@@ -151,8 +151,8 @@ class metric {
    *  This should return the sum of metric values across the
    *  mini-batch, not the mean value.
    */
-  virtual double evaluate_compute(const AbsDistMat& prediction,
-                                  const AbsDistMat& ground_truth) = 0;
+  virtual EvalType evaluate_compute(const AbsDistMat& prediction,
+                                    const AbsDistMat& ground_truth) = 0;
 
   /** Get LBANN communicator. */
   lbann_comm& get_comm() { return *m_comm; }

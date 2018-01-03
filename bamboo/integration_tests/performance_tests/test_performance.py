@@ -1,10 +1,11 @@
+import pytest
 from test_tools import *
 
-def test_performance_mnist_distributed_io(exe, dirname):
-  mnist_distributed_io_skeleton(exe, dirname)
+def test_performance_lenet_mnist(dirname, exe):
+  skeleton(dirname, exe, 'lenet_mnist', 'mnist', True)
 
-def test_performance_alexnet(exe, dirname):
-  alexnet_skeleton(exe, dirname)
-
-def test_performance_resnet50(exe, dirname):
-  resnet50_skeleton(exe, dirname)
+def test_performance_alexnet(dirname, exe, weekly):
+  if weekly:
+    skeleton(dirname, exe, 'alexnet', 'imagenet', True)
+  else:
+    pytest.skip('Not doing weekly testing')

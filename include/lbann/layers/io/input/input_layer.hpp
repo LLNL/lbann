@@ -35,7 +35,7 @@
 namespace lbann {
 class input_layer : public io_layer, public virtual generic_data_distribution {
  public:
-  typedef std::map<execution_mode, generic_data_reader *> data_reader_map_t;
+  using data_reader_map_t = std::map<execution_mode, generic_data_reader *>;
 
  public:
   input_layer(lbann_comm *comm,

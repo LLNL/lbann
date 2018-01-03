@@ -51,7 +51,7 @@ template <data_layout T_layout>
 class fully_connected_layer : public learning_layer {
  private:
 
-  /** Scaling factor for bias term. 
+  /** Scaling factor for bias term.
    *  If the scaling factor is zero, bias is not applied.
    */
   DataType m_bias_scaling_factor;
@@ -95,7 +95,7 @@ class fully_connected_layer : public learning_layer {
    * Do layout-dependent backward propagation. This handles computing the error
    * signal for the next layer and the gradients for the weights.
    */
-  template <device Device>  
+  template <device Device>
   inline void bp_compute_weights();
 
  public:
@@ -129,7 +129,7 @@ class fully_connected_layer : public learning_layer {
   /** Returns description of ctor params */
   std::string get_description() const override {
     return std::string {} +
-     " fully_connected; num_neurons: " 
+     " fully_connected; num_neurons: "
      + std::to_string(this->m_num_neurons)
      + " has_bias: " + std::to_string(this->m_bias_scaling_factor)
      + " dataLayout: " + this->get_data_layout_string(get_data_layout());
@@ -141,7 +141,7 @@ class fully_connected_layer : public learning_layer {
                                         El::Int height, El::Int width) {
     activations = parameters;
     for (auto & parameter : parameters) {
-      // point to the last column 
+      // point to the last column
       bias.push_back(parameter + height * (width - 1));
     }
   }
@@ -167,7 +167,7 @@ class fully_connected_layer : public learning_layer {
                                     m_activations_desc);
     }
 #endif // __LIB_CUDNN
-    
+
   }
 
   fully_connected_layer& operator=(const fully_connected_layer& other) {
@@ -231,7 +231,7 @@ class fully_connected_layer : public learning_layer {
       }
     }
 #endif // __LIB_CUDNN
-    
+
   }
 
   fully_connected_layer* copy() const override {
@@ -344,7 +344,7 @@ class fully_connected_layer : public learning_layer {
     // mini batch size, and bias dimensions as (1, 1, 1, Y) does not
     // work. Calls to cudnnAddTensor return
     // CUDNN_STATUS_NOT_SUPPORTED. Setting X as the dimension of C
-    // works, though they should be mathematically the same. 
+    // works, though they should be mathematically the same.
     FORCE_CHECK_CUDNN(cudnnCreateTensorDescriptor(&m_bias_weights_desc));
     FORCE_CHECK_CUDNN(cudnnSetTensor4dDescriptor(m_bias_weights_desc,
                                                  CUDNN_TENSOR_NCHW,
@@ -375,7 +375,7 @@ class fully_connected_layer : public learning_layer {
     }
   }
 
-  void fp_compute_cpu() {  
+  void fp_compute_cpu() {
     // Apply weight matrix
     m_weights[0]->get_values_view(*m_matrix_weights_v);
     fp_compute_weights<device::CPU>();
@@ -407,7 +407,7 @@ class fully_connected_layer : public learning_layer {
       for (int i = 0; i < num_gpus; ++i) {
         CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
 #if 1
-        const DataType one = 1;        
+        const DataType one = 1;
         CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
                                    this->m_cudnn->get_stream(i)));
         FORCE_CHECK_CUDNN(cudnnAddTensor(this->m_cudnn->get_handle(i),
@@ -452,7 +452,7 @@ class fully_connected_layer : public learning_layer {
                  m_bias_weights_gradient->Matrix());
       bias_optimizer->stage_gradient_for_accumulation(
         *m_bias_weights_gradient,
-        m_bias_scaling_factor / this->m_model->get_current_mini_batch_size());
+        m_bias_scaling_factor / this->m_model->get_effective_mini_batch_size());
     }
 
   }
@@ -475,7 +475,7 @@ class fully_connected_layer : public learning_layer {
                                     m_bias_weights_gradient_d);
       bias_optimizer->stage_gradient_for_accumulation_gpu(
         m_bias_weights_gradient_d,
-        m_bias_scaling_factor / this->m_model->get_current_mini_batch_size());
+        m_bias_scaling_factor / this->m_model->get_effective_mini_batch_size());
     }
 
 #ifdef LBANN_DEBUG
@@ -564,7 +564,7 @@ fully_connected_layer<data_layout::MODEL_PARALLEL>::bp_compute_weights() {
              *m_matrix_weights_gradient);
     matrix_optimizer->add_to_gradient(
       *m_matrix_weights_gradient,
-      DataType(1) / this->m_model->get_current_mini_batch_size());
+      DataType(1) / this->m_model->get_effective_mini_batch_size());
   }
 }
 
@@ -586,7 +586,7 @@ fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_weights<device::CP
              m_matrix_weights_gradient->Matrix());
     matrix_optimizer->stage_gradient_for_accumulation(
       *m_matrix_weights_gradient,
-      DataType(1) / this->m_model->get_current_mini_batch_size());
+      DataType(1) / this->m_model->get_effective_mini_batch_size());
   }
 }
 
@@ -637,9 +637,9 @@ fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_weights<device::CU
     }
     matrix_optimizer->stage_gradient_for_accumulation_gpu(
       m_matrix_weights_gradient_d,
-      DataType(1) / this->m_model->get_current_mini_batch_size());
+      DataType(1) / this->m_model->get_effective_mini_batch_size());
   }
-  
+
 }
 #endif // __LIB_CUDNN
 

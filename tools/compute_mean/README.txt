@@ -6,6 +6,15 @@ Computing mean and storing the cropped images are optional. This relies on MPI.
 
 
 **************************************
+        usage of uniform_mean
+**************************************
+This tool can be used for two tasks. One is to create an image filled with the same pixel
+value when the mean pixel value is given per channel as well as the size of the image.
+The other is to compute the mean pixel value (for each channel) from an existing image,
+and create such an image filled with the mean value.
+
+
+**************************************
               Building
 **************************************
 mkdir build; cd build; cmake ..; make
@@ -63,3 +72,16 @@ the root data directory and the label of the image data. The fourth line contain
 shortlist.txt
 out
 --------------------------------------------------------------------
+
+
+Usage: > ./uniform_mean width height B G R [depth] (for a color image)
+    or > ./uniform_mean width height M [depth] (for a monochrome image)
+    or > ./uniform_mean input_image [depth]
+
+  B, G, R, M: The mean channel values for blue, green and red for a color image
+              or that for the only channel of a monochrome image
+       depth: OpenCV depth code for the output image.
+              Use 0 for unsigned 8-bit channels, and 2 for unsigned 16-bit channels.
+              The default is 0.
+
+  e.g.,  > ./uniform_mean 256 256 104 117 123 0

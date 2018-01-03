@@ -38,7 +38,7 @@ class objective_function_term {
  public:
 
   /** Default constructor. */
-  objective_function_term(DataType scale_factor = DataType(1));
+  objective_function_term(EvalType scale_factor = EvalType(1));
 
   /** Copy constructor. */
   objective_function_term(const objective_function_term& other) = default;
@@ -54,21 +54,26 @@ class objective_function_term {
 
   /** Setup objective function term. */
   virtual void setup(model& m);
-  
+
   /** Evaluate the objective function term.
    *  This should include the scaling factor.
    */
-  virtual DataType evaluate() = 0;
-  
+  virtual EvalType evaluate() = 0;
+
   /** Compute the gradient of the objective function term.
    *  The gradient is computed w.r.t. the objective function term
    *  inputs. This should include the scaling factor.
    */
   virtual void differentiate() = 0;
 
+  /** Compute the gradient of the weight regularization term.
+   *  The gradient is computed w.r.t. the weights.
+   */
+  virtual void compute_weight_regularization() = 0;
+
   virtual bool save_to_checkpoint_shared(lbann::persist& p);
   virtual bool load_from_checkpoint_shared(lbann::persist& p);
-  
+
 
   /** Get list of pointers to layers. */
   std::vector<Layer*> get_layer_pointers() const { return m_layers; }
@@ -82,7 +87,7 @@ class objective_function_term {
  protected:
 
   /** Scaling factor for objective function term. */
-  DataType m_scale_factor;
+  EvalType m_scale_factor;
 
   /** Layers used to compute objective function term. */
   std::vector<Layer*> m_layers;

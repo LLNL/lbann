@@ -82,11 +82,11 @@ class lbann_callback_timer : public lbann_callback {
  private:
 
   /** Start time for the current timing. */
-  double m_start_time;
+  EvalType m_start_time;
   /** Start time for the current mini-batch. */
-  double m_batch_start_time;
+  EvalType m_batch_start_time;
   /** History of mini-batch times for the current timing. */
-  std::vector<double> m_batch_times;
+  std::vector<EvalType> m_batch_times;
 
   /** Start timing. */
   void timing_begin(model *m);
