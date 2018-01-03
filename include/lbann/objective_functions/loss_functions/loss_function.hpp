@@ -49,7 +49,7 @@ class loss_function : public objective_function_term {
 
   /** Setup objective function term. */
   virtual void setup(model& m) override;
-  
+
   /** Evaluate the objective function term. */
   EvalType evaluate() override;
 
@@ -58,6 +58,11 @@ class loss_function : public objective_function_term {
    *  inputs.
    */
   void differentiate() override;
+
+  /** Loss functions do not directly contribute to the gradient update
+   *  of the weight matrix, they are applied through backprop
+   */
+  void compute_weight_regularization() override {};
 
   /** Evaluate the loss function.
    *  This should not include the scale factor.
@@ -73,7 +78,7 @@ class loss_function : public objective_function_term {
                                      const AbsDistMat& ground_truth,
                                      AbsDistMat& gradient) = 0;
 
-  bool save_to_checkpoint_shared(lbann::persist& p) override; 
+  bool save_to_checkpoint_shared(lbann::persist& p) override;
   //  char l_name[512];
   //  sprintf(l_name, "gradient_loss_func_%lldx%lld", m_gradient->Height(), m_gradient->Width());
   //  p.write_distmat(persist_type::model, l_name, (DistMat *)m_gradient);

@@ -52,14 +52,19 @@ class group_lasso_weight_regularization : public objective_function_term {
 
   /** Setup group lasso regularization term. */
   void setup(model& m) override;
-  
+
   /** Get the value of the group lasso regularization term. */
   EvalType evaluate() override;
+
+  /** Weight regularization terms are not applied to the objective
+   *  functions w.r.t. the activations
+   */
+  void differentiate() override {};
 
   /** Compute the gradient of the group lasso regularization term.
    *  The gradient is computed w.r.t. the weights.
    */
-  void differentiate() override;
+  void compute_weight_regularization() override;
 
 };
 
