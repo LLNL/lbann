@@ -28,7 +28,9 @@ if (CMAKE_HOST_SYSTEM_NAME MATCHES "Linux")
     endif ()
   endforeach ()
 endif ()
-list(REMOVE_DUPLICATES LBANN_CMAKE_INSTALL_RPATH)
+if (LBANN_CMAKE_INSTALL_RPATH)
+  list(REMOVE_DUPLICATES LBANN_CMAKE_INSTALL_RPATH)
+endif ()
 
 # Build the dependency set
 if (TARGET CNPY)
