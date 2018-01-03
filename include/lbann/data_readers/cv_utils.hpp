@@ -41,8 +41,6 @@ namespace lbann {
 
 class cv_utils {
  public:
-  static size_t image_data_amount(const cv::Mat& img);
-
 
   // copy_cvMat_to_buf (with a tempoary buffer)
   template<typename T = uint8_t, int NCh = 3>
@@ -104,8 +102,6 @@ class cv_utils {
    *  otherwise.
    */
   static cv::Mat copy_buf_to_cvMat(const ::Mat& buf, const int Width, const int Height, const int Type, const cv_process& pp);
-
-  static double get_depth_normalizing_factor(const int cv_depth);
 };
 
 
@@ -128,7 +124,7 @@ inline bool cv_utils::copy_cvMat_to_buf_with_full_info(
   const int sz = Height*Width;
 
   buf.resize(sz*NCh*sizeof(T));
-  T *Pixels = reinterpret_cast<T *>(&(buf[0]));
+  auto *Pixels = reinterpret_cast<T *>(&(buf[0]));
 
   if (pp.to_split()) {
     // TODO: like the case with the output in El::Matrixi type, branch on whether the
@@ -161,7 +157,7 @@ inline bool cv_utils::copy_cvMat_to_buf_with_full_info(
     } else {
       const int stride = Width*NCh;
       for (int i = 0; i < Height; ++i, Pixels += stride) {
-        const T *ptr = reinterpret_cast<const T *>(image.ptr<const T>(i));
+        const auto *ptr = reinterpret_cast<const T *>(image.ptr<const T>(i));
         cv_normalizer::
         scale(ptr, ptr+stride, Pixels, pp.get_transform_normalize());
       }
@@ -209,7 +205,7 @@ inline cv::Mat cv_utils::copy_buf_to_cvMat_with_full_info(
                         << sz*NCh*sizeof(T) << " are expected.", \
                         cv::Mat())
 
-  const T *Pixels = reinterpret_cast<const T *>(&(buf[0]));
+  const auto *Pixels = reinterpret_cast<const T *>(&(buf[0]));
 
   cv::Mat image = cv::Mat(Height, Width, CV_MAKETYPE(cv::DataType<T>::depth, NCh));
 
@@ -229,7 +225,7 @@ inline cv::Mat cv_utils::copy_buf_to_cvMat_with_full_info(
     }
 
     cv::merge(channels, image);
-    T *optr = reinterpret_cast<T *>(image.data);
+    auto *optr = reinterpret_cast<T *>(image.data);
     for(size_t ch=0; ch < NCh; ++ch, optr += sz) {
       cv_normalizer::
       scale(reinterpret_cast<const T *>(image.datastart),
@@ -259,7 +255,7 @@ inline cv::Mat cv_utils::copy_buf_to_cvMat_with_known_type(
                         "An empty image (" << Height << " x " << Width << ") or a buffer (" << buf.size() << ")", \
                         cv::Mat())
 
-  const size_t sz = static_cast<size_t>(Width*Height*sizeof(T));
+  const auto sz = static_cast<size_t>(Width*Height*sizeof(T));
   const size_t NCh = buf.size()/sz;
 
   _LBANN_MILD_EXCEPTION(sz*NCh != buf.size(), \
@@ -294,7 +290,7 @@ inline bool cv_utils::copy_cvMat_to_buf_with_full_info(
   // NCh need not be a template parameter here. It can be a function argument.
   // However, keeping it as a static parameter enables custom accesses on pixels
   // For example,
-  //   typedef cv::Vec<T, NCh> Vec_T;
+  //   using Vec_T = cv::Vec<T, NCh>;
   //   image.at<Vec_T>(y, x) = newPixel;
   _LBANN_SILENT_EXCEPTION(image.empty(), "", false)
 
@@ -354,7 +350,7 @@ inline bool cv_utils::copy_cvMat_to_buf_with_full_info(
     } else {
       const int stride = Width*NCh;
       for (int i = 0; i < Height; ++i, Pixels += stride) {
-        const T *ptr = reinterpret_cast<const T *>(image.ptr<const T>(i));
+        const auto *ptr = reinterpret_cast<const T *>(image.ptr<const T>(i));
         cv_normalizer::
         scale(ptr, ptr+stride, Pixels, pp.get_transform_normalize());
       }
@@ -418,20 +414,17 @@ inline cv::Mat cv_utils::copy_buf_to_cvMat_with_full_info(
     std::vector<cv::Mat> channels(NCh);
 
     if (std::is_same<DataType, T>::value) {
-      for(size_t ch=0; ch < NCh; ++ch, Pixels += sz)
+      for(size_t ch=0; ch < NCh; ++ch, Pixels += sz) {
         channels[ch] = cv::Mat(Height, Width, CV_MAKETYPE(image.depth(),1),
                                const_cast<DataType *>(Pixels));
+      }
 
       cv::merge(channels, image);
+      const auto *iptr = reinterpret_cast<const T *>(image.data);
+      auto *optr = reinterpret_cast<T *>(image.data);
 
-      T *optr = reinterpret_cast<T *>(image.data);
-
-      for(size_t ch=0; ch < NCh; ++ch, optr += sz) {
-        cv_normalizer::
-        scale(reinterpret_cast<const T *>(image.datastart),
-              reinterpret_cast<const T *>(image.dataend),
-              optr, {trans[ch]});
-      }
+      cv_normalizer::
+      scale(iptr, iptr+sz*NCh, optr, trans);
     } else {
       for(size_t ch=0; ch < NCh; ++ch, Pixels += sz) {
         channels[ch] = cv::Mat(Height, Width, CV_MAKETYPE(image.depth(),1));

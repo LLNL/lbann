@@ -42,7 +42,7 @@ function HELP {
   exit 1
 }
 
-while getopts "b:c:de:ghm:st:" opt; do
+while getopts "b:c:de:ghm:st:z" opt; do
   case $opt in
     b)
       BLAS=$OPTARG
@@ -72,6 +72,9 @@ while getopts "b:c:de:ghm:st:" opt; do
     t)
       DTYPE=$OPTARG
       ;;
+    z)
+      SPACK_DIRTY=1
+      ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
       exit 1
@@ -91,8 +94,15 @@ CLUSTER=`hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g'`
 ARCH=`uname -m`
 
 PLATFORM=
+FEATURE=
 if [ "${GPU}" == "1" -o "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" ]; then
-  PLATFORM="+gpu"
+  if [ "${CLUSTER}" == "flash" ]; then
+    PLATFORM="+gpu ^cuda@7.5 ^cudnn@5.1"
+    FEATURE="_gpu_cuda-7.5_cudnn-5.1"
+  else
+    PLATFORM="+gpu"
+    FEATURE="_gpu"
+  fi
   EL_VER="${EL_VER}+cublas"
 fi
 
@@ -104,7 +114,7 @@ DIST=
 case ${BUILD_TYPE} in
   Release)
     DIST=rel
-    # Don't use the march=native flag for gcc and intel compilers since that 
+    # Don't use the march=native flag for gcc and intel compilers since that
     # wouldn't allow spack to differentiate between optimization sets
     # C_FLAGS="${C_FLAGS} -march=native"
     # CXX_FLAGS="${CXX_FLAGS} -march=native"
@@ -164,15 +174,20 @@ if [ ! -z "${Fortran_FLAGS}" ]; then
     SPACK_FFLAGS="fflags=\"${Fortran_FLAGS}\""
 fi
 
+SPACK_SETUP_FLAGS=
+if [ "${SPACK_DIRTY}" == "1" ]; then
+  SPACK_SETUP_FLAGS="--dirty"
+fi
+
 SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ^elemental@${EL_VER} blas=${BLAS} ^${MPI}"
 # Disable the extra compiler flags until spack supports propagating flags properly
 #SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ${SPACK_CFLAGS} ${SPACK_CXXFLAGS} ${SPACK_FFLAGS} ^elemental@${EL_VER} blas=${BLAS} ^${MPI}"
 
 SPEC="spack spec ${SPACK_OPTIONS}"
-CMD="spack setup ${SPACK_OPTIONS}"
+CMD="spack setup ${SPACK_SETUP_FLAGS} ${SPACK_OPTIONS}"
 
 # Create a directory for the build
-DIR="${CLUSTER}_${COMPILER}_${ARCH}_${MPI}_${BLAS}_${DIST}"
+DIR="${CLUSTER}_${COMPILER}_${ARCH}${FEATURE}_${MPI}_${BLAS}_${DIST}"
 DIR=${DIR//@/-}
 DIR=${DIR// /-}
 

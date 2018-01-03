@@ -32,11 +32,14 @@
 
 #include "cv_transform.hpp"
 #include "cv_normalizer.hpp"
+#include "cv_subtractor.hpp"
 #include "cv_augmenter.hpp"
 #include "cv_colorizer.hpp"
+#include "cv_decolorizer.hpp"
 #include "cv_cropper.hpp"
 #include "cv_mean_extractor.hpp"
 #include <memory>
+#include <limits> // std::numeric_limits
 
 #ifdef __LIB_OPENCV
 namespace lbann {
@@ -48,6 +51,8 @@ class cv_process {
   /// OpenCV flip codes: c<0 for top_left <-> bottom_right, c=0 for top<->down, and c>0 for left<->right
 
  protected:
+  /// unique name for the processor
+  std::string m_name;
   /// Whether to flip an image
   cv_transform::cv_flipping m_flip;
   /// Whether to split channels
@@ -60,10 +65,10 @@ class cv_process {
   /// Array of transforms
   std::vector<std::unique_ptr<cv_transform> > m_transforms;
 
-  /// Check if the last transform registered in the list is a normalizer
-  inline bool is_normalizer_last() const {
-    return (m_is_normalizer_set && ((m_normalizer_idx+1) == m_transforms.size()));
-  }
+  /// Check if the last transform registered in the list is a normalizer and not a subtractor
+  bool to_fuse_normalizer_with_copy() const;
+
+  void set_normalizer_info();
 
  public:
   cv_process()
@@ -76,6 +81,9 @@ class cv_process {
     : m_flip(flip_code), m_split(tosplit), m_is_normalizer_set(false), m_normalizer_idx(0u) {}
 
   virtual ~cv_process() {}
+
+  std::string get_name() const { return m_name; }
+  void set_name(const std::string& name) { m_name = name; }
 
   /// Reset all the transforms
   void reset();
@@ -108,7 +116,7 @@ class cv_process {
   std::vector<cv_normalizer::channel_trans_t> get_transform_normalize(const unsigned int ch) const;
 
   /// Turn off normalizer. This is useful to make sure it off after potential lazy application
-  void disable_normalizer();
+  void disable_lazy_normalizer();
 
   /// Turn off all transforms
   void disable_transforms();
@@ -118,6 +126,7 @@ class cv_process {
 
   /// Add a normalizing tranform
   bool add_normalizer(std::unique_ptr<cv_normalizer> tr);
+  bool add_normalizer(std::unique_ptr<cv_subtractor> tr);
 
   /// Allow access to the list of transforms registered
   const std::vector<std::unique_ptr<cv_transform> >& get_transforms() const {
@@ -133,13 +142,20 @@ class cv_process {
   /// Retrun the number of transforms registered
   unsigned int get_num_transforms() const { return m_transforms.size(); }
 
+  /** Return final image dimension {width, height} after all the transforms
+   *  If a cropper is set, returns {crop_width, crop_height}. Otherwise, {0,0}.
+   */
+  std::vector<unsigned int> get_data_dims() const;
 
-  void determine_inverse_normalization();
+  void determine_inverse_lazy_normalization();
 
-  bool preprocess(cv::Mat& image);
+  /// Execute a range of transforms [tr_strart, tr_end) on the given image in order
+  bool preprocess(cv::Mat& image, unsigned int tr_start = 0u,
+                  unsigned int tr_end = std::numeric_limits<unsigned int>::max());
+  /// Execute all the inverse transforms on the given image in the reverse order
   bool postprocess(cv::Mat& image);
 
-  virtual std::string get_type() const { return "image processor"; }
+  virtual std::string get_type() const { return "cv_process"; }
   virtual std::string get_description() const;
 };
 

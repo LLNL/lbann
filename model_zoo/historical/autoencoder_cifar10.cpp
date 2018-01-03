@@ -187,7 +187,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Initialize network
-    deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::mean_squared_error(), optimizer_fac);
+    sequential_model dnn(trainParams.MBSize, comm, new objective_functions::mean_squared_error(), optimizer_fac);
     std::map<execution_mode, generic_data_reader *> data_readers = {std::make_pair(execution_mode::training,&cifar10_trainset),
                                                            std::make_pair(execution_mode::validation, &cifar10_validation_set),
                                                            std::make_pair(execution_mode::testing, &cifar10_testset)
@@ -268,7 +268,7 @@ int main(int argc, char *argv[]) {
       optimizer *o = optimizer_fac->create_optimizer();
       cout << "\nOptimizer:\n" << o->get_description() << endl << endl;
       delete o;
-      std::vector<Layer *>& layers = dnn.get_layers();
+      const std::vector<Layer *>& layers = dnn.get_layers();
       for (size_t h=0; h<layers.size(); h++) {
         std::cout << h << " " << layers[h]->get_description() << endl;
       }

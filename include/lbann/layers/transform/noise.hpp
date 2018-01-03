@@ -29,7 +29,6 @@
 #ifndef LBANN_LAYER_NOISE_HPP_INCLUDED
 #define LBANN_LAYER_NOISE_HPP_INCLUDED
 
-#include "lbann/base.hpp"
 #include "lbann/layers/transform/transform.hpp"
 #include "lbann/utils/exception.hpp"
 
@@ -40,7 +39,7 @@ namespace lbann {
  * @param noise_factor controls the noise level
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
-class noise_layer : public transform {
+class noise_layer : public transform_layer {
  private:
 
  public:
@@ -48,7 +47,7 @@ class noise_layer : public transform {
   noise_layer(lbann_comm *comm,
               float noise_factor=0.5f,
               cudnn::cudnn_manager *cudnn = nullptr)
-    : transform(comm), m_noise_factor(noise_factor) {
+    : transform_layer(comm), m_noise_factor(noise_factor) {
 
     // Setup the data distribution
     initialize_distributed_matrices();
@@ -64,16 +63,16 @@ class noise_layer : public transform {
   }
 
   noise_layer(const noise_layer& other) :
-    transform(other),
+    transform_layer(other),
     m_noise_factor(other.m_noise_factor) { }
 
   noise_layer& operator=(const noise_layer& other) {
-    transform::operator=(other);
+    transform_layer::operator=(other);
     m_noise_factor = other.m_noise_factor;
     return *this;
   }
 
-  ~noise_layer() {
+  ~noise_layer() override {
   #ifdef __LIB_CUDNN
     // GPU memory for activations is a copy of previous layer's activations
     this->m_error_signal_d.clear();
@@ -93,13 +92,13 @@ class noise_layer : public transform {
   std::string get_type() const override { return "noise"; }
 
   virtual inline void initialize_distributed_matrices() {
-    transform::initialize_distributed_matrices<T_layout>();
+    transform_layer::initialize_distributed_matrices<T_layout>();
   }
-  virtual data_layout get_data_layout() const override { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
 
   void setup_gpu() override {
-    transform::setup_gpu();
+    transform_layer::setup_gpu();
   #ifndef __LIB_CUDNN
     throw lbann_exception("noise_layer: cuDNN not detected");
   #else
@@ -124,7 +123,7 @@ class noise_layer : public transform {
     if(this->m_using_gpus) {
       throw lbann_exception("noise_layer: cuDNN not implemented");
     } else {
-      El::LockedView(*this->m_error_signal_v, *this->m_prev_error_signal);
+      El::LockedView(*this->m_error_signal_v, *this->m_prev_error_signal_v);
     }
   }
 
@@ -133,7 +132,7 @@ class noise_layer : public transform {
   }
 
   void fp_compute_cpu() {
-    El::Copy(*this->m_prev_activations, *this->m_activations_v);
+    El::Copy(*this->m_prev_activations_v, *this->m_activations_v);
     AbsDistMat* noise_mat = this->m_activations_v->Construct(this->m_activations_v->Grid(),
                                                              this->m_activations_v->Root());
     El::Gaussian(*noise_mat, this->m_activations_v->Height(), 

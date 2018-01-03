@@ -25,44 +25,158 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/objective_functions/objective_function.hpp"
+#include "lbann/utils/timer.hpp"
+#include <numeric>
 
 namespace lbann {
 
-namespace objective_functions {
-
-objective_function::objective_function() {
-  reset_statistics();
-}
-
-void objective_function::add_to_value(double value) {
-  m_value += value;
-}
-
-void objective_function::record_and_reset_value() {
-  m_recorded_values += m_value;
-  m_recorded_iterations++;
-  m_value = 0.0;
-}
-
-double objective_function::get_value() const {
-  return m_value;
-}
-
-double objective_function::get_mean_value() const {
-  if(m_recorded_iterations != 0) {
-    return m_recorded_values / m_recorded_iterations;
-  }
-  else {
-    return std::nan("");
+objective_function::objective_function(const objective_function& other)
+  : m_statistics(other.m_statistics),
+    m_evaluation_time(other.m_evaluation_time),
+    m_differentiation_time(other.m_differentiation_time) {
+  m_terms = other.m_terms;
+  for (auto& term : m_terms) {
+    term = term->copy();
   }
 }
 
-void objective_function::reset_statistics() {
-  m_value = 0.0;
-  m_recorded_values = 0.0;
-  m_recorded_iterations = 0;
+objective_function& objective_function::operator=(const objective_function& other) {
+  for (const auto& term : m_terms) {
+    if (term != nullptr) { delete term; }
+  }
+  m_terms = other.m_terms;
+  for (auto& term : m_terms) {
+    term = term->copy();
+  }
+  m_statistics = other.m_statistics;
+  m_evaluation_time = other.m_evaluation_time;
+  m_differentiation_time = other.m_differentiation_time;
+  return *this;
 }
 
-}  // namespace objective_functions
+objective_function::~objective_function() {
+  for (const auto& term : m_terms) {
+    if (term != nullptr) { delete term; }
+  }
+}
+
+void objective_function::setup(model& m) {
+  for (objective_function_term *term : m_terms) {
+    if (term == nullptr) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "a term in the objective function is a null pointer";
+      throw lbann_exception(err.str());
+    }
+    term->setup(m);
+  }
+}
+
+EvalType objective_function::evaluate(execution_mode mode) {
+  const auto start_time = get_time();
+  EvalType value = EvalType(0);
+  for (const auto& term : m_terms) {
+    value += term->evaluate();
+  }
+  m_statistics[mode].add_value(value, 1);
+  m_evaluation_time += get_time() - start_time;
+  return value;
+}
+
+void objective_function::differentiate() {
+  const auto start_time = get_time();
+  for (const auto& term : m_terms) {
+    term->differentiate();
+  }
+  m_differentiation_time += get_time() - start_time;
+}
+
+EvalType objective_function::get_mean_value(execution_mode mode) const {
+  if (m_statistics.count(mode) == 0
+      || m_statistics.at(mode).get_num_samples() == 0) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "attempted to get mean objective function value with no samples for statistics";
+    throw lbann_exception(err.str());
+  }
+  return m_statistics.at(mode).get_mean();
+}
+
+int objective_function::get_statistics_num_samples(execution_mode mode) const {
+  if (m_statistics.count(mode) == 0) {
+    return 0;
+  } else {
+    return m_statistics.at(mode).get_num_samples();
+  }
+}
+
+std::vector<Layer*> objective_function::get_layer_pointers() const {
+  std::vector<Layer*> layers;
+  for (objective_function_term *term : m_terms) {
+    std::vector<Layer*> term_layers = term->get_layer_pointers();
+    layers.insert(layers.end(), term_layers.begin(), term_layers.end());
+  }
+  return layers;
+}
+
+void objective_function::set_layer_pointers(std::vector<Layer*> layers) {
+  auto it = layers.begin();
+  for (objective_function_term *term : m_terms) {
+    const size_t num_layers = term->get_layer_pointers().size();
+    std::vector<Layer*> term_layers(it, it + num_layers);
+    term->set_layer_pointers(term_layers);
+    it += num_layers;
+  }
+  if (it != layers.end()) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "attempted to set an invalid number of layer pointers "
+        << "(expected " << it - layers.begin() << ", "
+        << "found " << layers.size() << ")";
+    throw lbann_exception(err.str());
+  }
+}
+
+std::vector<weights*> objective_function::get_weights_pointers() const {
+  std::vector<weights*> w;
+  for (objective_function_term *term : m_terms) {
+    std::vector<weights*> term_weights = term->get_weights_pointers();
+    w.insert(w.end(), term_weights.begin(), term_weights.end());
+  }
+  return w;
+}
+
+void objective_function::set_weights_pointers(std::vector<weights*> w) {
+  auto it = w.begin();
+  for (objective_function_term *term : m_terms) {
+    const size_t num_weights = term->get_weights_pointers().size();
+    std::vector<weights*> term_weights(it, it + num_weights);
+    term->set_weights_pointers(term_weights);
+    it += num_weights;
+  }
+  if (it != w.end()) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "attempted to set an invalid number of weights pointers "
+        << "(expected " << it - w.begin() << ", "
+        << "found " << w.size() << ")";
+    throw lbann_exception(err.str());
+  }
+}
+
+bool objective_function::save_to_checkpoint_shared(lbann::persist& p) {
+  for (objective_function_term *term : m_terms) {
+    term->save_to_checkpoint_shared(p);
+  }
+  return true;
+}
+
+bool objective_function::load_from_checkpoint_shared(lbann::persist& p) {
+  for (objective_function_term *term : m_terms) {
+    term->load_from_checkpoint_shared(p);
+  }
+  return true;
+}
+
 
 }  // namespace lbann

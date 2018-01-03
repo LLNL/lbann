@@ -39,27 +39,46 @@ namespace lbann {
  */
 class pilot2_molecular_reader : public generic_data_reader {
  public:
-  pilot2_molecular_reader(int num_neighbors, 
+  pilot2_molecular_reader(int num_neighbors,
+                          int max_neighborhood,
                           bool shuffle = true);
-  pilot2_molecular_reader(const pilot2_molecular_reader&);
-  pilot2_molecular_reader& operator=(const pilot2_molecular_reader&);
-  ~pilot2_molecular_reader() {}
-  pilot2_molecular_reader* copy() const {
+  pilot2_molecular_reader(const pilot2_molecular_reader&) = default;
+  pilot2_molecular_reader& operator=(const pilot2_molecular_reader&) = default;
+  ~pilot2_molecular_reader() override {}
+  pilot2_molecular_reader* copy() const override {
     return new pilot2_molecular_reader(*this);
   }
 
-  void load();
+  void load() override;
 
-  int get_linearized_data_size() const {
+  int get_linearized_data_size() const override {
     return m_num_features * (m_num_neighbors + 1);
   }
-  const std::vector<int> get_data_dims() const {
-    return {m_num_neighbors, (int) m_features.shape[2],
+  const std::vector<int> get_data_dims() const override {
+    return {m_num_neighbors + 1, (int) m_features.shape[2],
         (int) m_features.shape[3]};
   }
+
+  /// Data format is:
+  /// [Frames (2900), Molecules (3040), Beads (12), ['x', 'y', 'z',
+  /// 'CHOL', 'DPPC', 'DIPC', 'Head', 'Tail', 'BL1', 'BL2', 'BL3',
+  /// 'BL4', 'BL5', 'BL6', 'BL7', 'BL8', 'BL9', 'BL10', 'BL11',
+  /// 'BL12'] (20)]
+  template <class T>
+  T scale_data(int idx, T datum) {
+    T scaled_datum = datum;
+    if(idx >= 0 && idx <= 2) { /// x,y,z
+      scaled_datum /= position_scale_factor;
+    }
+    if(idx >= 8 && idx <= 19) {
+      scaled_datum /= bond_len_scale_factor;
+    }
+    return scaled_datum;
+  }
+
  protected:
   /// Fetch a molecule and its neighbors.
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
+  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
   /// Fetch molecule data_id into X at molecule offset idx.
   void fetch_molecule(Mat& X, int data_id, int idx, int mb_idx);
 
@@ -76,10 +95,15 @@ class pilot2_molecular_reader : public generic_data_reader {
   int m_num_samples_per_frame = 0;
   // Number of neighbors to fetch for each molecule.
   int m_num_neighbors;
+  // Size of the neighborhood in the data set
+  int m_max_neighborhood;
   /// Molecular features.
   cnpy::NpyArray m_features;
   /// Neighbor information (adjacency matrix).
   cnpy::NpyArray m_neighbors;
+
+  DataType position_scale_factor = 350.0;
+  DataType bond_len_scale_factor = 10.0;
 };
 
 }  // namespace lbann

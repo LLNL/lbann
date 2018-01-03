@@ -8,6 +8,12 @@ if(CUDA_FOUND)
 
   # Include CUDA header files
   include_directories(${CUDA_INCLUDE_DIRS})
+  if(WITH_NCCL)
+#    include_directories(/usr/workspace/wsb/brain/nccl2/include/)
+#    set(nccl2_LIBRARIES /usr/workspace/wsb/brain/nccl2/lib/${CMAKE_SHARED_LIBRARY_PREFIX}nccl${CMAKE_SHARED_LIBRARY_SUFFIX})
+    include_directories(${NCCL_HOME_DIR}/include/)
+    set(nccl2_LIBRARIES ${NCCL_HOME_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}nccl${CMAKE_SHARED_LIBRARY_SUFFIX})
+  endif()
 
   set(cuBLAS_LIBRARIES ${CUDA_TOOLKIT_ROOT_DIR}/lib64/${CMAKE_SHARED_LIBRARY_PREFIX}cublas${CMAKE_SHARED_LIBRARY_SUFFIX})
   set(NVTX_LIBRARIES ${CUDA_TOOLKIT_ROOT_DIR}/lib64/${CMAKE_SHARED_LIBRARY_PREFIX}nvToolsExt${CMAKE_SHARED_LIBRARY_SUFFIX})  

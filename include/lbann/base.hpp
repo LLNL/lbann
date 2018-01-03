@@ -31,29 +31,39 @@
 
 #include "El.hpp"
 #include "lbann/Elemental_extensions.hpp"
+#include "lbann/utils/cyg_profile.hpp"
 
+
+// Datatype for numerical computation
+// Default: float
 #if LBANN_DATATYPE == 8
-typedef double DataType;
+using DataType = double;
 #elif LBANN_DATATYPE == 4
-typedef float DataType;
+using DataType = float;
 #else
-typedef float DataType; // Default to floats
+#define LBANN_DATATYPE 4
+using DataType = float; 
 #endif
 
-typedef El::Grid EGrid;
-typedef El::Grid Grid;
-typedef El::Matrix<DataType> Mat;
-typedef El::AbstractDistMatrix<DataType> AbsDistMat;
-typedef El::DistMatrix<DataType, El::MC, El::MR> DistMat;
-typedef El::DistMatrix<DataType, El::CIRC, El::CIRC> CircMat;
-typedef El::DistMatrix<DataType, El::STAR, El::STAR> StarMat;
-typedef El::DistMatrix<DataType, El::MR, El::STAR> ColSumMat; /* Summary matrix over columns */
-typedef El::DistMatrix<DataType, El::MC, El::STAR> RowSumMat;
-typedef El::DistMatrix<DataType, El::STAR, El::VC> StarVCMat;
-typedef El::DistMatrix<DataType, El::STAR, El::MR> StarMRMat;
-typedef El::DistMatrix<DataType, El::VC, El::STAR> ColSumStarVCMat; /* Summary matrix over columns */
-typedef El::BlockMatrix<DataType> BlockMat;
-typedef El::ElementalMatrix<DataType> ElMat;
+// Datatype for model evaluation
+// Examples: timing, metrics, objective functions
+using EvalType = double;
+
+// Elemental matrices
+using EGrid = El::Grid;
+using Grid = El::Grid;
+using Mat = El::Matrix<DataType>;
+using AbsDistMat = El::AbstractDistMatrix<DataType>;
+using DistMat = El::DistMatrix<DataType, El::MC, El::MR>;
+using CircMat = El::DistMatrix<DataType, El::CIRC, El::CIRC>;
+using StarMat = El::DistMatrix<DataType, El::STAR, El::STAR>;
+using ColSumMat = El::DistMatrix<DataType, El::MR, El::STAR>; /* Summary matrix over columns */
+using RowSumMat = El::DistMatrix<DataType, El::MC, El::STAR>;
+using StarVCMat = El::DistMatrix<DataType, El::STAR, El::VC>;
+using StarMRMat = El::DistMatrix<DataType, El::STAR, El::MR>;
+using ColSumStarVCMat = El::DistMatrix<DataType, El::VC, El::STAR>; /* Summary matrix over columns */
+using BlockMat = El::BlockMatrix<DataType>;
+using ElMat = El::ElementalMatrix<DataType>;
 
 /// Distributed matrix format
 enum class matrix_format {MC_MR, CIRC_CIRC, STAR_STAR, STAR_VC, MC_STAR, invalid};
@@ -94,12 +104,6 @@ static const char *__attribute__((used)) _to_string(execution_mode m) {
     throw("Invalid execution mode specified"); /// @todo this should be an lbann_exception but then the class has to move to resolve dependencies
   }
 }
-
-/** Weight matrix initialization scheme */
-enum class weight_initialization {zero, uniform, normal, glorot_normal, glorot_uniform, he_normal, he_uniform};
-
-/** returns a string representation of the weight_initialization */
-std::string get_weight_initialization_name(weight_initialization m); 
 
 /** Pooling layer mode */
 enum class pool_mode {max, average, average_no_pad};

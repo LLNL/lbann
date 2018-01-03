@@ -9,6 +9,7 @@
 #include "lbann/utils/random.hpp"
 #include "lbann/data_readers/patchworks/patchworks.hpp"
 #include "patchworks_image.hpp"
+//#include <opencv2/cvconfig.h>
 
 
 using namespace lbann::patchworks;
@@ -69,7 +70,9 @@ bool test_patch(const int argc, char *argv[]) {
     return false;
   }
   img->show_info();
+ #if defined(HAVE_GTK) || defined(HAVE_CARBON)
   img->display("original " + filename);
+ #endif
 
   bool ok = true;
   patch_descriptor pi;
@@ -97,11 +100,13 @@ bool test_patch(const int argc, char *argv[]) {
     image::write(sstr.str(), patches[i]);
   }
   std::cout << "the id of the last patch generated (label in case of paired patches): "
-            << pi.get_current_patch_idx() << std::endl;
+            << pi.get_last_label()+1 << std::endl;
 
   std::cout << pi;
+ #if defined(HAVE_GTK) || defined(HAVE_CARBON)
   img->draw_patches(pi);
   img->display("patches of " + filename);
+ #endif
 
   std::string patched_filename = basename_with_no_extention(filename)
                                  + ".patched." + get_file_extention(filename);

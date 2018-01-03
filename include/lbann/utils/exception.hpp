@@ -31,17 +31,20 @@
 
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
+#include "lbann/utils/stack_trace.hpp"
 #include <iostream>
 #include <exception>
 
-using namespace El;
-
 namespace lbann {
+
 class lbann_exception : public std::exception {
  public:
-  lbann_exception(const std::string m="my custom exception"):msg(m) {}
-  ~lbann_exception() {}
-  const char *what() const noexcept {
+  lbann_exception(const std::string m="my custom exception"):msg(m) { 
+    stack_trace::print_lbann_exception_stack_trace(msg);
+  }
+
+  ~lbann_exception() override {}
+  const char *what() const noexcept override {
     return msg.c_str();
   }
 
@@ -49,9 +52,9 @@ class lbann_exception : public std::exception {
   std::string msg;
 };
 
-inline void lbann_report_exception( lbann_exception& e, lbann_comm *comm=NULL, std::ostream& os=std::cerr) {
+inline void lbann_report_exception( lbann_exception& e, lbann_comm *comm=nullptr, std::ostream& os=std::cerr) {
   if( std::string(e.what()) != "" ) {
-    if(comm != NULL) {
+    if(comm != nullptr) {
       os << "LBANN: rank " << comm->get_rank_in_model() << " of model " << comm->get_model_rank() <<" caught error message:";
     } else {
       os << "LBANN: caught error message:";
@@ -61,5 +64,6 @@ inline void lbann_report_exception( lbann_exception& e, lbann_comm *comm=NULL, s
   El::mpi::Abort( El::mpi::COMM_WORLD, 1 );
 }
 }
+
 
 #endif // LBANN_EXCEPTION_HPP_INCLUDED

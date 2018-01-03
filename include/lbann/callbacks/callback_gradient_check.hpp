@@ -47,9 +47,9 @@ class lbann_callback_gradient_check : public lbann_callback {
 
   lbann_callback_gradient_check(const lbann_callback_gradient_check&) = default;
   lbann_callback_gradient_check& operator=(const lbann_callback_gradient_check&) = default;
-  lbann_callback_gradient_check* copy() const { return new lbann_callback_gradient_check(*this); }
-  void on_test_begin(model *m);
-  std::string name() const { return "gradient check"; }
+  lbann_callback_gradient_check* copy() const override { return new lbann_callback_gradient_check(*this); }
+  void on_test_begin(model *m) override;
+  std::string name() const override { return "gradient check"; }
 
   /** Compute objective function value.
    *  It is assumed that input data has already been loaded into the

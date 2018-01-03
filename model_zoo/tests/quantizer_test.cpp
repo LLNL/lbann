@@ -26,7 +26,7 @@
 // quantizer_test.cpp - Tests lbann_quantizer
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <stdlib.h>
+#include <cstdlib>
 #include "lbann/comm.hpp"
 #include "lbann/utils/quantizer.hpp"
 #include "test_utils.hpp"
@@ -88,8 +88,7 @@ void test_adaptive_quantization(const Mat& mat, bool exact) {
   lbann_quantizer quantizer;
   std::vector<uint16_t> qmat;
   // Handle different datatype sizes.
-  typedef std::conditional<sizeof(DataType) <= sizeof(uint32_t),
-          uint32_t, uint64_t>::type colT;
+  using colT = std::conditional<sizeof(DataType) <= sizeof(uint32_t), uint32_t, uint64_t>::type;
   quantizer.adaptive_quantize<colT, uint16_t>(mat, qmat, qerror, 3);
   quantizer.adaptive_unquantize<colT, uint16_t>(qmat.data(), uqmat);
   check_quantized_mat(mat, qerror, uqmat, exact);
@@ -160,7 +159,7 @@ void test_adaptive_quantize_allreduce(lbann_comm *comm, DistMat& mat,
 /** Test local operations. */
 void test_local() {
   std::cout << "Testing local quantization" << std::endl;
-  for (Int mat_size = 1; mat_size <= 4096; mat_size *= 2) {
+  for (El::Int mat_size = 1; mat_size <= 4096; mat_size *= 2) {
     // Test uniform matrix.
     Mat uniform_mat;
     El::Uniform(uniform_mat, mat_size, mat_size, DataType(0), DataType(4));
@@ -188,12 +187,12 @@ void test_local() {
 
 /** Test global allreduce operations. */
 void test_allreduces() {
-  lbann_comm *comm = new lbann_comm(1);
+  auto *comm = new lbann_comm(1);
   if (comm->am_world_master()) {
     std::cout << "Testing quantized allreduces" << std::endl;
   }
   // Note: Threshold quantized allreduce not currently supported.
-  for (Int mat_size = 1; mat_size <= 4096; mat_size *= 2) {
+  for (El::Int mat_size = 1; mat_size <= 4096; mat_size *= 2) {
     // Test Rademacher matrix (should be exact);
     DistMat rademacher_mat(comm->get_model_grid());
     if (comm->get_model_rank() == 0) {

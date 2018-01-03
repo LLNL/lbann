@@ -12,12 +12,14 @@
 struct cropper_params {
   bool m_is_set;
   bool m_rand_center;
+  bool m_adaptive_interpolation;
   std::pair<int, int> m_crop_sz;
   std::pair<int, int> m_roi_sz;
 
   cropper_params(void)
     : m_is_set(false),
       m_rand_center(false),
+      m_adaptive_interpolation(false),
       m_crop_sz(std::make_pair(0, 0)),
       m_roi_sz(std::make_pair(0,0)) {}
 };
@@ -42,22 +44,30 @@ struct augmenter_params {
 };
 
 struct main_params {
+  enum normalizer_type {_NONE_,_CHANNEL_WISE_,_PIXEL_WISE_};
   unsigned int m_num_bytes;
   bool m_enable_cropper;
   bool m_enable_augmenter;
   bool m_enable_colorizer;
+  bool m_enable_decolorizer;
   bool m_enable_mean_extractor;
-  bool m_enable_normalizer;
+  normalizer_type m_enable_normalizer;
   unsigned int m_mean_batch_size;
   unsigned int m_num_iter;
+  std::string m_mean_image_name;
+
+  bool is_normalizer_off() const { return (m_enable_normalizer == _NONE_); }
+  bool is_channel_wise_normalizer() const { return (m_enable_normalizer == _CHANNEL_WISE_); }
+  bool is_pixel_wise_normalizer() const { return (m_enable_normalizer == _PIXEL_WISE_); }
 
   main_params(void)
     : m_num_bytes(0u),
       m_enable_cropper(true),
       m_enable_augmenter(false),
       m_enable_colorizer(false),
+      m_enable_decolorizer(false),
       m_enable_mean_extractor(true),
-      m_enable_normalizer(false),
+      m_enable_normalizer(_NONE_),
       m_mean_batch_size(1024u),
       m_num_iter(1u) {}
 };
@@ -79,8 +89,10 @@ int main(int argc, char *argv[]) {
   main_params mp;
   mp.m_enable_cropper = true;
   mp.m_enable_augmenter = static_cast<bool>(atoi(argv[8]));
-  mp.m_enable_colorizer = false;
-  mp.m_enable_normalizer = static_cast<bool>(atoi(argv[9]));
+  mp.m_enable_colorizer = true;
+  mp.m_enable_decolorizer = false;
+  mp.m_enable_normalizer = static_cast<main_params::normalizer_type>(atoi(argv[9]));
+  if (mp.is_pixel_wise_normalizer()) mp.m_mean_image_name = "mean.png";
   mp.m_mean_batch_size = atoi(argv[7]);
   mp.m_enable_mean_extractor = (mp.m_mean_batch_size > 0);
   mp.m_num_iter = atoi(argv[10]);
@@ -93,6 +105,7 @@ int main(int argc, char *argv[]) {
     rp.m_rand_center = static_cast<bool>(atoi(argv[4]));
     rp.m_roi_sz.first = atoi(argv[5]);
     rp.m_roi_sz.second = atoi(argv[6]);
+    //rp.m_adaptive_interpolation = true;
   }
 
   augmenter_params ap;
@@ -134,7 +147,7 @@ void show_help(std::string name) {
     std::cout << std::endl;
     std::cout << "    a: whether to use augmenter (0|1)" << std::endl;
     std::cout << std::endl;
-    std::cout << "    n: whether to use normalizer (0|1)" << std::endl;
+    std::cout << "    n: whether to use normalizer (0=none|1=channel-wise|2=pixel-wise)" << std::endl;
     std::cout << std::endl;
     std::cout << "   ni: The number of iterations." << std::endl;
     std::cout << "       must be greater than 0" << std::endl;
@@ -202,7 +215,7 @@ bool test_image_io(const std::string filename,
     if (rp.m_is_set) { // If cropper parameters are given
       // Setup a cropper
       std::unique_ptr<lbann::cv_cropper> cropper(new(lbann::cv_cropper));
-      cropper->set(rp.m_crop_sz.first, rp.m_crop_sz.second, rp.m_rand_center, rp.m_roi_sz);
+      cropper->set(rp.m_crop_sz.first, rp.m_crop_sz.second, rp.m_rand_center, rp.m_roi_sz, rp.m_adaptive_interpolation);
       pp.add_transform(std::move(cropper));
       num_bytes = rp.m_crop_sz.first * rp.m_crop_sz.second * 3;
       transform_idx ++;
@@ -221,6 +234,12 @@ bool test_image_io(const std::string filename,
       transform_idx ++;
     }
 
+    if (mp.m_enable_decolorizer) { // Set up a colorizer
+      std::unique_ptr<lbann::cv_decolorizer> decolorizer(new(lbann::cv_decolorizer));
+      pp.add_transform(std::move(decolorizer));
+      transform_idx ++;
+    }
+
     if (mp.m_enable_mean_extractor) { // set up a mean extractor
       mean_extractor_idx = transform_idx;
       std::unique_ptr<lbann::cv_mean_extractor> mean_extractor(new(lbann::cv_mean_extractor));
@@ -232,10 +251,21 @@ bool test_image_io(const std::string filename,
       transform_idx ++;
     }
 
-    if (mp.m_enable_normalizer) { // Set up a normalizer
-      std::unique_ptr<lbann::cv_normalizer> normalizer(new(lbann::cv_normalizer));
-      normalizer->z_score(true);
-      pp.add_normalizer(std::move(normalizer));
+    if (!mp.is_normalizer_off()) { // Set up a normalizer
+      if (mp.is_channel_wise_normalizer()) {
+        std::unique_ptr<lbann::cv_normalizer> normalizer(new(lbann::cv_normalizer));
+        normalizer->z_score(true);
+        pp.add_normalizer(std::move(normalizer));
+      } else {
+        std::unique_ptr<lbann::cv_subtractor> normalizer(new(lbann::cv_subtractor));
+        cv::Mat img_to_sub = cv::imread(mp.m_mean_image_name);
+        if (img_to_sub.empty()) {
+          std::cout << mp.m_mean_image_name << " does not exist" << std::endl;
+          return false;
+        }
+        normalizer->set(img_to_sub);
+        pp.add_normalizer(std::move(normalizer));
+      }
       transform_idx ++;
     }
   }

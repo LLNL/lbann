@@ -40,7 +40,7 @@ template<int T> class cv_depth_type {};
 #define _def_cv_depth_translation(_CV_TYPE_, _NATIVE_TYPE_) \
 template<> struct cv_depth_type<_CV_TYPE_>  { \
  public: \
-  typedef _NATIVE_TYPE_ standard_type; \
+  using standard_type =  _NATIVE_TYPE_; \
 }
 
 /// cv_depth_type<CV_8U> maps to uint8_t
@@ -80,10 +80,11 @@ struct cv_image_type {
    *  OpenCV channel type.
    *  The depth value returned ranges from 0 to (CV_DEPTH_MAX-1) which is 7
    */
-  static int T(void) {
+  static int T() {
     return cv::DataType<_T_>::depth;
   }
 };
+
 
 template<typename T>
 struct depth_normalization {
@@ -102,6 +103,7 @@ struct depth_normalization {
     }
   }
 };
+
 template<>
 struct depth_normalization<void> {
   static double factor() {
@@ -111,6 +113,43 @@ struct depth_normalization<void> {
     return 1.0;
   }
 };
+
+/// Checks if an OpenCV depth code corresponds to an integral type
+inline bool is_float(const int cv_depth) {
+  return ((cv_depth == CV_64F) || (cv_depth == CV_32F));
+}
+
+inline bool check_if_cv_Mat_is_float_type(const cv::Mat& image) {
+  return is_float(image.depth());
+}
+
+inline bool check_if_cv_Mat_has_same_shape(const cv::Mat& image1, const cv::Mat& image2) {
+  return ((image1.cols == image2.cols) &&
+          (image1.rows == image2.rows) &&
+          (image1.channels() == image2.channels())); 
+}
+
+template<typename T>
+static double depth_norm_factor() {
+  return depth_normalization<T>::factor();
+}
+
+template<typename T>
+static double depth_norm_inverse_factor() {
+  return depth_normalization<T>::inverse_factor();
+}
+
+/// Return the factor for unit scaling with the type indicated by the OpenCV depth
+double get_depth_normalizing_factor(const int cv_depth);
+/// Return the factor to inverse the unit scaling
+double get_depth_denormalizing_factor(const int cv_depth);
+
+/// returns the number of bytes that would be used for the image without compresstion and any header
+inline size_t image_data_amount(const cv::Mat& img) {
+  return static_cast<size_t>(CV_ELEM_SIZE(img.depth())*
+                             CV_MAT_CN(img.type())*
+                             img.cols*img.rows);
+}
 
 } // end of namespace lbann
 

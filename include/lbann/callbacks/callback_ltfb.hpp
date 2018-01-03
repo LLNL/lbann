@@ -30,7 +30,6 @@
 #define __LBANN_CALLBACKS_CALLBACK_LTFB_HPP_INCLUDED
 
 #include "lbann/callbacks/callback.hpp"
-#include "lbann/models/model_dnn.hpp"
 
 namespace lbann {
 
@@ -59,14 +58,14 @@ class lbann_callback_ltfb : public lbann_callback {
                       lbann_summary *summarizer = nullptr);
   lbann_callback_ltfb(const lbann_callback_ltfb& other);
   lbann_callback_ltfb& operator=(const lbann_callback_ltfb& other);
-  ~lbann_callback_ltfb();
+  ~lbann_callback_ltfb() override;
   lbann_callback_ltfb* copy() const override { return new lbann_callback_ltfb(*this); }
   /** Set up LTFB. */
   void setup(model *m) override;
   /**
    * Potentially run an LTFB round.
    */
-  void on_batch_end(model *m) override;
+  void on_batch_begin(model *m) override;
 
   std::string name() const override { return "ltfb"; }
  private:
@@ -90,7 +89,7 @@ class lbann_callback_ltfb : public lbann_callback {
   /**
    * Evaluate a model on tournament data and return its accuracy.
    */
-  double evaluate(deep_neural_network *m);
+  EvalType evaluate(model *m);
   /**
    * Replace the local model m with the remote model data.
    */

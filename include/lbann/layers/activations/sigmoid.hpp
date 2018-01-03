@@ -44,20 +44,25 @@ class sigmoid_layer : public entrywise_activation_layer {
     initialize_distributed_matrices(); 
   }
 
-  sigmoid_layer* copy() const { return new sigmoid_layer(*this); }
+  sigmoid_layer* copy() const override { return new sigmoid_layer(*this); }
 
-  std::string get_type() const { return "sigmoid"; }
+  std::string get_type() const override { return "sigmoid"; }
 
-  virtual inline void initialize_distributed_matrices() {
+  std::string get_description() const override {
+    return std::string{} +
+     " sigmoid dataLayout: " + this->get_data_layout_string(get_data_layout());
+  }
+
+  inline void initialize_distributed_matrices() override {
     entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
   }
-  virtual data_layout get_data_layout() const { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
  protected:
-  DataType activation_function(DataType z) {
+  DataType activation_function(DataType z) override {
     return (DataType(1) / (DataType(1) + std::exp(-z)));
   }
-  DataType activation_function_gradient(DataType z) {
+  DataType activation_function_gradient(DataType z) override {
     const DataType sigz = activation_function(z);
     return sigz * (DataType(1) - sigz);
   }

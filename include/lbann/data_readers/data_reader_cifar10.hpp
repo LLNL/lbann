@@ -29,11 +29,11 @@
 #ifndef LBANN_DATA_READER_CIFAR10_HPP
 #define LBANN_DATA_READER_CIFAR10_HPP
 
-#include "data_reader.hpp"
+#include "data_reader_image.hpp"
 
 namespace lbann {
 
-class cifar10_reader : public generic_data_reader {
+class cifar10_reader : public image_data_reader {
  public:
   /// constructor
   cifar10_reader(bool shuffle = true);
@@ -41,57 +41,20 @@ class cifar10_reader : public generic_data_reader {
   cifar10_reader& operator=(const cifar10_reader&) = default;
 
   /// destructor
-  ~cifar10_reader();
+  ~cifar10_reader() override;
 
-  cifar10_reader* copy() const { return new cifar10_reader(*this); }
+  cifar10_reader* copy() const override { return new cifar10_reader(*this); }
 
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
-  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid);
-  void load();
+  void set_input_params(const int, const int, const int, const int) override { set_defaults(); }
+  void load() override;
 
-  /// returns image width (which should be 32)
-  int get_image_width() const {
-    return m_image_width;
-  }
-
-  /// returns image height (which should be 32)
-  int get_image_height() const {
-    return m_image_height;
-  }
-
-  int get_num_labels() const {
-    return 10;
-  }
-
-  /// returns image depth (which should be 3)
-  int get_image_num_channels() const {
-    return m_image_num_channels;
-  }
-
-  /// returns the number of pixels in the image (should be 3072)
-  int get_linearized_data_size() const {
-    return m_image_width * m_image_height * m_image_num_channels;
-  }
-
-  /// returns
-  int get_linearized_label_size() const {
-    return 10;
-  }
-  
-  const std::vector<int> get_data_dims() const {
-    return {m_image_num_channels, m_image_height, m_image_width};
-  }
-  
-  void save_image(Mat& pixels, const std::string filename, bool do_scale = true) {
-    internal_save_image(pixels, filename, m_image_height, m_image_width,
-                        m_image_num_channels, do_scale);
-  }
+ protected:
+  void set_defaults() override;
+  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;
 
  private:
   std::vector<std::vector<unsigned char> > m_data;
-  int m_image_width;
-  int m_image_height;
-  int m_image_num_channels;
 };
 
 }  // namespace lbann

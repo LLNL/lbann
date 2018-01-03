@@ -28,8 +28,7 @@
 
 #include "lbann/data_readers/cv_augmenter.hpp"
 #include "lbann/utils/mild_exception.hpp"
-#include <ostream>
-#include <iostream>
+#include "lbann/utils/random.hpp"
 
 #ifdef __LIB_OPENCV
 namespace lbann {
@@ -242,7 +241,7 @@ std::string cv_augmenter::get_description() const {
 
 std::ostream& cv_augmenter::print(std::ostream& os) const {
   os << get_description()
-     << " - flipping: " << static_cast<int>(m_flip) << std::endl << std::fixed
+     << " - flipping: " << cv_transform::flip_desc(m_flip) << std::endl << std::fixed
      << " - transfrom: " << m_trans(0,0) << '\t' << m_trans(0,1) << '\t' << m_trans(0,2)  << std::endl
      << "              " << m_trans(1,0) << '\t' << m_trans(1,1) << '\t' << m_trans(1,2)  << std::endl
      << "              " << m_trans(2,0) << '\t' << m_trans(2,1) << '\t' << m_trans(2,2)  << std::endl; //<< std::defaultfloat;

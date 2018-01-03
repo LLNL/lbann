@@ -33,8 +33,9 @@
 
 namespace lbann {
 
-/**
- * Print accuracy information after each epoch and after testing.
+/** Periodically print computational results.
+ *  Prints average objective function value and metric scores after
+ *  each training epoch and evaluation.
  */
 class lbann_callback_print : public lbann_callback {
  public:
@@ -45,8 +46,14 @@ class lbann_callback_print : public lbann_callback {
   void setup(model *m) override;
   void on_epoch_begin(model *m) override;
   void on_epoch_end(model *m) override;
+  void on_validation_end(model *m) override;
   void on_test_end(model *m) override;
   std::string name() const override { return "print"; }
+
+ private:
+  /** Print objective function and metrics to standard output. */
+  void report_results(model *m);
+
 };
 
 }  // namespace lbann

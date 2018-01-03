@@ -29,8 +29,8 @@
 #ifndef LBANN_LAYER_POOLING_HPP_INCLUDED
 #define LBANN_LAYER_POOLING_HPP_INCLUDED
 
+#include <utility>
 #include <vector>
-#include "lbann/base.hpp"
 #include "lbann/layers/transform/transform.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/utils/exception.hpp"
@@ -44,7 +44,7 @@ class unpooling_layer;
 
 /// Pooling layer
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
-class pooling_layer : public transform {
+class pooling_layer : public transform_layer {
  private:
 
   /// Pooling mode
@@ -84,22 +84,25 @@ class pooling_layer : public transform {
                 cudnn::cudnn_manager *cudnn = nullptr)
     : pooling_layer(comm,
                     num_data_dims,
-                    std::vector<int>(num_data_dims, pool_dim).data(),
-                    std::vector<int>(num_data_dims, pool_pad).data(),
-                    std::vector<int>(num_data_dims, pool_stride).data(),
+                    std::vector<int>(num_data_dims, pool_dim),
+                    std::vector<int>(num_data_dims, pool_pad),
+                    std::vector<int>(num_data_dims, pool_stride),
                     pool_mode,
                     cudnn) {}
 
   /// Constructor
   pooling_layer(lbann_comm *comm,
                 int num_data_dims,
-                const int *pool_dims,
-                const int *pool_pads,
-                const int *pool_strides,
+                std::vector<int> pool_dims,
+                std::vector<int> pool_pads,
+                std::vector<int> pool_strides,
                 pool_mode pool_mode,
                 cudnn::cudnn_manager *cudnn = nullptr)
-    : transform(comm),
-      m_pool_mode(pool_mode) {
+    : transform_layer(comm),
+      m_pool_mode(pool_mode),
+      m_pool_dims(std::move(pool_dims)),
+      m_pool_pads(std::move(pool_pads)),
+      m_pool_strides(std::move(pool_strides))  {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "pooling only supports DATA_PARALLEL");
 
@@ -107,13 +110,10 @@ class pooling_layer : public transform {
     initialize_distributed_matrices();
 
     // Initialize input dimensions and pooling parameters
-    m_pool_dims.assign(pool_dims, pool_dims+num_data_dims);
     m_pool_size = std::accumulate(m_pool_dims.begin(),
                                   m_pool_dims.end(),
                                   1,
                                   std::multiplies<int>());
-    m_pool_pads.assign(pool_pads, pool_pads+num_data_dims);
-    m_pool_strides.assign(pool_strides, pool_strides+num_data_dims);
 
   #ifdef __LIB_CUDNN
 
@@ -130,7 +130,7 @@ class pooling_layer : public transform {
   }
 
   pooling_layer(const pooling_layer& other) :
-    transform(other),
+    transform_layer(other),
     m_pool_mode(other.m_pool_mode),
     m_pool_dims(other.m_pool_dims),
     m_pool_pads(other.m_pool_pads),
@@ -144,7 +144,7 @@ class pooling_layer : public transform {
   }
 
   pooling_layer& operator=(const pooling_layer& other){
-    transform::operator=(other);
+    transform_layer::operator=(other);
     m_pool_mode = other.m_pool_mode;
     m_pool_dims = other.m_pool_dims;
     m_pool_pads = other.m_pool_pads;
@@ -179,7 +179,7 @@ class pooling_layer : public transform {
   }
 
   /// Destructor
-  ~pooling_layer() {
+  ~pooling_layer() override {
   #ifdef __LIB_CUDNN
     // Destroy cuDNN objects
     if(m_pooling_cudnn_desc) {
@@ -194,12 +194,12 @@ class pooling_layer : public transform {
   
   virtual inline void initialize_distributed_matrices();
 
-  virtual data_layout get_data_layout() const override { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
   void setup_dims() override {
 
     // Initialize previous neuron tensor dimensions
-    transform::setup_dims();
+    transform_layer::setup_dims();
 
     // Initialize neuron tensor dimensions
     for(int i=0; i<this->m_num_neuron_dims-1; ++i) {
@@ -217,7 +217,7 @@ class pooling_layer : public transform {
 
   /// Initialize GPU objects
   void setup_gpu() override {
-    transform::setup_gpu();
+    transform_layer::setup_gpu();
   #ifndef __LIB_CUDNN
     throw lbann_exception("lbann_layer_pooling: cuDNN not detected");
   #else
@@ -286,7 +286,7 @@ class pooling_layer : public transform {
                                       m_pooling_cudnn_desc,
                                       &one,
                                       this->m_prev_neurons_cudnn_desc,
-                                      this->m_prev_activations_d[i],
+                                      this->m_prev_activations_dv[i],
                                       &zero,
                                       this->m_neurons_cudnn_desc,
                                       this->m_activations_d[i]));
@@ -302,8 +302,8 @@ class pooling_layer : public transform {
   #else
 
     // Useful constants
-    const DataType one = 1;
-    const DataType zero = 0;
+    const DataType one = DataType(1);
+    const DataType zero = DataType(0);
 
     // Get number of GPUs
     const int num_gpus = this->m_cudnn->get_num_gpus();
@@ -319,9 +319,9 @@ class pooling_layer : public transform {
                                        this->m_neurons_cudnn_desc,
                                        this->m_activations_d[i],
                                        this->m_neurons_cudnn_desc,
-                                       this->m_prev_error_signal_d[i],
+                                       this->m_prev_error_signal_dv[i],
                                        this->m_prev_neurons_cudnn_desc,
-                                       this->m_prev_activations_d[i],
+                                       this->m_prev_activations_dv[i],
                                        &zero,
                                        this->m_prev_neurons_cudnn_desc,
                                        this->m_error_signal_d[i]));
@@ -340,7 +340,7 @@ class pooling_layer : public transform {
     }
 
     // Get local matrices
-    const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
+    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
     Mat& activations_local = this->m_activations_v->Matrix();
 
     // Get parameters
@@ -429,7 +429,7 @@ class pooling_layer : public transform {
     }
 
     // Get local matrices
-    const Mat& prev_error_signal_local = this->m_prev_error_signal->LockedMatrix();
+    const Mat& prev_error_signal_local = this->m_prev_error_signal_v->LockedMatrix();
     Mat& error_signal_local = this->m_error_signal_v->Matrix();
 
     // Get parameters
@@ -506,11 +506,11 @@ class pooling_layer : public transform {
 };
 
 template<> inline void pooling_layer<data_layout::MODEL_PARALLEL>::initialize_distributed_matrices() {
-  transform::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>();
+  transform_layer::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>();
 }
 
 template<> inline void pooling_layer<data_layout::DATA_PARALLEL>::initialize_distributed_matrices() {
-  transform::initialize_distributed_matrices<data_layout::DATA_PARALLEL>();
+  transform_layer::initialize_distributed_matrices<data_layout::DATA_PARALLEL>();
 }
 
 }  // namespace lbann

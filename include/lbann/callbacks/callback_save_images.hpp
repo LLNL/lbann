@@ -29,6 +29,8 @@
 #ifndef LBANN_CALLBACKS_CALLBACK_SAVE_IMAGES_HPP_INCLUDED
 #define LBANN_CALLBACKS_CALLBACK_SAVE_IMAGES_HPP_INCLUDED
 
+#include <utility>
+
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/data_readers/data_reader.hpp"
 
@@ -46,7 +48,7 @@ class lbann_callback_save_images : public lbann_callback {
    */
   lbann_callback_save_images(generic_data_reader *reader, std::string image_dir,
                              std::string extension="jpg") :
-    lbann_callback(), m_image_dir(image_dir), m_extension(extension),
+    lbann_callback(), m_image_dir(std::move(image_dir)), m_extension(std::move(extension)),
     m_reader(reader) {}
   lbann_callback_save_images(const lbann_callback_save_images&) = default;
   lbann_callback_save_images& operator=(

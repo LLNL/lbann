@@ -33,6 +33,8 @@
 #include "lbann/lbann.hpp"
 
 using namespace lbann;
+using namespace std;
+using namespace El;
 
 /// Main function
 int main(int argc, char *argv[]) {
@@ -124,7 +126,7 @@ int main(int argc, char *argv[]) {
     ///////////////////////////////////////////////////////////////////
     // load training data (MNIST)
     ///////////////////////////////////////////////////////////////////
-    mnist_reader* mnist_trainset = new mnist_reader(true);
+    auto* mnist_trainset = new mnist_reader(true);
     mnist_trainset->set_file_dir(trainParams.DatasetRootDir);
     mnist_trainset->set_data_filename(g_MNIST_TrainImageFile);
     mnist_trainset->set_label_filename(g_MNIST_TrainLabelFile);
@@ -139,7 +141,7 @@ int main(int argc, char *argv[]) {
     ///////////////////////////////////////////////////////////////////
     // create a validation set from the unused training data (MNIST)
     ///////////////////////////////////////////////////////////////////
-    mnist_reader* mnist_validation_set = new mnist_reader(*mnist_trainset); // Clone the training set object
+    auto* mnist_validation_set = new mnist_reader(*mnist_trainset); // Clone the training set object
     mnist_validation_set->use_unused_index_set();
 
     if (comm->am_world_master()) {
@@ -154,7 +156,7 @@ int main(int argc, char *argv[]) {
     ///////////////////////////////////////////////////////////////////
     // load testing data (MNIST)
     ///////////////////////////////////////////////////////////////////
-    mnist_reader* mnist_testset = new mnist_reader(true);
+    auto* mnist_testset = new mnist_reader(true);
     mnist_testset->set_file_dir(trainParams.DatasetRootDir);
     mnist_testset->set_data_filename(g_MNIST_TestImageFile);
     mnist_testset->set_label_filename(g_MNIST_TestLabelFile);
@@ -175,25 +177,27 @@ int main(int argc, char *argv[]) {
     ///////////////////////////////////////////////////////////////////
 
     // Initialize optimizer
-    optimizer_factory *optimizer_fac;
+    optimizer *default_optimizer;
     if (trainParams.LearnRateMethod == 1) { // Adagrad
-      optimizer_fac = new adagrad_factory(comm, trainParams.LearnRate);
+      default_optimizer = new adagrad(comm, trainParams.LearnRate);
     } else if (trainParams.LearnRateMethod == 2) { // RMSprop
-      optimizer_fac = new rmsprop_factory(comm, trainParams.LearnRate);
+      default_optimizer = new rmsprop(comm, trainParams.LearnRate, 0.9);
     } else if (trainParams.LearnRateMethod == 3) { // Adam
-      optimizer_fac = new adam_factory(comm, trainParams.LearnRate);
+      default_optimizer = new adam(comm, trainParams.LearnRate);
     } else {
-      optimizer_fac = new sgd_factory(comm, trainParams.LearnRate, 0.9, trainParams.LrDecayRate, true);
+      default_optimizer = new sgd(comm, trainParams.LearnRate, 0.9, true);
     }
 
     // Initialize network
 #if __LIB_CUDNN
     cudnn::cudnn_manager *cudnn = new cudnn::cudnn_manager(comm, num_gpus);
 #else // __LIB_CUDNN
-    cudnn::cudnn_manager *cudnn = NULL;
+    cudnn::cudnn_manager *cudnn = nullptr;
 #endif // __LIB_CUDNN
-    deep_neural_network dnn(trainParams.MBSize, comm, new objective_functions::cross_entropy(), optimizer_fac);
-    dnn.add_metric(new metrics::categorical_accuracy<data_layout::MODEL_PARALLEL>(comm));
+    auto *obj_fn = new objective_function();
+    obj_fn->add_term(new cross_entropy());
+    sequential_model dnn(comm, trainParams.MBSize, obj_fn, default_optimizer);
+    dnn.add_metric(new categorical_accuracy_metric(comm));
     std::map<execution_mode, generic_data_reader *> data_readers = {std::make_pair(execution_mode::training, mnist_trainset),
                                                            std::make_pair(execution_mode::validation, mnist_validation_set),
                                                            std::make_pair(execution_mode::testing, mnist_testset)
@@ -202,16 +206,15 @@ int main(int argc, char *argv[]) {
 
     //first layer
     Layer *ilayer = new input_layer_distributed_minibatch<data_layout::DATA_PARALLEL>(comm, parallel_io, data_readers);
-    dnn.add(ilayer);
+    dnn.add_layer(ilayer);
 
     // First convolution layer
     {
-      optimizer *convolution_layer_optimizer = optimizer_fac->create_optimizer();
       int numDims = 2;
       int outputChannels = 32;
-      int filterDims[] = {3, 3};
-      int convPads[] = {0, 0};
-      int convStrides[] = {1, 1};
+      std::vector<int> filterDims = {3, 3};
+      std::vector<int> convPads = {0, 0};
+      std::vector<int> convStrides = {1, 1};
 
       convolution_layer<> *layer
         = new convolution_layer<>(comm,
@@ -220,26 +223,22 @@ int main(int argc, char *argv[]) {
                                   filterDims,
                                   convPads,
                                   convStrides,
-                                  weight_initialization::glorot_uniform,
-                                  convolution_layer_optimizer,
                                   true,
-                                  DataType(0),
                                   cudnn);
-      dnn.add(layer);
+      dnn.add_layer(layer);
 
       Layer *relu = new relu_layer<data_layout::DATA_PARALLEL>(comm,
                                                                cudnn);
-      dnn.add(relu);
+      dnn.add_layer(relu);
     }
 
     // Second convolution layer
     {
-      optimizer *convolution_layer_optimizer = optimizer_fac->create_optimizer();
       int numDims = 2;
       int outputChannels = 32;
-      int filterDims[] = {3, 3};
-      int convPads[] = {0, 0};
-      int convStrides[] = {1, 1};
+      std::vector<int> filterDims = {3, 3};
+      std::vector<int> convPads = {0, 0};
+      std::vector<int> convStrides = {1, 1};
 
       convolution_layer<> *layer
         = new convolution_layer<>(comm,
@@ -248,24 +247,21 @@ int main(int argc, char *argv[]) {
                                   filterDims,
                                   convPads,
                                   convStrides,
-                                  weight_initialization::glorot_uniform,
-                                  convolution_layer_optimizer,
                                   true,
-                                  DataType(0),
                                   cudnn);
-      dnn.add(layer);
+      dnn.add_layer(layer);
 
       Layer *relu = new relu_layer<data_layout::DATA_PARALLEL>(comm,
                                                                cudnn);
-      dnn.add(relu);
+      dnn.add_layer(relu);
     }
 
     // Pooling layer
     {
       int numDims = 2;
-      int poolWindowDims[] = {2, 2};
-      int poolPads[] = {0, 0};
-      int poolStrides[] = {2, 2};
+      std::vector<int> poolWindowDims = {2, 2};
+      std::vector<int> poolPads = {0, 0};
+      std::vector<int> poolStrides = {2, 2};
       pool_mode poolMode = pool_mode::max;
       pooling_layer<> *layer
         = new pooling_layer<>(comm,
@@ -275,43 +271,40 @@ int main(int argc, char *argv[]) {
                               poolStrides,
                               poolMode,
                               cudnn);
-      dnn.add(layer);
+      dnn.add_layer(layer);
     }
 
     // First fully connected layer
     {
       Layer *fc = new fully_connected_layer<data_layout::MODEL_PARALLEL>(comm,
-                                                                         128,
-                                                                         weight_initialization::glorot_uniform,
-                                                                         optimizer_fac->create_optimizer());
-      dnn.add(fc);
+                                                                         128);
+      dnn.add_layer(fc);
       Layer *relu = new relu_layer<data_layout::MODEL_PARALLEL>(comm,
-                                                                NULL);
-      dnn.add(relu);
+                                                                nullptr);
+      dnn.add_layer(relu);
       Layer *dropout1 = new dropout<data_layout::MODEL_PARALLEL>(comm,
                                                                  0.5);
-      dnn.add(dropout1);
+      dnn.add_layer(dropout1);
     }
 
     // Second fully connected layer
     {
       Layer *fc = new fully_connected_layer<data_layout::MODEL_PARALLEL>(comm,
                                                                          10,
-                                                                         weight_initialization::glorot_uniform,
-                                                                         optimizer_fac->create_optimizer(),
+                                                                         nullptr,
                                                                          false);
-      dnn.add(fc);
+      dnn.add_layer(fc);
     }
 
     // Softmax layer
     Layer *sl = new softmax_layer<data_layout::MODEL_PARALLEL>(comm);
-    dnn.add(sl);
+    dnn.add_layer(sl);
 
     // Target layer
     Layer *tlayer = new target_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(comm, dynamic_cast<input_layer*>(ilayer), parallel_io, data_readers, true);
-    dnn.add(tlayer);
+    dnn.add_layer(tlayer);
 
-    lbann_callback_print* print_cb = new lbann_callback_print;
+    auto* print_cb = new lbann_callback_print;
     dnn.add_callback(print_cb);
     lbann_callback_dump_weights *dump_weights_cb = nullptr;
     lbann_callback_dump_activations *dump_activations_cb = nullptr;
@@ -344,9 +337,8 @@ int main(int argc, char *argv[]) {
     }
 
     if (comm->am_world_master()) {
-      optimizer *o = optimizer_fac->create_optimizer();
-      cout << "\nOptimizer:\n" << o->get_description() << endl << endl;
-      std::vector<Layer *>& layers = dnn.get_layers();
+      cout << "\nOptimizer:\n" << default_optimizer->get_description() << endl << endl;
+      const std::vector<Layer *>& layers = dnn.get_layers();
       for (size_t h=0; h<layers.size(); h++) {
         std::cout << h << " " << layers[h]->get_description() << endl;
       }
@@ -359,10 +351,10 @@ int main(int argc, char *argv[]) {
     dnn.setup();
 
     // set checkpoint directory and checkpoint interval
-    dnn.set_checkpoint_dir(trainParams.ParameterDir);
-    dnn.set_checkpoint_epochs(trainParams.CkptEpochs);
-    dnn.set_checkpoint_steps(trainParams.CkptSteps);
-    dnn.set_checkpoint_secs(trainParams.CkptSecs);
+    //dnn.set_checkpoint_dir(trainParams.ParameterDir);
+    //dnn.set_checkpoint_epochs(trainParams.CkptEpochs);
+    //dnn.set_checkpoint_steps(trainParams.CkptSteps);
+    //dnn.set_checkpoint_secs(trainParams.CkptSecs);
 
     // restart model from checkpoint if we have one
     // dnn.restartShared();
@@ -386,7 +378,6 @@ int main(int argc, char *argv[]) {
     if (trainParams.DumpGradients) {
       delete dump_gradients_cb;
     }
-    delete optimizer_fac;
   } catch (lbann_exception& e) {
     lbann_report_exception(e, comm);
   } catch (exception& e) {

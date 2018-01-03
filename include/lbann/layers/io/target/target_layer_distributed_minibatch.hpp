@@ -75,21 +75,24 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
   virtual inline void initialize_distributed_matrices() {
     target_layer::initialize_distributed_matrices<T_layout>();
   }
-  virtual data_layout get_data_layout() const override { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
-  virtual void setup_data() override {
+  void setup_data() override {
     target_layer::setup_data();
 
-    int max_mb_size = this->m_neural_network_model->get_max_mini_batch_size();
+    int max_mb_size = this->m_model->get_max_mini_batch_size();
     for (auto& buf : m_data_buffers) {
       buf.second->M_local.Resize(this->m_num_neurons, max_mb_size);
       buf.second->Ms.Resize(this->m_num_neurons, max_mb_size);
     }
+    // m_local_data_valid = false;
+    // m_local_reader_done = false;
+    // m_num_data_per_epoch = 0;
   }
 
   void fp_set_std_matrix_view() override {
     target_layer::fp_set_std_matrix_view();
-    El::Int cur_mini_batch_size = m_neural_network_model->get_current_mini_batch_size();
+    El::Int cur_mini_batch_size = m_model->get_current_mini_batch_size();
     data_buffer *buf = distributed_minibatch::get_data_buffer();
     El::View(buf->M_local_v, buf->M_local, El::ALL, El::IR(0, cur_mini_batch_size));
   }
@@ -102,7 +105,7 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
       target_layer::update_num_samples_processed(num_samples_in_batch);
     }
 
-    int curr_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
+    int curr_mini_batch_size = this->m_model->get_current_mini_batch_size();
     if(is_current_root() && num_samples_in_batch != curr_mini_batch_size) {
       throw lbann_exception("lbann_target_layer_distributed_minibatch: number of labels ("
                             + std::to_string(num_samples_in_batch) + ") does not match the current mini-batch size (" 
@@ -113,27 +116,10 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
     distribute_from_local_matrix(buf->M_local, buf->Ms, paired_input_layer->get_data_reader());
     Copy(buf->Ms, *this->m_activations);
 
-    /// Compute and record the objective function score
-    objective_functions::objective_function *obj_fn = this->m_neural_network_model->m_obj_fn;
-    obj_fn->compute_value(*this->m_prev_activations,
-                          *this->m_activations_v);
-
-    for (auto&& m : this->m_neural_network_model->get_metrics()) {
-      double num_errors = m->compute_metric(*this->m_prev_activations, *this->m_activations_v);
-      m->record_error(num_errors, curr_mini_batch_size);
-    }
-
     return;
   }
 
-
-  void bp_compute() override {
-    // Compute initial error signal
-    this->m_neural_network_model->m_obj_fn->compute_gradient(*this->m_prev_activations,
-                                                             *this->m_activations_v,
-                                                             *this->m_error_signal_v);
-
-  }
+  void bp_compute() override {}
 
   /**
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary

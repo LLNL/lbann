@@ -23,31 +23,26 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_layer .h .cpp - Parent class for all layer types
+// regularizer .hpp - Base class for regularizer layers
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_LAYER_REGULARIZER_HPP_INCLUDED
 #define LBANN_LAYER_REGULARIZER_HPP_INCLUDED
 
 #include "lbann/layers/layer.hpp"
-#include <string>
-#include <vector>
 
 namespace lbann {
 
 class regularizer_layer : public Layer {
  public:
-  regularizer_layer(lbann_comm *comm) :
-    Layer(comm) {
-    
-  }
+  /** Constructor. */
+  regularizer_layer(lbann_comm *comm) : Layer(comm) {}
+  /** Copy constructor. */
   regularizer_layer(const regularizer_layer&) = default;
+  /** Copy assignment operator. */
   regularizer_layer& operator=(const regularizer_layer&) = default;
-  virtual ~regularizer_layer() {}
-
-  template<data_layout T_layout> inline void initialize_distributed_matrices() {
-    Layer::initialize_distributed_matrices<T_layout>();
-  }
+  /** Destructor. */
+  virtual ~regularizer_layer() override = default;
 };
 
 }  // namespace lbann

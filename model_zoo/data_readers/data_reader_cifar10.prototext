@@ -9,16 +9,25 @@ data_reader {
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
     image_preprocessor {
-      scale: true
-      subtract_mean: false
-      unit_variance: false
-      z_score: false
-      horizontal_flip: false
-      vertical_flip: false
-      rotation: 0
-      horizontal_shift: 0
-      vertical_shift: 0
-      shear_range: 0
+      normalizer {
+        scale: true
+        subtract_mean: false
+        unit_variance: false
+        z_score: false
+      }
+      augmenter {
+        disable: true
+        horizontal_flip: false
+        vertical_flip: false
+        rotation: 0
+        horizontal_shift: 0
+        vertical_shift: 0
+        shear_range: 0
+      }
+      noiser {
+        disable: true
+        factor: 0.0
+      }
     }
   }
   reader {
@@ -31,16 +40,25 @@ data_reader {
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
     image_preprocessor {
-      scale: true
-      subtract_mean: false
-      unit_variance: false
-      z_score: false
-      horizontal_flip: false
-      vertical_flip: false
-      rotation: 0
-      horizontal_shift: 0
-      vertical_shift: 0
-      shear_range: 0
+      normalizer {
+        scale: true
+        subtract_mean: false
+        unit_variance: false
+        z_score: false
+      }
+      augmenter {
+        disable: true
+        horizontal_flip: false
+        vertical_flip: false
+        rotation: 0
+        horizontal_shift: 0
+        vertical_shift: 0
+        shear_range: 0
+      }
+      noiser {
+        disable: true
+        factor: 0.0
+      }
     }
   }
 }

@@ -27,78 +27,110 @@
 #ifndef LBANN_OBJECTIVE_FUNCTION_HPP_INCLUDED
 #define LBANN_OBJECTIVE_FUNCTION_HPP_INCLUDED
 
-#include "lbann/base.hpp"
-#include "lbann/layers/layer.hpp"
+#include "lbann/objective_functions/objective_function_term.hpp"
+#include "lbann/metrics/metric.hpp"
 
 namespace lbann {
 
-namespace objective_functions {
-
-/** Abstract class for objective functions. */
+/** Objective function class. */
 class objective_function {
  public:
-  /** Default constructor. */
-  objective_function();
-  /** Copy constructor. */
-  objective_function(const objective_function& other) = default;
-  /** Copy assignment operator. */
-  objective_function& operator=(const objective_function& other) = default;
-  /** Destructor. */
-  virtual ~objective_function() {}
-  /** Copy function. */
-  virtual objective_function* copy() const = 0;
 
-  virtual void setup(const Layer& prev_layer) {}
+  /** Default constructor. */
+  objective_function() {}
+
+  /** Copy constructor. */
+  objective_function(const objective_function& other);
+  /** Copy assignment operator. */
+  objective_function& operator=(const objective_function& other);
+  /** Destructor. */
+  ~objective_function();
+  /** Copy function. */
+  objective_function* copy() const { return new objective_function(*this); }
+
+  /** Add a term to the objective function.
+   *  The objective function takes ownership of the objective function
+   *  term and deallocates it during destruction.
+   */
+  void add_term(objective_function_term* term) { m_terms.push_back(term); }
+  /** Get list of objective function terms. */
+  std::vector<objective_function_term*> get_terms() { return m_terms; }
+
+  /** Setup objective function. */
+  void setup(model& m);
   
-  /** Compute the objective function value. */
-  virtual void compute_value(const AbsDistMat& predictions,
-                             const AbsDistMat& ground_truth) = 0;
+  /** Evaluate the objective function.
+   *  The result is stored in history.
+   */
+  EvalType evaluate(execution_mode mode);
   
   /** Compute the objective function gradient.
-   *  The gradient is with respect to the predictions.
+   *  The gradient is with respect to the objective function inputs
    */
-  virtual void compute_gradient(const AbsDistMat& predictions,
-                                const AbsDistMat& ground_truth,
-                                AbsDistMat& gradient) = 0;
-  
-  /** Add to objective function value.
-   *  Primarily used to add regularization terms.
-   */
-  void add_to_value(double value);
+  void differentiate();
 
-  /** Record and reset objective function value.
-   *  Recorded values are used to compute statistics.
-   */
-  void record_and_reset_value();
-
-  /** Get objective function value. */
-  double get_value() const;
+  /** Clear all statistics. */
+  void reset_statistics() { m_statistics.clear(); }
+  /** Clear statistics for an execution mode. */
+  void reset_statistics(execution_mode mode) { m_statistics.erase(mode); }
 
   /** Get mean objective function value.
-   *  The mean is out of recorded objective function values.
-   */ 
-  double get_mean_value() const;
-  
-  /** Reset objective function statistics.
-   *  The objective function value is also reset.
+   *  The mean is over the mini-batches, even if the mini-batch sizes
+   *  are not identical.
    */
-  void reset_statistics();
+  EvalType get_mean_value(execution_mode mode) const;
+  /** Get number of samples for statistics. */
+  int get_statistics_num_samples(execution_mode mode) const;
 
-  /** Get the name of the objective function. */
-  virtual std::string name() const = 0;
+  /** Get list of pointers to layers. */
+  std::vector<Layer*> get_layer_pointers() const;
+  /** Set list of pointers to layers. */
+  void set_layer_pointers(std::vector<Layer*> layers);
+  /** Get list of pointers to weights. */
+  std::vector<weights*> get_weights_pointers() const;
+  /** Set list of pointers to weights. */
+  void set_weights_pointers(std::vector<weights*> w);
 
- protected:
+  /** Get the time spent evaluating the objective function. */
+  EvalType get_evaluation_time() const { return m_evaluation_time; }
+  /** Get the time spent computing the objective function gradient. */
+  EvalType get_differentiation_time() const { return m_differentiation_time; }
+  /** Reset time counters. */
+  void reset_counters() {
+    m_evaluation_time = 0.0;
+    m_differentiation_time = 0.0;
+  }
 
-  /** Objective function value. */
-  double m_value;
-  /** Sum of recorded objective function values. */
-  double m_recorded_values;
-  /** Number of recorded objective function values. */
-  int m_recorded_iterations;
+  bool save_to_checkpoint_shared(lbann::persist& p); //{
+    //for (objective_function_term* term : m_terms) {
+    //  term->get_objective_function()->saveToCheckpointShared(p);
+    //}
+    //return true;
+
+  //}
+
+  bool load_from_checkpoint_shared(lbann::persist& p);// {
+    //for (objective_function_term* term : m_terms) {
+    //  term->get_objective_function()->loadFromCheckpointShared(p);
+    //}
+
+   //return true;
+   //}
+
+ private:
+
+  /** List of objective function terms. */
+  std::vector<objective_function_term*> m_terms;
+
+  /** Objective funciton statistics. */
+  std::map<execution_mode,metric_statistics> m_statistics;
+
+  /** Time spent evaluating the objective function. */
+  EvalType m_evaluation_time = EvalType(0);
+  /** Time spent computing the objective function gradient. */
+  EvalType m_differentiation_time = EvalType(0);
 
 };
-
-}  // namespace objective_functions
 
 } // namespace lbann
 

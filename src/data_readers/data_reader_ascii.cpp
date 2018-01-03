@@ -27,7 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_ascii.hpp"
-#include <stdio.h>
+#include <cstdio>
 namespace lbann {
 
 ascii_reader::ascii_reader(int sequence_length, bool shuffle)
@@ -50,7 +50,7 @@ bool ascii_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
 
   // Convert text sequence to binary vector
   for (int i = 0; i < m_sequence_length; ++i) {
-    int current_char = (int) sequence[i];
+    auto current_char = (int) sequence[i];
     if (current_char < 0 || current_char >= 128) {
       current_char = 0;
     }
@@ -77,7 +77,7 @@ bool ascii_reader::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
 
   // Convert text sequence to binary vector
   for (int i = 0; i < m_sequence_length; ++i) {
-    int current_char = (int) sequence[i];
+    auto current_char = (int) sequence[i];
     if (current_char < 0 || current_char >= 128) {
       current_char = 0;
     }

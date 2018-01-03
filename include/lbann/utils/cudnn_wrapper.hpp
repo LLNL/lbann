@@ -42,7 +42,8 @@
 #ifdef __LIB_NCCL
 #include "nccl.h"
 #include "nccl1_compat.h"
-#endif
+#include "common.h"
+#endif // #ifdef __LIB_NCCL
 
 #endif // #ifdef __LIB_CUDNN
 
@@ -108,8 +109,8 @@ class cudnn_manager {
 
   /** Get number of GPUs assigned to current process. */
   int get_num_gpus() const;
-  /** Get number of GPUs on current node. */
-  int get_num_total_gpus() const;
+  /** Get number of visible GPUs on current node. */
+  int get_num_visible_gpus() const;
   /** Get GPUs. */
   std::vector<int>& get_gpus();
   /** Get GPUs (const). */
@@ -162,15 +163,34 @@ class cudnn_manager {
   /** Deallocate memory on GPUs. */
   void deallocate_on_gpus(std::vector<DataType*>& gpu_data);
 
+  /** Zero out memory on ith GPU. */
+  void clear_on_gpu(int i,
+                    DataType* gpu_data,
+                    int height,
+                    int width,
+                    int leading_dim = 0);
+  /** Copy data from CPU to ith GPU. */
+  void copy_to_gpu(int i,
+                   DataType* gpu_data,
+                   const Mat& cpu_data,
+                   int gpu_data_leading_dim = 0);
+  /** Copy data from ith GPU to CPU. */
+  void copy_from_gpu(int i,
+                     Mat& cpu_data,
+                     const DataType* gpu_data,
+                     int gpu_data_leading_dim = 0);
+
   /** Zero out memory on GPUs. */
   void clear_on_gpus(std::vector<DataType*>& gpu_data,
                      int height,
-                     int width_per_gpu);
+                     int width_per_gpu,
+                     int leading_dim = 0);
   /** Zero out memory corresponding to unused columns on GPUs. */
   void clear_unused_columns_on_gpus(std::vector<DataType*>& gpu_data,
                                     int height,
                                     int width,
-                                    int width_per_gpu);
+                                    int width_per_gpu,
+                                    int leading_dim = 0);
 
   /** Copy data on GPUs. */
   void copy_on_gpus(std::vector<DataType*>& gpu_dst_data,
@@ -199,22 +219,26 @@ class cudnn_manager {
   void broadcast_to_gpus(std::vector<DataType*>& gpu_data,
                          const Mat& cpu_data,
                          int gpu_data_leading_dim = 0);
-  /** Copy data from GPUs to CPU and reduce.
-   */
+  /** Copy data from GPUs to CPU and reduce. */
   void reduce_from_gpus(Mat& cpu_data,
                         const std::vector<DataType*>& gpu_data,
                         int gpu_data_leading_dim = 0);
-  /** Allreduce within local multiple GPUs
-   */
-  void allreduce(const std::vector<DataType*>& gpu_data,
-                 El::Int height,
-                 El::Int width);
+  /** Allreduce within local GPUs. */
+  void allreduce_on_gpus(std::vector<DataType*>& gpu_data,
+                         El::Int height,
+                         El::Int width);
 
-  /** Allreduce within local multiple GPUs when NCCL is used for collectives
-   */
-  void allreduce_nccl(const std::vector<DataType*>& gpu_data,
+  /** Allreduce within all GPUs in MPI communicator. */
+  void global_allreduce_on_gpus(std::vector<DataType*>& gpu_data,
+                                El::Int height,
+                                El::Int width,
+                                El::mpi::Comm comm);
+
+  /** Allreduce within local GPUs using NCCL. */
+  void global_allreduce_on_gpus_nccl(std::vector<DataType*>& gpu_data,
                  El::Int height,
-                 El::Int width);
+                 El::Int width,
+                 DataType scale = DataType(1));
 
   /** Synchronize the default stream. */
   void synchronize();
@@ -246,6 +270,8 @@ class cudnn_manager {
 
   void check_error();
 
+  bool is_nccl_used() { return m_nccl_used; }
+
  private:
 
   /** LBANN communicator. */
@@ -253,8 +279,8 @@ class cudnn_manager {
 
   /** Number of GPUs for current process. */
   int m_num_gpus;
-  /** Number of available GPUs. */
-  int m_num_total_gpus;
+  /** Number of visible GPUs. */
+  int m_num_visible_gpus;
 
   /** List of GPUs. */
   std::vector<int> m_gpus;
@@ -270,19 +296,16 @@ class cudnn_manager {
   /** List of GPU work space sizes. */
   std::vector<size_t> m_work_space_sizes;
 
-  /** List of NCCL 2 related variables. */
   bool m_nccl_used;
   void nccl_setup();
   void nccl_destroy();
 
+  /** List of NCCL 2 related variables. */
 #ifdef __LIB_NCCL
   // One GPU per single thread of one MPI rank is assumed
-  ncclComm_t m_nccl_comm;
-
-  uint64_t getHostHash(const char* string);
+  std::vector<ncclComm_t> m_nccl_comm;
   ncclDataType_t nccl_datatype();
-#endif
-
+#endif // #ifdef __LIB_NCCL
 
 #endif // #ifdef __LIB_CUDNN
 };

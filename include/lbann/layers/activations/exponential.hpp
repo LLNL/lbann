@@ -44,21 +44,21 @@ class exponential_layer : public entrywise_activation_layer {
     initialize_distributed_matrices(); 
   }
 
-  exponential_layer* copy() const { return new exponential_layer(*this); }
+  exponential_layer* copy() const override { return new exponential_layer(*this); }
 
-  std::string get_type() const { return "exponential"; }
+  std::string get_type() const override { return "exponential"; }
 
-  virtual inline void initialize_distributed_matrices() {
+  inline void initialize_distributed_matrices() override {
     entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
   }
-  virtual data_layout get_data_layout() const { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
  protected:
-  DataType activation_function(DataType z) {
+  DataType activation_function(DataType z) override {
     //return (DataType(1) / (DataType(1) + std::exp(-z)));
     return std::exp(z);
   }
-  DataType activation_function_gradient(DataType z) {
+  DataType activation_function_gradient(DataType z) override {
     //const DataType sigz = activation_function(z);
     //return sigz * (DataType(1) - sigz);
     return activation_function(z);

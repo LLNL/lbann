@@ -3,13 +3,19 @@ add_sources(
   summary.cpp
   random.cpp
   statistics.cpp
+  graph.cpp
   im2col.cpp
   cudnn_wrapper.cpp
   options.cpp
+  omp_diagnostics.cpp
+  protobuf_utils.cpp
+  stack_trace.cpp
+  file_utils.cpp
+  stack_profiler.cpp
 )
 
 if(LBANN_HAS_CUDA)
   add_sources(
-    cudnn_wrapper_cuda.cu
+    cudnn_wrapper.cu
     )
 endif()

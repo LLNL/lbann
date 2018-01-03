@@ -62,6 +62,8 @@ class cv_transform {
 
  public:
   enum cv_flipping {_both_axes_=-1, _vertical_=0, _horizontal_=1, _no_flip_=2};
+  static const constexpr char* const cv_flip_desc[] = {"both_axes", "vertical", "horizontal", "none"};
+  static std::string flip_desc(const cv_flipping flip_code) { return std::string(cv_flip_desc[static_cast<int>(flip_code)+1]); }
 
   static const float pi;
 
@@ -108,7 +110,7 @@ class cv_transform {
   std::string get_name() const { return m_name; }
 
   /** Sets this transform's name; this is an arbitrary string, e.g, assigned in a prototext file. */
-  void set_name(std::string name) { m_name = name; }
+  void set_name(const std::string& name) { m_name = name; }
   
   /** Returns a description of the parameters passed to the ctor */
   virtual std::string get_description() const;
@@ -118,16 +120,17 @@ class cv_transform {
 
 /// Default constructor
 inline cv_transform::cv_transform()
-  : m_enabled(false)//, m_manual_switch(false)
+  : m_name(""), m_enabled(false)//, m_manual_switch(false)
 {}
 
 /// Deep-copying constructor
 inline cv_transform::cv_transform(const cv_transform& rhs)
-  : m_enabled(rhs.m_enabled) {}
+  : m_name(rhs.m_name), m_enabled(rhs.m_enabled) {}
 
 /// Assignement operator. deep-copy everything
 inline cv_transform& cv_transform::operator=(const cv_transform& rhs) {
   m_enabled = rhs.m_enabled;
+  m_name = rhs.m_name;
   return *this;
 }
 
@@ -195,7 +198,7 @@ inline bool cv_transform::apply(cv::Mat& image) {
 
 /// Return the pointer of a newly copy-constructed object
 inline cv_transform *cv_transform::clone() const {
-  return static_cast<cv_transform *>(NULL);
+  return static_cast<cv_transform *>(nullptr);
 }
 
 //inline std::string cv_transform::get_type() { return "image transform"; }

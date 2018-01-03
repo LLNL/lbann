@@ -35,36 +35,68 @@
 
 namespace lbann {
 
-/**
- * Record the time to execute minibatches and epochs and report it at the end of
- * each epoch.
- * Right now this reports times only for the master node of each model.
+/** Record and report model timing results.
+ *  Reports the total time and mini-batch time statistics for training
+ *  epochs and for model evaluations. This reports times for the
+ *  master process in each model.
  */
 class lbann_callback_timer : public lbann_callback {
  public:
+
+  /** Constructor. */
   lbann_callback_timer(lbann_summary *summarizer = nullptr) :
     lbann_callback(1, summarizer) {}
+  /** Copy constructor. */
   lbann_callback_timer(const lbann_callback_timer&) = default;
+  /** Copy assignment operator. */
   lbann_callback_timer& operator=(const lbann_callback_timer&) = default;
+  /** Copy function. */
   lbann_callback_timer* copy() const override {
     return new lbann_callback_timer(*this);
   }
-  /** Start recording time for the epoch. */
-  void on_epoch_begin(model *m) override;
-  /** Report epoch and mean minibatch times. */
-  void on_epoch_end(model *m) override;
-  /** Start record time for a batch. */
-  void on_batch_begin(model *m) override;
-  /** Stop and save time for a batch. */
-  void on_batch_end(model *m) override;
+
+  /** Start timing for a training epoch. */
+  void on_epoch_begin(model *m) override      { timing_begin(m); }
+  /** Report timing for a training epoch. */
+  void on_epoch_end(model *m) override        { timing_end(m); }
+  /** Start timing for validation. */
+  void on_validation_begin(model *m) override { timing_begin(m); }
+  /** Report timing for validation. */
+  void on_validation_end(model *m) override   { timing_end(m); }
+  /** Start timing for testing. */
+  void on_test_begin(model *m) override       { timing_begin(m); }
+  /** Report timing for testing. */
+  void on_test_end(model *m) override         { timing_end(m); }
+  /** Record training mini-batch start time. */
+  void on_batch_begin(model *m) override          { batch_timing_begin(m); }
+  /** Record training mini-batch run time. */
+  void on_batch_end(model *m) override            { batch_timing_end(m); }
+  /** Record evaluation mini-batch start time. */
+  void on_batch_evaluate_begin(model *m) override { batch_timing_begin(m); }
+  /** Record evaluation mini-batch run time. */
+  void on_batch_evaluate_end(model *m) override   { batch_timing_end(m); }
+
+  /** Callback name. */
   std::string name() const override { return "timer"; }
+
  private:
-  /** Start time for the current epoch. */
-  double m_epoch_start;
-  /** Start time for the current batch. */
-  double m_batch_start;
-  /** History of batch times for the current epoch. */
-  std::vector<double> m_batch_times;
+
+  /** Start time for the current timing. */
+  EvalType m_start_time;
+  /** Start time for the current mini-batch. */
+  EvalType m_batch_start_time;
+  /** History of mini-batch times for the current timing. */
+  std::vector<EvalType> m_batch_times;
+
+  /** Start timing. */
+  void timing_begin(model *m);
+  /** Print timing results to standard output. */
+  void timing_end(model *m);
+  /** Start mini-batch timing. */
+  void batch_timing_begin(model *m);
+  /** Record mini-batch timing. */
+  void batch_timing_end(model *m);
+
 };
 
 }  // namespace lbann

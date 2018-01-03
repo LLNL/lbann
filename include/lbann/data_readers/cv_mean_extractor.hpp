@@ -60,7 +60,7 @@ namespace lbann {
 class cv_mean_extractor : public cv_transform {
  public:
   /// type of image statistics value accumulated
-  typedef double Float_T;
+  using Float_T = double;
   static const unsigned int m_default_batch_size = 65536u;
 
  protected:
@@ -92,6 +92,7 @@ class cv_mean_extractor : public cv_transform {
   void reset() override;
 
   bool determine_transform(const cv::Mat& image) override;
+  /// The transform does not modify the image. Thus, this has no effect.
   bool determine_inverse_transform() override;
   bool apply(cv::Mat& image) override;
 
@@ -125,7 +126,7 @@ inline cv::Mat cv_mean_extractor::extract() const {
 
   double minVal = 0.0;
   double maxVal = 0.0;
-  cv::minMaxLoc(avg_so_far, &minVal, &maxVal, 0, 0);
+  cv::minMaxLoc(avg_so_far, &minVal, &maxVal, nullptr, nullptr);
   //const double max_channel_type = std::numeric_limits<Channel_T>::max();
   const double max_channel_type = depth_normalization<Channel_T>::inverse_factor();
 

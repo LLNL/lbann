@@ -37,7 +37,7 @@ void lbann_callback_print::setup(model *m) {
   lbann_comm *comm = m->get_comm();
   if (comm->am_world_master()) {
     std::cout << "Training with LLNL LBANN version "
-              << LBANN_MAKE_STR(LBANN_VERSION) << endl;
+              << LBANN_MAKE_STR(LBANN_VERSION) << std::endl;
   }
 #endif
 }
@@ -45,8 +45,8 @@ void lbann_callback_print::setup(model *m) {
 void lbann_callback_print::on_epoch_begin(model *m) {
   lbann_comm *comm = m->get_comm();
   if (comm->am_world_master()) {
-    std::vector<Layer *>layers = m->get_layers();
-    input_layer *layer = dynamic_cast<input_layer*>(layers[0]);
+    const std::vector<Layer *>layers = m->get_layers();
+    auto *layer = dynamic_cast<input_layer*>(layers[0]);
     std::cout << "--------------------------------------------------------------------------------" 
               << std::endl;
     std::cout << "[" << m->get_cur_epoch() << "] Epoch : stats formated [tr/v/te]" 
@@ -101,58 +101,102 @@ void lbann_callback_print::on_epoch_begin(model *m) {
 }
 
 void lbann_callback_print::on_epoch_end(model *m) {
-  lbann_comm *comm = m->get_comm();
-  if (comm->am_model_master()) {
-    /// Report the current score for each metric attached to the model
-    for (auto&& metric : m->get_metrics()) {
-      double train_score = metric->report_metric(execution_mode::training);
-      double validate_score = metric->report_metric(execution_mode::validation);
-      if (comm->am_world_master()) {
-        std::vector<double> train_scores(comm->get_num_models());
-        std::vector<double> validate_scores(comm->get_num_models());
-        comm->intermodel_gather(train_score, train_scores);
-        comm->intermodel_gather(validate_score, validate_scores);
+  report_results(m);
+}
 
-        for (size_t i = 0; i < train_scores.size(); ++i) {
-          std::cout << "Model " << i;
-          std::cout << " @" << m->get_cur_step() << " steps";
-          std::cout << " Training " << metric->name() << ": " <<
-            train_scores[i] << metric->display_unit();
-          std::cout << " @" << m->get_cur_validation_step() <<
-            " validation steps Validation " << metric->name() << ": " <<
-            validate_scores[i] << metric->display_unit();
-          std::cout << std::endl;
-        }
-      } else {
-        comm->intermodel_gather(train_score, comm->get_intermodel_master());
-        comm->intermodel_gather(validate_score, comm->get_intermodel_master());
-      }
-    }
-    for (Layer *layer : m->get_layers()) {
-      layer->epoch_print();
-    }
-  }
+void lbann_callback_print::on_validation_end(model *m) {
+  report_results(m);
 }
 
 void lbann_callback_print::on_test_end(model *m) {
+  report_results(m);
+}
+
+void lbann_callback_print::report_results(model *m) {
   lbann_comm *comm = m->get_comm();
+
+  // Get string for execution mode
+  const execution_mode mode = m->get_execution_mode();
+  std::string mode_string;
+  switch (mode) {
+  case execution_mode::training:
+    mode_string = "training epoch " + std::to_string(m->get_cur_epoch());
+    break;
+  case execution_mode::validation:
+    mode_string = "validation";
+    break;
+  case execution_mode::testing:
+    mode_string = "test";
+    break;
+  default:
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "invalid execution mode for reporting results";
+    throw lbann_exception(err.str());
+  }
+
   if (comm->am_model_master()) {
-    /// Report the current score for each metric attached to the model
-    for (auto&& metric : m->get_metrics()) {
-      double test_score = metric->report_metric(execution_mode::testing);
+    const int num_models = comm->get_num_models();
+
+    // Report objective function value
+    const EvalType obj_fn = m->get_objective_function()->get_mean_value(mode);
+    if (comm->am_world_master()) {
+      std::vector<EvalType> obj_fn_list(comm->get_num_models());
+      comm->intermodel_gather(obj_fn, obj_fn_list);
+      for (int i = 0; i < num_models; ++i) {
+        std::cout << "Model " << i << " " << mode_string << " "
+                  << "objective function : " << obj_fn_list[i]
+                  << std::endl;
+      }
+      if (num_models > 1) {
+        const EvalType avg_obj_fn = (std::accumulate(obj_fn_list.begin(),
+                                                     obj_fn_list.end(),
+                                                     EvalType(0))
+                                     / num_models);
+        std::cout << "World average " << mode_string << " "
+                  << "objective function : " << avg_obj_fn
+                  << std::endl;
+      }
+    } else {
+      comm->intermodel_gather(obj_fn, comm->get_world_master());
+    }
+
+    // Report score for each metric
+    for (const auto& met : m->get_metrics()) {
+      const EvalType score = met->get_mean_value(mode);
+      const int num_samples = met->get_statistics_num_samples(mode);
       if (comm->am_world_master()) {
-        std::vector<double> test_scores(comm->get_num_models());
-        comm->intermodel_gather(test_score, test_scores);
-        for (size_t i = 0; i < test_scores.size(); ++i) {
-          std::cout << "Model " << i << " @" << m->get_cur_testing_step() <<
-            " testing steps external validation " << metric->name() << ": ";
-          std::cout << test_scores[i] << metric->display_unit() << std::endl;
+        std::vector<EvalType> score_list(comm->get_num_models());
+        std::vector<int> num_samples_list(comm->get_num_models());
+        comm->intermodel_gather(score, score_list);
+        comm->intermodel_gather(num_samples, num_samples_list);
+        for (int i = 0; i < num_models; ++i) {
+          std::cout << "Model " << i << " " << mode_string << " "
+                    << met->name() << " : " 
+                    << score_list[i] << met->get_unit()
+                    << std::endl;
+        }
+        if (num_models > 1) {
+          const EvalType avg_score = (std::inner_product(score_list.begin(),
+                                                         score_list.end(),
+                                                         num_samples_list.begin(),
+                                                         EvalType(0))
+                                      / std::accumulate(num_samples_list.begin(),
+                                                        num_samples_list.end(),
+                                                        EvalType(0)));
+          std::cout << "World " << mode_string << " "
+                    << met->name() << " : "
+                    << avg_score << met->get_unit()
+                    << std::endl;
         }
       } else {
-        comm->intermodel_gather(test_score, comm->get_intermodel_master());
+        comm->intermodel_gather(score, comm->get_intermodel_master());
+        comm->intermodel_gather(num_samples, comm->get_intermodel_master());
       }
     }
+
   }
+  
 }
 
 }  // namespace lbann

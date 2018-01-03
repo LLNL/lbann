@@ -33,8 +33,8 @@
 
 namespace lbann {
 
-typedef std::mt19937 rng_gen;  // Mersenne Twister
-typedef std::minstd_rand fast_rng_gen;  // Minimum standard, LC
+using rng_gen = std::mt19937;  // Mersenne Twister
+using fast_rng_gen = std::minstd_rand;  // Minimum standard, LC
 
 /**
  * Return a reference to the global LBANN random number generator.
@@ -123,7 +123,7 @@ void gaussian_fill(AbsDistMat& mat, El::Int m, El::Int n, DataType mean = 0.0f,
 /**
  * Make mat into an m x n matrix where each entry is an indepenent Bernoulli
  * random variable with parameter p.
- * This makes the same gaurantees as gaussian_fill.
+ * This makes the same guarantees as gaussian_fill.
  */
 void bernoulli_fill(AbsDistMat& mat, El::Int m, El::Int n, double p = 0.5);
 /**
@@ -155,15 +155,6 @@ void bernoulli_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n, double p = 0.
  */
 void uniform_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n,
                           DataType center = 0.0f, DataType radius = 1.0f);
-
-/**
- * Using one of the available initialization methods, initialize a
- * matrix
- */
-void initialize_matrix(AbsDistMat& matrix_v,
-                       weight_initialization initialization,
-                       El::Int fan_in,
-                       El::Int fan_out);
 
 template<typename DistType,typename DType=DataType>
 class rng {

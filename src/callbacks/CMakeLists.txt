@@ -22,4 +22,7 @@ add_sources(
   callback_check_reconstruction_error.cpp
   callback_variable_minibatch.cpp
   callback_gradient_check.cpp
+  callback_timeline.cpp
+  callback_checkpoint.cpp
+  callback_save_model.cpp
 )

@@ -44,15 +44,16 @@ namespace patchworks {
 
 class patch_descriptor {
  public:
+  // --- configuration variables ---
   unsigned int m_width; ///< patch width
   unsigned int m_height; ///< patch height
   unsigned int m_gap; ///< gap between patches
-  unsigned int m_jitter; ///< patch position randomization
+  unsigned int m_jitter; ///< for patch position randomization
 
   /** patch centering mode
    *  0: place the center patch anywhere within the image
-   *  1: place the center patch anywhere allowing the space for all 8 neighbor patches
-   *  the rest: place the center patch at the center of the image
+   *  1: place the center patch anywhere as long as it allows the space for all 8 neighboring patches
+   *  other: place the center patch at the center of the image
    */
   unsigned int m_mode_center;
 
@@ -63,17 +64,23 @@ class patch_descriptor {
    */
   unsigned int m_mode_chrom;
 
+  /// Whether patches are self-labeled
+  bool m_self_label;
+
+  /// The file extension name (i.e., image type)
+  std::string m_ext;
+
+  // --- post-configuration variables ---
   ROI m_sample_area; ///< The area to sample patches from
-  ROI m_patch_center; ///< The center patch region
-  std::string m_ext; ///< The file extension name (i.e., image type)
-
-  /// The index of displacement used to generate the current patch
-  unsigned int m_cur_patch_idx;
-
-  /// The list of displacements to used to generate consecutive patches
+  /// The list of displacements used to generate consecutive patches
   std::vector<displacement_type> m_displacements;
+
+  // --- state variables ---
+  ROI m_patch_center; ///< The center patch region
   /// The actual patch positions
   std::vector<ROI> m_positions;
+  /// The index of displacement used to generate the current patch
+  unsigned int m_cur_patch_idx;
 
  public:
   patch_descriptor() {
@@ -81,6 +88,11 @@ class patch_descriptor {
   }
   virtual ~patch_descriptor() {}
   void init(); ///< Initializer
+  void reset(); ///< Clear state variables other than configuration variables
+
+  /// Get patch size
+  unsigned int get_patch_width() const { return m_width; }
+  unsigned int get_patch_height() const { return m_height; }
 
   /// Set patch size
   void set_size(const int w, const int h);
@@ -89,13 +101,13 @@ class patch_descriptor {
     m_gap = g;
   }
   /// Set poisiton radomization parameter, the maximum jitter
-  void set_jitter(const unsigned int j);
-
+  void set_jitter(const unsigned int j) {
+    m_jitter = j;
+  }
   /// Set mode to place center patch
   void set_mode_centering(const unsigned int m) {
     m_mode_center = m;
   }
-
   /// Set correction mode for chromatic aberration
   void set_mode_chromatic_aberration(const unsigned int m) {
     m_mode_chrom = m;
@@ -110,6 +122,16 @@ class patch_descriptor {
   void set_file_ext(const std::string e) {
     m_ext = e;
   }
+
+  /// Mark self labeling for patches
+  void set_self_label() { m_self_label = true; }
+
+  /// Unmark self labeling
+  void unset_self_label() { m_self_label = false; }
+
+  bool is_self_labeling() const { return m_self_label; }
+
+  unsigned int get_num_labels() const { return 8u; }
 
   /// A function that populates the list of displacements from the base patch to the next one
   virtual void define_patch_set();
@@ -129,20 +151,27 @@ class patch_descriptor {
     return m_displacements;
   }
 
+  virtual unsigned int get_num_patches() const { return 2u; }
+
   /// Compute the position of the first patch
   virtual bool get_first_patch(ROI& patch);
   /// Compute the position of a subsequent patch
   virtual bool get_next_patch(ROI& patch);
   /// extract all the patches defined
   virtual bool extract_patches(const cv::Mat& img, std::vector<cv::Mat>& patches);
-  /// return the id (vector index + 1) of the last patch generated
-  virtual unsigned int get_current_patch_idx() const { return m_cur_patch_idx; }
+  /**
+   * Return the label of the last patch generated.
+   * For dual patch scenarios, it is one less the id of the non-center patch position.
+   */
+  virtual unsigned int get_last_label() const { return m_cur_patch_idx - 1; }
 
   /// Allow read-only access to the positions of the patches generated
   const std::vector<ROI>& access_positions() const {
     return m_positions;
   }
-  /// print out the content of patch descriptor
+  virtual std::string get_type() const { return "patch_descriptor"; }
+  virtual std::string get_description() const;
+  /// Print out the content of patch descriptor
   virtual std::ostream& print(std::ostream& os) const;
 };
 

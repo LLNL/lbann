@@ -26,9 +26,6 @@
 
 #include "lbann/params.hpp"
 
-using namespace std;
-using namespace El;
-
 lbann::TrainingParams::TrainingParams()
   : EnableProfiling(false), RandomSeed(1), ShuffleTrainingData(1),
     PercentageTrainingSamples(1.00), PercentageValidationSamples(1.00),
@@ -48,52 +45,52 @@ lbann::TrainingParams::TrainingParams()
 
 void lbann::TrainingParams::parse_params() {
 
-  EnableProfiling = Input("--profiling", "Enable profiling", EnableProfiling);
+  EnableProfiling = El::Input("--profiling", "Enable profiling", EnableProfiling);
 
-  RandomSeed = Input("--seed", "Random seed", RandomSeed);
-  ShuffleTrainingData = Input("--random-training-samples", "0 - Pick first N training samples, 1 - Select N random training samples", ShuffleTrainingData);
+  RandomSeed = El::Input("--seed", "Random seed", RandomSeed);
+  ShuffleTrainingData = El::Input("--random-training-samples", "0 - Pick first N training samples, 1 - Select N random training samples", ShuffleTrainingData);
 
-  PercentageTrainingSamples = Input("--percentage-training-samples", "Percentage of training set sampled during training [0.00 to 1.00]", PercentageTrainingSamples);
-  PercentageValidationSamples = Input("--percentage-validation-samples", "Percentage of the unused training set sampled during validation [0.00 to 1.00]", PercentageValidationSamples);
-  PercentageTestingSamples = Input("--percentage-testing-samples", "Percentage of testing set sampled during testing", PercentageTestingSamples);
-  TestWithTrainData = Input("--test-with-train-data", "Use the training data for validation", TestWithTrainData);
+  PercentageTrainingSamples = El::Input("--percentage-training-samples", "Percentage of training set sampled during training [0.00 to 1.00]", PercentageTrainingSamples);
+  PercentageValidationSamples = El::Input("--percentage-validation-samples", "Percentage of the unused training set sampled during validation [0.00 to 1.00]", PercentageValidationSamples);
+  PercentageTestingSamples = El::Input("--percentage-testing-samples", "Percentage of testing set sampled during testing", PercentageTestingSamples);
+  TestWithTrainData = El::Input("--test-with-train-data", "Use the training data for validation", TestWithTrainData);
 
-  EpochCount = Input("--num-epochs", "# of training epochs", EpochCount);
-  MBSize = Input("--mb-size", "Size of the mini-batch to be trained", MBSize);
+  EpochCount = El::Input("--num-epochs", "# of training epochs", EpochCount);
+  MBSize = El::Input("--mb-size", "Size of the mini-batch to be trained", MBSize);
 
-  TrainingSamples = Input("--training-samples", "# of samples to use in training", TrainingSamples);
-  TestingSamples = Input("--testing-samples", "# of samples to use in testing", TestingSamples);
+  TrainingSamples = El::Input("--training-samples", "# of samples to use in training", TrainingSamples);
+  TestingSamples = El::Input("--testing-samples", "# of samples to use in testing", TestingSamples);
 
-  LearnRate = Input("--learning-rate", "How much of the gradient update is applied to the weight matrix", LearnRate);
-  LearnRateMethod = Input("--learning-rate-method", "1 - Adagrad, 2 - RMSprop, 3 - Adam", LearnRateMethod);
-  LrDecayRate = Input("--lr-decay-rate", "How much does the learning rate decay when it decays", LrDecayRate);
-  LrDecayCycles = Input("--lr-decay-cycle", "How often does the learning rate decay", LrDecayCycles);
-  ActivationType = Input("--activation-type", "1 - Sigmoid, 2 - Tanh, 3 - reLU, 4 - id", ActivationType);
-  DropOut = Input("--drop-out", "% dropout", DropOut);
-  Lambda = Input("--lambda", "Lambda for L2 Regularization", Lambda);
+  LearnRate = El::Input("--learning-rate", "How much of the gradient update is applied to the weight matrix", LearnRate);
+  LearnRateMethod = El::Input("--learning-rate-method", "1 - Adagrad, 2 - RMSprop, 3 - Adam", LearnRateMethod);
+  LrDecayRate = El::Input("--lr-decay-rate", "How much does the learning rate decay when it decays", LrDecayRate);
+  LrDecayCycles = El::Input("--lr-decay-cycle", "How often does the learning rate decay", LrDecayCycles);
+  ActivationType = El::Input("--activation-type", "1 - Sigmoid, 2 - Tanh, 3 - reLU, 4 - id", ActivationType);
+  DropOut = El::Input("--drop-out", "% dropout", DropOut);
+  Lambda = El::Input("--lambda", "Lambda for L2 Regularization", Lambda);
 
-  DatasetRootDir = Input("--dataset", "Location of train and test data", DatasetRootDir);
-  TrainFile = Input("--train-file", "Train data file",TrainFile);
-  TestFile = Input("--test-file", "Test data file", TestFile);
+  DatasetRootDir = El::Input("--dataset", "Location of train and test data", DatasetRootDir);
+  TrainFile = El::Input("--train-file", "Train data file",TrainFile);
+  TestFile = El::Input("--test-file", "Test data file", TestFile);
 
-  SaveImageDir = Input("--output", "Location to save output images", SaveImageDir);
-  ParameterDir = Input("--params", "Location to save model parameters", ParameterDir);
-  SaveModel = Input("--save-model", "Save the current model", SaveModel);
-  LoadModel = Input("--load-model", "Load a saved model", LoadModel);
+  SaveImageDir = El::Input("--output", "Location to save output images", SaveImageDir);
+  ParameterDir = El::Input("--params", "Location to save model parameters", ParameterDir);
+  SaveModel = El::Input("--save-model", "Save the current model", SaveModel);
+  LoadModel = El::Input("--load-model", "Load a saved model", LoadModel);
 
-  CkptEpochs = Input("--ckpt-epochs", "Number of training epochs between checkpoints", CkptEpochs);
-  CkptSteps  = Input("--ckpt-steps", "Number of training steps between checkpoints", CkptSteps);
-  CkptSecs   = Input("--ckpt-secs", "Number of seconds between checkpoints", CkptSecs);
+  CkptEpochs = El::Input("--ckpt-epochs", "Number of training epochs between checkpoints", CkptEpochs);
+  CkptSteps  = El::Input("--ckpt-steps", "Number of training steps between checkpoints", CkptSteps);
+  CkptSecs   = El::Input("--ckpt-secs", "Number of seconds between checkpoints", CkptSecs);
 
-  SummaryDir = Input("--summary-dir", "Directory to write summary files", SummaryDir);
-  DumpWeights = Input("--dump-weights", "Whether to dump weights", DumpWeights);
-  DumpActivations = Input("--dump-activations", "Whether to dump weights", DumpActivations);
-  DumpGradients = Input("--dump-gradients", "Whether to dump gradients", DumpGradients);
-  DumpDir = Input("--dump-dir", "Directory to dump matrices", DumpDir);
+  SummaryDir = El::Input("--summary-dir", "Directory to write summary files", SummaryDir);
+  DumpWeights = El::Input("--dump-weights", "Whether to dump weights", DumpWeights);
+  DumpActivations = El::Input("--dump-activations", "Whether to dump weights", DumpActivations);
+  DumpGradients = El::Input("--dump-gradients", "Whether to dump gradients", DumpGradients);
+  DumpDir = El::Input("--dump-dir", "Directory to dump matrices", DumpDir);
 
-  IntermodelCommMethod = Input("--imcomm", "Type of inter-model communication",
+  IntermodelCommMethod = El::Input("--imcomm", "Type of inter-model communication",
                                IntermodelCommMethod);
-  ProcsPerModel = Input("--procs-per-model",
+  ProcsPerModel = El::Input("--procs-per-model",
                         "Number of processes per model (0 = one model)",
                         ProcsPerModel);
 }
@@ -101,8 +98,8 @@ void lbann::TrainingParams::parse_params() {
 lbann::PerformanceParams::PerformanceParams() : BlockSize(256), MaxParIOSize(0) {}
 
 void lbann::PerformanceParams::parse_params() {
-  BlockSize = Input("--block-size", "libElemental Block Size", BlockSize);
-  MaxParIOSize = Input("--par-IO", "Maximum parallel I/O size (0 - unlimited)", MaxParIOSize);
+  BlockSize = El::Input("--block-size", "libElemental Block Size", BlockSize);
+  MaxParIOSize = El::Input("--par-IO", "Maximum parallel I/O size (0 - unlimited)", MaxParIOSize);
 }
 
 lbann::NetworkParams::NetworkParams() : NetworkStr("1000") {
@@ -110,7 +107,7 @@ lbann::NetworkParams::NetworkParams() : NetworkStr("1000") {
 }
 
 void lbann::NetworkParams::parse_params() {
-  NetworkStr = Input("--network", "Specify the hidden layers of the topology", NetworkStr);
+  NetworkStr = El::Input("--network", "Specify the hidden layers of the topology", NetworkStr);
   parse_network_string();
 }
 
@@ -131,8 +128,8 @@ lbann::SystemParams::SystemParams()
   : HostName("Unknwn"), NumNodes(-1), NumCores(-1), TasksPerNode(-1) {}
 
 void lbann::SystemParams::parse_params() {
-  HostName = Input("--hostname", "HPC hostname", HostName);
-  NumNodes = Input("--num-nodes", "Total allocation size", NumNodes);
-  NumCores = Input("--num-cores", "Number of cores per node", NumCores);
-  TasksPerNode = Input("--tasks-per-node", "MPI Tasks allowed per node", TasksPerNode);
+  HostName = El::Input("--hostname", "HPC hostname", HostName);
+  NumNodes = El::Input("--num-nodes", "Total allocation size", NumNodes);
+  NumCores = El::Input("--num-cores", "Number of cores per node", NumCores);
+  TasksPerNode = El::Input("--tasks-per-node", "MPI Tasks allowed per node", TasksPerNode);
 }

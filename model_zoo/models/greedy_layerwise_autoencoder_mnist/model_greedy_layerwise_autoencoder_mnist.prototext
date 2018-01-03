@@ -1,10 +1,5 @@
 model {
-  name: "dnn"
-  objective_function: "mean_squared_error"
-  metric {
-    categorical_accuracy {
-    }
-  }
+  name: "greedy_layerwise_autoencoder"
   data_layout: "model_parallel"
   mini_batch_size: 192
   block_size: 256
@@ -13,6 +8,20 @@ model {
   procs_per_model: 0
   use_cudnn: true
   num_gpus: -1
+
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    mean_squared_error {}
+  }
+
+  ###################################################
+  # Metrics
+  ###################################################
+
+  metric { mean_squared_error {} }
 
   ###################################################
   # Callbacks
@@ -37,139 +46,70 @@ model {
   # start of layers
   ###################################################
 
-  #######
-  # INPUT
-  #######
+  # data
   layer {
-    name: "1"
-    parents: "1"
-    children: ""
+    name: "data"
     data_layout: "model_parallel"
-    input_distributed_minibatch {
-    }
+    input_distributed_minibatch {}
   }
 
-  # FULLY_CONNECTED
-  #################
+  # encode1
   layer {
-    name: "2"
-    parents: "1"
-    children: ""
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 100
-      weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }
-
-  # SIGMOID
-  #########
   layer {
-    name: "3"
-    parents: "2"
-    children: ""
     data_layout: "model_parallel"
-    sigmoid {
-    }
+    sigmoid {}
   }
 
-  # FULLY_CONNECTED
-  #################
+  # encode2
   layer {
-    name: "5"
-    parents: "3"
-    children: ""
-    data_layout: "model_parallel"
-    fully_connected {
-      num_neurons: 784
-      weight_initialization: "glorot_uniform"
-      has_bias: true
-    }
-  }
-
-  # SIGMOID
-  #########
-  layer {
-    name: "6"
-    parents: "5"
-    children: ""
-    data_layout: "model_parallel"
-    sigmoid {
-    }
-  }
-
-  # RECONSTRUCTION
-  #################
-  layer {
-    name: "19"
-    parents: "18"
-    children: ""
-    data_layout: "model_parallel"
-    reconstruction {
-      original_layer: "1"
-    }
-  }
-
-  # FULLY_CONNECTED encode3
-  #################
-  layer {
-    name: "8"
-    parents: "6"
-    children: ""
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 50
-      weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }
-
-  # RELU 
-  ######
   layer {
-    name: "9"
-    parents: "8"
-    children: ""
     data_layout: "model_parallel"
-    relu {
-    }
+    sigmoid {}
   }
 
-  # FULLY_CONNECTED
-  #################
+  # decode2
   layer {
-    name: "10"
-    parents: "9"
-    children: ""
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 100
-      weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }
-
-  # SIGMOID
-  #########
   layer {
-    name: "6"
-    parents: "5"
-    children: ""
     data_layout: "model_parallel"
-    sigmoid {
-    }
+    sigmoid {}
   }
 
-  # RECONSTRUCTION
-  #################
+  # decode1
   layer {
-    name: "19"
-    parents: "18"
-    children: ""
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 784
+      has_bias: true
+    }
+  }
+  layer {
+    data_layout: "model_parallel"
+    sigmoid {}
+  }
+
+  # reconstruction
+  layer {
     data_layout: "model_parallel"
     reconstruction {
-      original_layer: "6"
+      original_layer: "data"
     }
   }
 

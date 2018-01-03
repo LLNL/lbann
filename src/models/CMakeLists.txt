@@ -1,8 +1,8 @@
 add_sources(
   model.cpp
-  model_sequential.cpp
-  model_dnn.cpp
-  model_greedy_layerwise_autoencoder.cpp
-  model_dag.cpp
-  model_planar.cpp
+  sequential.cpp
+  directed_acyclic_graph.cpp
+  recurrent.cpp
+  greedy_layerwise_autoencoder.cpp
+  siamese.cpp
 )

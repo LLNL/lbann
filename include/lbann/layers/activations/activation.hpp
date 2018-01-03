@@ -41,11 +41,13 @@ class activation_layer : public Layer {
   activation_layer(const activation_layer&) = default;
   activation_layer& operator=(const activation_layer&) = default;
 
-  virtual ~activation_layer() {}
+  ~activation_layer() override {}
 
   template<data_layout T_layout> inline void initialize_distributed_matrices() {
     Layer::initialize_distributed_matrices<T_layout>();
   }
+
+  virtual void initialize_distributed_matrices() = 0;
 
 };
 
@@ -59,7 +61,7 @@ class entrywise_activation_layer : public activation_layer {
   entrywise_activation_layer& operator=(
     const entrywise_activation_layer&) = default;
 
-  virtual ~entrywise_activation_layer() {}
+  ~entrywise_activation_layer() override {}
 
   template<data_layout T_layout> inline void initialize_distributed_matrices() {
     activation_layer::initialize_distributed_matrices<T_layout>();
@@ -70,7 +72,7 @@ class entrywise_activation_layer : public activation_layer {
   virtual DataType activation_function(DataType x) = 0;
   virtual DataType activation_function_gradient(DataType x) = 0;
 
-  void fp_compute() {
+  void fp_compute() override {
     if(this->m_using_gpus) {
       fp_compute_gpu();
     } else {
@@ -78,7 +80,7 @@ class entrywise_activation_layer : public activation_layer {
     }
   }
 
-  void bp_compute() {
+  void bp_compute() override {
     if(this->m_using_gpus) {
       bp_compute_gpu();
     } else {
@@ -97,7 +99,7 @@ class entrywise_activation_layer : public activation_layer {
   virtual void fp_compute_cpu() {
     
     // Get local matrices
-    const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
+    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
     Mat& activations_local = this->m_activations_v->Matrix();
 
     // Local matrix parameters
@@ -138,8 +140,8 @@ class entrywise_activation_layer : public activation_layer {
   virtual void bp_compute_cpu() {
     
     // Get local matrices
-    const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
-    const Mat& prev_error_signal_local = this->m_prev_error_signal->LockedMatrix();
+    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
+    const Mat& prev_error_signal_local = this->m_prev_error_signal_v->LockedMatrix();
     Mat& error_signal_local = this->m_error_signal_v->Matrix();
 
     // Local matrix parameters

@@ -23,11 +23,11 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_mnist .hpp .cpp - generic_data_reader class for MNIST dataset
+// mnist_reader .hpp .cpp - data reader class for MNIST dataset
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_mnist.hpp"
-#include <stdio.h>
+#include <cstdio>
 
 inline void __swapEndianInt(unsigned int& ui) {
   ui = ((ui >> 24) | ((ui<<8) & 0x00FF0000) | ((ui>>8) & 0x0000FF00) | (ui << 24));
@@ -36,19 +36,23 @@ inline void __swapEndianInt(unsigned int& ui) {
 namespace lbann {
 
 mnist_reader::mnist_reader(bool shuffle)
-  : generic_data_reader(shuffle) {
-  m_image_width = 28;
-  m_image_height = 28;
-  m_num_labels = 10;
+  : image_data_reader(shuffle) {
+  set_defaults();
 }
 
 mnist_reader::mnist_reader()
   : mnist_reader(true) {}
 
+void mnist_reader::set_defaults() {
+  m_image_width = 28;
+  m_image_height = 28;
+  m_image_num_channels = 1;
+  m_num_labels = 10;
+}
 
 bool mnist_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
   int pixelcount = m_image_width * m_image_height;
-  vector<unsigned char>& tmp = m_image_data[data_id];
+  std::vector<unsigned char>& tmp = m_image_data[data_id];
   
   for (int p = 0; p < pixelcount; p++) {
     X.Set(p, mb_idx, tmp[p+1]);
@@ -91,6 +95,10 @@ void mnist_reader::load() {
       " :: MNIST data reader: failed to open file: " + labelpath);
   }
 
+  if (is_master()) {
+    std::cerr << "read labels!\n";
+  }
+
   int magicnum1, numitems1;
   fread(&magicnum1, 4, 1, fplbl);
   fread(&numitems1, 4, 1, fplbl);
@@ -121,6 +129,12 @@ void mnist_reader::load() {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
       " :: MNIST data reader: numitems1 != numitems2");
+  }
+
+  if (m_first_n > 0) {
+    numitems1 = m_first_n > numitems1 ? numitems1 : m_first_n;
+    set_use_percent(1.0);
+    set_absolute_sample_count(0.0);
   }
 
   // set to array

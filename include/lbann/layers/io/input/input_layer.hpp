@@ -35,12 +35,12 @@
 namespace lbann {
 class input_layer : public io_layer, public virtual generic_data_distribution {
  public:
-  typedef std::map<execution_mode, generic_data_reader *> data_reader_map_t;
+  using data_reader_map_t = std::map<execution_mode, generic_data_reader *>;
 
  public:
-  input_layer(lbann_comm *comm, 
-              int num_parallel_readers,  
-              std::map<execution_mode, generic_data_reader *> data_readers, 
+  input_layer(lbann_comm *comm,
+              int num_parallel_readers,
+              std::map<execution_mode, generic_data_reader *> data_readers,
               bool data_set_spans_models = true)
     : generic_data_distribution(comm, num_parallel_readers, data_readers),
       io_layer(comm, data_set_spans_models),
@@ -68,7 +68,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
     }
   }
 
-  virtual ~input_layer() {
+  ~input_layer() override {
     // Input layer always frees data readers.
     for (auto& dr : m_data_readers) {
       delete dr.second;
@@ -76,7 +76,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   }
 
   // Input layers copy their datareaders.
-  input_layer(const input_layer& other) 
+  input_layer(const input_layer& other)
     : generic_data_distribution(other), io_layer(other),
       m_training_dataset(other.m_training_dataset),
       m_testing_dataset(other.m_testing_dataset),
@@ -146,12 +146,12 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
     // Use the predetermined size of the mini-batch to set the current
     // batch size for the neural network
     El::Int cur_mini_batch_size = get_current_mini_batch_size();
-    this->m_neural_network_model->set_current_mini_batch_size(cur_mini_batch_size);
+    this->m_model->set_current_mini_batch_size(cur_mini_batch_size);
 
     // Use the precomputed size of the global mini-batch to set the
     // current effective batch size across all models
     int total_mini_batch_size = get_current_global_mini_batch_size();
-    this->m_neural_network_model->set_effective_mini_batch_size(total_mini_batch_size);
+    this->m_model->set_effective_mini_batch_size(total_mini_batch_size);
 
     // Once the current mini-batch size is defined, set the standard view for activations only
     El::View(*m_activations_v, *m_activations, El::ALL, El::IR(0, cur_mini_batch_size));
@@ -163,14 +163,11 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   //************************************************************************
   // Helper functions to access the data readers
   //************************************************************************
-  execution_mode get_execution_mode() const {
-    return this->m_execution_mode;
-  }
 
   generic_data_reader *get_data_reader(const execution_mode mode) const {
     generic_data_reader *data_reader = nullptr;
-  
-    data_reader_map_t::const_iterator it = m_data_readers.find(mode);
+
+    auto it = m_data_readers.find(mode);
     if (it != m_data_readers.end()) data_reader = it->second;
 
     switch(mode) {
@@ -189,7 +186,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   }
 
   generic_data_reader *get_data_reader() const {
-    return get_data_reader(get_execution_mode());
+    return get_data_reader(this->m_model->get_execution_mode());
   }
 
   virtual int get_num_parallel_readers(execution_mode mode) const {
@@ -198,7 +195,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   }
 
   virtual int get_num_parallel_readers() const {
-    return get_num_parallel_readers(get_execution_mode());
+    return get_num_parallel_readers(this->m_model->get_execution_mode());
   }
 
   virtual int get_num_iterations_per_epoch(execution_mode mode) const {
@@ -207,7 +204,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   }
 
   virtual int get_num_iterations_per_epoch() const {
-    return get_num_iterations_per_epoch(get_execution_mode());
+    return get_num_iterations_per_epoch(this->m_model->get_execution_mode());
   }
 
   virtual int get_current_step_in_epoch(execution_mode mode) const {
@@ -216,7 +213,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   }
 
   virtual int get_current_step_in_epoch() const {
-    return get_current_step_in_epoch(get_execution_mode());
+    return get_current_step_in_epoch(this->m_model->get_execution_mode());
   }
 
   virtual int get_mini_batch_size(execution_mode mode) const {
@@ -230,7 +227,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   }
 
   virtual int get_last_mini_batch_size() const {
-    return get_last_mini_batch_size(get_execution_mode());
+    return get_last_mini_batch_size(this->m_model->get_execution_mode());
   }
 
   virtual int get_current_mini_batch_size(execution_mode mode) const {
@@ -239,7 +236,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   }
 
   virtual int get_current_mini_batch_size() const {
-    return get_current_mini_batch_size(get_execution_mode());
+    return get_current_mini_batch_size(this->m_model->get_execution_mode());
   }
 
   virtual int get_global_mini_batch_size(execution_mode mode) const {
@@ -258,7 +255,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   }
 
   virtual int get_current_global_mini_batch_size() const {
-    return get_current_global_mini_batch_size(get_execution_mode());
+    return get_current_global_mini_batch_size(this->m_model->get_execution_mode());
   }
 
   /** Calculate how many iterations are required for training, testing,
@@ -274,7 +271,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
     /// Each model uses the entire validation and testing data sets
     calculate_num_iterations_per_epoch_single_model(mini_batch_size,
                                                     get_data_reader(execution_mode::validation));
-    calculate_num_iterations_per_epoch_single_model(mini_batch_size, 
+    calculate_num_iterations_per_epoch_single_model(mini_batch_size,
                                                     get_data_reader(execution_mode::testing));
 
   }
@@ -288,7 +285,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
     /// Each model uses the entire validation and testing data sets
     calculate_num_iterations_per_epoch_single_model(mini_batch_size,
                                                     get_data_reader(execution_mode::validation));
-    calculate_num_iterations_per_epoch_single_model(mini_batch_size, 
+    calculate_num_iterations_per_epoch_single_model(mini_batch_size,
                                                     get_data_reader(execution_mode::testing));
 
   }
@@ -331,8 +328,8 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   /**
    * Return the dataset associated with the current execution mode.
    */
-  dataset& select_dataset() override { return get_dataset(m_execution_mode); }
-  const dataset& select_dataset() const override { return get_dataset(m_execution_mode); }
+  dataset& select_dataset() override { return get_dataset(m_model->get_execution_mode()); }
+  const dataset& select_dataset() const override { return get_dataset(m_model->get_execution_mode()); }
 
   /**
    * Return the first dataset with a valid (non-null) datareader.
@@ -386,7 +383,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
     return std::vector<int>(1, 0);
   }
 
-  virtual std::string get_topo_description() const override {
+  std::string get_topo_description() const override {
     std::stringstream s;
     for (size_t i = 0; i < this->m_neuron_dims.size(); i++) {
       s << this->m_neuron_dims[i];
@@ -494,7 +491,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   //************************************************************************
 
   // save state of IO to a checkpoint
-  bool saveToCheckpointShared(persist& p) const override {
+  bool save_to_checkpoint_shared(persist& p) const override {
     // save state of data readers from input layer
     data_reader_map_t::const_iterator it;
 
@@ -531,7 +528,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
       p.write_uint64(persist_type::train, "reader_validate_total",
                      (uint64_t) m_validation_dataset.get_total_samples());
     }
-    io_layer::saveToCheckpointShared(p);
+    //io_layer::save_to_checkpoint_shared(p);
 
     return true;
   }
@@ -546,7 +543,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   };
 
   // reload state of IO from a checkpoint
-  bool loadFromCheckpointShared(persist& p) override {
+  bool load_from_checkpoint_shared(persist& p) override {
     // save state of data readers from input layer
     data_reader_map_t::const_iterator it;
 
@@ -588,8 +585,6 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
     m_testing_dataset.total_samples()            = (long) header.test_total;
     m_validation_dataset.num_samples_processed() = (long) header.validate_proc;
     m_validation_dataset.total_samples()         = (long) header.validate_total;
-
-    io_layer::loadFromCheckpointShared(p);
 
     return true;
   }

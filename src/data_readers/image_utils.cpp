@@ -23,184 +23,13 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_image_utils .cpp .hpp - Image I/O utility functions
+// image_utils .cpp .hpp - Image I/O utility functions
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/image_utils.hpp"
-#include <stdlib.h>
-#include <stdio.h>
-
-#ifdef __LIB_OPENCV
-using namespace cv;
-#endif
 
 
-#define BMP_HEADER_MARKER   ((unsigned short) ('M' << 8) | 'B')
-
-#pragma pack(push)
-#pragma pack(2)
-typedef struct __BMP_FILEHEADER {
-  unsigned short bfType;
-  unsigned long  bfSize;
-  unsigned short bfReserved1;
-  unsigned short bfReserved2;
-  unsigned long  bfOffBits;
-
-} BMP_FILEHEADER;
-
-typedef struct __BMP_INFOHEADER {
-  unsigned long  biSize;
-  long           biWidth;
-  long           biHeight;
-  unsigned short biPlanes;
-  unsigned short biBitCount;
-  unsigned long  biCompression;
-  unsigned long  biSizeImage;
-  long           biXPelsPerMeter;
-  long           biYPelsPerMeter;
-  unsigned long  biClrUsed;
-  unsigned long  biClrImportant;
-
-} BMP_INFOHEADER;
-
-typedef struct __BMP_RGBQUAD {
-  unsigned char rgbBlue;
-  unsigned char rgbGreen;
-  unsigned char rgbRed;
-  unsigned char rgbReserved;
-
-} BMP_RGBQUAD;
-
-typedef struct __BMP_INFO {
-  BMP_INFOHEADER bmiHeader;
-  BMP_RGBQUAD    bmiColors[1];
-
-} BMP_INFO;
-#pragma pack(pop)
-
-
-bool lbann::image_utils::loadBMP(const std::string& Imagefile, int& Width, int& Height, int& BPP, bool Flip, unsigned char *&Pixels) {
-  FILE *infile = fopen(Imagefile.c_str(), "rb");
-  if (infile == NULL) {
-    fprintf(stderr, "can't open %s\n", Imagefile.c_str());
-    return false;
-  }
-
-  // Read Bitmap File Header
-  BMP_FILEHEADER header;
-  fread(&header, sizeof(BMP_FILEHEADER), 1, infile);
-  if (header.bfType != BMP_HEADER_MARKER) {
-    fclose(infile);
-    return false;
-  }
-
-  // Read Bitmap Info
-  int bisize = header.bfOffBits - sizeof(BMP_FILEHEADER);
-  BMP_INFO *info = (BMP_INFO *)malloc(bisize);
-  fread(info, bisize, 1, infile);
-
-  // Check Palette Count
-  if (info->bmiHeader.biClrUsed != 0 || info->bmiHeader.biBitCount != 24) {
-    free(info);
-    fclose(infile);
-    return false;
-  }
-
-  // Read DIB Bits
-  int bitrowsize = ((info->bmiHeader.biWidth * info->bmiHeader.biBitCount + 31) / 32) * 4;
-  int bitsize = bitrowsize * info->bmiHeader.biHeight;
-  unsigned char *bits = (unsigned char *)malloc(bitsize);
-  fread(bits, bitsize, 1, infile);
-
-  // Set Pixels
-  Width = info->bmiHeader.biWidth;
-  Height = info->bmiHeader.biHeight;
-  BPP = 3;
-  Pixels = new unsigned char[Width * Height * BPP];
-  for (int y = 0; y < Height; y++) {
-    for (int x = 0; x < Width; x++) {
-      int offset = (Flip) ? ((Height - 1 - y) * Width + x) : (y * Width + x);
-      Pixels[offset] = bits[y * bitrowsize + x * 3 + 2];
-      Pixels[offset + Height*Width] = bits[y * bitrowsize + x * 3 + 1];
-      Pixels[offset + 2*Height*Width] = bits[y * bitrowsize + x * 3 + 0];
-    }
-  }
-
-  free(info);
-  free(bits);
-  fclose(infile);
-
-  return true;
-}
-
-bool lbann::image_utils::saveBMP(const std::string& Imagefile, int Width, int Height, int BPP, bool Flip, unsigned char *Pixels) {
-  if (BPP != 3) {
-    return false;
-  }
-
-
-
-  return false;
-}
-
-bool lbann::image_utils::loadPGM(const std::string& Imagefile, int& Width, int& Height, int& BPP, bool Flip, unsigned char *&Pixels) {
-  FILE *infile = fopen(Imagefile.c_str(), "rb");
-  if (infile == NULL) {
-    fprintf(stderr, "can't open %s\n", Imagefile.c_str());
-    return false;
-  }
-
-  char format[5];
-  fscanf(infile, "%s", format);
-  int width, height;
-  fscanf(infile, "%d%d", &width, &height);
-  int maxpixel;
-  fscanf(infile, "%d", &maxpixel);
-
-  Width = width;
-  Height = height;
-  BPP = 1;
-  Pixels = new unsigned char[Width * Height * BPP];
-
-  for (int y = 0; y < Height; y++) {
-    for (int x = 0; x < Width; x++) {
-      int offset = (Flip) ? ((Height - 1 - y) * Width + x) : (y * Width + x);
-      int pixel = fgetc(infile);
-      Pixels[offset] = (unsigned char)((double)pixel / maxpixel * 255.0);
-    }
-  }
-
-  fclose(infile);
-  return true;
-}
-
-bool lbann::image_utils::savePGM(const std::string& Imagefile, int Width, int Height, int BPP, bool Flip, unsigned char *Pixels) {
-  if (BPP != 1) {
-    return false;
-  }
-
-  FILE *outfile = fopen(Imagefile.c_str(), "wb");
-  if (outfile == NULL) {
-    fprintf(stderr, "can't create %s\n", Imagefile.c_str());
-    return false;
-  }
-
-  fprintf(outfile, "P5\n");
-  fprintf(outfile, "%d %d\n", Width, Height);
-  fprintf(outfile, "255\n");
-
-  for (int y = 0; y < Height; y++) {
-    for (int x = 0; x < Width; x++) {
-      int offset = (Flip) ? ((Height - 1 - y) * Width + x) : (y * Width + x);
-      fputc(Pixels[offset], outfile);
-    }
-  }
-
-  fclose(outfile);
-  return true;
-}
-
-bool lbann::image_utils::loadPNG(const std::string& Imagefile, int& Width, int& Height, bool Flip, uchar *&Pixels) {
+bool lbann::image_utils::loadIMG(const std::string& Imagefile, int& Width, int& Height, bool Flip, unsigned char *&Pixels) {
 #ifdef __LIB_OPENCV
   cv::Mat image = cv::imread(Imagefile, _LBANN_CV_COLOR_);
   if (image.empty()) {
@@ -226,56 +55,7 @@ bool lbann::image_utils::loadPNG(const std::string& Imagefile, int& Width, int& 
 #endif
 }
 
-bool lbann::image_utils::savePNG(const std::string& Imagefile, int Width, int Height, bool Flip, uchar *Pixels) {
-#ifdef __LIB_OPENCV
-  cv::Mat image = cv::Mat(Height, Width, CV_8UC3);
-
-  for (int y = 0; y < Height; y++) {
-    for (int x = 0; x < Width; x++) {
-      cv::Vec3b pixel;
-      int offset = (Flip) ? ((Height - 1 - y) * Width + x) : (y * Width + x);
-      pixel[_LBANN_CV_BLUE_] = Pixels[offset];
-      pixel[_LBANN_CV_GREEN_] = Pixels[offset + Height*Width];
-      pixel[_LBANN_CV_RED_] = Pixels[offset + 2*Height*Width];
-      image.at<cv::Vec3b>(y, x) = pixel;
-    }
-  }
-  cv::imwrite(Imagefile, image);
-
-  return true;
-#else
-  return false;
-#endif
-}
-
-bool lbann::image_utils::loadJPG(const std::string& Imagefile, int& Width, int& Height, bool Flip, unsigned char *&Pixels) {
-
-#ifdef __LIB_OPENCV
-  cv::Mat image = cv::imread(Imagefile, _LBANN_CV_COLOR_);
-  if (image.empty()) {
-    return false;
-  }
-
-  Width = image.cols;
-  Height = image.rows;
-
-  for (int y = 0; y < Height; y++) {
-    for (int x = 0; x < Width; x++) {
-      cv::Vec3b pixel = image.at<cv::Vec3b>(y, x);
-      int offset = (Flip) ? ((Height - 1 - y) * Width + x) : (y * Width + x);
-      Pixels[offset]                  = pixel[_LBANN_CV_BLUE_];
-      Pixels[offset + Height*Width]   = pixel[_LBANN_CV_GREEN_];
-      Pixels[offset + 2*Height*Width] = pixel[_LBANN_CV_RED_];
-    }
-  }
-
-  return true;
-#else
-  return false;
-#endif
-}
-
-bool lbann::image_utils::loadJPG(std::vector<unsigned char>& image_buf, int& Width, int& Height, bool Flip, unsigned char *&Pixels) {
+bool lbann::image_utils::loadIMG(std::vector<unsigned char>& image_buf, int& Width, int& Height, bool Flip, unsigned char *&Pixels) {
 #ifdef __LIB_OPENCV
   cv::Mat image = cv::imdecode(image_buf, _LBANN_CV_COLOR_);
   //cv::Mat image = cv::imdecode(image_buf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
@@ -302,7 +82,7 @@ bool lbann::image_utils::loadJPG(std::vector<unsigned char>& image_buf, int& Wid
 #endif
 }
 
-bool lbann::image_utils::saveJPG(const std::string& Imagefile, int Width, int Height, bool Flip, unsigned char *Pixels) {
+bool lbann::image_utils::saveIMG(const std::string& Imagefile, int Width, int Height, bool Flip, unsigned char *Pixels) {
 #ifdef __LIB_OPENCV
   cv::Mat image = cv::Mat(Height, Width, CV_8UC3);
 
@@ -316,7 +96,7 @@ bool lbann::image_utils::saveJPG(const std::string& Imagefile, int Width, int He
       image.at<cv::Vec3b>(y, x) = pixel;
     }
   }
-  imwrite(Imagefile, image);
+  cv::imwrite(Imagefile, image);
 
   return true;
 #else
@@ -330,7 +110,7 @@ bool lbann::image_utils::load_image(const std::string& filename,
   cv::Mat image = cv::imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
   bool ok = !image.empty() && pp.preprocess(image);
   ok = ok && cv_utils::copy_cvMat_to_buf(image, buf, pp);
-  pp.disable_normalizer();
+  pp.disable_lazy_normalizer();
 
   _LBANN_MILD_EXCEPTION(!ok, "Image preprocessing or copying failed.", false)
 
@@ -346,7 +126,7 @@ bool lbann::image_utils::load_image(const std::string& filename,
 bool lbann::image_utils::save_image(const std::string& filename,
                                     const int Width, const int Height, const int Type, cv_process& pp, const std::vector<uint8_t>& buf) {
 #ifdef __LIB_OPENCV
-  pp.determine_inverse_normalization();
+  pp.determine_inverse_lazy_normalization();
   cv::Mat image = cv_utils::copy_buf_to_cvMat(buf, Width, Height, Type, pp);
   bool ok = !image.empty() && pp.postprocess(image);
 
@@ -375,7 +155,7 @@ bool lbann::image_utils::load_image(const std::string& filename,
   // Disabling normalizer is needed because normalizer is not necessarily
   // called during preprocessing but implicitly applied during data copying to
   // reduce overhead.
-  pp.disable_normalizer();
+  pp.disable_lazy_normalizer();
 
   _LBANN_MILD_EXCEPTION(!ok, "Image preprocessing or copying failed.", false)
 
@@ -414,7 +194,7 @@ bool lbann::image_utils::load_image(const std::string& filename,
   // Disabling normalizer is needed because normalizer is not necessarily
   // called during preprocessing but implicitly applied during data copying to
   // reduce overhead.
-  pp.disable_normalizer();
+  pp.disable_lazy_normalizer();
 
   _LBANN_MILD_EXCEPTION(!ok, "Image preprocessing or copying failed.", false)
 
@@ -438,7 +218,7 @@ bool lbann::image_utils::load_image(const std::string& filename,
 bool lbann::image_utils::save_image(const std::string& filename,
                                     const int Width, const int Height, const int Type, cv_process& pp, const ::Mat& data) {
 #ifdef __LIB_OPENCV
-  pp.determine_inverse_normalization();
+  pp.determine_inverse_lazy_normalization();
   cv::Mat image = cv_utils::copy_buf_to_cvMat(data, Width, Height, Type, pp);
   bool ok = !image.empty() && pp.postprocess(image);
 
@@ -466,7 +246,7 @@ bool lbann::image_utils::import_image(cv::InputArray inbuf,
   cv::Mat image = cv::imdecode(inbuf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
   bool ok = !image.empty() && pp.preprocess(image);
   ok = ok && cv_utils::copy_cvMat_to_buf(image, data, pp);
-  pp.disable_normalizer();
+  pp.disable_lazy_normalizer();
 
   _LBANN_MILD_EXCEPTION(!ok, "Image preprocessing or copying failed.", false)
 
@@ -504,7 +284,7 @@ bool lbann::image_utils::import_image(cv::InputArray inbuf,
     ok = cv_utils::copy_cvMat_to_buf(patches[i], data[i], pp);
   }
 
-  pp.disable_normalizer();
+  pp.disable_lazy_normalizer();
 
   _LBANN_MILD_EXCEPTION(!ok, "Image preprocessing or copying failed.", false)
 
@@ -529,7 +309,7 @@ bool lbann::image_utils::import_image(cv::InputArray inbuf,
 bool lbann::image_utils::export_image(const std::string& fileExt, std::vector<uchar>& outbuf,
                                       const int Width, const int Height, const int Type, cv_process& pp, const ::Mat& data) {
 #ifdef __LIB_OPENCV
-  pp.determine_inverse_normalization();
+  pp.determine_inverse_lazy_normalization();
   cv::Mat image = cv_utils::copy_buf_to_cvMat(data, Width, Height, Type, pp);
   bool ok = !image.empty() && pp.postprocess(image);
 
@@ -539,7 +319,7 @@ bool lbann::image_utils::export_image(const std::string& fileExt, std::vector<uc
   const std::string ext = ((fileExt[0] != '.')? ("." + fileExt) : fileExt);
 
   static const size_t max_img_header_size = 1024;
-  const size_t capacity = cv_utils::image_data_amount(image) + max_img_header_size;
+  const size_t capacity = image_data_amount(image) + max_img_header_size;
 
   if (outbuf.size() < capacity) {
     //std::cout << "bytes reserved for the image: " << image_data_amount(image) << std::endl;

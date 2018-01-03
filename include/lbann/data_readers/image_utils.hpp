@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_image_utils .cpp .hpp - Image I/O utility functions
+// image_utils .cpp .hpp - Image I/O utility functions
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_IMAGE_UTILS_HPP
@@ -42,17 +42,9 @@
 namespace lbann {
 class image_utils {
  public:
-  static bool loadBMP(const std::string& Imagefile, int& Width, int& Height, int& BPP, bool Flip, unsigned char *&Pixels);
-  static bool saveBMP(const std::string& Imagefile, int Width, int Height, int BPP, bool Flip, unsigned char *Pixels);
-
-  static bool loadPGM(const std::string& Imagefile, int& Width, int& Height, int& BPP, bool Flip, unsigned char *&Pixels);
-  static bool savePGM(const std::string& Imagefile, int Width, int Height, int BPP, bool Flip, unsigned char *Pixels);
-  static bool loadPNG(const std::string& Imagefile, int& Width, int& Height, bool Flip, unsigned char *&Pixels);
-  static bool savePNG(const std::string& Imagefile, int Width, int Height, bool Flip, unsigned char *Pixels);
-
-  static bool loadJPG(std::vector<unsigned char>& image_buf, int& Width, int& Height, bool Flip, unsigned char *&Pixels);
-  static bool loadJPG(const std::string& Imagefile, int& Width, int& Height, bool Flip, unsigned char *&Pixels);
-  static bool saveJPG(const std::string& Imagefile, int Width, int Height, bool Flip, unsigned char *Pixels);
+  static bool loadIMG(std::vector<unsigned char>& image_buf, int& Width, int& Height, bool Flip, unsigned char *&Pixels);
+  static bool loadIMG(const std::string& Imagefile, int& Width, int& Height, bool Flip, unsigned char *&Pixels);
+  static bool saveIMG(const std::string& Imagefile, int Width, int Height, bool Flip, unsigned char *Pixels);
 
   // load/save an image into/from a temporary buffer
   /// Load an image from a file and put it into a serialized buffer

@@ -26,6 +26,8 @@
 // lbann_variable_minibatch .hpp .cpp - Callback for variable-size mini-batches
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <utility>
+
 #include "lbann/callbacks/callback_variable_minibatch.hpp"
 
 namespace lbann {
@@ -39,7 +41,7 @@ void lbann_callback_variable_minibatch::on_train_begin(model *m) {
   if (m->get_cur_epoch() != 0) {
     return;
   }
-  input_layer* input = dynamic_cast<input_layer*>(m->get_layers()[0]);
+  auto* input = dynamic_cast<input_layer*>(m->get_layers()[0]);
   if (!input) {
     throw lbann_exception("variable_minibatch: could not get input layer");
   }
@@ -58,7 +60,7 @@ void lbann_callback_variable_minibatch::on_train_begin(model *m) {
 }
 
 void lbann_callback_variable_minibatch::on_epoch_end(model *m) {
-  input_layer* input = dynamic_cast<input_layer*>(m->get_layers()[0]);
+  auto* input = dynamic_cast<input_layer*>(m->get_layers()[0]);
   lbann_comm *comm = m->get_comm();
   int new_mbsize = 0;
   float new_lr = 0.0f;
@@ -112,13 +114,8 @@ void lbann_callback_variable_minibatch::on_epoch_end(model *m) {
 
 void lbann_callback_variable_minibatch::change_learning_rate(
   model *m, float new_lr) const {
-  std::vector<Layer*>& layers = m->get_layers();
-  for (size_t l = 0; l < layers.size(); ++l) {
-    optimizable_layer *opt_layer = dynamic_cast<optimizable_layer*>(layers[l]);
-    if (opt_layer == nullptr) {
-      continue;
-    }
-    optimizer *opt = opt_layer->get_optimizer();
+  for (weights *w : m->get_weights()) {
+    optimizer *opt = w->get_optimizer();
     if (opt != nullptr) {
       opt->set_learning_rate(new_lr);
     }
@@ -127,13 +124,8 @@ void lbann_callback_variable_minibatch::change_learning_rate(
 
 float lbann_callback_variable_minibatch::get_current_learning_rate(
   model *m) const {
-  std::vector<Layer*>& layers = m->get_layers();
-  for (size_t l = 0; l < layers.size(); ++l) {
-    optimizable_layer *opt_layer = dynamic_cast<optimizable_layer*>(layers[l]);
-    if (opt_layer == nullptr) {
-      continue;
-    }
-    optimizer *opt = opt_layer->get_optimizer();
+  for (weights *w : m->get_weights()) {
+    optimizer *opt = w->get_optimizer();
     if (opt != nullptr) {
       return opt->get_learning_rate();
     }
@@ -160,7 +152,7 @@ bool lbann_callback_step_minibatch::schedule(
 
 lbann_callback_minibatch_schedule::lbann_callback_minibatch_schedule(
   int starting_mbsize, std::vector<minibatch_step> steps) :
-  lbann_callback_variable_minibatch(starting_mbsize), m_steps(steps) {
+  lbann_callback_variable_minibatch(starting_mbsize), m_steps(std::move(steps)) {
   std::sort(m_steps.rbegin(), m_steps.rend(),
             [] (const minibatch_step& a, const minibatch_step& b) {
               return a.epoch < b.epoch;

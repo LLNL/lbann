@@ -27,8 +27,6 @@
 #include "lbann/data_distributions/partitioned_minibatch.hpp"
 #include "lbann/utils/exception.hpp"
 
-using namespace std;
-
 lbann::partitioned_minibatch::partitioned_minibatch(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
   : generic_data_distribution(comm, num_parallel_readers, data_readers) {}
 
@@ -104,7 +102,7 @@ int lbann::partitioned_minibatch::compute_max_num_parallel_readers(long data_set
 }
 
 void lbann::partitioned_minibatch::calculate_num_iterations_per_epoch_spanning_models(int max_mini_batch_size, generic_data_reader *data_reader) {
-  if(data_reader == NULL) { return; }
+  if(data_reader == nullptr) { return; }
   // If the data reader does not have any data bail out (e.g. unused validation reader)
   if(data_reader->get_use_percent() == double(0.0)) { return; }
 
@@ -185,7 +183,7 @@ void lbann::partitioned_minibatch::calculate_num_iterations_per_epoch_spanning_m
 
   /// BVE FIXME - I feel like this is wrong  I don't think that the -1
   /// should be there
-  int last_mini_batch_offset = max(0, num_whole_mini_batches_per_model - 1) * data_reader->get_stride_to_next_mini_batch();
+  int last_mini_batch_offset = std::max(0, num_whole_mini_batches_per_model - 1) * data_reader->get_stride_to_next_mini_batch();
 
   ///  The last mini-batch may be partial and thus may have a smaller stride
   if(per_model_partial_mini_batch_size > 0 || world_master_remainder_adjustment > 0) {
@@ -198,7 +196,7 @@ void lbann::partitioned_minibatch::calculate_num_iterations_per_epoch_spanning_m
 }
 
 void lbann::partitioned_minibatch::calculate_num_iterations_per_epoch_single_model(int max_mini_batch_size, generic_data_reader *data_reader) {
-  if(data_reader == NULL) { return; }
+  if(data_reader == nullptr) { return; }
   // If the data reader does not have any data bail out (e.g. unused validation reader)
   if(data_reader->get_use_percent() == double(0.0)) { return; }
 

@@ -147,7 +147,7 @@ bool cv_normalizer::determine_transform(const cv::Mat& image) {
   std::vector<ComputeType> mean;
   std::vector<ComputeType> stddev;
   const normalization_type code_wo_uscale = mask_normalization_bits(ntype, _z_score);
-  const size_t NCh = static_cast<size_t>(image.channels());
+  const auto NCh = static_cast<size_t>(image.channels());
 
   if (code_wo_uscale != _none) {
     if (!compute_mean_stddev(image, mean, stddev) || (NCh != mean.size())) {
@@ -299,9 +299,9 @@ bool cv_normalizer::compute_mean_stddev(const cv::Mat& image,
                             compute_mean_stddev_with_known_type, image, mean, stddev, mask)
   } else {
     // cv::meanStdDev() currently only works with double type for mean and stddev and images of 1-4 channels
-    typedef double Ch_T;
-    //typedef ComputeType Ch_T;
-    typedef cv_image_type<Ch_T> Output_T;
+    using Ch_T = double;
+    //using Ch_T = ComputeType;
+    using Output_T = cv_image_type<Ch_T>;
     cv::Mat _mean(1, 4, Output_T::T());
     cv::Mat _stddev(1, 4, Output_T::T());
     cv::meanStdDev(image, _mean, _stddev, mask);

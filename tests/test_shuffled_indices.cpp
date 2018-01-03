@@ -35,7 +35,7 @@ const int lbann_default_random_seed = 42;
 
 int mini_batch_size = 128;
 
-void test_is_shuffled(generic_data_reader *reader, bool is_shuffled, const char *msg = 0);
+void test_is_shuffled(generic_data_reader *reader, bool is_shuffled, const char *msg = nullptr);
 
 int main(int argc, char *argv[]) {
   int random_seed = lbann_default_random_seed;
@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
       throw lbann_exception(err.str());
     }
     lbann_data::LbannPB pb;
-    string reader_fn(opts->get_string("fn").c_str());
+    std::string reader_fn(opts->get_string("fn").c_str());
     read_prototext_file(reader_fn.c_str(), pb, master);
     const lbann_data::DataReader & d_reader = pb.data_reader();
 

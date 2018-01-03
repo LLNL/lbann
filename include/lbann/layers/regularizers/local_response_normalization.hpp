@@ -30,7 +30,6 @@
 #define LBANN_LAYER_LOCAL_RESPONSE_NORMALIZATION_HPP_INCLUDED
 
 #include <vector>
-#include "lbann/base.hpp"
 #include "lbann/layers/regularizers/regularizer.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/utils/exception.hpp"
@@ -108,7 +107,7 @@ class local_response_normalization_layer : public regularizer_layer {
   #endif // __LIB_CUDNN
   }
 
-  ~local_response_normalization_layer() {
+  ~local_response_normalization_layer() override {
   #ifdef __LIB_CUDNN
     // Destroy cuDNN objects
     if(m_lrn_cudnn_desc) {
@@ -117,15 +116,16 @@ class local_response_normalization_layer : public regularizer_layer {
   #endif // __LIB_CUDNN
   }
 
-  local_response_normalization_layer* copy() const {
+  local_response_normalization_layer* copy() const override {
     return new local_response_normalization_layer(*this);
   }
 
-  std::string get_type() const { return "local response normalization"; }
+  /// Use LRN rather than local response normalization for better formatting
+  std::string get_type() const override { return "LRN"; }
 
-  std::string get_description() const {
+  std::string get_description() const override {
     return " LRN window width: " + std::to_string(m_window_width) + " alpha: " +
-      std::to_string(m_lrn_alpha) + " beta: " + std::to_string(m_lrn_beta) 
+      std::to_string(m_lrn_alpha) + " beta: " + std::to_string(m_lrn_beta)
       + " k: " + std::to_string(m_lrn_k)
       + " dataLayout: " + get_data_layout_string(get_data_layout());
   }
@@ -133,10 +133,10 @@ class local_response_normalization_layer : public regularizer_layer {
   virtual inline void initialize_distributed_matrices() {
     regularizer_layer::initialize_distributed_matrices<T_layout>();
   }
-  virtual data_layout get_data_layout() const { return T_layout; }
+  data_layout get_data_layout() const override { return T_layout; }
 
   /// Initialize GPU objects
-  void setup_gpu() {
+  void setup_gpu() override {
     regularizer_layer::setup_gpu();
   #ifndef __LIB_CUDNN
     throw lbann_exception("lbann_layer_local_response_normalization: cuDNN not detected");
@@ -153,7 +153,7 @@ class local_response_normalization_layer : public regularizer_layer {
   #endif // #ifndef __LIB_CUDNN
   }
 
-  void fp_compute() {
+  void fp_compute() override {
     if(this->m_using_gpus) {
       fp_compute_cudnn();
     } else {
@@ -161,7 +161,7 @@ class local_response_normalization_layer : public regularizer_layer {
     }
   }
 
-  void bp_compute() {
+  void bp_compute() override {
     if(this->m_using_gpus) {
       bp_compute_cudnn();
     } else {
@@ -191,7 +191,7 @@ class local_response_normalization_layer : public regularizer_layer {
                                               CUDNN_LRN_CROSS_CHANNEL_DIM1,
                                               &one,
                                               this->m_prev_neurons_cudnn_desc,
-                                              this->m_prev_activations_d[i],
+                                              this->m_prev_activations_dv[i],
                                               &zero,
                                               this->m_neurons_cudnn_desc,
                                               this->m_activations_d[i]));
@@ -225,9 +225,9 @@ class local_response_normalization_layer : public regularizer_layer {
                                                this->m_neurons_cudnn_desc,
                                                this->m_activations_d[i],
                                                this->m_neurons_cudnn_desc,
-                                               this->m_prev_error_signal_d[i],
+                                               this->m_prev_error_signal_dv[i],
                                                this->m_prev_neurons_cudnn_desc,
-                                               this->m_prev_activations_d[i],
+                                               this->m_prev_activations_dv[i],
                                                &zero,
                                                this->m_prev_neurons_cudnn_desc,
                                                this->m_error_signal_d[i]));
@@ -240,7 +240,7 @@ class local_response_normalization_layer : public regularizer_layer {
   void fp_compute_cpu() {
 
     // Get local matrices
-    const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
+    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
     Mat& activations_local = this->m_activations_v->Matrix();
 
     // Get matrix buffers
@@ -261,7 +261,7 @@ class local_response_normalization_layer : public regularizer_layer {
     ////////////////////////////////////////////////////////////////
     // activations(i) = prev_activations(i) / scale_factor(i) ^ beta
     // scale_factor(i)
-    //   = k + alpha / window_width * sum( prev_activations(j) ^ 2 )
+    //   = k + alpha * sum( prev_activations(j) ^ 2 )
     // Note: The sum is over entries in the normalization window.
     ////////////////////////////////////////////////////////////////
 
@@ -286,7 +286,7 @@ class local_response_normalization_layer : public regularizer_layer {
           for(int window_pos = window_start; window_pos <= window_end; ++window_pos) {
             for(int block_pos = 0; block_pos < block_size; ++block_pos) {
               const int index = block_start + block_pos + window_pos * num_per_channel;
-              const DataType prev_activations_entry 
+              const DataType prev_activations_entry
                 = prev_activations_buffer[index + sample * prev_activations_ldim];
               workspace[block_pos] += prev_activations_entry * prev_activations_entry;
             }
@@ -296,7 +296,7 @@ class local_response_normalization_layer : public regularizer_layer {
           for(int block_pos = 0; block_pos < block_size; ++block_pos) {
             workspace[block_pos] = 1 / (m_lrn_k + m_lrn_alpha * workspace[block_pos]);
           }
-          
+
           // Compute activations
           for(int block_pos = 0; block_pos < block_size; ++block_pos) {
             const int index = block_start + block_pos + channel * num_per_channel;
@@ -313,9 +313,9 @@ class local_response_normalization_layer : public regularizer_layer {
                 = prev_activations_entry * std::pow(scale_factor, m_lrn_beta);
             }
           }
-          
+
         }
-        
+
       }
     }
 
@@ -325,9 +325,9 @@ class local_response_normalization_layer : public regularizer_layer {
   void bp_compute_cpu() {
 
     // Get local matrices
-    const Mat& prev_activations_local = this->m_prev_activations->LockedMatrix();
+    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
     const Mat& activations_local = this->m_activations_v->LockedMatrix();
-    const Mat& prev_error_signal_local = this->m_prev_error_signal->LockedMatrix();
+    const Mat& prev_error_signal_local = this->m_prev_error_signal_v->LockedMatrix();
     Mat& error_signal_local = this->m_error_signal_v->Matrix();
 
     // Get matrix buffers
@@ -373,7 +373,7 @@ class local_response_normalization_layer : public regularizer_layer {
         const int block_size = std::min(max_block_size,
                                         num_per_channel - block_start);
         DataType workspace[max_block_size];
-        
+
         // Iterate through channels
         for(int channel = 0; channel < num_channels; ++channel) {
           const int window_start = std::max(channel - m_window_width / 2, 0);
@@ -384,7 +384,7 @@ class local_response_normalization_layer : public regularizer_layer {
           for(int window_pos = window_start; window_pos <= window_end; ++window_pos) {
             for(int block_pos = 0; block_pos < block_size; ++block_pos) {
               const int index = block_start + block_pos + window_pos * num_per_channel;
-              const DataType prev_activations_entry 
+              const DataType prev_activations_entry
                 = prev_activations_buffer[index + sample * prev_activations_ldim];
               workspace[block_pos] += prev_activations_entry * prev_activations_entry;
             }

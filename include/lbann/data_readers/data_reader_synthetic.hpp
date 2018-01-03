@@ -37,14 +37,12 @@ class data_reader_synthetic : public generic_data_reader {
   data_reader_synthetic(int num_samples, int num_features, bool shuffle = true);
   data_reader_synthetic(const data_reader_synthetic&) = default;
   data_reader_synthetic& operator=(const data_reader_synthetic&) = default;
-  ~data_reader_synthetic() {}
-  data_reader_synthetic* copy() const {
+  ~data_reader_synthetic() override {}
+  data_reader_synthetic* copy() const override {
     return new data_reader_synthetic(*this);
   }
 
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid);
-
-  void load();
+  void load() override;
 
   int get_num_samples() const {
     return m_num_samples;
@@ -53,13 +51,16 @@ class data_reader_synthetic : public generic_data_reader {
     return m_num_features;
   }
 
-  int get_linearized_data_size() const {
+  int get_linearized_data_size() const override {
     return m_num_features;
   }
 
-  const std::vector<int> get_data_dims() const {
+  const std::vector<int> get_data_dims() const override {
     return {m_num_features};
   }
+
+ protected:
+  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
 
  private:
   int  m_num_samples; //rows

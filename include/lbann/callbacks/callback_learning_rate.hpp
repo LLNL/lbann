@@ -32,7 +32,6 @@
 #include <unordered_set>
 #include <unordered_map>
 #include "lbann/callbacks/callback.hpp"
-#include "lbann/layers/optimizable_layer.hpp"
 
 namespace lbann {
 
@@ -48,42 +47,42 @@ class lbann_callback_learning_rate : public lbann_callback {
   lbann_callback_learning_rate(const lbann_callback_learning_rate&) = default;
   lbann_callback_learning_rate& operator=(
     const lbann_callback_learning_rate&) = default;
-  /** Only apply to specific layers. */
-  lbann_callback_learning_rate(std::unordered_set<Layer *> layers);
+  /** Only apply to specific weights. */
+  lbann_callback_learning_rate(std::unordered_set<weights *> weights_list);
   /** Do some initialization. */
   void setup(model *m) override;
   /** Apply global learning rate schedules. */
   void on_epoch_end(model *m) override;
 
   using lbann_callback::on_backward_prop_end;
-  /** Apply local/per-layer learning rate schedules. */
+  /** Apply local/per-optimizer learning rate schedules. */
   void on_backward_prop_end(model *m) override;
  protected:
   /**
-   * This is called at the end of every epoch to update the learning rate
-   * for every layer. Adjustments should be made based on the current global
-   * learning rate.
-   * The returned learning rate will be used to automatically update the current
-   * global learning rate.
+   * This is called at the end of every epoch to update the learning
+   * rate for every optimizer. Adjustments should be made based on the
+   * current global learning rate.
+   * The returned learning rate will be used to automatically update
+   * the current global learning rate.
    */
   virtual float global_schedule(model *m) { return m_cur_global_lr; }
   /**
    * This is called at the end of every training mini-batch to update the
-   * learning rate for layer l. The current global learning rate is *not*
+   * learning rate for optimizer opt. The current global learning rate is *not*
    * updated automatically based on this method.
    */
-  virtual float layer_schedule(model *m, Layer *l) {
-    optimizable_layer *opt_layer = dynamic_cast<optimizable_layer*>(l);
-    return opt_layer->get_optimizer()->get_learning_rate();
+  virtual float optimizer_schedule(model *m, optimizer &opt) {
+    return opt.get_learning_rate();
   }
 
-  /** Layers to update. */
-  std::unordered_set<Layer *> m_layers;
+  /** Weights to update. */
+  std::unordered_set<weights *> m_weights;
 
   /**
-   * This should be maintained by all learning rate schedule implementations
-   * as the current global learning rate. This enables coordination among
-   * different schedules, particularly ones that work on a per-layer basis.
+   * This should be maintained by all learning rate schedule
+   * implementations as the current global learning rate. This enables
+   * coordination among different schedules, particularly ones that
+   * work on a per-optimizer basis.
    */
   static float m_cur_global_lr;
 };
@@ -96,17 +95,17 @@ class lbann_callback_step_learning_rate : public lbann_callback_learning_rate {
   /** Decrease the learning rate by amt every step epochs. */
   lbann_callback_step_learning_rate(int step, float amt);
   lbann_callback_step_learning_rate(int step, float amt,
-                                    std::unordered_set<Layer *> layers);
+                                    std::unordered_set<weights *> weights_list);
   lbann_callback_step_learning_rate(
     const lbann_callback_step_learning_rate&) = default;
   lbann_callback_step_learning_rate& operator=(
     const lbann_callback_step_learning_rate&) = default;
-  lbann_callback_step_learning_rate* copy() const {
+  lbann_callback_step_learning_rate* copy() const override {
     return new lbann_callback_step_learning_rate(*this);
   }
-  std::string name() const { return "step learning rate"; }
+  std::string name() const override { return "step learning rate"; }
  protected:
-  float global_schedule(model *m);
+  float global_schedule(model *m) override;
  private:
   /** Number of epochs between each learning rate decrease. */
   int m_step;
@@ -126,17 +125,17 @@ class lbann_callback_adaptive_learning_rate : public lbann_callback_learning_rat
    */
   lbann_callback_adaptive_learning_rate(int64_t patience, float amt);
   lbann_callback_adaptive_learning_rate(int64_t patience, float amt,
-                                        std::unordered_set<Layer *> layers);
+                                        std::unordered_set<weights *> weights_list);
   lbann_callback_adaptive_learning_rate(
     const lbann_callback_adaptive_learning_rate&) = default;
   lbann_callback_adaptive_learning_rate& operator=(
     const lbann_callback_adaptive_learning_rate&) = default;
-  lbann_callback_adaptive_learning_rate* copy() const {
+  lbann_callback_adaptive_learning_rate* copy() const override {
     return new lbann_callback_adaptive_learning_rate(*this);
   }
-  std::string name() const { return "adaptive learning rate"; }
+  std::string name() const override { return "adaptive learning rate"; }
  protected:
-  float global_schedule(model *m);
+  float global_schedule(model *m) override;
  private:
   /** Number of epochs to wait for improvements. */
   int64_t m_patience;
@@ -145,7 +144,7 @@ class lbann_callback_adaptive_learning_rate : public lbann_callback_learning_rat
   /** Current epoch. */
   int m_cur_epoch = -1;
   /** Last recorded score. */
-  double m_last_score = std::numeric_limits<double>::max();
+  EvalType m_last_score = std::numeric_limits<EvalType>::max();
   /** Current number of epochs without improvement. */
   int64_t m_wait = 0;
   /** Whether to adjust learning rate for current epoch. */
@@ -166,17 +165,17 @@ class lbann_callback_drop_fixed_learning_rate :
     std::vector<int64_t> drop_epochs, float amt);
   lbann_callback_drop_fixed_learning_rate(
     std::vector<int64_t> drop_epochs, float amt,
-    std::unordered_set<Layer *> layers);
+    std::unordered_set<weights *> weights_list);
   lbann_callback_drop_fixed_learning_rate(
     const lbann_callback_drop_fixed_learning_rate&) = default;
   lbann_callback_drop_fixed_learning_rate& operator=(
     const lbann_callback_drop_fixed_learning_rate&) = default;
-  lbann_callback_drop_fixed_learning_rate* copy() const {
+  lbann_callback_drop_fixed_learning_rate* copy() const override {
     return new lbann_callback_drop_fixed_learning_rate(*this);
   }
-  std::string name() const { return "drop fixed learning rate"; }
+  std::string name() const override { return "drop fixed learning rate"; }
  protected:
-  float global_schedule(model *m);
+  float global_schedule(model *m) override;
  private:
   /// Amount to decrease the learning rate by.
   float m_amt;
@@ -188,10 +187,11 @@ class lbann_callback_drop_fixed_learning_rate :
 };
 
 /**
- * Linearly increase the learning rate to reach a target value over a fixed
- * number of epochs.
- * @note This currently assumes every layer begins with the same learning rate.
- * This also *forces* its schedule and will stomp over other changes.
+ * Linearly increase the learning rate to reach a target value over a
+ * fixed number of epochs.
+ * @note This currently assumes every optimizer begins with the same
+ * learning rate.  This also *forces* its schedule and will stomp over
+ * other changes.
  */
 class lbann_callback_linear_growth_learning_rate :
     public lbann_callback_learning_rate {
@@ -205,7 +205,7 @@ class lbann_callback_linear_growth_learning_rate :
     float target, int64_t num_epochs, int64_t delay);
   lbann_callback_linear_growth_learning_rate(
     float target, int64_t num_epochs, int64_t delay,
-    std::unordered_set<Layer *> layers);
+    std::unordered_set<weights *> weights_list);
   lbann_callback_linear_growth_learning_rate(
     const lbann_callback_linear_growth_learning_rate&) = default;
   lbann_callback_linear_growth_learning_rate& operator=(
@@ -230,24 +230,26 @@ class lbann_callback_linear_growth_learning_rate :
 };
 
 /**
- * This implements an adaptive scheme for adjust each layer's learning rate
- * based on the ratio of the norms of its weights and its gradients.
- * See: You et al. "Scaling SGD Batch Size to 32K for ImageNet Training", 2017.
+ * This implements an adaptive scheme for adjust each optimizer's
+ * learning rate based on the ratio of the norms of its weights and
+ * its gradients.
+ * See: You et al. "Scaling SGD Batch Size to 32K for ImageNet
+ * Training", 2017.
  */
-class lbann_callback_layerwise_adaptive_learning_rate : public lbann_callback_learning_rate {
+class lbann_callback_optimizerwise_adaptive_learning_rate : public lbann_callback_learning_rate {
  public:
-  lbann_callback_layerwise_adaptive_learning_rate(float scale);
-  lbann_callback_layerwise_adaptive_learning_rate(
-    float scale, std::unordered_set<Layer*> layers);
-  lbann_callback_layerwise_adaptive_learning_rate(
-    const lbann_callback_layerwise_adaptive_learning_rate&) = default;
-  lbann_callback_layerwise_adaptive_learning_rate& operator=(
-    const lbann_callback_layerwise_adaptive_learning_rate&) = default;
-  lbann_callback_layerwise_adaptive_learning_rate* copy() const override {
-    return new lbann_callback_layerwise_adaptive_learning_rate(*this); }
-  std::string name() const override { return "layerwise adaptive learning rate"; }
+  lbann_callback_optimizerwise_adaptive_learning_rate(float scale);
+  lbann_callback_optimizerwise_adaptive_learning_rate(
+    float scale, std::unordered_set<weights *> weights_list);
+  lbann_callback_optimizerwise_adaptive_learning_rate(
+    const lbann_callback_optimizerwise_adaptive_learning_rate&) = default;
+  lbann_callback_optimizerwise_adaptive_learning_rate& operator=(
+    const lbann_callback_optimizerwise_adaptive_learning_rate&) = default;
+  lbann_callback_optimizerwise_adaptive_learning_rate* copy() const override {
+    return new lbann_callback_optimizerwise_adaptive_learning_rate(*this); }
+  std::string name() const override { return "optimizerwise adaptive learning rate"; }
  protected:
-  float layer_schedule(model *m, Layer *l) override;
+  float optimizer_schedule(model *m, optimizer &opt) override;
  private:
   float m_scale;
 };

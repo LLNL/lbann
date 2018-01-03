@@ -26,7 +26,7 @@
 // comm_test.cpp - Tests lbann_comm
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <stdlib.h>
+#include <cstdlib>
 #include "lbann/comm.hpp"
 #include "test_utils.hpp"
 
