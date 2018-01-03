@@ -201,7 +201,7 @@ int main(int argc, char *argv[]) {
     model->setup();
     // restart model from checkpoint if we have one
     //@todo
-    
+
     if (comm->am_world_master()) {
       std::cout << std::endl;
       if (default_optimizer != nullptr) {
@@ -230,7 +230,7 @@ int main(int argc, char *argv[]) {
       init_random(random_seed + comm->get_rank_in_world());
 #else
       if(comm->am_world_master()) {
-        std::cout << 
+        std::cout <<
           "--------------------------------------------------------------------------------\n"
           "ALERT: executing in sequentially consistent mode -- performance will suffer\n"
           "--------------------------------------------------------------------------------\n";
@@ -248,7 +248,7 @@ int main(int argc, char *argv[]) {
 
     } else {
       if (comm->am_world_master()) {
-        std::cout << 
+        std::cout <<
           "--------------------------------------------------------------------------------\n"
           "ALERT: model has been setup; we are now exiting due to command\n"
           "       line option: --exit_after_setup\n"

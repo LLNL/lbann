@@ -1,4 +1,3 @@
-
 model {
   name: "sequential_model"
   data_layout: "model_parallel"
