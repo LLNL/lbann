@@ -80,10 +80,11 @@ class input_layer_partitioned_minibatch : public input_layer {
     } else {
       calculate_num_iterations_per_epoch_training_unique_per_models(max_mb_size);
     }
+    //    io_buffer->set_local_matrix_bypass(&this->m_activations_v->Matrix());
   }
 
   void fp_compute() override {
-    io_buffer->fetch_to_local_matrix(this->m_activations_v->Matrix(), get_data_reader());
+    io_buffer->fetch_to_local_matrix(get_data_reader());
 
     // Use the predetermined size of the mini-batch to set the current
     // batch size for the neural network

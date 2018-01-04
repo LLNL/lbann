@@ -98,8 +98,7 @@ class input_layer_distributed_minibatch : public input_layer {
 
   /** Handle forward propagation (arguments are unused). */
   void fp_compute() override {
-    data_buffer *buf = ((distributed_minibatch*) io_buffer)->get_data_buffer();
-    int num_samples_in_batch = io_buffer->fetch_to_local_matrix(buf->M_local_v, get_data_reader());
+    int num_samples_in_batch = io_buffer->fetch_to_local_matrix(get_data_reader());
     if(((distributed_minibatch*) io_buffer)->is_current_root()) {
       /// Only update the number of samples processed by this parallel reader, when it is the current root
       input_layer::update_num_samples_processed(num_samples_in_batch);
@@ -109,9 +108,7 @@ class input_layer_distributed_minibatch : public input_layer {
     /// Note that this field has to be updated before distributing the data
     this->m_model->set_current_mini_batch_size(Layer::m_comm->model_broadcast(((distributed_minibatch*) io_buffer)->current_root_rank(), num_samples_in_batch));
 
-    io_buffer->distribute_from_local_matrix(buf->M_local, buf->Ms, get_data_reader());
-
-    Copy(buf->Ms, *this->m_activations);
+    io_buffer->distribute_from_local_matrix(*this->m_activations, get_data_reader());
   }
 
  public:

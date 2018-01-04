@@ -73,10 +73,11 @@ class target_layer_partitioned_minibatch : public target_layer {
 
   void setup_data() override {
     target_layer::setup_data();
+    io_buffer->set_local_matrix_bypass(&this->m_activations->Matrix());
   }
 
   void fp_compute() override {
-    int num_samples_in_batch = io_buffer->fetch_to_local_matrix(this->m_activations_v->Matrix(), paired_input_layer->get_data_reader());
+    int num_samples_in_batch = io_buffer->fetch_to_local_matrix(paired_input_layer->get_data_reader());
 
     target_layer::update_num_samples_processed(num_samples_in_batch);
 

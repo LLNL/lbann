@@ -34,7 +34,7 @@ lbann::distributed_minibatch::distributed_minibatch(lbann_comm *comm, int num_pa
   m_data_buffers[execution_mode::testing] = new data_buffer(comm, num_parallel_readers);
 }
 
-int lbann::distributed_minibatch::fetch_to_local_matrix(Mat& M_local, generic_data_reader *data_reader) {
+int lbann::distributed_minibatch::fetch_to_local_matrix(generic_data_reader *data_reader) {
   int num_parallel_readers = data_reader->get_num_parallel_readers();
 
   /// Check to see if this rank has valid data -- if not read in the next batch
@@ -42,11 +42,11 @@ int lbann::distributed_minibatch::fetch_to_local_matrix(Mat& M_local, generic_da
   data_buffer *buf = get_data_buffer();
   if (buf->m_root == 0) {
     if (m_comm->get_rank_in_model() < num_parallel_readers && !buf->m_local_reader_done) {
-      Zero(M_local);
+      Zero(buf->M_local);
 
       /// Each data reader needs to either have independent / split
       /// data, or take an offset / stride
-      buf->m_num_samples_in_batch = (*fetch_data_fn)(M_local, data_reader);
+      buf->m_num_samples_in_batch = (*fetch_data_fn)(buf->M_local, data_reader);
       bool data_valid = (buf->m_num_samples_in_batch > 0);
       if(data_valid) {
         buf->m_num_data_per_epoch+=buf->m_num_samples_in_batch;
@@ -57,10 +57,10 @@ int lbann::distributed_minibatch::fetch_to_local_matrix(Mat& M_local, generic_da
   return buf->m_num_samples_in_batch;
 }
 
-void lbann::distributed_minibatch::distribute_from_local_matrix(Mat& M_local, CircMat& Ms, generic_data_reader *data_reader) {
+void lbann::distributed_minibatch::distribute_from_local_matrix(AbsDistMat& Ms, generic_data_reader *data_reader) {
   int num_parallel_readers = data_reader->get_num_parallel_readers();
   data_buffer *buf = get_data_buffer();
-  Ms.SetRoot(buf->m_root);
+  buf->Ms.SetRoot(buf->m_root);
 
   m_comm->model_barrier();
 
@@ -71,16 +71,18 @@ void lbann::distributed_minibatch::distribute_from_local_matrix(Mat& M_local, Ci
           << " :: lbann_distributed_minibatch: No valid data for this step -- local data was invalid";
       lbann_exception(err.str());
     }
-    CopyFromRoot(M_local, Ms);
+    CopyFromRoot(buf->M_local, buf->Ms);
     buf->m_local_data_valid = false;
     buf->m_num_samples_in_batch = 0;
   } else {
-    CopyFromNonRoot(Ms);
+    CopyFromNonRoot(buf->Ms);
   }
 
   m_comm->model_barrier();
 
   buf->m_root = (buf->m_root + 1) % num_parallel_readers;
+
+  Copy(buf->Ms, Ms);
   return;
 }
 

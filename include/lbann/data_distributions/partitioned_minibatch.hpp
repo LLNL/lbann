@@ -43,13 +43,17 @@ class partitioned_minibatch : public generic_data_distribution {
     const partitioned_minibatch&) = default;
   ~partitioned_minibatch() override {}
 
-  int fetch_to_local_matrix(Mat& M_local, generic_data_reader *data_reader) override;
-  void distribute_from_local_matrix(Mat& M_local, CircMat& Ms, generic_data_reader *data_reader) override;
+  void set_local_matrix_bypass(Mat *m) override { M_local = m; }
+
+  int fetch_to_local_matrix(generic_data_reader *data_reader) override;
+  void distribute_from_local_matrix(AbsDistMat& Ms, generic_data_reader *data_reader) override;
   bool is_data_set_processed(generic_data_reader *data_reader) override;
 
   void calculate_num_iterations_per_epoch_spanning_models(int max_mini_batch_size, generic_data_reader *data_reader) override;
   void calculate_num_iterations_per_epoch_single_model(int max_mini_batch_size, generic_data_reader *data_reader) override;
   int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) const override;
+
+  Mat *M_local;
 };
 }
 

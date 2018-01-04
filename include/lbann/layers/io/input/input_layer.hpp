@@ -151,6 +151,7 @@ class input_layer : public io_layer {
 
     // Once the current mini-batch size is defined, set the standard view for activations only
     El::View(*m_activations_v, *m_activations, El::ALL, El::IR(0, cur_mini_batch_size));
+    io_buffer->set_local_matrix_bypass(&this->m_activations_v->Matrix());
   }
 
   /** No setting the standard view of the matrix -- it defines the standard view */
