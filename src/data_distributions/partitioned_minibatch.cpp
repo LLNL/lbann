@@ -46,7 +46,6 @@ int lbann::partitioned_minibatch::fetch_to_local_matrix(Mat& M_local, generic_da
     bool data_valid = (num_samples_fetched > 0);
     if(data_valid) {
       //      m_num_data_per_epoch+=num_samples_fetched; /// BVE FIXME need to change how this is shared
-      preprocess_data_samples(M_local, num_samples_fetched);
     }
   }
   return num_samples_fetched;

@@ -34,7 +34,7 @@ namespace lbann {
 /**
  * Parallel I/O routines for managing partitioned minibatches
  */
-class partitioned_minibatch : public virtual generic_data_distribution {
+class partitioned_minibatch : public generic_data_distribution {
  public:
   partitioned_minibatch(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers);
   partitioned_minibatch(

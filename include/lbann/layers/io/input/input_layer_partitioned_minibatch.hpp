@@ -39,15 +39,17 @@
 namespace lbann {
 
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
-class input_layer_partitioned_minibatch : public input_layer, public partitioned_minibatch {
+class input_layer_partitioned_minibatch : public input_layer {
  public:
   /// @todo make the map and vector references
   input_layer_partitioned_minibatch(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, bool data_set_spans_models = true)
-    : generic_data_distribution(comm, num_parallel_readers, data_readers),
-      input_layer(comm, num_parallel_readers, data_readers, data_set_spans_models),
-      partitioned_minibatch(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), data_readers) {
+    : input_layer(comm, num_parallel_readers, data_readers, data_set_spans_models) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "partitioned_minibatch only supports DATA_PARALLEL");
+
+    io_buffer = new partitioned_minibatch(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), data_readers);
+    io_buffer->fetch_data_fn = new fetch_data_functor(true, false);
+    io_buffer->update_data_reader_fn = new update_data_reader_functor(true);
     // Setup the data distribution
     initialize_distributed_matrices();
   }
@@ -81,7 +83,7 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
   }
 
   void fp_compute() override {
-    partitioned_minibatch::fetch_to_local_matrix(this->m_activations_v->Matrix(), get_data_reader());
+    io_buffer->fetch_to_local_matrix(this->m_activations_v->Matrix(), get_data_reader());
 
     // Use the predetermined size of the mini-batch to set the current
     // batch size for the neural network
@@ -94,13 +96,8 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary
    */
   bool update_compute() override {
-    return partitioned_minibatch::is_data_set_processed(get_data_reader());
+    return io_buffer->is_data_set_processed(get_data_reader());
   }
-
-  void preprocess_data_samples(Mat& M_local, int num_samples_in_batch) override {
-    return;
-  }
-
 };
 
 }

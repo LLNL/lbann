@@ -33,17 +33,17 @@
 #include "lbann/models/model.hpp"
 
 namespace lbann {
-class input_layer : public io_layer, public virtual generic_data_distribution {
+class input_layer : public io_layer {
  public:
   using data_reader_map_t = std::map<execution_mode, generic_data_reader *>;
+  generic_data_distribution *io_buffer;
 
  public:
   input_layer(lbann_comm *comm,
               int num_parallel_readers,
               std::map<execution_mode, generic_data_reader *> data_readers,
               bool data_set_spans_models = true)
-    : generic_data_distribution(comm, num_parallel_readers, data_readers),
-      io_layer(comm, data_set_spans_models),
+    : io_layer(comm, data_set_spans_models),
       m_training_dataset(),
       m_testing_dataset(),
       m_validation_dataset(),
@@ -51,9 +51,6 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
       //m_data_sets_span_models(data_sets_span_models) {
     // Input layers have no parents
     m_max_num_parent_layers = 0;
-
-    generic_data_distribution::fetch_data_fn = new fetch_data_functor(true, false);
-    generic_data_distribution::update_data_reader_fn = new update_data_reader_functor(true);
 
     if(m_data_readers[execution_mode::training] != nullptr) {
       m_training_dataset.total_samples() = m_data_readers[execution_mode::training]->get_num_data();
@@ -77,7 +74,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
 
   // Input layers copy their datareaders.
   input_layer(const input_layer& other)
-    : generic_data_distribution(other), io_layer(other),
+    : io_layer(other),
       m_training_dataset(other.m_training_dataset),
       m_testing_dataset(other.m_testing_dataset),
       m_validation_dataset(other.m_validation_dataset),
@@ -88,7 +85,6 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   }
 
   input_layer& operator=(const input_layer& other) {
-    generic_data_distribution::operator=(other);
     io_layer::operator=(other);
     for (auto& dr : m_data_readers) {
       dr.second = dr.second->copy();
@@ -265,28 +261,28 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
   void calculate_num_iterations_per_epoch_training_spans_models(int mini_batch_size) {
 
     /// Setup the training data set so that it spans all models
-    calculate_num_iterations_per_epoch_spanning_models(mini_batch_size,
-                                                       get_data_reader(execution_mode::training));
+    io_buffer->calculate_num_iterations_per_epoch_spanning_models(mini_batch_size,
+                                                                  get_data_reader(execution_mode::training));
 
     /// Each model uses the entire validation and testing data sets
-    calculate_num_iterations_per_epoch_single_model(mini_batch_size,
-                                                    get_data_reader(execution_mode::validation));
-    calculate_num_iterations_per_epoch_single_model(mini_batch_size,
-                                                    get_data_reader(execution_mode::testing));
+    io_buffer->calculate_num_iterations_per_epoch_single_model(mini_batch_size,
+                                                               get_data_reader(execution_mode::validation));
+    io_buffer->calculate_num_iterations_per_epoch_single_model(mini_batch_size,
+                                                               get_data_reader(execution_mode::testing));
 
   }
 
   void calculate_num_iterations_per_epoch_training_unique_per_models(int mini_batch_size) {
 
     /// Setup the training data set so that it spans all models
-    calculate_num_iterations_per_epoch_single_model(mini_batch_size,
-                                                    get_data_reader(execution_mode::training));
+    io_buffer->calculate_num_iterations_per_epoch_single_model(mini_batch_size,
+                                                               get_data_reader(execution_mode::training));
 
     /// Each model uses the entire validation and testing data sets
-    calculate_num_iterations_per_epoch_single_model(mini_batch_size,
-                                                    get_data_reader(execution_mode::validation));
-    calculate_num_iterations_per_epoch_single_model(mini_batch_size,
-                                                    get_data_reader(execution_mode::testing));
+    io_buffer->calculate_num_iterations_per_epoch_single_model(mini_batch_size,
+                                                               get_data_reader(execution_mode::validation));
+    io_buffer->calculate_num_iterations_per_epoch_single_model(mini_batch_size,
+                                                               get_data_reader(execution_mode::testing));
 
   }
 

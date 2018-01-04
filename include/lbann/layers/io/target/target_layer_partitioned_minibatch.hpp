@@ -39,19 +39,19 @@
 namespace lbann {
 
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
-class target_layer_partitioned_minibatch : public target_layer, public partitioned_minibatch {
+class target_layer_partitioned_minibatch : public target_layer {
  public:
   target_layer_partitioned_minibatch(lbann_comm *comm, input_layer *input_layer, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression=false)
-    : generic_data_distribution(comm, num_parallel_readers, data_readers),
-      target_layer(comm, input_layer,  data_readers, for_regression),
-      partitioned_minibatch(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), data_readers) {
+    : target_layer(comm, input_layer,  data_readers, for_regression) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "partitioned_minibatch only supports DATA_PARALLEL");
+
+    io_buffer = new partitioned_minibatch(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), data_readers);
     // Setup the data distribution
     initialize_distributed_matrices();
 
-    generic_data_distribution::fetch_data_fn = new fetch_data_functor(false, target_layer::is_for_regression());
-    generic_data_distribution::update_data_reader_fn = new update_data_reader_functor(false);
+    io_buffer->fetch_data_fn = new fetch_data_functor(false, target_layer::is_for_regression());
+    io_buffer->update_data_reader_fn = new update_data_reader_functor(false);
   }
 
   /** Returns description of ctor params */
@@ -76,7 +76,7 @@ class target_layer_partitioned_minibatch : public target_layer, public partition
   }
 
   void fp_compute() override {
-    int num_samples_in_batch = fetch_to_local_matrix(this->m_activations_v->Matrix(), paired_input_layer->get_data_reader());
+    int num_samples_in_batch = io_buffer->fetch_to_local_matrix(this->m_activations_v->Matrix(), paired_input_layer->get_data_reader());
 
     target_layer::update_num_samples_processed(num_samples_in_batch);
 
@@ -90,13 +90,8 @@ class target_layer_partitioned_minibatch : public target_layer, public partition
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary
    */
   bool update_compute() override {
-    return is_data_set_processed(paired_input_layer->get_data_reader());
+    return io_buffer->is_data_set_processed(paired_input_layer->get_data_reader());
   }
-
-  void preprocess_data_samples(Mat& M_local, int num_samples_in_batch) override {
-    return;
-  }
-
 };
 
 }  // namespace lbann

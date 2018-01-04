@@ -67,7 +67,7 @@ class data_buffer {
 /**
  * Parallel I/O routines for managing distributed minibatches
  */
-class distributed_minibatch : public virtual generic_data_distribution {
+class distributed_minibatch : public generic_data_distribution {
  public:
   typedef std::map<execution_mode, data_buffer *> data_buffer_map_t;
  public:
@@ -142,7 +142,7 @@ class distributed_minibatch : public virtual generic_data_distribution {
     return buf->m_local_reader_done;
   }
 
- protected:
+  // protected:
   data_buffer_map_t m_data_buffers;
 };
 

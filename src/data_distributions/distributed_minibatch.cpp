@@ -50,7 +50,6 @@ int lbann::distributed_minibatch::fetch_to_local_matrix(Mat& M_local, generic_da
       bool data_valid = (buf->m_num_samples_in_batch > 0);
       if(data_valid) {
         buf->m_num_data_per_epoch+=buf->m_num_samples_in_batch;
-        preprocess_data_samples(M_local, buf->m_num_samples_in_batch);
       }
       buf->m_local_data_valid = data_valid;
     }

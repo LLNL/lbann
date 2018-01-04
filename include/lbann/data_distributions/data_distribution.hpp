@@ -93,9 +93,8 @@ public:
 ;
   virtual int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) const = 0; 
 
-  virtual void preprocess_data_samples(Mat& M_local, int num_samples_in_batch) = 0;
-
- protected:
+  // protected:
+ public:
   lbann_comm *m_comm;
   const fetch_data_functor *fetch_data_fn;
   const update_data_reader_functor *update_data_reader_fn;
