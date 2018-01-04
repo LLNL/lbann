@@ -91,6 +91,14 @@ void objective_function::differentiate() {
   m_differentiation_time += get_time() - start_time;
 }
 
+void objective_function::compute_weight_regularization() {
+  const auto start_time = get_time();
+  for (const auto& term : m_terms) {
+    term->compute_weight_regularization();
+  }
+  m_differentiation_time += get_time() - start_time;
+}
+
 EvalType objective_function::get_mean_value(execution_mode mode) const {
   if (m_statistics.count(mode) == 0
       || m_statistics.at(mode).get_num_samples() == 0) {

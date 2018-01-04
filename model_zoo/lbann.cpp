@@ -29,6 +29,7 @@
 #include "lbann/lbann.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/protobuf_utils.hpp"
+#include "lbann/utils/stack_profiler.hpp"
 
 
 using namespace lbann;
@@ -39,6 +40,7 @@ int main(int argc, char *argv[]) {
   int random_seed = lbann_default_random_seed;
   lbann_comm *comm = initialize(argc, argv, random_seed);
   bool master = comm->am_world_master();
+
 
   if (master) {
     std::cout << "\n\n==============================================================\n"
@@ -63,9 +65,12 @@ int main(int argc, char *argv[]) {
       return 0;
     }
 
-    //must be called after opts->init(); must also specify "--catch-signals" 
-    //on cmd line
+    //this must be called after call to opts->init();
+    //must also specify "--catch-signals" on cmd line
     stack_trace::register_handler();
+
+    //to activate, must specify --st_on on cmd line
+    stack_profiler::get()->activate(comm->get_rank_in_world());
 
     std::vector<lbann_data::LbannPB *> pbs;
     protobuf_utils::load_prototext(master, argc, argv, pbs);
@@ -196,7 +201,7 @@ int main(int argc, char *argv[]) {
     model->setup();
     // restart model from checkpoint if we have one
     //@todo
-    
+
     if (comm->am_world_master()) {
       std::cout << std::endl;
       if (default_optimizer != nullptr) {
@@ -217,6 +222,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (!opts->has_string("exit_after_setup")) {
+
 #ifndef LBANN_SEQUENTIAL_CONSISTENCY
       // Under normal conditions, reinitialize the random number generator so
       // that regularization techniques (e.g. dropout) generate unique patterns
@@ -224,7 +230,7 @@ int main(int argc, char *argv[]) {
       init_random(random_seed + comm->get_rank_in_world());
 #else
       if(comm->am_world_master()) {
-        std::cout << 
+        std::cout <<
           "--------------------------------------------------------------------------------\n"
           "ALERT: executing in sequentially consistent mode -- performance will suffer\n"
           "--------------------------------------------------------------------------------\n";
@@ -237,14 +243,20 @@ int main(int argc, char *argv[]) {
       // Evaluate model on test set
       model->evaluate(execution_mode::testing);
 
+      //has no affect unless option: --st_on was given
+      stack_profiler::get()->print();
+
     } else {
       if (comm->am_world_master()) {
-        std::cout << 
+        std::cout <<
           "--------------------------------------------------------------------------------\n"
           "ALERT: model has been setup; we are now exiting due to command\n"
           "       line option: --exit_after_setup\n"
           "--------------------------------------------------------------------------------\n";
       }
+
+      //has no affect unless option: --st_on was given
+      stack_profiler::get()->print();
     }
 
     // @todo: figure out and implement coherent strategy

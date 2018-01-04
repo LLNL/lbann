@@ -568,6 +568,7 @@ bool model::train_mini_batch() {
   clear_error_signals();
   m_objective_function->differentiate();
   backward_prop();
+  m_objective_function->compute_weight_regularization();
 
   // Update step
   update_weights();

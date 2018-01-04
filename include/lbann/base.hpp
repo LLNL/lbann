@@ -31,6 +31,8 @@
 
 #include "El.hpp"
 #include "lbann/Elemental_extensions.hpp"
+#include "lbann/utils/cyg_profile.hpp"
+
 
 // Datatype for numerical computation
 // Default: float
@@ -40,7 +42,7 @@ using DataType = double;
 using DataType = float;
 #else
 #define LBANN_DATATYPE 4
-using DataType = float; 
+using DataType = float;
 #endif
 
 // Datatype for model evaluation
@@ -107,7 +109,7 @@ static const char *__attribute__((used)) _to_string(execution_mode m) {
 enum class pool_mode {max, average, average_no_pad};
 
 /** returns a string representation of the pool_mode */
-std::string get_pool_mode_name(pool_mode m); 
+std::string get_pool_mode_name(pool_mode m);
 
 namespace lbann {
 
