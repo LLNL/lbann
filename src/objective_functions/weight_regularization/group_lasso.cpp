@@ -83,23 +83,23 @@ EvalType group_lasso_weight_regularization::evaluate() {
       w_sum += std::sqrt(sqsums(0, col));
     }
     value += get_comm().allreduce(w_sum, values.RowComm());
-    
+
   }
   return m_scale_factor * value;
 }
 
-void group_lasso_weight_regularization::differentiate() {
+void group_lasso_weight_regularization::compute_weight_regularization() {
   if (m_scale_factor == EvalType(0)) { return; }
   Mat sqsums;
   AbsDistMat* gradient;
   for (weights* w : m_weights) {
-    
+
     // Get matrices
     const AbsDistMat& values = w->get_values();
     const Mat& values_local = values.LockedMatrix();
     const int local_height = values_local.Height();
     const int local_width = values_local.Width();
-    
+
     // Compute sum of squares of each column
     sqsums.Resize(1, local_width);
     #pragma omp parallel for
@@ -129,7 +129,7 @@ void group_lasso_weight_regularization::differentiate() {
       for (int row = 0; row < local_height; ++row) {
         gradient_local(row, col) = values_local(row, col) * sqsums(0, col);
       }
-    }    
+    }
     w->get_optimizer()->add_to_gradient(*gradient, m_scale_factor);
     delete gradient;
 

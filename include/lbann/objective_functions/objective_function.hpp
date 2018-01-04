@@ -58,16 +58,21 @@ class objective_function {
 
   /** Setup objective function. */
   void setup(model& m);
-  
+
   /** Evaluate the objective function.
    *  The result is stored in history.
    */
   EvalType evaluate(execution_mode mode);
-  
+
   /** Compute the objective function gradient.
    *  The gradient is with respect to the objective function inputs
    */
   void differentiate();
+
+  /** Compute the gradient of the weight regularization term.
+   *  The gradient is computed w.r.t. the weights.
+   */
+  void compute_weight_regularization();
 
   /** Clear all statistics. */
   void reset_statistics() { m_statistics.clear(); }
