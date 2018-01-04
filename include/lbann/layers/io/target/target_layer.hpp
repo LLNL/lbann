@@ -40,7 +40,7 @@ namespace lbann {
 class target_layer : public io_layer {
  protected:
   input_layer *paired_input_layer;
-  generic_data_distribution *io_buffer;
+  generic_io_buffer *io_buffer;
 
  public:
   target_layer(lbann_comm *comm, input_layer* input_layer, std::map<execution_mode, generic_data_reader *> data_readers, bool for_regression = false)

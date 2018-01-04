@@ -28,7 +28,7 @@
 #define LBANN_LAYERS_INPUT_LAYER_DISTRIBUTED_MINIBATCH_HPP_INCLUDED
 
 #include "lbann/layers/io/input/input_layer.hpp"
-#include "lbann/data_distributions/distributed_minibatch.hpp"
+#include "lbann/data_distributions/distributed_io_buffer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/models/model.hpp"
 #include <string>
@@ -42,7 +42,7 @@ class input_layer_distributed_minibatch : public input_layer {
  public:
   input_layer_distributed_minibatch(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, bool data_set_spans_models = true)
     : input_layer(comm, num_parallel_readers, data_readers, data_set_spans_models) {
-    io_buffer = new distributed_minibatch(comm, num_parallel_readers, data_readers);
+    io_buffer = new distributed_io_buffer(comm, num_parallel_readers, data_readers);
     io_buffer->fetch_data_fn = new fetch_data_functor(true, false);
     io_buffer->update_data_reader_fn = new update_data_reader_functor(true);
     // Setup the data distribution
@@ -82,7 +82,7 @@ class input_layer_distributed_minibatch : public input_layer {
       calculate_num_iterations_per_epoch_training_unique_per_models(max_mb_size);
     }
 
-    for (auto& buf : ((distributed_minibatch*) io_buffer)->m_data_buffers) {
+    for (auto& buf : ((distributed_io_buffer*) io_buffer)->m_data_buffers) {
       buf.second->M_local.Resize(this->m_num_neurons, max_mb_size);
       buf.second->Ms.Resize(this->m_num_neurons, max_mb_size);
     }
@@ -92,21 +92,21 @@ class input_layer_distributed_minibatch : public input_layer {
   void fp_set_std_matrix_view() override {
     input_layer::fp_set_std_matrix_view();
     El::Int cur_mini_batch_size = m_model->get_current_mini_batch_size();
-    data_buffer *buf = ((distributed_minibatch*) io_buffer)->get_data_buffer();
+    data_buffer *buf = ((distributed_io_buffer*) io_buffer)->get_data_buffer();
     El::View(buf->M_local_v, buf->M_local, El::ALL, El::IR(0, cur_mini_batch_size));
   }
 
   /** Handle forward propagation (arguments are unused). */
   void fp_compute() override {
     int num_samples_in_batch = io_buffer->fetch_to_local_matrix(get_data_reader());
-    if(((distributed_minibatch*) io_buffer)->is_current_root()) {
+    if(((distributed_io_buffer*) io_buffer)->is_current_root()) {
       /// Only update the number of samples processed by this parallel reader, when it is the current root
       input_layer::update_num_samples_processed(num_samples_in_batch);
     }
 
     /// Let each rank know this size of the current mini-batch
     /// Note that this field has to be updated before distributing the data
-    this->m_model->set_current_mini_batch_size(Layer::m_comm->model_broadcast(((distributed_minibatch*) io_buffer)->current_root_rank(), num_samples_in_batch));
+    this->m_model->set_current_mini_batch_size(Layer::m_comm->model_broadcast(((distributed_io_buffer*) io_buffer)->current_root_rank(), num_samples_in_batch));
 
     io_buffer->distribute_from_local_matrix(*this->m_activations, get_data_reader());
   }
@@ -120,16 +120,16 @@ class input_layer_distributed_minibatch : public input_layer {
   }
 
   data_buffer *get_data_buffer() const {
-    return ((distributed_minibatch*) io_buffer)->get_data_buffer(this->m_model->get_execution_mode());
+    return ((distributed_io_buffer*) io_buffer)->get_data_buffer(this->m_model->get_execution_mode());
   }
 
   Mat *get_local_mat() {
-    data_buffer *buf = ((distributed_minibatch*) io_buffer)->get_data_buffer();
+    data_buffer *buf = ((distributed_io_buffer*) io_buffer)->get_data_buffer();
     return &buf->M_local;
   }
 
   CircMat *get_dist_mat() {
-    data_buffer *buf = ((distributed_minibatch*) io_buffer)->get_data_buffer();
+    data_buffer *buf = ((distributed_io_buffer*) io_buffer)->get_data_buffer();
     return &buf->Ms;
   }
 };

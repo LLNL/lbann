@@ -28,7 +28,7 @@
 #define LBANN_LAYERS_TARGET_LAYER_PARTITIONED_MINIBATCH_HPP_INCLUDED
 
 #include "lbann/layers/io/target/target_layer.hpp"
-#include "lbann/data_distributions/partitioned_minibatch.hpp"
+#include "lbann/data_distributions/partitioned_io_buffer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/models/model.hpp"
 #include <string>
@@ -46,7 +46,7 @@ class target_layer_partitioned_minibatch : public target_layer {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "partitioned_minibatch only supports DATA_PARALLEL");
 
-    io_buffer = new partitioned_minibatch(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), data_readers);
+    io_buffer = new partitioned_io_buffer(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), data_readers);
     // Setup the data distribution
     initialize_distributed_matrices();
 

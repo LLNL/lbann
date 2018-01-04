@@ -24,17 +24,17 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_distributions/distributed_minibatch.hpp"
+#include "lbann/data_distributions/distributed_io_buffer.hpp"
 #include "lbann/utils/exception.hpp"
 
-lbann::distributed_minibatch::distributed_minibatch(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
-  : generic_data_distribution(comm, num_parallel_readers, data_readers) {
+lbann::distributed_io_buffer::distributed_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
+  : generic_io_buffer(comm, num_parallel_readers, data_readers) {
   m_data_buffers[execution_mode::training] = new data_buffer(comm, num_parallel_readers);
   m_data_buffers[execution_mode::validation] = new data_buffer(comm, num_parallel_readers);
   m_data_buffers[execution_mode::testing] = new data_buffer(comm, num_parallel_readers);
 }
 
-int lbann::distributed_minibatch::fetch_to_local_matrix(generic_data_reader *data_reader) {
+int lbann::distributed_io_buffer::fetch_to_local_matrix(generic_data_reader *data_reader) {
   int num_parallel_readers = data_reader->get_num_parallel_readers();
 
   /// Check to see if this rank has valid data -- if not read in the next batch
@@ -57,7 +57,7 @@ int lbann::distributed_minibatch::fetch_to_local_matrix(generic_data_reader *dat
   return buf->m_num_samples_in_batch;
 }
 
-void lbann::distributed_minibatch::distribute_from_local_matrix(AbsDistMat& Ms, generic_data_reader *data_reader) {
+void lbann::distributed_io_buffer::distribute_from_local_matrix(AbsDistMat& Ms, generic_data_reader *data_reader) {
   int num_parallel_readers = data_reader->get_num_parallel_readers();
   data_buffer *buf = get_data_buffer();
   buf->Ms.SetRoot(buf->m_root);
@@ -68,7 +68,7 @@ void lbann::distributed_minibatch::distribute_from_local_matrix(AbsDistMat& Ms, 
     if(!buf->m_local_data_valid) {
       std::stringstream err;
       err << __FILE__ << " " << __LINE__
-          << " :: lbann_distributed_minibatch: No valid data for this step -- local data was invalid";
+          << " :: lbann_distributed_io_buffer: No valid data for this step -- local data was invalid";
       lbann_exception(err.str());
     }
     CopyFromRoot(buf->M_local, buf->Ms);
@@ -86,7 +86,7 @@ void lbann::distributed_minibatch::distribute_from_local_matrix(AbsDistMat& Ms, 
   return;
 }
 
-bool lbann::distributed_minibatch::is_data_set_processed(generic_data_reader *data_reader) {
+bool lbann::distributed_io_buffer::is_data_set_processed(generic_data_reader *data_reader) {
   // not just the ones in the last round.  This will ensure that all readers, that had data
   // will have distributed it.
   int num_parallel_readers = data_reader->get_num_parallel_readers();
@@ -101,7 +101,7 @@ bool lbann::distributed_minibatch::is_data_set_processed(generic_data_reader *da
       if(buf->m_local_data_valid) { /// Make sure that all local data has been processed
         std::stringstream err;
         err << __FILE__ << " "<<  __LINE__
-            << " :: lbann_input_layer_distributed_minibatch: all valid data was not processed.";
+            << " :: lbann_input_layer_distributed_io_buffer: all valid data was not processed.";
         throw lbann_exception(err.str());
       }
   }
@@ -123,7 +123,7 @@ bool lbann::distributed_minibatch::is_data_set_processed(generic_data_reader *da
 /** Make sure that there are enough ranks and data for all of the
  *  parallel readers requested.
  */
-int lbann::distributed_minibatch::compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) const {
+int lbann::distributed_io_buffer::compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) const {
   int num_parallel_readers = requested_num_parallel_readers;
 
   /// Are there enough ranks in the model to support the requested
@@ -155,7 +155,7 @@ int lbann::distributed_minibatch::compute_max_num_parallel_readers(long data_set
   }
 }
 
-void lbann::distributed_minibatch::calculate_num_iterations_per_epoch(int num_models, int model_rank, int max_mini_batch_size, generic_data_reader *data_reader) {
+void lbann::distributed_io_buffer::calculate_num_iterations_per_epoch(int num_models, int model_rank, int max_mini_batch_size, generic_data_reader *data_reader) {
   if(data_reader == nullptr) { return; }
   // If the data reader does not have any data bail out (e.g. unused validation reader)
   if(data_reader->get_use_percent() == double(0.0)) { return; }
@@ -171,7 +171,7 @@ void lbann::distributed_minibatch::calculate_num_iterations_per_epoch(int num_mo
   if(num_parallel_readers_per_model == 0) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: distributed_minibatch: number of parallel readers is zero");
+      " :: distributed_io_buffer: number of parallel readers is zero");
   }
 
   /// Set the basic parameters for stride and offset of the data reader
@@ -257,10 +257,10 @@ void lbann::distributed_minibatch::calculate_num_iterations_per_epoch(int num_mo
   return;
 }
 
-void lbann::distributed_minibatch::calculate_num_iterations_per_epoch_spanning_models(int max_mini_batch_size, generic_data_reader *data_reader) {
+void lbann::distributed_io_buffer::calculate_num_iterations_per_epoch_spanning_models(int max_mini_batch_size, generic_data_reader *data_reader) {
   calculate_num_iterations_per_epoch(m_comm->get_num_models(), m_comm->get_model_rank(), max_mini_batch_size, data_reader);
 }
 
-void lbann::distributed_minibatch::calculate_num_iterations_per_epoch_single_model(int max_mini_batch_size, generic_data_reader *data_reader) {
+void lbann::distributed_io_buffer::calculate_num_iterations_per_epoch_single_model(int max_mini_batch_size, generic_data_reader *data_reader) {
   calculate_num_iterations_per_epoch(1, 0, max_mini_batch_size, data_reader);
 }

@@ -24,10 +24,10 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_DISTRIBUTED_MINIBATCH_HPP_INCLUDED
-#define LBANN_DISTRIBUTED_MINIBATCH_HPP_INCLUDED
+#ifndef LBANN_DISTRIBUTED_IO_BUFFER_HPP_INCLUDED
+#define LBANN_DISTRIBUTED_IO_BUFFER_HPP_INCLUDED
 
-#include "lbann/data_distributions/data_distribution.hpp"
+#include "lbann/data_distributions/generic_io_buffer.hpp"
 
 namespace lbann {
 
@@ -67,25 +67,25 @@ class data_buffer {
 /**
  * Parallel I/O routines for managing distributed minibatches
  */
-class distributed_minibatch : public generic_data_distribution {
+class distributed_io_buffer : public generic_io_buffer {
  public:
   typedef std::map<execution_mode, data_buffer *> data_buffer_map_t;
  public:
-  distributed_minibatch(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers);
-  distributed_minibatch(const distributed_minibatch& other) :
-    generic_data_distribution(other) {
+  distributed_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers);
+  distributed_io_buffer(const distributed_io_buffer& other) :
+    generic_io_buffer(other) {
     for (auto& buf : m_data_buffers) {
       buf.second = buf.second->copy();
     }
   }
-  distributed_minibatch& operator=(const distributed_minibatch& other) {
-    generic_data_distribution::operator=(other);
+  distributed_io_buffer& operator=(const distributed_io_buffer& other) {
+    generic_io_buffer::operator=(other);
     for (auto& buf : m_data_buffers) {
       buf.second = buf.second->copy();
     }
     return *this;
   }
-  virtual ~distributed_minibatch() {
+  virtual ~distributed_io_buffer() {
     for (auto buf : m_data_buffers) {
       delete buf.second;
     }
@@ -117,7 +117,7 @@ class distributed_minibatch : public generic_data_distribution {
     default:
       throw lbann_exception(
                             std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-                            " :: distributed_minibatch: invalid execution phase");
+                            " :: distributed_io_buffer: invalid execution phase");
     }
     return data_buffer;
   }
@@ -150,4 +150,4 @@ class distributed_minibatch : public generic_data_distribution {
 
 }  // namespace lbann
 
-#endif  // LBANN_DISTRIBUTED_MINIBATCH_HPP_INCLUDED
+#endif  // LBANN_DISTRIBUTED_IO_BUFFER_HPP_INCLUDED

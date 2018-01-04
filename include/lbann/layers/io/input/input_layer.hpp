@@ -29,14 +29,14 @@
 
 #include "lbann/layers/io/io_layer.hpp"
 //#include "lbann/utils/dataset.hpp"
-#include "lbann/data_distributions/data_distribution.hpp"
+#include "lbann/data_distributions/generic_io_buffer.hpp"
 #include "lbann/models/model.hpp"
 
 namespace lbann {
 class input_layer : public io_layer {
  public:
   using data_reader_map_t = std::map<execution_mode, generic_data_reader *>;
-  generic_data_distribution *io_buffer;
+  generic_io_buffer *io_buffer;
 
  public:
   input_layer(lbann_comm *comm,

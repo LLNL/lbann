@@ -1,5 +1,5 @@
 add_sources(
-  data_distribution.cpp 
-  distributed_minibatch
-  partitioned_minibatch
+  generic_io_buffer
+  distributed_io_buffer
+  partitioned_io_buffer
 )

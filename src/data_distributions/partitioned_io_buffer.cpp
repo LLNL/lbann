@@ -24,14 +24,14 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_distributions/partitioned_minibatch.hpp"
+#include "lbann/data_distributions/partitioned_io_buffer.hpp"
 #include "lbann/utils/exception.hpp"
 
-lbann::partitioned_minibatch::partitioned_minibatch(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
-  : generic_data_distribution(comm, num_parallel_readers, data_readers),
+lbann::partitioned_io_buffer::partitioned_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
+  : generic_io_buffer(comm, num_parallel_readers, data_readers),
     M_local(nullptr) {}
 
-int lbann::partitioned_minibatch::fetch_to_local_matrix(generic_data_reader *data_reader) {
+int lbann::partitioned_io_buffer::fetch_to_local_matrix(generic_data_reader *data_reader) {
   int num_parallel_readers = data_reader->get_num_parallel_readers();
 
   int num_samples_fetched = 0;
@@ -52,13 +52,13 @@ int lbann::partitioned_minibatch::fetch_to_local_matrix(generic_data_reader *dat
   return num_samples_fetched;
 }
 
-void lbann::partitioned_minibatch::distribute_from_local_matrix(AbsDistMat& Ms, generic_data_reader *data_reader) {
+void lbann::partitioned_io_buffer::distribute_from_local_matrix(AbsDistMat& Ms, generic_data_reader *data_reader) {
 
   /// Nothing to do here, it is already done
   return;
 }
 
-bool lbann::partitioned_minibatch::is_data_set_processed(generic_data_reader *data_reader) {
+bool lbann::partitioned_io_buffer::is_data_set_processed(generic_data_reader *data_reader) {
   int num_iterations_per_epoch = data_reader->get_num_iterations_per_epoch();
   int current_step_in_epoch = data_reader->get_current_step_in_epoch(); // Get the current step before the update function increments it
 
@@ -71,7 +71,7 @@ bool lbann::partitioned_minibatch::is_data_set_processed(generic_data_reader *da
   }
 }
 
-int lbann::partitioned_minibatch::compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) const {
+int lbann::partitioned_io_buffer::compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) const {
   int num_parallel_readers = requested_num_parallel_readers;
 
   if(m_comm->get_procs_per_model() != num_parallel_readers) {
@@ -101,7 +101,7 @@ int lbann::partitioned_minibatch::compute_max_num_parallel_readers(long data_set
   return num_parallel_readers;
 }
 
-void lbann::partitioned_minibatch::calculate_num_iterations_per_epoch_spanning_models(int max_mini_batch_size, generic_data_reader *data_reader) {
+void lbann::partitioned_io_buffer::calculate_num_iterations_per_epoch_spanning_models(int max_mini_batch_size, generic_data_reader *data_reader) {
   if(data_reader == nullptr) { return; }
   // If the data reader does not have any data bail out (e.g. unused validation reader)
   if(data_reader->get_use_percent() == double(0.0)) { return; }
@@ -118,7 +118,7 @@ void lbann::partitioned_minibatch::calculate_num_iterations_per_epoch_spanning_m
      || (num_parallel_readers_per_model != m_comm->get_procs_per_model() && num_parallel_readers_per_model != max_mini_batch_size)) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__)
-      + " :: partitioned_minibatch: number of parallel readers is " + std::to_string(num_parallel_readers_per_model)
+      + " :: partitioned_io_buffer: number of parallel readers is " + std::to_string(num_parallel_readers_per_model)
       + " and there are " + std::to_string(m_comm->get_procs_per_model()) + " processes in the model");
   }
 
@@ -195,7 +195,7 @@ void lbann::partitioned_minibatch::calculate_num_iterations_per_epoch_spanning_m
   return;
 }
 
-void lbann::partitioned_minibatch::calculate_num_iterations_per_epoch_single_model(int max_mini_batch_size, generic_data_reader *data_reader) {
+void lbann::partitioned_io_buffer::calculate_num_iterations_per_epoch_single_model(int max_mini_batch_size, generic_data_reader *data_reader) {
   if(data_reader == nullptr) { return; }
   // If the data reader does not have any data bail out (e.g. unused validation reader)
   if(data_reader->get_use_percent() == double(0.0)) { return; }

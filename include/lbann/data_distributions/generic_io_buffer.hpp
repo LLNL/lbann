@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_DATA_DISTRIBUTION_HPP_INCLUDED
-#define LBANN_DATA_DISTRIBUTION_HPP_INCLUDED
+#ifndef LBANN_GENERIC_IO_BUFFER_HPP_INCLUDED
+#define LBANN_GENERIC_IO_BUFFER_HPP_INCLUDED
 
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
@@ -68,14 +68,14 @@ class update_data_reader_functor {
   const bool _is_input_layer;
 };
 
-class generic_data_distribution {
+class generic_io_buffer {
 public:
-  generic_data_distribution(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers);
-  generic_data_distribution(
-    const generic_data_distribution&);
-  generic_data_distribution& operator=(
-    const generic_data_distribution&);
-  virtual ~generic_data_distribution() {
+  generic_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers);
+  generic_io_buffer(
+    const generic_io_buffer&);
+  generic_io_buffer& operator=(
+    const generic_io_buffer&);
+  virtual ~generic_io_buffer() {
     if(fetch_data_fn != nullptr) {
       delete fetch_data_fn;
     }
@@ -103,4 +103,4 @@ public:
 };
 }
 
-#endif // LBANN_DATA_DISTRIBUTION_HPP_INCLUDED
+#endif // LBANN_GENERIC_IO_BUFFER_HPP_INCLUDED

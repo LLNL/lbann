@@ -24,24 +24,24 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_PARTITIONED_MINIBATCH_HPP_INCLUDED
-#define LBANN_PARTITIONED_MINIBATCH_HPP_INCLUDED
+#ifndef LBANN_PARTITIONED_IO_BUFFER_HPP_INCLUDED
+#define LBANN_PARTITIONED_IO_BUFFER_HPP_INCLUDED
 
-#include "lbann/data_distributions/data_distribution.hpp"
+#include "lbann/data_distributions/generic_io_buffer.hpp"
 
 namespace lbann {
 
 /**
  * Parallel I/O routines for managing partitioned minibatches
  */
-class partitioned_minibatch : public generic_data_distribution {
+class partitioned_io_buffer : public generic_io_buffer {
  public:
-  partitioned_minibatch(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers);
-  partitioned_minibatch(
-    const partitioned_minibatch&) = default;
-  partitioned_minibatch& operator=(
-    const partitioned_minibatch&) = default;
-  ~partitioned_minibatch() override {}
+  partitioned_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers);
+  partitioned_io_buffer(
+    const partitioned_io_buffer&) = default;
+  partitioned_io_buffer& operator=(
+    const partitioned_io_buffer&) = default;
+  ~partitioned_io_buffer() override {}
 
   void set_local_matrix_bypass(Mat *m) override { M_local = m; }
 
@@ -57,4 +57,4 @@ class partitioned_minibatch : public generic_data_distribution {
 };
 }
 
-#endif  // LBANN_PARTITIONED_MINIBATCH_HPP_INCLUDED
+#endif  // LBANN_PARTITIONED_IO_BUFFER_HPP_INCLUDED
