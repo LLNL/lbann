@@ -410,7 +410,8 @@ else
 fi
 
 # Add flag for libldl: may be needed some compilers
-CXX_FLAGS="${CXX_FLAGS} -ldl}"
+CXX_FLAGS="${CXX_FLAGS} -ldl"
+C_FLAGS="${CXX_FLAGS} -ldl"
 
 
 # Set environment variables
