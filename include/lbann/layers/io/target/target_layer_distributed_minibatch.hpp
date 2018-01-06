@@ -89,26 +89,27 @@ class target_layer_distributed_minibatch : public target_layer {
   void fp_set_std_matrix_view() override {
     target_layer::fp_set_std_matrix_view();
     El::Int cur_mini_batch_size = m_model->get_current_mini_batch_size();
-    data_buffer *buf = ((distributed_io_buffer*) io_buffer)->get_data_buffer();
+    data_buffer *buf = ((distributed_io_buffer*) io_buffer)->get_data_buffer(this->m_model->get_execution_mode());
     El::View(buf->M_local_v, buf->M_local, El::ALL, El::IR(0, cur_mini_batch_size));
   }
 
   void fp_compute() override {
-    int num_samples_in_batch = io_buffer->fetch_to_local_matrix(paired_input_layer->get_data_reader());
-    if(((distributed_io_buffer*) io_buffer)->is_current_root()) {
+    execution_mode mode = this->m_model->get_execution_mode();
+    int num_samples_in_batch = io_buffer->fetch_to_local_matrix(paired_input_layer->get_data_reader(), mode);
+    if(((distributed_io_buffer*) io_buffer)->is_current_root(mode)) {
       /// Only update the number of samples processed by this parallel reader, when it is the current root
       target_layer::update_num_samples_processed(num_samples_in_batch);
     }
 
     int curr_mini_batch_size = this->m_model->get_current_mini_batch_size();
-    if(((distributed_io_buffer*) io_buffer)->is_current_root() && num_samples_in_batch != curr_mini_batch_size) {
+    if(((distributed_io_buffer*) io_buffer)->is_current_root(mode) && num_samples_in_batch != curr_mini_batch_size) {
       throw lbann_exception("lbann_target_layer_distributed_minibatch: number of labels ("
                             + std::to_string(num_samples_in_batch) + ") does not match the current mini-batch size (" 
                             + std::to_string(curr_mini_batch_size) + ")."
                             );
     }
     /// @todo should this distribute the entire matrix even if there is only a partial mini-batch
-    io_buffer->distribute_from_local_matrix(*this->m_activations, paired_input_layer->get_data_reader());
+    io_buffer->distribute_from_local_matrix(*this->m_activations, paired_input_layer->get_data_reader(), mode);
     return;
   }
 
@@ -118,7 +119,7 @@ class target_layer_distributed_minibatch : public target_layer {
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary
    */
   bool update_compute() override {
-    return io_buffer->is_data_set_processed(paired_input_layer->get_data_reader());
+    return io_buffer->is_data_set_processed(paired_input_layer->get_data_reader(), this->m_model->get_execution_mode());
   }
 
   data_buffer *get_data_buffer() const {

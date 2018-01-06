@@ -45,9 +45,9 @@ class partitioned_io_buffer : public generic_io_buffer {
 
   void set_local_matrix_bypass(Mat *m) override { M_local = m; }
 
-  int fetch_to_local_matrix(generic_data_reader *data_reader) override;
-  void distribute_from_local_matrix(AbsDistMat& Ms, generic_data_reader *data_reader) override;
-  bool is_data_set_processed(generic_data_reader *data_reader) override;
+  int fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) override;
+  void distribute_from_local_matrix(AbsDistMat& Ms, generic_data_reader *data_reader, execution_mode mode) override;
+  bool is_data_set_processed(generic_data_reader *data_reader, execution_mode mode) override;
 
   void calculate_num_iterations_per_epoch_spanning_models(int max_mini_batch_size, generic_data_reader *data_reader) override;
   void calculate_num_iterations_per_epoch_single_model(int max_mini_batch_size, generic_data_reader *data_reader) override;

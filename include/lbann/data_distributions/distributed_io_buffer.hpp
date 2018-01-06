@@ -35,8 +35,6 @@ class data_buffer {
  public:
   /** Which rank is the root of the CircMat */
   int m_root;
-  /** Requested maximum number of parallel readers (I/O streams) */
-  int m_requested_max_num_parallel_readers;
   bool m_local_reader_done;
   /** Number of samples in the current mini-batch */
   int m_num_samples_in_batch;
@@ -49,9 +47,8 @@ class data_buffer {
   Mat M_local_v; /** View of local matrix that holds data from data reader */
   CircMat Ms; /** Distributed matrix used to stage local data to layer output */
 
-  data_buffer(lbann_comm *comm, int num_parallel_readers) :
+  data_buffer(lbann_comm *comm) :
     m_root(0),
-    m_requested_max_num_parallel_readers(num_parallel_readers),
     m_local_reader_done(false),
     m_num_samples_in_batch(0),
     m_local_data_valid(false),
@@ -70,16 +67,20 @@ class data_buffer {
 class distributed_io_buffer : public generic_io_buffer {
  public:
   typedef std::map<execution_mode, data_buffer *> data_buffer_map_t;
+  /** Requested maximum number of parallel readers (I/O streams) */
+  int m_requested_max_num_parallel_readers;
  public:
   distributed_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers);
   distributed_io_buffer(const distributed_io_buffer& other) :
     generic_io_buffer(other) {
+    m_requested_max_num_parallel_readers = other.m_requested_max_num_parallel_readers;
     for (auto& buf : m_data_buffers) {
       buf.second = buf.second->copy();
     }
   }
   distributed_io_buffer& operator=(const distributed_io_buffer& other) {
     generic_io_buffer::operator=(other);
+    m_requested_max_num_parallel_readers = other.m_requested_max_num_parallel_readers;
     for (auto& buf : m_data_buffers) {
       buf.second = buf.second->copy();
     }
@@ -93,9 +94,9 @@ class distributed_io_buffer : public generic_io_buffer {
 
   void set_local_matrix_bypass(Mat *M_local) override {};
 
-  int fetch_to_local_matrix(generic_data_reader *data_reader) override;
-  void distribute_from_local_matrix(AbsDistMat& Ms, generic_data_reader *data_reader) override;
-  bool is_data_set_processed(generic_data_reader *data_reader) override;
+  int fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) override;
+  void distribute_from_local_matrix(AbsDistMat& Ms, generic_data_reader *data_reader, execution_mode mode) override;
+  bool is_data_set_processed(generic_data_reader *data_reader, execution_mode mode) override;
 
   void calculate_num_iterations_per_epoch(int num_models, int model_rank, int max_mini_batch_size, generic_data_reader *data_reader);
   void calculate_num_iterations_per_epoch_spanning_models(int max_mini_batch_size, generic_data_reader *data_reader) override;
@@ -122,25 +123,21 @@ class distributed_io_buffer : public generic_io_buffer {
     return data_buffer;
   }
 
-  data_buffer *get_data_buffer() const {
-    return get_data_buffer(execution_mode::training/*get_execution_mode()*/);
-  }
-
   /// Return the rank of the current root node for the Elemental Distribution
-  virtual int current_root_rank() const {
-    data_buffer *buf = get_data_buffer();
+  virtual int current_root_rank(execution_mode mode) const {
+    data_buffer *buf = get_data_buffer(mode);
     return buf->m_root;
   }
 
   /// Is this rank the current root node for the Elemental Distribution
-  bool is_current_root() const {
-    data_buffer *buf = get_data_buffer();
+  bool is_current_root(execution_mode mode) const {
+    data_buffer *buf = get_data_buffer(mode);
     return (m_comm->get_rank_in_model() == buf->m_root);
   }
 
   /// Is the local reader done
-  virtual bool is_local_reader_done() const {
-    data_buffer *buf = get_data_buffer();
+  virtual bool is_local_reader_done(execution_mode mode) const {
+    data_buffer *buf = get_data_buffer(mode);
     return buf->m_local_reader_done;
   }
 

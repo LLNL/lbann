@@ -28,18 +28,19 @@
 #include "lbann/utils/exception.hpp"
 
 lbann::distributed_io_buffer::distributed_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
-  : generic_io_buffer(comm, num_parallel_readers, data_readers) {
-  m_data_buffers[execution_mode::training] = new data_buffer(comm, num_parallel_readers);
-  m_data_buffers[execution_mode::validation] = new data_buffer(comm, num_parallel_readers);
-  m_data_buffers[execution_mode::testing] = new data_buffer(comm, num_parallel_readers);
+  : generic_io_buffer(comm, num_parallel_readers, data_readers),
+    m_requested_max_num_parallel_readers(num_parallel_readers) {
+  m_data_buffers[execution_mode::training] = new data_buffer(comm);
+  m_data_buffers[execution_mode::validation] = new data_buffer(comm);
+  m_data_buffers[execution_mode::testing] = new data_buffer(comm);
 }
 
-int lbann::distributed_io_buffer::fetch_to_local_matrix(generic_data_reader *data_reader) {
+int lbann::distributed_io_buffer::fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) {
   int num_parallel_readers = data_reader->get_num_parallel_readers();
 
   /// Check to see if this rank has valid data -- if not read in the next batch
   /// Coordinate all available readers so that the perform I/O in the same step
-  data_buffer *buf = get_data_buffer();
+  data_buffer *buf = get_data_buffer(mode);
   if (buf->m_root == 0) {
     if (m_comm->get_rank_in_model() < num_parallel_readers && !buf->m_local_reader_done) {
       Zero(buf->M_local);
@@ -57,9 +58,9 @@ int lbann::distributed_io_buffer::fetch_to_local_matrix(generic_data_reader *dat
   return buf->m_num_samples_in_batch;
 }
 
-void lbann::distributed_io_buffer::distribute_from_local_matrix(AbsDistMat& Ms, generic_data_reader *data_reader) {
+void lbann::distributed_io_buffer::distribute_from_local_matrix(AbsDistMat& Ms, generic_data_reader *data_reader, execution_mode mode) {
   int num_parallel_readers = data_reader->get_num_parallel_readers();
-  data_buffer *buf = get_data_buffer();
+  data_buffer *buf = get_data_buffer(mode);
   buf->Ms.SetRoot(buf->m_root);
 
   m_comm->model_barrier();
@@ -86,13 +87,13 @@ void lbann::distributed_io_buffer::distribute_from_local_matrix(AbsDistMat& Ms, 
   return;
 }
 
-bool lbann::distributed_io_buffer::is_data_set_processed(generic_data_reader *data_reader) {
+bool lbann::distributed_io_buffer::is_data_set_processed(generic_data_reader *data_reader, execution_mode mode) {
   // not just the ones in the last round.  This will ensure that all readers, that had data
   // will have distributed it.
   int num_parallel_readers = data_reader->get_num_parallel_readers();
   int num_iterations_per_epoch = data_reader->get_num_iterations_per_epoch();
   int current_step_in_epoch = data_reader->get_current_step_in_epoch(); // Get the current step before the update function increments it
-  data_buffer *buf = get_data_buffer();
+  data_buffer *buf = get_data_buffer(mode);
 
   bool is_active_reader = (m_comm->get_rank_in_model() < num_parallel_readers) 
     && ((m_comm->get_rank_in_model()+1)%num_parallel_readers == buf->m_root);
@@ -163,10 +164,9 @@ void lbann::distributed_io_buffer::calculate_num_iterations_per_epoch(int num_mo
   if(max_mini_batch_size > data_reader->get_num_data()) {
     max_mini_batch_size = data_reader->get_num_data();
   }
-  data_buffer *buf = get_data_buffer();
 
   /// Check to make sure that there is enough data for all of the parallel readers
-  int num_parallel_readers_per_model = compute_max_num_parallel_readers(data_reader->get_num_data(), max_mini_batch_size, buf->m_requested_max_num_parallel_readers);
+  int num_parallel_readers_per_model = compute_max_num_parallel_readers(data_reader->get_num_data(), max_mini_batch_size, m_requested_max_num_parallel_readers);
   data_reader->set_num_parallel_readers(num_parallel_readers_per_model);
   if(num_parallel_readers_per_model == 0) {
     throw lbann_exception(

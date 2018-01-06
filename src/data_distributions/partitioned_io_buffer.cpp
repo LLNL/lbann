@@ -31,7 +31,7 @@ lbann::partitioned_io_buffer::partitioned_io_buffer(lbann_comm *comm, int num_pa
   : generic_io_buffer(comm, num_parallel_readers, data_readers),
     M_local(nullptr) {}
 
-int lbann::partitioned_io_buffer::fetch_to_local_matrix(generic_data_reader *data_reader) {
+int lbann::partitioned_io_buffer::fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) {
   int num_parallel_readers = data_reader->get_num_parallel_readers();
 
   int num_samples_fetched = 0;
@@ -52,13 +52,13 @@ int lbann::partitioned_io_buffer::fetch_to_local_matrix(generic_data_reader *dat
   return num_samples_fetched;
 }
 
-void lbann::partitioned_io_buffer::distribute_from_local_matrix(AbsDistMat& Ms, generic_data_reader *data_reader) {
+void lbann::partitioned_io_buffer::distribute_from_local_matrix(AbsDistMat& Ms, generic_data_reader *data_reader, execution_mode mode) {
 
   /// Nothing to do here, it is already done
   return;
 }
 
-bool lbann::partitioned_io_buffer::is_data_set_processed(generic_data_reader *data_reader) {
+bool lbann::partitioned_io_buffer::is_data_set_processed(generic_data_reader *data_reader, execution_mode mode) {
   int num_iterations_per_epoch = data_reader->get_num_iterations_per_epoch();
   int current_step_in_epoch = data_reader->get_current_step_in_epoch(); // Get the current step before the update function increments it
 

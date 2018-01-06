@@ -77,7 +77,7 @@ class target_layer_partitioned_minibatch : public target_layer {
   }
 
   void fp_compute() override {
-    int num_samples_in_batch = io_buffer->fetch_to_local_matrix(paired_input_layer->get_data_reader());
+    int num_samples_in_batch = io_buffer->fetch_to_local_matrix(paired_input_layer->get_data_reader(), this->m_model->get_execution_mode());
 
     target_layer::update_num_samples_processed(num_samples_in_batch);
 
@@ -91,7 +91,7 @@ class target_layer_partitioned_minibatch : public target_layer {
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary
    */
   bool update_compute() override {
-    return io_buffer->is_data_set_processed(paired_input_layer->get_data_reader());
+    return io_buffer->is_data_set_processed(paired_input_layer->get_data_reader(), this->m_model->get_execution_mode());
   }
 };
 
