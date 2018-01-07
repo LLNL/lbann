@@ -93,6 +93,12 @@ class distributed_io_buffer : public generic_io_buffer {
   }
 
   void set_local_matrix_bypass(Mat *M_local) override {};
+  void setup_data(El::Int num_neurons, El::Int max_minibatch_size) override {
+    for (auto& buf : m_data_buffers) {
+      buf.second->M_local.Resize(num_neurons, max_minibatch_size);
+      buf.second->Ms.Resize(num_neurons, max_minibatch_size);
+    }
+  }
 
   int fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) override;
   void distribute_from_local_matrix(AbsDistMat& Ms, generic_data_reader *data_reader, execution_mode mode) override;

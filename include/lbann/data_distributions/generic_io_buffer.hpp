@@ -85,6 +85,7 @@ public:
   }
 
   virtual void set_local_matrix_bypass(Mat *M_local) = 0;
+  virtual void setup_data(El::Int num_neurons, El::Int max_minibatch_size) = 0;
 
   virtual int fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) = 0;
   virtual void distribute_from_local_matrix(AbsDistMat& Ms, generic_data_reader *data_reader, execution_mode mode) {}

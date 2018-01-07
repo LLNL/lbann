@@ -57,15 +57,15 @@ class input_layer_partitioned_minibatch : public input_layer {
     return new input_layer_partitioned_minibatch(*this);
   }
 
-  std::string get_type() const override { return "input:partitioned"; }
+  // std::string get_type() const override { return "input:partitioned"; }
 
-  /** Returns description of ctor params */
-  std::string get_description() const override {
-    std::string s = get_topo_description();
-    return std::string {} + " input_layer_partitioned_minibatch "
-           + " dataLayout: " + this->get_data_layout_string(get_data_layout())
-           + " (" + s + ")";
-  }
+  // /** Returns description of ctor params */
+  // std::string get_description() const override {
+  //   std::string s = get_topo_description();
+  //   return std::string {} + " input_layer_partitioned_minibatch "
+  //          + " dataLayout: " + this->get_data_layout_string(get_data_layout())
+  //          + " (" + s + ")";
+  // }
 
   virtual inline void initialize_distributed_matrices() {
     input_layer::initialize_distributed_matrices<T_layout>();
@@ -74,13 +74,6 @@ class input_layer_partitioned_minibatch : public input_layer {
 
   void setup_data() override {
     input_layer::setup_data();
-    int max_mb_size = this->m_model->get_max_mini_batch_size();
-    if(io_layer::m_data_set_spans_models) {
-      calculate_num_iterations_per_epoch_training_spans_models(max_mb_size);
-    } else {
-      calculate_num_iterations_per_epoch_training_unique_per_models(max_mb_size);
-    }
-    //    io_buffer->set_local_matrix_bypass(&this->m_activations_v->Matrix());
   }
 
   void fp_compute() override {
@@ -91,13 +84,6 @@ class input_layer_partitioned_minibatch : public input_layer {
     int num_samples_in_batch = get_current_mini_batch_size();
 
     input_layer::update_num_samples_processed(num_samples_in_batch);
-  }
-
-  /**
-   * Once a mini-batch is processed, resuffle the data for the next batch if necessary
-   */
-  bool update_compute() override {
-    return io_buffer->is_data_set_processed(get_data_reader(), this->m_model->get_execution_mode());
   }
 };
 

@@ -91,6 +91,18 @@ class input_layer : public io_layer {
     }
     return *this;
   }
+
+  std::string get_type() const override { return "input"; }
+
+  /** Returns description of ctor params */
+  std::string get_description() const override {
+    std::string s = get_topo_description();
+    return std::string {} + " input_layer "
+           + " dataLayout: " + this->get_data_layout_string(get_data_layout())
+           + " (" + s + ")";
+  }
+
+  //data_layout get_data_layout() const override { return T_layout; }
   // std::string get_description() const {
   //   std::stringstream s;
   //   for (size_t i = 0; i < this->m_neuron_dims.size(); i++) {
@@ -129,6 +141,18 @@ class input_layer : public io_layer {
       m_data_readers[execution_mode::testing]->setup();
       m_data_readers[execution_mode::testing]->set_rank(Layer::m_comm->get_rank_in_model());
     }
+
+    int max_mb_size = this->m_model->get_max_mini_batch_size();
+    #ifdef LBANN_DEBUG
+    std::cout << "Setting up data for the input layer " << io_layer::m_data_set_spans_models << std::endl;
+    #endif
+    if(io_layer::m_data_set_spans_models) {
+      calculate_num_iterations_per_epoch_training_spans_models(max_mb_size);
+    } else {
+      calculate_num_iterations_per_epoch_training_unique_per_models(max_mb_size);
+    }
+
+    io_buffer->setup_data(this->m_num_neurons, max_mb_size);
   }
 
   template<data_layout T_layout> inline void initialize_distributed_matrices() {
@@ -156,6 +180,13 @@ class input_layer : public io_layer {
 
   /** No setting the standard view of the matrix -- it defines the standard view */
   void bp_set_std_matrix_view() override {}
+
+  /**
+   * Once a mini-batch is processed, resuffle the data for the next batch if necessary
+   */
+  bool update_compute() override {
+    return io_buffer->is_data_set_processed(get_data_reader(), this->m_model->get_execution_mode());
+  }
 
   //************************************************************************
   // Helper functions to access the data readers

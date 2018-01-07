@@ -63,7 +63,7 @@ class input_layer_distributed_minibatch : public input_layer {
     return new input_layer_distributed_minibatch(*this);
   }
 
-  std::string get_type() const override { return "input:distributed"; }
+  // std::string get_type() const override { return "input:distributed"; }
 
   virtual inline void initialize_distributed_matrices() {
     input_layer::initialize_distributed_matrices<T_layout>();
@@ -72,20 +72,6 @@ class input_layer_distributed_minibatch : public input_layer {
 
   void setup_data() override {
     input_layer::setup_data();
-    int max_mb_size = this->m_model->get_max_mini_batch_size();
-    #ifdef LBANN_DEBUG
-    std::cout << "Setting up data for the input layer " << io_layer::m_data_set_spans_models << std::endl;
-    #endif
-    if(io_layer::m_data_set_spans_models) {
-      calculate_num_iterations_per_epoch_training_spans_models(max_mb_size);
-    } else {
-      calculate_num_iterations_per_epoch_training_unique_per_models(max_mb_size);
-    }
-
-    for (auto& buf : ((distributed_io_buffer*) io_buffer)->m_data_buffers) {
-      buf.second->M_local.Resize(this->m_num_neurons, max_mb_size);
-      buf.second->Ms.Resize(this->m_num_neurons, max_mb_size);
-    }
   }
 
  protected:
@@ -110,28 +96,6 @@ class input_layer_distributed_minibatch : public input_layer {
     this->m_model->set_current_mini_batch_size(Layer::m_comm->model_broadcast(((distributed_io_buffer*) io_buffer)->current_root_rank(mode), num_samples_in_batch));
 
     io_buffer->distribute_from_local_matrix(*this->m_activations, get_data_reader(), mode);
-  }
-
- public:
-  /**
-   * Once a mini-batch is processed, resuffle the data for the next batch if necessary
-   */
-  bool update_compute() override {
-    return io_buffer->is_data_set_processed(get_data_reader(), this->m_model->get_execution_mode());
-  }
-
-  data_buffer *get_data_buffer() const {
-    return ((distributed_io_buffer*) io_buffer)->get_data_buffer(this->m_model->get_execution_mode());
-  }
-
-  Mat *get_local_mat() {
-    data_buffer *buf = ((distributed_io_buffer*) io_buffer)->get_data_buffer(this->m_model->get_execution_mode());
-    return &buf->M_local;
-  }
-
-  CircMat *get_dist_mat() {
-    data_buffer *buf = ((distributed_io_buffer*) io_buffer)->get_data_buffer(this->m_model->get_execution_mode());
-    return &buf->Ms;
   }
 };
 
