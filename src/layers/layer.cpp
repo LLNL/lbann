@@ -38,42 +38,6 @@
 
 namespace lbann {
 
-template <>
-void Layer::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>() {
-
-  // Instantiate matrices with MC,MR distribution
-  El::Grid& grid = m_comm->get_model_grid();
-  m_prev_activations_v  = new DistMat(grid);
-  m_activations         = new DistMat(grid);
-  m_prev_error_signal_v = new DistMat(grid);
-  m_error_signal        = new DistMat(grid);
-
-  // Construct matrix views
-  m_activations_v = m_activations->Construct(m_activations->Grid(),
-                                             m_activations->Root());
-  m_error_signal_v = m_error_signal->Construct(m_error_signal->Grid(),
-                                               m_error_signal->Root());
-
-}
-
-template<>
-void Layer::initialize_distributed_matrices<data_layout::DATA_PARALLEL>() {
-
-  // Instantiate matrices with STAR,VC distribution
-  El::Grid& grid = m_comm->get_model_grid();
-  m_prev_activations_v  = new StarVCMat(grid);
-  m_activations         = new StarVCMat(grid);
-  m_prev_error_signal_v = new StarVCMat(grid);
-  m_error_signal        = new StarVCMat(grid);
-
-  // Construct matrix views
-  m_activations_v = m_activations->Construct(m_activations->Grid(),
-                                             m_activations->Root());
-  m_error_signal_v = m_error_signal->Construct(m_error_signal->Grid(),
-                                               m_error_signal->Root());
-
-}
-
 Layer::Layer(lbann_comm *comm)
   : m_comm(comm),
     m_cudnn(nullptr) {
@@ -92,8 +56,8 @@ Layer::Layer(lbann_comm *comm)
   m_neuron_dims = std::vector<int>(1, 0);
 
   // Default number of parent and child layers
-  m_max_num_parent_layers = 1;
-  m_max_num_child_layers = 1;
+  m_expected_num_parent_layers = 1;
+  m_expected_num_child_layers = 1;
 
   // Initialize model
   m_model = nullptr;
@@ -111,7 +75,9 @@ Layer::Layer(lbann_comm *comm)
   m_neurons_cudnn_desc = nullptr;
 #endif // __LIB_CUDNN
 
+  // Reset timing counters
   reset_counters();
+
 }
 
 Layer::Layer(const Layer& other) :
@@ -125,32 +91,36 @@ Layer::Layer(const Layer& other) :
   m_weights(other.m_weights),
   m_parent_layers(other.m_parent_layers),
   m_child_layers(other.m_child_layers),
-  m_max_num_parent_layers(other.m_max_num_parent_layers),
-  m_max_num_child_layers(other.m_max_num_child_layers),
+  m_expected_num_parent_layers(other.m_expected_num_parent_layers),
+  m_expected_num_child_layers(other.m_expected_num_child_layers),
   m_model(other.m_model),
   m_using_gpus(other.m_using_gpus),
-  m_cudnn(other.m_cudnn)
+  m_cudnn(other.m_cudnn),
 #ifdef __LIB_CUDNN
-  ,
   m_mini_batch_size_per_gpu(other.m_mini_batch_size_per_gpu),
   m_max_mini_batch_size_per_gpu(other.m_max_mini_batch_size_per_gpu),
   m_copy_fp_input_to_gpus(other.m_copy_fp_input_to_gpus),
   m_copy_fp_output_from_gpus(other.m_copy_fp_output_from_gpus),
   m_copy_bp_input_to_gpus(other.m_copy_bp_input_to_gpus),
-  m_copy_bp_output_from_gpus(other.m_copy_bp_output_from_gpus)
+  m_copy_bp_output_from_gpus(other.m_copy_bp_output_from_gpus),
 #endif // __LIB_CUDNN
-{
-  fp_time = other.fp_time;
-  fp_compute_time = other.fp_compute_time;
-  bp_time = other.bp_time;
-  bp_compute_time = other.bp_compute_time;
-  update_time = other.update_time;
-  m_prev_activations_v = other.m_prev_activations_v->Copy();
-  m_activations = other.m_activations->Copy();
-  m_activations_v = other.m_activations_v->Copy();
-  m_prev_error_signal_v = other.m_prev_error_signal_v->Copy();
-  m_error_signal = other.m_error_signal->Copy();
-  m_error_signal_v = other.m_error_signal_v->Copy();
+  m_fp_time(other.m_fp_time),
+  m_fp_compute_time(other.m_fp_compute_time),
+  m_bp_time(other.m_bp_time),
+  m_bp_compute_time(other.m_bp_compute_time),
+  m_update_time(other.m_update_time),
+  m_name(other.m_name) {
+
+  // Deep matrix copies
+  m_prev_activations   = other.m_prev_activations;
+  m_activations        = other.m_activations;
+  m_prev_error_signals = other.m_prev_error_signals;
+  m_error_signals      = other.m_error_signals;
+  for (auto& m : m_prev_activations)   { m = m->Copy(); }
+  for (auto& m : m_activations)        { m = m->Copy(); }
+  for (auto& m : m_prev_error_signals) { m = m->Copy(); }
+  for (auto& m : m_error_signals)      { m = m->Copy(); }
+
 #ifdef __LIB_CUDNN
   if(m_cudnn != nullptr) {
     m_prev_activations_d = m_cudnn->copy(other.m_prev_activations_d,
@@ -173,10 +143,11 @@ Layer::Layer(const Layer& other) :
   cudnn::copy_tensor_cudnn_desc(other.m_neurons_cudnn_desc,
                                 m_neurons_cudnn_desc);
 #endif // __LIB_CUDNN
-  m_name = other.m_name;
 }
 
 Layer& Layer::operator=(const Layer& other) {
+  
+  // Shallow copies
   m_comm = other.m_comm;
   m_num_neurons = other.m_num_neurons;
   m_num_neuron_dims = other.m_num_neuron_dims;
@@ -187,16 +158,11 @@ Layer& Layer::operator=(const Layer& other) {
   m_weights = other.m_weights;
   m_parent_layers = other.m_parent_layers;
   m_child_layers = other.m_child_layers;
-  m_max_num_parent_layers = other.m_max_num_parent_layers;
-  m_max_num_child_layers = other.m_max_num_child_layers;
+  m_expected_num_parent_layers = other.m_expected_num_parent_layers;
+  m_expected_num_child_layers = other.m_expected_num_child_layers;
   m_model = other.m_model;
   m_using_gpus = other.m_using_gpus;
   m_cudnn = other.m_cudnn;
-  fp_time = other.fp_time;
-  fp_compute_time = other.fp_compute_time;
-  bp_time = other.bp_time;
-  bp_compute_time = other.bp_compute_time;
-  update_time = other.update_time;
 #ifdef __LIB_CUDNN
   m_mini_batch_size_per_gpu = other.m_mini_batch_size_per_gpu;
   m_max_mini_batch_size_per_gpu = other.m_max_mini_batch_size_per_gpu;
@@ -205,28 +171,22 @@ Layer& Layer::operator=(const Layer& other) {
   m_copy_bp_input_to_gpus = other.m_copy_bp_input_to_gpus;
   m_copy_bp_output_from_gpus = other.m_copy_bp_output_from_gpus;
 #endif // __LIB_CUDNN
+  m_fp_time = other.m_fp_time;
+  m_fp_compute_time = other.m_fp_compute_time;
+  m_bp_time = other.m_bp_time;
+  m_bp_compute_time = other.m_bp_compute_time;
+  m_update_time = other.m_update_time;
 
-  // Free allocated memory and copy data from other matrix
-#define COPY_MATRIX(src, dst)                   \
-  do {                                          \
-    if(src != nullptr && dst != nullptr) {      \
-      El::Copy(*src, *dst);                     \
-    }                                           \
-    if(src != nullptr && dst == nullptr) {      \
-      dst = src->Copy();                        \
-    }                                           \
-    if(src == nullptr && dst != nullptr) {      \
-      delete dst;                               \
-      dst = nullptr;                            \
-    }                                           \
-  } while(false)
-  COPY_MATRIX(other.m_activations, m_activations);
-  COPY_MATRIX(other.m_error_signal, m_error_signal);
-  COPY_MATRIX(other.m_prev_activations_v, m_prev_activations_v);
-  COPY_MATRIX(other.m_prev_error_signal_v, m_prev_error_signal_v);
-  COPY_MATRIX(other.m_activations_v, m_activations_v);
-  COPY_MATRIX(other.m_error_signal_v, m_error_signal_v);
-#undef COPY_MATRIX
+  // Deep matrix copies
+  deallocate_matrices();
+  m_prev_activations   = other.m_prev_activations;
+  m_activations        = other.m_activations;
+  m_prev_error_signals = other.m_prev_error_signals;
+  m_error_signals      = other.m_error_signals;
+  for (auto& m : m_prev_activations)   { m = m->Copy(); }
+  for (auto& m : m_activations)        { m = m->Copy(); }
+  for (auto& m : m_prev_error_signals) { m = m->Copy(); }
+  for (auto& m : m_error_signals)      { m = m->Copy(); }
 
 #ifdef __LIB_CUDNN
   if(m_cudnn != nullptr) {
@@ -276,27 +236,14 @@ Layer::~Layer() {
     m_cudnn->unpin_matrix(*m_error_signal);
   }
 #endif // __LIB_CUDNN
-  if(m_activations         != nullptr) delete m_activations;
-  if(m_error_signal        != nullptr) delete m_error_signal;
-  if(m_prev_activations_v  != nullptr) delete m_prev_activations_v;
-  if(m_prev_error_signal_v != nullptr) delete m_prev_error_signal_v;
-  if(m_activations_v       != nullptr) delete m_activations_v;
-  if(m_error_signal_v      != nullptr) delete m_error_signal_v;
+  deallocate_matrices();
 }
 
 void Layer::forward_prop() {
-  double fp_start = get_time();
+  const auto fp_start = get_time();
 
-  // Set matrix views based on current mini-batch size
-  fp_set_std_matrix_view();
-
-  // Get incoming activations and convert matrix distribution if necessary
-  if(!m_parent_layers.empty()) {
-    m_parent_layers.front()->get_fp_output(*m_prev_activations_v, this);
-  } else {
-    const int mini_batch_size = m_model->get_current_mini_batch_size();
-    El::Zeros(*m_prev_activations_v, m_num_prev_neurons, mini_batch_size);
-  }
+  // Setup matrix data, e.g. input matrices
+  fp_setup_data(m_model->get_current_mini_batch_size());
 
 #ifdef __LIB_CUDNN
   if(m_using_gpus) {
@@ -337,9 +284,9 @@ void Layer::forward_prop() {
 #endif // __LIB_CUDNN
 
   // Apply layer's compute function
-  double fp_compute_start = get_time();
+  const auto fp_compute_start = get_time();
   fp_compute();
-  fp_compute_time += get_time() - fp_compute_start;
+  m_fp_compute_time += get_time() - fp_compute_start;
 
 #ifdef __LIB_CUDNN
   // Transfer outputs from GPUs to CPU if needed
@@ -351,22 +298,14 @@ void Layer::forward_prop() {
   }
 #endif // __LIB_CUDNN
 
-  fp_time += get_time() - fp_start;
+  m_fp_time += get_time() - fp_start;
 }
 
 void Layer::back_prop() {
-  double bp_start = get_time();
+  const auto bp_start = get_time();
 
-  // Set matrix views based on current mini-batch size
-  bp_set_std_matrix_view();
-
-  // Get incoming error signal and convert matrix distribution if necessary
-  if(!m_child_layers.empty()) {
-    m_child_layers.front()->get_bp_output(*m_prev_error_signal_v, this);
-  } else {
-    const int mini_batch_size = m_model->get_current_mini_batch_size();
-    El::Zeros(*m_prev_error_signal_v, m_num_neurons, mini_batch_size);
-  }
+  // Setup matrix data, e.g. input matrices
+  bp_setup_data(m_model->get_current_mini_batch_size());
 
 #ifdef __LIB_CUDNN
   if(m_using_gpus) {
@@ -407,9 +346,9 @@ void Layer::back_prop() {
 #endif // __LIB_CUDNN
 
   // Backprop the compute function.
-  double bp_compute_start = get_time();
+  const auto bp_compute_start = get_time();
   bp_compute();
-  bp_compute_time += get_time() - bp_compute_start;
+  m_bp_compute_time += get_time() - bp_compute_start;
 
 #ifdef __LIB_CUDNN
   // Transfer outputs from GPUs to CPU if needed
@@ -421,23 +360,22 @@ void Layer::back_prop() {
   }
 #endif // __LIB_CUDNN
 
-  bp_time += get_time() - bp_start;
+  m_bp_time += get_time() - bp_start;
 }
 
 bool Layer::update() {
-  bool layer_done = false;
   // Apply any updates.
-  double update_compute_start = get_time();
-  layer_done = update_compute();
-  update_time += get_time() - update_compute_start;
+  const auto update_compute_start = get_time();
+  const auto layer_done = update_compute();
+  m_update_time += get_time() - update_compute_start;
   return layer_done;
 }
 
 void Layer::summarize_stats(lbann_summary& summarizer, int step) {
   std::string prefix = m_name + "/";
-  summarizer.reduce_scalar(prefix + "fp_time", fp_time, step);
-  summarizer.reduce_scalar(prefix + "bp_time", bp_time, step);
-  summarizer.reduce_scalar(prefix + "update_time", update_time, step);
+  summarizer.reduce_scalar(prefix + "fp_time", m_fp_time, step);
+  summarizer.reduce_scalar(prefix + "bp_time", m_bp_time, step);
+  summarizer.reduce_scalar(prefix + "update_time", m_update_time, step);
   reset_counters();
   // Combine the optimizer step time from all the weights.
   double step_time = 0.0;
@@ -452,21 +390,34 @@ void Layer::summarize_stats(lbann_summary& summarizer, int step) {
 }
 
 void Layer::summarize_matrices(lbann_summary& summarizer, int step) {
-  std::string prefix = m_name + "/activations/";
-  summarizer.reduce_mean(prefix + "mean", *m_activations_v, step);
-  summarizer.reduce_min(prefix + "min", *m_activations_v, step);
-  summarizer.reduce_max(prefix + "max", *m_activations_v, step);
-  summarizer.reduce_stdev(prefix + "stdev", *m_activations_v, step);
-  summarizer.reduce_2norm(prefix + "2norm2", *m_activations_v, step);
-  prefix = m_name + "/error_signal/";
-  summarizer.reduce_mean(prefix + "mean", *m_error_signal_v, step);
-  summarizer.reduce_min(prefix + "min", *m_error_signal_v, step);
-  summarizer.reduce_max(prefix + "max", *m_error_signal_v, step);
-  summarizer.reduce_stdev(prefix + "stdev", *m_error_signal_v, step);
-  summarizer.reduce_2norm(prefix + "2norm2", *m_error_signal_v, step);
+
+  // Summarize activation matrices
+  const int num_children = m_child_layers.size();
+  for (int i = 0; i < num_children; ++i) {
+    std::string prefix = m_name + "/activations";
+    if (num_children > 1) { prefix += std::to_string(i); }
+    summarizer.reduce_mean(prefix + "/mean", *m_activations[i], step);
+    summarizer.reduce_min(prefix + "/min", *m_activations[i], step);
+    summarizer.reduce_max(prefix + "/max", *m_activations[i], step);
+    summarizer.reduce_stdev(prefix + "/stdev", *m_activations[i], step);
+    summarizer.reduce_2norm(prefix + "/2norm2", *m_activations[i], step);
+  }
+
+  // Summarize error signal matrices
+  const int num_parents = m_parent_layers.size();
+  for (int i = 0; i < num_parents; ++i) {
+    std::string prefix = m_name + "/error_signals";
+    if (num_parents > 1) { prefix += std::to_string(i); }
+    summarizer.reduce_mean(prefix + "/mean", *m_error_signals[i], step);
+    summarizer.reduce_min(prefix + "/min", *m_error_signals[i], step);
+    summarizer.reduce_max(prefix + "/max", *m_error_signals[i], step);
+    summarizer.reduce_stdev(prefix + "/stdev", *m_error_signals[i], step);
+    summarizer.reduce_2norm(prefix + "/2norm2", *m_error_signals[i], step);
+  }
+
 }
 
-void Layer::clear_error_signal() {
+void Layer::clear_error_signals(int mini_batch_size) {
   if(m_using_gpus) {
 #ifdef __LIB_CUDNN
     m_cudnn->clear_on_gpus(m_error_signal_d,
@@ -475,13 +426,18 @@ void Layer::clear_error_signal() {
 #endif // __LIB_CUDNN
   }
   else {
-    El::Zero(*m_error_signal);
+    for (size_t i = 0; i < m_error_signals.size(); ++i) {
+      El::Zeros(*m_error_signals[i],
+                get_num_prev_neurons(i),
+                mini_batch_size);
+    }
   }
 }
 
 void Layer::setup() {
   setup_pointers();
   setup_dims();
+  setup_matrices(m_comm->get_model_grid());
   setup_data();
   setup_views();
   if (m_using_gpus) {
@@ -490,31 +446,27 @@ void Layer::setup() {
 }
 
 void Layer::setup_pointers() {
+
   // Check if the number of parents/children are valid
-  if(m_max_num_parent_layers >= 0
-     && (int)m_parent_layers.size() > m_max_num_parent_layers) {
+  if(m_expected_num_parent_layers >= 0
+     && (int)m_parent_layers.size() != m_expected_num_parent_layers) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
-        << "layer " << m_name << " has too many parent layers "
-        << "(found ";
-    for (const auto& parent : m_parent_layers) {
-      err << parent->get_name() << ", ";
-    }
-    err << "but only " << m_max_num_parent_layers << " parent layers are allowed)";
+        << "layer " << m_name << " has an invalid number of parent layers "
+        << "(expected " << m_expected_num_parent_layers << ", "
+        << "but found " << m_parent_layers.size() << ")";
     throw lbann_exception(err.str());
   }
-  if(m_max_num_child_layers >= 0
-     && (int)m_child_layers.size() > m_max_num_child_layers) {
+  if(m_expected_num_child_layers >= 0
+     && (int)m_child_layers.size() != m_expected_num_child_layers) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
-        << "layer " << m_name << " has too many child layers "
-        << "(found ";
-    for (const auto& child : m_child_layers) {
-      err << child->get_name() << ", ";
-    }
-    err << "but only " << m_max_num_child_layers << " child layers are allowed)";
+        << "layer " << m_name << " has an invalid number of child layers "
+        << "(expected " << m_expected_num_child_layers << ", "
+        << "but found " << m_child_layers.size() << ")";
     throw lbann_exception(err.str());
   }
+
 }
 
 void Layer::setup_dims() {
@@ -538,20 +490,66 @@ void Layer::setup_dims() {
   
 }
 
+void Layer::setup_matrices(const El::Grid& grid) {
+
+  // Delete any previously allocated matrices
+  deallocate_matrices();
+
+  // Allocate input and output matrices for forward an back prop
+  switch (get_data_layout()) {
+  case data_layout::MODEL_PARALLEL:
+    for (size_t i = 0; i < m_parent_layers.size(); ++i) {
+      m_prev_activations.push_back(new MCMRMat(grid));
+      m_error_signals.push_back(new MCMRMat(grid));
+    }
+    for (size_t i = 0; i < m_child_layers.size(); ++i) {
+      m_activations.push_back(new MCMRMat(grid));
+      m_prev_error_signals.push_back(new MCMRMat(grid));
+    }
+    break;
+  case data_layout::DATA_PARALLEL:
+    for (size_t i = 0; i < m_parent_layers.size(); ++i) {
+      m_prev_activations.push_back(new StarVCMat(grid));
+      m_error_signals.push_back(new StarVCMat(grid));
+    }
+    for (size_t i = 0; i < m_child_layers.size(); ++i) {
+      m_activations.push_back(new StarVCMat(grid));
+      m_prev_error_signals.push_back(new StarVCMat(grid));
+    }
+    break;
+  default:
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "invalid distributed matrix layout";
+    throw lbann_exception(err.str());
+  }
+
+}
+
 void Layer::setup_data() {
 
   // Initialize matrices
-  const int max_mini_batch_size = m_model->get_max_mini_batch_size();
-  if(max_mini_batch_size <= 0) {
-    throw lbann_exception(
-      std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
-      "Layer: max mini-batch size is invalid");
+  const int mini_batch_size = m_model->get_max_mini_batch_size();
+  if(mini_batch_size <= 0) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "invalid mini-batch size "
+        << "(" << mini_batch_size << ")";
+    throw lbann_exception(err.str());
   }
-  if(m_num_prev_neurons > 0) {
-    El::Zeros(*m_error_signal, m_num_prev_neurons, max_mini_batch_size);
+
+  // Initialize forward prop output
+  for (size_t i = 0; i < m_child_layers.size(); ++i) {
+    El::Zeros(*m_activations[i],
+              get_num_neurons(i),
+              mini_batch_size);
   }
-  if(m_num_neurons > 0) {
-    El::Zeros(*m_activations, m_num_neurons, max_mini_batch_size);
+
+  // Initialize backward prop output
+  for (size_t i = 0; i < m_parent_layers.size(); ++i) {
+    El::Zeros(*m_error_signals[i],
+              get_num_prev_neurons(i),
+              mini_batch_size);
   }
 
 #ifdef __LIB_CUDNN
@@ -614,8 +612,64 @@ void Layer::setup_gpu() {
 }
 
 void Layer::check_setup() {
+  std::stringstream err;
+
+  // Check that matrices matches number of parent/child layers
+  if (m_prev_activations.size() != m_parent_layers.size()
+      || m_activations.size() != m_child_layers.size()) {
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "layer " << m_name << " has an invalid number of "
+        << "forward prop matrices "
+        << "(expected " << m_parent_layers.size() << " input and "
+        << m_child_layers.size() << " output, "
+        << "but found " << m_prev_activations.size() << " and "
+        << m_activations.size() << " respectively) ";
+    throw lbann_exception(err.str());
+  }
+  if (m_prev_error_signals.size() != m_child_layers.size()
+      || m_error_signals.size() != m_parent_layers.size()) {
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "layer " << m_name << " has an invalid number of "
+        << "backward prop matrices "
+        << "(expected " << m_child_layers.size() << " input and "
+        << m_parent_layers.size() << " output, "
+        << "but found " << m_prev_error_signals.size() << " and "
+        << m_error_signals.size() << " respectively) ";
+    throw lbann_exception(err.str());
+  }
+
+  // Check that matrices are initialized
+  for (const auto& m : m_prev_activations) {
+    if (m == nullptr) {
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "layer " << m_name << " has an uninitialized previous activation matrix";
+      throw lbann_exception(err.str());
+    }
+  }
+  for (const auto& m : m_activations) {
+    if (m == nullptr) {
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "layer " << m_name << " has an uninitialized activation matrix";
+      throw lbann_exception(err.str());
+    }
+  }
+  for (const auto& m : m_prev_error_signals) {
+    if (m == nullptr) {
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "layer " << m_name << " has an uninitialized previous error signal matrix";
+      throw lbann_exception(err.str());
+    }
+  }
+  for (const auto& m : m_error_signals) {
+    if (m == nullptr) {
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "layer " << m_name << " has an uninitialized error signal matrix";
+      throw lbann_exception(err.str());
+    }
+  }
+
+  // Check that number of neurons is greater than zero
   if (m_num_neurons <= 0) {
-    std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
         << "layer " << m_name << " has invalid output dimensions "
         << "(" << m_neuron_dims[0];
@@ -625,11 +679,12 @@ void Layer::check_setup() {
     err << ")";
     throw lbann_exception(err.str());
   }
+
 }
 
 void Layer::replace_weights(Layer* other_layer) {
   if (other_layer == nullptr) {
-    throw lbann_exception("Layer::replace_weighhts: Attempted to add null pointer as a replacement layer.");
+    throw lbann_exception("Layer::replace_weights: Attempted to add null pointer as a replacement layer.");
   }
   
   const std::vector<weights *> other_layer_weights = other_layer->get_weights();
@@ -639,6 +694,24 @@ void Layer::replace_weights(Layer* other_layer) {
 
 }
 
+void Layer::deallocate_matrices() {
+  for (const auto& m : m_prev_activations) {
+    if (m != nullptr) delete m;
+  }
+  for (const auto& m : m_activations) {
+    if (m != nullptr) delete m;
+  }
+  for (const auto& m : m_prev_error_signals) {
+    if (m != nullptr) delete m;
+  }
+  for (const auto& m : m_error_signals) {
+    if (m != nullptr) delete m;
+  }
+  m_prev_activations.clear();
+  m_activations.clear();
+  m_prev_error_signals.clear();
+  m_error_signals.clear();
+}
 
 bool Layer::saveToCheckpoint(int fd, const char *filename, size_t *bytes) const {
   //writeDist(fd, filename, *m_weights, bytes);
@@ -676,16 +749,57 @@ void Layer::write_proto(lbann_data::Layer* proto) const {
   proto->set_name(get_name());
 }
 
-void Layer::fp_set_std_matrix_view() {
-  int mini_batch_size = m_model->get_current_mini_batch_size();
-  El::View(*m_activations_v, *m_activations, El::ALL, El::IR(0, mini_batch_size));
+void Layer::fp_setup_data(int mini_batch_size) {
+
+  // Get previous activations from parent layers
+  for (size_t i = 0; i < m_prev_activations.size(); ++i) {
+    const auto& parent = m_parent_layers[i];
+    auto& input = *m_prev_activations[i];
+    parent->get_fp_output(input, this);
+    const int expected_height = get_num_prev_neurons(i);
+    if (input.Height() != expected_height
+        || input.Width() != mini_batch_size) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << get_name() << " expected a "
+          << expected_height << " x " << mini_batch_size
+          << " input matrix from " << parent->get_name()
+          << " during forward prop, but got a "
+          << input.Height() << " x " << input.Width() << " matrix";
+      throw lbann_exception(err.str());
+    }
+  }
+
+  // Initialize activation matrices
+  for (size_t i = 0; i < m_activations.size(); ++i) {
+    m_activations[i]->Resize(get_num_neurons(i), mini_batch_size);
+  }
+  
 }
 
-void Layer::bp_set_std_matrix_view() {
-  int mini_batch_size = m_model->get_current_mini_batch_size();
-  El::View(*m_activations_v, *m_activations, El::ALL, El::IR(0, mini_batch_size));
-  El::View(*m_error_signal_v, *m_error_signal, El::ALL, El::IR(0, mini_batch_size));
+void Layer::bp_setup_data(int mini_batch_size) {
+
+  // Get previous error signal matrices from child layers
+  for (size_t i = 0; i < m_prev_error_signals.size(); ++i) {
+    const auto& child = m_child_layers[i];
+    auto& input = *m_prev_error_signals[i];
+    child->get_bp_output(input, this);
+    const int expected_height = get_num_neurons(i);
+    if (input.Height() != expected_height
+        || input.Width() != mini_batch_size) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << get_name() << " expected a "
+          << expected_height << " x " << mini_batch_size
+          << " input matrix from " << child->get_name()
+          << " during backward prop, but got a "
+          << input.Height() << " x " << input.Width() << " matrix";
+      throw lbann_exception(err.str());
+    }
+  }
+
 }
+
 
 #ifdef __LIB_CUDNN
 void Layer::pin_data() {
@@ -803,22 +917,56 @@ void Layer::pin_data() {
 
 #endif // __LIB_CUDNN
 
-void Layer::get_fp_output(AbsDistMat& fp_output, const Layer* next_layer) const {
-  if(m_activations_v->DistData() == fp_output.DistData()) {
-    El::LockedView(fp_output, *m_activations_v);
+void Layer::get_fp_output(AbsDistMat& output, const Layer* child) const {
+
+  // Get activation matrix corresponding to child layer
+  const size_t child_index = (std::find(m_child_layers.begin(),
+                                        m_child_layers.end(),
+                                        child)
+                              - m_child_layers.begin());
+  if (child_index >= m_child_layers.size()) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << get_name() << " has no forward prop output corresponding to "
+        << child->get_name();
+    throw lbann_exception(err.str());
+  }
+  const auto& activation = *m_activations[child_index];
+
+  // Put view or copy of activation matrix in output matrix
+  if(activation.DistData() == output.DistData()) {
+    El::LockedView(output, activation);
   }
   else {
-    El::Copy(*m_activations_v, fp_output);
+    El::Copy(activation, output);
   }
+
 }
 
-void Layer::get_bp_output(AbsDistMat& bp_output, const Layer* prev_layer) const {
-  if(m_error_signal_v->DistData() == bp_output.DistData()) {
-    El::LockedView(bp_output, *m_error_signal_v);
+void Layer::get_bp_output(AbsDistMat& output, const Layer* parent) const {
+
+  // Get error signal matrix corresponding to parent layer
+  const size_t parent_index = (std::find(m_parent_layers.begin(),
+                                         m_parent_layers.end(),
+                                         parent)
+                               - m_parent_layers.begin());
+  if (parent_index >= m_parent_layers.size()) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << get_name() << " has no backward prop output corresponding to "
+        << parent->get_name();
+    throw lbann_exception(err.str());
+  }
+  const auto& error_signal = *m_error_signals[parent_index];
+
+  // Put view or copy of error signal matrix in output matrix
+  if(error_signal.DistData() == output.DistData()) {
+    El::LockedView(output, error_signal);
   }
   else {
-    El::Copy(*m_error_signal_v, bp_output);
+    El::Copy(error_signal, output);
   }
+
 }
 
 #ifdef __LIB_CUDNN

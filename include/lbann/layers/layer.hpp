@@ -48,16 +48,18 @@ class model;
 
 class Layer {
  public:
-  Layer(lbann_comm *comm);
-  Layer(const Layer& other);
-  Layer& operator=(const Layer& other);
 
+  /** Constructor. */
+  Layer(lbann_comm *comm);
+  /** Copy constructor. */
+  Layer(const Layer& other);
+  /** Copy assignment operator. */
+  Layer& operator=(const Layer& other);
+  /** Destructor. */
   virtual ~Layer();
 
+  /** Copy function. */
   virtual Layer* copy() const = 0;
-
-  template <data_layout T_layout>
-  void initialize_distributed_matrices();
 
   /** Forward propagation step.
    *  Apply the layer's operation to the previous activations tensor
@@ -77,7 +79,7 @@ class Layer {
   virtual bool update();
 
   /** Clear the error signal tensor. */
-  virtual void clear_error_signal();
+  virtual void clear_error_signals(int mini_batch_size);
 
   virtual void summarize_stats(lbann_summary& summarizer, int step);
   virtual void summarize_matrices(lbann_summary& summarizer, int step);
@@ -111,50 +113,57 @@ class Layer {
   /** Returns a description of the topology */
   virtual std::string get_topo_description() const {
     std::stringstream s;
-    for (size_t h=0; h<this->m_neuron_dims.size(); h++) {
-      if (h == 0) { s << "Acts=["; }
-      s << this->m_neuron_dims[h] ;
-      if (h == 0 && this->m_neuron_dims.size() > 1) { s << "c x "; }
-      if (this->m_neuron_dims.size() == 2) {
-        if (h == 1) { s << "w "; }
-      }else if (this->m_neuron_dims.size() == 3) {
-        if (h == 1) { s << "w x "; }
-        if (h == 2) { s << "h"; }
-      }else {
-        if (h > 1) {
-          s << " ";
+    for (size_t i = 0; i < m_child_layers.size(); ++i) {
+      const auto& dims = get_neuron_dims(i);
+      s << "activations[" << i << "]=[";
+      switch (dims.size()) {
+      case 0:
+        s << "0"; break;
+      case 2:
+        s << dims[0] << "c x"
+          << dims[1] << "w";
+        break;
+      case 3:
+        s << dims[0] << "c x "
+          << dims[1] << "w x "
+          << dims[2] << "h";
+        break;
+      default:
+        s << dims[0];
+        for (size_t j = 1; j < dims.size(); ++j) {
+          s << " x " << dims[j];
         }
       }
+      s << ", " << m_activations[i]->Width() << "s]";
     }
-    s << ", " << m_activations->Width() << "s]";
-    return s.str();;
+    return s.str();
   }
 
   /** Returns a string description of the data_layout */
   std::string get_data_layout_string(data_layout d) const;
 
   /** Return the number of neurons from previous layer. */
-  inline int get_num_prev_neurons() const {
+  virtual int get_num_prev_neurons(int parent_index = 0) const {
     return m_num_prev_neurons;
   }
   /** Return the number of dimensions in neuron tensor from previous layer. */
-  inline int get_num_prev_neuron_dims() const {
+  virtual int get_num_prev_neuron_dims(int parent_index = 0) const {
     return m_num_prev_neuron_dims;
   }
   /** Return the dimensions of neuron tensor from previous layer. */
-  inline const std::vector<int>& get_prev_neuron_dims() const {
+  virtual const std::vector<int>& get_prev_neuron_dims(int parent_index = 0) const {
     return m_prev_neuron_dims;
   }
   /** Return the number of neurons. */
-  inline int get_num_neurons() const {
+  virtual int get_num_neurons(int child_index = 0) const {
     return m_num_neurons;
   }
   /** Return the number of dimensions in neuron tensor. */
-  inline int get_num_neuron_dims() const {
+  virtual int get_num_neuron_dims(int child_index = 0) const {
     return m_num_neuron_dims;
   }
   /** Return the dimensions of neuron tensor. */
-  inline const std::vector<int>& get_neuron_dims() const {
+  virtual const std::vector<int>& get_neuron_dims(int child_index = 0) const {
     return m_neuron_dims;
   }
   /** Return the data layout of the given layer -- Every concrete
@@ -162,32 +171,32 @@ class Layer {
   virtual data_layout get_data_layout() const = 0;
   /** Return (a view of) the activations matrix for this layer. */
   virtual AbsDistMat& get_activations() {
-    return *m_activations_v;
+    return *m_activations[0];
   }
   /** Reset layer stat counters. */
   virtual void reset_counters() {
-    fp_time = 0.0;
-    fp_compute_time = 0.0;
-    bp_time = 0.0;
-    bp_compute_time = 0.0;
-    update_time = 0.0;
+    m_fp_time         = EvalType(0);
+    m_fp_compute_time = EvalType(0);
+    m_bp_time         = EvalType(0);
+    m_bp_compute_time = EvalType(0);
+    m_update_time     = EvalType(0);
   }
 
   bool using_gpus() const {
     return m_using_gpus;
   }
 
-  /** Get maximum number of parent layers.
+  /** Get expected number of parent layers.
    *  A negative value indicates no limit.
    */
-  inline int get_max_num_parent_layers() const {
-    return m_max_num_parent_layers;
+  inline int get_expected_num_parent_layers() const {
+    return m_expected_num_parent_layers;
   }
-  /** Get maximum number of child layers.
+  /** Get expected number of child layers.
    *  A negative value indicates no limit.
    */
-  inline int get_max_num_child_layers() const {
-    return m_max_num_child_layers;
+  inline int get_expected_num_child_layers() const {
+    return m_expected_num_child_layers;
   }
 
   /** Return the model that owns this layer. */
@@ -235,9 +244,9 @@ class Layer {
   virtual const std::vector<int> fp_output_dims(const Layer* next_layer = nullptr) const;
 
   virtual void add_to_error_signal(const AbsDistMat& gradient,
-                                   DataType scale = DataType(1)) {
-    bp_set_std_matrix_view();
-    El::Axpy(scale, gradient, *m_error_signal_v);
+                                   DataType scale = DataType(1),
+                                   int parent_index = 0) {
+    El::Axpy(scale, gradient, *m_error_signals[parent_index]);
   }
 
   /** Get list of parent layers. */
@@ -286,38 +295,34 @@ class Layer {
   int m_num_prev_neuron_dims;           ///< Number of dimensions in previous layer's neuron tensor
   std::vector<int> m_prev_neuron_dims;  ///< Neuron tensor dimensions in previous layer
 
-  /** Activations matrix from the "previous" layer.
-   *  This matrix is the forward propagation input. This is typically
-   *  a matrix view with dimensions m_num_prev_neurons x mini-batch
-   *  size.
+  /** Activation matrices from parent layers.
+   *  Forward propagation inputs, one for each parent layer. These are
+   *  typically matrix views where each column is a flattened tensor
+   *  corresponding to a mini-batch sample.
    */
-  AbsDistMat* m_prev_activations_v;
-  /** Memory for activations matrix.
-   *  This matrix has dimensions m_num_neurons x max mini-batch size.
+  std::vector<AbsDistMat*> m_prev_activations;
+  /** Activation matrices.
+   *  Forward propagation outputs, one for each child layer. These are
+   *  typically matrices where each column is a flattened tensor
+   *  corresponding to a mini-batch sample.
    */
-  AbsDistMat* m_activations;
-  /** Activations matrix.
-   *  This matrix is the forward propagation output. This is typically
-   *  a matrix view into m_activations with dimensions m_num_neurons x
-   *  mini-batch size.
+  std::vector<AbsDistMat*> m_activations;
+  /** Error signal matrices from child layers.
+   *  Backward propagation inputs, one for each child layer. These
+   *  should be the objective function gradients w.r.t. the forward
+   *  propagation outputs. These are typically matrix views where each
+   *  column is a flattened tensor corresponding to a mini-batch
+   *  sample.
    */
-  AbsDistMat* m_activations_v;
-  /** Error signal matrix from the "next" layer.
-   *  This matrix is the backward propagation input. This is typically
-   *  a matrix view with dimensions m_num_neurons x mini-batch size.
+  std::vector<AbsDistMat*> m_prev_error_signals;
+  /** Error signal matrices.
+   *  Backward propagation outputs, one for each parent layer. These
+   *  should be the objective function gradients w.r.t. the forward
+   *  propagation inputs. These are typically matrices where each
+   *  column is a flattened tensor corresponding to a mini-batch
+   *  sample.
    */
-  AbsDistMat* m_prev_error_signal_v;
-  /** Memory for error signal matrix.
-   *  This matrix has dimensions m_num_prev_neurons x max mini-batch
-   *  size.
-   */
-  AbsDistMat* m_error_signal;
-  /** Error signal matrix.
-   *  This matrix is the backward propagation output. This is
-   *  typically a matrix view into m_error_signal with dimensions
-   *  m_num_prev_neurons x mini-batch size.
-   */
-  AbsDistMat *m_error_signal_v;
+  std::vector<AbsDistMat*> m_error_signals;
 
   /** List of layer weights. */
   std::vector<weights*> m_weights;
@@ -327,22 +332,22 @@ class Layer {
   /** List of child layers. */
   std::vector<const Layer*> m_child_layers;
 
-  /** Maximum number of parent layers.
+  /** Expected number of parent layers.
    *  A negative value indicates no limit.
    */
-  int m_max_num_parent_layers;
-  /** Maximum number of child layers.
+  int m_expected_num_parent_layers;
+  /** Expected number of child layers.
    *  A negative value indicates no limit.
    */
-  int m_max_num_child_layers;
+  int m_expected_num_child_layers;
 
   execution_mode  m_execution_mode;
   model *m_model;
 
   /** Setup views of the matrices for the layer's forward propagation. */
-  virtual void fp_set_std_matrix_view();
+  virtual void fp_setup_data(int mini_batch_size);
   /** Setup views of the matrices for the layer's backward propagation. */
-  virtual void bp_set_std_matrix_view();
+  virtual void bp_setup_data(int mini_batch_size);
 #ifdef __LIB_CUDNN
   /** Pin host memory if needed for GPU memory transfers. */
   virtual void pin_data();
@@ -360,25 +365,27 @@ class Layer {
    *  dimensions equal to the input.
    */
   virtual void setup_dims();
+  /** Setup distributed matrix objects. */
+  virtual void setup_matrices(const El::Grid& grid);
   /** Setup layer data.
    *  Called by the setup function. This base method initializes the
    *  activations and error signal matrices.
    */
   virtual void setup_data();
+  /** Setup matrix views.
+   *  Called by the setup function.
+   */
+  virtual void setup_views() {}
   /** Setup GPU objects.
    *  Called by the setup function if GPUs are enabled. This base
    *  method initializes the activations and error signal matrices on
    *  GPUs.
    */
   virtual void setup_gpu();
-  /** Setup matrix views.
-   *  Called by the setup function.
-   */
-  virtual void setup_views() {}
   /** Perform the main computation for a forward propagation step. */
-  virtual void fp_compute() {}
+  virtual void fp_compute() = 0;
   /** Perform the main computation for a backward propagation step. */
-  virtual void bp_compute() {}
+  virtual void bp_compute() = 0;
   /** Perform the main computation for an update step. */
   virtual bool update_compute() { return true; }
 
@@ -425,17 +432,23 @@ class Layer {
 #endif // __LIB_CUDNN
 
   /** Time spent in forward propagation. */
-  double fp_time;
+  EvalType m_fp_time;
   /** Time spent in the forward propagation computation. */
-  double fp_compute_time;
+  EvalType m_fp_compute_time;
   /** Time spent in backward propagation. */
-  double bp_time;
+  EvalType m_bp_time;
   /** Time spent in the backward propagation computation. */
-  double bp_compute_time;
+  EvalType m_bp_compute_time;
   /** Time spent in updates. */
-  double update_time;
+  EvalType m_update_time;
 
   std::string m_name;
+
+ private:
+
+  /** Deallocate distributed matrices. */
+  void deallocate_matrices();
+
 };
 }
 
