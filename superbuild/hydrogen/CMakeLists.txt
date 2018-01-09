@@ -2,6 +2,8 @@ enable_language(C)
 enable_language(CXX)
 enable_language(Fortran)
 
+option(Hydrogen_ENABLE_OPENMP "Hydrogen use OpenMP threading." ON)
+
 option(Hydrogen_USE_64BIT_INTS
   "Hydrogen use 64-bit internal indices" ON)
 
@@ -23,6 +25,10 @@ if (TARGET OPENBLAS)
     CACHE BOOL "Whether to use OpenBLAS in Hydrogen")
   set(LBANN_SB_FWD_HYDROGEN_OpenBLAS_DIR "${OPENBLAS_DIR}/lib/cmake/openblas"
     CACHE STRING "The path to OpenBLAS for Hydrogen.")
+
+  if (OPENBLAS_USE_64_BIT_INDEX)
+    set(Hydrogen_USE_64BIT_BLAS_INTS ON)
+  endif ()
 endif ()
 
 # Get the list of HYDROGEN variables

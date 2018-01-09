@@ -5,7 +5,7 @@ option(OPENBLAS_USE_64_BIT_INDEX
   "Whether OpenBLAS should use 64-bit indices" OFF)
 
 option(OPENBLAS_USE_OPENMP
-  "Whether OpenBLAS should make use of OpenMP" OFF)
+  "Whether OpenBLAS should make use of OpenMP" ON)
 
 set(OPENBLAS_MAX_MAKE_JOBS "8"
   CACHE STRING "Number of 'make' jobs allowed for OpenBLAS build.")
