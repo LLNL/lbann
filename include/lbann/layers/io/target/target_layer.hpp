@@ -45,7 +45,7 @@ class target_layer : public io_layer {
   target_layer(lbann_comm *comm, input_layer* input_layer, std::map<execution_mode, generic_data_reader *> data_readers, bool for_regression = false)
     : io_layer(comm, true, for_regression), paired_input_layer(input_layer) {
     // Target layers have no children
-    m_max_num_child_layers = 0;
+    m_expected_num_child_layers = 0;
   }
 
   ~target_layer() override = default;
@@ -53,10 +53,6 @@ class target_layer : public io_layer {
   target_layer(const target_layer& other) = default;
 
   target_layer& operator=(const target_layer& other) = default;
-
-  template<data_layout T_layout> inline void initialize_distributed_matrices() {
-    io_layer::initialize_distributed_matrices<T_layout>();
-  }
 
   input_layer* get_paired_input_layer() {
     return paired_input_layer;
@@ -198,10 +194,34 @@ class target_layer : public io_layer {
     return paired_input_layer->is_execution_mode_valid(mode);
   }
 
-  AbsDistMat& get_prediction() { return *this->m_prev_activations_v; }
-  AbsDistMat& get_ground_truth() { return *this->m_activations_v; }
-  const AbsDistMat& get_prediction() const { return *this->m_prev_activations_v; }
-  const AbsDistMat& get_ground_truth() const { return *this->m_activations_v; }
+  AbsDistMat& get_prediction() { 
+    /// @todo Implement
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__
+        << " :: not implemented";
+    throw lbann_exception(err.str());
+  }
+  AbsDistMat& get_ground_truth() { 
+    /// @todo Implement
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__
+        << " :: not implemented";
+    throw lbann_exception(err.str());
+  }
+  const AbsDistMat& get_prediction() const {
+    /// @todo Implement
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__
+        << " :: not implemented";
+    throw lbann_exception(err.str());
+  }
+  const AbsDistMat& get_ground_truth() const { 
+    /// @todo Implement
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__
+        << " :: not implemented";
+    throw lbann_exception(err.str());
+  }
 
   std::vector<Layer*> get_layer_pointers() override {
     std::vector<Layer*> layers = io_layer::get_layer_pointers();

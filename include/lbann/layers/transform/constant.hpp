@@ -43,9 +43,6 @@ class constant_layer : public transform_layer {
                  cudnn::cudnn_manager *cudnn = nullptr)
     : transform_layer(comm), m_value(value) {
 
-    // Initialize matrices
-    initialize_distributed_matrices();
-
     // Record neuron dimensions
     this->m_neuron_dims = neuron_dims;
     this->m_num_neuron_dims = neuron_dims.size();
@@ -55,7 +52,7 @@ class constant_layer : public transform_layer {
                                           std::multiplies<int>());
 
     // Constant layer has no parents
-    m_max_num_parent_layers = 0;
+    m_expected_num_parent_layers = 0;
 
   }
 
@@ -79,9 +76,6 @@ class constant_layer : public transform_layer {
   /** Get layer type. */
   std::string get_type() const override { return "constant"; }
 
-  virtual inline void initialize_distributed_matrices() {
-    transform_layer::initialize_distributed_matrices<T_layout>();
-  }
   data_layout get_data_layout() const override { return T_layout; }
 
  protected:
@@ -100,7 +94,7 @@ class constant_layer : public transform_layer {
   void setup_data() override {
     transform_layer::setup_data();
     if (m_value != DataType(0)) {
-      El::Fill(*m_activations, m_value);
+      El::Fill(get_activations(), m_value);
     }
   }
 

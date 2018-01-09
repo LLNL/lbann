@@ -246,7 +246,7 @@ void greedy_layerwise_autoencoder::restore_sequential_model() {
 void greedy_layerwise_autoencoder::clear_error_signals() {
   sequential_model::clear_error_signals();
   if (m_reconstruction != nullptr) {
-    m_reconstruction->clear_error_signal();
+    m_reconstruction->clear_error_signals();
   }
 }
 

@@ -47,10 +47,7 @@ class reconstruction_layer : public target_layer {
   reconstruction_layer(lbann_comm *comm,
                        Layer *original_layer)
     :  target_layer(comm, dynamic_cast<input_layer*>(original_layer), {}, false),
-       m_original_layer(original_layer) {
-    // Setup the data distribution
-    initialize_distributed_matrices();
-  }
+       m_original_layer(original_layer) {}
 
   reconstruction_layer(const reconstruction_layer& other) :
     target_layer(other),
@@ -74,10 +71,6 @@ class reconstruction_layer : public target_layer {
                            " dataLayout: " + this->get_data_layout_string(get_data_layout());
   }
 
-  //virtual inline void initialize_distributed_matrices();
-  virtual inline void initialize_distributed_matrices() {
-    target_layer::initialize_distributed_matrices<T_layout>();
-  }
   data_layout get_data_layout() const override { return T_layout; }
 
   /** Set original layer. */
@@ -100,10 +93,10 @@ class reconstruction_layer : public target_layer {
   }
 
  protected:
-  void fp_set_std_matrix_view() override {
+  void fp_setup_data() override {
     int64_t cur_mini_batch_size = this->m_model->get_current_mini_batch_size();
 
-    target_layer::fp_set_std_matrix_view();
+    target_layer::fp_setup_data();
 
     //view of original layer
     AbsDistMat& orig_acts = m_original_layer->get_activations();

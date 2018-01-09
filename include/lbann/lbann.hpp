@@ -35,11 +35,14 @@
 
 /// Models
 #include "lbann/models/sequential.hpp"
+#if 0
 #include "lbann/models/directed_acyclic_graph.hpp"
 #include "lbann/models/recurrent.hpp"
 #include "lbann/models/greedy_layerwise_autoencoder.hpp"
 #include "lbann/models/siamese.hpp"
+#endif
 
+#if 0
 /// Activation Layers
 #include "lbann/layers/activations/atan.hpp"
 #include "lbann/layers/activations/bent_identity.hpp"
@@ -87,6 +90,7 @@
 
 /// Reconstruction Layer
 #include "lbann/layers/io/target/reconstruction.hpp"
+#endif
 
 /// Data Readers
 #include "lbann/data_readers/data_reader_imagenet_org.hpp"
@@ -105,6 +109,7 @@
 #include "lbann/data_readers/data_reader_pilot2_molecular.hpp"
 
 /// Callbacks
+#if 0
 #include "lbann/callbacks/callback_check_init.hpp"
 #include "lbann/callbacks/callback_checknan.hpp"
 #include "lbann/callbacks/callback_checksmall.hpp"
@@ -132,6 +137,7 @@
 #include "lbann/callbacks/callback_timeline.hpp"
 #include "lbann/callbacks/callback_checkpoint.hpp"
 #include "lbann/callbacks/callback_save_model.hpp"
+#endif
 
 /// Weights and weight initializers
 #include "lbann/weights/weights.hpp"

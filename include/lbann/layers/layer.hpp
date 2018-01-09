@@ -169,10 +169,12 @@ class Layer {
   /** Return the data layout of the given layer -- Every concrete
       layer has to overrride this with its T_layout template parameter */
   virtual data_layout get_data_layout() const = 0;
+
   /** Return (a view of) the activations matrix for this layer. */
   virtual AbsDistMat& get_activations() {
     return *m_activations[0];
   }
+
   /** Reset layer stat counters. */
   virtual void reset_counters() {
     m_fp_time         = EvalType(0);

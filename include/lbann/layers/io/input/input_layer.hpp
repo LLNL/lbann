@@ -50,7 +50,7 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
       m_data_readers(data_readers) {
       //m_data_sets_span_models(data_sets_span_models) {
     // Input layers have no parents
-    m_max_num_parent_layers = 0;
+    m_expected_num_parent_layers = 0;
 
     generic_data_distribution::fetch_data_fn = new fetch_data_functor(true, false);
     generic_data_distribution::update_data_reader_fn = new update_data_reader_functor(true);
@@ -135,30 +135,25 @@ class input_layer : public io_layer, public virtual generic_data_distribution {
     }
   }
 
-  template<data_layout T_layout> inline void initialize_distributed_matrices() {
-    io_layer::initialize_distributed_matrices<T_layout>();
-  }
-
   /** Define the standard view of the matrix -- and set it for the model
    * Setup the effective (global) mini-batch size so that gradients are properly
    * averaged across models. */
-  void fp_set_std_matrix_view() override {
+  void fp_setup_data(int mini_batch_size) override {
+
     // Use the predetermined size of the mini-batch to set the current
     // batch size for the neural network
-    El::Int cur_mini_batch_size = get_current_mini_batch_size();
-    this->m_model->set_current_mini_batch_size(cur_mini_batch_size);
+    mini_batch_size = get_current_mini_batch_size();
+    this->m_model->set_current_mini_batch_size(mini_batch_size);
 
     // Use the precomputed size of the global mini-batch to set the
     // current effective batch size across all models
     int total_mini_batch_size = get_current_global_mini_batch_size();
     this->m_model->set_effective_mini_batch_size(total_mini_batch_size);
 
-    // Once the current mini-batch size is defined, set the standard view for activations only
-    El::View(*m_activations_v, *m_activations, El::ALL, El::IR(0, cur_mini_batch_size));
-  }
+    // Initialize matrices
+    io_layer::fp_setup_data(mini_batch_size);
 
-  /** No setting the standard view of the matrix -- it defines the standard view */
-  void bp_set_std_matrix_view() override {}
+  }
 
   //************************************************************************
   // Helper functions to access the data readers

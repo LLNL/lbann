@@ -29,6 +29,7 @@
 #include <utility>
 
 #include "lbann/callbacks/callback_variable_minibatch.hpp"
+#include "lbann/layers/io/input/input_layer.hpp"
 
 namespace lbann {
 

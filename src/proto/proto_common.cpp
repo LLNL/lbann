@@ -164,6 +164,7 @@ void setup_pointers(
         throw lbann_exception(err.str());
       }
 
+#if 0
       // Set original layer
       Layer *original_layer = model_layers[name];
       if (dynamic_cast<reconstruction_layer<data_layout::MODEL_PARALLEL>*>(layer)) {
@@ -176,12 +177,14 @@ void setup_pointers(
           = dynamic_cast<reconstruction_layer<data_layout::DATA_PARALLEL>*>(layer);
         reconstruction->set_original_layer(original_layer);
       }
+#endif
 
     }
 
   }
 }
 
+#if 0
 lbann_callback_imcomm::comm_type get_comm_type(const std::string &s, bool master)
 {
   if (s == "none") {
@@ -206,6 +209,7 @@ lbann_callback_imcomm::comm_type get_comm_type(const std::string &s, bool master
     }
   }
 }
+#endif
 
 pool_mode get_pool_mode(const std::string& s, bool master)
 {
@@ -305,6 +309,7 @@ void add_layers(
       throw lbann_exception(err.str());
     }
 
+#if 0
     //////////////////////////////////////////////////////////////////
     // LAYER: Relu
     //////////////////////////////////////////////////////////////////
@@ -1037,6 +1042,8 @@ void add_layers(
       }
     }
 
+#endif
+
     // Set layer name
     std::string layer_name = layer.name();
     if (!layer_name.empty()) {
@@ -1134,7 +1141,7 @@ void init_callbacks(
   const lbann_data::Model& m = p.model();
   if (master) std::cerr << std::endl << "starting init_callbacks; size: " << m.callback_size() << std::endl;
 
-
+#if 0
   //the same summarizer is passed to all call backs that take a summarizer;
   //construct_summarizer returns this summarizer, which may be a nullptr
   lbann_summary *summarizer = construct_summarizer(m, comm);
@@ -1618,8 +1625,9 @@ void init_callbacks(
       lbann_callback_save_model *model_cb = new lbann_callback_save_model(dir, extension);
       model->add_callback(model_cb);
     }
-  }
 
+  }
+#endif
 }
 
 objective_function *init_objective_function(lbann_data::ObjectiveFunction obj_fn_params) {
@@ -1690,7 +1698,9 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
   if (name == "sequential_model") {
     model = new sequential_model(comm, mini_batch_size, obj_fn, default_optimizer);
     if (master) std::cout << "instantiating sequential_model\n";
-  } else if (name == "directed_acyclic_graph_model") {
+  } 
+#if 0
+else if (name == "directed_acyclic_graph_model") {
     model = new directed_acyclic_graph_model(comm, mini_batch_size, obj_fn, default_optimizer);
     if (master) std::cout << "instantiating directed_acyclic_graph_model\n";
   } else if (name == "recurrent_model") {
@@ -1711,6 +1721,7 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
     model = new greedy_layerwise_autoencoder(comm, mini_batch_size, obj_fn, default_optimizer);
     if (master) std::cout << "instantiating greedy_layerwise_autoencoder\n";
   }
+#endif
   else {
     if (master) {
       err << __FILE__ << " " << __LINE__
