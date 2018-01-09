@@ -27,6 +27,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader.hpp"
+#include "lbann/data_store/data_store_imagenet.hpp"
+#include "lbann/data_readers/data_reader_imagenet.hpp"
 #include <omp.h>
 
 namespace lbann {
@@ -81,23 +83,31 @@ int lbann::generic_data_reader::fetch_data(Mat& X) {
 
   El::Zeros(X, X.Height(), X.Width());
   El::Zeros(m_indices_fetched_per_mb, mb_size, 1);
-  #pragma omp parallel for
-  for (int s = 0; s < mb_size; s++) {
-    // Catch exceptions within the OpenMP thread.
-    try {
-      int n = m_current_pos + (s * m_sample_stride);
-      int index = m_shuffled_indices[n];
-      bool valid = fetch_datum(X, index, s, omp_get_thread_num());
-      if (!valid) {
-        throw lbann_exception(
-          std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-          " :: generic data reader load error: datum not valid");
+
+  if (m_data_store != nullptr) {
+    //@todo: get it to work, then add omp support
+    //m_data_store->fetch_datum(...);
+  } 
+
+  else {
+    #pragma omp parallel for
+    for (int s = 0; s < mb_size; s++) {
+      // Catch exceptions within the OpenMP thread.
+      try {
+        int n = m_current_pos + (s * m_sample_stride);
+        int index = m_shuffled_indices[n];
+        bool valid = fetch_datum(X, index, s, omp_get_thread_num());
+        if (!valid) {
+          throw lbann_exception(
+            std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+            " :: generic data reader load error: datum not valid");
+        }
+        m_indices_fetched_per_mb.Set(s, 0, index);
+      } catch (lbann_exception& e) {
+        lbann_report_exception(e);
+      } catch (std::exception& e) {
+        El::ReportException(e);
       }
-      m_indices_fetched_per_mb.Set(s, 0, index);
-    } catch (lbann_exception& e) {
-      lbann_report_exception(e);
-    } catch (std::exception& e) {
-      El::ReportException(e);
     }
   }
 
@@ -126,23 +136,31 @@ int lbann::generic_data_reader::fetch_labels(Mat& Y) {
     Y.Width());
 
   El::Zeros(Y, Y.Height(), Y.Width());
-  #pragma omp parallel for
-  for (int s = 0; s < mb_size; s++) {
-    // Catch exceptions within the OpenMP thread.
-    try {
-      int n = m_current_pos + (s * m_sample_stride);
-      int index = m_shuffled_indices[n];
 
-      bool valid = fetch_label(Y, index, s, omp_get_thread_num());
-      if (!valid) {
-        throw lbann_exception(
-          std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-          " :: generic data reader load error: label not valid");
+  if (m_data_store != nullptr) {
+    //@todo: get it to work, then add omp support
+    //m_data_store->fetch_labels(...);
+  }
+
+  else {
+    #pragma omp parallel for
+    for (int s = 0; s < mb_size; s++) {
+      // Catch exceptions within the OpenMP thread.
+      try {
+        int n = m_current_pos + (s * m_sample_stride);
+        int index = m_shuffled_indices[n];
+
+        bool valid = fetch_label(Y, index, s, omp_get_thread_num());
+        if (!valid) {
+          throw lbann_exception(
+            std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+            " :: generic data reader load error: label not valid");
+        }
+      } catch (lbann_exception& e) {
+        lbann_report_exception(e);
+      } catch (std::exception& e) {
+        El::ReportException(e);
       }
-    } catch (lbann_exception& e) {
-      lbann_report_exception(e);
-    } catch (std::exception& e) {
-      El::ReportException(e);
     }
   }
   return mb_size;
@@ -223,6 +241,10 @@ bool generic_data_reader::update(bool is_active_reader) {
                    get_data_seq_generator());
     }
     set_initial_position();
+
+    if (m_data_store) {
+      m_data_store->set_shuffled_indices(&m_shuffled_indices);
+    }
   }
   return reader_not_done;
 }
@@ -553,6 +575,20 @@ void generic_data_reader::set_use_percent(double s) {
 
 double generic_data_reader::get_use_percent() const {
   return m_use_percent;
+}
+
+void generic_data_reader::setup_data_store(lbann_comm *comm) {
+
+  imagenet_reader *the_reader = dynamic_cast<imagenet_reader*>(this);
+  if (the_reader == nullptr && m_master) {
+    std::cerr << "WARNING: " << __FILE__ << " " << __LINE__
+              << " dynamic_cast<imagenet_reader*> failed; NOT using data_store\n";
+    return;
+  }
+
+  generic_data_store *store = new data_store_imagenet(comm, this);
+  m_data_store = store; 
+  store->setup();
 }
 
 }  // namespace lbann
