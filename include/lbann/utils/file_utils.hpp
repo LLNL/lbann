@@ -52,6 +52,7 @@ bool parse_path(const std::string& path, std::string& dir, std::string& basename
 std::string get_ext_name(const std::string file_name);
 std::string get_basename_without_ext(const std::string file_name);
 std::string add_delimiter(const std::string dir);
+std::string modify_file_name(const std::string file_name, const std::string tag, const std::string new_ext="");
 
 bool check_if_file_exists(const std::string& filename);
 bool create_dir(const std::string output_dir);
