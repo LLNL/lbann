@@ -26,7 +26,7 @@
 
 #include "lbann/metrics/metric.hpp"
 #include "lbann/models/model.hpp"
-#include "lbann/layers/io/target/target_layer.hpp"
+#include "lbann/layers/io/target/generic_target_layer.hpp"
 
 namespace lbann {
 
@@ -75,7 +75,7 @@ void metric_statistics::unpack_header(struct packing_header& header) {
   m_num_samples = header.num_samples;
 }
 
-metric::metric(lbann_comm *comm) 
+metric::metric(lbann_comm *comm)
   : m_comm(comm),
     m_target_layer(nullptr) {}
 
@@ -85,7 +85,7 @@ void metric::setup(model& m) {
   if (m_target_layer == nullptr) {
     std::vector<Layer*> layers = m.get_layers();
     for (int i = layers.size() - 1; i >= 0; --i) {
-      const target_layer *target = dynamic_cast<const target_layer*>(layers[i]);
+      const generic_target_layer *target = dynamic_cast<const generic_target_layer*>(layers[i]);
       if (target != nullptr) {
         m_target_layer = target;
         break;
@@ -141,18 +141,18 @@ int metric::get_statistics_num_samples(execution_mode mode) const {
   }
 }
 
-const target_layer& metric::get_target_layer() const {
+const generic_target_layer& metric::get_target_layer() const {
   if (m_target_layer == nullptr) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
         << "attempted to access target layer before it is set";
     throw lbann_exception(err.str());
-  } 
+  }
   return *m_target_layer;
 }
 
 std::vector<Layer*> metric::get_layer_pointers() const {
-  return std::vector<Layer*>(1, const_cast<target_layer *>(m_target_layer));
+  return std::vector<Layer*>(1, const_cast<generic_target_layer *>(m_target_layer));
 }
 
 void metric::set_layer_pointers(std::vector<Layer*> layers) {
@@ -163,7 +163,7 @@ void metric::set_layer_pointers(std::vector<Layer*> layers) {
         << "(expected 1, found " << layers.size() << ")";
     throw lbann_exception(err.str());
   }
-  m_target_layer = dynamic_cast<const target_layer *>(layers[0]);
+  m_target_layer = dynamic_cast<const generic_target_layer *>(layers[0]);
 }
 
 bool metric::save_to_checkpoint_shared(persist& p) {

@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_TARGET_LAYER_PARTITIONED_MINIBATCH_HPP_INCLUDED
 #define LBANN_LAYERS_TARGET_LAYER_PARTITIONED_MINIBATCH_HPP_INCLUDED
 
-#include "lbann/layers/io/target/target_layer.hpp"
+#include "lbann/layers/io/target/generic_target_layer.hpp"
 #include "lbann/data_distributions/partitioned_io_buffer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/models/model.hpp"
@@ -39,10 +39,10 @@
 namespace lbann {
 
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
-class target_layer_partitioned_minibatch : public target_layer {
+class target_layer_partitioned_minibatch : public generic_target_layer {
  public:
   target_layer_partitioned_minibatch(lbann_comm *comm, generic_input_layer *input_layer, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression=false)
-    : target_layer(comm, input_layer,  data_readers, for_regression) {
+    : generic_target_layer(comm, input_layer,  data_readers, for_regression) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "partitioned_minibatch only supports DATA_PARALLEL");
 
@@ -50,7 +50,7 @@ class target_layer_partitioned_minibatch : public target_layer {
     // Setup the data distribution
     initialize_distributed_matrices();
 
-    io_buffer->fetch_data_fn = new fetch_data_functor(false, target_layer::is_for_regression());
+    io_buffer->fetch_data_fn = new fetch_data_functor(false, generic_target_layer::is_for_regression());
     io_buffer->update_data_reader_fn = new update_data_reader_functor(false);
   }
 
@@ -67,7 +67,7 @@ class target_layer_partitioned_minibatch : public target_layer {
   std::string get_type() const override { return "target:partitioned"; }
 
   virtual inline void initialize_distributed_matrices() {
-    target_layer::initialize_distributed_matrices<T_layout>();
+    generic_target_layer::initialize_distributed_matrices<T_layout>();
   }
   data_layout get_data_layout() const override { return T_layout; }
 };

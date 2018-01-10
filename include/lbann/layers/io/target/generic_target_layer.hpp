@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYERS_TARGET_LAYER_HPP_INCLUDED
-#define LBANN_LAYERS_TARGET_LAYER_HPP_INCLUDED
+#ifndef LBANN_LAYERS_GENERIC_TARGET_LAYER_HPP_INCLUDED
+#define LBANN_LAYERS_GENERIC_TARGET_LAYER_HPP_INCLUDED
 
 #include "lbann/layers/io/io_layer.hpp"
 #include "lbann/layers/io/input/generic_input_layer.hpp"
@@ -37,23 +37,23 @@
 #include <unistd.h>
 
 namespace lbann {
-class target_layer : public io_layer {
+class generic_target_layer : public io_layer {
  protected:
   generic_input_layer *paired_input_layer;
   generic_io_buffer *io_buffer;
 
  public:
-  target_layer(lbann_comm *comm, generic_input_layer* input_layer, std::map<execution_mode, generic_data_reader *> data_readers, bool for_regression = false)
+  generic_target_layer(lbann_comm *comm, generic_input_layer* input_layer, std::map<execution_mode, generic_data_reader *> data_readers, bool for_regression = false)
     : io_layer(comm, true, for_regression), paired_input_layer(input_layer) {
     // Target layers have no children
     m_max_num_child_layers = 0;
   }
 
-  ~target_layer() override = default;
+  ~generic_target_layer() override = default;
 
-  target_layer(const target_layer& other) = default;
+  generic_target_layer(const generic_target_layer& other) = default;
 
-  target_layer& operator=(const target_layer& other) = default;
+  generic_target_layer& operator=(const generic_target_layer& other) = default;
 
   template<data_layout T_layout> inline void initialize_distributed_matrices() {
     io_layer::initialize_distributed_matrices<T_layout>();
@@ -316,4 +316,4 @@ class target_layer : public io_layer {
 
 }  // namespace lbann
 
-#endif  // LBANN_LAYERS_TARGET_LAYER_HPP_INCLUDED
+#endif  // LBANN_LAYERS_GENERIC_TARGET_LAYER_HPP_INCLUDED

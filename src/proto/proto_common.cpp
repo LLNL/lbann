@@ -111,8 +111,8 @@ void setup_pointers(
     }
 
     // Set a target layer's paired input layer
-    if (dynamic_cast<target_layer*>(layer) != nullptr) {
-      auto *target = dynamic_cast<target_layer*>(layer);
+    if (dynamic_cast<generic_target_layer*>(layer) != nullptr) {
+      auto *target = dynamic_cast<generic_target_layer*>(layer);
 
       std::string name;
 

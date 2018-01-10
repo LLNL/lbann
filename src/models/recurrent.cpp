@@ -28,7 +28,7 @@
 
 #include "lbann/models/recurrent.hpp"
 #include "lbann/layers/io/input/generic_input_layer.hpp"
-#include "lbann/layers/io/target/target_layer.hpp"
+#include "lbann/layers/io/target/generic_target_layer.hpp"
 #include "lbann/layers/transform/constant.hpp"
 #include "lbann/layers/activations/id.hpp"
 
@@ -67,7 +67,7 @@ void recurrent_model::setup_layer_topology() {
   if (dynamic_cast<generic_input_layer *>(m_layers.front()) == nullptr
       || input_slice->get_type() != "slice"
       || target_concat->get_type() != "concatenation"
-      || dynamic_cast<target_layer *>(m_layers.back()) == nullptr) {
+      || dynamic_cast<generic_target_layer *>(m_layers.back()) == nullptr) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
         << "expected the first layer to be an input layer, "

@@ -25,11 +25,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/metrics/categorical_accuracy.hpp"
-#include "lbann/layers/io/target/target_layer.hpp"
+#include "lbann/layers/io/target/generic_target_layer.hpp"
 
 namespace lbann {
 
-categorical_accuracy_metric::categorical_accuracy_metric(lbann_comm *comm) 
+categorical_accuracy_metric::categorical_accuracy_metric(lbann_comm *comm)
   : metric(comm), m_prediction_values(nullptr) {}
 
 categorical_accuracy_metric::categorical_accuracy_metric(const categorical_accuracy_metric& other)
@@ -85,7 +85,7 @@ EvalType categorical_accuracy_metric::evaluate_compute(const AbsDistMat& predict
   const int width = prediction.Width();
   const int local_height = prediction.LocalHeight();
   const int local_width = prediction.LocalWidth();
-  
+
   // Get local matrices
   const Mat& prediction_local = prediction.LockedMatrix();
   const Mat& ground_truth_local = ground_truth.LockedMatrix();

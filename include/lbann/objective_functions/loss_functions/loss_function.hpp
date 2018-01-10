@@ -28,7 +28,7 @@
 #define LBANN_OBJECTIVE_FUNCTION_LOSS_FUNCTION_HPP_INCLUDED
 
 #include "lbann/objective_functions/objective_function_term.hpp"
-#include "lbann/layers/io/target/target_layer.hpp"
+#include "lbann/layers/io/target/generic_target_layer.hpp"
 
 namespace lbann {
 
@@ -45,7 +45,7 @@ class loss_function : public objective_function_term {
   /** Destructor. */
   ~loss_function() override;
 
-  void set_target_layer(target_layer* layer);
+  void set_target_layer(generic_target_layer* layer);
 
   /** Setup objective function term. */
   virtual void setup(model& m) override;
