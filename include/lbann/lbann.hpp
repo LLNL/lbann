@@ -81,13 +81,13 @@
 #include "lbann/layers/regularizers/dropout.hpp"
 #include "lbann/layers/regularizers/selu_dropout.hpp"
 #include "lbann/layers/regularizers/batch_normalization.hpp"
+#endif
 
 /// I/O Layers
 #include "lbann/layers/io/input/input_layer_distributed_minibatch.hpp"
 #include "lbann/layers/io/target/target_layer_distributed_minibatch.hpp"
 #include "lbann/layers/io/input/input_layer_partitioned_minibatch.hpp"
 #include "lbann/layers/io/target/target_layer_partitioned_minibatch.hpp"
-#endif
 
 /// Reconstruction Layer
 // #include "lbann/layers/io/target/reconstruction.hpp"

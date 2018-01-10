@@ -48,8 +48,6 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
       partitioned_minibatch(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), data_readers) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "partitioned_minibatch only supports DATA_PARALLEL");
-    // Setup the data distribution
-    initialize_distributed_matrices();
   }
   input_layer_partitioned_minibatch* copy() const override {
     return new input_layer_partitioned_minibatch(*this);
@@ -65,9 +63,6 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
            + " (" + s + ")";
   }
 
-  virtual inline void initialize_distributed_matrices() {
-    input_layer::initialize_distributed_matrices<T_layout>();
-  }
   data_layout get_data_layout() const override { return T_layout; }
 
   void setup_data() override {
@@ -85,7 +80,7 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
   }
 
   void fp_compute() override {
-    partitioned_minibatch::fetch_to_local_matrix(this->m_activations_v->Matrix(), get_data_reader());
+    partitioned_minibatch::fetch_to_local_matrix(get_local_activations(), get_data_reader());
 
     // Use the predetermined size of the mini-batch to set the current
     // batch size for the neural network

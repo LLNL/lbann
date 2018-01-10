@@ -50,11 +50,7 @@ class input_layer_distributed_minibatch : public input_layer, public distributed
     : generic_data_distribution(comm, num_parallel_readers, data_readers),
       input_layer(comm, num_parallel_readers, data_readers, data_set_spans_models),
       distributed_minibatch(comm, num_parallel_readers, data_readers),
-      Xs(comm->get_model_grid()) {
-
-    // Setup the data distribution
-    initialize_distributed_matrices();
-  }
+      Xs(comm->get_model_grid()) {}
 
   /** Returns description of ctor params */
   std::string get_description() const override {
@@ -72,9 +68,6 @@ class input_layer_distributed_minibatch : public input_layer, public distributed
 
   std::string get_type() const override { return "input:distributed"; }
 
-  virtual inline void initialize_distributed_matrices() {
-    input_layer::initialize_distributed_matrices<T_layout>();
-  }
   data_layout get_data_layout() const override { return T_layout; }
 
   void setup_data() override {
@@ -97,8 +90,8 @@ class input_layer_distributed_minibatch : public input_layer, public distributed
   }
 
  protected:
-  void fp_set_std_matrix_view() override {
-    input_layer::fp_set_std_matrix_view();
+  void fp_setup_data() override {
+    input_layer::fp_setup_data();
     El::Int cur_mini_batch_size = m_model->get_current_mini_batch_size();
     El::View(X_local_v, X_local, El::ALL, El::IR(0, cur_mini_batch_size));
   }
@@ -118,7 +111,7 @@ class input_layer_distributed_minibatch : public input_layer, public distributed
 
     distributed_minibatch::distribute_from_local_matrix(X_local, Xs, get_data_reader());
 
-    Copy(Xs, *this->m_activations);
+    Copy(Xs, get_activations());
   }
 
  public:

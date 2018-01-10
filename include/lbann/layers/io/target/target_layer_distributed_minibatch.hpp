@@ -50,8 +50,6 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
       target_layer(comm, input_layer, data_readers, for_regression),
       distributed_minibatch(comm, num_parallel_readers, data_readers),
       Ys(comm->get_model_grid()) {
-    // Setup the data distribution
-    initialize_distributed_matrices();
 
     // if(!dynamic_cast<input_layer_distributed_minibatch*>(input_layer)) {
     //   std::stringstream err;
@@ -78,9 +76,6 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
 
   std::string get_type() const override { return "target:distributed"; }
 
-  virtual inline void initialize_distributed_matrices() {
-    target_layer::initialize_distributed_matrices<T_layout>();
-  }
   data_layout get_data_layout() const override { return T_layout; }
 
   void setup_data() override {
@@ -95,8 +90,8 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
     m_num_data_per_epoch = 0;
   }
 
-  void fp_set_std_matrix_view() override {
-    target_layer::fp_set_std_matrix_view();
+  void fp_setup_data() override {
+    target_layer::fp_setup_data();
     El::Int cur_mini_batch_size = m_model->get_current_mini_batch_size();
     El::View(Y_local_v, Y_local, El::ALL, El::IR(0, cur_mini_batch_size));
   }
@@ -119,8 +114,8 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
     /// @todo should this distribute the entire matrix even if there is only a partial mini-batch
     distribute_from_local_matrix(Y_local, Ys, paired_input_layer->get_data_reader());
 
-    const auto& predictions = get_predictions();
-    m_ground_truth->Resize(predictions.Height(), predictions.Width());
+    const auto& prediction = get_prediction();
+    m_ground_truth->Resize(prediction.Height(), prediction.Width());
     Copy(Ys, *m_ground_truth);
 
     return;

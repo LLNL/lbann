@@ -47,9 +47,6 @@ class target_layer_partitioned_minibatch : public target_layer, public partition
       partitioned_minibatch(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), data_readers) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "partitioned_minibatch only supports DATA_PARALLEL");
-    // Setup the data distribution
-    initialize_distributed_matrices();
-
     generic_data_distribution::fetch_data_fn = new fetch_data_functor(false, target_layer::is_for_regression());
     generic_data_distribution::update_data_reader_fn = new update_data_reader_functor(false);
   }
@@ -66,9 +63,6 @@ class target_layer_partitioned_minibatch : public target_layer, public partition
 
   std::string get_type() const override { return "target:partitioned"; }
 
-  virtual inline void initialize_distributed_matrices() {
-    target_layer::initialize_distributed_matrices<T_layout>();
-  }
   data_layout get_data_layout() const override { return T_layout; }
 
   void setup_data() override {
@@ -80,8 +74,8 @@ class target_layer_partitioned_minibatch : public target_layer, public partition
   }
 
   void fp_compute() override {
-    const auto& predictions = get_predictions();
-    m_ground_truth->Resize(predictions.Height(), predictions.Width());
+    const auto& prediction = get_prediction();
+    m_ground_truth->Resize(prediction.Height(), prediction.Width());
     const int num_samples_in_batch = fetch_to_local_matrix(m_ground_truth->Matrix(),
                                                            paired_input_layer->get_data_reader());
     target_layer::update_num_samples_processed(num_samples_in_batch);
