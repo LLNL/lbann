@@ -47,13 +47,13 @@
 // #include "lbann/layers/activations/bent_identity.hpp"
 // #include "lbann/layers/activations/elu.hpp"
 #include "lbann/layers/activations/exponential.hpp"
-// #include "lbann/layers/activations/id.hpp"
+#include "lbann/layers/activations/identity.hpp"
 // #include "lbann/layers/activations/leaky_relu.hpp"
 #include "lbann/layers/activations/relu.hpp"
 // #include "lbann/layers/activations/selu.hpp"
 #include "lbann/layers/activations/sigmoid.hpp"
 // #include "lbann/layers/activations/smooth_relu.hpp"
-// #include "lbann/layers/activations/softmax.hpp"
+#include "lbann/layers/activations/softmax.hpp"
 // #include "lbann/layers/activations/softplus.hpp"
 // #include "lbann/layers/activations/swish.hpp"
 #include "lbann/layers/activations/tanh.hpp"
@@ -87,10 +87,10 @@
 #include "lbann/layers/io/target/target_layer_distributed_minibatch.hpp"
 #include "lbann/layers/io/input/input_layer_partitioned_minibatch.hpp"
 #include "lbann/layers/io/target/target_layer_partitioned_minibatch.hpp"
+#endif
 
 /// Reconstruction Layer
-#include "lbann/layers/io/target/reconstruction.hpp"
-#endif
+// #include "lbann/layers/io/target/reconstruction.hpp"
 
 /// Data Readers
 #include "lbann/data_readers/data_reader_imagenet_org.hpp"

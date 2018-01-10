@@ -44,10 +44,12 @@
 
 #include <cassert>
 
+// Output has minimum value to avoid denormalized floats
 #define LBANN_ENABLE_SOFTMAX_CUTOFF
 
 namespace lbann {
 
+/** Softmax layer. */
 template <data_layout T_layout>
 class softmax_layer : public activation_layer {
 
@@ -55,8 +57,6 @@ class softmax_layer : public activation_layer {
 
   /** Workspace for column-wise reductions. */
   AbsDistMat *m_workspace;
-  /** View into workspace for column-wise reductions. */
-  AbsDistMat *m_workspace_v;
 
   /** Lower bound for outputs.
    *  This should be sufficiently large to avoid denormalized
@@ -69,11 +69,13 @@ class softmax_layer : public activation_layer {
 #endif
 
  public:
+
+  /** Constructor. */
   softmax_layer(lbann_comm *comm,
                 cudnn::cudnn_manager *cudnn=nullptr)
-      : activation_layer(comm) {
-    initialize_distributed_matrices();
-    m_min_output = std::sqrt(std::numeric_limits<DataType>::min());
+    : activation_layer(comm),
+      m_workspace(nullptr),
+      m_min_output(std::sqrt(std::numeric_limits<DataType>::min())) {
     this->m_cudnn = cudnn;
 #if defined(__LIB_CUDA) && defined(LBANN_SOFTMAX_CUDA)
     if (this->m_cudnn && T_layout == data_layout::DATA_PARALLEL) {
@@ -82,11 +84,15 @@ class softmax_layer : public activation_layer {
 #endif
   }
 
-  softmax_layer(const softmax_layer& other) :
-    activation_layer(other) {
-    m_workspace = other.m_workspace->Copy();
-    m_workspace_v = other.m_workspace_v->Copy();
-    m_min_output = other.m_min_output;
+  softmax_layer(const softmax_layer& other)
+    : activation_layer(other),
+      m_min_output(other.m_min_output) {
+
+    // Matrix deep copy
+    m_workspace = other.m_workspace;
+    if (m_workspace != nullptr) { m_workspace = m_workspace->Copy(); }
+
+    // Copy GPU objects
     this->m_cudnn = other.m_cudnn;
     this->m_using_gpus = other.m_using_gpus;
 #if defined(__LIB_CUDA) && defined(LBANN_SOFTMAX_CUDA)
@@ -95,17 +101,18 @@ class softmax_layer : public activation_layer {
                                     m_cudnn_desc);
     }
 #endif
+
   }
 
   softmax_layer& operator=(const softmax_layer& other) {
     activation_layer::operator=(other);
-    if (m_workspace) {
-      delete m_workspace;
-      delete m_workspace_v;
-    }
-    m_workspace = other.m_workspace->Copy();
-    m_workspace_v = other.m_workspace_v->Copy();
     m_min_output = other.m_min_output;
+
+    // Deep matrix copy
+    if (m_workspace != nullptr) { delete m_workspace; }
+    m_workspace = other.m_workspace;
+    if (m_workspace != nullptr) { m_workspace = m_workspace->Copy(); }
+
     this->m_cudnn = other.m_cudnn;
     this->m_using_gpus = other.m_using_gpus;
 #if defined(__LIB_CUDA) && defined(LBANN_SOFTMAX_CUDA)    
@@ -117,9 +124,7 @@ class softmax_layer : public activation_layer {
   }
 
   ~softmax_layer() override {
-    delete m_workspace;
-    delete m_workspace_v;
-
+    if (m_workspace != nullptr) { delete m_workspace; }
 #if defined(__LIB_CUDA) && defined(LBANN_SOFTMAX_CUDA)
     if (m_cudnn_desc) {
       CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_cudnn_desc));
@@ -137,12 +142,30 @@ class softmax_layer : public activation_layer {
            + this->get_data_layout_string(get_data_layout());
   }
 
-  inline void initialize_distributed_matrices() override;
   data_layout get_data_layout() const override { return T_layout; }
+
+  void setup_matrices(const El::Grid& grid) override {
+    activation_layer::setup_matrices(grid);
+    if (m_workspace != nullptr) { delete m_workspace; }
+    switch (get_data_layout()) {
+    case data_layout::MODEL_PARALLEL:
+      m_workspace = new StarMRMat(grid);
+      break;
+    case data_layout::DATA_PARALLEL:
+      m_workspace = new StarVCMat(grid);
+      break;
+    default:
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "invalid distributed matrix layout";
+      throw lbann_exception(err.str());
+    }
+  }
 
   void setup_data() override {
     activation_layer::setup_data();
-    m_workspace->Resize(1, this->m_model->get_max_mini_batch_size());
+    const int mini_batch_size = this->m_model->get_max_mini_batch_size();
+    m_workspace->Resize(1, mini_batch_size);
   }
 
   void setup_gpu() override {
@@ -154,10 +177,9 @@ class softmax_layer : public activation_layer {
 #endif
   }  
 
-  void fp_set_std_matrix_view() override {
-    El::Int cur_mini_batch_size = this->m_model->get_current_mini_batch_size();
-    Layer::fp_set_std_matrix_view();
-    El::View(*m_workspace_v, *m_workspace, El::ALL, El::IR(0, cur_mini_batch_size));
+  void fp_setup_data(int mini_batch_size) override {
+    activation_layer::fp_setup_data(mini_batch_size);
+    m_workspace->Resize(1, mini_batch_size);
   }
   
   void fp_compute() override {
@@ -167,64 +189,6 @@ class softmax_layer : public activation_layer {
       fp_compute_cpu();
     }
   }
-  
-  virtual void fp_compute_cpu() {
-
-    // Get local matrices and parameters
-    Mat& workspace_local = m_workspace_v->Matrix();
-    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
-    Mat& activations_local = this->m_activations_v->Matrix();
-    const El::Int local_height = activations_local.Height();
-    const El::Int local_width = activations_local.Width();
-
-    // Find maximum entry in each column
-    #pragma omp parallel for
-    for(El::Int col = 0; col < local_width; ++col) {
-      DataType max_entry = prev_activations_local(0, col);
-      for(El::Int row = 1; row < local_height; ++row) {
-        max_entry = std::max(max_entry, prev_activations_local(row,col));
-      }
-      workspace_local(0, col) = max_entry;
-    }
-    m_comm->allreduce(*m_workspace_v, m_workspace_v->RedundantComm(),
-                      El::mpi::MAX);
-
-    // Exponentiate activations and compute column sums
-    // Note: Subtracting by the column max prevents activations from
-    // blowing up. Large negative values underflow to 0.
-    #pragma omp parallel for
-    for (El::Int col = 0; col < local_width; ++col) {
-      const DataType shift = workspace_local(0, col);
-      DataType sum = 0;
-      for (El::Int row = 0; row < local_height; ++row) {
-        const DataType prev_activations_entry = prev_activations_local(row, col);
-        const DataType activations_entry = std::exp(prev_activations_entry - shift);
-        activations_local(row, col) = activations_entry;
-        sum += activations_entry;
-      }
-      workspace_local(0, col) = sum;
-    }
-    m_comm->allreduce(*m_workspace_v, m_workspace_v->RedundantComm());
-
-    // Divide activations by column sums
-    // Note: Small values are rounded to minimum output value to avoid
-    // denormalized floats.
-    El::IndexDependentMap(activations_local,
-                          (std::function<DataType(El::Int,El::Int,const DataType&)>)
-                          ([this,&workspace_local](El::Int r, El::Int c, const DataType& x)
-                           ->DataType {
-                            const DataType sum = workspace_local(0, c);
-                            const DataType y = x / sum;
-#ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
-                            return y > m_min_output ? y : m_min_output;
-#else
-                            return y;
-#endif
-                          }));
-
-  }
-
-  void fp_compute_cuda();
 
   void bp_compute() override {
     if(this->m_using_gpus) {
@@ -233,6 +197,108 @@ class softmax_layer : public activation_layer {
       bp_compute_cpu();
     }
   }
+  
+  virtual void fp_compute_cpu() {
+
+    // Local matrices
+    const auto& local_input = get_local_prev_activations();
+    auto& local_output = get_local_activations();
+    auto& local_workspace = m_workspace->Matrix();
+    
+    // Matrix parameters
+    const El::Int local_height = local_input.Height();
+    const El::Int local_width = local_input.Width();
+
+    // Find maximum entry in each column
+    #pragma omp parallel for
+    for(El::Int col = 0; col < local_width; ++col) {
+      DataType max_entry = local_input(0, col);
+      for(El::Int row = 1; row < local_height; ++row) {
+        max_entry = std::max(max_entry, local_input(row, col));
+      }
+      local_workspace(0, col) = max_entry;
+    }
+    m_comm->allreduce(*m_workspace, m_workspace->RedundantComm(),
+                      El::mpi::MAX);
+
+    // Exponentiate activations and compute column sums
+    // Note: Subtracting by the column max prevents activations from
+    // blowing up. Large negative values underflow to 0.
+    #pragma omp parallel for
+    for (El::Int col = 0; col < local_width; ++col) {
+      const DataType shift = local_workspace(0, col);
+      DataType sum = 0;
+      for (El::Int row = 0; row < local_height; ++row) {
+        const DataType x = local_input(row, col);
+        const DataType y = std::exp(x - shift);
+        local_output(row, col) = y;
+        sum += y;
+      }
+      local_workspace(0, col) = sum;
+    }
+    m_comm->allreduce(*m_workspace, m_workspace->RedundantComm());
+
+    // Divide activations by column sums
+    // Note: Small values are rounded to minimum output value to avoid
+    // denormalized floats.
+    #pragma omp parallel for
+    for (El::Int col = 0; col < local_width; ++col) {
+      const DataType scale = DataType(1) / local_workspace(0, col);
+      for (El::Int row = 0; row < local_height; ++row) {
+        DataType& y = local_output(row, col);
+        y *= scale;
+#ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
+        y = std::max(y, m_min_output);
+#endif
+      }
+    }
+
+  }
+
+  virtual void bp_compute_cpu() {
+
+    // Local matrices
+    const auto& local_output = get_local_activations();
+    const auto& local_gradient_wrt_output = get_local_prev_error_signals();
+    auto& local_gradient_wrt_input = get_local_error_signals();
+    auto& local_workspace = m_workspace->Matrix();
+    
+    // Matrix parameters
+    const El::Int local_height = local_output.Height();
+    const El::Int local_width = local_output.Width();
+
+    // Compute dot products between output and gradient w.r.t. output
+    for (El::Int col = 0; col < local_width; ++col) {
+      const auto& y = local_output(El::ALL, El::IR(col));
+      const auto& dy = local_gradient_wrt_output(El::ALL, El::IR(col));
+      local_workspace(0, col) = El::Dot(y, dy);
+    }
+    m_comm->allreduce(*m_workspace, m_workspace->RedundantComm());
+
+    // Compute gradient w.r.t. input
+    #pragma omp parallel for
+    for (El::Int col = 0; col < local_width; ++col) {
+      const DataType y_dot_dy = local_workspace(0, col);
+      for (El::Int row = 0; row < local_height; ++row) {
+        const DataType y = local_output(row, col);
+        const DataType dy = local_gradient_wrt_output(row, col);
+        DataType& dx = local_gradient_wrt_input(row, col);
+        dx = y * (dy - y_dot_dy);
+#ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
+        if (y <= m_min_output) {
+          dx = DataType(0);
+        }
+#endif
+      }
+    }
+
+  }
+
+
+
+
+  void fp_compute_cuda();
+
   
 #if 0
   void bp_compute_cross_entropy_shortcut() {
@@ -282,78 +348,11 @@ class softmax_layer : public activation_layer {
   }
 #endif
 
-  virtual void bp_compute_cpu() {
-    const Mat& activations_local = this->m_activations_v->LockedMatrix();
-    const Mat& prev_error_signal_local = this->m_prev_error_signal_v->Matrix();
-    Mat& error_signal_local = this->m_error_signal_v->Matrix();
-    Mat& workspace_local = m_workspace_v->Matrix();
-    const El::Int local_width = activations_local.Width();
-    
-    // Compute dot products
-    // Note: prev_error_signal^T activations
-    for(El::Int c=0; c<local_width; ++c) {
-      workspace_local(0, c) = El::Dot(prev_error_signal_local(El::ALL,El::IR(c)),
-                                      activations_local(El::ALL,El::IR(c)));
-    }
-    m_comm->allreduce(*m_workspace_v, m_workspace_v->RedundantComm());
-
-    // Update error signal
-    // Note: error_signal := activations * (prev_error_signal - prev_error_signal^T activations)
-    El::IndexDependentFill(error_signal_local,
-                           (std::function<DataType(El::Int,El::Int)>)
-                           ([this,&activations_local,&prev_error_signal_local,&workspace_local]
-                            (El::Int r, El::Int c)->DataType {
-                             const DataType activations_entry = activations_local(r,c);
-                             const DataType prev_error_signal_entry = prev_error_signal_local(r,c);
-                             const DataType dot_product_entry = workspace_local(El::Int(0),c);
-#ifdef LBANN_ENABLE_SOFTMAX_CUTOFF                            
-                             if(activations_entry > m_min_output) {
-                               return activations_entry * (prev_error_signal_entry
-                                                           - dot_product_entry);
-                             }
-                             else {
-                               return DataType(0);
-                             }
-#else
-                               return activations_entry * (prev_error_signal_entry
-                                                           - dot_product_entry);
-#endif
-                           }));
-
-  }
 
   void bp_compute_cuda();
 
-  bool saveToCheckpoint(int fd, const char *filename, size_t *bytes) const override {
-    return Layer::saveToCheckpoint(fd, filename, bytes);
-  }
 
-  bool loadFromCheckpoint(int fd, const char *filename, size_t *bytes) override {
-    return Layer::loadFromCheckpoint(fd, filename, bytes);
-  }
-
-  bool save_to_checkpoint_shared(lbann::persist& p) const override {
-    return Layer::save_to_checkpoint_shared(p);
-  }
-
-  bool load_from_checkpoint_shared(lbann::persist& p) override {
-    return Layer::load_from_checkpoint_shared(p);
-  }
 };
-
-/// Matrices should be in MC,MR distributions
-template<> inline void softmax_layer<data_layout::MODEL_PARALLEL>::initialize_distributed_matrices() {
-  activation_layer::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>();
-  m_workspace = new StarMRMat(this->m_comm->get_model_grid());
-  m_workspace_v = new StarMRMat(this->m_comm->get_model_grid());
-}
-
-/// Weight matrices should be in Star,Star and data matrices Star,VC distributions
-template<> inline void softmax_layer<data_layout::DATA_PARALLEL>::initialize_distributed_matrices() {
-  activation_layer::initialize_distributed_matrices<data_layout::DATA_PARALLEL>();
-  m_workspace = new StarVCMat(this->m_comm->get_model_grid());
-  m_workspace_v = new StarVCMat(this->m_comm->get_model_grid());
-}
 
 template<> inline void softmax_layer<data_layout::DATA_PARALLEL>::fp_compute_cuda() {
 #if !(defined(__LIB_CUDA) && defined(LBANN_SOFTMAX_CUDA))

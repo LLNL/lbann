@@ -117,11 +117,11 @@ class relu_layer : public entrywise_activation_layer {
 
  protected:
 
-  DataType activation_function(DataType x) override {
+  DataType activation_function(DataType x) const override {
     return x > DataType(0) ? x : DataType(0);
   }
 
-  DataType activation_function_derivative(DataType x) override {
+  DataType activation_function_derivative(DataType x) const override {
     return x > DataType(0) ? DataType(1) : DataType(0);
   }
 

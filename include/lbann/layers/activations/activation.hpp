@@ -40,12 +40,6 @@ class activation_layer : public Layer {
  public:
   /** Constructor. */
   activation_layer(lbann_comm *comm) : Layer(comm) {}
-  /** Copy constructor. */
-  activation_layer(const activation_layer&) = default;
-  /** Copy assignment operator. */
-  activation_layer& operator=(const activation_layer&) = default;
-  /** Destructor. */
-  virtual ~activation_layer() override = default;
 };
 
 /** Abstract base class for entry-wise activation layer.
@@ -55,25 +49,20 @@ class activation_layer : public Layer {
 class entrywise_activation_layer : public activation_layer {
 
  public:
+
   /** Constructor. */
   entrywise_activation_layer(lbann_comm *comm)
     : activation_layer(comm) {}
-  /** Copy constructor. */
-  entrywise_activation_layer(const entrywise_activation_layer&) = default;
-  /** Copy assignment operator. */
-  entrywise_activation_layer& operator=(
-    const entrywise_activation_layer&) = default;
-  /** Destructor. */
-  virtual ~entrywise_activation_layer() override = default;
 
  protected:
 
   /** Activation function.
    *  This function is applied independently to each input entry.
    */
-  virtual DataType activation_function(DataType x) = 0;
+  virtual DataType activation_function(DataType x) const = 0;
+
   /** Derivative of activation function. */
-  virtual DataType activation_function_derivative(DataType x) = 0;
+  virtual DataType activation_function_derivative(DataType x) const = 0;
 
   void fp_compute() override {
     if(this->m_using_gpus) {

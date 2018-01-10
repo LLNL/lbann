@@ -52,10 +52,10 @@ class sigmoid_layer : public entrywise_activation_layer {
   data_layout get_data_layout() const override { return T_layout; }
 
  protected:
-  DataType activation_function(DataType z) override {
+  DataType activation_function(DataType z) const override {
     return (DataType(1) / (DataType(1) + std::exp(-z)));
   }
-  DataType activation_function_derivative(DataType z) override {
+  DataType activation_function_derivative(DataType z) const override {
     const auto sigz = activation_function(z);
     return sigz * (DataType(1) - sigz);
   }
