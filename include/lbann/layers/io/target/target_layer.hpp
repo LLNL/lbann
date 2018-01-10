@@ -83,6 +83,12 @@ class target_layer : public io_layer {
     }
   }
 
+  void setup_data() override {
+    io_layer::setup_data();
+    int max_mb_size = this->m_model->get_max_mini_batch_size();
+    io_buffer->setup_data(this->m_num_neurons, max_mb_size);
+  }
+
   void check_setup() override {
     io_layer::check_setup();
     if(this->m_num_prev_neurons != this->m_num_neurons) {
@@ -98,6 +104,7 @@ class target_layer : public io_layer {
   void fp_set_std_matrix_view() override {
     io_layer::fp_set_std_matrix_view();
     El::Int cur_mini_batch_size = m_model->get_current_mini_batch_size();
+    io_buffer->set_local_matrix_bypass(&this->m_activations_v->Matrix());
     io_buffer->set_std_matrix_view(cur_mini_batch_size);
   }
 
@@ -128,6 +135,12 @@ class target_layer : public io_layer {
           << "could not fp_compute for I/O layers : encoutered generic_io_buffer type";
       throw lbann_exception(err.str());
     }
+  }
+
+  void bp_compute() override {}
+
+  bool update_compute() override {
+    return io_buffer->is_data_set_processed(paired_input_layer->get_data_reader(), this->m_model->get_execution_mode());
   }
   // lbann::generic_data_reader *set_training_data_reader(generic_data_reader *data_reader, bool shared_data_reader) {
   //   return io_layer::set_training_data_reader(data_reader);

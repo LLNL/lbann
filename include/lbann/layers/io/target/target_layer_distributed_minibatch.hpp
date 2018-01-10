@@ -75,29 +75,6 @@ class target_layer_distributed_minibatch : public target_layer {
     target_layer::initialize_distributed_matrices<T_layout>();
   }
   data_layout get_data_layout() const override { return T_layout; }
-
-  void setup_data() override {
-    target_layer::setup_data();
-
-    int max_mb_size = this->m_model->get_max_mini_batch_size();
-    for (auto& buf : ((distributed_io_buffer*) io_buffer)->m_data_buffers) {
-      buf.second->M_local.Resize(this->m_num_neurons, max_mb_size);
-      buf.second->Ms.Resize(this->m_num_neurons, max_mb_size);
-    }
-  }
-
-  void bp_compute() override {}
-
-  /**
-   * Once a mini-batch is processed, resuffle the data for the next batch if necessary
-   */
-  bool update_compute() override {
-    return io_buffer->is_data_set_processed(paired_input_layer->get_data_reader(), this->m_model->get_execution_mode());
-  }
-
-  data_buffer *get_data_buffer() const {
-    return ((distributed_io_buffer*) io_buffer)->get_data_buffer(this->m_model->get_execution_mode());
-  }
 };
 
 }  // namespace lbann

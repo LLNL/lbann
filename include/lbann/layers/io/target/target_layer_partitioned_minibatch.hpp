@@ -70,20 +70,6 @@ class target_layer_partitioned_minibatch : public target_layer {
     target_layer::initialize_distributed_matrices<T_layout>();
   }
   data_layout get_data_layout() const override { return T_layout; }
-
-  void setup_data() override {
-    target_layer::setup_data();
-    io_buffer->set_local_matrix_bypass(&this->m_activations->Matrix());
-  }
-
-  void bp_compute() override {}
-
-  /**
-   * Once a mini-batch is processed, resuffle the data for the next batch if necessary
-   */
-  bool update_compute() override {
-    return io_buffer->is_data_set_processed(paired_input_layer->get_data_reader(), this->m_model->get_execution_mode());
-  }
 };
 
 }  // namespace lbann
