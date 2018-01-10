@@ -41,7 +41,7 @@ namespace lbann {
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
 class target_layer_partitioned_minibatch : public target_layer {
  public:
-  target_layer_partitioned_minibatch(lbann_comm *comm, input_layer *input_layer, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression=false)
+  target_layer_partitioned_minibatch(lbann_comm *comm, generic_input_layer *input_layer, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression=false)
     : target_layer(comm, input_layer,  data_readers, for_regression) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "partitioned_minibatch only supports DATA_PARALLEL");

@@ -40,7 +40,7 @@ namespace lbann {
 template <data_layout T_layout>
 class target_layer_distributed_minibatch : public target_layer {
  public:
-  target_layer_distributed_minibatch(lbann_comm *comm, input_layer *input_layer, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
+  target_layer_distributed_minibatch(lbann_comm *comm, generic_input_layer *input_layer, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, bool shared_data_reader, bool for_regression = false)
     : target_layer(comm, input_layer, data_readers, for_regression){
     io_buffer = new distributed_io_buffer(comm, num_parallel_readers, data_readers);
     // Setup the data distribution

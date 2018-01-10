@@ -125,7 +125,7 @@ void setup_pointers(
       }
       if (name.empty()) {
         for (auto& other_layer : model_layers) {
-          if (dynamic_cast<input_layer*>(other_layer.second) != nullptr) {
+          if (dynamic_cast<generic_input_layer*>(other_layer.second) != nullptr) {
             name = other_layer.first;
             break;
           }
@@ -138,7 +138,7 @@ void setup_pointers(
       }
 
       // Set input layer
-      auto *input = dynamic_cast<input_layer*>(model_layers[name]);
+      auto *input = dynamic_cast<generic_input_layer*>(model_layers[name]);
       target->set_paired_input_layer(input);
 
     }
@@ -152,7 +152,7 @@ void setup_pointers(
       name = proto_layers[i].reconstruction().original_layer();
       if (name.empty()) {
         for (auto& other_layer : model_layers) {
-          if (dynamic_cast<input_layer*>(other_layer.second) != nullptr) {
+          if (dynamic_cast<generic_input_layer*>(other_layer.second) != nullptr) {
             name = other_layer.first;
             break;
           }
@@ -1600,7 +1600,7 @@ void init_callbacks(
     if (callback.has_checkpoint()) {
       const lbann_data::CallbackCheckpoint& c = callback.checkpoint();
       if (master) {
-        std::cout << "checkpoint saving on interval <epoch:" << c.checkpoint_epochs() << " steps:" << c.checkpoint_steps() << " secs:" << c.checkpoint_secs()  
+        std::cout << "checkpoint saving on interval <epoch:" << c.checkpoint_epochs() << " steps:" << c.checkpoint_steps() << " secs:" << c.checkpoint_secs()
 	          << "> to dir: " << c.checkpoint_dir() << std::endl;
       }
       lbann_callback_checkpoint *checkpoint_cb = new
@@ -1891,15 +1891,15 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
         reader = merged_samples;
       }else {
         //create label file
-        auto* label_csv = new csv_reader(shuffle); 
+        auto* label_csv = new csv_reader(shuffle);
         label_csv->set_data_filename(readme.label_filename());
-        label_csv->disable_labels(false); 
+        label_csv->disable_labels(false);
         label_csv->set_has_header(readme.has_header()); //use same as parent file
         label_csv->set_label_col(0); //assume there is only one label file and the column and is label column
         data_reader_merge_features* merged_features = new data_reader_merge_features(npy_readers,label_csv, shuffle);
         reader = merged_features;
       }
-  
+
     } else if (name == "synthetic") {
       reader = new data_reader_synthetic(readme.num_samples(), readme.num_features(), shuffle);
     } else if (name == "ascii") {

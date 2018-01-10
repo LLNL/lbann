@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_INPUT_LAYER_DISTRIBUTED_MINIBATCH_HPP_INCLUDED
 #define LBANN_LAYERS_INPUT_LAYER_DISTRIBUTED_MINIBATCH_HPP_INCLUDED
 
-#include "lbann/layers/io/input/input_layer.hpp"
+#include "lbann/layers/io/input/generic_input_layer.hpp"
 #include "lbann/data_distributions/distributed_io_buffer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/models/model.hpp"
@@ -38,10 +38,10 @@
 
 namespace lbann {
 template <data_layout T_layout>
-class input_layer_distributed_minibatch : public input_layer {
+class input_layer_distributed_minibatch : public generic_input_layer {
  public:
   input_layer_distributed_minibatch(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, bool data_set_spans_models = true)
-    : input_layer(comm, num_parallel_readers, data_readers, data_set_spans_models) {
+    : generic_input_layer(comm, num_parallel_readers, data_readers, data_set_spans_models) {
     io_buffer = new distributed_io_buffer(comm, num_parallel_readers, data_readers);
     io_buffer->fetch_data_fn = new fetch_data_functor(true, false);
     io_buffer->update_data_reader_fn = new update_data_reader_functor(true);
@@ -66,12 +66,12 @@ class input_layer_distributed_minibatch : public input_layer {
   // std::string get_type() const override { return "input:distributed"; }
 
   virtual inline void initialize_distributed_matrices() {
-    input_layer::initialize_distributed_matrices<T_layout>();
+    generic_input_layer::initialize_distributed_matrices<T_layout>();
   }
   data_layout get_data_layout() const override { return T_layout; }
 
   void setup_data() override {
-    input_layer::setup_data();
+    generic_input_layer::setup_data();
   }
 };
 

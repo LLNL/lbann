@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYERS_INPUT_LAYER_HPP_INCLUDED
-#define LBANN_LAYERS_INPUT_LAYER_HPP_INCLUDED
+#ifndef LBANN_LAYERS_GENERIC_INPUT_LAYER_HPP_INCLUDED
+#define LBANN_LAYERS_GENERIC_INPUT_LAYER_HPP_INCLUDED
 
 #include "lbann/layers/io/io_layer.hpp"
 //#include "lbann/utils/dataset.hpp"
@@ -35,13 +35,13 @@
 #include "lbann/models/model.hpp"
 
 namespace lbann {
-class input_layer : public io_layer {
+class generic_input_layer : public io_layer {
  public:
   using data_reader_map_t = std::map<execution_mode, generic_data_reader *>;
   generic_io_buffer *io_buffer;
 
  public:
-  input_layer(lbann_comm *comm,
+  generic_input_layer(lbann_comm *comm,
               int num_parallel_readers,
               std::map<execution_mode, generic_data_reader *> data_readers,
               bool data_set_spans_models = true)
@@ -67,7 +67,7 @@ class input_layer : public io_layer {
     }
   }
 
-  ~input_layer() override {
+  ~generic_input_layer() override {
     // Input layer always frees data readers.
     for (auto& dr : m_data_readers) {
       delete dr.second;
@@ -75,7 +75,7 @@ class input_layer : public io_layer {
   }
 
   // Input layers copy their datareaders.
-  input_layer(const input_layer& other)
+  generic_input_layer(const generic_input_layer& other)
     : io_layer(other),
       m_training_dataset(other.m_training_dataset),
       m_testing_dataset(other.m_testing_dataset),
@@ -86,7 +86,7 @@ class input_layer : public io_layer {
     }
   }
 
-  input_layer& operator=(const input_layer& other) {
+  generic_input_layer& operator=(const generic_input_layer& other) {
     io_layer::operator=(other);
     for (auto& dr : m_data_readers) {
       dr.second = dr.second->copy();
@@ -661,4 +661,4 @@ class input_layer : public io_layer {
 
 }  // namespace lbann
 
-#endif  // LBANN_LAYERS_INPUT_LAYER_HPP_INCLUDED
+#endif  // LBANN_LAYERS_GENERIC_INPUT_LAYER_HPP_INCLUDED

@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_INPUT_LAYER_PARTITIONED_MINIBATCH_HPP_INCLUDED
 #define LBANN_LAYERS_INPUT_LAYER_PARTITIONED_MINIBATCH_HPP_INCLUDED
 
-#include "lbann/layers/io/input/input_layer.hpp"
+#include "lbann/layers/io/input/generic_input_layer.hpp"
 #include "lbann/data_distributions/partitioned_io_buffer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/models/model.hpp"
@@ -39,11 +39,11 @@
 namespace lbann {
 
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
-class input_layer_partitioned_minibatch : public input_layer {
+class input_layer_partitioned_minibatch : public generic_input_layer {
  public:
   /// @todo make the map and vector references
   input_layer_partitioned_minibatch(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, bool data_set_spans_models = true)
-    : input_layer(comm, num_parallel_readers, data_readers, data_set_spans_models) {
+    : generic_input_layer(comm, num_parallel_readers, data_readers, data_set_spans_models) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "partitioned_minibatch only supports DATA_PARALLEL");
 
@@ -68,12 +68,12 @@ class input_layer_partitioned_minibatch : public input_layer {
   // }
 
   virtual inline void initialize_distributed_matrices() {
-    input_layer::initialize_distributed_matrices<T_layout>();
+    generic_input_layer::initialize_distributed_matrices<T_layout>();
   }
   data_layout get_data_layout() const override { return T_layout; }
 
   void setup_data() override {
-    input_layer::setup_data();
+    generic_input_layer::setup_data();
   }
 };
 

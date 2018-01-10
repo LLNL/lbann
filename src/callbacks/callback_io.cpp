@@ -29,7 +29,7 @@
 #include <utility>
 
 #include "lbann/callbacks/callback_io.hpp"
-#include "lbann/layers/io/input/input_layer.hpp"
+#include "lbann/layers/io/input/generic_input_layer.hpp"
 #include "lbann/layers/io/target/target_layer.hpp"
 
 namespace lbann {
@@ -44,7 +44,7 @@ void lbann_callback_io::on_epoch_end(model *m) {
   for (Layer *layer : m->get_layers()) {
     if(m_layer_indices.size() == 0
        || m_layer_indices.find(layer) != m_layer_indices.end()) {
-      auto *input = (input_layer *) dynamic_cast<input_layer *> (layer);
+      auto *input = (generic_input_layer *) dynamic_cast<generic_input_layer *> (layer);
       if(input != nullptr) {
         std::cout << "Rank " << comm->get_model_rank() << "." << comm->get_rank_in_model() << " processed "
                   << input->get_num_samples_trained() << " training samples of "
@@ -67,7 +67,7 @@ void lbann_callback_io::on_test_end(model *m) {
   for (Layer *layer : m->get_layers()) {
     if(m_layer_indices.size() == 0
        || m_layer_indices.find(layer) != m_layer_indices.end()) {
-      auto *input = (input_layer *) dynamic_cast<input_layer *> (layer);
+      auto *input = (generic_input_layer *) dynamic_cast<generic_input_layer *> (layer);
       if(input != nullptr) {
         std::cout << "Rank " << comm->get_model_rank() << "." << comm->get_rank_in_model() << " processed "
                   << input->get_num_samples_tested() << " test samples of "

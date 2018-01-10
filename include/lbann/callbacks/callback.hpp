@@ -35,7 +35,7 @@
 #include "lbann/layers/layer.hpp"
 #include "lbann/layers/activations/activation.hpp"
 #include "lbann/layers/io/io_layer.hpp"
-#include "lbann/layers/io/input/input_layer.hpp"
+#include "lbann/layers/io/input/generic_input_layer.hpp"
 #include "lbann/layers/io/target/target_layer.hpp"
 #include "lbann/layers/learning/learning.hpp"
 #include "lbann/layers/regularizers/regularizer.hpp"
