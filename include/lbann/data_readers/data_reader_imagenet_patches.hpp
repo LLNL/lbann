@@ -43,9 +43,6 @@ class imagenet_reader_patches : public image_data_reader {
 
   imagenet_reader_patches* copy() const override { return new imagenet_reader_patches(*this); }
 
-  using image_data_reader::fetch_data;
-  virtual int fetch_data(std::vector<::Mat>& X);
-
   int get_linearized_data_size() const override {
     return m_image_linearized_size * m_num_patches;
   }
@@ -57,9 +54,7 @@ class imagenet_reader_patches : public image_data_reader {
   void set_defaults() override;
   virtual bool replicate_processor(const cv_process_patches& pp);
   virtual std::vector<::Mat> create_datum_views(::Mat& X, const int mb_idx) const;
-  virtual std::vector<::Mat> create_datum_views(std::vector<::Mat>& X, const int mb_idx) const;
   bool fetch_datum(::Mat& X, int data_id, int mb_idx, int tid) override;
-  virtual bool fetch_datum(std::vector<::Mat>& X, int data_id, int mb_idx, int tid);
 
  protected:
   int m_num_patches; ///< number of patches extracted
