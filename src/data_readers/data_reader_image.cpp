@@ -136,4 +136,15 @@ void image_data_reader::load() {
   select_subset_of_data();
 }
 
+std::vector<std::pair<std::string, int> > image_data_reader::get_image_list_of_current_mb() const {
+  std::vector<std::pair<std::string, int> > ret;
+  ret.reserve(m_mini_batch_size);
+
+  for (El::Int i = 0; i < m_indices_fetched_per_mb.Height(); ++i) {
+    El::Int index = m_indices_fetched_per_mb.Get(i, 0);
+    ret.push_back(m_image_list[index]);
+  }
+  return ret;
+}
+
 }  // namespace lbann
