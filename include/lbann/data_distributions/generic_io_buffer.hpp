@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
-// Produced at the Lawrence Livermore National Laboratory. 
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of LBANN: Livermore Big Artificial Neural Network
 // Toolkit. For details, see http://software.llnl.gov/LBANN or
-// https://github.com/LLNL/LBANN. 
+// https://github.com/LLNL/LBANN.
 //
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
 // may not use this file except in compliance with the License.  You may
@@ -35,7 +35,7 @@ namespace lbann
 {
 class fetch_data_functor {
  public:
-  fetch_data_functor (bool is_input_layer, bool is_for_regression) : 
+  fetch_data_functor (bool is_input_layer, bool is_for_regression) :
     _is_input_layer(is_input_layer), _is_for_regression(is_for_regression) {}
   int operator() (Mat& M_local, generic_data_reader* data_reader) const {
     if (_is_input_layer) {
@@ -55,7 +55,7 @@ class fetch_data_functor {
 
 class update_data_reader_functor {
  public:
-  update_data_reader_functor (bool is_input_layer) : 
+  update_data_reader_functor (bool is_input_layer) :
     _is_input_layer(is_input_layer) {}
   int operator() (bool is_active_reader, generic_data_reader* data_reader) const {
     if (_is_input_layer) {
@@ -85,6 +85,7 @@ public:
   }
 
   virtual void set_local_matrix_bypass(Mat *M_local) = 0;
+  virtual void set_std_matrix_view(El::Int cur_mini_batch_size) = 0;
   virtual void setup_data(El::Int num_neurons, El::Int max_minibatch_size) = 0;
 
   virtual int fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) = 0;
@@ -94,7 +95,7 @@ public:
   virtual void calculate_num_iterations_per_epoch_spanning_models(int max_mini_batch_size, generic_data_reader *data_reader) = 0;
   virtual void calculate_num_iterations_per_epoch_single_model(int max_mini_batch_size, generic_data_reader *data_reader) = 0;
 ;
-  virtual int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) const = 0; 
+  virtual int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) const = 0;
 
   // protected:
  public:

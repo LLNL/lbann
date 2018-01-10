@@ -75,16 +75,6 @@ class input_layer_partitioned_minibatch : public input_layer {
   void setup_data() override {
     input_layer::setup_data();
   }
-
-  void fp_compute() override {
-    io_buffer->fetch_to_local_matrix(get_data_reader(), this->m_model->get_execution_mode());
-
-    // Use the predetermined size of the mini-batch to set the current
-    // batch size for the neural network
-    int num_samples_in_batch = get_current_mini_batch_size();
-
-    input_layer::update_num_samples_processed(num_samples_in_batch);
-  }
 };
 
 }

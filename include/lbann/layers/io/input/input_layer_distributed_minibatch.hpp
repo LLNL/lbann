@@ -73,30 +73,6 @@ class input_layer_distributed_minibatch : public input_layer {
   void setup_data() override {
     input_layer::setup_data();
   }
-
- protected:
-  void fp_set_std_matrix_view() override {
-    input_layer::fp_set_std_matrix_view();
-    El::Int cur_mini_batch_size = m_model->get_current_mini_batch_size();
-    data_buffer *buf = ((distributed_io_buffer*) io_buffer)->get_data_buffer(this->m_model->get_execution_mode());
-    El::View(buf->M_local_v, buf->M_local, El::ALL, El::IR(0, cur_mini_batch_size));
-  }
-
-  /** Handle forward propagation (arguments are unused). */
-  void fp_compute() override {
-    execution_mode mode = this->m_model->get_execution_mode();
-    int num_samples_in_batch = io_buffer->fetch_to_local_matrix(get_data_reader(), mode);
-    if(((distributed_io_buffer*) io_buffer)->is_current_root(mode)) {
-      /// Only update the number of samples processed by this parallel reader, when it is the current root
-      input_layer::update_num_samples_processed(num_samples_in_batch);
-    }
-
-    /// Let each rank know this size of the current mini-batch
-    /// Note that this field has to be updated before distributing the data
-    this->m_model->set_current_mini_batch_size(Layer::m_comm->model_broadcast(((distributed_io_buffer*) io_buffer)->current_root_rank(mode), num_samples_in_batch));
-
-    io_buffer->distribute_from_local_matrix(*this->m_activations, get_data_reader(), mode);
-  }
 };
 
 }  // namespace lbann

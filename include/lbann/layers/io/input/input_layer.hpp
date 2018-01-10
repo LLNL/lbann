@@ -30,6 +30,8 @@
 #include "lbann/layers/io/io_layer.hpp"
 //#include "lbann/utils/dataset.hpp"
 #include "lbann/data_distributions/generic_io_buffer.hpp"
+#include "lbann/data_distributions/partitioned_io_buffer.hpp"
+#include "lbann/data_distributions/distributed_io_buffer.hpp"
 #include "lbann/models/model.hpp"
 
 namespace lbann {
@@ -176,10 +178,40 @@ class input_layer : public io_layer {
     // Once the current mini-batch size is defined, set the standard view for activations only
     El::View(*m_activations_v, *m_activations, El::ALL, El::IR(0, cur_mini_batch_size));
     io_buffer->set_local_matrix_bypass(&this->m_activations_v->Matrix());
+    io_buffer->set_std_matrix_view(cur_mini_batch_size);
   }
 
   /** No setting the standard view of the matrix -- it defines the standard view */
   void bp_set_std_matrix_view() override {}
+
+  void fp_compute() override {
+    execution_mode mode = this->m_model->get_execution_mode();
+    int num_samples_in_batch = io_buffer->fetch_to_local_matrix(get_data_reader(), mode);
+
+    if(dynamic_cast<partitioned_io_buffer*>(io_buffer) != nullptr) {
+      // Use the predetermined size of the mini-batch to set the current
+      // batch size for the neural network
+      num_samples_in_batch = get_current_mini_batch_size();
+
+      update_num_samples_processed(num_samples_in_batch);
+    }else if(dynamic_cast<distributed_io_buffer*>(io_buffer) != nullptr) {
+      if(((distributed_io_buffer*) io_buffer)->is_current_root(mode)) {
+        /// Only update the number of samples processed by this parallel reader, when it is the current root
+        update_num_samples_processed(num_samples_in_batch);
+      }
+
+      /// Let each rank know this size of the current mini-batch
+      /// Note that this field has to be updated before distributing the data
+      this->m_model->set_current_mini_batch_size(Layer::m_comm->model_broadcast(((distributed_io_buffer*) io_buffer)->current_root_rank(mode), num_samples_in_batch));
+
+      io_buffer->distribute_from_local_matrix(*this->m_activations, get_data_reader(), mode);
+    }else {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "could not fp_compute for I/O layers : encoutered generic_io_buffer type";
+      throw lbann_exception(err.str());
+    }
+  }
 
   /**
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary

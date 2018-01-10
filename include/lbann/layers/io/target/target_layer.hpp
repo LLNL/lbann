@@ -95,6 +95,40 @@ class target_layer : public io_layer {
     }
   }
 
+  void fp_set_std_matrix_view() override {
+    io_layer::fp_set_std_matrix_view();
+    El::Int cur_mini_batch_size = m_model->get_current_mini_batch_size();
+    io_buffer->set_std_matrix_view(cur_mini_batch_size);
+  }
+
+  void fp_compute() override {
+    execution_mode mode = this->m_model->get_execution_mode();
+    int num_samples_in_batch = io_buffer->fetch_to_local_matrix(paired_input_layer->get_data_reader(), mode);
+
+    if(dynamic_cast<partitioned_io_buffer*>(io_buffer) != nullptr) {
+      update_num_samples_processed(num_samples_in_batch);
+    }else if(dynamic_cast<distributed_io_buffer*>(io_buffer) != nullptr) {
+      if(((distributed_io_buffer*) io_buffer)->is_current_root(mode)) {
+        /// Only update the number of samples processed by this parallel reader, when it is the current root
+        update_num_samples_processed(num_samples_in_batch);
+      }
+
+      int curr_mini_batch_size = this->m_model->get_current_mini_batch_size();
+      if(((distributed_io_buffer*) io_buffer)->is_current_root(mode) && num_samples_in_batch != curr_mini_batch_size) {
+        throw lbann_exception("lbann_target_layer_distributed_minibatch: number of labels ("
+                              + std::to_string(num_samples_in_batch) + ") does not match the current mini-batch size ("
+                              + std::to_string(curr_mini_batch_size) + ")."
+                              );
+      }
+      /// @todo should this distribute the entire matrix even if there is only a partial mini-batch
+      io_buffer->distribute_from_local_matrix(*this->m_activations, paired_input_layer->get_data_reader(), mode);
+    }else {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "could not fp_compute for I/O layers : encoutered generic_io_buffer type";
+      throw lbann_exception(err.str());
+    }
+  }
   // lbann::generic_data_reader *set_training_data_reader(generic_data_reader *data_reader, bool shared_data_reader) {
   //   return io_layer::set_training_data_reader(data_reader);
   // }

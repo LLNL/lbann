@@ -48,7 +48,7 @@ class target_layer_distributed_minibatch : public target_layer {
 
     // if(!dynamic_cast<input_layer_distributed_minibatch*>(input_layer)) {
     //   std::stringstream err;
-    //   err << __FILE__ << " " << __LINE__ 
+    //   err << __FILE__ << " " << __LINE__
     //       << " :: " << get_type() << " paired with invalid input layer type" << std::endl;
     //   throw lbann_exception(err.str());
     // }
@@ -84,33 +84,6 @@ class target_layer_distributed_minibatch : public target_layer {
       buf.second->M_local.Resize(this->m_num_neurons, max_mb_size);
       buf.second->Ms.Resize(this->m_num_neurons, max_mb_size);
     }
-  }
-
-  void fp_set_std_matrix_view() override {
-    target_layer::fp_set_std_matrix_view();
-    El::Int cur_mini_batch_size = m_model->get_current_mini_batch_size();
-    data_buffer *buf = ((distributed_io_buffer*) io_buffer)->get_data_buffer(this->m_model->get_execution_mode());
-    El::View(buf->M_local_v, buf->M_local, El::ALL, El::IR(0, cur_mini_batch_size));
-  }
-
-  void fp_compute() override {
-    execution_mode mode = this->m_model->get_execution_mode();
-    int num_samples_in_batch = io_buffer->fetch_to_local_matrix(paired_input_layer->get_data_reader(), mode);
-    if(((distributed_io_buffer*) io_buffer)->is_current_root(mode)) {
-      /// Only update the number of samples processed by this parallel reader, when it is the current root
-      target_layer::update_num_samples_processed(num_samples_in_batch);
-    }
-
-    int curr_mini_batch_size = this->m_model->get_current_mini_batch_size();
-    if(((distributed_io_buffer*) io_buffer)->is_current_root(mode) && num_samples_in_batch != curr_mini_batch_size) {
-      throw lbann_exception("lbann_target_layer_distributed_minibatch: number of labels ("
-                            + std::to_string(num_samples_in_batch) + ") does not match the current mini-batch size (" 
-                            + std::to_string(curr_mini_batch_size) + ")."
-                            );
-    }
-    /// @todo should this distribute the entire matrix even if there is only a partial mini-batch
-    io_buffer->distribute_from_local_matrix(*this->m_activations, paired_input_layer->get_data_reader(), mode);
-    return;
   }
 
   void bp_compute() override {}

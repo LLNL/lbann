@@ -44,6 +44,7 @@ class partitioned_io_buffer : public generic_io_buffer {
   ~partitioned_io_buffer() override {}
 
   void set_local_matrix_bypass(Mat *m) override { M_local = m; }
+  void set_std_matrix_view(El::Int cur_mini_batch_size) override {}
   void setup_data(El::Int num_neurons, El::Int max_minibatch_size) override {}
 
   int fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) override;
