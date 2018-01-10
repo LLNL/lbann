@@ -28,6 +28,7 @@
 
 #include "lbann/data_readers/data_reader_imagenet.hpp"
 #include "lbann/data_readers/image_utils.hpp"
+#include "lbann/data_store/data_store_imagenet.hpp"
 #include <omp.h>
 
 namespace lbann {
@@ -127,8 +128,17 @@ bool imagenet_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
 
   int width=0, height=0, img_type=0;
 
+  std::vector<unsigned char> *image_buf;
+
   ::Mat X_v = create_datum_view(X, mb_idx);
-  const bool ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v);
+
+  bool ret;
+  if (m_data_store != nullptr) {
+    m_data_store->get_data_buf(get_file_dir(), m_image_list[data_id].first, image_buf, tid);
+    ret = lbann::image_utils::load_image(*image_buf, width, height, img_type, *(m_pps[tid]), X_v);
+  } else {
+    ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v);
+  }
 
   if(!ret) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)

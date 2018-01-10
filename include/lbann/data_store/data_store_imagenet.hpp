@@ -56,6 +56,8 @@ class data_store_imagenet : public generic_data_store {
 
   void setup() override;
 
+  void get_data_buf(std::string dir, std::string filename, std::vector<unsigned char> *&buf, int tid);
+
  protected :
 
 };

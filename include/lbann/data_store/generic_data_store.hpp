@@ -47,9 +47,7 @@ class generic_data_store {
  public:
 
   //! ctor
-  generic_data_store(lbann_comm *comm, generic_data_reader *reader) :
-    m_comm(comm), m_master(comm->am_world_master()), m_reader(reader)
-  {}
+  generic_data_store(lbann_comm *comm, generic_data_reader *reader); 
 
   //! copy ctor
   generic_data_store(const generic_data_store&) = default;
@@ -71,6 +69,13 @@ class generic_data_store {
 
   void set_shuffled_indices(const std::vector<int> *indices) {
     m_shuffled_indices = indices;
+    m_cur_idx = 0;
+  }
+
+  virtual void get_data_buf(std::string dir, std::string filename, std::vector<unsigned char> *&buf, int tid) = 0;
+
+  void update() {
+    m_cur_idx = 0;
   }
 
   /// for use during development and debugging
@@ -78,11 +83,15 @@ class generic_data_store {
 
  protected :
 
+  bool m_in_memory;
+
   lbann_comm *m_comm;
   bool m_master;
   generic_data_reader *m_reader;
 
-  std::vector<int> *m_my_indices;
+  int m_cur_idx;
+
+  //std::vector<std::vector<int> > *m_my_indices;
 
   const std::vector<int> *m_shuffled_indices;
 
@@ -90,7 +99,7 @@ class generic_data_store {
   /// indices; they do not change!
   void get_my_indices();
 
-
+  std::vector<std::vector<unsigned char> > m_buffers;
 };
 
 }  // namespace lbann
