@@ -220,8 +220,8 @@ bool generic_data_reader::update(bool is_active_reader) {
   if(is_active_reader) {
     m_current_pos = get_next_position();
 
-    /// Maintain the current width of the matrix
-    El::Zeros(m_indices_fetched_per_mb, m_indices_fetched_per_mb.Width(), 1);
+    /// Maintain the current height of the matrix
+    El::Zeros(m_indices_fetched_per_mb, m_indices_fetched_per_mb.Height(), 1);
 
     m_loaded_mini_batch_idx += m_iteration_stride;
   }
