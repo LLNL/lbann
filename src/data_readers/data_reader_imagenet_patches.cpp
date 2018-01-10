@@ -81,6 +81,7 @@ void imagenet_reader_patches::set_defaults() {
   m_image_width = 256;
   m_image_height = 256;
   m_image_num_channels = 3;
+  set_linearized_image_size();
   m_num_labels = 1000;
   m_num_patches = 1;
 }
@@ -114,6 +115,7 @@ bool imagenet_reader_patches::replicate_processor(const cv_process_patches& pp) 
     m_num_patches = static_cast<int>(dims[0]);
     m_image_width = static_cast<int>(dims[1]);
     m_image_height = static_cast<int>(dims[2]);
+    set_linearized_image_size();
   }
   if (pp.is_self_labeling()) {
     m_num_labels = pp.get_num_labels();
@@ -125,7 +127,7 @@ bool imagenet_reader_patches::replicate_processor(const cv_process_patches& pp) 
 
 std::vector<::Mat> imagenet_reader_patches::create_datum_views(::Mat& X, const int mb_idx) const {
 /*
-  if (X.Height() != m_num_patches * m_image_height) {
+  if (X.Height() != get_linearized_data_size()) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
                           + "ImageNet: inconsistent number of patches");
   }
@@ -149,7 +151,6 @@ std::vector<::Mat> imagenet_reader_patches::create_datum_views(std::vector<::Mat
 }
 
 bool imagenet_reader_patches::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
-  const int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
   const std::string imagepath = get_file_dir() + m_image_list[data_id].first;
 
   int width=0, height=0, img_type=0;
@@ -166,11 +167,11 @@ bool imagenet_reader_patches::fetch_datum(Mat& X, int data_id, int mb_idx, int t
                           + "ImageNet: image_utils::load_image failed to load - " 
                           + imagepath);
   }
-  if((width * height * CV_MAT_CN(img_type)) != num_channel_values) {
+  if((width * height * CV_MAT_CN(img_type)) != m_image_linearized_size) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
                           + "ImageNet: mismatch data size -- either width, height or channel - "
                           + imagepath + " [w,h,c]=[" + std::to_string(width) + "x" + std::to_string(height)
-                          + "x" + std::to_string(CV_MAT_CN(img_type)) + "] != " + std::to_string(num_channel_values));
+                          + "x" + std::to_string(CV_MAT_CN(img_type)) + "] != " + std::to_string(m_image_linearized_size));
   }
   return true;
 }

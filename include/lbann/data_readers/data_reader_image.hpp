@@ -63,7 +63,7 @@ class image_data_reader : public generic_data_reader {
     return m_image_num_channels;
   }
   int get_linearized_data_size() const override {
-    return m_image_width * m_image_height * m_image_num_channels;
+    return m_image_linearized_size;
   }
   int get_linearized_label_size() const override {
     return m_num_labels;
@@ -81,6 +81,7 @@ class image_data_reader : public generic_data_reader {
   /// Set the default values for the width, the height, the number of channels, and the number of labels of an image
   virtual void set_defaults();
   bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;
+  void set_linearized_image_size();
 
  protected:
   std::string m_image_dir; ///< where images are stored
@@ -88,6 +89,7 @@ class image_data_reader : public generic_data_reader {
   int m_image_width; ///< image width
   int m_image_height; ///< image height
   int m_image_num_channels; ///< number of image channels
+  int m_image_linearized_size; ///< linearized image size
   int m_num_labels; ///< number of labels
 };
 

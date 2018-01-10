@@ -43,6 +43,7 @@ image_data_reader::image_data_reader(const image_data_reader& rhs)
     m_image_width(rhs.m_image_width),
     m_image_height(rhs.m_image_height),
     m_image_num_channels(rhs.m_image_num_channels),
+    m_image_linearized_size(rhs.m_image_linearized_size),
     m_num_labels(rhs.m_num_labels)
 {}
 
@@ -53,15 +54,21 @@ image_data_reader& image_data_reader::operator=(const image_data_reader& rhs) {
   m_image_width = rhs.m_image_width;
   m_image_height = rhs.m_image_height;
   m_image_num_channels = rhs.m_image_num_channels;
+  m_image_linearized_size = rhs.m_image_linearized_size;
   m_num_labels = rhs.m_num_labels;
 
   return (*this);
+}
+
+void image_data_reader::set_linearized_image_size() {
+  m_image_linearized_size = m_image_width * m_image_height * m_image_num_channels;
 }
 
 void image_data_reader::set_defaults() {
   m_image_width = 256;
   m_image_height = 256;
   m_image_num_channels = 3;
+  set_linearized_image_size();
   m_num_labels = 1000;
 }
 
@@ -81,6 +88,7 @@ void image_data_reader::set_input_params(const int width, const int height, cons
     err << __FILE__<<" "<<__LINE__<< " :: Imagenet data reader setup error: invalid number of channels of input images";
     throw lbann_exception(err.str());
   }
+  set_linearized_image_size();
   if (num_labels > 0) {
     m_num_labels = num_labels;
   } else if (num_labels < 0) {
