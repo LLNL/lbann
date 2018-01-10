@@ -104,7 +104,7 @@ void loss_function::setup(model& m) {
 
   // Initialize gradient matrix
   auto *target = (target_layer*) m_layers[0];
-  const AbsDistMat& ground_truth = target->get_activations();
+  const AbsDistMat& ground_truth = target->get_ground_truth();
   m_gradient = ground_truth.Construct(ground_truth.Grid(),
                                       ground_truth.Root());
   El::Zeros(*m_gradient, ground_truth.Height(), ground_truth.Width());

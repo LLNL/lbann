@@ -42,23 +42,23 @@
 #include "lbann/models/siamese.hpp"
 #endif
 
-#if 0
 /// Activation Layers
 #include "lbann/layers/activations/atan.hpp"
-#include "lbann/layers/activations/bent_identity.hpp"
-#include "lbann/layers/activations/elu.hpp"
+// #include "lbann/layers/activations/bent_identity.hpp"
+// #include "lbann/layers/activations/elu.hpp"
 #include "lbann/layers/activations/exponential.hpp"
-#include "lbann/layers/activations/id.hpp"
-#include "lbann/layers/activations/leaky_relu.hpp"
+// #include "lbann/layers/activations/id.hpp"
+// #include "lbann/layers/activations/leaky_relu.hpp"
 #include "lbann/layers/activations/relu.hpp"
-#include "lbann/layers/activations/selu.hpp"
+// #include "lbann/layers/activations/selu.hpp"
 #include "lbann/layers/activations/sigmoid.hpp"
-#include "lbann/layers/activations/smooth_relu.hpp"
-#include "lbann/layers/activations/softmax.hpp"
-#include "lbann/layers/activations/softplus.hpp"
-#include "lbann/layers/activations/swish.hpp"
+// #include "lbann/layers/activations/smooth_relu.hpp"
+// #include "lbann/layers/activations/softmax.hpp"
+// #include "lbann/layers/activations/softplus.hpp"
+// #include "lbann/layers/activations/swish.hpp"
 #include "lbann/layers/activations/tanh.hpp"
 
+#if 0
 /// Learning Layers
 #include "lbann/layers/learning/fully_connected.hpp"
 #include "lbann/layers/learning/convolution.hpp"

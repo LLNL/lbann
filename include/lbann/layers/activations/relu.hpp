@@ -32,9 +32,8 @@
 
 namespace lbann {
 
-/**
- * Rectified linear unit activation function.
- * See: https://en.wikipedia.org/wiki/Rectifier_(neural_networks)
+/** Rectified linear unit activation function.
+ *  See https://en.wikipedia.org/wiki/Rectifier_(neural_networks)
  */
 template <data_layout T_layout>
 class relu_layer : public entrywise_activation_layer {
@@ -50,8 +49,6 @@ class relu_layer : public entrywise_activation_layer {
   relu_layer(lbann_comm *comm,
              cudnn::cudnn_manager *cudnn = nullptr) :
     entrywise_activation_layer(comm) {
-
-    initialize_distributed_matrices();
 
   #ifdef __LIB_CUDNN
 
@@ -101,9 +98,6 @@ class relu_layer : public entrywise_activation_layer {
      " relu" + " dataLayout: " + this->get_data_layout_string(get_data_layout());
   }
 
-  inline void initialize_distributed_matrices() override {
-    entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
-  }
   data_layout get_data_layout() const override { return T_layout; }
 
   void setup_gpu() override {
@@ -127,7 +121,7 @@ class relu_layer : public entrywise_activation_layer {
     return x > DataType(0) ? x : DataType(0);
   }
 
-  DataType activation_function_gradient(DataType x) override {
+  DataType activation_function_derivative(DataType x) override {
     return x > DataType(0) ? DataType(1) : DataType(0);
   }
 

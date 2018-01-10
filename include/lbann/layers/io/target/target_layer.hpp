@@ -41,14 +41,23 @@ class target_layer : public io_layer {
  protected:
   input_layer *paired_input_layer;
 
+  AbsDistMat* m_ground_truth;
+
  public:
-  target_layer(lbann_comm *comm, input_layer* input_layer, std::map<execution_mode, generic_data_reader *> data_readers, bool for_regression = false)
-    : io_layer(comm, true, for_regression), paired_input_layer(input_layer) {
+  target_layer(lbann_comm *comm,
+               input_layer* input_layer,
+               std::map<execution_mode, generic_data_reader *> data_readers,
+               bool for_regression = false)
+    : io_layer(comm, true, for_regression),
+      paired_input_layer(input_layer),
+      m_ground_truth(nullptr) {
     // Target layers have no children
     m_expected_num_child_layers = 0;
   }
 
-  ~target_layer() override = default;
+  virtual ~target_layer() override {
+    if (m_ground_truth != nullptr) delete m_ground_truth;
+  }
 
   target_layer(const target_layer& other) = default;
 
@@ -76,6 +85,12 @@ class target_layer : public io_layer {
       this->m_num_neuron_dims = 1;
       this->m_neuron_dims.assign(1, this->m_num_neurons);
     }
+  }
+
+  void setup_matrices(const El::Grid& grid) override {
+    io_layer::setup_matrices(grid);
+    if (m_ground_truth != nullptr) delete m_ground_truth;
+    m_ground_truth = get_prev_activations().Copy();
   }
 
   void check_setup() override {
@@ -194,34 +209,14 @@ class target_layer : public io_layer {
     return paired_input_layer->is_execution_mode_valid(mode);
   }
 
-  AbsDistMat& get_prediction() { 
-    /// @todo Implement
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__
-        << " :: not implemented";
-    throw lbann_exception(err.str());
-  }
-  AbsDistMat& get_ground_truth() { 
-    /// @todo Implement
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__
-        << " :: not implemented";
-    throw lbann_exception(err.str());
-  }
-  const AbsDistMat& get_prediction() const {
-    /// @todo Implement
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__
-        << " :: not implemented";
-    throw lbann_exception(err.str());
-  }
-  const AbsDistMat& get_ground_truth() const { 
-    /// @todo Implement
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__
-        << " :: not implemented";
-    throw lbann_exception(err.str());
-  }
+  /** Get prediction matrix. */
+  AbsDistMat& get_prediction()             { return get_prev_activations(); }
+  /** Get prediction matrix (const). */
+  const AbsDistMat& get_prediction() const { return get_prev_activations(); }
+  /** Get ground truth matrix. */
+  AbsDistMat& get_ground_truth()             { return *m_ground_truth; }
+  /** Get ground truth matrix (const). */
+  const AbsDistMat& get_ground_truth() const { return *m_ground_truth; }
 
   std::vector<Layer*> get_layer_pointers() override {
     std::vector<Layer*> layers = io_layer::get_layer_pointers();

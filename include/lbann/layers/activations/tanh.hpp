@@ -35,26 +35,19 @@ namespace lbann {
 template <data_layout T_layout>
 class tanh_layer : public entrywise_activation_layer {
  public:
-  tanh_layer(lbann_comm *comm) :
-    entrywise_activation_layer(comm) { 
-    initialize_distributed_matrices(); 
-  }
-
+  tanh_layer(lbann_comm *comm) : entrywise_activation_layer(comm) {}
   tanh_layer* copy() const override { return new tanh_layer(*this); }
 
   std::string get_type() const override { return "tanh"; }
-
-  inline void initialize_distributed_matrices() override {
-    entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
-  }
   data_layout get_data_layout() const override { return T_layout; }
 
  protected:
   DataType activation_function(DataType z) override {
     return std::tanh(z);
   }
-  DataType activation_function_gradient(DataType z) override {
-    return std::pow(std::cosh(z), -2);
+  DataType activation_function_derivative(DataType z) override {
+    const auto coshz = std::cosh(z);
+    return DataType(1) / (coshz * coshz);
   }
 };
 

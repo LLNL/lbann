@@ -170,19 +170,8 @@ class Layer {
       layer has to overrride this with its T_layout template parameter */
   virtual data_layout get_data_layout() const = 0;
 
-  /** Return (a view of) the activations matrix for this layer. */
-  virtual AbsDistMat& get_activations() {
-    return *m_activations[0];
-  }
-
   /** Reset layer stat counters. */
-  virtual void reset_counters() {
-    m_fp_time         = EvalType(0);
-    m_fp_compute_time = EvalType(0);
-    m_bp_time         = EvalType(0);
-    m_bp_compute_time = EvalType(0);
-    m_update_time     = EvalType(0);
-  }
+  virtual void reset_counters();
 
   bool using_gpus() const {
     return m_using_gpus;
@@ -390,6 +379,24 @@ class Layer {
   virtual void bp_compute() = 0;
   /** Perform the main computation for an update step. */
   virtual bool update_compute() { return true; }
+
+  AbsDistMat& get_prev_activations(int parent_index = 0);
+  AbsDistMat& get_activations(int child_index = 0);
+  AbsDistMat& get_prev_error_signals(int child_index = 0);
+  AbsDistMat& get_error_signals(int parent_index = 0);
+  const AbsDistMat& get_prev_activations(int parent_index = 0) const;
+  const AbsDistMat& get_activations(int child_index = 0) const;
+  const AbsDistMat& get_prev_error_signals(int child_index = 0) const;
+  const AbsDistMat& get_error_signals(int parent_index = 0) const;
+
+  Mat& get_local_prev_activations(int parent_index = 0);
+  Mat& get_local_activations(int child_index = 0);
+  Mat& get_local_prev_error_signals(int child_index = 0);
+  Mat& get_local_error_signals(int parent_index = 0);
+  const Mat& get_local_prev_activations(int parent_index = 0) const;
+  const Mat& get_local_activations(int child_index = 0) const;
+  const Mat& get_local_prev_error_signals(int child_index = 0) const;
+  const Mat& get_local_error_signals(int parent_index = 0) const;
 
   /** Whether current layer is using GPUs. */
   bool m_using_gpus;

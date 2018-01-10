@@ -102,6 +102,7 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
   }
 
   void fp_compute() override {
+
     int num_samples_in_batch = fetch_to_local_matrix(Y_local_v, paired_input_layer->get_data_reader());
     if(is_current_root()) {
       /// Only update the number of samples processed by this parallel reader, when it is the current root
@@ -117,7 +118,10 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
     }
     /// @todo should this distribute the entire matrix even if there is only a partial mini-batch
     distribute_from_local_matrix(Y_local, Ys, paired_input_layer->get_data_reader());
-    Copy(Ys, *this->m_activations_v);
+
+    const auto& predictions = get_predictions();
+    m_ground_truth->Resize(predictions.Height(), predictions.Width());
+    Copy(Ys, *m_ground_truth);
 
     return;
   }

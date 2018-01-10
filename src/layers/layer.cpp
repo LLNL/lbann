@@ -371,6 +371,14 @@ bool Layer::update() {
   return layer_done;
 }
 
+void Layer::reset_counters() {
+  m_fp_time         = EvalType(0);
+  m_fp_compute_time = EvalType(0);
+  m_bp_time         = EvalType(0);
+  m_bp_compute_time = EvalType(0);
+  m_update_time     = EvalType(0);
+}
+
 void Layer::summarize_stats(lbann_summary& summarizer, int step) {
   std::string prefix = m_name + "/";
   summarizer.reduce_scalar(prefix + "fp_time", m_fp_time, step);
@@ -415,6 +423,95 @@ void Layer::summarize_matrices(lbann_summary& summarizer, int step) {
     summarizer.reduce_2norm(prefix + "/2norm2", *m_error_signals[i], step);
   }
 
+}
+
+AbsDistMat& Layer::get_prev_activations(int parent_index) {
+  return const_cast<AbsDistMat&>(static_cast<const Layer&>(*this).get_prev_activations(parent_index));
+}
+const AbsDistMat& Layer::get_prev_activations(int parent_index) const {
+  if (parent_index < 0 || parent_index >= (int) m_prev_activations.size()) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "attempted to access invalid previous activation matrix "
+        << "from " << m_name << " "
+        << "(requested index " << parent_index << ", but there are "
+        << m_prev_activations.size() << " previous activation matrices)";
+    throw lbann_exception(err.str());
+  }
+  return *m_prev_activations[parent_index];
+}
+
+AbsDistMat& Layer::get_activations(int child_index) {
+  return const_cast<AbsDistMat&>(static_cast<const Layer&>(*this).get_activations(child_index));
+}
+const AbsDistMat& Layer::get_activations(int child_index) const {
+  if (child_index < 0 || child_index >= (int) m_activations.size()) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "attempted to access invalid activation matrix "
+        << "from " << m_name << " "
+        << "(requested index " << child_index << ", but there are "
+        << m_activations.size() << " activation matrices)";
+    throw lbann_exception(err.str());
+  }
+  return *m_activations[child_index];
+}
+
+AbsDistMat& Layer::get_prev_error_signals(int child_index) {
+  return const_cast<AbsDistMat&>(static_cast<const Layer&>(*this).get_prev_error_signals(child_index));
+}
+const AbsDistMat& Layer::get_prev_error_signals(int child_index) const {
+  if (child_index < 0 || child_index >= (int) m_prev_error_signals.size()) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "attempted to access invalid previous error signal matrix "
+        << "from " << m_name << " "
+        << "(requested index " << child_index << ", but there are "
+        << m_prev_error_signals.size() << " previous error signal matrices)";
+    throw lbann_exception(err.str());
+  }
+  return *m_prev_error_signals[child_index];
+}
+
+AbsDistMat& Layer::get_error_signals(int parent_index) {
+  return const_cast<AbsDistMat&>(static_cast<const Layer&>(*this).get_error_signals(parent_index));
+}
+const AbsDistMat& Layer::get_error_signals(int parent_index) const {
+  if (parent_index < 0 || parent_index >= (int) m_error_signals.size()) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "attempted to access invalid error signal matrix "
+        << "from " << m_name << " "
+        << "(requested index " << parent_index << ", but there are "
+        << m_error_signals.size() << " error signal matrices)";
+    throw lbann_exception(err.str());
+  }
+  return *m_error_signals[parent_index];
+}
+
+Mat& Layer::get_local_prev_activations(int parent_index) {
+  return get_prev_activations(parent_index).Matrix();
+}
+const Mat& Layer::get_local_prev_activations(int parent_index) const {
+  return get_prev_activations(parent_index).LockedMatrix();
+}
+Mat& Layer::get_local_activations(int child_index) {
+  return get_activations(child_index).Matrix();
+}
+const Mat& Layer::get_local_activations(int child_index) const {
+  return get_activations(child_index).LockedMatrix();
+}
+Mat& Layer::get_local_prev_error_signals(int child_index) {
+  return get_prev_error_signals(child_index).Matrix();
+}
+const Mat& Layer::get_local_prev_error_signals(int child_index) const {
+  return get_prev_error_signals(child_index).LockedMatrix();
+}
+Mat& Layer::get_local_error_signals(int parent_index) {
+  return get_error_signals(parent_index).Matrix();
+}
+const Mat& Layer::get_local_error_signals(int parent_index) const {
+  return get_error_signals(parent_index).LockedMatrix();
 }
 
 void Layer::clear_error_signals(int mini_batch_size) {

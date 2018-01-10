@@ -80,11 +80,11 @@ class target_layer_partitioned_minibatch : public target_layer, public partition
   }
 
   void fp_compute() override {
-    int num_samples_in_batch = fetch_to_local_matrix(this->m_activations_v->Matrix(), paired_input_layer->get_data_reader());
-
+    const auto& predictions = get_predictions();
+    m_ground_truth->Resize(predictions.Height(), predictions.Width());
+    const int num_samples_in_batch = fetch_to_local_matrix(m_ground_truth->Matrix(),
+                                                           paired_input_layer->get_data_reader());
     target_layer::update_num_samples_processed(num_samples_in_batch);
-
-    return;
   }
 
 
