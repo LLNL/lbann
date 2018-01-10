@@ -400,7 +400,7 @@ void Layer::summarize_stats(lbann_summary& summarizer, int step) {
 void Layer::summarize_matrices(lbann_summary& summarizer, int step) {
 
   // Summarize activation matrices
-  const int num_children = m_child_layers.size();
+  const int num_children = get_num_children();
   for (int i = 0; i < num_children; ++i) {
     std::string prefix = m_name + "/activations";
     if (num_children > 1) { prefix += std::to_string(i); }
@@ -412,7 +412,7 @@ void Layer::summarize_matrices(lbann_summary& summarizer, int step) {
   }
 
   // Summarize error signal matrices
-  const int num_parents = m_parent_layers.size();
+  const int num_parents = get_num_parents();
   for (int i = 0; i < num_parents; ++i) {
     std::string prefix = m_name + "/error_signals";
     if (num_parents > 1) { prefix += std::to_string(i); }
@@ -523,7 +523,7 @@ void Layer::clear_error_signals(int mini_batch_size) {
 #endif // __LIB_CUDNN
   }
   else {
-    for (size_t i = 0; i < m_error_signals.size(); ++i) {
+    for (int i = 0; i < get_num_parents(); ++i) {
       El::Zeros(*m_error_signals[i],
                 get_num_prev_neurons(i),
                 mini_batch_size);
@@ -546,7 +546,7 @@ void Layer::setup_pointers() {
 
   // Check if the number of parents/children are valid
   if(m_expected_num_parent_layers >= 0
-     && (int)m_parent_layers.size() != m_expected_num_parent_layers) {
+     && get_num_parents() != m_expected_num_parent_layers) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
         << "layer " << m_name << " has an invalid number of parent layers "
@@ -555,7 +555,7 @@ void Layer::setup_pointers() {
     throw lbann_exception(err.str());
   }
   if(m_expected_num_child_layers >= 0
-     && (int)m_child_layers.size() != m_expected_num_child_layers) {
+     && get_num_children() != m_expected_num_child_layers) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
         << "layer " << m_name << " has an invalid number of child layers "
@@ -595,21 +595,21 @@ void Layer::setup_matrices(const El::Grid& grid) {
   // Allocate input and output matrices for forward an back prop
   switch (get_data_layout()) {
   case data_layout::MODEL_PARALLEL:
-    for (size_t i = 0; i < m_parent_layers.size(); ++i) {
+    for (int i = 0; i < get_num_parents(); ++i) {
       m_prev_activations.push_back(new MCMRMat(grid));
       m_error_signals.push_back(new MCMRMat(grid));
     }
-    for (size_t i = 0; i < m_child_layers.size(); ++i) {
+    for (int i = 0; i < get_num_children(); ++i) {
       m_activations.push_back(new MCMRMat(grid));
       m_prev_error_signals.push_back(new MCMRMat(grid));
     }
     break;
   case data_layout::DATA_PARALLEL:
-    for (size_t i = 0; i < m_parent_layers.size(); ++i) {
+    for (int i = 0; i < get_num_parents(); ++i) {
       m_prev_activations.push_back(new StarVCMat(grid));
       m_error_signals.push_back(new StarVCMat(grid));
     }
-    for (size_t i = 0; i < m_child_layers.size(); ++i) {
+    for (int i = 0; i < get_num_children(); ++i) {
       m_activations.push_back(new StarVCMat(grid));
       m_prev_error_signals.push_back(new StarVCMat(grid));
     }
@@ -636,14 +636,14 @@ void Layer::setup_data() {
   }
 
   // Initialize forward prop output
-  for (size_t i = 0; i < m_child_layers.size(); ++i) {
+  for (int i = 0; i < get_num_children(); ++i) {
     El::Zeros(*m_activations[i],
               get_num_neurons(i),
               mini_batch_size);
   }
 
   // Initialize backward prop output
-  for (size_t i = 0; i < m_parent_layers.size(); ++i) {
+  for (int i = 0; i < get_num_parents(); ++i) {
     El::Zeros(*m_error_signals[i],
               get_num_prev_neurons(i),
               mini_batch_size);
@@ -712,24 +712,24 @@ void Layer::check_setup() {
   std::stringstream err;
 
   // Check that matrices matches number of parent/child layers
-  if (m_prev_activations.size() != m_parent_layers.size()
-      || m_activations.size() != m_child_layers.size()) {
+  const int num_parents = get_num_parents();
+  const int num_children = get_num_children();
+  if ((int) m_prev_activations.size() != num_parents
+      || (int) m_activations.size() != num_children) {
     err << __FILE__ << " " << __LINE__ << " :: "
         << "layer " << m_name << " has an invalid number of "
-        << "forward prop matrices "
-        << "(expected " << m_parent_layers.size() << " input and "
-        << m_child_layers.size() << " output, "
+        << "forward prop matrices (expected "
+        << num_parents << " input and " << num_children << " output, "
         << "but found " << m_prev_activations.size() << " and "
         << m_activations.size() << " respectively) ";
     throw lbann_exception(err.str());
   }
-  if (m_prev_error_signals.size() != m_child_layers.size()
-      || m_error_signals.size() != m_parent_layers.size()) {
+  if ((int) m_prev_error_signals.size() != num_children
+      || (int) m_error_signals.size() != num_parents) {
     err << __FILE__ << " " << __LINE__ << " :: "
         << "layer " << m_name << " has an invalid number of "
-        << "backward prop matrices "
-        << "(expected " << m_child_layers.size() << " input and "
-        << m_parent_layers.size() << " output, "
+        << "backward prop matrices (expected "
+        << num_children << " input and " << num_parents << " output. "
         << "but found " << m_prev_error_signals.size() << " and "
         << m_error_signals.size() << " respectively) ";
     throw lbann_exception(err.str());
@@ -849,7 +849,7 @@ void Layer::write_proto(lbann_data::Layer* proto) const {
 void Layer::fp_setup_data(int mini_batch_size) {
 
   // Get previous activations from parent layers
-  for (size_t i = 0; i < m_prev_activations.size(); ++i) {
+  for (int i = 0; i < get_num_parents(); ++i) {
     const auto& parent = m_parent_layers[i];
     auto& input = *m_prev_activations[i];
     parent->get_fp_output(input, this);
@@ -868,7 +868,7 @@ void Layer::fp_setup_data(int mini_batch_size) {
   }
 
   // Initialize activation matrices
-  for (size_t i = 0; i < m_activations.size(); ++i) {
+  for (int i = 0; i < get_num_children(); ++i) {
     m_activations[i]->Resize(get_num_neurons(i), mini_batch_size);
   }
   
@@ -877,7 +877,7 @@ void Layer::fp_setup_data(int mini_batch_size) {
 void Layer::bp_setup_data(int mini_batch_size) {
 
   // Get previous error signal matrices from child layers
-  for (size_t i = 0; i < m_prev_error_signals.size(); ++i) {
+  for (int i = 0; i < get_num_children(); ++i) {
     const auto& child = m_child_layers[i];
     auto& input = *m_prev_error_signals[i];
     child->get_bp_output(input, this);

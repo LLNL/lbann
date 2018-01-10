@@ -248,6 +248,12 @@ class Layer {
   std::vector<const Layer*>& get_child_layers();
   /** Get list of child layers (const). */
   const std::vector<const Layer*>& get_child_layers() const;
+
+  /** Get number of parent layers. */
+  inline int get_num_parents() const { return m_parent_layers.size(); }
+  /** Get number of child layers. */
+  inline int get_num_children() const { return m_child_layers.size(); }
+
   /** Get names in a particular list of layers */
   static std::string get_layer_names(const std::vector<const Layer*>& list);
   std::string get_child_names() const { return get_layer_names(m_child_layers); }
