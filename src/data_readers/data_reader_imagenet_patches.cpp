@@ -135,8 +135,8 @@ std::vector<::Mat> imagenet_reader_patches::create_datum_views(::Mat& X, const i
   std::vector<::Mat> X_v(m_num_patches);
   El::Int h = 0;
   for(int i=0; i < m_num_patches; ++i) {
-    El::View(X_v[i], X, El::IR(h, h + m_image_height), El::IR(mb_idx, mb_idx + 1));
-    h = h + m_image_height;
+    El::View(X_v[i], X, El::IR(h, h + m_image_linearized_size), El::IR(mb_idx, mb_idx + 1));
+    h = h + m_image_linearized_size;
   }
   return X_v;
 }
