@@ -55,6 +55,9 @@ class generic_target_layer : public io_layer {
 
   generic_target_layer& operator=(const generic_target_layer& other) = default;
 
+  template<typename T_io_buffer>
+  inline void initialize_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers);
+
   template<data_layout T_layout> inline void initialize_distributed_matrices() {
     io_layer::initialize_distributed_matrices<T_layout>();
   }
@@ -65,6 +68,14 @@ class generic_target_layer : public io_layer {
 
   void set_paired_input_layer(generic_input_layer *input_layer) {
     paired_input_layer = input_layer;
+  }
+
+  /** Returns description of ctor params */
+  std::string get_description() const override {
+    std::string s = get_topo_description();
+    return std::string {} + " target_layer " + io_buffer->get_type()
+           + " dataLayout: " + this->get_data_layout_string(get_data_layout())
+           + " (" + s + ")";
   }
 
   void setup_dims() override {
@@ -313,6 +324,14 @@ class generic_target_layer : public io_layer {
     //return true;
   }
 };
+
+template<> inline void generic_target_layer::initialize_io_buffer<partitioned_io_buffer>(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers) {
+  io_buffer = new partitioned_io_buffer(comm, num_parallel_readers, data_readers);
+}
+
+template<> inline void generic_target_layer::initialize_io_buffer<distributed_io_buffer>(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers) {
+  io_buffer = new distributed_io_buffer(comm, num_parallel_readers, data_readers);
+}
 
 }  // namespace lbann
 

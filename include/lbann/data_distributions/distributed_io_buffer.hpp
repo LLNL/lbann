@@ -92,7 +92,7 @@ class distributed_io_buffer : public generic_io_buffer {
     }
   }
 
-  std::string get_type() const override { return "distributed"; }
+  std::string get_type() const override { return "distributed_io_buffer"; }
 
   void set_local_matrix_bypass(Mat *M_local) override {};
 

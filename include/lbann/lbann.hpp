@@ -80,9 +80,8 @@
 #include "lbann/layers/regularizers/batch_normalization.hpp"
 
 /// I/O Layers
-#include "lbann/layers/io/target/target_layer_distributed_minibatch.hpp"
 #include "lbann/layers/io/input/input_layer.hpp"
-#include "lbann/layers/io/target/target_layer_partitioned_minibatch.hpp"
+#include "lbann/layers/io/target/target_layer.hpp"
 
 /// Reconstruction Layer
 #include "lbann/layers/io/target/reconstruction.hpp"

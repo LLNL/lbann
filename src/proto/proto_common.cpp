@@ -988,11 +988,11 @@ void add_layers(
     else if (layer.has_target_partitioned_minibatch()) {
       const lbann_data::TargetPartitionedMinibatch& ell = layer.target_partitioned_minibatch();
       if (layout == data_layout::MODEL_PARALLEL and master) {
-        err << __FILE__ << " " << __LINE__ << " :: target_layer_partitioned_minibatch "
+        err << __FILE__ << " " << __LINE__ << " :: target_layer "
             << "does not support MODEL_PARALLEL layouts";
         throw lbann_exception(err.str());
       } else {
-        d = new  target_layer_partitioned_minibatch<data_layout::DATA_PARALLEL>(
+        d = new  target_layer<partitioned_io_buffer, data_layout::DATA_PARALLEL>(
           comm,
           nullptr,
           m.num_parallel_readers(),
@@ -1008,7 +1008,7 @@ void add_layers(
     else if (layer.has_target_distributed_minibatch()) {
       const lbann_data::TargetDistributedMinibatch& ell = layer.target_distributed_minibatch();
       if (layout == data_layout::MODEL_PARALLEL) {
-        d = new  target_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(
+        d = new  target_layer<distributed_io_buffer, data_layout::MODEL_PARALLEL>(
           comm,
           nullptr,
           m.num_parallel_readers(),
@@ -1016,7 +1016,7 @@ void add_layers(
           ell.shared_data_reader(),
           ell.for_regression());
       } else {
-        d = new  target_layer_distributed_minibatch<data_layout::DATA_PARALLEL>(
+        d = new  target_layer<distributed_io_buffer, data_layout::DATA_PARALLEL>(
           comm,
           nullptr,
           m.num_parallel_readers(),
