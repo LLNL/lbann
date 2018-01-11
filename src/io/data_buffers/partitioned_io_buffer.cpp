@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_distributions/partitioned_io_buffer.hpp"
+#include "lbann/io/data_buffers/partitioned_io_buffer.hpp"
 #include "lbann/utils/exception.hpp"
 
 lbann::partitioned_io_buffer::partitioned_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
@@ -114,7 +114,7 @@ void lbann::partitioned_io_buffer::calculate_num_iterations_per_epoch_spanning_m
   /// Check to make sure that there is enough data for all of the parallel readers
   int num_parallel_readers_per_model = compute_max_num_parallel_readers(data_reader->get_num_data(), max_mini_batch_size, m_comm->get_procs_per_model());
   data_reader->set_num_parallel_readers(num_parallel_readers_per_model);
-  if(num_parallel_readers_per_model == 0 
+  if(num_parallel_readers_per_model == 0
      || (num_parallel_readers_per_model != m_comm->get_procs_per_model() && num_parallel_readers_per_model != max_mini_batch_size)) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__)

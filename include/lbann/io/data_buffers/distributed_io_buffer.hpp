@@ -27,7 +27,7 @@
 #ifndef LBANN_DISTRIBUTED_IO_BUFFER_HPP_INCLUDED
 #define LBANN_DISTRIBUTED_IO_BUFFER_HPP_INCLUDED
 
-#include "lbann/data_distributions/generic_io_buffer.hpp"
+#include "lbann/io/data_buffers/generic_io_buffer.hpp"
 
 namespace lbann {
 

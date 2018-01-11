@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_distributions/distributed_io_buffer.hpp"
+#include "lbann/io/data_buffers/distributed_io_buffer.hpp"
 #include "lbann/utils/exception.hpp"
 
 lbann::distributed_io_buffer::distributed_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
@@ -95,7 +95,7 @@ bool lbann::distributed_io_buffer::is_data_set_processed(generic_data_reader *da
   int current_step_in_epoch = data_reader->get_current_step_in_epoch(); // Get the current step before the update function increments it
   data_buffer *buf = get_data_buffer(mode);
 
-  bool is_active_reader = (m_comm->get_rank_in_model() < num_parallel_readers) 
+  bool is_active_reader = (m_comm->get_rank_in_model() < num_parallel_readers)
     && ((m_comm->get_rank_in_model()+1)%num_parallel_readers == buf->m_root);
 
   if(is_active_reader) {

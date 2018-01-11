@@ -29,6 +29,8 @@
 
 #include "lbann/layers/io/io_layer.hpp"
 #include "lbann/layers/io/input/generic_input_layer.hpp"
+#include "lbann/io/data_buffers/partitioned_io_buffer.hpp"
+#include "lbann/io/data_buffers/distributed_io_buffer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/models/model.hpp"
 #include <string>

@@ -29,9 +29,9 @@
 
 #include "lbann/layers/io/io_layer.hpp"
 //#include "lbann/utils/dataset.hpp"
-#include "lbann/data_distributions/generic_io_buffer.hpp"
-#include "lbann/data_distributions/partitioned_io_buffer.hpp"
-#include "lbann/data_distributions/distributed_io_buffer.hpp"
+#include "lbann/io/data_buffers/generic_io_buffer.hpp"
+#include "lbann/io/data_buffers/partitioned_io_buffer.hpp"
+#include "lbann/io/data_buffers/distributed_io_buffer.hpp"
 #include "lbann/models/model.hpp"
 
 namespace lbann {

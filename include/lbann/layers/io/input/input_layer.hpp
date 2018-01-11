@@ -28,7 +28,6 @@
 #define LBANN_LAYERS_INPUT_LAYER_HPP_INCLUDED
 
 #include "lbann/layers/io/input/generic_input_layer.hpp"
-#include "lbann/data_distributions/partitioned_io_buffer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/models/model.hpp"
 #include <string>

@@ -24,14 +24,14 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_distributions/generic_io_buffer.hpp"
+#include "lbann/io/data_buffers/generic_io_buffer.hpp"
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {
 generic_io_buffer::generic_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
   : m_comm(comm), fetch_data_fn(nullptr),  update_data_reader_fn(nullptr) {}
 
-generic_io_buffer::generic_io_buffer(const generic_io_buffer& rhs) 
+generic_io_buffer::generic_io_buffer(const generic_io_buffer& rhs)
 : m_comm(rhs.m_comm)
 {
   if (rhs.fetch_data_fn)
