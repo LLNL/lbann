@@ -39,6 +39,55 @@
 using namespace cudnn;
 using namespace lbann;
 
+matrix::matrix(cudnn_manager *cudnn, int height, int width_per_gpu)
+  : m_cudnn(cudnn),
+    m_is_view(false) {
+  resize(height, width_per_gpu);
+}
+
+matrix::~matrix() {
+  clear();
+}
+
+void matrix::clear() {
+  if (!m_is_view) { m_cudnn->deallocate_on_gpus(m_data); }
+  m_data.clear();
+  m_height = 0;
+  m_width_per_gpu = 0;
+  m_leading_dim = 0;
+  m_is_view = false;
+}
+
+void matrix::resize(int height, int width_per_gpu) {
+  if (m_height != height || m_width_per_gpu != width_per_gpu) {
+    clear();
+    m_height = height;
+    m_width_per_gpu = width_per_gpu;
+    m_leading_dim = height;
+    m_cudnn->allocate_on_gpus(m_data, height, width_per_gpu);
+  }
+}
+
+void matrix::copy(const matrix& other) {
+  resize(other.m_height, other.m_width_per_gpu);
+  m_cudnn->copy_on_gpus(m_data, other.m_data,
+                        m_height, m_width_per_gpu,
+                        other.m_leading_dim, m_leading_dim);
+}
+
+void matrix::view(matrix& other) {
+  clear();
+  m_data = other.m_data;
+  m_height = other.m_height;
+  m_width_per_gpu = other.m_width_per_gpu;
+  m_leading_dim = other.m_leading_dim;
+  m_is_view = true;
+}
+
+void matrix::zero() {
+  m_cudnn->clear_on_gpus(m_data, m_height, m_width_per_gpu, m_leading_dim);
+}
+
 /// It is assumed the number of processes and the number of GPUs on a compute node are equal
 cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus, bool nccl_used)
   : comm(_comm) {

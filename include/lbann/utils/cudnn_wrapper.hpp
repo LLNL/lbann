@@ -92,6 +92,65 @@
 
 namespace cudnn {
 
+// Forward declaration
+class cudnn_manager;
+class matrix;
+
+/** GPU matrix class.
+ *  This will soon be deprecated by native GPU support in Hydrogen.
+ */
+class matrix {
+#ifdef __LIB_CUDNN
+  
+public:
+
+  /** Constructor. */
+  matrix(cudnn_manager *cudnn, int height = 0, int width_per_gpu = 0);
+  /** Destructor. */
+  virtual ~matrix();
+
+  /** Clear data. */
+  void clear();
+  /** Resize matrix. */
+  void resize(int height, int width_per_gpu);
+  /** Copy matrix entries.
+   *  The matrix is resized if needed.
+   */
+  void copy(const matrix& other);
+  /** Make a view of another matrix.
+   *  There is no check whether the original matrix is still valid.
+   */
+  void view(matrix& other);
+  /** Set matrix entries to zero. */
+  void zero();
+
+  /** Get matrix height. */
+  int get_height() const { return m_height; }
+  /** Get matrix width per GPU. */
+  int get_width_per_gpu() const { return m_width_per_gpu; }
+  /** Get GPU data pointers. */
+  std::vector<DataType*>& get_data() { return m_data; }
+  /** Get GPU data pointers (const). */
+  const std::vector<DataType*>& get_data() const { return m_data; }
+
+private:
+
+  /** cuDNN manager. */
+  cudnn_manager *m_cudnn;
+  /** GPU data pointers. */
+  std::vector<DataType*> m_data;
+  /** Matrix height. */
+  int m_height;
+  /** Matrix width per GPU. */
+  int m_width_per_gpu;
+  /** Matrix leading dimension. */
+  int m_leading_dim;
+  /** Whether the matrix is a view of another matrix. */
+  bool m_is_view;
+
+#endif
+};
+
 /** cuDNN manager class */
 class cudnn_manager {
 #ifdef __LIB_CUDNN
