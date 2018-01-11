@@ -123,7 +123,6 @@ void imagenet_reader_single::load() {
 
 
 bool imagenet_reader_single::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
-  const int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
   std::stringstream err;
 
   if (static_cast<size_t>(data_id+1) >= m_offsets.size()) {
@@ -158,7 +157,7 @@ bool imagenet_reader_single::fetch_datum(Mat& X, int data_id, int mb_idx, int ti
     err << __FILE__ << " " << __LINE__ << " :: ImageNetSingle: image_utils::import_image failed to load index: " << data_id;
     throw lbann_exception(err.str());
   }
-  if ((width * height * CV_MAT_CN(img_type)) != num_channel_values) {
+  if ((width * height * CV_MAT_CN(img_type)) != m_image_linearized_size) {
     err << __FILE__ << " " << __LINE__ << " :: ImageNetSingle: mismatch data size -- either width, height or channel";
     throw lbann_exception(err.str());
   }

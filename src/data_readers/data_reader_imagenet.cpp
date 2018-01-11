@@ -28,6 +28,7 @@
 
 #include "lbann/data_readers/data_reader_imagenet.hpp"
 #include "lbann/data_readers/image_utils.hpp"
+#include "lbann/data_store/data_store_imagenet.hpp"
 #include <omp.h>
 
 namespace lbann {
@@ -79,6 +80,7 @@ void imagenet_reader::set_defaults() {
   m_image_width = 256;
   m_image_height = 256;
   m_image_num_channels = 3;
+  set_linearized_image_size();
   m_num_labels = 1000;
 }
 
@@ -111,6 +113,7 @@ bool imagenet_reader::replicate_processor(const cv_process& pp) {
   if ((dims.size() == 2u) && (dims[0] != 0u) && (dims[1] != 0u)) {
     m_image_width = static_cast<int>(dims[0]);
     m_image_height = static_cast<int>(dims[1]);
+    set_linearized_image_size();
   }
 
   return true;
@@ -121,20 +124,28 @@ bool imagenet_reader::replicate_processor(const cv_process& pp) {
 }
 
 bool imagenet_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
-  const int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
   const std::string imagepath = get_file_dir() + m_image_list[data_id].first;
 
   int width=0, height=0, img_type=0;
 
+  std::vector<unsigned char> *image_buf;
+
   ::Mat X_v = create_datum_view(X, mb_idx);
-  const bool ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v);
+
+  bool ret;
+  if (m_data_store != nullptr) {
+    m_data_store->get_data_buf(get_file_dir(), m_image_list[data_id].first, image_buf, tid);
+    ret = lbann::image_utils::load_image(*image_buf, width, height, img_type, *(m_pps[tid]), X_v);
+  } else {
+    ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v);
+  }
 
   if(!ret) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
                           + "ImageNet: image_utils::load_image failed to load - " 
                           + imagepath);
   }
-  if((width * height * CV_MAT_CN(img_type)) != num_channel_values) {
+  if((width * height * CV_MAT_CN(img_type)) != m_image_linearized_size) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
                           + "ImageNet: mismatch data size -- either width, height or channel - "
                           + imagepath + "[w,h,c]=[" + std::to_string(width) + "x" + std::to_string(height)

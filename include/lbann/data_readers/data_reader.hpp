@@ -264,6 +264,12 @@ class generic_data_reader : public lbann_image_preprocessor {
    */
   void setup();
 
+  /** returns, in 'indicies,' all indicies that would be used internally
+   *  in a call to fetch_data(). These are NOT shuffled indices.
+   *  This method is added to support data_store functionality.
+   */
+  int fetch_data_indices(std::vector<int> &indicies);
+
   /// Fetch this mini-batch's samples into X.
   virtual int fetch_data(Mat& X);
   /// Fetch this mini-batch's labels into Y.
@@ -287,6 +293,12 @@ class generic_data_reader : public lbann_image_preprocessor {
    * around, then reshuffle the data indicies.
    */
   virtual bool update(bool is_active_reader);
+
+  /**
+   * Advance the data reader's current position pointer.
+   * This method is added to support data_store functionality.
+   */
+  virtual bool fake_update(bool is_active_reader);
 
   /// Return the number of labels (classes) in this dataset.
   virtual int get_num_labels() const {

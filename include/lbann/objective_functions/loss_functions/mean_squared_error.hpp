@@ -67,7 +67,7 @@ class mean_squared_error_loss : public loss_function {
                             const AbsDistMat& ground_truth) override;
 
   /** Compute the gradient of the mean squared error objective function.
-   *  Given a prediction \f$y\f$ and ground truth \f$\hat{y}\f$, the
+   *  Given a prediction \f$\hat{y}\f$ and ground truth \f$y\f$, the
    *  gradient of the mean squared error is
    *    \f[
    *    \nabla_y MSE (y,\hat{y}) = \frac{2}{n} (y - \hat{y})

@@ -41,6 +41,7 @@ void cifar10_reader::set_defaults() {
   m_image_width = 32;
   m_image_height = 32;
   m_image_num_channels = 3;
+  set_linearized_image_size();
   m_num_labels = 10;
 }
 
