@@ -179,6 +179,8 @@ class lbann_summary {
   DataType local_min(const Mat& mat) const;
   /** Compute the maximum element in mat. */
   DataType local_max(const Mat& mat) const;
+  /** Compute the element-wise L2 norm of mat. */
+  DataType local_2norm(const Mat& mat) const;
   /** Prepend "model<model>/" to tag. */
   std::string prepend_model(const std::string tag, int model) const;
   /** Gather and write out a scalar summary for each model. */

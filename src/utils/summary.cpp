@@ -175,7 +175,7 @@ void lbann_summary::reduce_histogram(const std::string tag,
 void lbann_summary::reduce_2norm(const std::string tag, const AbsDistMat& mat,
                                  int step) {
   // Using a squared 2-norm so that we can just sum this.
-  DataType local_norm = El::Nrm2(mat.LockedMatrix());
+  DataType local_norm = local_2norm(mat.LockedMatrix());
   sum_reduce_scalar(tag, local_norm * local_norm, step);
 }
 
@@ -519,6 +519,30 @@ DataType lbann_summary::local_max(const Mat& mat) const {
     }
   }
   return max;
+}
+
+DataType lbann_summary::local_2norm(const Mat& mat) const {
+  // Note there are more numerically stable ways to compute this.
+  const El::Int height = mat.Height();
+  const El::Int width = mat.Width();
+  const El::Int ldim = mat.LDim();
+  const DataType * __restrict__ mat_buf = mat.LockedBuffer();
+  auto norm = DataType(0);
+  if (ldim == height) {
+    const El::Int size = height*width;
+#pragma omp parallel for reduction(+:norm)
+    for (El::Int i = 0; i < size; ++i) {
+      norm += mat_buf[i] * mat_buf[i];
+    }
+  } else {
+#pragma omp parallel for reduction(+:norm) collapse(2)
+    for (El::Int row = 0; row < height; ++row) {
+      for (El::Int col = 0; col < width; ++col) {
+        norm += mat_buf[row + col * ldim] * mat_buf[row + col * ldim];
+      }
+    }
+  }
+  return std::sqrt(norm);
 }
 
 std::string lbann_summary::prepend_model(const std::string tag,
