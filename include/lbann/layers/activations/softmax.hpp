@@ -282,13 +282,11 @@ class softmax_layer : public activation_layer {
       for (El::Int row = 0; row < local_height; ++row) {
         const DataType y = local_output(row, col);
         const DataType dy = local_gradient_wrt_output(row, col);
-        DataType& dx = local_gradient_wrt_input(row, col);
-        dx = y * (dy - y_dot_dy);
+        DataType dx = y * (dy - y_dot_dy);
 #ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
-        if (y <= m_min_output) {
-          dx = DataType(0);
-        }
+        if (y <= m_min_output) { dx = DataType(0); }
 #endif
+        local_gradient_wrt_input(row, col) += dx;
       }
     }
 

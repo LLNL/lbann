@@ -48,7 +48,7 @@ class identity_layer : public activation_layer {
   }
 
   void bp_compute() override {
-    El::LockedView(get_error_signals(), get_prev_error_signals());
+    get_error_signals() += get_prev_error_signals();
   }
 
 };

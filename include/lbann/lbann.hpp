@@ -58,12 +58,12 @@
 // #include "lbann/layers/activations/swish.hpp"
 #include "lbann/layers/activations/tanh.hpp"
 
-#if 0
 /// Learning Layers
 #include "lbann/layers/learning/fully_connected.hpp"
-#include "lbann/layers/learning/convolution.hpp"
-#include "lbann/layers/learning/deconvolution.hpp"
+// #include "lbann/layers/learning/convolution.hpp"
+// #include "lbann/layers/learning/deconvolution.hpp"
 
+#if 0
 /// Transform Layers
 #include "lbann/layers/transform/reshape.hpp"
 #include "lbann/layers/transform/pooling.hpp"

@@ -49,22 +49,27 @@ using DataType = float;
 // Examples: timing, metrics, objective functions
 using EvalType = double;
 
-// Elemental matrices
+// Typedefs for Elemental matrices
 using EGrid = El::Grid;
 using Grid = El::Grid;
 using Mat = El::Matrix<DataType>;
 using AbsDistMat = El::AbstractDistMatrix<DataType>;
-using MCMRMat = El::DistMatrix<DataType, El::MC, El::MR>;
-using CircMat = El::DistMatrix<DataType, El::CIRC, El::CIRC>;
-using StarMat = El::DistMatrix<DataType, El::STAR, El::STAR>;
-using ColSumMat = El::DistMatrix<DataType, El::MR, El::STAR>; /* Summary matrix over columns */
-using RowSumMat = El::DistMatrix<DataType, El::MC, El::STAR>;
-using StarVCMat = El::DistMatrix<DataType, El::STAR, El::VC>;
-using StarMRMat = El::DistMatrix<DataType, El::STAR, El::MR>;
-using ColSumStarVCMat = El::DistMatrix<DataType, El::VC, El::STAR>; /* Summary matrix over columns */
-using BlockMat = El::BlockMatrix<DataType>;
-using ElMat = El::ElementalMatrix<DataType>;
-using DistMat = MCMRMat; /* Deprecated. */
+using ElMat      = El::ElementalMatrix<DataType>;
+using BlockMat   = El::BlockMatrix<DataType>;
+using MCMRMat    = El::DistMatrix<DataType, El::MC  , El::MR>;
+using CircMat    = El::DistMatrix<DataType, El::CIRC, El::CIRC>;
+using StarMat    = El::DistMatrix<DataType, El::STAR, El::STAR>;
+using StarVCMat  = El::DistMatrix<DataType, El::STAR, El::VC>;
+using VCStarMat  = El::DistMatrix<DataType, El::VC  , El::STAR>;
+using MCStarMat  = El::DistMatrix<DataType, El::MC  , El::STAR>;
+using MRStarMat  = El::DistMatrix<DataType, El::MR  , El::STAR>;
+using StarMRMat  = El::DistMatrix<DataType, El::STAR, El::MR>;
+
+// Deprecated typedefs for Elemental matrices
+using DistMat = MCMRMat;
+using RowSumMat = MCStarMat;
+using ColSumStarVCMat = VCStarMat;
+using ColSumMat = MRStarMat;
 
 /// Distributed matrix format
 enum class matrix_format {MC_MR, CIRC_CIRC, STAR_STAR, STAR_VC, MC_STAR, invalid};

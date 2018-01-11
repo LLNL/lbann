@@ -154,7 +154,7 @@ class entrywise_activation_layer : public activation_layer {
         const auto& x = input_buffer[i];
         const auto& dy = gradient_wrt_output_buffer[i];
         auto& dx = gradient_wrt_input_buffer[i];
-        dx = dy * activation_function_derivative(x);
+        dx += dy * activation_function_derivative(x);
       }
     } else {
       // Non-contiguous data
@@ -166,7 +166,7 @@ class entrywise_activation_layer : public activation_layer {
             = gradient_wrt_output_buffer[row + col * gradient_wrt_output_ldim];
           auto& dx
             = gradient_wrt_input_buffer[row + col * gradient_wrt_input_ldim];
-          dx = dy * activation_function_derivative(x);
+          dx += dy * activation_function_derivative(x);
         }
       }
     }
