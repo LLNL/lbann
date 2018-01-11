@@ -89,6 +89,8 @@ class input_layer_partitioned_minibatch : public input_layer, public partitioned
     input_layer::update_num_samples_processed(num_samples_in_batch);
   }
 
+  void bp_compute() override {}
+
   /**
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary
    */

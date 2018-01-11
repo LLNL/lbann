@@ -98,7 +98,9 @@ class fully_connected_layer : public learning_layer {
                         weights* weight = nullptr,
                         bool has_bias = true,
                         cudnn::cudnn_manager *cudnn = nullptr)
-    : learning_layer(comm) {
+    : learning_layer(comm),
+      m_linearity_gradient(nullptr),
+      m_bias_gradient(nullptr) {
 
     // Initialize neuron tensor dimensions
     this->m_num_neurons = num_neurons;

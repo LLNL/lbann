@@ -90,10 +90,9 @@ class input_layer_distributed_minibatch : public input_layer, public distributed
   }
 
  protected:
-  void fp_setup_data() override {
-    input_layer::fp_setup_data();
-    El::Int cur_mini_batch_size = m_model->get_current_mini_batch_size();
-    El::View(X_local_v, X_local, El::ALL, El::IR(0, cur_mini_batch_size));
+  void fp_setup_data(int mini_batch_size) override {
+    input_layer::fp_setup_data(mini_batch_size);
+    El::View(X_local_v, X_local, El::ALL, El::IR(0, mini_batch_size));
   }
 
   /** Handle forward propagation (arguments are unused). */
@@ -113,6 +112,8 @@ class input_layer_distributed_minibatch : public input_layer, public distributed
 
     Copy(Xs, get_activations());
   }
+
+  void bp_compute() override {}
 
  public:
   /**

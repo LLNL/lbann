@@ -90,10 +90,9 @@ class target_layer_distributed_minibatch : public target_layer, public distribut
     m_num_data_per_epoch = 0;
   }
 
-  void fp_setup_data() override {
-    target_layer::fp_setup_data();
-    El::Int cur_mini_batch_size = m_model->get_current_mini_batch_size();
-    El::View(Y_local_v, Y_local, El::ALL, El::IR(0, cur_mini_batch_size));
+  void fp_setup_data(int mini_batch_size) override {
+    target_layer::fp_setup_data(mini_batch_size);
+    El::View(Y_local_v, Y_local, El::ALL, El::IR(0, mini_batch_size));
   }
 
   void fp_compute() override {

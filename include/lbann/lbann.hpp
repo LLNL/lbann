@@ -114,10 +114,12 @@
 #include "lbann/callbacks/callback_checknan.hpp"
 #include "lbann/callbacks/callback_checksmall.hpp"
 #include "lbann/callbacks/callback_check_dataset.hpp"
+#endif
 #include "lbann/callbacks/callback_print.hpp"
+#include "lbann/callbacks/callback_timer.hpp"
+#if 0
 #include "lbann/callbacks/callback_io.hpp"
 #include "lbann/callbacks/callback_summary.hpp"
-#include "lbann/callbacks/callback_timer.hpp"
 #include "lbann/callbacks/callback_learning_rate.hpp"
 #include "lbann/callbacks/callback_debug.hpp"
 #include "lbann/callbacks/callback_debug_io.hpp"
@@ -133,7 +135,9 @@
 #include "lbann/callbacks/callback_check_reconstruction_error.hpp"
 #include "lbann/callbacks/callback_hang.hpp"
 #include "lbann/callbacks/callback_variable_minibatch.hpp"
+#endif
 #include "lbann/callbacks/callback_gradient_check.hpp"
+#if 0
 #include "lbann/callbacks/callback_timeline.hpp"
 #include "lbann/callbacks/callback_checkpoint.hpp"
 #include "lbann/callbacks/callback_save_model.hpp"

@@ -309,7 +309,6 @@ void add_layers(
       throw lbann_exception(err.str());
     }
 
-#if 0
     //////////////////////////////////////////////////////////////////
     // LAYER: Relu
     //////////////////////////////////////////////////////////////////
@@ -333,7 +332,7 @@ void add_layers(
         d = new sigmoid_layer<data_layout::DATA_PARALLEL>(comm);
       }
     }
-
+#if 0
     //////////////////////////////////////////////////////////////////
     // LAYER: reconstruction
     //////////////////////////////////////////////////////////////////
@@ -361,7 +360,7 @@ void add_layers(
         );
       }
     }
-
+#endif
     //////////////////////////////////////////////////////////////////
     // LAYER: input_distributed_minibatch
     //////////////////////////////////////////////////////////////////
@@ -427,19 +426,8 @@ void add_layers(
           cudnn);
       }
 
-#if 0
-      double l2_regularization_factor = ell.l2_regularization_factor();
-      if(l2_regularization_factor != double(0.0)) {
-        ((learning *) d)->set_l2_regularization_factor(l2_regularization_factor);
-      }
-
-      double group_lasso_regularization_factor = ell.group_lasso_regularization_factor();
-      if (group_lasso_regularization_factor != double(0.0)) {
-        ((learning *) d)->set_group_lasso_regularization_factor(group_lasso_regularization_factor);
-      }
-#endif // 0
     }
-
+#if 0
     //////////////////////////////////////////////////////////////////
     // LAYER: reshape
     //////////////////////////////////////////////////////////////////
@@ -974,6 +962,7 @@ void add_layers(
           ell.keep_prob());
       }
     }
+#endif
 
     //////////////////////////////////////////////////////////////////
     // LAYER: softmax
@@ -1041,8 +1030,6 @@ void add_layers(
         throw lbann_exception(err.str());
       }
     }
-
-#endif
 
     // Set layer name
     std::string layer_name = layer.name();
@@ -1141,17 +1128,16 @@ void init_callbacks(
   const lbann_data::Model& m = p.model();
   if (master) std::cerr << std::endl << "starting init_callbacks; size: " << m.callback_size() << std::endl;
 
-#if 0
   //the same summarizer is passed to all call backs that take a summarizer;
   //construct_summarizer returns this summarizer, which may be a nullptr
   lbann_summary *summarizer = construct_summarizer(m, comm);
-
 
   //loop over the callbacks
   int size = m.callback_size();
   for (int j=0; j<size; j++) {
     const lbann_data::Callback& callback = m.callback(j);
 
+#if 0
     //////////////////////////////////////////////////////////////////
     // CALLBACK: ltfb
     //////////////////////////////////////////////////////////////////
@@ -1172,7 +1158,7 @@ void init_callbacks(
       lbann_callback_save_images *image_cb = new lbann_callback_save_images(reader, image_dir, extension);
       model->add_callback(image_cb);
     }
-
+#endif
     //////////////////////////////////////////////////////////////////
     // CALLBACK: print
     //////////////////////////////////////////////////////////////////
@@ -1192,7 +1178,7 @@ void init_callbacks(
       auto *timer_cb = new lbann_callback_timer(summarizer);
       model->add_callback(timer_cb);
     }
-
+#if 0
     //////////////////////////////////////////////////////////////////
     // CALLBACK: summary
     //////////////////////////////////////////////////////////////////
@@ -1560,7 +1546,7 @@ void init_callbacks(
         lbann_callback_minibatch_schedule(c.starting_mbsize(), steps);
       model->add_callback(mb_sched);
     }
-
+#endif
     //////////////////////////////////////////////////////////////////
     // CALLBACK: gradient_check
     //////////////////////////////////////////////////////////////////
@@ -1573,7 +1559,7 @@ void init_callbacks(
       lbann_callback_gradient_check(c.step_size(), c.verbose(), c.fail_on_error());
       model->add_callback(gradient_check_cb);
     }
-
+#if 0
     //////////////////////////////////////////////////////////////////
     // CALLBACK: optimizerwise_adaptive_learning_rate
     //////////////////////////////////////////////////////////////////
@@ -1626,8 +1612,9 @@ void init_callbacks(
       model->add_callback(model_cb);
     }
 
-  }
 #endif
+  }
+
 }
 
 objective_function *init_objective_function(lbann_data::ObjectiveFunction obj_fn_params) {

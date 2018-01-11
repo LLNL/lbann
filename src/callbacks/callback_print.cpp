@@ -28,6 +28,7 @@
 
 #include <vector>
 #include "lbann/callbacks/callback_print.hpp"
+#include "lbann/layers/io/input/input_layer.hpp"
 #include <iomanip>
 
 namespace lbann {
