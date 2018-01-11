@@ -92,6 +92,8 @@ class distributed_io_buffer : public generic_io_buffer {
     }
   }
 
+  std::string get_type() const override { return "distributed"; }
+
   void set_local_matrix_bypass(Mat *M_local) override {};
 
   void set_std_matrix_view(El::Int cur_mini_batch_size) override {

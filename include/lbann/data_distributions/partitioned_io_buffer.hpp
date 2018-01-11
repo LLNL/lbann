@@ -43,6 +43,7 @@ class partitioned_io_buffer : public generic_io_buffer {
     const partitioned_io_buffer&) = default;
   ~partitioned_io_buffer() override {}
 
+  std::string get_type() const override { return "partitioned"; }
   void set_local_matrix_bypass(Mat *m) override { M_local = m; }
   void set_std_matrix_view(El::Int cur_mini_batch_size) override {}
   void setup_data(El::Int num_neurons, El::Int max_minibatch_size) override {}

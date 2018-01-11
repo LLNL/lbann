@@ -94,12 +94,15 @@ class generic_input_layer : public io_layer {
     return *this;
   }
 
-  std::string get_type() const override { return "input"; }
+  template<typename T_io_buffer>
+  inline void initialize_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers);
+
+  std::string get_type() const override { return "generic_input"; }
 
   /** Returns description of ctor params */
   std::string get_description() const override {
     std::string s = get_topo_description();
-    return std::string {} + " input_layer "
+    return std::string {} + " input_layer " + io_buffer->get_type()
            + " dataLayout: " + this->get_data_layout_string(get_data_layout())
            + " (" + s + ")";
   }
@@ -658,6 +661,14 @@ class generic_input_layer : public io_layer {
   data_reader_map_t m_data_readers;
  //  std::map<execution_mode, dataset_stats> m_dataset_stats;
 };
+
+template<> inline void generic_input_layer::initialize_io_buffer<partitioned_io_buffer>(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers) {
+  io_buffer = new partitioned_io_buffer(comm, num_parallel_readers, data_readers);
+}
+
+template<> inline void generic_input_layer::initialize_io_buffer<distributed_io_buffer>(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers) {
+  io_buffer = new distributed_io_buffer(comm, num_parallel_readers, data_readers);
+}
 
 }  // namespace lbann
 

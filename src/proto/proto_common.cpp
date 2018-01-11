@@ -363,13 +363,13 @@ void add_layers(
     else if (layer.has_input_distributed_minibatch()) {
       const lbann_data::InputDistributedMiniBatch& ell = layer.input_distributed_minibatch();
       if (layout == data_layout::MODEL_PARALLEL) {
-        d = new input_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(
+        d = new input_layer<distributed_io_buffer, data_layout::MODEL_PARALLEL>(
           comm,
           m.num_parallel_readers(),
           data_readers,
           !ell.data_set_per_model());
       } else {
-        d = new input_layer_distributed_minibatch<data_layout::DATA_PARALLEL>(
+        d = new input_layer<distributed_io_buffer, data_layout::DATA_PARALLEL>(
           comm,
           m.num_parallel_readers(),
           data_readers,
@@ -387,7 +387,7 @@ void add_layers(
             << "does not support MODEL_PARALLEL layouts";
         throw lbann_exception(err.str());
       } else {
-        d = new input_layer_partitioned_minibatch<data_layout::DATA_PARALLEL>(
+        d = new input_layer<partitioned_io_buffer, data_layout::DATA_PARALLEL>(
           comm,
           m.num_parallel_readers(),
           data_readers,

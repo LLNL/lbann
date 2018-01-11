@@ -24,11 +24,11 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYERS_INPUT_LAYER_DISTRIBUTED_MINIBATCH_HPP_INCLUDED
-#define LBANN_LAYERS_INPUT_LAYER_DISTRIBUTED_MINIBATCH_HPP_INCLUDED
+#ifndef LBANN_LAYERS_INPUT_LAYER_HPP_INCLUDED
+#define LBANN_LAYERS_INPUT_LAYER_HPP_INCLUDED
 
 #include "lbann/layers/io/input/generic_input_layer.hpp"
-#include "lbann/data_distributions/distributed_io_buffer.hpp"
+#include "lbann/data_distributions/partitioned_io_buffer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/models/model.hpp"
 #include <string>
@@ -37,33 +37,37 @@
 #include <unistd.h>
 
 namespace lbann {
-template <data_layout T_layout>
-class input_layer_distributed_minibatch : public generic_input_layer {
+
+template <typename T_io_buffer, data_layout T_layout = data_layout::DATA_PARALLEL>
+class input_layer : public generic_input_layer {
  public:
-  input_layer_distributed_minibatch(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, bool data_set_spans_models = true)
+  /// @todo make the map and vector references
+  input_layer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, bool data_set_spans_models = true)
     : generic_input_layer(comm, num_parallel_readers, data_readers, data_set_spans_models) {
-    io_buffer = new distributed_io_buffer(comm, num_parallel_readers, data_readers);
+    validate_data_layout();
+    initialize_io_buffer(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), data_readers);
     io_buffer->fetch_data_fn = new fetch_data_functor(true, false);
     io_buffer->update_data_reader_fn = new update_data_reader_functor(true);
     // Setup the data distribution
     initialize_distributed_matrices();
   }
-
-  /** Returns description of ctor params */
-  std::string get_description() const override {
-    return std::string {} + " input_layer_distributed_minibatch "
-           + " dataLayout: " + this->get_data_layout_string(get_data_layout());
+  input_layer(const input_layer&) = default;
+  input_layer& operator=(const input_layer&) = default;
+  input_layer* copy() const override {
+    return new input_layer(*this);
   }
 
-  input_layer_distributed_minibatch(
-    const input_layer_distributed_minibatch&) = default;
-  input_layer_distributed_minibatch& operator=(
-    const input_layer_distributed_minibatch&) = default;
-  input_layer_distributed_minibatch* copy() const override {
-    return new input_layer_distributed_minibatch(*this);
+  std::string get_type() const override {
+    return std::string {}
+      + "input:"
+      + io_buffer->get_type();
   }
 
-  // std::string get_type() const override { return "input:distributed"; }
+  inline void validate_data_layout();
+
+  inline void initialize_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers) {
+    generic_input_layer::initialize_io_buffer<T_io_buffer>(comm, num_parallel_readers, data_readers);
+  }
 
   virtual inline void initialize_distributed_matrices() {
     generic_input_layer::initialize_distributed_matrices<T_layout>();
@@ -75,6 +79,20 @@ class input_layer_distributed_minibatch : public generic_input_layer {
   }
 };
 
-}  // namespace lbann
+template<>
+inline void input_layer<partitioned_io_buffer, data_layout::MODEL_PARALLEL>::validate_data_layout() {
+  static_assert(true, "input_layer with partitioned_io_buffer does not supports MODEL_PARALLEL data layout");
+}
 
-#endif  // LBANN_LAYERS_INPUT_LAYER_DISTRIBUTED_MINIBATCH_HPP_INCLUDED
+template<>
+inline void input_layer<partitioned_io_buffer, data_layout::DATA_PARALLEL>::validate_data_layout() {}
+
+template<>
+inline void input_layer<distributed_io_buffer, data_layout::MODEL_PARALLEL>::validate_data_layout() {}
+
+template<>
+inline void input_layer<distributed_io_buffer, data_layout::DATA_PARALLEL>::validate_data_layout() {}
+
+}
+
+#endif  // LBANN_LAYERS_INPUT_LAYER_HPP_INCLUDED

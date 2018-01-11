@@ -205,7 +205,7 @@ int main(int argc, char *argv[]) {
 
 
     //first layer
-    Layer *ilayer = new input_layer_distributed_minibatch<data_layout::DATA_PARALLEL>(comm, parallel_io, data_readers);
+    Layer *ilayer = new input_layer<distributed_io_buffer, data_layout::DATA_PARALLEL>(comm, parallel_io, data_readers);
     dnn.add_layer(ilayer);
 
     // First convolution layer
