@@ -41,12 +41,12 @@
 namespace lbann {
 class generic_target_layer : public io_layer {
  protected:
-  generic_input_layer *paired_input_layer;
+  generic_input_layer *m_paired_input_layer;
   generic_io_buffer *io_buffer;
 
  public:
   generic_target_layer(lbann_comm *comm, generic_input_layer* input_layer, std::map<execution_mode, generic_data_reader *> data_readers, bool for_regression = false)
-    : io_layer(comm, true, for_regression), paired_input_layer(input_layer) {
+    : io_layer(comm, true, for_regression), m_paired_input_layer(input_layer) {
     // Target layers have no children
     m_max_num_child_layers = 0;
   }
@@ -64,12 +64,12 @@ class generic_target_layer : public io_layer {
     io_layer::initialize_distributed_matrices<T_layout>();
   }
 
-  generic_input_layer* get_paired_input_layer() {
-    return paired_input_layer;
+  generic_input_layer* get_paired_input_layer() const {
+    return m_paired_input_layer;
   }
 
   void set_paired_input_layer(generic_input_layer *input_layer) {
-    paired_input_layer = input_layer;
+    m_paired_input_layer = input_layer;
   }
 
   /** Returns description of ctor params */
@@ -123,7 +123,7 @@ class generic_target_layer : public io_layer {
 
   void fp_compute() override {
     execution_mode mode = this->m_model->get_execution_mode();
-    int num_samples_in_batch = io_buffer->fetch_to_local_matrix(paired_input_layer->get_data_reader(), mode);
+    int num_samples_in_batch = io_buffer->fetch_to_local_matrix(m_paired_input_layer->get_data_reader(), mode);
 
     if(dynamic_cast<partitioned_io_buffer*>(io_buffer) != nullptr) {
       update_num_samples_processed(num_samples_in_batch);
@@ -141,7 +141,7 @@ class generic_target_layer : public io_layer {
                               );
       }
       /// @todo should this distribute the entire matrix even if there is only a partial mini-batch
-      io_buffer->distribute_from_local_matrix(*this->m_activations, paired_input_layer->get_data_reader(), mode);
+      io_buffer->distribute_from_local_matrix(*this->m_activations, m_paired_input_layer->get_data_reader(), mode);
     }else {
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
@@ -153,7 +153,7 @@ class generic_target_layer : public io_layer {
   void bp_compute() override {}
 
   bool update_compute() override {
-    return io_buffer->is_data_set_processed(paired_input_layer->get_data_reader(), this->m_model->get_execution_mode());
+    return io_buffer->is_data_set_processed(m_paired_input_layer->get_data_reader(), this->m_model->get_execution_mode());
   }
   // lbann::generic_data_reader *set_training_data_reader(generic_data_reader *data_reader, bool shared_data_reader) {
   //   return io_layer::set_training_data_reader(data_reader);
@@ -167,96 +167,96 @@ class generic_target_layer : public io_layer {
   // Helper functions to access the data readers
   //************************************************************************
   dataset& get_dataset(execution_mode m) override {
-    return paired_input_layer->get_dataset(m);
+    return m_paired_input_layer->get_dataset(m);
   }
 
   const dataset& get_dataset(execution_mode m) const override {
-    return paired_input_layer->get_dataset(m);
+    return m_paired_input_layer->get_dataset(m);
   }
 
   /**
    * Return the dataset associated with the current execution mode.
    */
-  dataset& select_dataset() override { return paired_input_layer->select_dataset(); }
-  const dataset& select_dataset() const override { return paired_input_layer->select_dataset(); }
+  dataset& select_dataset() override { return m_paired_input_layer->select_dataset(); }
+  const dataset& select_dataset() const override { return m_paired_input_layer->select_dataset(); }
 
   /**
    * Return the first dataset with a valid (non-null) datareader.
    * Returns null if none are valid.
    */
   dataset* select_first_valid_dataset() override {
-    return paired_input_layer->select_first_valid_dataset();
+    return m_paired_input_layer->select_first_valid_dataset();
   }
 
   /**
    * Return the data reader associated with the current execution mode.
    */
   generic_data_reader *select_data_reader() const override {
-    return paired_input_layer->select_data_reader();
+    return m_paired_input_layer->select_data_reader();
   }
 
   /**
    * Update the number of samples processed for the current execution mode.
    */
   long update_num_samples_processed(long num_samples) override {
-    return paired_input_layer->update_num_samples_processed(num_samples);
+    return m_paired_input_layer->update_num_samples_processed(num_samples);
   }
 
   /**
    * Return the sample indices fetched in the current mini-batch.
    */
   El::Matrix<El::Int>* get_sample_indices_per_mb() override {
-    return paired_input_layer->get_sample_indices_per_mb();
+    return m_paired_input_layer->get_sample_indices_per_mb();
   }
 
   /**
    * Get the dimensions of the underlying data.
    */
   const std::vector<int> get_data_dims() const override {
-    return paired_input_layer->get_data_dims();
+    return m_paired_input_layer->get_data_dims();
   }
 
   std::string get_topo_description() const override {
-    return paired_input_layer->get_topo_description();
+    return m_paired_input_layer->get_topo_description();
   }
 
   /**
    * Get the linearized size of the underlying data.
    */
   long get_linearized_data_size() const override {
-    return paired_input_layer->get_linearized_data_size();
+    return m_paired_input_layer->get_linearized_data_size();
   }
 
   /**
    * Get the linearized size of the labels for the underlying data.
    */
   long get_linearized_label_size() const override {
-    return paired_input_layer->get_linearized_label_size();
+    return m_paired_input_layer->get_linearized_label_size();
   }
 
   long get_linearized_response_size() const override {
-    return paired_input_layer->get_linearized_response_size();
+    return m_paired_input_layer->get_linearized_response_size();
   }
 
   long get_num_samples_trained() const override {
-    return paired_input_layer->get_num_samples_trained();
+    return m_paired_input_layer->get_num_samples_trained();
   }
   long get_num_samples_tested() const override {
-    return paired_input_layer->get_num_samples_tested();
+    return m_paired_input_layer->get_num_samples_tested();
   }
   long get_total_num_training_samples() const override {
-    return paired_input_layer->get_total_num_training_samples();
+    return m_paired_input_layer->get_total_num_training_samples();
   }
   long get_total_num_testing_samples() const override {
-    return paired_input_layer->get_total_num_testing_samples();
+    return m_paired_input_layer->get_total_num_testing_samples();
   }
 
   bool at_new_epoch() const override {
-    return paired_input_layer->at_new_epoch();
+    return m_paired_input_layer->at_new_epoch();
   }
 
   bool is_execution_mode_valid(execution_mode mode) const override {
-    return paired_input_layer->is_execution_mode_valid(mode);
+    return m_paired_input_layer->is_execution_mode_valid(mode);
   }
 
   AbsDistMat& get_prediction() { return *this->m_prev_activations_v; }
@@ -266,13 +266,13 @@ class generic_target_layer : public io_layer {
 
   std::vector<Layer*> get_layer_pointers() override {
     std::vector<Layer*> layers = io_layer::get_layer_pointers();
-    layers.push_back((Layer*) paired_input_layer);
+    layers.push_back((Layer*) m_paired_input_layer);
     return layers;
   }
 
   void set_layer_pointers(std::vector<Layer*> layers) override {
-    paired_input_layer = dynamic_cast<generic_input_layer*>(layers.back());
-    if (paired_input_layer == nullptr) {
+    m_paired_input_layer = dynamic_cast<generic_input_layer*>(layers.back());
+    if (m_paired_input_layer == nullptr) {
       std::stringstream err;
       err << __FILE__ << " " << __LINE__
           << " :: lbann_target_layer: invalid layer pointer used to set paired input layer";

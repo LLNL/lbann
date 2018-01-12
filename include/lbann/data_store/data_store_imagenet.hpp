@@ -25,37 +25,43 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef _LBANN_FILE_UTILS_HPP_
-#define _LBANN_FILE_UTILS_HPP_
-#include <string>
-#include <vector>
+#ifndef __DATA_STORE_IMAGENET_HPP__
+#define __DATA_STORE_IMAGENET_HPP__
+
+#include "lbann/data_store/generic_data_store.hpp"
 
 namespace lbann {
 
-struct path_delimiter {
-  static const std::string characters;
-  static std::string preferred() {
-    return std::string(1, characters[0]);
-  }
-  static bool check(const char ch) {
-    return (characters.find(ch) != std::string::npos);
-  }
-  bool operator()(const char ch) const {
-    return (characters.find(ch) != std::string::npos);
-  }
+/**
+ * todo
+ */
+
+class data_store_imagenet : public generic_data_store {
+ public:
+
+  //! ctor
+  data_store_imagenet(lbann_comm *comm, generic_data_reader *reader) :
+    generic_data_store(comm, reader) {}
+
+  //! copy ctor
+  data_store_imagenet(const data_store_imagenet&) = default;
+
+  //! operator=
+  data_store_imagenet& operator=(const data_store_imagenet&) = default;
+
+  generic_data_store * copy() const override { return new data_store_imagenet(*this); }
+
+  //! dtor
+  ~data_store_imagenet() override {}
+
+  void setup() override;
+
+  void get_data_buf(std::string dir, std::string filename, std::vector<unsigned char> *&buf, int tid);
+
+ protected :
+
 };
 
-/// Tokenize a string by a sequence of delimiter characters.
-std::vector<int> get_tokens(const std::vector<char> delims, std::string str);
+}  // namespace lbann
 
-bool parse_path(const std::string& path, std::string& dir, std::string& basename);
-std::string get_ext_name(const std::string file_name);
-std::string get_basename_without_ext(const std::string file_name);
-std::string add_delimiter(const std::string dir);
-std::string modify_file_name(const std::string file_name, const std::string tag, const std::string new_ext="");
-
-bool check_if_file_exists(const std::string& filename);
-bool create_dir(const std::string output_dir);
-
-} // end of namespace lbann
-#endif // _LBANN_FILE_UTILS_HPP_
+#endif  // __GENERIC_DATA_STORE_HPP__

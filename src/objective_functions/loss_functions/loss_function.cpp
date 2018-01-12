@@ -79,7 +79,7 @@ void loss_function::setup(model& m) {
     throw lbann_exception(err.str());
   }
   if (m_layers.empty()) {
-    std::vector<Layer*> layers = m.get_layers();
+    const std::vector<Layer*> layers = m.get_layers();
     for (int i = layers.size() - 1; i >= 0; --i) {
       if (dynamic_cast<generic_target_layer*>(layers[i]) != nullptr) {
         m_layers.push_back(layers[i]);

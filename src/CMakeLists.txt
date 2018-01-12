@@ -1,4 +1,5 @@
 add_subdirectory(data_readers)
+add_subdirectory(data_store)
 add_subdirectory(layers)
 add_subdirectory(models)
 add_subdirectory(weights)

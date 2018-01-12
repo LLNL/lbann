@@ -161,7 +161,7 @@ class Layer {
       layer has to overrride this with its T_layout template parameter */
   virtual data_layout get_data_layout() const = 0;
   /** Return (a view of) the activations matrix for this layer. */
-  virtual AbsDistMat& get_activations() {
+  virtual AbsDistMat& get_activations() const {
     return *m_activations_v;
   }
   /** Reset layer stat counters. */
