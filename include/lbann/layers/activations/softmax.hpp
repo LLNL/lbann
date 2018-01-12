@@ -287,6 +287,10 @@ class softmax_layer : public activation_layer {
     const DataType one = 1;
     const DataType zero = 0;
 
+    // Matrices
+    const auto& prev_activations_d = this->m_prev_activations_d[0];
+    auto& activations_d = this->m_activations_d[0];
+
     // Apply softmax on each GPU
     const int num_gpus = this->m_cudnn->get_num_gpus();
     for(int i = 0; i < num_gpus; ++i) {
@@ -298,16 +302,16 @@ class softmax_layer : public activation_layer {
                                       CUDNN_SOFTMAX_MODE_INSTANCE,
                                       &one,
                                       this->m_prev_neurons_cudnn_desc,
-                                      this->m_prev_activations_d[0].get_data(i),
+                                      prev_activations_d.get_data(i),
                                       &zero,
                                       this->m_neurons_cudnn_desc,
-                                      this->m_activations_d[0].get_data(i)));
+                                      activations_d.get_data(i)));
     }
 
   #ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
     // Round to minimum value to avoid denormalized floats
     softmax_cuda::fp_cutoff(*this->m_cudnn,
-                            this->m_activations_d[0].get_data(),
+                            activations_d.get_data(),
                             get_num_neurons(),
                             this->m_mini_batch_size_per_gpu,
                             m_min_output);
@@ -324,6 +328,11 @@ class softmax_layer : public activation_layer {
     // Useful constants
     const DataType one = 1;
 
+    // Matrices
+    const auto& activations_d = this->m_activations_d[0];
+    const auto& prev_error_signals_d = this->m_prev_error_signals_d[0];
+    auto& error_signals_d = this->m_error_signals_d[0];
+
     // Apply softmax on each GPU
     const int num_gpus = this->m_cudnn->get_num_gpus();
     for(int i = 0; i < num_gpus; ++i) {
@@ -335,19 +344,19 @@ class softmax_layer : public activation_layer {
                                        CUDNN_SOFTMAX_MODE_INSTANCE,
                                        &one,
                                        this->m_neurons_cudnn_desc,
-                                       this->m_activations_d[0].get_data(i),
+                                       activations_d.get_data(i),
                                        this->m_neurons_cudnn_desc,
-                                       this->m_prev_error_signals_d[0].get_data(i),
+                                       prev_error_signals_d.get_data(i),
                                        &one,
                                        this->m_prev_neurons_cudnn_desc,
-                                       this->m_error_signals_d[0].get_data(i)));
+                                       error_signals_d.get_data(i)));
     }
 
   #ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
     // Round to minimum value to avoid denormalized floats
     softmax_cuda::bp_cutoff(*this->m_cudnn,
-                            this->m_activations_d[0].get_data(),
-                            this->m_error_signals_d[0].get_data(),
+                            activations_d.get_data(),
+                            error_signals_d.get_data(),
                             get_num_neurons(),
                             this->m_mini_batch_size_per_gpu,
                             m_min_output);
