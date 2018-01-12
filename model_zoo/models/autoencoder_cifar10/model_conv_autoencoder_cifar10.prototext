@@ -6,7 +6,7 @@ model {
   num_epochs: 10
   num_parallel_readers: 1
   #procs_per_model: 12
-  procs_per_model: 0 
+  procs_per_model: 0
   use_cudnn: false
   num_gpus: -1
 
@@ -58,7 +58,8 @@ model {
   layer {
     name: "data"
     data_layout: "data_parallel"
-    input_distributed_minibatch {
+    input {
+      io_buffer: "distributed"
     }
   }
 
@@ -190,7 +191,7 @@ model {
       has_vectors: true
     }
   }
-  
+
  #########
   # UNPOOLING 3
   #########
@@ -202,7 +203,7 @@ model {
       pooling_layer: "pool3"
     }
   }
- 
+
   #############
   # DECONVOLUTION 3
   #############
@@ -260,7 +261,7 @@ model {
   }
 
   ######
-  # RELU 5 
+  # RELU 5
   ######
   layer {
     name: "relu5"
@@ -332,7 +333,7 @@ model {
     }
   }
 
-  
+
   #################
   # RECONSTRUCTION
   #################
