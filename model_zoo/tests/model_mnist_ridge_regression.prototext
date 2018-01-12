@@ -62,7 +62,9 @@ model {
   #######
   layer {
     data_layout: "data_parallel"
-    input_partitioned_minibatch {}
+    input {
+      io_buffer: "partitioned"
+    }
   }
 
   #################
@@ -81,7 +83,8 @@ model {
   ########
   layer {
     data_layout: "data_parallel"
-    target_partitioned_minibatch {
+    target {
+      io_buffer: "partitioned"
       shared_data_reader: true
     }
   }
