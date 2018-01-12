@@ -158,6 +158,7 @@
 #include "lbann/objective_functions/weight_regularization/l1.hpp"
 #include "lbann/objective_functions/weight_regularization/l2.hpp"
 #include "lbann/objective_functions/weight_regularization/group_lasso.hpp"
+#include "lbann/objective_functions/weight_regularization/kl_divergence.hpp"
 
 /// Metrics
 #include "lbann/metrics/categorical_accuracy.hpp"
