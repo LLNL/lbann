@@ -210,14 +210,6 @@ void Layer::forward_prop() {
                                        get_activations().LocalWidth());
     m_mini_batch_size_per_gpu = (local_mini_batch_size + num_gpus - 1) / num_gpus;
 
-    // Set tensor descriptors
-    cudnn::set_tensor_cudnn_desc(m_prev_neurons_cudnn_desc,
-                                 m_mini_batch_size_per_gpu,
-                                 m_prev_neuron_dims);
-    cudnn::set_tensor_cudnn_desc(m_neurons_cudnn_desc,
-                                 m_mini_batch_size_per_gpu,
-                                 m_neuron_dims);
-
     // Transfer inputs from CPU to GPUs if needed
     for (int i = 0; i < get_num_parents(); ++i) {
       const auto& parent = *m_parent_layers[i];
@@ -232,6 +224,22 @@ void Layer::forward_prop() {
                                  m_mini_batch_size_per_gpu);
       }
     }
+
+    // Set tensor descriptors
+    const int input_stride = (m_prev_activations_d.empty() ?
+                              0 :
+                              m_prev_activations_d[0].get_leading_dim());
+    const int output_stride = (m_activations_d.empty() ?
+                               0 :
+                               m_activations_d[0].get_leading_dim());
+    cudnn::set_tensor_cudnn_desc(m_prev_neurons_cudnn_desc,
+                                 m_mini_batch_size_per_gpu,
+                                 m_prev_neuron_dims,
+                                 input_stride);
+    cudnn::set_tensor_cudnn_desc(m_neurons_cudnn_desc,
+                                 m_mini_batch_size_per_gpu,
+                                 m_neuron_dims,
+                                 output_stride);
 
   }
 #endif // __LIB_CUDNN
@@ -458,14 +466,13 @@ const Mat& Layer::get_local_error_signals(int parent_index) const {
 
 void Layer::clear_error_signals(int mini_batch_size) {
   for (int i = 0; i < get_num_parents(); ++i) {
+    get_error_signals(i).Resize(get_num_prev_neurons(i), mini_batch_size);
     if (m_using_gpus) {
 #ifdef __LIB_CUDNN
       m_error_signals_d[i].zero();
 #endif // __LIB_CUDNN
     } else {
-      El::Zeros(get_error_signals(i),
-                get_num_prev_neurons(i),
-                mini_batch_size);
+      El::Zero(get_error_signals(i));
     }
   }
 }
@@ -574,17 +581,21 @@ void Layer::setup_data() {
     throw lbann_exception(err.str());
   }
 
-  // Initialize forward prop output
+  // Initialize matrices
+  for (int i = 0; i < get_num_parents(); ++i) {
+    El::Zeros(*m_prev_activations[i],
+              get_num_prev_neurons(i),
+              mini_batch_size);
+    El::Zeros(*m_error_signals[i],
+              get_num_prev_neurons(i),
+              mini_batch_size);
+  }
   for (int i = 0; i < get_num_children(); ++i) {
     El::Zeros(*m_activations[i],
               get_num_neurons(i),
               mini_batch_size);
-  }
-
-  // Initialize backward prop output
-  for (int i = 0; i < get_num_parents(); ++i) {
-    El::Zeros(*m_error_signals[i],
-              get_num_prev_neurons(i),
+    El::Zeros(*m_prev_error_signals[i],
+              get_num_neurons(i),
               mini_batch_size);
   }
 
@@ -875,8 +886,7 @@ void Layer::pin_data() {
     const auto& child = *m_child_layers[i];
     if (using_gpus() && !child.using_gpus()) {
       m_cudnn->pin_matrix(get_activations(i));
-      if (get_prev_error_signals().DistData()
-          != child.get_error_signals().DistData()) {
+      if (get_data_layout() != child.get_data_layout()) {
         m_cudnn->pin_matrix(get_prev_error_signals(i));
       }
     }
@@ -952,7 +962,7 @@ void Layer::get_gpu_fp_output(cudnn::matrix& output_d,
         << child->get_name();
     throw lbann_exception(err.str());
   }
-  output_d.view(m_activations_d[child_index]);
+  output_d.locked_view(m_activations_d[child_index]);
 }
 
 void Layer::get_gpu_bp_output(cudnn::matrix& output_d,
@@ -968,7 +978,7 @@ void Layer::get_gpu_bp_output(cudnn::matrix& output_d,
         << parent->get_name();
     throw lbann_exception(err.str());
   }
-  output_d.view(m_error_signals_d[parent_index]);
+  output_d.locked_view(m_error_signals_d[parent_index]);
 }
 
 #endif // __LIB_CUDNN

@@ -410,6 +410,8 @@ class fully_connected_layer : public learning_layer {
     const int output_size = get_num_neurons();
     const int mini_batch_size = m_mini_batch_size_per_gpu;
     const int num_gpus = this->m_cudnn->get_num_gpus();
+    const int input_ldim = input_d.get_leading_dim();
+    const int output_ldim = output_d.get_leading_dim();
 
     // Apply linearity
     for (int i=0; i<num_gpus; ++i) {
@@ -419,9 +421,9 @@ class fully_connected_layer : public learning_layer {
                                 output_size, mini_batch_size, input_size,
                                 DataType(1),
                                 linearity_d[i], output_size,
-                                input_d.get_data(i), input_size,
+                                input_d.get_data(i), input_ldim,
                                 DataType(0),
-                                output_d.get_data(i), output_size));
+                                output_d.get_data(i), output_ldim));
     }
 
     // Apply bias if needed
@@ -456,7 +458,7 @@ class fully_connected_layer : public learning_layer {
                                   bias_d[i], output_size,
                                   ones_d[i], mini_batch_size,
                                   DataType(1),
-                                  output_d.get_data(i), output_size));
+                                  output_d.get_data(i), output_ldim));
 
       }
 
@@ -483,6 +485,9 @@ class fully_connected_layer : public learning_layer {
     const int output_size = get_num_neurons();
     const int mini_batch_size = m_mini_batch_size_per_gpu;
     const int num_gpus = this->m_cudnn->get_num_gpus();
+    const int input_ldim = input_d.get_leading_dim();
+    const int gradient_wrt_output_ldim = gradient_wrt_output_d.get_leading_dim();
+    const int gradient_wrt_input_ldim = gradient_wrt_input_d.get_leading_dim();
 
     // Compute gradient w.r.t. bias if needed
     optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
@@ -514,7 +519,7 @@ class fully_connected_layer : public learning_layer {
                                   CUBLAS_OP_N, 
                                   output_size, mini_batch_size,
                                   DataType(1),
-                                  gradient_wrt_output_d.get_data(i), output_size,
+                                  gradient_wrt_output_d.get_data(i), gradient_wrt_output_ldim,
                                   ones_d[i], 1,
                                   DataType(0),
                                   m_bias_gradient_d.get_data(i), 1));
@@ -533,8 +538,8 @@ class fully_connected_layer : public learning_layer {
                                   CUBLAS_OP_N, CUBLAS_OP_T,
                                   output_size, input_size, mini_batch_size,
                                   DataType(1),
-                                  gradient_wrt_output_d.get_data(i), output_size,
-                                  input_d.get_data(i), input_size,
+                                  gradient_wrt_output_d.get_data(i), gradient_wrt_output_ldim,
+                                  input_d.get_data(i), input_ldim,
                                   DataType(0),
                                   m_linearity_gradient_d.get_data(i), output_size));
       }
@@ -551,9 +556,9 @@ class fully_connected_layer : public learning_layer {
                                 input_size, mini_batch_size, output_size,
                                 DataType(1),
                                 linearity_d[i], output_size,
-                                gradient_wrt_output_d.get_data(i), output_size,
+                                gradient_wrt_output_d.get_data(i), gradient_wrt_output_ldim,
                                 DataType(1),
-                                gradient_wrt_input_d.get_data(i), input_size));
+                                gradient_wrt_input_d.get_data(i), gradient_wrt_input_ldim));
     }
 
 #ifdef LBANN_DEBUG

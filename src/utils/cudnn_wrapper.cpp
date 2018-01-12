@@ -40,12 +40,12 @@ using namespace cudnn;
 using namespace lbann;
 
 matrix::matrix(cudnn_manager *cudnn, int height, int width_per_gpu)
-  : m_cudnn(cudnn), m_is_view(false) {
+  : m_cudnn(cudnn), m_is_view(false), m_is_locked(false) {
   resize(height, width_per_gpu);
 }
 
 matrix::matrix(const matrix& other)
-  : m_cudnn(other.m_cudnn), m_is_view(false) {
+  : m_cudnn(other.m_cudnn), m_is_view(false), m_is_locked(false) {
   copy(other);
 }
 
@@ -69,10 +69,11 @@ void matrix::clear() {
   m_width_per_gpu = 0;
   m_leading_dim = 0;
   m_is_view = false;
+  m_is_locked = false;
 }
 
 void matrix::resize(int height, int width_per_gpu) {
-  if (height * width_per_gpu == 0) {
+  if (height <= 0 || width_per_gpu <= 0) {
     clear();
   } else if (m_cudnn == nullptr) {
     throw lbann::lbann_exception("cudnn::matrix: attempted to resize matrix without cuDNN manager");
@@ -88,6 +89,8 @@ void matrix::resize(int height, int width_per_gpu) {
 void matrix::copy(const matrix& other) {
   if (m_cudnn == nullptr) {
     throw lbann::lbann_exception("cudnn::matrix: attempted to copy into matrix without cuDNN manager");
+  } else if (m_is_locked) {
+    throw lbann::lbann_exception("cudnn::matrix: attempted to copy into a locked matrix");
   }
   resize(other.m_height, other.m_width_per_gpu);
   m_cudnn->copy_on_gpus(m_data, other.m_data,
@@ -96,28 +99,72 @@ void matrix::copy(const matrix& other) {
 }
 
 void matrix::view(matrix& other) {
-  clear();
-  m_data = other.m_data;
-  m_height = other.m_height;
-  m_width_per_gpu = other.m_width_per_gpu;
-  m_leading_dim = other.m_leading_dim;
-  m_is_view = true;
+  attach(other.m_data,
+         other.m_height,
+         other.m_width_per_gpu,
+         other.m_leading_dim);
 }
 
-void matrix::view(const matrix& other) {
-  clear();
-  m_data = other.m_data;
-  m_height = other.m_height;
-  m_width_per_gpu = other.m_width_per_gpu;
-  m_leading_dim = other.m_leading_dim;
-  m_is_view = true;
+void matrix::locked_view(const matrix& other) {
+  locked_attach(other.m_data,
+                other.m_height,
+                other.m_width_per_gpu,
+                other.m_leading_dim);
 }
 
 void matrix::zero() {
   if (m_cudnn == nullptr) {
     throw lbann::lbann_exception("cudnn::matrix: attempted to zero out matrix without cuDNN manager");
+  } else if (m_is_locked) {
+    throw lbann::lbann_exception("cudnn::matrix: attempted to zero out a locked matrix");
   }
   m_cudnn->clear_on_gpus(m_data, m_height, m_width_per_gpu, m_leading_dim);
+}
+
+void matrix::attach(std::vector<DataType*>& data,
+                    int height,
+                    int width_per_gpu,
+                    int leading_dim) {
+  if (m_cudnn == nullptr) {
+    throw lbann::lbann_exception("cudnn::matrix: attach matrix without cuDNN manager");
+  }
+  clear();
+  m_data = data;
+  m_height = height;
+  m_width_per_gpu = width_per_gpu;
+  m_leading_dim = leading_dim;
+  m_is_view = true;
+  m_is_locked = false;
+}
+
+void matrix::locked_attach(const std::vector<DataType*>& data,
+                           int height,
+                           int width_per_gpu,
+                           int leading_dim) {
+  if (m_cudnn == nullptr) {
+    throw lbann::lbann_exception("cudnn::matrix: attach matrix without cuDNN manager");
+  }
+  clear();
+  m_data = data;
+  m_height = height;
+  m_width_per_gpu = width_per_gpu;
+  m_leading_dim = leading_dim;
+  m_is_view = true;
+  m_is_locked = true;
+}
+
+std::vector<DataType*>& matrix::get_data() {
+  if (m_is_locked) {
+    throw lbann::lbann_exception("cudnn::matrix: attempted access mutable data of locked matrix");
+  }
+  return m_data;
+}
+
+DataType* matrix::get_data(int i) {
+  if (m_is_locked) {
+    throw lbann::lbann_exception("cudnn::matrix: attempted access mutable data of locked matrix");
+  }
+  return m_data[i];
 }
 
 /// It is assumed the number of processes and the number of GPUs on a compute node are equal
@@ -665,10 +712,14 @@ void *cudnn_manager::get_work_space(int i) {
     throw lbann_exception("cudnn_wrapper: tried to access invalid work space");
   }
   m_work_spaces.resize(m_num_gpus, nullptr);
-  if(m_work_spaces[i] == nullptr && m_work_space_sizes[i] > 0) {
-    CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-    FORCE_CHECK_CUDA(cudaMalloc((void **) &m_work_spaces[i],
-                                m_work_space_sizes[i]));
+  if(m_work_spaces[i] == nullptr) {
+    if(m_work_space_sizes[i] > 0) {
+      CHECK_CUDA(cudaSetDevice(m_gpus[i]));
+      FORCE_CHECK_CUDA(cudaMalloc((void **) &m_work_spaces[i],
+                                  m_work_space_sizes[i]));
+    } else {
+      set_maximum_work_space_size(i);
+    }
   }
   return m_work_spaces[i];
 }
@@ -941,27 +992,29 @@ cudnnDataType_t cudnn::get_cudnn_data_type() {
 
 void cudnn::set_tensor_cudnn_desc(cudnnTensorDescriptor_t& desc,
                                   int num_samples,
-                                  const std::vector<int>& sample_dims) {
+                                  const std::vector<int>& sample_dims,
+                                  int sample_stride) {
 
   // Create tensor descriptor if needed
-  if(desc == nullptr) {
+  if (desc == nullptr) {
     CHECK_CUDNN(cudnnCreateTensorDescriptor(&desc));
   }
 
   // Determine tensor dimensions
   // Note: cuDNN tensors should have at least 4 dimension
   std::vector<int> dims = sample_dims;
-  dims.insert(dims.begin(), num_samples);
-  while(dims.size() < 4) {
-    dims.push_back(1);
+  while (dims.size() < 3) {
+    dims.insert(dims.begin(), 1);
   }
+  dims.insert(dims.begin(), num_samples);
 
   // Determine tensor strides
   std::vector<int> strides(dims.size());
   strides.back() = 1;
-  for(int i=dims.size()-1; i>0; --i) {
+  for(int i = dims.size() - 1; i > 0; --i) {
     strides[i-1] = strides[i] * dims[i];
   }
+  strides.front() = std::max(strides.front(), sample_stride);
 
   // Set cuDNN tensor descriptor
   CHECK_CUDNN(cudnnSetTensorNdDescriptor(desc,

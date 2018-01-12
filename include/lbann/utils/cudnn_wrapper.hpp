@@ -130,20 +130,37 @@ public:
   /** Make a view of another matrix.
    *  There is no check whether the original matrix is still valid.
    */
-  void view(const matrix& other);
+  void locked_view(const matrix& other);
   /** Set matrix entries to zero. */
   void zero();
+
+  /** Attach matrix to GPU data. */
+  void attach(std::vector<DataType*>& data,
+              int height,
+              int width_per_gpu,
+              int leading_dim);
+  /** Attach matrix to GPU data. */
+  void locked_attach(const std::vector<DataType*>& data,
+                     int height,
+                     int width_per_gpu,
+                     int leading_dim);
 
   /** Get matrix height. */
   int get_height() const { return m_height; }
   /** Get matrix width per GPU. */
   int get_width_per_gpu() const { return m_width_per_gpu; }
+  /** Get matrix leading dimension. */
+  int get_leading_dim() const { return m_leading_dim; }
+  /** Whether the matrix is responsible for managing its memory. */
+  bool is_view() const { return m_is_view; }
+  /** Whether the matrix can modify its entries. */
+  bool is_locked() const { return m_is_locked; }
   /** Get GPU data pointers. */
-  std::vector<DataType*>& get_data() { return m_data; }
+  std::vector<DataType*>& get_data();
   /** Get GPU data pointers (const). */
   const std::vector<DataType*>& get_data() const { return m_data; }
   /** Get GPU data pointer on ith GPU. */
-  DataType* get_data(int i) { return m_data[i]; }
+  DataType* get_data(int i);
   /** Get GPU data pointer on ith GPU (const). */
   const DataType* get_data(int i) const { return m_data[i]; }
 
@@ -159,8 +176,10 @@ private:
   int m_width_per_gpu;
   /** Matrix leading dimension. */
   int m_leading_dim;
-  /** Whether the matrix is a view of another matrix. */
+  /** Whether the matrix is responsible for managing its memory. */
   bool m_is_view;
+  /** Whether the matrix can modify its entries. */
+  bool m_is_locked;
 
 #endif
 };
@@ -410,7 +429,8 @@ cudnnDataType_t get_cudnn_data_type();
  */
 void set_tensor_cudnn_desc(cudnnTensorDescriptor_t& desc,
                            int num_samples,
-                           const std::vector<int>& sample_dims);
+                           const std::vector<int>& sample_dims,
+                           int sample_stride = 0);
 
 /** Copy cuDNN tensor descriptor.
  *  dst is created or destroyed if needed.
