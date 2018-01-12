@@ -64,6 +64,18 @@ cublasStatus_t scal(const cublasHandle_t &handle,
   return cublasSscal(handle, n, &alpha, x, incx);
 }
 inline
+cublasStatus_t gemv(const cublasHandle_t &handle,
+                    cublasOperation_t trans,
+                    int m, int n,
+                    float alpha,
+                    const float *A, int lda,
+                    const float *x, int incx,
+                    float beta,
+                    float *y, int incy) {
+  return cublasSgemv(handle, trans, m, n,
+                     &alpha, A, lda, x, incx, &beta, y, incy);
+}
+inline
 cublasStatus_t gemm(const cublasHandle_t &handle,
                     cublasOperation_t transa,
                     cublasOperation_t transb,
@@ -100,6 +112,18 @@ cublasStatus_t scal(const cublasHandle_t &handle,
                     double alpha,
                     double *x, int incx) {
   return cublasDscal(handle, n, &alpha, x, incx);
+}
+inline
+cublasStatus_t gemv(const cublasHandle_t &handle,
+                    cublasOperation_t trans,
+                    int m, int n,
+                    double alpha,
+                    const double *A, int lda,
+                    const double *x, int incx,
+                    double beta,
+                    double *y, int incy) {
+  return cublasDgemv(handle, trans, m, n,
+                     &alpha, A, lda, x, incx, &beta, y, incy);
 }
 inline
 cublasStatus_t gemm(const cublasHandle_t &handle,

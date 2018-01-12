@@ -105,7 +105,9 @@ class matrix {
 public:
 
   /** Constructor. */
-  matrix(cudnn_manager *cudnn, int height = 0, int width_per_gpu = 0);
+  matrix(cudnn_manager *cudnn = nullptr,
+         int height = 0,
+         int width_per_gpu = 0);
   /** Copy constructor. */
   matrix(const matrix& other);
   /** Copy assignment operator. */
@@ -140,6 +142,10 @@ public:
   std::vector<DataType*>& get_data() { return m_data; }
   /** Get GPU data pointers (const). */
   const std::vector<DataType*>& get_data() const { return m_data; }
+  /** Get GPU data pointer on ith GPU. */
+  DataType* get_data(int i) { return m_data[i]; }
+  /** Get GPU data pointer on ith GPU (const). */
+  const DataType* get_data(int i) const { return m_data[i]; }
 
 private:
 
@@ -258,6 +264,18 @@ class cudnn_manager {
                                     int width,
                                     int width_per_gpu,
                                     int leading_dim = 0);
+
+  /** Set memory on ith GPU to a constant. */
+  void set_on_gpu(int i,
+                  DataType* gpu_data,
+                  DataType val,
+                  int height,
+                  int width = 1);
+  /** Set memory on GPU to a constant. */
+  void set_on_gpus(std::vector<DataType*>& gpu_data,
+                   DataType val,
+                   int height,
+                   int width_per_gpu = 1);
 
   /** Copy data on GPUs. */
   void copy_on_gpus(std::vector<DataType*>& gpu_dst_data,

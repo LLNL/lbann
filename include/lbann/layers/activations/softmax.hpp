@@ -292,61 +292,7 @@ class softmax_layer : public activation_layer {
 
   }
 
-
-
-
   void fp_compute_cuda();
-
-  
-#if 0
-  void bp_compute_cross_entropy_shortcut() {
-    if(this->m_using_gpus) {
-#if defined(__LIB_CUDA) && defined(LBANN_SOFTMAX_CUDA)
-      Mat& error_signal_local = this->m_error_signal_v->Matrix();
-      int height = error_signal_local.Height();
-      int width = this->m_mini_batch_size_per_gpu;
-      softmax_cuda::bp_compute_cross_entropy_shortcut(*this->m_cudnn,
-                                                      this->m_activations_d,
-                                                      this->m_prev_error_signal_dv,
-                                                      this->m_error_signal_d,
-                                                      height, width,
-                                                      m_min_output);
-#else
-      throw lbann_exception("softmax: CUDA not detected");
-#endif
-    } else {
-      bp_compute_cross_entropy_shortcut_cpu();
-    }
-  }
-
-  void bp_compute_cross_entropy_shortcut_cpu() {  
-    // Get local matrices and parameters
-    const Mat& activations_local = this->m_activations_v->LockedMatrix();
-    const Mat& prev_error_signal_local = this->m_prev_error_signal_v->Matrix();
-    Mat& error_signal_local = this->m_error_signal_v->Matrix();
-
-    El::IndexDependentFill(error_signal_local,
-                           (std::function<DataType(El::Int,El::Int)>)
-                           ([this,&activations_local,&prev_error_signal_local]
-                            (El::Int r, El::Int c)->DataType {
-                             const DataType activations_entry = activations_local(r,c);
-                             const DataType prev_error_signal_entry = prev_error_signal_local(r,c);
-#ifdef LBANN_ENABLE_SOFTMAX_CUTOFF                               
-                             if(activations_entry > m_min_output) {
-                               return activations_entry - prev_error_signal_entry;
-                             }
-                             else {
-                               return DataType(0);
-                             }
-#else
-                             return activations_entry - prev_error_signal_entry;
-#endif
-                           }));
-    return;
-  }
-#endif
-
-
   void bp_compute_cuda();
 
 

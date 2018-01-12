@@ -243,12 +243,14 @@ void Layer::forward_prop() {
 
 #ifdef __LIB_CUDNN
   // Transfer outputs from GPUs to CPU if needed
-  for (int i = 0; i < get_num_children(); ++i) {
-    if (!m_child_layers[i]->using_gpus()) {
-      m_cudnn->gather_from_gpus(get_local_activations(i),
-                                m_activations_d[i].get_data(),
-                                m_mini_batch_size_per_gpu);
-      m_cudnn->synchronize();
+  if (m_using_gpus) {
+    for (int i = 0; i < get_num_children(); ++i) {
+      if (!m_child_layers[i]->using_gpus()) {
+        m_cudnn->gather_from_gpus(get_local_activations(i),
+                                  m_activations_d[i].get_data(),
+                                  m_mini_batch_size_per_gpu);
+        m_cudnn->synchronize();
+      }
     }
   }
 #endif // __LIB_CUDNN
@@ -288,12 +290,14 @@ void Layer::back_prop() {
 
 #ifdef __LIB_CUDNN
   // Transfer outputs from GPUs to CPU if needed
-  for (int i = 0; i < get_num_parents(); ++i) {
-    if (!m_parent_layers[i]->using_gpus()) {
-      m_cudnn->gather_from_gpus(get_local_error_signals(i),
-                                m_error_signals_d[i].get_data(),
-                                m_mini_batch_size_per_gpu);
-      m_cudnn->synchronize();
+  if (m_using_gpus) {
+    for (int i = 0; i < get_num_parents(); ++i) {
+      if (!m_parent_layers[i]->using_gpus()) {
+        m_cudnn->gather_from_gpus(get_local_error_signals(i),
+                                  m_error_signals_d[i].get_data(),
+                                  m_mini_batch_size_per_gpu);
+        m_cudnn->synchronize();
+      }
     }
   }
 #endif // __LIB_CUDNN

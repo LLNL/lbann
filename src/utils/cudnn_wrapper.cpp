@@ -61,7 +61,9 @@ matrix::~matrix() {
 }
 
 void matrix::clear() {
-  if (!m_is_view) { m_cudnn->deallocate_on_gpus(m_data); }
+  if (m_cudnn != nullptr && !m_is_view) {
+    m_cudnn->deallocate_on_gpus(m_data);
+  }
   m_data.clear();
   m_height = 0;
   m_width_per_gpu = 0;
@@ -70,7 +72,11 @@ void matrix::clear() {
 }
 
 void matrix::resize(int height, int width_per_gpu) {
-  if (m_height != height || m_width_per_gpu != width_per_gpu) {
+  if (height * width_per_gpu == 0) {
+    clear();
+  } else if (m_cudnn == nullptr) {
+    throw lbann::lbann_exception("cudnn::matrix: attempted to resize matrix without cuDNN manager");
+  } else if (m_height != height || m_width_per_gpu != width_per_gpu) {
     clear();
     m_height = height;
     m_width_per_gpu = width_per_gpu;
@@ -80,6 +86,9 @@ void matrix::resize(int height, int width_per_gpu) {
 }
 
 void matrix::copy(const matrix& other) {
+  if (m_cudnn == nullptr) {
+    throw lbann::lbann_exception("cudnn::matrix: attempted to copy into matrix without cuDNN manager");
+  }
   resize(other.m_height, other.m_width_per_gpu);
   m_cudnn->copy_on_gpus(m_data, other.m_data,
                         m_height, m_width_per_gpu,
@@ -105,6 +114,9 @@ void matrix::view(const matrix& other) {
 }
 
 void matrix::zero() {
+  if (m_cudnn == nullptr) {
+    throw lbann::lbann_exception("cudnn::matrix: attempted to zero out matrix without cuDNN manager");
+  }
   m_cudnn->clear_on_gpus(m_data, m_height, m_width_per_gpu, m_leading_dim);
 }
 
@@ -428,6 +440,17 @@ void cudnn_manager::cudnn_manager::clear_unused_columns_on_gpus(std::vector<Data
                    height,
                    width_per_gpu - current_width,
                    leading_dim);
+    }
+  }
+}
+
+void cudnn_manager::cudnn_manager::set_on_gpus(std::vector<DataType *>& gpu_data,
+                                               DataType val,
+                                               int height,
+                                               int width_per_gpu) {
+  if(!gpu_data.empty()) {
+    for(int i=0; i<m_num_gpus; ++i) {
+      set_on_gpu(i, gpu_data[i], height, width_per_gpu);
     }
   }
 }

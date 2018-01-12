@@ -51,14 +51,11 @@ class relu_layer : public entrywise_activation_layer {
     entrywise_activation_layer(comm) {
 
   #ifdef __LIB_CUDNN
-
     m_activation_cudnn_desc = nullptr;
-
-    if(cudnn) {
+    this->m_cudnn = cudnn;
+    if (this->m_cudnn) {
       this->m_using_gpus = true;
-      this->m_cudnn = cudnn;
     }
-
   #endif // #ifdef __LIB_CUDNN
 
   }
@@ -82,7 +79,7 @@ class relu_layer : public entrywise_activation_layer {
 
   ~relu_layer() override {
   #ifdef __LIB_CUDNN
-    if(m_activation_cudnn_desc) {
+    if (m_activation_cudnn_desc != nullptr) {
       CHECK_CUDNN(cudnnDestroyActivationDescriptor(m_activation_cudnn_desc));
     }
   #endif
@@ -105,8 +102,6 @@ class relu_layer : public entrywise_activation_layer {
   #ifndef __LIB_CUDNN
     throw lbann_exception("relu_layer: cuDNN not detected");
   #else
-
-    // Initialize activation descriptor
     CHECK_CUDNN(cudnnCreateActivationDescriptor(&m_activation_cudnn_desc));
     CHECK_CUDNN(cudnnSetActivationDescriptor(m_activation_cudnn_desc,
                                              CUDNN_ACTIVATION_RELU,
@@ -144,10 +139,10 @@ class relu_layer : public entrywise_activation_layer {
                                          m_activation_cudnn_desc,
                                          &one,
                                          this->m_prev_neurons_cudnn_desc,
-                                         this->m_prev_activations_dv[i],
+                                         this->m_prev_activations_d[0].get_data(i),
                                          &zero,
                                          this->m_neurons_cudnn_desc,
-                                         this->m_activations_d[i]));
+                                         this->m_activations_d[0].get_data(i)));
     }
 
   #endif // #ifndef __LIB_CUDNN
@@ -160,7 +155,6 @@ class relu_layer : public entrywise_activation_layer {
 
     // Useful constants
     const DataType one = 1;
-    const DataType zero = 0;
 
     // Apply application on each GPU
     const int num_gpus = this->m_cudnn->get_num_gpus();
@@ -172,14 +166,14 @@ class relu_layer : public entrywise_activation_layer {
                                           m_activation_cudnn_desc,
                                           &one,
                                           this->m_prev_neurons_cudnn_desc,
-                                          this->m_prev_activations_dv[i],
+                                          this->m_prev_activations_d[0].get_data(i),
                                           this->m_neurons_cudnn_desc,
-                                          this->m_prev_error_signal_dv[i],
+                                          this->m_prev_error_signals_d[0].get_data(i),
                                           this->m_neurons_cudnn_desc,
-                                          this->m_activations_d[i],
-                                          &zero,
+                                          this->m_activations_d[0].get_data(i),
+                                          &one,
                                           this->m_prev_neurons_cudnn_desc,
-                                          this->m_error_signal_d[i]));
+                                          this->m_error_signals_d[0].get_data(i)));
     }
 
   #endif // #ifndef __LIB_CUDNN

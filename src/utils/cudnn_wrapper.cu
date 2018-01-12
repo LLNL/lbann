@@ -38,6 +38,14 @@ namespace cudnn {
 
 namespace {
 
+__global__ void constant_kernel(DataType *data,
+                                DataType val,
+                                El::Int len) {
+  int offset = blockIdx.x * blockDim.x + threadIdx.x;
+  if (offset >= len) return;
+  data[offset] = val;
+}
+
 __global__ void reduce_kernel(DataType *dst, const DataType *src,
                               El::Int len) {
   int offset = blockIdx.x * blockDim.x + threadIdx.x;
@@ -55,6 +63,18 @@ __global__ void scale_kernel(DataType *data,
 
 }
 
+}
+
+void cudnn_manager::set_on_gpu(int i,
+                               DataType* gpu_data,
+                               DataType val,
+                               int height,
+                               int width) {
+  CHECK_CUDA(cudaSetDevice(m_gpus[i]));
+  const El::Int len = height * width;
+  const int tb_dim = 256;
+  const int grid_dim = len/tb_dim + (len % tb_dim ? 1 : 0);
+  constant_kernel<<<grid_dim, tb_dim>>>(gpu_data, val, len);
 }
 
 void cudnn_manager::allreduce_on_gpus(std::vector<DataType*>& gpu_data,
