@@ -106,6 +106,10 @@ public:
 
   /** Constructor. */
   matrix(cudnn_manager *cudnn, int height = 0, int width_per_gpu = 0);
+  /** Copy constructor. */
+  matrix(const matrix& other);
+  /** Copy assignment operator. */
+  matrix& operator=(const matrix& other);
   /** Destructor. */
   virtual ~matrix();
 
@@ -121,6 +125,10 @@ public:
    *  There is no check whether the original matrix is still valid.
    */
   void view(matrix& other);
+  /** Make a view of another matrix.
+   *  There is no check whether the original matrix is still valid.
+   */
+  void view(const matrix& other);
   /** Set matrix entries to zero. */
   void zero();
 

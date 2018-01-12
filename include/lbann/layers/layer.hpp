@@ -209,27 +209,17 @@ class Layer {
   /** Write layer to proto file */
   virtual void write_proto(lbann_data::Layer* proto) const;
 
-  /** Get forward propagation output, as seen by next layer. */
-  virtual void get_fp_output(AbsDistMat& fp_output, const Layer* next_layer = nullptr) const;
-  /** Get backward propagation output, as seen by previous layer. */
-  virtual void get_bp_output(AbsDistMat& fp_output, const Layer* prev_layer = nullptr) const;
+  /** Get forward propagation output, as seen by child layer. */
+  virtual void get_fp_output(AbsDistMat& fp_output, const Layer* child) const;
+  /** Get backward propagation output, as seen by parent layer. */
+  virtual void get_bp_output(AbsDistMat& fp_output, const Layer* parent) const;
 #ifdef __LIB_CUDNN
-  /** Get forward propagation output on GPUs, as seen by next layer.
-   *  output_dv is a view into GPU memory for the output. If the
-   *  output cannot be represented as a view, the data is copied into
-   *  output_d and output_dv is set as a view into it.
-   */
-  virtual void get_gpu_fp_output(std::vector<DataType*>& output_dv,
-                                 std::vector<DataType*>& output_d,
-                                 const Layer* next_layer = NULL) const;
-  /** Get backward propagation output on GPUs, as seen by previous layer.
-   *  output_dv is a view into GPU memory for the output. If the
-   *  output cannot be represented as a view, the data is copied into
-   *  output_d and output_dv is set as a view into it.
-   */
-  virtual void get_gpu_bp_output(std::vector<DataType*>& output_dv,
-                                 std::vector<DataType*>& output_d,
-                                 const Layer* prev_layer = NULL) const;
+  /** Get forward propagation output on GPUs, as seen by child layer. */
+  virtual void get_gpu_fp_output(cudnn::matrix& output_d,
+                                 const Layer* child) const;
+  /** Get back propagation output on GPUs, as seen by parent layer. */
+  virtual void get_gpu_bp_output(cudnn::matrix& output_d,
+                                 const Layer* parent) const;
 #endif // __LIB_CUDNN
   /** Get forward propagation output dimensions, as seen by next layer. */
   virtual const std::vector<int> fp_output_dims(const Layer* next_layer = nullptr) const;
@@ -418,26 +408,13 @@ class Layer {
   int m_max_mini_batch_size_per_gpu;
 
   /** GPU memory for activations from "previous" layer. */
-  std::vector<DataType*> m_prev_activations_d;
-  /** View into GPU memory for activations from "previous" layer. */
-  std::vector<DataType*> m_prev_activations_dv;
+  std::vector<cudnn::matrix> m_prev_activations_d;
   /** GPU memory for activations. */
-  std::vector<DataType*> m_activations_d;
+  std::vector<cudnn::matrix> m_activations_d;
   /** GPU memory for error signal from "next" layer. */
-  std::vector<DataType*> m_prev_error_signal_d;
-  /** View into GPU memory for error signal from "next" layer. */
-  std::vector<DataType*> m_prev_error_signal_dv;
+  std::vector<cudnn::matrix> m_prev_error_signals_d;
   /** GPU memory for error signal. */
-  std::vector<DataType*> m_error_signal_d;
-
-  /** Whether to copy forward propagation input from CPU to GPUs. */
-  bool m_copy_fp_input_to_gpus;
-  /** Whether to copy forward propagation output from GPUs to CPU. */
-  bool m_copy_fp_output_from_gpus;
-  /** Whether to copy backward propagation input from CPU to GPUs. */
-  bool m_copy_bp_input_to_gpus;
-  /** Whether to copy backward propagation output from GPUs to CPU. */
-  bool m_copy_bp_output_from_gpus;
+  std::vector<cudnn::matrix> m_error_signals_d;
 
   /** cuDNN descriptor for neuron tensor from "previous" layer. */
   cudnnTensorDescriptor_t m_prev_neurons_cudnn_desc;

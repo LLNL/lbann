@@ -40,9 +40,20 @@ using namespace cudnn;
 using namespace lbann;
 
 matrix::matrix(cudnn_manager *cudnn, int height, int width_per_gpu)
-  : m_cudnn(cudnn),
-    m_is_view(false) {
+  : m_cudnn(cudnn), m_is_view(false) {
   resize(height, width_per_gpu);
+}
+
+matrix::matrix(const matrix& other)
+  : m_cudnn(other.m_cudnn), m_is_view(false) {
+  copy(other);
+}
+
+matrix& matrix::operator=(const matrix& other) {
+  clear();
+  m_cudnn = other.m_cudnn;
+  copy(other);
+  return *this;
 }
 
 matrix::~matrix() {
@@ -76,6 +87,15 @@ void matrix::copy(const matrix& other) {
 }
 
 void matrix::view(matrix& other) {
+  clear();
+  m_data = other.m_data;
+  m_height = other.m_height;
+  m_width_per_gpu = other.m_width_per_gpu;
+  m_leading_dim = other.m_leading_dim;
+  m_is_view = true;
+}
+
+void matrix::view(const matrix& other) {
   clear();
   m_data = other.m_data;
   m_height = other.m_height;

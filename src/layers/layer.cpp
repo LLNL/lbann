@@ -67,10 +67,6 @@ Layer::Layer(lbann_comm *comm)
 #ifdef __LIB_CUDNN
   m_mini_batch_size_per_gpu = 0;
   m_max_mini_batch_size_per_gpu = 0;
-  m_copy_fp_input_to_gpus = false;
-  m_copy_fp_output_from_gpus = false;
-  m_copy_bp_input_to_gpus = false;
-  m_copy_bp_output_from_gpus = false;
   m_prev_neurons_cudnn_desc = nullptr;
   m_neurons_cudnn_desc = nullptr;
 #endif // __LIB_CUDNN
@@ -99,10 +95,6 @@ Layer::Layer(const Layer& other) :
 #ifdef __LIB_CUDNN
   m_mini_batch_size_per_gpu(other.m_mini_batch_size_per_gpu),
   m_max_mini_batch_size_per_gpu(other.m_max_mini_batch_size_per_gpu),
-  m_copy_fp_input_to_gpus(other.m_copy_fp_input_to_gpus),
-  m_copy_fp_output_from_gpus(other.m_copy_fp_output_from_gpus),
-  m_copy_bp_input_to_gpus(other.m_copy_bp_input_to_gpus),
-  m_copy_bp_output_from_gpus(other.m_copy_bp_output_from_gpus),
 #endif // __LIB_CUDNN
   m_fp_time(other.m_fp_time),
   m_fp_compute_time(other.m_fp_compute_time),
@@ -122,20 +114,11 @@ Layer::Layer(const Layer& other) :
   for (auto& m : m_error_signals)      { m = m->Copy(); }
 
 #ifdef __LIB_CUDNN
-  if(m_cudnn != nullptr) {
-    m_prev_activations_d = m_cudnn->copy(other.m_prev_activations_d,
-                                         m_num_prev_neurons,
-                                         m_max_mini_batch_size_per_gpu);
-    m_activations_d = m_cudnn->copy(other.m_activations_d,
-                                    m_num_neurons,
-                                    m_max_mini_batch_size_per_gpu);
-    m_prev_error_signal_d = m_cudnn->copy(other.m_prev_error_signal_d,
-                                          m_num_neurons,
-                                          m_max_mini_batch_size_per_gpu);
-    m_error_signal_d = m_cudnn->copy(other.m_error_signal_d,
-                                     m_num_prev_neurons,
-                                     m_max_mini_batch_size_per_gpu);
-  }
+  // Copy GPU objects
+  m_prev_activations_d = other.m_prev_activations_d;
+  m_activations_d = other.m_activations_d;
+  m_prev_error_signals_d = other.m_prev_error_signals_d;
+  m_error_signals_d = other.m_error_signals_d;
   m_prev_neurons_cudnn_desc = nullptr;
   m_neurons_cudnn_desc = nullptr;
   cudnn::copy_tensor_cudnn_desc(other.m_prev_neurons_cudnn_desc,
@@ -166,16 +149,13 @@ Layer& Layer::operator=(const Layer& other) {
 #ifdef __LIB_CUDNN
   m_mini_batch_size_per_gpu = other.m_mini_batch_size_per_gpu;
   m_max_mini_batch_size_per_gpu = other.m_max_mini_batch_size_per_gpu;
-  m_copy_fp_input_to_gpus = other.m_copy_fp_input_to_gpus;
-  m_copy_fp_output_from_gpus = other.m_copy_fp_output_from_gpus;
-  m_copy_bp_input_to_gpus = other.m_copy_bp_input_to_gpus;
-  m_copy_bp_output_from_gpus = other.m_copy_bp_output_from_gpus;
 #endif // __LIB_CUDNN
   m_fp_time = other.m_fp_time;
   m_fp_compute_time = other.m_fp_compute_time;
   m_bp_time = other.m_bp_time;
   m_bp_compute_time = other.m_bp_compute_time;
   m_update_time = other.m_update_time;
+  m_name = other.m_name;
 
   // Deep matrix copies
   deallocate_matrices();
@@ -189,29 +169,14 @@ Layer& Layer::operator=(const Layer& other) {
   for (auto& m : m_error_signals)      { m = m->Copy(); }
 
 #ifdef __LIB_CUDNN
-  if(m_cudnn != nullptr) {
-    m_cudnn->deallocate_on_gpus(m_prev_activations_d);
-    m_cudnn->deallocate_on_gpus(m_activations_d);
-    m_cudnn->deallocate_on_gpus(m_prev_error_signal_d);
-    m_cudnn->deallocate_on_gpus(m_error_signal_d);
-    m_prev_activations_d = m_cudnn->copy(other.m_prev_activations_d,
-                                         m_num_prev_neurons,
-                                         m_max_mini_batch_size_per_gpu);
-    m_activations_d = m_cudnn->copy(other.m_activations_d,
-                                    m_num_neurons,
-                                    m_max_mini_batch_size_per_gpu);
-    m_prev_error_signal_d = m_cudnn->copy(other.m_prev_error_signal_d,
-                                          m_num_neurons,
-                                          m_max_mini_batch_size_per_gpu);
-    m_error_signal_d = m_cudnn->copy(other.m_error_signal_d,
-                                     m_num_prev_neurons,
-                                     m_max_mini_batch_size_per_gpu);
-  }
+  m_prev_activations_d = other.m_prev_activations_d;
+  m_activations_d = other.m_activations_d;
+  m_prev_error_signals_d = other.m_prev_error_signals_d;
+  m_error_signals_d = other.m_error_signals_d;
   cudnn::copy_tensor_cudnn_desc(other.m_prev_neurons_cudnn_desc,
                                 m_prev_neurons_cudnn_desc);
   cudnn::copy_tensor_cudnn_desc(other.m_neurons_cudnn_desc,
                                 m_neurons_cudnn_desc);
-  m_name = other.m_name;
 #endif // __LIB_CUDNN
 
   return *this;
@@ -224,16 +189,6 @@ Layer::~Layer() {
   }
   if(m_neurons_cudnn_desc != nullptr) {
     CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_neurons_cudnn_desc));
-  }
-  if(m_cudnn != nullptr) {
-    m_cudnn->deallocate_on_gpus(m_prev_activations_d);
-    m_cudnn->deallocate_on_gpus(m_activations_d);
-    m_cudnn->deallocate_on_gpus(m_prev_error_signal_d);
-    m_cudnn->deallocate_on_gpus(m_error_signal_d);
-    m_cudnn->unpin_matrix(*m_prev_activations_v);
-    m_cudnn->unpin_matrix(*m_activations);
-    m_cudnn->unpin_matrix(*m_prev_error_signal_v);
-    m_cudnn->unpin_matrix(*m_error_signal);
   }
 #endif // __LIB_CUDNN
   deallocate_matrices();
@@ -250,7 +205,9 @@ void Layer::forward_prop() {
 
     // Determine mini-batch size per GPU
     const int num_gpus = m_cudnn->get_num_gpus();
-    const int local_mini_batch_size = m_activations_v->LocalWidth();
+    const int local_mini_batch_size = (get_num_parents() > 0 ?
+                                       get_prev_activations().LocalWidth() :
+                                       get_activations().LocalWidth());
     m_mini_batch_size_per_gpu = (local_mini_batch_size + num_gpus - 1) / num_gpus;
 
     // Set tensor descriptors
@@ -262,21 +219,17 @@ void Layer::forward_prop() {
                                  m_neuron_dims);
 
     // Transfer inputs from CPU to GPUs if needed
-    if(m_copy_fp_input_to_gpus) {
-      if(m_prev_activations_d.empty()) {
-        m_cudnn->allocate_on_gpus(m_prev_activations_d,
-                                  m_num_prev_neurons,
-                                  m_max_mini_batch_size_per_gpu);
-      }
-      m_cudnn->scatter_to_gpus(m_prev_activations_d,
-                               m_prev_activations_v->LockedMatrix(),
-                               m_mini_batch_size_per_gpu);
-      m_prev_activations_dv = m_prev_activations_d;
-    } else {
-      if(!m_parent_layers.empty()) {
-        m_parent_layers.front()->get_gpu_fp_output(m_prev_activations_dv,
-                                                   m_prev_activations_d,
-                                                   this);
+    for (int i = 0; i < get_num_parents(); ++i) {
+      const auto& parent = *m_parent_layers[i];
+      auto& gpu_prev_activations = m_prev_activations_d[i];
+      if (parent.using_gpus()) {
+        parent.get_gpu_fp_output(gpu_prev_activations, this);
+      } else {
+        gpu_prev_activations.resize(m_num_prev_neurons,
+                                    m_max_mini_batch_size_per_gpu);
+        m_cudnn->scatter_to_gpus(gpu_prev_activations.get_data(),
+                                 get_local_prev_activations(i),
+                                 m_mini_batch_size_per_gpu);
       }
     }
 
@@ -290,11 +243,13 @@ void Layer::forward_prop() {
 
 #ifdef __LIB_CUDNN
   // Transfer outputs from GPUs to CPU if needed
-  if(m_using_gpus && m_copy_fp_output_from_gpus) {
-    m_cudnn->gather_from_gpus(m_activations_v->Matrix(),
-                              m_activations_d,
-                              m_mini_batch_size_per_gpu);
-    m_cudnn->synchronize();
+  for (int i = 0; i < get_num_children(); ++i) {
+    if (!m_child_layers[i]->using_gpus()) {
+      m_cudnn->gather_from_gpus(get_local_activations(i),
+                                m_activations_d[i].get_data(),
+                                m_mini_batch_size_per_gpu);
+      m_cudnn->synchronize();
+    }
   }
 #endif // __LIB_CUDNN
 
@@ -309,39 +264,20 @@ void Layer::back_prop() {
 
 #ifdef __LIB_CUDNN
   if(m_using_gpus) {
-
-    // Determine mini-batch size per GPU
-    const int num_gpus = m_cudnn->get_num_gpus();
-    const int local_mini_batch_size = m_activations_v->LocalWidth();
-    m_mini_batch_size_per_gpu = (local_mini_batch_size + num_gpus - 1) / num_gpus;
-
-    // Set tensor descriptors
-    cudnn::set_tensor_cudnn_desc(m_prev_neurons_cudnn_desc,
-                                 m_mini_batch_size_per_gpu,
-                                 m_prev_neuron_dims);
-    cudnn::set_tensor_cudnn_desc(m_neurons_cudnn_desc,
-                                 m_mini_batch_size_per_gpu,
-                                 m_neuron_dims);
-
     // Transfer inputs from CPU to GPUs if needed
-    if(m_copy_bp_input_to_gpus) {
-      if(m_prev_error_signal_d.empty()) {
-        m_cudnn->allocate_on_gpus(m_prev_error_signal_d,
-                                  m_num_neurons,
-                                  m_max_mini_batch_size_per_gpu);
-      }
-      m_cudnn->scatter_to_gpus(m_prev_error_signal_d,
-                               m_prev_error_signal_v->LockedMatrix(),
-                               m_mini_batch_size_per_gpu);
-      m_prev_error_signal_dv = m_prev_error_signal_d;
-    } else {
-      if(!m_child_layers.empty()) {
-        m_child_layers.front()->get_gpu_bp_output(m_prev_error_signal_dv,
-                                                  m_prev_error_signal_d,
-                                                  this);
+    for (int i = 0; i < get_num_children(); ++i) {
+      const auto& child = *m_child_layers[i];
+      auto& gpu_prev_error_signals = m_prev_error_signals_d[i];
+      if (child.using_gpus()) {
+        child.get_gpu_bp_output(gpu_prev_error_signals, this);
+      } else {
+        gpu_prev_error_signals.resize(m_num_neurons,
+                                      m_max_mini_batch_size_per_gpu);
+        m_cudnn->scatter_to_gpus(gpu_prev_error_signals.get_data(),
+                                 get_local_prev_error_signals(i),
+                                 m_mini_batch_size_per_gpu);
       }
     }
-
   }
 #endif // __LIB_CUDNN
 
@@ -352,11 +288,13 @@ void Layer::back_prop() {
 
 #ifdef __LIB_CUDNN
   // Transfer outputs from GPUs to CPU if needed
-  if(m_using_gpus && m_copy_bp_output_from_gpus) {
-    m_cudnn->gather_from_gpus(m_error_signal_v->Matrix(),
-                              m_error_signal_d,
-                              m_mini_batch_size_per_gpu);
-    m_cudnn->synchronize();
+  for (int i = 0; i < get_num_parents(); ++i) {
+    if (!m_parent_layers[i]->using_gpus()) {
+      m_cudnn->gather_from_gpus(get_local_error_signals(i),
+                                m_error_signals_d[i].get_data(),
+                                m_mini_batch_size_per_gpu);
+      m_cudnn->synchronize();
+    }
   }
 #endif // __LIB_CUDNN
 
@@ -515,16 +453,13 @@ const Mat& Layer::get_local_error_signals(int parent_index) const {
 }
 
 void Layer::clear_error_signals(int mini_batch_size) {
-  if(m_using_gpus) {
+  for (int i = 0; i < get_num_parents(); ++i) {
+    if (m_using_gpus) {
 #ifdef __LIB_CUDNN
-    m_cudnn->clear_on_gpus(m_error_signal_d,
-                           m_num_prev_neurons,
-                           m_max_mini_batch_size_per_gpu);
+      m_error_signals_d[i].zero();
 #endif // __LIB_CUDNN
-  }
-  else {
-    for (int i = 0; i < get_num_parents(); ++i) {
-      El::Zeros(*m_error_signals[i],
+    } else {
+      El::Zeros(get_error_signals(i),
                 get_num_prev_neurons(i),
                 mini_batch_size);
     }
@@ -663,29 +598,19 @@ void Layer::setup_gpu() {
       "Layer: cuDNN not detected");
 #else
 
-  // Throw error is data layout is not data parallel
+  // Throw error if data layout is not data parallel
   // TODO: Design a more general interface
   if(get_data_layout() != data_layout::DATA_PARALLEL) {
     throw lbann_exception(
       std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
       "Layer: GPUs are currently only supported for data parallel layers");
   }
-
-  // Determine whether to transfer data between CPU and GPUs
-  if(m_parent_layers.empty() || !m_parent_layers.front()->using_gpus()) {
-    m_copy_fp_input_to_gpus = true;
-    m_copy_bp_output_from_gpus = true;
-  }
-  if(m_child_layers.empty() || !m_child_layers.front()->using_gpus()) {
-    m_copy_fp_output_from_gpus = true;
-    m_copy_bp_input_to_gpus = true;
-  }
   
   // Split mini-batch amongst GPUs
   const int num_gpus = m_cudnn->get_num_gpus();
   const int num_processes = m_comm->get_procs_per_model();
-  const int local_mini_batch_size =
-    (m_model->get_max_mini_batch_size() + num_processes - 1) / num_processes;
+  const int mini_batch_size = m_model->get_max_mini_batch_size();
+  const int local_mini_batch_size = (mini_batch_size + num_processes - 1) / num_processes;
   m_max_mini_batch_size_per_gpu = (local_mini_batch_size + num_gpus - 1) / num_gpus;
   m_mini_batch_size_per_gpu = m_max_mini_batch_size_per_gpu;
 
@@ -697,13 +622,19 @@ void Layer::setup_gpu() {
                                m_mini_batch_size_per_gpu,
                                m_neuron_dims);
 
-  // Allocate GPU memory
-  m_cudnn->allocate_on_gpus(m_activations_d,
-                            m_num_neurons,
-                            m_max_mini_batch_size_per_gpu);
-  m_cudnn->allocate_on_gpus(m_error_signal_d,
-                            m_num_prev_neurons,
-                            m_max_mini_batch_size_per_gpu);
+  // Initialize GPU memory
+  for (int i = 0; i < get_num_children(); ++i) {
+    m_activations_d.emplace_back(m_cudnn,
+                                 get_num_neurons(i),
+                                 mini_batch_size);
+    m_prev_error_signals_d.emplace_back(m_cudnn);
+  }
+  for (int i = 0; i < get_num_parents(); ++i) {
+    m_prev_activations_d.emplace_back(m_cudnn);
+    m_error_signals_d.emplace_back(m_cudnn,
+                                   get_num_prev_neurons(i),
+                                   mini_batch_size);
+  }
 
 #endif // __LIB_CUDNN
 }
@@ -792,6 +723,31 @@ void Layer::replace_weights(Layer* other_layer) {
 }
 
 void Layer::deallocate_matrices() {
+#ifdef __LIB_CUDNN
+  // Deallocate GPU memory
+  m_prev_activations_d.clear();
+  m_activations_d.clear();
+  m_prev_error_signals_d.clear();
+  m_error_signals_d.clear();
+
+  // Unpin matrices
+  if (m_cudnn != nullptr) {
+    for (const auto& m : m_prev_activations) {
+      if (m != nullptr) { m_cudnn->unpin_matrix(*m); }
+    }
+    for (const auto& m : m_activations) {
+      if (m != nullptr) { m_cudnn->unpin_matrix(*m); }
+    }
+    for (const auto& m : m_prev_error_signals) {
+      if (m != nullptr) { m_cudnn->unpin_matrix(*m); }
+    }
+    for (const auto& m : m_error_signals) {
+      if (m != nullptr) { m_cudnn->unpin_matrix(*m); }
+    }
+  }
+#endif // __LIB_CUDNN
+
+  // Deallocate matrices
   for (const auto& m : m_prev_activations) {
     if (m != nullptr) delete m;
   }
@@ -808,6 +764,7 @@ void Layer::deallocate_matrices() {
   m_activations.clear();
   m_prev_error_signals.clear();
   m_error_signals.clear();
+
 }
 
 bool Layer::saveToCheckpoint(int fd, const char *filename, size_t *bytes) const {
@@ -900,116 +857,26 @@ void Layer::bp_setup_data(int mini_batch_size) {
 
 #ifdef __LIB_CUDNN
 void Layer::pin_data() {
-
-  // Get maximum mini-batch size
-  const int max_mini_batch_size = m_model->get_max_mini_batch_size();
-
-  // Flags to determine whether to pin memory
-  bool pin_fp_input = false;
-  bool pin_fp_output = false;
-  bool pin_bp_input = false;
-  bool pin_bp_output = false;
-
-  // Pin fp input if there is no input layer and this layer uses GPUs
-  if(m_parent_layers.empty() && m_using_gpus) {
-    pin_fp_input = true;
-  }
-    
-  // Pin fp input if input layer does not use GPUs, this layer uses
-  // GPUs, and input layer has different distribution
-  if(!m_parent_layers.empty()
-     && !m_parent_layers.front()->using_gpus()
-     && m_using_gpus) {
-    if(m_parent_layers.front()->m_activations->DistData()
-       != m_prev_activations_v->DistData()) {
-      pin_fp_input = true;
+  for (int i = 0; i < get_num_parents(); ++i) {
+    const auto& parent = *m_parent_layers[i];
+    if (using_gpus() && !parent.using_gpus()) {
+      m_cudnn->pin_matrix(get_error_signals(i));
+      if (get_prev_activations().DistData()
+          != parent.get_activations().DistData()) {
+        m_cudnn->pin_matrix(get_prev_activations(i));
+      }
     }
   }
-
-  // Pin fp output if this layer does not use GPUs, output layer uses
-  // GPUs, and output layer has same distribution
-  if(!m_using_gpus
-     && !m_parent_layers.empty()
-     && m_parent_layers.front()->using_gpus()) {
-    if(m_parent_layers.front()->m_prev_activations_v->DistData()
-       != m_activations->DistData()) {
-      pin_fp_output = true;
+  for (int i = 0; i < get_num_children(); ++i) {
+    const auto& child = *m_child_layers[i];
+    if (using_gpus() && !child.using_gpus()) {
+      m_cudnn->pin_matrix(get_activations(i));
+      if (get_prev_error_signals().DistData()
+          != child.get_error_signals().DistData()) {
+        m_cudnn->pin_matrix(get_prev_error_signals(i));
+      }
     }
   }
-
-  // Pin fp output if this layer uses GPUs and output layer does not
-  // use GPUs
-  if(m_using_gpus
-     && !m_child_layers.empty()
-     && !m_child_layers.front()->using_gpus()) {
-    pin_fp_output = true;
-  }
-
-  // Pin fp output if this layer uses GPUs and there is no output layer
-  if(m_using_gpus && m_child_layers.empty()) {
-    pin_fp_output = true;
-  }
-
-  // Pin bp input if there is no input layer and this layer uses GPUs
-  if(m_child_layers.empty() && m_using_gpus) {
-    pin_bp_input = true;
-  }
-    
-  // Pin bp input if input layer does not use GPUs, this layer uses
-  // GPUs, and input layer has different distribution
-  if(!m_child_layers.empty()
-     && !m_child_layers.front()->using_gpus()
-     && m_using_gpus) {
-    if(m_child_layers.front()->m_error_signal->DistData()
-       != m_prev_error_signal_v->DistData()) {
-      pin_bp_input = true;
-    }
-  }
-
-  // Pin bp output if this layer does not use GPUs, output layer uses
-  // GPUs, and output layer has same distribution
-  if(!m_using_gpus
-     && !m_parent_layers.empty()
-     && m_parent_layers.front()->using_gpus()) {
-    if(m_parent_layers.front()->m_prev_error_signal_v->DistData()
-       != m_error_signal->DistData()) {
-      pin_bp_output = true;
-    }
-  }
-
-  // Pin bp output if this layer uses GPUs and output layer does not
-  // use GPUs
-  if(m_using_gpus
-     && !m_parent_layers.empty()
-     && !m_parent_layers.front()->using_gpus()) {
-    pin_bp_output = true;
-  }
-
-  // Pin bp output if this layer uses GPUs and there is no output layer
-  if(m_using_gpus && m_parent_layers.empty()) {
-    pin_bp_output = true;
-  }
-
-  // Pin host memory if needed for GPU memory transfers
-  if(pin_fp_input) {
-    /// @todo If m_prev_activations is resized, we might leak pinned memory
-    // m_prev_activations_v->Resize(m_num_prev_neurons, max_mini_batch_size);
-    // m_cudnn->pin_matrix(*m_prev_activations_v);
-  }
-  if(pin_fp_output) {
-    m_activations->Resize(m_num_neurons, max_mini_batch_size);
-    m_cudnn->pin_matrix(*m_activations);
-  }
-  if(pin_bp_input) {
-    /// @todo If m_prev_error_signal is resized, we might leak pinned memory
-    // m_prev_error_signal->Resize(m_num_neurons, max_mini_batch_size);
-    // m_cudnn->pin_matrix(*m_prev_error_signal_v);
-  }
-  if(pin_bp_output) {
-    m_error_signal->Resize(m_num_prev_neurons, max_mini_batch_size);
-    m_cudnn->pin_matrix(*m_error_signal);
-  }
-
 }
 
 #endif // __LIB_CUDNN
@@ -1068,16 +935,36 @@ void Layer::get_bp_output(AbsDistMat& output, const Layer* parent) const {
 
 #ifdef __LIB_CUDNN
 
-void Layer::get_gpu_fp_output(std::vector<DataType*>& output_dv,
-                              std::vector<DataType*>& output_d,
-                              const Layer* next_layer) const {
-  output_dv = m_activations_d;
+void Layer::get_gpu_fp_output(cudnn::matrix& output_d,
+                              const Layer* child) const {
+  const size_t child_index = (std::find(m_child_layers.begin(),
+                                        m_child_layers.end(),
+                                        child)
+                              - m_child_layers.begin());
+  if (child_index >= m_child_layers.size()) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << get_name() << " has no forward prop output corresponding to "
+        << child->get_name();
+    throw lbann_exception(err.str());
+  }
+  output_d.view(m_activations_d[child_index]);
 }
 
-void Layer::get_gpu_bp_output(std::vector<DataType*>& output_dv,
-                              std::vector<DataType*>& output_d,
-                              const Layer* prev_layer) const {
-  output_dv = m_error_signal_d;
+void Layer::get_gpu_bp_output(cudnn::matrix& output_d,
+                              const Layer* parent) const {
+  const size_t parent_index = (std::find(m_parent_layers.begin(),
+                                         m_parent_layers.end(),
+                                         parent)
+                               - m_parent_layers.begin());
+  if (parent_index >= m_parent_layers.size()) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << get_name() << " has no backward prop output corresponding to "
+        << parent->get_name();
+    throw lbann_exception(err.str());
+  }
+  output_d.view(m_error_signals_d[parent_index]);
 }
 
 #endif // __LIB_CUDNN
