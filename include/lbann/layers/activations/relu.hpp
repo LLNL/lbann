@@ -112,11 +112,11 @@ class relu_layer : public entrywise_activation_layer {
 
  protected:
 
-  DataType activation_function(DataType x) const override {
+  DataType activation(DataType x) const override {
     return x > DataType(0) ? x : DataType(0);
   }
 
-  DataType activation_function_derivative(DataType x) const override {
+  DataType activation_derivative(DataType x) const override {
     return x > DataType(0) ? DataType(1) : DataType(0);
   }
 
@@ -129,7 +129,7 @@ class relu_layer : public entrywise_activation_layer {
     const DataType one = 1;
     const DataType zero = 0;
 
-    // Apply application on each GPU
+    // Apply activation on each GPU
     const int num_gpus = this->m_cudnn->get_num_gpus();
     for(int i = 0; i < num_gpus; ++i) {
       CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
@@ -156,7 +156,7 @@ class relu_layer : public entrywise_activation_layer {
     // Useful constants
     const DataType one = 1;
 
-    // Apply application on each GPU
+    // Apply activation derivative on each GPU
     const int num_gpus = this->m_cudnn->get_num_gpus();
     for(int i = 0; i < num_gpus; ++i) {
       CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));

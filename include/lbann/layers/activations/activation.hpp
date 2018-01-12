@@ -59,10 +59,10 @@ class entrywise_activation_layer : public activation_layer {
   /** Activation function.
    *  This function is applied independently to each input entry.
    */
-  virtual DataType activation_function(DataType x) const = 0;
+  virtual DataType activation(DataType x) const = 0;
 
   /** Derivative of activation function. */
-  virtual DataType activation_function_derivative(DataType x) const = 0;
+  virtual DataType activation_derivative(DataType x) const = 0;
 
   void fp_compute() override {
     if(this->m_using_gpus) {
@@ -108,7 +108,7 @@ class entrywise_activation_layer : public activation_layer {
       const size_t buffer_size = local_height * local_width;
       #pragma omp parallel for
       for (size_t i = 0; i < buffer_size; ++i) {
-        output_buffer[i] = activation_function(input_buffer[i]);
+        output_buffer[i] = activation(input_buffer[i]);
       }
     } else {
       // Non-contiguous data
@@ -117,7 +117,7 @@ class entrywise_activation_layer : public activation_layer {
         for(int row = 0; row < local_height; ++row) {
           const auto& x = input_buffer[row + col * input_ldim];
           auto& y = output_buffer[row + col * output_ldim];
-          y = activation_function(x);
+          y = activation(x);
         }
       }
     }
@@ -154,7 +154,7 @@ class entrywise_activation_layer : public activation_layer {
         const auto& x = input_buffer[i];
         const auto& dy = gradient_wrt_output_buffer[i];
         auto& dx = gradient_wrt_input_buffer[i];
-        dx += dy * activation_function_derivative(x);
+        dx += dy * activation_derivative(x);
       }
     } else {
       // Non-contiguous data
@@ -166,7 +166,7 @@ class entrywise_activation_layer : public activation_layer {
             = gradient_wrt_output_buffer[row + col * gradient_wrt_output_ldim];
           auto& dx
             = gradient_wrt_input_buffer[row + col * gradient_wrt_input_ldim];
-          dx += dy * activation_function_derivative(x);
+          dx += dy * activation_derivative(x);
         }
       }
     }

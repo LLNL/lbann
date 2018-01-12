@@ -44,18 +44,18 @@
 
 /// Activation Layers
 #include "lbann/layers/activations/atan.hpp"
-// #include "lbann/layers/activations/bent_identity.hpp"
-// #include "lbann/layers/activations/elu.hpp"
+#include "lbann/layers/activations/bent_identity.hpp"
+#include "lbann/layers/activations/elu.hpp"
 #include "lbann/layers/activations/exponential.hpp"
 #include "lbann/layers/activations/identity.hpp"
-// #include "lbann/layers/activations/leaky_relu.hpp"
+#include "lbann/layers/activations/leaky_relu.hpp"
 #include "lbann/layers/activations/relu.hpp"
-// #include "lbann/layers/activations/selu.hpp"
+#include "lbann/layers/activations/selu.hpp"
 #include "lbann/layers/activations/sigmoid.hpp"
-// #include "lbann/layers/activations/smooth_relu.hpp"
+#include "lbann/layers/activations/smooth_relu.hpp"
 #include "lbann/layers/activations/softmax.hpp"
-// #include "lbann/layers/activations/softplus.hpp"
-// #include "lbann/layers/activations/swish.hpp"
+#include "lbann/layers/activations/softplus.hpp"
+#include "lbann/layers/activations/swish.hpp"
 #include "lbann/layers/activations/tanh.hpp"
 
 /// Learning Layers

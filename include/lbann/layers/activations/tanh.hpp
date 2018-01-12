@@ -42,12 +42,12 @@ class tanh_layer : public entrywise_activation_layer {
   data_layout get_data_layout() const override { return T_layout; }
 
  protected:
-  DataType activation_function(DataType z) const override {
+  DataType activation(DataType z) const override {
     return std::tanh(z);
   }
-  DataType activation_function_derivative(DataType z) const override {
-    const auto coshz = std::cosh(z);
-    return DataType(1) / (coshz * coshz);
+  DataType activation_derivative(DataType z) const override {
+    const DataType coshz = std::cosh(z);
+    return 1 / (coshz * coshz);
   }
 };
 

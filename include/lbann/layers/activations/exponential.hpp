@@ -45,10 +45,10 @@ class exponential_layer : public entrywise_activation_layer {
   data_layout get_data_layout() const override { return T_layout; }
 
  protected:
-  DataType activation_function(DataType z) const override {
+  DataType activation(DataType z) const override {
     return std::exp(z);
   }
-  DataType activation_function_derivative(DataType z) const override {
+  DataType activation_derivative(DataType z) const override {
     return std::exp(z);
   }
 };

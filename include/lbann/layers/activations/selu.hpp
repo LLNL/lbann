@@ -31,42 +31,36 @@
 
 namespace lbann {
 
-/**
- * SELU: scaled exponential linear unit.
- * See: Klambauer et al. "Self-Normalizing Neural Networks", 2017.
- * https://arxiv.org/abs/1706.02515
- * By default, this assumes the goal is to normalize to 0 mean/unit variance.
- * To accomplish this, you should also normalize input to 0 mean/unit variance
- * (z-score), initialize with 0 mean, 1/n variance (He), and use the SELU
- * dropout.
+/** SELU: scaled exponential linear unit.
+ *  See: Klambauer et al. "Self-Normalizing Neural Networks", 2017.
+ *  https://arxiv.org/abs/1706.02515
+ *  By default, this assumes the goal is to normalize to 0 mean/unit
+ *  variance. To accomplish this, you should also normalize input to 0
+ *  mean/unit variance (z-score), initialize with 0 mean, 1/n variance
+ *  (He), and use the SELU dropout.
  */
 template <data_layout T_layout>
 class selu_layer : public entrywise_activation_layer {
  public:
   selu_layer(lbann_comm *comm,
              DataType alpha = DataType(1.6732632423543772848170429916717),
-             DataType scale = DataType(1.0507009873554804934193349852946)) :
-    entrywise_activation_layer(comm),
-    m_alpha(alpha), m_scale(scale)
-  {
-    initialize_distributed_matrices();
-  }
-
+             DataType scale = DataType(1.0507009873554804934193349852946))
+    : entrywise_activation_layer(comm), m_alpha(alpha), m_scale(scale) {}
   selu_layer* copy() const override { return new selu_layer(*this); }
 
   std::string get_type() const override { return "SELU"; }
-
-  inline void initialize_distributed_matrices() override {
-    entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
-  }
   data_layout get_data_layout() const override { return T_layout; }
 
  protected:
-  DataType activation_function(DataType z) override {
-    return (z >= DataType(0)) ? m_scale*z : m_scale*(m_alpha*std::expm1(z));
+  DataType activation(DataType z) const override {
+    return (z >= DataType(0) ?
+            m_scale * z :
+            m_scale * (m_alpha * std::expm1(z)));
   }
-  DataType activation_function_gradient(DataType z) override {
-    return (z >= DataType(0)) ? m_scale : m_scale*m_alpha*std::exp(z);
+  DataType activation_derivative(DataType z) const override {
+    return (z >= DataType(0) ?
+            m_scale :
+            m_scale * m_alpha * std::exp(z));
   }
  private:
   /** Alpha parameter for the ELU. */

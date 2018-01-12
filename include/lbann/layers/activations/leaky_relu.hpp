@@ -31,38 +31,30 @@
 
 namespace lbann {
 
-/**
- * Leaky rectified linear unit activation function.
- * This is a ReLU variant that avoids the dying ReLU problem where a ReLU neuron
- * can stop updating. See:
- * Maas, Andrew L., Awni Y. Hannun, and Andrew Y. Ng. "Rectifier nonlinearities
- * improve neural network acoustic models." Proc. ICML. Vol. 30. No. 1. 2013.
+/** Leaky rectified linear unit activation function.
+ *  This is a ReLU variant that avoids the dying ReLU problem where a
+ *  ReLU neuron can stop updating. See:
+ *  Maas, Andrew L., Awni Y. Hannun, and Andrew Y. Ng. "Rectifier
+ *  nonlinearities improve neural network acoustic models."
+ *  Proc. ICML. Vol. 30. No. 1. 2013.
  */
 template <data_layout T_layout>
 class leaky_relu_layer : public entrywise_activation_layer {
  public:
   /** Leak is the amount of signal to permit for negative values. */
   leaky_relu_layer(lbann_comm *comm,
-                   DataType leak = DataType(0.01)) :
-    entrywise_activation_layer(comm),
-    m_leak(leak) { 
-    initialize_distributed_matrices(); 
-  }
-
+                   DataType leak = DataType(0.01))
+    : entrywise_activation_layer(comm), m_leak(leak) {}
   leaky_relu_layer* copy() const override { return new leaky_relu_layer(*this); }
 
   std::string get_type() const override { return "leaky relu"; }
-
-  inline void initialize_distributed_matrices() override {
-    entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
-  }
   data_layout get_data_layout() const override { return T_layout; }
 
  protected:
-  DataType activation_function(DataType z) override {
+  DataType activation(DataType z) const override {
     return std::max(m_leak * z, z);
   }
-  DataType activation_function_gradient(DataType z) override {
+  DataType activation_derivative(DataType z) const override {
     return (z > DataType(0)) ? DataType(1) : m_leak;
   }
  private:

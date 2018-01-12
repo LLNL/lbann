@@ -45,11 +45,11 @@ class atan_layer : public entrywise_activation_layer {
   data_layout get_data_layout() const override { return T_layout; }
 
  protected:
-  DataType activation_function(DataType z) const override {
+  DataType activation(DataType z) const override {
     return std::atan(z);
   }
-  DataType activation_function_derivative(DataType z) const override {
-    return DataType(1) / (DataType(1) + z * z);
+  DataType activation_derivative(DataType z) const override {
+    return 1 / (DataType(1) + z * z);
   }
 };
 

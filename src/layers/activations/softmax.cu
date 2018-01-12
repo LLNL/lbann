@@ -26,9 +26,7 @@
 // softmax_cuda.cu - GPU helper routines for softmax layer
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/layers/activations/softmax_cuda.hpp"
-
-#define LBANN_ENABLE_SOFTMAX_CUTOFF_CUDA
+#include "lbann/layers/activations/softmax.hpp"
 
 namespace lbann {
 namespace softmax_cuda {
@@ -47,9 +45,6 @@ void fp_cutoff(cudnn::cudnn_manager &cudnn,
                const std::vector<DataType*> &activations,
                El::Int h, El::Int w,
                DataType min_output) {
-#ifndef LBANN_ENABLE_SOFTMAX_CUTOFF_CUDA
-  return;
-#else
   El::Int num_elms = h * w;  
   int num_gpus = cudnn.get_num_gpus();
   int block_dim = 256;
@@ -59,7 +54,6 @@ void fp_cutoff(cudnn::cudnn_manager &cudnn,
     fp_cutoff_kernel<<<grid_dim, block_dim>>>(activations[i], num_elms,
                                               min_output);
   }
-#endif
 }
 
 __global__ void bp_cutoff_kernel(const DataType *activations,
@@ -79,9 +73,6 @@ void bp_cutoff(cudnn::cudnn_manager &cudnn,
                const std::vector<DataType*> &error_signals,               
                El::Int h, El::Int w,
                DataType min_output) {
-#ifndef LBANN_ENABLE_SOFTMAX_CUTOFF_CUDA
-  return;
-#else
   El::Int num_elms = h * w;  
   int num_gpus = cudnn.get_num_gpus();
   int block_dim = 256;
@@ -90,44 +81,6 @@ void bp_cutoff(cudnn::cudnn_manager &cudnn,
     CHECK_CUDA(cudaSetDevice(cudnn.get_gpu(i)));
     bp_cutoff_kernel<<<grid_dim, block_dim>>>(activations[i], error_signals[i],
                                               num_elms, min_output);
-  }
-#endif
-}
-
-
-__global__ void bp_compute_cross_entropy_shortcut_kernel(const DataType *activations,
-                                                         const DataType *prev_error_signals,
-                                                         DataType *error_signals,
-                                                         El::Int num_elms,
-                                                         DataType min_output) {
-  El::Int tid = blockIdx.x * blockDim.x + threadIdx.x;
-  if (tid > num_elms) return;
-  DataType a = activations[tid];
-  DataType p = prev_error_signals[tid];
-#ifdef LBANN_ENABLE_SOFTMAX_CUTOFF_CUDA
-  DataType e = a > min_output ? a - p : DataType(0);
-#else
-  DataType e = a - p;
-#endif
-  error_signals[tid] = e;
-  return;
-}
-
-void bp_compute_cross_entropy_shortcut(cudnn::cudnn_manager &cudnn,
-                                       const std::vector<DataType*> &activations,
-                                       const std::vector<DataType*> &prev_error_signals,
-                                       const std::vector<DataType*> &error_signals,
-                                       El::Int h, El::Int w,
-                                       DataType min_output) {
-  El::Int num_elms = h * w;                                       
-  int block_dim = 256;
-  int grid_dim = num_elms / block_dim + ((num_elms % block_dim) ? 1 : 0);
-  int num_gpus = cudnn.get_num_gpus();  
-  for (int i = 0; i < num_gpus; ++i) {
-    CHECK_CUDA(cudaSetDevice(cudnn.get_gpu(i)));
-    bp_compute_cross_entropy_shortcut_kernel<<<
-      grid_dim, block_dim, 0, cudnn.get_stream(i)>>>(
-          activations[i], prev_error_signals[i], error_signals[i], num_elms, min_output);
   }
 }
 
