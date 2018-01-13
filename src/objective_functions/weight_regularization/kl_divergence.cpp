@@ -26,6 +26,7 @@
 
 #include "lbann/objective_functions/weight_regularization/kl_divergence.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/utils/statistics.hpp"
 
 
 namespace lbann {
@@ -34,9 +35,9 @@ void kl_divergence::setup(model& m) {
   objective_function_term::setup(m);
 
   //set up layers of interest
-  for(layers* l : m.get_layers()) {
+  for(const auto& l : m.get_layers()) {
     if(l->get_name() == m_z_mean_layer_name) m_z_mean_layer = l; 
-    if(l->get_name() == m_zlog_sigma_layer_name) z_log_sigma_layer = l;
+    if(l->get_name() == m_z_log_sigma_layer_name) m_z_log_sigma_layer = l;
   }
 
 }
@@ -44,39 +45,40 @@ void kl_divergence::setup(model& m) {
 EvalType kl_divergence::evaluate() {
 
   //Get matrices of input layers
-  auto z_mean_acts = m_z_mean_layer->get_activations();
-  auto z_log_sigma_acts = m_z_log_sigma_layer->get_activations();
+  AbsDistMat& z_mean_acts = m_z_mean_layer->get_activations();
+  AbsDistMat& z_log_sigma_acts = m_z_log_sigma_layer->get_activations();
   
-  auto z_log_sigma_copy = z_log_sigma_acts->Contruct(z_log_sigma_acts->Grid(),
-                                                            z_log_sigma_acts->Root());
+  AbsDistMat* z_log_sigma_copy = z_log_sigma_acts.Construct(z_log_sigma_acts.Grid(),
+                                                     z_log_sigma_acts.Root());
 
-  auto mean_value = std_value = EvalType(0);
+  DataType mean_value = DataType(0); 
+  DataType std_value = DataType(0);
   
   auto sq = [&](const DataType& x) {
     return (x*x);
-  }
-  auto ex  = [&](const DataType& x) {
+  };
+  auto expn  = [&](const DataType& x) {
     return std::exp(x);
-  }
+  };
   auto addone  = [&](const DataType& x) {
     return (1+x);
-  }
+  };
 
 
-  El::Copy(*z_log_sigma_acts,*z_log_sigma_copy);
+  El::Copy(z_log_sigma_acts, *z_log_sigma_copy);
 
   //Compute entrywise add, square and exponent of the matrices
-  El::EntrywiseMap(*z_log_sigma_acts,El::MakeFunction(addone));
-  El::EntrywiseMap(*z_mean_acts,El::MakeFunction(sq));
-  El::EntrywiseMap(*z_log_sigma_copy,El::MakeFunction(ex));
+  El::EntrywiseMap(z_log_sigma_acts,El::MakeFunction(addone));
+  El::EntrywiseMap(z_mean_acts,El::MakeFunction(sq));
+  El::EntrywiseMap(*z_log_sigma_copy,El::MakeFunction(expn));
 
   //Entrywise substraction of matrices
-  El::Axpy(-1,z_mean_acts,z_log_sigma_acts);
-  El::Axpy(-1,z_log_sigma_copy,z_log_sigma_acts);
+  El::Axpy(DataType(-1),z_mean_acts,z_log_sigma_acts);
+  El::Axpy(DataType(-1),*z_log_sigma_copy,z_log_sigma_acts);
   
   //Entrywise mean of all the previous computation (stats)
-  entrywise_mean_and_stdev(z_log_sigma_acts,mean_val,std_val);
-  m_loss = 0.5 * mean_val;
+  entrywise_mean_and_stdev(z_log_sigma_acts,mean_value,std_value);
+  m_kl_loss = 0.5 * mean_value;
   return m_kl_loss;
 }
 
