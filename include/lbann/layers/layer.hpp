@@ -416,10 +416,14 @@ class Layer {
   /** GPU memory for error signal. */
   std::vector<cudnn::matrix> m_error_signals_d;
 
-  /** cuDNN descriptor for neuron tensor from "previous" layer. */
-  cudnnTensorDescriptor_t m_prev_neurons_cudnn_desc;
-  /** cuDNN descriptor for neuron tensor. */
-  cudnnTensorDescriptor_t m_neurons_cudnn_desc;
+  /** cuDNN descriptor for activations tensor from "previous" layer. */
+  cudnnTensorDescriptor_t m_prev_activations_cudnn_desc;
+  /** cuDNN descriptor for activations tensor. */
+  cudnnTensorDescriptor_t m_activations_cudnn_desc;
+  /** cuDNN descriptor for error signal tensor from "next" layer. */
+  cudnnTensorDescriptor_t m_prev_error_signals_cudnn_desc;
+  /** cuDNN descriptor for error signal tensor. */
+  cudnnTensorDescriptor_t m_error_signals_cudnn_desc;
 
 #endif // __LIB_CUDNN
 

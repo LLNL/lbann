@@ -138,10 +138,10 @@ class relu_layer : public entrywise_activation_layer {
       CHECK_CUDNN(cudnnActivationForward(this->m_cudnn->get_handle(i),
                                          m_activation_cudnn_desc,
                                          &one,
-                                         this->m_prev_neurons_cudnn_desc,
+                                         this->m_prev_activations_cudnn_desc,
                                          this->m_prev_activations_d[0].get_data(i),
                                          &zero,
-                                         this->m_neurons_cudnn_desc,
+                                         this->m_activations_cudnn_desc,
                                          this->m_activations_d[0].get_data(i)));
     }
 
@@ -165,14 +165,14 @@ class relu_layer : public entrywise_activation_layer {
       CHECK_CUDNN(cudnnActivationBackward(this->m_cudnn->get_handle(i),
                                           m_activation_cudnn_desc,
                                           &one,
-                                          this->m_prev_neurons_cudnn_desc,
+                                          this->m_prev_activations_cudnn_desc,
                                           this->m_prev_activations_d[0].get_data(i),
-                                          this->m_neurons_cudnn_desc,
+                                          this->m_prev_error_signals_cudnn_desc,
                                           this->m_prev_error_signals_d[0].get_data(i),
-                                          this->m_neurons_cudnn_desc,
+                                          this->m_activations_cudnn_desc,
                                           this->m_activations_d[0].get_data(i),
                                           &one,
-                                          this->m_prev_neurons_cudnn_desc,
+                                          this->m_error_signals_cudnn_desc,
                                           this->m_error_signals_d[0].get_data(i)));
     }
 

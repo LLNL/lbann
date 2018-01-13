@@ -301,10 +301,10 @@ class softmax_layer : public activation_layer {
                                       CUDNN_SOFTMAX_ACCURATE,
                                       CUDNN_SOFTMAX_MODE_INSTANCE,
                                       &one,
-                                      this->m_prev_neurons_cudnn_desc,
+                                      this->m_prev_activations_cudnn_desc,
                                       prev_activations_d.get_data(i),
                                       &zero,
-                                      this->m_neurons_cudnn_desc,
+                                      this->m_activations_cudnn_desc,
                                       activations_d.get_data(i)));
     }
 
@@ -343,12 +343,12 @@ class softmax_layer : public activation_layer {
                                        CUDNN_SOFTMAX_ACCURATE,
                                        CUDNN_SOFTMAX_MODE_INSTANCE,
                                        &one,
-                                       this->m_neurons_cudnn_desc,
+                                       this->m_activations_cudnn_desc,
                                        activations_d.get_data(i),
-                                       this->m_neurons_cudnn_desc,
+                                       this->m_prev_error_signals_cudnn_desc,
                                        prev_error_signals_d.get_data(i),
                                        &one,
-                                       this->m_prev_neurons_cudnn_desc,
+                                       this->m_error_signals_cudnn_desc,
                                        error_signals_d.get_data(i)));
     }
 
