@@ -39,10 +39,12 @@ namespace lbann {
 //@todo change to on training end
 void lbann_callback_save_model::on_epoch_end(model *m) {
   lbann_data::Model model_param;
+  if(m->get_comm()->am_world_master()) std::cout << "Save Model callback: write proto " << std::endl; 
   m->write_proto(&model_param);
   std::string filename = m_dir + "." + m_extension;
   //@todo flag to save as either binary or text
-  write_proto_text(model_param,filename);
+  if(m_extension == "txt") write_proto_text(model_param,filename);
+  else write_proto_binary(model_param,filename);
 }
 
 void lbann_callback_save_model::write_proto_binary(const lbann_data::Model& proto,

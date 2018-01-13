@@ -35,7 +35,6 @@
 #include <iomanip>
 #include <queue>
 #include <unordered_set>
-//#include "lbann_proto/lbanntt.pbxtt.h"
 #include <lbann.pb.h>
 
 #include "mpi.h"
@@ -982,11 +981,8 @@ bool model::load_from_checkpoint_shared(persist& p) {
 
 void model::write_proto(lbann_data::Model* proto) {
   proto->Clear();
-  if (m_comm->am_world_master()) {
-    //proto->set_name(m_name);
+  if (m_comm->am_world_master()) 
     proto->set_mini_batch_size(m_max_mini_batch_size);
-    proto->set_num_epochs(m_current_epoch);
-  }
 }
 
 }  // namespace lbann
