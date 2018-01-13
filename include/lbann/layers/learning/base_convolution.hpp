@@ -22,8 +22,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// base_convolution.hpp - Base class for convolution and deconvolution layers
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_LAYER_BASE_CONVOLUTION_HPP_INCLUDED
@@ -52,13 +50,13 @@ class base_convolution_layer : public learning_layer {
 
   /** Convolution kernel dimensions. */
   std::vector<int> m_kernel_dims;
+  /** Size of convolutional kernel. */
+  int m_kernel_size;
   /** Convolution padding. */
   std::vector<int> m_pads;
   /** Convolution strides. */
   std::vector<int> m_strides;
 
-  /** Size of convolutional kernel. */
-  int m_kernel_size;
 
   /** Scaling factor for bias term.
    *  If the scaling factor is zero, bias is not applied.
@@ -104,9 +102,9 @@ class base_convolution_layer : public learning_layer {
                          cudnn::cudnn_manager *cudnn)
     : learning_layer(comm),
       m_kernel_dims(conv_dims),
+      m_kernel_size(0),
       m_pads(pads),
       m_strides(strides),
-      m_kernel_size(0),
       m_bias_scaling_factor(has_bias ? DataType(1) : DataType(0)),
       m_kernel_gradient(this->m_comm->get_model_grid()),
       m_bias_gradient(this->m_comm->get_model_grid()) {
@@ -141,9 +139,9 @@ class base_convolution_layer : public learning_layer {
   base_convolution_layer(const base_convolution_layer& other)
     : learning_layer(other),
       m_kernel_dims(other.m_kernel_dims),
+      m_kernel_size(other.m_kernel_size),
       m_pads(other.m_pads),
       m_strides(other.m_strides),
-      m_kernel_size(other.m_kernel_size),
       m_bias_scaling_factor(other.m_bias_scaling_factor),
       m_kernel_gradient(other.m_kernel_gradient),
       m_bias_gradient(other.m_bias_gradient) {
@@ -172,9 +170,9 @@ class base_convolution_layer : public learning_layer {
   base_convolution_layer& operator=(const base_convolution_layer& other) {
     learning_layer::operator=(other);
     m_kernel_dims = other.m_kernel_dims;
+    m_kernel_size = other.m_kernel_size;
     m_pads = other.m_pads;
     m_strides = other.m_strides;
-    m_kernel_size = other.m_kernel_size;
     m_bias_scaling_factor = other.m_bias_scaling_factor;
     m_kernel_gradient = other.m_kernel_gradient;
     m_bias_gradient = other.m_bias_gradient;

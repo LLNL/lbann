@@ -22,8 +22,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// deconvolution.hpp - Deconvolution Layer
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_LAYER_DECONVOLUTION_HPP_INCLUDED
@@ -42,7 +40,7 @@ namespace lbann {
 // Forward declaration.
 class lbann_callback_imcomm;
 
-/// Convolution layer
+/// Deconvolution layer
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
 class deconvolution_layer : public base_convolution_layer {
  private:

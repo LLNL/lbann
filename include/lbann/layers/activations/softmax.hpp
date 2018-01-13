@@ -22,8 +22,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_layer_softmax .hpp .cpp - softmax layer
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_LAYER_SOFTMAX_HPP_INCLUDED
