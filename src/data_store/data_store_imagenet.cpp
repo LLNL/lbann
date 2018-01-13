@@ -25,37 +25,40 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef _LBANN_FILE_UTILS_HPP_
-#define _LBANN_FILE_UTILS_HPP_
-#include <string>
-#include <vector>
+#include "lbann/data_store/data_store_imagenet.hpp"
+#include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
-struct path_delimiter {
-  static const std::string characters;
-  static std::string preferred() {
-    return std::string(1, characters[0]);
+void data_store_imagenet::setup() {
+  generic_data_store::setup();
+  if (! m_in_memory) {
+    m_buffers.resize( omp_get_max_threads() );
   }
-  static bool check(const char ch) {
-    return (characters.find(ch) != std::string::npos);
+}
+
+void data_store_imagenet::get_data_buf(std::string dir, std::string filename, std::vector<unsigned char> *&buf, int tid) {
+  static int idx = 0;
+  std::vector<unsigned char> &b = m_buffers[tid];
+  std::string imagepath = dir + filename;
+  if (m_master && idx == 0) {
+    std::cerr << "\ndata_store_imagenet: READING: " << imagepath << std::endl << std::endl;
+    ++idx;
+  }  
+  std::ifstream in(imagepath.c_str(), std::ios::in | std::ios::binary);
+  if (! in.good()) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "failed to open " << imagepath << " for reading";
+    throw lbann_exception(err.str());
   }
-  bool operator()(const char ch) const {
-    return (characters.find(ch) != std::string::npos);
-  }
-};
+  in.seekg(0, std::ios::end);
+  size_t sz = in.tellg();
+  in.seekg(0, std::ios::beg);
+  b.resize(sz);
+  in.read((char*)&b[0], sz*sizeof(unsigned char));
+  in.close();
+  buf = &m_buffers[tid];
+}
 
-/// Tokenize a string by a sequence of delimiter characters.
-std::vector<int> get_tokens(const std::vector<char> delims, std::string str);
-
-bool parse_path(const std::string& path, std::string& dir, std::string& basename);
-std::string get_ext_name(const std::string file_name);
-std::string get_basename_without_ext(const std::string file_name);
-std::string add_delimiter(const std::string dir);
-std::string modify_file_name(const std::string file_name, const std::string tag, const std::string new_ext="");
-
-bool check_if_file_exists(const std::string& filename);
-bool create_dir(const std::string output_dir);
-
-} // end of namespace lbann
-#endif // _LBANN_FILE_UTILS_HPP_
+}  // namespace lbann

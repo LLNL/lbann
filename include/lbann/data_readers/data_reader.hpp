@@ -50,6 +50,8 @@
 
 namespace lbann {
 
+class generic_data_store;
+
 /**
  * A data reader manages reading in data in a particular format.
  * This abstract base class manages common functionality. In particular, child
@@ -58,10 +60,13 @@ namespace lbann {
  */
 class generic_data_reader : public lbann_image_preprocessor {
  public:
+
   /**
    * ctor
    */
   generic_data_reader(bool shuffle = true) :
+    m_data_store(nullptr),
+    m_comm(nullptr),
     m_mini_batch_size(0), m_current_pos(0),
     m_stride_to_next_mini_batch(0), m_base_offset(0), m_model_offset(0),
     m_sample_stride(1), m_iteration_stride(1),
@@ -83,6 +88,16 @@ class generic_data_reader : public lbann_image_preprocessor {
 
   ~generic_data_reader() override {}
   virtual generic_data_reader* copy() const = 0;
+
+  /// set the comm object
+  void set_comm(lbann_comm *comm) {
+    m_comm = comm;
+  }
+
+  /// returns a (possibly nullptr) to comm
+  lbann_comm * get_comm() const {
+    return m_comm;
+  }
 
   // These non-virtual methods are used to specify where data is, how much to
   // load, etc.
@@ -249,6 +264,12 @@ class generic_data_reader : public lbann_image_preprocessor {
    */
   void setup();
 
+  /** returns, in 'indicies,' all indicies that would be used internally
+   *  in a call to fetch_data(). These are NOT shuffled indices.
+   *  This method is added to support data_store functionality.
+   */
+  int fetch_data_indices(std::vector<int> &indicies);
+
   /// Fetch this mini-batch's samples into X.
   virtual int fetch_data(Mat& X);
   /// Fetch this mini-batch's labels into Y.
@@ -272,6 +293,12 @@ class generic_data_reader : public lbann_image_preprocessor {
    * around, then reshuffle the data indicies.
    */
   virtual bool update(bool is_active_reader);
+
+  /**
+   * Advance the data reader's current position pointer.
+   * This method is added to support data_store functionality.
+   */
+  virtual bool fake_update(bool is_active_reader);
 
   /// Return the number of labels (classes) in this dataset.
   virtual int get_num_labels() const {
@@ -505,7 +532,36 @@ class generic_data_reader : public lbann_image_preprocessor {
   /** \brief Given directory to store checkpoint files, read state from file and add to number of bytes read */
   bool loadFromCheckpointShared(persist& p, const char *name);
 
+  //! experimental: to support data_store functionality
+  void save_initial_state() {
+    m_current_pos_save = m_current_pos;
+    m_loaded_mini_batch_idx_save = m_loaded_mini_batch_idx;
+    m_current_mini_batch_idx_save = m_current_mini_batch_idx;
+  }
+
+  //! experimental: to support data_store functionality
+  void restore_initial_state() {
+    m_current_pos = m_current_pos_save;
+    m_loaded_mini_batch_idx = m_loaded_mini_batch_idx_save;
+    m_current_mini_batch_idx = m_current_mini_batch_idx_save;
+  }
+
+  
+  /// returns the data store, which may be a nullptr
+  generic_data_store * get_data_store() {
+    return m_data_store;
+  }
+
+  /// sets up a data_store. @todo: must modify this method
+  /// anytime you derive a class from generic_data_store
+  void setup_data_store(lbann_comm *comm); 
+
  protected:
+
+   generic_data_store *m_data_store;
+
+   lbann_comm *m_comm;
+
   /**
    * Fetch a single sample into a matrix.
    * @param X The matrix to load data into.
@@ -602,6 +658,12 @@ class generic_data_reader : public lbann_image_preprocessor {
 
   friend class data_reader_merge_features;
   friend class data_reader_merge_samples;
+
+ private :
+  //! experimental: to support data_store functionality
+  int m_current_pos_save;
+  int m_loaded_mini_batch_idx_save;
+  int m_current_mini_batch_idx_save;
 };
 
 }  // namespace lbann
