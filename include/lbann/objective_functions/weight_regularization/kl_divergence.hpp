@@ -28,6 +28,7 @@
 #define LBANN_OBJECTIVE_FUNCTION_WEIGHT_REGULARIZATION_KL_DIVERGENCE_HPP_INCLUDED
 
 #include "lbann/objective_functions/objective_function_term.hpp"
+#include "lbann/layers/io/target/target_layer.hpp"
 
 namespace lbann {
 /** Kullback Leibler (KL) divergence regularizer
@@ -39,26 +40,18 @@ namespace lbann {
  * Kingma and Welling, "Auto-Encoding Variational Bayes"
  * Doersch, "Tutorial on Variational Autoencoders"
  * https://blogs.keras.io/building-autoencoder-in-keras.html*/
+
 class kl_divergence : public objective_function_term {
  public:
   /** Default constructor. */
-  //kl_divergence(std::string layer1, std::string layer2, EvalType scale_factor = EvalType(1))
-  kl_divergence(std::string layer1, std::string layer2)
-               : objective_function_term(),
-                 m_z_mean_layer_name(layer1), 
-                 m_z_log_sigma_layer_name(layer2){ 
-    m_kl_loss = EvalType(0);
-  }
-
+  kl_divergence(std::string layer1, std::string layer2);
   /** Copy constructor. */
-  kl_divergence(const kl_divergence& other) = default;
+  kl_divergence(const kl_divergence& other);
   /** Copy assignment operator. */
-  kl_divergence& operator=(const kl_divergence& other) = default;
+  kl_divergence& operator=(const kl_divergence& other);
   /** Destructor. */
-  ~kl_divergence() override = default;
-  /** Copy function. */
-  kl_divergence* copy() const override { return new kl_divergence(*this); }
-
+  ~kl_divergence() override;
+  
   /** Get the name of the objective function term. */
   std::string name() const override { return "kl_divergence"; }
 
@@ -84,6 +77,10 @@ class kl_divergence : public objective_function_term {
  Layer* m_z_mean_layer;
  Layer* m_z_log_sigma_layer; 
  EvalType m_kl_loss;
+ /**target layer for adding kl_loss to gradient. */
+ target_layer* m_target_layer;
+ /** Gradient matrix. */
+ AbsDistMat* m_gradient;
 
 };
 

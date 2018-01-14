@@ -31,15 +31,58 @@
 
 namespace lbann {
 
+kl_divergence::kl_divergence(std::string layer1, std::string layer2)
+               : objective_function_term(),
+                 m_z_mean_layer_name(layer1), 
+                 m_z_log_sigma_layer_name(layer2), 
+                 m_kl_loss(EvalType(0)),
+                 m_target_layer(nullptr),
+                 m_gradient(nullptr) { } 
+
+kl_divergence::kl_divergence(const kl_divergence& other)
+  : objective_function_term(other),
+    m_gradient(other.m_gradient) {
+  if (m_gradient != nullptr) { m_gradient = m_gradient->Copy(); }
+}
+
+kl_divergence& kl_divergence::operator=(const kl_divergence& other) {
+  objective_function_term::operator=(other);
+  if (m_gradient != nullptr && other.m_gradient != nullptr
+      && m_gradient->DistData() == other.m_gradient->DistData()) {
+    El::Copy(*other.m_gradient, *m_gradient);
+  }
+  else {
+    if (m_gradient != nullptr) { delete m_gradient; }
+    m_gradient = other.m_gradient;
+    if (m_gradient != nullptr) { m_gradient = m_gradient->Copy(); }
+  }
+  return *this;
+}
+
+kl_divergence::~kl_divergence() {
+  if (m_gradient != nullptr) { delete m_gradient; }
+}
+
 void kl_divergence::setup(model& m) {
   objective_function_term::setup(m);
-
   //set up layers of interest
   for(const auto& l : m.get_layers()) {
+    if(dynamic_cast<target_layer*>(l) != nullptr) m_target_layer = (target_layer*)l;
     if(l->get_name() == m_z_mean_layer_name) m_z_mean_layer = l; 
     if(l->get_name() == m_z_log_sigma_layer_name) m_z_log_sigma_layer = l;
   }
 
+  if(m_target_layer != nullptr) {
+    const AbsDistMat& ground_truth = m_target_layer->get_activations();
+    m_gradient = ground_truth.Construct(ground_truth.Grid(),
+                                        ground_truth.Root());
+    El::Zeros(*m_gradient, ground_truth.Height(), ground_truth.Width());
+  } else {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "Null pointer to target layer";
+    throw lbann_exception(err.str());
+  }
 }
 
 EvalType kl_divergence::evaluate() {
@@ -53,6 +96,7 @@ EvalType kl_divergence::evaluate() {
 
   DataType mean_value = DataType(0); 
   DataType std_value = DataType(0);
+  m_kl_loss = EvalType(0);
   
   auto sq = [&](const DataType& x) {
     return (x*x);
@@ -83,6 +127,10 @@ EvalType kl_divergence::evaluate() {
 }
 
 void kl_divergence::differentiate() {
-
+  const AbsDistMat& prediction = m_target_layer->get_prediction();
+  El::Zeros(*m_gradient, prediction.Height(), prediction.Width());
+  El::Fill(*m_gradient,DataType(m_kl_loss));
+  m_target_layer->add_to_error_signal(*m_gradient);
 }
+
 }  // namespace lbann
