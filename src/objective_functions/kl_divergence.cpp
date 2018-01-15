@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/objective_functions/weight_regularization/kl_divergence.hpp"
+#include "lbann/objective_functions/kl_divergence.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/statistics.hpp"
 
