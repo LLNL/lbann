@@ -87,7 +87,7 @@ void kl_divergence::setup(model& m) {
 
 EvalType kl_divergence::evaluate() {
 
-  //Get matrices of input layers
+  //Get matrices of input (latent space) layers
   AbsDistMat& z_mean_acts = m_z_mean_layer->get_activations();
   AbsDistMat& z_log_sigma_acts = m_z_log_sigma_layer->get_activations();
   
@@ -130,6 +130,7 @@ void kl_divergence::differentiate() {
   const AbsDistMat& prediction = m_target_layer->get_prediction();
   El::Zeros(*m_gradient, prediction.Height(), prediction.Width());
   El::Fill(*m_gradient,DataType(m_kl_loss));
+  //add kl_loss to existing reonstruction loss/error signal
   m_target_layer->add_to_error_signal(*m_gradient);
 }
 

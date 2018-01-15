@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_OBJECTIVE_FUNCTION_WEIGHT_REGULARIZATION_KL_DIVERGENCE_HPP_INCLUDED
-#define LBANN_OBJECTIVE_FUNCTION_WEIGHT_REGULARIZATION_KL_DIVERGENCE_HPP_INCLUDED
+#ifndef LBANN_OBJECTIVE_FUNCTION_KL_DIVERGENCE_HPP_INCLUDED
+#define LBANN_OBJECTIVE_FUNCTION_KL_DIVERGENCE_HPP_INCLUDED
 
 #include "lbann/objective_functions/objective_function_term.hpp"
 #include "lbann/layers/io/target/target_layer.hpp"
@@ -36,10 +36,12 @@ namespace lbann {
  * induced by an encoder on input data and some prior.
  * It is acts as a kind of regularizer added to reconstruction cost.
  * A good use is in Variational Autoencoder (VAE).
+ * kl_loss = -0.5 * mean(1 + z_log_sigma - square(z_mean) - exp(z_log_sigma))
  * See the following reference:
  * Kingma and Welling, "Auto-Encoding Variational Bayes"
  * Doersch, "Tutorial on Variational Autoencoders"
- * https://blogs.keras.io/building-autoencoder-in-keras.html*/
+ * https://blogs.keras.io/building-autoencoder-in-keras.html
+ * TODO: Add checkpoint */
 
 class kl_divergence : public objective_function_term {
  public:
