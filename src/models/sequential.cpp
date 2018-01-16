@@ -150,11 +150,6 @@ void sequential_model::write_proto(lbann_data::Model* proto) {
       m_layers[l]->write_proto(layer_proto);
     }
   }
-  //Add weights
-  for (weights *w : m_weights) {
-    auto weight_proto = proto->add_weights();
-    w->write_proto(weight_proto);
-  }
 }
 
 bool sequential_model::load_from_checkpoint_shared(persist& p) {

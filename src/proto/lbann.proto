@@ -561,7 +561,7 @@ message Weights {
   int64 height = 2;
   int64 width = 3;
   //@todo assume float above, add other datatype
-  repeated float value = 4 [packed=true];
+  repeated float data = 4 [packed=true];
 
   Imcomm imcomm = 55;
 }
@@ -589,6 +589,12 @@ message Layer {
    string children = 152;
    string data_layout = 52;
    bool num_neurons_from_data_reader = 53;
+
+
+   repeated Weights weights = 153;
+   string top = 154;
+   string bottom = 155;
+   string type = 156;
 
    // a Layer should contain exactly one of the following
    // (this may or may not be properly checked for in proto_common.cpp)

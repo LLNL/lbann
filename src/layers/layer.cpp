@@ -673,7 +673,16 @@ bool Layer::load_from_checkpoint_shared(persist& p) {
 }
 
 void Layer::write_proto(lbann_data::Layer* proto) const {
+  proto->Clear();
   proto->set_name(get_name());
+  proto->set_type(get_type());
+  if(!m_parent_layers.empty()) proto->set_bottom(m_parent_layers.front()->get_name());
+  proto->set_top(get_name());
+  //Add weights
+  for (weights *w : m_weights) {
+    auto weight_proto = proto->add_weights();
+    w->write_proto(weight_proto);
+  }
 }
 
 void Layer::fp_set_std_matrix_view() {
