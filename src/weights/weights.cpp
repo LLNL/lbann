@@ -330,15 +330,17 @@ bool weights::save_to_checkpoint_shared(lbann::persist& p)
 
 void weights::write_proto(lbann_data::Weights* proto) const {
   proto->Clear();
+  std::cout << "Write weight params: " << std::endl;
   proto->set_name(m_name);
   proto->set_height(m_height);
   proto->set_width(m_width);
-  //write weight values; mimic elemental Write/Print
+  //Write weight values; mimic elemental Write/Print
+  //@todo openMP
   for(auto i = 0; i < m_values->Height(); ++i) {
     for(auto j = 0; j < m_values->Width(); ++j) {
       //assume datatype is float
       //@todo generalize
-      proto->add_value(m_values->Get(i,j));
+      proto->add_data(m_values->Get(i,j));
     }
   }
   
