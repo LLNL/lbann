@@ -6,6 +6,9 @@ def test_models(exe):
     host = re.sub("\d+", "", hostname)
     #exe = lbann_dir + '/../LBANN-NIGHTD-BDE/build/' + host + '.llnl.gov/model_zoo/lbann'
     opt = lbann_dir + '/model_zoo/optimizers/opt_adagrad.prototext'
+    slurm_cmd = 'srun '
+    if os.getenv('SLURM_NNODES') is None:
+        slurm_cmd = 'salloc -N1 -ppdebug -t 1 ' + slurm_cmd
     defective_models = []
     tell_Dylan = []
     for subdir, dirs, files in os.walk(lbann_dir + '/model_zoo/models/'):
@@ -14,19 +17,19 @@ def test_models(exe):
                 model_path = subdir + '/' + file_name
                 print('Attempting model setup for: ' + file_name )
                 if 'mnist' in file_name:
-                    cmd = 'salloc -N1 -ppdebug -t 1 srun ' + exe + ' --model=' + model_path + ' --reader='+ lbann_dir + '/model_zoo/data_readers/data_reader_mnist.prototext' + ' --optimizer=' + opt + ' --exit_after_setup'
+                    cmd = slurm_cmd + exe + ' --model=' + model_path + ' --reader='+ lbann_dir + '/model_zoo/data_readers/data_reader_mnist.prototext' + ' --optimizer=' + opt + ' --exit_after_setup'
                     if os.system(cmd) != 0:
                         print("Error detected in " + model_path)
                         #defective_models.append(file_name)
                         defective_models.append(cmd)
                 elif 'net' in file_name:
-                    cmd = 'salloc -N1 -ppdebug -t 1 srun ' + exe + ' --model=' + model_path + ' --reader='+ lbann_dir + '/model_zoo/data_readers/data_reader_imagenet.prototext' + ' --optimizer=' + opt + ' --exit_after_setup'
+                    cmd = slurm_cmd + exe + ' --model=' + model_path + ' --reader='+ lbann_dir + '/model_zoo/data_readers/data_reader_imagenet.prototext' + ' --optimizer=' + opt + ' --exit_after_setup'
                     if os.system(cmd) != 0:
                         print("Error detected in " + model_path)
-                        #defective_models.append(file_name)       
+                        #defective_models.append(file_name)
                         defective_models.append(cmd)
                 elif 'cifar' in file_name:
-                    cmd = 'salloc -N1 -ppdebug -t 1 srun ' + exe + ' --model=' + model_path + ' --reader='+ lbann_dir + '/model_zoo/data_readers/data_reader_cifar10.prototext' + ' --optimizer=' + opt + ' --exit_after_setup'
+                    cmd = slurm_cmd + exe + ' --model=' + model_path + ' --reader='+ lbann_dir + '/model_zoo/data_readers/data_reader_cifar10.prototext' + ' --optimizer=' + opt + ' --exit_after_setup'
                     if os.system(cmd) != 0:
                         print("Error detected in " + model_path)
                         #defective_models.append(file_name)
@@ -34,7 +37,7 @@ def test_models(exe):
                 else:
                     #cmd = exe + ' --model=' + model_path + ' --exit_after_setup'
                     #if os.system(cmd) != 0:
-                    #print("Error detected in " + model_path)                
+                    #print("Error detected in " + model_path)
                     print("Tell Dylan which data reader this model needs")
                     tell_Dylan.append(file_name)
     if len(defective_models) != 0:
