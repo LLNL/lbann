@@ -98,14 +98,14 @@ class optimizer {
                                        DataType scale = DataType(1));
 #ifdef __LIB_CUDNN
   /** Add to the gradient matrix on GPU. */
-  void add_to_gradient_gpu(std::vector<DataType*>& gradient,
+  void add_to_gradient_gpu(const std::vector<DataType*>& gradient,
                            DataType scale = DataType(1));
   /**
    *  The input is added to a staging matrix. When the gradient is
    *  needed, an allreduce is applied over the redundant communicator
    *  of the gradient matrix and the result is added to the gradient.
    */
-  void stage_gradient_for_accumulation_gpu(std::vector<DataType*>& gradient,
+  void stage_gradient_for_accumulation_gpu(const std::vector<DataType*>& gradient,
                                            DataType scale = DataType(1));
 #endif // __LIB_CUDNN
 

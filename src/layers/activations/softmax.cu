@@ -31,7 +31,7 @@
 namespace lbann {
 namespace softmax_cuda {
 
-__global__ void fp_cutoff_kernel(DataType *activations,
+__global__ void fp_cutoff_kernel(DataType* activations,
                                  El::Int num_elms,
                                  DataType min_output) {
   El::Int tid = ((El::Int)blockIdx.x) * blockDim.x + threadIdx.x;
@@ -41,8 +41,8 @@ __global__ void fp_cutoff_kernel(DataType *activations,
   activations[tid] = x;
 }
 
-void fp_cutoff(cudnn::cudnn_manager &cudnn,
-               const std::vector<DataType*> &activations,
+void fp_cutoff(cudnn::cudnn_manager& cudnn,
+               std::vector<DataType*>& activations,
                El::Int h, El::Int w,
                DataType min_output) {
   El::Int num_elms = h * w;  
@@ -56,8 +56,8 @@ void fp_cutoff(cudnn::cudnn_manager &cudnn,
   }
 }
 
-__global__ void bp_cutoff_kernel(const DataType *activations,
-                                 DataType *error_signals,
+__global__ void bp_cutoff_kernel(const DataType* activations,
+                                 DataType* error_signals,
                                  El::Int num_elms,
                                  DataType min_output) {
   El::Int tid = ((El::Int)blockIdx.x) * blockDim.x + threadIdx.x;
@@ -68,9 +68,9 @@ __global__ void bp_cutoff_kernel(const DataType *activations,
   error_signals[tid] = e;
 }
 
-void bp_cutoff(cudnn::cudnn_manager &cudnn,
-               const std::vector<DataType*> &activations,
-               const std::vector<DataType*> &error_signals,               
+void bp_cutoff(cudnn::cudnn_manager& cudnn,
+               const std::vector<DataType*>& activations,
+               std::vector<DataType*>& error_signals,               
                El::Int h, El::Int w,
                DataType min_output) {
   El::Int num_elms = h * w;  

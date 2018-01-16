@@ -279,11 +279,11 @@ class pooling_layer : public transform_layer {
       CHECK_CUDNN(cudnnPoolingForward(this->m_cudnn->get_handle(i),
                                       m_pooling_cudnn_desc,
                                       &one,
-                                      this->m_prev_neurons_cudnn_desc,
-                                      this->m_prev_activations_dv[i],
+                                      this->m_prev_activations_cudnn_desc,
+                                      this->m_prev_activations_d[0].get_locked_data(i),
                                       &zero,
-                                      this->m_neurons_cudnn_desc,
-                                      this->m_activations_d[i]));
+                                      this->m_activations_cudnn_desc,
+                                      this->m_activations_d[0].get_data(i)));
     }
 
   #endif // #ifndef __LIB_CUDNN
@@ -297,7 +297,6 @@ class pooling_layer : public transform_layer {
 
     // Useful constants
     const DataType one = DataType(1);
-    const DataType zero = DataType(0);
 
     // Get number of GPUs
     const int num_gpus = this->m_cudnn->get_num_gpus();
@@ -310,15 +309,15 @@ class pooling_layer : public transform_layer {
       CHECK_CUDNN(cudnnPoolingBackward(this->m_cudnn->get_handle(i),
                                        m_pooling_cudnn_desc,
                                        &one,
-                                       this->m_neurons_cudnn_desc,
-                                       this->m_activations_d[i],
-                                       this->m_neurons_cudnn_desc,
-                                       this->m_prev_error_signal_dv[i],
-                                       this->m_prev_neurons_cudnn_desc,
-                                       this->m_prev_activations_dv[i],
-                                       &zero,
-                                       this->m_prev_neurons_cudnn_desc,
-                                       this->m_error_signal_d[i]));
+                                       this->m_activations_cudnn_desc,
+                                       this->m_activations_d[0].get_locked_data(i),
+                                       this->m_prev_error_signals_cudnn_desc,
+                                       this->m_prev_error_signals_d[0].get_locked_data(i),
+                                       this->m_prev_activations_cudnn_desc,
+                                       this->m_prev_activations_d[0].get_locked_data(i),
+                                       &one,
+                                       this->m_error_signals_cudnn_desc,
+                                       this->m_error_signals_d[0].get_data(i)));
     }
 
   #endif // #ifndef __LIB_CUDNN
@@ -427,13 +426,14 @@ class pooling_layer : public transform_layer {
     auto& local_gradient_wrt_input = get_local_error_signals();
 
     // Pool parameters
+    const int input_size = local_gradient_wrt_input.Height();
     const int local_width = local_gradient_wrt_output.Width();
     const int num_channels = this->m_prev_neuron_dims[0];
     const int num_per_input_channel = this->m_num_neurons / num_channels;
 
     // Initialize matrices
     Mat im2col_mat(m_pool_size * num_channels, num_per_input_channel);
-    Mat gradient_wrt_input_mat;
+    Mat gradient_wrt_input_col(input_size, 1);
 
     // Iterate through data samples
     for(int sample = 0; sample < local_width; ++sample) {
@@ -483,15 +483,15 @@ class pooling_layer : public transform_layer {
       }
 
       // Compute error signal (i.e. gradient w.r.t. input)
-      El::View(gradient_wrt_input_mat, local_gradient_wrt_input, El::ALL, El::IR(sample));
       col2im(im2col_mat,
-             gradient_wrt_input_mat,
+             gradient_wrt_input_col,
              num_channels,
              this->m_num_prev_neuron_dims - 1,
              &this->m_prev_neuron_dims[1],
              m_pads.data(),
              m_pool_dims.data(),
              m_strides.data());
+      local_gradient_wrt_input(El::ALL, El::IR(sample)) += gradient_wrt_input_col;
 
     }
 

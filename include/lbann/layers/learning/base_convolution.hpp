@@ -199,13 +199,13 @@ class base_convolution_layer : public learning_layer {
   ~base_convolution_layer() override {
   #ifdef __LIB_CUDNN
     // Destroy cuDNN objects
-    if(m_bias_cudnn_desc) {
+    if (m_bias_cudnn_desc != nullptr) {
       CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_bias_cudnn_desc));
     }
-    if(m_kernel_cudnn_desc) {
+    if (m_kernel_cudnn_desc != nullptr) {
       CHECK_CUDNN(cudnnDestroyFilterDescriptor(m_kernel_cudnn_desc));
     }
-    if(m_convolution_cudnn_desc) {
+    if (m_convolution_cudnn_desc != nullptr) {
       CHECK_CUDNN(cudnnDestroyConvolutionDescriptor(m_convolution_cudnn_desc));
     }
   #endif // __LIB_CUDNN
@@ -293,7 +293,7 @@ class base_convolution_layer : public learning_layer {
     m_kernel_gradient_d = cudnn::matrix(m_cudnn,
                                         m_kernel_gradient.Height(),
                                         m_kernel_gradient.Width());
-    if(m_bias_scaling_factor != DataType(0)) {
+    if (m_bias_scaling_factor != DataType(0)) {
       m_bias_gradient_d = cudnn::matrix(m_cudnn,
                                         m_bias_gradient.Height(),
                                         m_bias_gradient.Width());
@@ -312,7 +312,6 @@ class base_convolution_layer : public learning_layer {
 
     // Useful constants
     const DataType one = 1;
-    const DataType zero = 0;
 
     // GPU data
     const auto& kernel_d = m_weights[0]->get_values_gpu();
@@ -324,13 +323,16 @@ class base_convolution_layer : public learning_layer {
                       m_error_signals_d[0]);
     auto&& work_spaces_d = m_cudnn->get_work_spaces();
 
-    // Matrix parameters
+    // Convolution parameters
+    DataType mixing_factor;
     cudnnTensorDescriptor_t input_cudnn_desc, output_cudnn_desc;
     if (during_forward_prop) {
+      mixing_factor = DataType(0);
       input_cudnn_desc = this->m_prev_activations_cudnn_desc;
       output_cudnn_desc = this->m_activations_cudnn_desc;
     }
     else {
+      mixing_factor = DataType(1);
       input_cudnn_desc = this->m_prev_error_signals_cudnn_desc;
       output_cudnn_desc = this->m_error_signals_cudnn_desc;
     }
@@ -359,14 +361,14 @@ class base_convolution_layer : public learning_layer {
       CHECK_CUDNN(cudnnConvolutionForward(this->m_cudnn->get_handle(i),
                                           &one,
                                           input_cudnn_desc,
-                                          input_d.get_data(i),
+                                          input_d.get_locked_data(i),
                                           m_kernel_cudnn_desc,
                                           kernel_d[i],
                                           m_convolution_cudnn_desc,
                                           convolution_cudnn_algorithm,
                                           work_spaces_d[i],
                                           work_space_size,
-                                          &zero,
+                                          &mixing_factor,
                                           output_cudnn_desc,
                                           output_d.get_data(i)));
 
@@ -383,7 +385,6 @@ class base_convolution_layer : public learning_layer {
 
     // Useful constants
     const DataType one = 1;
-    const DataType zero = 0;
 
     // GPU data
     const auto& kernel_d = m_weights[0]->get_values_gpu();
@@ -395,13 +396,16 @@ class base_convolution_layer : public learning_layer {
                       m_error_signals_d[0]);
     auto&& work_spaces_d = m_cudnn->get_work_spaces();
 
-    // Matrix parameters
+    // Convolution transpose parameters
+    DataType mixing_factor;
     cudnnTensorDescriptor_t input_cudnn_desc, output_cudnn_desc;
     if (during_forward_prop) {
+      mixing_factor = DataType(0);
       input_cudnn_desc = this->m_prev_activations_cudnn_desc;
       output_cudnn_desc = this->m_activations_cudnn_desc;
     }
     else {
+      mixing_factor = DataType(1);
       input_cudnn_desc = this->m_prev_error_signals_cudnn_desc;
       output_cudnn_desc = this->m_error_signals_cudnn_desc;
     }
@@ -432,12 +436,12 @@ class base_convolution_layer : public learning_layer {
                                                m_kernel_cudnn_desc,
                                                kernel_d[i],
                                                input_cudnn_desc,
-                                               input_d.get_data(i),
+                                               input_d.get_locked_data(i),
                                                m_convolution_cudnn_desc,
                                                transposed_convolution_cudnn_algorithm,
                                                work_spaces_d[i],
                                                work_space_size,
-                                               &zero,
+                                               &mixing_factor,
                                                output_cudnn_desc,
                                                output_d.get_data(i)));
 
@@ -487,29 +491,29 @@ class base_convolution_layer : public learning_layer {
 
     // Compute bias gradient
     optimizer* bias_optimizer = m_weights[1]->get_optimizer();
-    if(bias_optimizer != nullptr && m_bias_scaling_factor != DataType(0)) {
-      for(int i = 0; i < num_gpus; ++i) {
+    if (bias_optimizer != nullptr && m_bias_scaling_factor != DataType(0)) {
+      for (int i = 0; i < num_gpus; ++i) {
         CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
         CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
                                    this->m_cudnn->get_stream(i)));
         CHECK_CUDNN(cudnnConvolutionBackwardBias(this->m_cudnn->get_handle(i),
                                                  &one,
                                                  this->m_prev_error_signals_cudnn_desc,
-                                                 gradient_wrt_output_d.get_data(i),
+                                                 gradient_wrt_output_d.get_locked_data(i),
                                                  &zero,
                                                  m_bias_cudnn_desc,
                                                  m_bias_gradient_d.get_data(i)));
       }
       bias_optimizer->stage_gradient_for_accumulation_gpu(
-        m_bias_gradient_d.get_data(),
+        m_bias_gradient_d.get_locked_data(),
         m_bias_scaling_factor / mini_batch_size);
     }
 
     // Compute kernel gradient
     optimizer* kernel_optimizer = m_weights[0]->get_optimizer();
-    if(kernel_optimizer != nullptr) {
+    if (kernel_optimizer != nullptr) {
       auto&& work_spaces_d = this->m_cudnn->get_work_spaces();
-      for(int i = 0; i < num_gpus; ++i) {
+      for (int i = 0; i < num_gpus; ++i) {
         CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
         CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
                                    this->m_cudnn->get_stream(i)));
@@ -518,7 +522,7 @@ class base_convolution_layer : public learning_layer {
         const size_t work_space_size = this->m_cudnn->get_work_space_size(i);
         cudnnConvolutionBwdFilterAlgo_t kernel_gradient_cudnn_algorithm
           = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0;
-        if(using_transposed_convolution) {
+        if (using_transposed_convolution) {
           CHECK_CUDNN(cudnnGetConvolutionBackwardFilterAlgorithm(this->m_cudnn->get_handle(i),
                                                                  this->m_prev_error_signals_cudnn_desc,
                                                                  this->m_prev_activations_cudnn_desc,
@@ -530,9 +534,9 @@ class base_convolution_layer : public learning_layer {
           CHECK_CUDNN(cudnnConvolutionBackwardFilter(this->m_cudnn->get_handle(i),
                                                      &one,
                                                      this->m_prev_error_signals_cudnn_desc,
-                                                     gradient_wrt_output_d.get_data(i),
+                                                     gradient_wrt_output_d.get_locked_data(i),
                                                      this->m_prev_activations_cudnn_desc,
-                                                     input_d.get_data(i),
+                                                     input_d.get_locked_data(i),
                                                      m_convolution_cudnn_desc,
                                                      kernel_gradient_cudnn_algorithm,
                                                      work_spaces_d[i],
@@ -553,9 +557,9 @@ class base_convolution_layer : public learning_layer {
           CHECK_CUDNN(cudnnConvolutionBackwardFilter(this->m_cudnn->get_handle(i),
                                                      &one,
                                                      this->m_prev_activations_cudnn_desc,
-                                                     input_d.get_data(i),
+                                                     input_d.get_locked_data(i),
                                                      this->m_prev_error_signals_cudnn_desc,
-                                                     gradient_wrt_output_d.get_data(i),
+                                                     gradient_wrt_output_d.get_locked_data(i),
                                                      m_convolution_cudnn_desc,
                                                      kernel_gradient_cudnn_algorithm,
                                                      work_spaces_d[i],
@@ -569,7 +573,7 @@ class base_convolution_layer : public learning_layer {
 
       // Add gradient contribution
       kernel_optimizer->stage_gradient_for_accumulation_gpu(
-        m_kernel_gradient_d.get_data(),
+        m_kernel_gradient_d.get_locked_data(),
         one / mini_batch_size);
     }
 
@@ -591,12 +595,15 @@ class base_convolution_layer : public learning_layer {
     // Matrix parameters
     const int output_size = local_output.Height();
     const El::Int local_width = local_input.Width();
+    DataType mixing_factor;
     std::vector<int> input_dims, output_dims;
-    if(during_forward_prop) {
+    if (during_forward_prop) {
+      mixing_factor = DataType(0);
       input_dims = this->m_prev_neuron_dims;
       output_dims = this->m_neuron_dims;
     }
     else {
+      mixing_factor = DataType(1);
       input_dims = this->m_neuron_dims;
       output_dims = this->m_prev_neuron_dims;
     }
@@ -609,7 +616,7 @@ class base_convolution_layer : public learning_layer {
     Mat input_col, output_col;
 
     // Iterate through input columns
-    for(El::Int col = 0; col < local_width; ++col) {
+    for (El::Int col = 0; col < local_width; ++col) {
 
       // Construct im2col matrix from current input column
       El::LockedView(input_col, local_input, El::ALL, El::IR(col));
@@ -626,7 +633,7 @@ class base_convolution_layer : public learning_layer {
       output_col.Attach(m, n, local_output.Buffer(0, col), m);
       El::Gemm(El::TRANSPOSE, El::NORMAL,
                DataType(1), im2col_matrix, local_kernel,
-               DataType(0), output_col);
+               mixing_factor, output_col);
 
     }
 
@@ -646,9 +653,10 @@ class base_convolution_layer : public learning_layer {
 
     // Matrix parameters
     const int input_size = local_input.Height();
+    const int output_size = local_output.Height();
     const El::Int local_width = local_input.Width();
     std::vector<int> input_dims, output_dims;
-    if(during_forward_prop) {
+    if (during_forward_prop) {
       input_dims = this->m_prev_neuron_dims;
       output_dims = this->m_neuron_dims;
     }
@@ -665,7 +673,7 @@ class base_convolution_layer : public learning_layer {
     Mat input_col, output_col;
 
     // Iterate through input columns
-    for(El::Int col = 0; col < local_width; ++col) {
+    for (El::Int col = 0; col < local_width; ++col) {
 
       // Apply transposed convolution to current input column
       input_col.LockedAttach(n, k, local_input.LockedBuffer(0, col), n);
@@ -675,7 +683,11 @@ class base_convolution_layer : public learning_layer {
 
       // Perform col2im to accumulate contributions from each kernel
       // position
-      El::View(output_col, local_output, El::ALL, El::IR(col));
+      if (during_forward_prop) {
+        El::View(output_col, local_output, El::ALL, El::IR(col));
+      } else {
+        output_col.Resize(output_size, 1);
+      }
       col2im(im2col_matrix,
              output_col,
              output_dims[0],
@@ -684,6 +696,9 @@ class base_convolution_layer : public learning_layer {
              m_pads.data(),
              &m_kernel_dims[2],
              m_strides.data());
+      if (!during_forward_prop) {
+        local_output(El::ALL, El::IR(col)) += output_col;
+      }
 
     }
 
@@ -692,7 +707,7 @@ class base_convolution_layer : public learning_layer {
   void apply_bias_cpu() {
 
     // Return immediately if there is no bias
-    if(m_bias_scaling_factor == DataType(0)) return;
+    if (m_bias_scaling_factor == DataType(0)) return;
 
     // Local matrices
     const auto& local_bias = m_weights[1]->get_values().LockedMatrix();
@@ -705,12 +720,12 @@ class base_convolution_layer : public learning_layer {
 
     // Apply bias to each output channel
     #pragma omp parallel for
-    for(El::Int channel = 0; channel < num_output_channels; ++channel) {
+    for (El::Int channel = 0; channel < num_output_channels; ++channel) {
       const El::Int row_start = channel * num_per_output_channel;
       const El::Int row_end = (channel+1) * num_per_output_channel;
       const DataType bias_term = m_bias_scaling_factor * local_bias(channel, 0);
-      for(El::Int col = 0; col < local_width; ++col) {
-        for(El::Int row = row_start; row < row_end; ++row) {
+      for (El::Int col = 0; col < local_width; ++col) {
+        for (El::Int row = row_start; row < row_end; ++row) {
           local_output(row, col) += bias_term;
         }
       }
@@ -736,15 +751,15 @@ class base_convolution_layer : public learning_layer {
     // Compute bias gradient
     // Note: Sum is computed with Kahan summation
     optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
-    if(m_bias_scaling_factor != DataType(0) && bias_optimizer != nullptr) {
+    if (m_bias_scaling_factor != DataType(0) && bias_optimizer != nullptr) {
       #pragma omp parallel for
-      for(int channel = 0; channel < num_output_channels; ++channel) {
+      for (int channel = 0; channel < num_output_channels; ++channel) {
         const El::Int row_start = channel * num_per_output_channel;
         const El::Int row_end = (channel+1) * num_per_output_channel;
         DataType sum = 0;
         DataType correction = 0;
-        for(El::Int col = 0; col < local_width; ++col) {
-          for(El::Int row = row_start; row < row_end; ++row) {
+        for (El::Int col = 0; col < local_width; ++col) {
+          for (El::Int row = row_start; row < row_end; ++row) {
             DataType term = local_gradient_wrt_output(row, col);
             term += correction;
             const DataType next_sum = sum + term;
@@ -777,8 +792,8 @@ class base_convolution_layer : public learning_layer {
 
     // Compute kernel gradient contributions from each data sample
     El::Zero(local_kernel_gradient);
-    for(El::Int col = 0; col < local_width; ++col) {
-      if(using_transposed_convolution) {
+    for (El::Int col = 0; col < local_width; ++col) {
+      if (using_transposed_convolution) {
         const Mat input_col(k, n, local_input.LockedBuffer(0,col), k);
         const Mat gradient_wrt_output_col
           = El::LockedView(local_gradient_wrt_output, El::ALL, El::IR(col));

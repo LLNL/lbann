@@ -139,7 +139,7 @@ class relu_layer : public entrywise_activation_layer {
                                          m_activation_cudnn_desc,
                                          &one,
                                          this->m_prev_activations_cudnn_desc,
-                                         this->m_prev_activations_d[0].get_data(i),
+                                         this->m_prev_activations_d[0].get_locked_data(i),
                                          &zero,
                                          this->m_activations_cudnn_desc,
                                          this->m_activations_d[0].get_data(i)));
@@ -166,11 +166,11 @@ class relu_layer : public entrywise_activation_layer {
                                           m_activation_cudnn_desc,
                                           &one,
                                           this->m_prev_activations_cudnn_desc,
-                                          this->m_prev_activations_d[0].get_data(i),
+                                          this->m_prev_activations_d[0].get_locked_data(i),
                                           this->m_prev_error_signals_cudnn_desc,
-                                          this->m_prev_error_signals_d[0].get_data(i),
+                                          this->m_prev_error_signals_d[0].get_locked_data(i),
                                           this->m_activations_cudnn_desc,
-                                          this->m_activations_d[0].get_data(i),
+                                          this->m_activations_d[0].get_locked_data(i),
                                           &one,
                                           this->m_error_signals_cudnn_desc,
                                           this->m_error_signals_d[0].get_data(i)));

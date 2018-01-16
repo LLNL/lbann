@@ -158,11 +158,11 @@ public:
   /** Get GPU data pointers. */
   std::vector<DataType*>& get_data();
   /** Get GPU data pointers (const). */
-  const std::vector<DataType*>& get_data() const { return m_data; }
+  const std::vector<DataType*>& get_locked_data() const { return m_data; }
   /** Get GPU data pointer on ith GPU. */
   DataType* get_data(int i);
   /** Get GPU data pointer on ith GPU (const). */
-  const DataType* get_data(int i) const { return m_data[i]; }
+  const DataType* get_locked_data(int i) const { return m_data[i]; }
 
 private:
 

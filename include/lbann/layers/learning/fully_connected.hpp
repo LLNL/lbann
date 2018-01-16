@@ -421,7 +421,7 @@ class fully_connected_layer : public learning_layer {
                                 output_size, mini_batch_size, input_size,
                                 DataType(1),
                                 linearity_d[i], output_size,
-                                input_d.get_data(i), input_ldim,
+                                input_d.get_locked_data(i), input_ldim,
                                 DataType(0),
                                 output_d.get_data(i), output_ldim));
     }
@@ -519,13 +519,13 @@ class fully_connected_layer : public learning_layer {
                                   CUBLAS_OP_N, 
                                   output_size, mini_batch_size,
                                   DataType(1),
-                                  gradient_wrt_output_d.get_data(i), gradient_wrt_output_ldim,
+                                  gradient_wrt_output_d.get_locked_data(i), gradient_wrt_output_ldim,
                                   ones_d[i], 1,
                                   DataType(0),
                                   m_bias_gradient_d.get_data(i), 1));
       }
       bias_optimizer->stage_gradient_for_accumulation_gpu(
-        m_bias_gradient_d.get_data(),
+        m_bias_gradient_d.get_locked_data(),
         m_bias_scaling_factor / this->m_model->get_current_mini_batch_size());
     }
       
@@ -538,13 +538,13 @@ class fully_connected_layer : public learning_layer {
                                   CUBLAS_OP_N, CUBLAS_OP_T,
                                   output_size, input_size, mini_batch_size,
                                   DataType(1),
-                                  gradient_wrt_output_d.get_data(i), gradient_wrt_output_ldim,
-                                  input_d.get_data(i), input_ldim,
+                                  gradient_wrt_output_d.get_locked_data(i), gradient_wrt_output_ldim,
+                                  input_d.get_locked_data(i), input_ldim,
                                   DataType(0),
                                   m_linearity_gradient_d.get_data(i), output_size));
       }
       linearity_optimizer->stage_gradient_for_accumulation_gpu(
-        m_linearity_gradient_d.get_data(),
+        m_linearity_gradient_d.get_locked_data(),
         DataType(1) / this->m_model->get_current_mini_batch_size());
     }
 
@@ -556,7 +556,7 @@ class fully_connected_layer : public learning_layer {
                                 input_size, mini_batch_size, output_size,
                                 DataType(1),
                                 linearity_d[i], output_size,
-                                gradient_wrt_output_d.get_data(i), gradient_wrt_output_ldim,
+                                gradient_wrt_output_d.get_locked_data(i), gradient_wrt_output_ldim,
                                 DataType(1),
                                 gradient_wrt_input_d.get_data(i), gradient_wrt_input_ldim));
     }

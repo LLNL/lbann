@@ -49,14 +49,14 @@ namespace softmax_cuda {
 /** Apply minimum cutoff to activation entries.
  *  A minimum output value helps avoid denormalized floats.
  */
-void fp_cutoff(cudnn::cudnn_manager &cudnn,
-               const std::vector<DataType*> &activations,
+void fp_cutoff(cudnn::cudnn_manager& cudnn,
+               std::vector<DataType*>& activations,
                El::Int h, El::Int w,
                DataType min_output);
 /** Error signal correction if activations have minimum cutoff. */
-void bp_cutoff(cudnn::cudnn_manager &cudnn,
-               const std::vector<DataType*> &activations,
-               const std::vector<DataType*> &error_signals,               
+void bp_cutoff(cudnn::cudnn_manager& cudnn,
+               const std::vector<DataType*>& activations,
+               std::vector<DataType*>& error_signals,               
                El::Int h, El::Int w,
                DataType min_output);
 } // namespace softmax
@@ -300,7 +300,7 @@ class softmax_layer : public activation_layer {
                                       CUDNN_SOFTMAX_MODE_INSTANCE,
                                       &one,
                                       this->m_prev_activations_cudnn_desc,
-                                      prev_activations_d.get_data(i),
+                                      prev_activations_d.get_locked_data(i),
                                       &zero,
                                       this->m_activations_cudnn_desc,
                                       activations_d.get_data(i)));
@@ -342,9 +342,9 @@ class softmax_layer : public activation_layer {
                                        CUDNN_SOFTMAX_MODE_INSTANCE,
                                        &one,
                                        this->m_activations_cudnn_desc,
-                                       activations_d.get_data(i),
+                                       activations_d.get_locked_data(i),
                                        this->m_prev_error_signals_cudnn_desc,
-                                       prev_error_signals_d.get_data(i),
+                                       prev_error_signals_d.get_locked_data(i),
                                        &one,
                                        this->m_error_signals_cudnn_desc,
                                        error_signals_d.get_data(i)));
@@ -353,7 +353,7 @@ class softmax_layer : public activation_layer {
   #ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
     // Round to minimum value to avoid denormalized floats
     softmax_cuda::bp_cutoff(*this->m_cudnn,
-                            activations_d.get_data(),
+                            activations_d.get_locked_data(),
                             error_signals_d.get_data(),
                             get_num_neurons(),
                             this->m_mini_batch_size_per_gpu,

@@ -352,7 +352,7 @@ void optimizer::stage_gradient_for_accumulation(const AbsDistMat& gradient,
 
 #if __LIB_CUDNN
 
-void optimizer::add_to_gradient_gpu(std::vector<DataType*>& gradient,
+void optimizer::add_to_gradient_gpu(const std::vector<DataType*>& gradient,
                                     DataType scale) {
   if (!is_initialized()) {
     std::stringstream err;
@@ -379,7 +379,7 @@ void optimizer::add_to_gradient_gpu(std::vector<DataType*>& gradient,
   }
 }
 
-void optimizer::stage_gradient_for_accumulation_gpu(std::vector<DataType*>& gradient,
+void optimizer::stage_gradient_for_accumulation_gpu(const std::vector<DataType*>& gradient,
                                                     DataType scale) {
   if (!is_initialized()) {
     std::stringstream err;

@@ -273,7 +273,7 @@ void Layer::forward_prop() {
     for (int i = 0; i < get_num_children(); ++i) {
       if (!m_child_layers[i]->using_gpus()) {
         m_cudnn->gather_from_gpus(get_local_activations(i),
-                                  m_activations_d[i].get_data(),
+                                  m_activations_d[i].get_locked_data(),
                                   m_mini_batch_size_per_gpu);
         m_cudnn->synchronize();
       }
@@ -338,7 +338,7 @@ void Layer::back_prop() {
     for (int i = 0; i < get_num_parents(); ++i) {
       if (!m_parent_layers[i]->using_gpus()) {
         m_cudnn->gather_from_gpus(get_local_error_signals(i),
-                                  m_error_signals_d[i].get_data(),
+                                  m_error_signals_d[i].get_locked_data(),
                                   m_mini_batch_size_per_gpu);
         m_cudnn->synchronize();
       }
