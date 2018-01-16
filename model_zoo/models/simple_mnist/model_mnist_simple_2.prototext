@@ -54,8 +54,8 @@ model {
   layer {
     name: "data"
     data_layout: "data_parallel"
-    input_minibatch {
-      io_buffer: "partitioned
+    input {
+      io_buffer: "partitioned"
     }
   }
 

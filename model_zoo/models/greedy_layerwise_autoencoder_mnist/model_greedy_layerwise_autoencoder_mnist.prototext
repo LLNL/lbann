@@ -51,7 +51,7 @@ model {
     name: "data"
     data_layout: "model_parallel"
     input {
-      io_buffer: distributed
+      io_buffer: "distributed"
     }
   }
 
