@@ -99,7 +99,9 @@ class generic_target_layer : public io_layer {
   void setup_data() override {
     io_layer::setup_data();
     int max_mb_size = this->m_model->get_max_mini_batch_size();
-    io_buffer->setup_data(this->m_num_neurons, max_mb_size);
+    if(io_buffer != nullptr) {  /// Note that reconstruction layers do not have io_buffers
+      io_buffer->setup_data(this->m_num_neurons, max_mb_size);
+    }
   }
 
   void check_setup() override {
