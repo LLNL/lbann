@@ -76,10 +76,12 @@
 #include "lbann/layers/transform/constant.hpp"
 #include "lbann/layers/transform/noise.hpp"
 #include "lbann/layers/transform/safe_inv.hpp"
+#endif
 
 /// Regularization layers.
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
 #include "lbann/layers/regularizers/dropout.hpp"
+#if 0
 #include "lbann/layers/regularizers/selu_dropout.hpp"
 #include "lbann/layers/regularizers/batch_normalization.hpp"
 #endif
