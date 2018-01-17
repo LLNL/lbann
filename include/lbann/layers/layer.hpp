@@ -336,7 +336,6 @@ class Layer {
    */
   int m_max_num_child_layers;
 
-  execution_mode  m_execution_mode;
   model *m_model;
 
   /** Setup views of the matrices for the layer's forward propagation. */

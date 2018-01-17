@@ -24,25 +24,15 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_distributions/data_distribution.hpp"
+#include "lbann/io/data_buffers/generic_io_buffer.hpp"
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {
-generic_data_distribution::generic_data_distribution(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
-  : m_comm(comm), m_requested_max_num_parallel_readers(num_parallel_readers), 
-    fetch_data_fn(nullptr),  update_data_reader_fn(nullptr)
-{
-  //, m_data_readers(data_readers) {
-  m_root = 0;
-  m_num_samples_in_batch = 0;
-}
+generic_io_buffer::generic_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
+  : m_comm(comm), fetch_data_fn(nullptr),  update_data_reader_fn(nullptr) {}
 
-generic_data_distribution::generic_data_distribution(const generic_data_distribution& rhs) 
-: m_comm(rhs.m_comm),  m_root(rhs.m_root),
-  m_requested_max_num_parallel_readers(rhs. m_requested_max_num_parallel_readers),
-  m_local_reader_done(rhs.m_local_reader_done),
-  m_num_samples_in_batch(rhs. m_num_samples_in_batch),
-  m_local_data_valid(rhs.m_local_data_valid)
+generic_io_buffer::generic_io_buffer(const generic_io_buffer& rhs)
+: m_comm(rhs.m_comm)
 {
   if (rhs.fetch_data_fn)
     fetch_data_fn = new fetch_data_functor(*(rhs.fetch_data_fn));
@@ -50,14 +40,8 @@ generic_data_distribution::generic_data_distribution(const generic_data_distribu
     update_data_reader_fn = new update_data_reader_functor(*(rhs.update_data_reader_fn));
 }
 
-generic_data_distribution& generic_data_distribution::operator=(const generic_data_distribution& rhs) {
+generic_io_buffer& generic_io_buffer::operator=(const generic_io_buffer& rhs) {
   m_comm = rhs.m_comm;
-  m_root = rhs.m_root;
-  m_requested_max_num_parallel_readers = rhs. m_requested_max_num_parallel_readers;
-  m_local_reader_done = rhs.m_local_reader_done;
-  m_num_samples_in_batch = rhs. m_num_samples_in_batch;
-  m_local_data_valid = rhs.m_local_data_valid;
-
   if (fetch_data_fn) {
     delete fetch_data_fn;
     fetch_data_fn = nullptr;

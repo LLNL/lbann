@@ -560,7 +560,7 @@ message Weights {
   string name = 1;
   int64 height = 2;
   int64 width = 3;
-  //@todo assume float above, add other datatype 
+  //@todo assume float above, add other datatype
   repeated float data = 4 [packed=true];
 
   Imcomm imcomm = 55;
@@ -589,8 +589,8 @@ message Layer {
    string children = 152;
    string data_layout = 52;
    bool num_neurons_from_data_reader = 53;
-  
- 
+
+
    repeated Weights weights = 153;
    string top = 154;
    string bottom = 155;
@@ -612,8 +612,7 @@ message Layer {
    MotifLayer motif_layer = 4;
 
    // input Layers
-   InputDistributedMiniBatch input_distributed_minibatch = 2;
-   InputPartitionedMiniBatch input_partitioned_minibatch = 3;
+   Input input = 2;
 
    // transform Layers
    Reshape reshape = 306;
@@ -631,8 +630,7 @@ message Layer {
    Deconvolution deconvolution = 305;
 
    // target Layers
-   TargetDistributedMinibatch target_distributed_minibatch = 18;
-   TargetPartitionedMinibatch target_partitioned_minibatch = 180;
+   Target target = 18;
    TargetReconstruction reconstruction = 22;
 
    // regularization Layers
@@ -746,12 +744,9 @@ message Dropout {
 //////////////////
 // Input Layers //
 //////////////////
-message InputDistributedMiniBatch {
+message Input {
   bool data_set_per_model = 1;  //default: false
-}
-
-message InputPartitionedMiniBatch {
-  bool data_set_per_model = 1;  //default: false
+  string io_buffer = 2;
 }
 
 //////////////////////
@@ -867,16 +862,11 @@ message Deconvolution {
 ///////////////////
 // Target Layers //
 ///////////////////
-message TargetDistributedMinibatch {
+message Target {
   string paired_input_layer = 1;
   bool shared_data_reader = 2;
   bool for_regression = 3; //default: false
-}
-
-message TargetPartitionedMinibatch {
-  string paired_input_layer = 1;
-  bool shared_data_reader = 2;
-  bool for_regression = 3; //default: false
+  string io_buffer = 4;
 }
 
 message TargetReconstruction {

@@ -46,7 +46,7 @@ void lbann_callback_check_dataset::add_to_set(model *m, Layer *l, int64_t step, 
       if(it != set.end()) {
         throw lbann_exception(
           std::string{} + __FILE__ + " " + std::to_string(__LINE__)
-          + " :: @" + std::to_string(step) 
+          + " :: @" + std::to_string(step)
           + " :: found a duplicate index in being loaded: " + std::to_string(idx));
       }else {
         set.insert(idx);
@@ -76,16 +76,16 @@ void lbann_callback_check_dataset::on_epoch_end(model *m) {
   lbann_comm* comm = m->get_comm();
   std::cout << "Training [" << comm->get_rank_in_model() <<
     "] : I have processed " << training_set.size() << " elements" << std::endl;
-  
+
   const std::vector<Layer *>& layers = m->get_layers();
-  auto *input = (input_layer *) dynamic_cast<input_layer *> (layers[0]);
+  auto *input = (generic_input_layer *) dynamic_cast<generic_input_layer *> (layers[0]);
   if (!input) {
     throw lbann_exception(
       "lbann_callback_check_dataset: could not get input layer");
   }
 
   int num_samples = training_set.size();
-  std::vector<int> vec_num_samples(comm->get_procs_per_model());  
+  std::vector<int> vec_num_samples(comm->get_procs_per_model());
   if (comm->am_model_master()) {
     comm->model_gather(num_samples, vec_num_samples.data());
   }else {
@@ -107,7 +107,7 @@ void lbann_callback_check_dataset::on_epoch_end(model *m) {
   // sample_offset[]
   // for (int i = 0; i < vec_num_samples.size(); i++) {
   //   //  for (const auto& idx : vec_num_samples) {
-    
+
   // }
 
   // Build a vector large enough to hold all the data indices for this rank.
@@ -119,7 +119,7 @@ void lbann_callback_check_dataset::on_epoch_end(model *m) {
     // Build a vector large enough to hold all indices for the model.
     std::vector<int> model_training_set(
       input->get_num_iterations_per_epoch(execution_mode::training) * m->get_max_mini_batch_size());
-    
+
     std::cout << "Training: my model vector has size " << model_training_set.size() << std::endl;
     // comm->model_gatherv(local_data.data(), local_data.size(),
     //                     model_training_set.data(), vec_num_samples.data(), sample_offsets.data());
