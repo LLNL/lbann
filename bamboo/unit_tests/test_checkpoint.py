@@ -23,6 +23,6 @@ def test_checkpoint_lenet(exe, dirname):
         sys.stderr.write('LeNet execution (restart from checkpoint) failed, exiting with error')
         sys.exit(1)
 
-    diff_test = os.system('diff ckpt/shared.epoch.2.step.1688 ckpt_baseline/shared.epoch.2.step.1688')
+    diff_test = os.system('diff -rq ckpt ckpt_baseline')
     os.system('rm -rf ckpt*')
     assert diff_test == 0
