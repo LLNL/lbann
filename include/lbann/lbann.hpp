@@ -63,23 +63,17 @@
 #include "lbann/layers/learning/convolution.hpp"
 #include "lbann/layers/learning/deconvolution.hpp"
 
-#include "lbann/layers/transform/pooling.hpp"
-#include "lbann/layers/transform/split.hpp"
-#include "lbann/layers/transform/sum.hpp"
-#include "lbann/layers/transform/reshape.hpp"
-#if 0
 /// Transform Layers
 #include "lbann/layers/transform/reshape.hpp"
 #include "lbann/layers/transform/pooling.hpp"
-#include "lbann/layers/transform/unpooling.hpp"
+// #include "lbann/layers/transform/unpooling.hpp"
 #include "lbann/layers/transform/split.hpp"
 #include "lbann/layers/transform/sum.hpp"
 #include "lbann/layers/transform/slice.hpp"
-#include "lbann/layers/transform/concatenation.hpp"
-#include "lbann/layers/transform/constant.hpp"
-#include "lbann/layers/transform/noise.hpp"
-#include "lbann/layers/transform/safe_inv.hpp"
-#endif
+// #include "lbann/layers/transform/concatenation.hpp"
+// #include "lbann/layers/transform/constant.hpp"
+// #include "lbann/layers/transform/noise.hpp"
+// #include "lbann/layers/transform/safe_inv.hpp"
 
 /// Regularization layers.
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
