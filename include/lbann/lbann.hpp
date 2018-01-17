@@ -64,6 +64,9 @@
 #include "lbann/layers/learning/deconvolution.hpp"
 
 #include "lbann/layers/transform/pooling.hpp"
+#include "lbann/layers/transform/split.hpp"
+#include "lbann/layers/transform/sum.hpp"
+#include "lbann/layers/transform/reshape.hpp"
 #if 0
 /// Transform Layers
 #include "lbann/layers/transform/reshape.hpp"

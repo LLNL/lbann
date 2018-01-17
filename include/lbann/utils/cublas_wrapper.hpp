@@ -88,6 +88,17 @@ cublasStatus_t gemm(const cublasHandle_t &handle,
   return cublasSgemm(handle, transa, transb, m, n, k,
                      &alpha, A, lda, B, ldb, &beta, C, ldc);
 }
+inline
+cublasStatus_t geam(const cublasHandle_t &handle,
+                    cublasOperation_t transa,
+                    cublasOperation_t transb,
+                    int m, int n,
+                    float alpha, const float *A, int lda,
+                    float beta, const float *B, int ldb,
+                    float *C, int ldc) {
+  return cublasSgeam(handle, transa, transb, m, n,
+                     &alpha, A, lda, &beta, B, ldb, C, ldc);
+}
 
 // cuBLAS routines for doubles
 #elif LBANN_DATATYPE == 8
@@ -137,6 +148,17 @@ cublasStatus_t gemm(const cublasHandle_t &handle,
                     double *C, int ldc) {
   return cublasDgemm(handle, transa, transb, m, n, k,
                      &alpha, A, lda, B, ldb, &beta, C, ldc);
+}
+inline
+cublasStatus_t geam(const cublasHandle_t &handle,
+                    cublasOperation_t transa,
+                    cublasOperation_t transb,
+                    int m, int n,
+                    double alpha, const double *A, int lda,
+                    double beta, const double *B, int ldb,
+                    double *C, int ldc) {
+  return cublasDgeam(handle, transa, transb, m, n,
+                     &alpha, A, lda, &beta, B, ldb, C, ldc);
 }
 
 // cuBLAS routines for an invalid datatype
