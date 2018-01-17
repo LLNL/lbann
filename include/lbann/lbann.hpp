@@ -81,10 +81,8 @@
 /// Regularization layers.
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
 #include "lbann/layers/regularizers/dropout.hpp"
-#if 0
-#include "lbann/layers/regularizers/selu_dropout.hpp"
+// #include "lbann/layers/regularizers/selu_dropout.hpp"
 #include "lbann/layers/regularizers/batch_normalization.hpp"
-#endif
 
 /// I/O Layers
 #include "lbann/layers/io/input/input_layer_distributed_minibatch.hpp"

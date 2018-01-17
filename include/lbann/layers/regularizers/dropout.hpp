@@ -80,7 +80,7 @@ class dropout : public regularizer_layer {
            + " dataLayout: " + get_data_layout_string(get_data_layout());
   }
 
-  virtual void setup_matrices(const El::Grid& grid) override {
+  void setup_matrices(const El::Grid& grid) override {
     regularizer_layer::setup_matrices(grid);
     if (m_mask != nullptr) delete m_mask;
     m_mask = get_activations().Copy();    
