@@ -43,7 +43,7 @@ model {
 
   callback {
     checkpoint {
-      checkpoint_dir: "ckpt_none"
+      checkpoint_dir: "ckpt"
       checkpoint_epochs: 1
     }
   }
