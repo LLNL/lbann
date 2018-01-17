@@ -12,6 +12,9 @@ def test_models(exe):
     defective_models = []
     tell_Dylan = []
     for subdir, dirs, files in os.walk(lbann_dir + '/model_zoo/models/'):
+        if 'greedy' in subdir:
+            print('Skipping greedy_layerwise_autoencoder_mnist, kills bamboo agent')
+            continue
         for file_name in files:
             if file_name.endswith('.prototext') and "model" in file_name:
                 model_path = subdir + '/' + file_name
@@ -33,6 +36,11 @@ def test_models(exe):
                     if os.system(cmd) != 0:
                         print("Error detected in " + model_path)
                         #defective_models.append(file_name)
+                        defective_models.append(cmd)
+                elif 'char' in file_name:
+                    cmd = slurm_cmd + exe + ' --model=' + model_path + ' --reader='+ lbann_dir + '/model_zoo/data_readers/data_reader_ascii.prototext' + ' --optimizer=' + opt + ' --exit_after_setup'
+                    if os.system(cmd) != 0:
+                        print("Error detected in " + model_path)
                         defective_models.append(cmd)
                 else:
                     #cmd = exe + ' --model=' + model_path + ' --exit_after_setup'
