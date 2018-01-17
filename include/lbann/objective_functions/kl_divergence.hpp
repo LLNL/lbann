@@ -48,12 +48,15 @@ class kl_divergence : public objective_function_term {
   /** Default constructor. */
   kl_divergence(std::string layer1, std::string layer2);
   /** Copy constructor. */
-  kl_divergence(const kl_divergence& other);
+  kl_divergence(const kl_divergence& other) = default;
   /** Copy assignment operator. */
-  kl_divergence& operator=(const kl_divergence& other);
+  kl_divergence& operator=(const kl_divergence& other) = default;
   /** Destructor. */
-  ~kl_divergence() override;
-  
+  ~kl_divergence() override = default;
+  /** Copy function. */
+  kl_divergence* copy() const override {
+    return new kl_divergence(*this);
+  } 
   /** Get the name of the objective function term. */
   std::string name() const override { return "kl_divergence"; }
 
@@ -78,11 +81,6 @@ class kl_divergence : public objective_function_term {
  std::string m_z_log_sigma_layer_name;
  Layer* m_z_mean_layer;
  Layer* m_z_log_sigma_layer; 
- EvalType m_kl_loss;
- /**target layer for adding kl_loss to gradient. */
- target_layer* m_target_layer;
- /** Gradient matrix. */
- AbsDistMat* m_gradient;
 
 };
 
