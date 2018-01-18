@@ -93,7 +93,8 @@ model {
     name: "1"
     parents: "1"
     data_layout: "model_parallel"
-    input_distributed_minibatch {
+    input {
+      io_buffer: "distributed"
     }
   }
 
@@ -228,7 +229,8 @@ model {
     name: "13"
     parents: "12"
     data_layout: "model_parallel"
-    target_distributed_minibatch {
+    target {
+      io_buffer: "distributed"
       shared_data_reader: true
     }
   }

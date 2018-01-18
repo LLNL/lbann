@@ -50,7 +50,8 @@ model {
   layer {
     name: "data"
     data_layout: "model_parallel"
-    input_distributed_minibatch {
+    input {
+      io_buffer: "distributed"
     }
   }
 
@@ -67,7 +68,7 @@ model {
     }
   }
 
-  # RELU 
+  # RELU
   ######
   layer {
     name: "relu1"
@@ -76,7 +77,7 @@ model {
     }
   }
 
-  # DROPOUT 
+  # DROPOUT
   #########
   layer {
     name: "dropout1"
@@ -109,7 +110,7 @@ model {
     }
   }
 
-  # DROPOUT 
+  # DROPOUT
   #########
   layer {
     name: "dropout2"

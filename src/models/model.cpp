@@ -29,7 +29,7 @@
 #include "lbann/models/model.hpp"
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/io/persist.hpp"
-#include "lbann/layers/io/input/input_layer.hpp"
+#include "lbann/layers/io/input/generic_input_layer.hpp"
 #include <string>
 #include <unistd.h>
 #include <iomanip>
@@ -249,7 +249,7 @@ optimizer* model::create_optimizer() const {
 
 bool model::is_execution_mode_valid(execution_mode mode) const {
   for (const auto& layer : m_layers) {
-    const auto *input = dynamic_cast<const input_layer*>(layer);
+    const auto *input = dynamic_cast<const generic_input_layer*>(layer);
     if (input != nullptr
         && !input->is_execution_mode_valid(mode)) {
       return false;

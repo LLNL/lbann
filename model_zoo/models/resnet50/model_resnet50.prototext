@@ -67,7 +67,8 @@ model {
     name: "data"
     children: "conv1"
     data_layout: "data_parallel"
-    input_partitioned_minibatch {
+    input {
+      io_buffer: "partitioned"
     }
   }
   layer {
@@ -889,7 +890,7 @@ model {
     relu {
     }
   }
-  
+
   # res3d
   layer {
     parents: "res3c_relu"
@@ -1901,7 +1902,7 @@ model {
     relu {
     }
   }
-  
+
   # res5b
   layer {
     parents: "res5a_relu"
@@ -2179,7 +2180,8 @@ model {
     name: "target"
     children: ""
     data_layout: "data_parallel"
-    target_partitioned_minibatch {
+    target {
+      io_buffer: "partitioned"
       shared_data_reader: true
     }
   }
