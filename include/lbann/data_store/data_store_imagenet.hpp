@@ -52,16 +52,57 @@ class data_store_imagenet : public generic_data_store {
   generic_data_store * copy() const override { return new data_store_imagenet(*this); }
 
   //! dtor
-  ~data_store_imagenet() override {}
+  ~data_store_imagenet() override;
 
   void setup() override;
 
-  void get_data_buf(std::string dir, std::string filename, std::vector<unsigned char> *&buf, int tid);
+  void exchange_data() override;
+
+  /// for use during development and testing
+  void test_data() override;
+
+  /// for use during development and testing
+  void test_file_sizes() override;
+
+  void get_data_buf(std::string dir, std::string filename, std::vector<unsigned char> *&buf, int tid) override;
+
+  void get_data_buf(int data_id, std::vector<unsigned char> *&buf, int tid) override;
 
  protected :
 
+  /// maps a global index (wrt image_list) to number of bytes in the file
+  std::unordered_map<size_t, size_t> m_file_sizes;
+
+  /// maps a global index (wrt image_list) to the file's data location 
+  /// wrt m_data
+  std::map<size_t, size_t> m_offsets;
+
+  /// fills in m_file_offsets
+  //void compute_offsets();  
+
+  /// fills in m_file_sizes
+  void get_file_sizes();
+
+  /// when running in in-memory mode, this buffer will contain
+  /// the concatenated data
+  std::vector<unsigned char> m_data;
+
+  /// allocate mem for m_data
+  void allocate_memory(); 
+
+  void load_file(const std::string &dir, const std::string &fn, unsigned char *p, size_t sz); 
+
+  void read_files();
+
+  /// will contain data to be passed to the data_reader
+  std::vector<std::vector<unsigned char> > m_my_data;
+
+  /// maps indices wrt shuffled indices to indices in m_my_data
+  std::unordered_map<size_t, size_t> m_my_data_hash;
+
+  MPI_Win m_win;
 };
 
 }  // namespace lbann
 
-#endif  // __GENERIC_DATA_STORE_HPP__
+#endif  // __DATA_STORE_IMAGENET_HPP__

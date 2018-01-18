@@ -290,15 +290,10 @@ class generic_data_reader : public lbann_image_preprocessor {
   /**
    * During the network's update phase, the data reader will
    * advanced the current position pointer.  If the pointer wraps
-   * around, then reshuffle the data indicies.
+   * around, then reshuffle the data indicies. "fake" is added
+   * to support data store functionality.
    */
-  virtual bool update(bool is_active_reader);
-
-  /**
-   * Advance the data reader's current position pointer.
-   * This method is added to support data_store functionality.
-   */
-  virtual bool fake_update(bool is_active_reader);
+  virtual bool update(bool is_active_reader, bool fake = false);
 
   /// Return the number of labels (classes) in this dataset.
   virtual int get_num_labels() const {
@@ -557,6 +552,8 @@ class generic_data_reader : public lbann_image_preprocessor {
   void setup_data_store(lbann_comm *comm); 
 
  protected:
+
+   int m_rank;
 
    generic_data_store *m_data_store;
 

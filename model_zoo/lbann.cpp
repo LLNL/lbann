@@ -30,6 +30,7 @@
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/protobuf_utils.hpp"
 #include "lbann/utils/stack_profiler.hpp"
+#include "lbann/data_store/generic_data_store.hpp"
 
 
 using namespace lbann;
