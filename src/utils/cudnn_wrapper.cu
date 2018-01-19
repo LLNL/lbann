@@ -84,17 +84,25 @@ void cudnn_manager::allreduce_on_gpus(std::vector<DataType*>& gpu_data,
     return;
   }
 
-  const El::Int buf_len = 1 << 27;
-  const El::Int work_len = buf_len * 2; // double buffering
-  const El::Int work_len_bytes = work_len * sizeof(DataType);
+  // Determine work space size
+  const El::Int work_space_size = get_minimum_work_space_size();
+  const El::Int min_work_space_size = 1024;
+  if (work_space_size < min_work_space_size) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "insufficient GPU work space "
+        << "(requires " << min_work_space_size << " bytes on each GPU, "
+        << "but only have " << work_space_size << " bytes)";
+    throw lbann_exception(err.str());
+  }
 
+  // Setup work buffers
+  const El::Int buf_len = work_space_size / (2 * sizeof(DataType));
   std::vector<DataType*> bufs[2];
   for(int i=0; i<m_num_gpus; ++i) {
-    if (get_work_space_size(i) < work_len_bytes) {
-      set_work_space_size(i, work_len_bytes); 
-    }
-    bufs[0].push_back(static_cast<DataType*>(get_work_space(i)));
-    bufs[1].push_back(static_cast<DataType*>(get_work_space(i)) + buf_len);
+    DataType* work_space = static_cast<DataType*>(get_work_space(i));
+    bufs[0].push_back(work_space);
+    bufs[1].push_back(work_space + buf_len);
   }  
 
   El::Int total_len = height * width;

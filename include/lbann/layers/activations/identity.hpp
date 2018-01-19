@@ -48,7 +48,7 @@ class identity_layer : public activation_layer {
   }
 
   void bp_compute() override {
-    get_error_signals() += get_prev_error_signals();
+    El::Axpy(DataType(1), get_prev_error_signals(), get_error_signals());
   }
 
 };

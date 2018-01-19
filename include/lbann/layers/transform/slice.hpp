@@ -46,6 +46,11 @@ class slice_layer : public transform_layer {
   /** Slice points for each child layer. */
   std::vector<int> m_slice_points;
 
+  /** View into region of input tensor. */
+  AbsDistMat *m_input_region_v;
+  /** View into region of output tensor. */
+  AbsDistMat *m_output_region_v;
+
  public:
   /// Constructor
   slice_layer(lbann_comm *comm,
@@ -54,7 +59,9 @@ class slice_layer : public transform_layer {
               cudnn::cudnn_manager *cudnn = nullptr)
     : transform_layer(comm),
       m_slice_axis(slice_axis),
-      m_slice_points(std::move(slice_points)) {
+      m_slice_points(slice_points),
+      m_input_region_v(nullptr),
+      m_output_region_v(nullptr) {
 
     // Slice layer has no limit on children
     m_expected_num_child_layers = -1;
@@ -67,6 +74,45 @@ class slice_layer : public transform_layer {
     }
   #endif // __LIB_CUDNN
 
+  }
+
+  slice_layer(const slice_layer& other)
+    : transform_layer(other),
+      m_slice_axis(other.m_slice_axis),
+      m_slice_points(other.m_slice_points),
+      m_input_region_v(other.m_input_region_v),
+      m_output_region_v(other.m_output_region_v) {
+    // Deep copy matrices
+    if (m_input_region_v != nullptr) {
+      m_input_region_v = m_input_region_v->Copy();
+    }
+    if (m_output_region_v != nullptr) {
+      m_output_region_v = m_output_region_v->Copy();
+    }
+  }
+
+  slice_layer& operator=(const slice_layer& other) {
+    transform_layer::operator=(other);
+    m_slice_axis = other.m_slice_axis;
+    m_slice_points = other.m_slice_points;
+
+    // Deep copy matrices
+    if (m_input_region_v != nullptr)  { delete m_input_region_v; }
+    if (m_output_region_v != nullptr) { delete m_output_region_v; }
+    m_input_region_v = other.m_input_region_v;
+    m_output_region_v = other.m_output_region_v;
+    if (m_input_region_v != nullptr) {
+      m_input_region_v = m_input_region_v->Copy();
+    }
+    if (m_output_region_v != nullptr) {
+      m_output_region_v = m_output_region_v->Copy();
+    }
+
+  }
+
+  virtual ~slice_layer() override {
+    if (m_input_region_v != nullptr)  { delete m_input_region_v; }
+    if (m_output_region_v != nullptr) { delete m_output_region_v; }
   }
 
   /** Returns description of ctor params */
@@ -90,6 +136,15 @@ class slice_layer : public transform_layer {
   std::string get_type() const override { return "slice"; }
 
   data_layout get_data_layout() const override { return T_layout; }
+
+  void setup_matrices(const El::Grid& grid) override {
+    transform_layer::setup_matrices(grid);
+    if (m_input_region_v != nullptr)  { delete m_input_region_v; }
+    if (m_output_region_v != nullptr) { delete m_output_region_v; }
+    const auto& input = get_prev_activations();
+    m_input_region_v = input.Construct(input.Grid(), input.Root());
+    m_output_region_v = input.Construct(input.Grid(), input.Root());
+  }
 
   void setup_dims() override {
     std::stringstream err;
@@ -179,16 +234,17 @@ class slice_layer : public transform_layer {
                        El::ALL);
       } else {
         for (int region = 0; region < num_regions; ++region) {
-          const auto& input_region
-            = El::LockedView(input,
-                             El::IR(input_region_start + region * input_region_stride,
-                                    input_region_end + region * input_region_stride),
-                             El::ALL);
-          auto&& output_region = El::View(output,
-                                         El::IR(region * output_region_stride,
-                                                (region+1) * output_region_stride),
-                                         El::ALL);
-          El::Copy(input_region, output_region);
+          El::LockedView(*m_input_region_v,
+                         input,
+                         El::IR(input_region_start + region * input_region_stride,
+                                input_region_end + region * input_region_stride),
+                         El::ALL);
+          El::View(*m_output_region_v,
+                   output,
+                   El::IR(region * output_region_stride,
+                          (region+1) * output_region_stride),
+                   El::ALL);
+          El::Copy(*m_input_region_v, *m_output_region_v);
         }
       }
     }
@@ -229,19 +285,17 @@ class slice_layer : public transform_layer {
 
       // Populate slice of gradient w.r.t. input
       for (int region = 0; region < num_regions; ++region) {
-        auto&& gradient_wrt_input_region
-          = El::View(gradient_wrt_input,
-                     El::IR(input_region_start + region * input_region_stride,
-                            input_region_end + region * input_region_stride),
-                     El::ALL);
-        const auto& gradient_wrt_output_region
-          = El::View(gradient_wrt_output,
-                     El::IR(region * output_region_stride,
-                            (region+1) * output_region_stride),
-                     El::ALL);
-        El::Axpy(DataType(1),
-                 gradient_wrt_output_region,
-                 gradient_wrt_input_region);
+        El::View(*m_input_region_v,
+                 gradient_wrt_input,
+                 El::IR(input_region_start + region * input_region_stride,
+                        input_region_end + region * input_region_stride),
+                 El::ALL);
+        El::LockedView(*m_output_region_v,
+                       gradient_wrt_output,
+                       El::IR(region * output_region_stride,
+                              (region+1) * output_region_stride),
+                       El::ALL);
+        El::Axpy(DataType(1), *m_output_region_v, *m_input_region_v);
       }
 
     }
@@ -257,7 +311,7 @@ class slice_layer : public transform_layer {
 
     // Input tensor
     const auto& input_d = m_prev_activations_d[0];
-    const int width_per_gpu = input_d.get_width_per_gpu();
+    const int width_per_gpu = this->m_mini_batch_size_per_gpu;
 
     // Get number of contiguous regions in a tensor slice of width 1
     const auto& input_dims = this->m_prev_neuron_dims;
@@ -285,10 +339,8 @@ class slice_layer : public transform_layer {
 
       // Get position of first contiguous region in input tensor
       const int input_region_start = m_slice_points[i] * unit_region_size;
-      const int input_region_end = m_slice_points[i+1] * unit_region_size;
 
       // Populate current output tensor
-      output_d.resize(num_regions * output_region_stride, width_per_gpu);
       if (num_regions == 1) {
         auto input_ptrs = input_d.get_locked_data();
         for (auto& ptr : input_ptrs) { ptr += input_region_start; }
@@ -331,7 +383,7 @@ class slice_layer : public transform_layer {
 
     // Gradient w.r.t. input
     auto& gradient_wrt_input_d = m_error_signals_d[0];
-    const int width_per_gpu = gradient_wrt_input_d.get_width_per_gpu();
+    const int width_per_gpu = this->m_mini_batch_size_per_gpu;
 
     // Get number of contiguous regions in a tensor slice of width 1
     const auto& input_dims = this->m_prev_neuron_dims;
@@ -360,7 +412,6 @@ class slice_layer : public transform_layer {
 
       // Get position of first contiguous region in input tensor
       const int input_region_start = m_slice_points[i] * unit_region_size;
-      const int input_region_end = m_slice_points[i+1] * unit_region_size;
 
       // Populate slice of gradient w.r.t. input
       for (int region = 0; region < num_regions; ++region) {
@@ -380,17 +431,16 @@ class slice_layer : public transform_layer {
                                                    output_region_stride,
                                                    width_per_gpu,
                                                    gradient_wrt_output_d.get_leading_dim());
-        const DataType one = DataType(1);
         const int num_gpus = m_cudnn->get_num_gpus();
         for (int gpu = 0; gpu < num_gpus; ++gpu) {
           CHECK_CUBLAS(cublas::geam(this->m_cudnn->get_cublas_handle(gpu),
                                     CUBLAS_OP_N, CUBLAS_OP_N,
                                     gradient_wrt_output_region_d.get_height(),
                                     gradient_wrt_output_region_d.get_width_per_gpu(),
-                                    &one,
+                                    DataType(1),
                                     gradient_wrt_output_region_d.get_locked_data(gpu),
                                     gradient_wrt_output_region_d.get_leading_dim(),
-                                    &one,
+                                    DataType(1),
                                     gradient_wrt_input_region_d.get_locked_data(gpu),
                                     gradient_wrt_input_region_d.get_leading_dim(),
                                     gradient_wrt_input_region_d.get_data(gpu),
@@ -403,7 +453,21 @@ class slice_layer : public transform_layer {
   #endif // __LIB_CUDNN
   }
 
-  const std::vector<int> fp_output_dims(const Layer* next_layer) const override {
+  std::vector<int> get_neuron_dims(int child_index = 0) const override {
+    std::vector<int> neuron_dims = m_neuron_dims;
+    neuron_dims[m_slice_axis] = m_slice_points[child_index+1] - m_slice_points[child_index];
+    return neuron_dims;
+  }
+
+  int get_num_neurons(int child_index = 0) const override {
+    auto&& neuron_dims = get_neuron_dims(child_index);
+    return std::accumulate(neuron_dims.begin(),
+                           neuron_dims.end(),
+                           1,
+                           std::multiplies<int>());
+  }
+
+  std::vector<int> fp_output_dims(const Layer* next_layer) const override {
 
     // Return all neurons if input is null
     if(next_layer == nullptr) {
@@ -420,9 +484,7 @@ class slice_layer : public transform_layer {
     }
 
     // Return slice dimensions
-    std::vector<int> neuron_dims = m_neuron_dims;
-    neuron_dims[m_slice_axis] = m_slice_points[child_index+1] - m_slice_points[child_index];
-    return neuron_dims;
+    return get_neuron_dims(child_index);
 
   }
 

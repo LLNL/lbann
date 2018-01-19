@@ -112,6 +112,10 @@ public:
   matrix(const matrix& other);
   /** Copy assignment operator. */
   matrix& operator=(const matrix& other);
+  /** Move constructor. */
+  matrix(matrix&& other);
+  /** Move assignment operator. */
+  matrix& operator=(matrix&& other);
   /** Destructor. */
   virtual ~matrix();
 
@@ -138,31 +142,31 @@ public:
   void attach(std::vector<DataType*>& data,
               int height,
               int width_per_gpu,
-              int leading_dim);
+              int leading_dim = 0);
   /** Attach matrix to GPU data. */
   void locked_attach(const std::vector<DataType*>& data,
                      int height,
                      int width_per_gpu,
-                     int leading_dim);
+                     int leading_dim = 0);
 
   /** Get matrix height. */
-  int get_height() const { return m_height; }
+  inline int get_height() const { return m_height; }
   /** Get matrix width per GPU. */
-  int get_width_per_gpu() const { return m_width_per_gpu; }
+  inline int get_width_per_gpu() const { return m_width_per_gpu; }
   /** Get matrix leading dimension. */
-  int get_leading_dim() const { return m_leading_dim; }
+  inline int get_leading_dim() const { return m_leading_dim; }
   /** Whether the matrix is responsible for managing its memory. */
-  bool is_view() const { return m_is_view; }
+  inline bool is_view() const { return m_is_view; }
   /** Whether the matrix can modify its entries. */
-  bool is_locked() const { return m_is_locked; }
+  inline bool is_locked() const { return m_is_locked; }
   /** Get GPU data pointers. */
   std::vector<DataType*>& get_data();
   /** Get GPU data pointers (const). */
-  const std::vector<DataType*>& get_locked_data() const { return m_data; }
+  const std::vector<DataType*>& get_locked_data() const;
   /** Get GPU data pointer on ith GPU. */
   DataType* get_data(int i);
   /** Get GPU data pointer on ith GPU (const). */
-  const DataType* get_locked_data(int i) const { return m_data[i]; }
+  const DataType* get_locked_data(int i) const;
 
 private:
 
@@ -237,14 +241,16 @@ class cudnn_manager {
   std::vector<void*> get_work_spaces();
   /** Get ith GPU work space. */
   void *get_work_space(int i);
-  /** Get GPU work space sizes (in bytes) (const). */
-  const std::vector<size_t> get_work_space_sizes() const;
+  /** Get a lower bound on GPU work space sizes (in bytes). */
+  size_t get_minimum_work_space_size();
+  /** Get GPU work space sizes (in bytes). */
+  std::vector<size_t> get_work_space_sizes();
   /** Get ith GPU work space size (in bytes). */
-  size_t get_work_space_size(int i) const;
-  /** Set ith GPU work space size (in bytes). */
-  void set_work_space_size(int i, size_t size);
+  size_t get_work_space_size(int i);
   /** Set ith GPU work space to occupy all available GPU memory. */
   void set_maximum_work_space_size(int i);
+  /** Free ith GPU work space. */
+  void free_work_space(int i);
   /** Free all GPU work spaces. */
   void free_work_spaces();
 

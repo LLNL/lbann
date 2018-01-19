@@ -79,24 +79,24 @@ class sum_layer : public transform_layer {
   protected:
 
   void fp_compute() override {
-    const DataType one = 1;
     if(this->m_using_gpus) {
   #ifndef __LIB_CUDNN
       throw lbann_exception("sum_layer: cuDNN not detected");
   #else
       const int num_gpus = m_cudnn->get_num_gpus();
-      auto& output_d = this->activations_d[0];
+      auto& output_d = this->m_activations_d[0];
       output_d.zero();
       for (const auto& input_d : this->m_prev_activations_d ) {
         for (int i=0; i<num_gpus; ++i) {
           CHECK_CUBLAS(cublas::geam(this->m_cudnn->get_cublas_handle(i),
-                                    CUBLAS_OP_N, CUBLAS_OP_N,
+                                    CUBLAS_OP_N,
+                                    CUBLAS_OP_N,
                                     input_d.get_height(),
-                                    input_d.get_width_per_gpu(),
-                                    &one,
+                                    this->m_mini_batch_size_per_gpu,
+                                    DataType(1),
                                     input_d.get_locked_data(i),
                                     input_d.get_leading_dim(),
-                                    &one,
+                                    DataType(1),
                                     output_d.get_locked_data(i),
                                     output_d.get_leading_dim(),
                                     output_d.get_data(i),
@@ -108,13 +108,12 @@ class sum_layer : public transform_layer {
       auto& output = get_activations();
       El::Zero(output);
       for (const auto& input : this->m_prev_activations) {
-        El::Axpy(one, input, output);
+        El::Axpy(DataType(1), *input, output);
       }
     }
   }
 
   void bp_compute() override {
-    const DataType one = 1;
     if(this->m_using_gpus) {
   #ifndef __LIB_CUDNN
       throw lbann_exception("sum_layer: cuDNN not detected");
@@ -126,11 +125,11 @@ class sum_layer : public transform_layer {
           CHECK_CUBLAS(cublas::geam(this->m_cudnn->get_cublas_handle(i),
                                     CUBLAS_OP_N, CUBLAS_OP_N,
                                     gradient_wrt_output_d.get_height(),
-                                    gradient_wrt_output_d.get_width_per_gpu(),
-                                    &one,
+                                    this->m_mini_batch_size_per_gpu,
+                                    DataType(1),
                                     gradient_wrt_output_d.get_locked_data(i),
                                     gradient_wrt_output_d.get_leading_dim(),
-                                    &one,
+                                    DataType(1),
                                     gradient_wrt_input_d.get_locked_data(i),
                                     gradient_wrt_input_d.get_leading_dim(),
                                     gradient_wrt_input_d.get_data(i),
@@ -141,7 +140,7 @@ class sum_layer : public transform_layer {
     } else {
       const auto& gradient_wrt_output = get_prev_error_signals();
       for (auto& gradient_wrt_input : this->m_error_signals) {
-        El::Axpy(one, gradient_wrt_output, gradient_wrt_input);
+        El::Axpy(DataType(1), gradient_wrt_output, *gradient_wrt_input);
       }
     }
   }

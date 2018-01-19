@@ -666,17 +666,21 @@ void Layer::setup_gpu() {
   m_mini_batch_size_per_gpu = m_max_mini_batch_size_per_gpu;
 
   // Initialize GPU memory
-  for (int i = 0; i < get_num_children(); ++i) {
-    m_activations_d.emplace_back(m_cudnn,
-                                 get_num_neurons(i),
-                                 mini_batch_size);
-    m_prev_error_signals_d.emplace_back(m_cudnn);
-  }
+  m_prev_activations_d.reserve(get_num_parents());
+  m_activations_d.reserve(get_num_children());
+  m_prev_error_signals_d.reserve(get_num_children());
+  m_error_signals_d.reserve(get_num_parents());
   for (int i = 0; i < get_num_parents(); ++i) {
     m_prev_activations_d.emplace_back(m_cudnn);
     m_error_signals_d.emplace_back(m_cudnn,
                                    get_num_prev_neurons(i),
-                                   mini_batch_size);
+                                   m_mini_batch_size_per_gpu);
+  }
+  for (int i = 0; i < get_num_children(); ++i) {
+    m_activations_d.emplace_back(m_cudnn,
+                                 get_num_neurons(i),
+                                 m_mini_batch_size_per_gpu);
+    m_prev_error_signals_d.emplace_back(m_cudnn);
   }
 
   // Set tensor descriptors
@@ -1038,7 +1042,7 @@ std::string Layer::get_data_layout_string(data_layout d) const {
   }
 }
 
-const std::vector<int> Layer::fp_output_dims(const Layer* next_layer) const {
+std::vector<int> Layer::fp_output_dims(const Layer* next_layer) const {
   return m_neuron_dims;
 }
 

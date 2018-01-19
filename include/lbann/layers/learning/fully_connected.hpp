@@ -506,7 +506,7 @@ class fully_connected_layer : public learning_layer {
           err << __FILE__ << " " << __LINE__ << " :: "
               << "insufficient GPU work space "
               << "(requires " << min_size << " bytes on each GPU, "
-              << "but only found " << size << " bytes)";
+              << "but only have " << size << " bytes)";
           throw lbann_exception(err.str());
         }
       }

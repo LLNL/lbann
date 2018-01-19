@@ -91,13 +91,12 @@ class split_layer : public transform_layer {
     } else {
       const auto& input = get_prev_activations();
       for (auto& output : this->m_activations) {
-        El::LockedView(output, input);
+        El::LockedView(*output, input);
       }
     }
   }
 
   void bp_compute() override {
-    const DataType one = 1;
     if(this->m_using_gpus) {
   #ifndef __LIB_CUDNN
       throw lbann_exception("split_layer: cuDNN not detected");
@@ -109,11 +108,11 @@ class split_layer : public transform_layer {
           CHECK_CUBLAS(cublas::geam(this->m_cudnn->get_cublas_handle(i),
                                     CUBLAS_OP_N, CUBLAS_OP_N,
                                     gradient_wrt_input_d.get_height(),
-                                    gradient_wrt_input_d.get_width_per_gpu(),
-                                    &one,
+                                    this->m_mini_batch_size_per_gpu,
+                                    DataType(1),
                                     gradient_wrt_input_d.get_locked_data(i),
                                     gradient_wrt_input_d.get_leading_dim(),
-                                    &one,
+                                    DataType(1),
                                     gradient_wrt_output_d.get_locked_data(i),
                                     gradient_wrt_output_d.get_leading_dim(),
                                     gradient_wrt_input_d.get_data(i),
@@ -124,7 +123,7 @@ class split_layer : public transform_layer {
     } else {
       auto& gradient_wrt_input = get_error_signals();
       for (const auto& gradient_wrt_output : this->m_prev_error_signals) {
-        El::Axpy(one, gradient_wrt_output, gradient_wrt_input);
+        El::Axpy(DataType(1), *gradient_wrt_output, gradient_wrt_input);
       }
     }
   }

@@ -427,7 +427,7 @@ void add_layers(
       }
 
     }
-#if 0
+
     //////////////////////////////////////////////////////////////////
     // LAYER: reshape
     //////////////////////////////////////////////////////////////////
@@ -462,7 +462,7 @@ void add_layers(
         d = new reshape_layer<data_layout::DATA_PARALLEL>(comm, num_dims, dims.data());
       }
     }
-
+#if 0
     //////////////////////////////////////////////////////////////////
     // LAYER: concatenation
     //////////////////////////////////////////////////////////////////
@@ -470,7 +470,7 @@ void add_layers(
       const lbann_data::Concatenation &ell = layer.concatenation();
       d = new concatenation_layer<>(comm, ell.concatenation_axis(), cudnn);
     }
-
+#endif
     //////////////////////////////////////////////////////////////////
     // LAYER: slice
     //////////////////////////////////////////////////////////////////
@@ -491,7 +491,7 @@ void add_layers(
     else if (layer.has_sum()) {
       d = new sum_layer<>(comm, cudnn);
     }
-
+#if 0
     //////////////////////////////////////////////////////////////////
     // LAYER: noise
     //////////////////////////////////////////////////////////////////
@@ -499,14 +499,14 @@ void add_layers(
       const lbann_data::Noise& ell = layer.noise();
       d = new noise_layer<>(comm,ell.noise_factor(), cudnn);
     }
-
+#endif
     //////////////////////////////////////////////////////////////////
     // LAYER: split
     //////////////////////////////////////////////////////////////////
     else if (layer.has_split()) {
       d = new split_layer<>(comm, cudnn);
     }
-#endif
+
     //////////////////////////////////////////////////////////////////
     // LAYER: pooling
     //////////////////////////////////////////////////////////////////
@@ -816,7 +816,7 @@ void add_layers(
         );
       }
     }
-
+#endif
     //////////////////////////////////////////////////////////////////
     // LAYER: tanh
     //////////////////////////////////////////////////////////////////
@@ -877,9 +877,9 @@ void add_layers(
     else if (layer.has_id()) {
       //const lbann_data::ID& ell = layer.id();
       if (layout == data_layout::MODEL_PARALLEL) {
-        d = new id_layer<data_layout::MODEL_PARALLEL>(comm);
+        d = new identity_layer<data_layout::MODEL_PARALLEL>(comm);
       } else {
-        d = new id_layer<data_layout::DATA_PARALLEL>(comm);
+        d = new identity_layer<data_layout::DATA_PARALLEL>(comm);
       }
     }
 
@@ -946,7 +946,7 @@ void add_layers(
         d = new swish_layer<data_layout::DATA_PARALLEL>(comm);
       }
     }
-#endif
+
     //////////////////////////////////////////////////////////////////
     // LAYER: dropout
     //////////////////////////////////////////////////////////////////

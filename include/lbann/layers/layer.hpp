@@ -114,6 +114,9 @@ class Layer {
   virtual std::string get_topo_description() const {
     std::stringstream s;
     for (size_t i = 0; i < m_child_layers.size(); ++i) {
+      if (i != 0) {
+        s << ", ";
+      }
       const auto& dims = get_neuron_dims(i);
       s << "activations[" << i << "]=[";
       switch (dims.size()) {
@@ -151,7 +154,7 @@ class Layer {
     return m_num_prev_neuron_dims;
   }
   /** Return the dimensions of neuron tensor from previous layer. */
-  virtual const std::vector<int>& get_prev_neuron_dims(int parent_index = 0) const {
+  virtual std::vector<int> get_prev_neuron_dims(int parent_index = 0) const {
     return m_prev_neuron_dims;
   }
   /** Return the number of neurons. */
@@ -163,7 +166,7 @@ class Layer {
     return m_num_neuron_dims;
   }
   /** Return the dimensions of neuron tensor. */
-  virtual const std::vector<int>& get_neuron_dims(int child_index = 0) const {
+  virtual std::vector<int> get_neuron_dims(int child_index = 0) const {
     return m_neuron_dims;
   }
   /** Return the data layout of the given layer -- Every concrete
@@ -222,7 +225,7 @@ class Layer {
                                  const Layer* parent) const;
 #endif // __LIB_CUDNN
   /** Get forward propagation output dimensions, as seen by next layer. */
-  virtual const std::vector<int> fp_output_dims(const Layer* next_layer = nullptr) const;
+  virtual std::vector<int> fp_output_dims(const Layer* next_layer = nullptr) const;
 
   virtual void add_to_error_signal(const AbsDistMat& gradient,
                                    DataType scale = DataType(1),
