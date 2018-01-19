@@ -96,6 +96,10 @@ EvalType kl_divergence::evaluate() {
   
   //Entrywise mean of all the previous computation (stats)
   entrywise_mean_and_stdev(*z_log1,mean_value,std_value);
+ 
+  delete z_mean;
+  delete z_log1;
+ 
   return (0.5 * mean_value);
 }
 
@@ -116,14 +120,13 @@ void kl_divergence::differentiate() {
   
   //Compute z_log_sigma_gradient = -(1/2n)(1-exp(Z_logsigma))
   auto expn  = [&](const DataType& x) {
-    return std::exp(x);
+    return (1 - std::exp(x));
   };
   El::EntrywiseMap(*z_log_sigma_gradient,El::MakeFunction(expn));
-  El::Axpy(DataType(-1),*z_log_sigma_gradient, *z_log_sigma_gradient);
 
   //add gradients to respective error signal
   //z_mean_gradient = (1/2n)z_mean 
-  m_z_mean_layer->add_to_error_signal(*z_mean_gradient, DataType(scale));
+  m_z_mean_layer->add_to_error_signal(*z_mean_gradient, (DataType(1)/height));
   m_z_log_sigma_layer->add_to_error_signal(*z_log_sigma_gradient,DataType(-scale));
   
   delete z_mean_gradient;
