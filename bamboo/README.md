@@ -47,3 +47,7 @@ To run tests locally (outside of the Bamboo infrastructure) you will likely need
 You can also run an individual test by specifying the test filename on the command line, e.g:
 
  `python -m pytest -s --exe ../../build/catalyst.llnl.gov/model_zoo/lbann test_ridge_regression.py`
+
+The above commands must be run from the appropriate subdirectory. For example, to run unit tests, first `cd` into `lbann/bamboo/unit_tests`. 
+
+To run all tests in a subdirectory, add the `--weekly` option.

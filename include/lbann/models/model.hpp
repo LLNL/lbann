@@ -40,6 +40,7 @@
 #include "lbann/metrics/metric.hpp"
 #include "lbann/weights/weights.hpp"
 #include "lbann/optimizers/optimizer.hpp"
+#include <lbann.pb.h>
 #include <vector>
 #include <string>
 #include <unordered_map>
@@ -203,6 +204,9 @@ class model {
   virtual bool save_to_checkpoint_shared(persist& p);
   /** Restore model by reading checkpoint from given file descriptor, return number of bytes read */
   virtual bool load_from_checkpoint_shared(persist& p);
+
+  /** Write model to proto file */
+  virtual void write_proto(lbann_data::Model* proto);
 
 
  protected:

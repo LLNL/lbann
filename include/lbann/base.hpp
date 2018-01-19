@@ -31,6 +31,8 @@
 
 #include "El.hpp"
 #include "lbann/Elemental_extensions.hpp"
+#include "lbann/utils/cyg_profile.hpp"
+
 
 // Defines, among other things, lbann::DataType.
 #include "lbann_config.hpp"

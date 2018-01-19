@@ -20,6 +20,7 @@ set_full_path(THIS_DIR_SOURCES
   callback_ltfb.cpp
   callback_print.cpp
   callback_save_images.cpp
+  callback_save_model.cpp
   callback_summary.cpp
   callback_timeline.cpp
   callback_timer.cpp
@@ -29,3 +30,4 @@ set_full_path(THIS_DIR_SOURCES
 
 # Propagate the files up the tree
 set(SOURCES "${SOURCES}" "${THIS_DIR_SOURCES}" PARENT_SCOPE)
+)

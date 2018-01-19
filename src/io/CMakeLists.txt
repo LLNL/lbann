@@ -1,3 +1,5 @@
+add_subdirectory(data_buffers)
+
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
   file_io.cpp

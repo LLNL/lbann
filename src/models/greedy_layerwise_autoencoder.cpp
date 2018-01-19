@@ -205,7 +205,7 @@ void greedy_layerwise_autoencoder::set_phase(int phase) {
   for (auto term : m_objective_function->get_terms()) {
     auto* loss = dynamic_cast<loss_function*>(term);
     if (loss != nullptr) {
-      loss->set_target_layer((target_layer*) m_reconstruction);
+      loss->set_target_layer((generic_target_layer*) m_reconstruction);
     }
   }
 
@@ -237,7 +237,7 @@ void greedy_layerwise_autoencoder::restore_sequential_model() {
   for (auto term : m_objective_function->get_terms()) {
     auto* loss = dynamic_cast<loss_function*>(term);
     if (loss != nullptr) {
-      loss->set_target_layer((target_layer*) m_layers.back());
+      loss->set_target_layer((generic_target_layer*) m_layers.back());
     }
   }
 

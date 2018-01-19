@@ -158,7 +158,7 @@ class batch_normalization : public regularizer_layer {
     m_bias_v(other.m_bias_v),
     m_scale_gradient(other.m_scale_gradient),
     m_bias_gradient(other.m_bias_gradient) {
-    
+
     // Deep copy matrices
     if (m_mean != nullptr)           { m_mean = m_mean->Copy(); }
     if (m_var != nullptr)            { m_var = m_var->Copy(); }
@@ -360,7 +360,7 @@ class batch_normalization : public regularizer_layer {
     this->m_weights[1]->setup(this->m_neuron_dims[0], 1, El::STAR, El::STAR);
     this->m_weights[2]->setup(this->m_neuron_dims[0], 1, El::STAR, El::STAR);
     this->m_weights[3]->setup(this->m_neuron_dims[0], 1, El::STAR, El::STAR);
-    
+
     // Initialize matrices
     El::Zeros(*m_mean, this->m_neuron_dims[0], 1);
     El::Zeros(*m_var, this->m_neuron_dims[0], 1);
@@ -495,7 +495,7 @@ class batch_normalization : public regularizer_layer {
                                          running_var_d[i],
                                          this->m_cudnn->get_stream(i));
       }
-      
+
     }
 
     // Get GPU objects
@@ -542,7 +542,7 @@ class batch_normalization : public regularizer_layer {
     std::vector<DataType*> var_d = is_training ? m_var_d : m_weights[3]->get_values_gpu();
 
     // Matrix parameters
-    const int mini_batch_size = this->m_model->get_current_mini_batch_size();
+    const int effective_mini_batch_size = this->m_model->get_effective_mini_batch_size();
     const int height = this->m_prev_activations_v->Height();
     const int width = this->m_prev_activations_v->Width();
     const int local_width = this->m_prev_activations_v->LocalWidth();
@@ -591,13 +591,13 @@ class batch_normalization : public regularizer_layer {
     if (scale_optimizer != nullptr) {
       scale_optimizer->stage_gradient_for_accumulation_gpu(
         m_scale_gradient_d,
-        DataType(1) / mini_batch_size);
+        DataType(1) / effective_mini_batch_size);
     }
     optimizer* bias_optimizer = m_weights[1]->get_optimizer();
     if (bias_optimizer != nullptr) {
       bias_optimizer->stage_gradient_for_accumulation_gpu(
         m_bias_gradient_d,
-        DataType(1) / mini_batch_size);
+        DataType(1) / effective_mini_batch_size);
     }
 
     // Compute error signal
@@ -627,7 +627,7 @@ class batch_normalization : public regularizer_layer {
   }
 
   void fp_compute_cpu() {
-    
+
     // Check execution mode
     const bool is_training = this->m_model->get_execution_mode() == execution_mode::training;
 
@@ -703,7 +703,7 @@ class batch_normalization : public regularizer_layer {
       }
       m_weights[2]->set_values(*m_mean_gradient);
       m_weights[3]->set_values(*m_var_gradient);
-      
+
     }
 
     // Local matrices
@@ -737,10 +737,10 @@ class batch_normalization : public regularizer_layer {
 
     }
 
-  }  
+  }
 
   void bp_compute_cpu() {
-    
+
     // Check execution mode
     const bool is_training = this->m_model->get_execution_mode() == execution_mode::training;
 
@@ -761,9 +761,9 @@ class batch_normalization : public regularizer_layer {
     Mat& var_gradient_local = m_var_gradient->Matrix();
     Mat& scale_gradient_local = m_scale_gradient->Matrix();
     Mat& bias_gradient_local = m_bias_gradient->Matrix();
-    
+
     // Matrix parameters
-    const int mini_batch_size = this->m_model->get_current_mini_batch_size();
+    const int effective_mini_batch_size = this->m_model->get_effective_mini_batch_size();
     const int width = this->m_prev_activations_v->Width();
     const El::Int local_width = this->m_prev_activations_v->LocalWidth();
     const int num_channels = this->m_neuron_dims[0];
@@ -824,15 +824,15 @@ class batch_normalization : public regularizer_layer {
     if (scale_optimizer != nullptr) {
       scale_optimizer->stage_gradient_for_accumulation(
         *m_scale_gradient,
-        DataType(1) / mini_batch_size);
+        DataType(1) / effective_mini_batch_size);
     }
     optimizer* bias_optimizer = m_weights[1]->get_optimizer();
     if (bias_optimizer != nullptr) {
       bias_optimizer->stage_gradient_for_accumulation(
         *m_bias_gradient,
-        DataType(1) / mini_batch_size);
+        DataType(1) / effective_mini_batch_size);
     }
-    
+
     // Compute error signal
     #pragma omp parallel for
     for(int channel = 0; channel < num_channels; ++channel) {

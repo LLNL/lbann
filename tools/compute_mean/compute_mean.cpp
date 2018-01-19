@@ -56,6 +56,7 @@ int main(int argc, char *argv[]) {
 
   // Load the image list
   image_list img_list(mp.get_data_path_file(), mp.to_write_cropped(), ms);
+  if (mp.check_to_create_dirs_only()) return 0;
 
   // Check the effective number of ranks which have data to process
   ms.set_effective_num_ranks(img_list.get_effective_num_ranks());

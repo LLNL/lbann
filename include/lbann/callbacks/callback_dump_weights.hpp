@@ -62,7 +62,7 @@ class lbann_callback_dump_weights : public lbann_callback {
   /** Basename for writing files. */
   std::string m_basename;
   /// Dump weights from learning layers.
-  void dump_weights(model *m);
+  void dump_weights(model *m, std::string s = "");
 };
 
 }  // namespace lbann

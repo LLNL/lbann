@@ -32,7 +32,7 @@
 namespace lbann {
 
 void lbann_callback_checknan::on_forward_prop_end(model *m, Layer *l) {
-  if (dynamic_cast<target_layer*>(l) != nullptr) {
+  if (dynamic_cast<generic_target_layer*>(l) != nullptr) {
     return;
   }
   const AbsDistMat& acts = l->get_activations();
@@ -98,7 +98,7 @@ bool lbann_callback_checknan::is_good(const AbsDistMat& m) {
 void lbann_callback_checknan::dump_network(model *m) {
   // Dump only the local matrices because not every rank will necessarily
   // have bad data, and the check is purely local.
-  for (Layer *layer : m->get_layers()) {
+  for (const Layer *layer : m->get_layers()) {
     const std::string prefix
       = ("model" + std::to_string(m->get_comm()->get_model_rank())
          + "-rank" + std::to_string(m->get_comm()->get_rank_in_model()) +

@@ -454,7 +454,7 @@ class fully_connected_layer : public learning_layer {
                  m_bias_weights_gradient->Matrix());
       bias_optimizer->stage_gradient_for_accumulation(
         *m_bias_weights_gradient,
-        m_bias_scaling_factor / this->m_model->get_current_mini_batch_size());
+        m_bias_scaling_factor / this->m_model->get_effective_mini_batch_size());
     }
 
   }
@@ -477,7 +477,7 @@ class fully_connected_layer : public learning_layer {
                                     m_bias_weights_gradient_d);
       bias_optimizer->stage_gradient_for_accumulation_gpu(
         m_bias_weights_gradient_d,
-        m_bias_scaling_factor / this->m_model->get_current_mini_batch_size());
+        m_bias_scaling_factor / this->m_model->get_effective_mini_batch_size());
     }
 
 #ifdef LBANN_DEBUG
@@ -566,7 +566,7 @@ fully_connected_layer<data_layout::MODEL_PARALLEL>::bp_compute_weights() {
              *m_matrix_weights_gradient);
     matrix_optimizer->add_to_gradient(
       *m_matrix_weights_gradient,
-      DataType(1) / this->m_model->get_current_mini_batch_size());
+      DataType(1) / this->m_model->get_effective_mini_batch_size());
   }
 }
 
@@ -588,7 +588,7 @@ fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_weights<device::CP
              m_matrix_weights_gradient->Matrix());
     matrix_optimizer->stage_gradient_for_accumulation(
       *m_matrix_weights_gradient,
-      DataType(1) / this->m_model->get_current_mini_batch_size());
+      DataType(1) / this->m_model->get_effective_mini_batch_size());
   }
 }
 
@@ -639,7 +639,7 @@ fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_weights<device::CU
     }
     matrix_optimizer->stage_gradient_for_accumulation_gpu(
       m_matrix_weights_gradient_d,
-      DataType(1) / this->m_model->get_current_mini_batch_size());
+      DataType(1) / this->m_model->get_effective_mini_batch_size());
   }
 
 }
