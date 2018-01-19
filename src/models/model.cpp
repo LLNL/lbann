@@ -484,11 +484,11 @@ void model::evaluate(execution_mode mode) {
   }
 
   // Evaluate on all mini-batches
+  reset_epoch_statistics(mode);
   reset_mode_and_model(mode);
   do_evaluate_begin_cbs(mode);
   while (!evaluate_mini_batch(mode)) {}
   do_evaluate_end_cbs(mode);
-  reset_epoch_statistics(mode);
 }
 
 void model::train(int num_epochs) {

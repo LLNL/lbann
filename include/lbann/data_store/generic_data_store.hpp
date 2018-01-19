@@ -67,21 +67,53 @@ class generic_data_store {
 
   virtual void setup();
 
+  virtual void exchange_data() {}
+
+  /// for use during development and testing
+  virtual void test_data() {}
+
   void set_shuffled_indices(const std::vector<int> *indices) {
     m_shuffled_indices = indices;
-    m_cur_idx = 0;
+    ++m_epoch;
+    if (m_epoch > 1) {
+      exchange_data();
+    }
+    //m_cur_idx = 0;
   }
 
   virtual void get_data_buf(std::string dir, std::string filename, std::vector<unsigned char> *&buf, int tid) = 0;
 
-  void update() {
-    m_cur_idx = 0;
-  }
+  virtual void get_data_buf(int data_id, std::vector<unsigned char> *&buf, int tid) = 0; 
 
   /// for use during development and debugging
   void print_indices(std::ostream &out);
 
+  /// for use during development and debugging
+  virtual void test_file_sizes() = 0;
+
  protected :
+
+  /// number of indices that m_reader owns (in a global sense);
+  /// equal to m_shuffled_indices->size()
+  size_t m_num_global_indices;
+
+  /// the indices that will be used locally
+  std::vector<size_t> m_my_minibatch_indices;
+
+  /// the indices that this processor owns
+  std::vector<size_t> m_my_datastore_indices;
+
+  /// fills in m_my_indices and m_index_mapping
+  void get_my_indices();
+
+  /// fills in m_my_datastore_indices
+  void get_my_datastore_indices();
+
+  size_t m_num_readers;
+
+  size_t m_rank;
+
+  size_t m_epoch;
 
   bool m_in_memory;
 
@@ -89,17 +121,12 @@ class generic_data_store {
   bool m_master;
   generic_data_reader *m_reader;
 
-  int m_cur_idx;
-
-  //std::vector<std::vector<int> > *m_my_indices;
-
   const std::vector<int> *m_shuffled_indices;
 
-  /// fills in m_my_indices; these are indices into the shuffled
-  /// indices; they do not change!
-  void get_my_indices();
-
   std::vector<std::vector<unsigned char> > m_buffers;
+
+  /// maps global indices (wrt shuffled_indices) to owning processor
+  std::unordered_map<size_t, size_t> m_owner_mapping;
 };
 
 }  // namespace lbann

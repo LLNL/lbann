@@ -102,6 +102,10 @@
 #include "lbann/data_readers/data_reader_ascii.hpp"
 #include "lbann/data_readers/data_reader_pilot2_molecular.hpp"
 
+/// Data Store
+#include "lbann/data_store/generic_data_store.hpp"
+#include "lbann/data_store/data_store_imagenet.hpp"
+
 /// Callbacks
 #include "lbann/callbacks/callback_check_init.hpp"
 #include "lbann/callbacks/callback_checknan.hpp"

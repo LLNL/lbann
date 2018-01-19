@@ -79,6 +79,10 @@ class image_data_reader : public generic_data_reader {
 
   std::vector<std::pair<std::string, int> > get_image_list_of_current_mb() const;
 
+  const std::vector<std::pair<std::string, int> > & get_image_list() const {
+    return m_image_list;
+  }
+
  protected:
   /// Set the default values for the width, the height, the number of channels, and the number of labels of an image
   virtual void set_defaults();

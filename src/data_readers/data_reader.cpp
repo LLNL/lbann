@@ -206,7 +206,7 @@ bool generic_data_reader::is_data_reader_done(bool is_active_reader) {
   return reader_not_done;
 }
 
-bool generic_data_reader::update(bool is_active_reader) {
+bool generic_data_reader::update(bool is_active_reader, bool fake) {
   bool reader_not_done = true; // BVE The sense of this should be fixed
   m_current_mini_batch_idx++;
 
@@ -214,12 +214,19 @@ bool generic_data_reader::update(bool is_active_reader) {
     m_current_pos = get_next_position();
 
     /// Maintain the current height of the matrix
-    El::Zeros(m_indices_fetched_per_mb, m_indices_fetched_per_mb.Height(), 1);
+    if (!fake) {
+      El::Zeros(m_indices_fetched_per_mb, m_indices_fetched_per_mb.Height(), 1);
+    }  
 
     m_loaded_mini_batch_idx += m_iteration_stride;
   }
   if (m_loaded_mini_batch_idx >= m_num_iterations_per_epoch) {
     reader_not_done = false;
+  }
+  if (fake) {
+    if ((size_t)m_current_pos >= m_shuffled_indices.size()) {
+      reader_not_done = false;
+    }  
   }
   if (m_current_mini_batch_idx == m_num_iterations_per_epoch) {
     if ((get_rank() < m_num_parallel_readers) && (m_current_pos < (int)m_shuffled_indices.size())) {
@@ -229,17 +236,19 @@ bool generic_data_reader::update(bool is_active_reader) {
         + " but not all of the data has been used -- current pos = " + std::to_string(m_current_pos)
         + " and there are " + std::to_string(m_shuffled_indices.size()) + " indices");
     }
-    if (m_shuffle) {
-      std::shuffle(m_shuffled_indices.begin(), m_shuffled_indices.end(),
-                   get_data_seq_generator());
-    }
-    set_initial_position();
 
-    if (m_data_store) {
-      m_data_store->set_shuffled_indices(&m_shuffled_indices);
+    if (!fake) {
+      if (m_shuffle) {
+        std::shuffle(m_shuffled_indices.begin(), m_shuffled_indices.end(),
+                     get_data_seq_generator());
+      }
+      set_initial_position();
+
+      if (m_data_store) {
+        m_data_store->set_shuffled_indices(&m_shuffled_indices);
+      }
     }
   }
-
   return reader_not_done;
 }
 
@@ -609,30 +618,6 @@ int lbann::generic_data_reader::fetch_data_indices(std::vector<int> &indicies) {
       indicies.push_back(n);
   }
   return mb_size;
-}
-
-bool generic_data_reader::fake_update(bool is_active_reader) {
-  bool reader_not_done = true;
-  m_current_mini_batch_idx++;
-
-  if(is_active_reader) {
-    m_current_pos = get_next_position();
-    m_loaded_mini_batch_idx += m_iteration_stride;
-  }
-  if (m_loaded_mini_batch_idx >= m_num_iterations_per_epoch) {
-    reader_not_done = false;
-  }
-  if (m_current_mini_batch_idx == m_num_iterations_per_epoch) {
-    if ((get_rank() < m_num_parallel_readers) && (m_current_pos < (int)m_shuffled_indices.size())) {
-      throw lbann_exception(
-        std::string{} + __FILE__ + " " + std::to_string(__LINE__)
-        + " :: generic data reader update error: the epoch is complete,"
-        + " but not all of the data has been used -- current pos = " + std::to_string(m_current_pos)
-        + " and there are " + std::to_string(m_shuffled_indices.size()) + " indices");
-    }
-    set_initial_position();
-  }
-  return reader_not_done;
 }
 
 }  // namespace lbann
