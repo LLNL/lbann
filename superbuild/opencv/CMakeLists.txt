@@ -20,12 +20,7 @@ if (TARGET JPEG-TURBO)
   list(APPEND _OPENCV_DEPENDS JPEG-TURBO)
   set(OPENCV_WITH_LIBJPEG_TURBO ON)
   set(OPENCV_BUILD_JPEG OFF)
-  
   set(OPENCV_CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "${JPEG-TURBO_CMAKE_INSTALL_PREFIX}") 
-  #set(OPENCV_JPEG_INCLUDE_DIR "${CMAKE_INSTALL_PREFIX}/include"
-  #    CACHE STRING "The include path to jpeg-turbo for OpenCv.")
-  #set(OPENCV_JPEG_LIBRARY "${CMAKE_INSTALL_PREFIX}/lib"
-  #  CACHE STRING "The library path to jpeg-turbo for OpenCv.")
 endif ()
 
 
