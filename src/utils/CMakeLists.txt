@@ -9,6 +9,7 @@ set_full_path(THIS_DIR_SOURCES
   protobuf_utils.cpp
   quantizer.cpp
   random.cpp
+  stack_profiler.cpp
   stack_trace.cpp
   statistics.cpp
   summary.cpp

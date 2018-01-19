@@ -80,10 +80,8 @@
 #include "lbann/layers/regularizers/batch_normalization.hpp"
 
 /// I/O Layers
-#include "lbann/layers/io/input/input_layer_distributed_minibatch.hpp"
-#include "lbann/layers/io/target/target_layer_distributed_minibatch.hpp"
-#include "lbann/layers/io/input/input_layer_partitioned_minibatch.hpp"
-#include "lbann/layers/io/target/target_layer_partitioned_minibatch.hpp"
+#include "lbann/layers/io/input/input_layer.hpp"
+#include "lbann/layers/io/target/target_layer.hpp"
 
 /// Reconstruction Layer
 #include "lbann/layers/io/target/reconstruction.hpp"
@@ -103,6 +101,10 @@
 #include "lbann/data_readers/data_reader_merge_features.hpp"
 #include "lbann/data_readers/data_reader_ascii.hpp"
 #include "lbann/data_readers/data_reader_pilot2_molecular.hpp"
+
+/// Data Store
+#include "lbann/data_store/generic_data_store.hpp"
+#include "lbann/data_store/data_store_imagenet.hpp"
 
 /// Callbacks
 #include "lbann/callbacks/callback_check_init.hpp"
@@ -131,6 +133,7 @@
 #include "lbann/callbacks/callback_gradient_check.hpp"
 #include "lbann/callbacks/callback_timeline.hpp"
 #include "lbann/callbacks/callback_checkpoint.hpp"
+#include "lbann/callbacks/callback_save_model.hpp"
 
 /// Weights and weight initializers
 #include "lbann/weights/weights.hpp"

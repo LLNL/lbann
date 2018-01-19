@@ -41,7 +41,7 @@ void lbann_callback_variable_minibatch::on_train_begin(model *m) {
   if (m->get_cur_epoch() != 0) {
     return;
   }
-  auto* input = dynamic_cast<input_layer*>(m->get_layers()[0]);
+  auto* input = dynamic_cast<generic_input_layer*>(m->get_layers()[0]);
   if (!input) {
     throw lbann_exception("variable_minibatch: could not get input layer");
   }
@@ -60,7 +60,7 @@ void lbann_callback_variable_minibatch::on_train_begin(model *m) {
 }
 
 void lbann_callback_variable_minibatch::on_epoch_end(model *m) {
-  auto* input = dynamic_cast<input_layer*>(m->get_layers()[0]);
+  auto* input = dynamic_cast<generic_input_layer*>(m->get_layers()[0]);
   lbann_comm *comm = m->get_comm();
   int new_mbsize = 0;
   float new_lr = 0.0f;

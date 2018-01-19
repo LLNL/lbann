@@ -112,7 +112,30 @@ std::string add_delimiter(const std::string dir) {
   return new_dir;
 }
 
- 
+
+/**
+ * Add tag to a file name and/or change the extension.
+ * i.e., given a file_name as "name.ext", a new name "name.tag.new_ext" is returned
+ * If a new extension is not specified, it assumes the same.
+ * To change the extension without adding a tag, set tag to a null string.
+ */
+std::string modify_file_name(const std::string file_name, const std::string tag, const std::string new_ext) {
+  std::string dir;
+  std::string name;
+  bool ok = parse_path(file_name, dir, name);
+  if (!ok) {
+    return std::string();
+  }
+  std::string ext = (new_ext.empty() ? get_ext_name(name) : new_ext);
+  name = get_basename_without_ext(name);
+
+  if (!tag.empty()) {
+    name = name + '.' + tag;
+  }
+  return (dir + name + '.' + ext);
+}
+
+
 /// Return true if a file with the given name exists.
 bool check_if_file_exists(const std::string& filename) {
   std::ifstream ifile(filename);
@@ -162,7 +185,14 @@ bool create_dir(const std::string dirname) {
   }
 
   std::string cmd = std::string("mkdir -p ") + dir;
+#if 1 // for ray
+  char cmdstr[cmd.size()+1];
+  std::copy(cmd.begin(), cmd.end(), &cmdstr[0]);
+  cmdstr[cmd.size()] = '\0';
+  const int r = ::system(&cmdstr[0]);
+#else
   const int r = ::system(cmd.c_str());
+#endif
 
   if (WEXITSTATUS(r) == 0x10) {
     return true;

@@ -37,6 +37,7 @@
 #include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/io/persist.hpp"
+#include <lbann.pb.h>
 #include <string>
 #include <vector>
 
@@ -160,7 +161,7 @@ class Layer {
       layer has to overrride this with its T_layout template parameter */
   virtual data_layout get_data_layout() const = 0;
   /** Return (a view of) the activations matrix for this layer. */
-  virtual AbsDistMat& get_activations() {
+  virtual AbsDistMat& get_activations() const {
     return *m_activations_v;
   }
   /** Reset layer stat counters. */
@@ -204,6 +205,9 @@ class Layer {
 
   virtual bool save_to_checkpoint_shared(persist& p) const;
   virtual bool load_from_checkpoint_shared(persist& p);
+  
+  /** Write layer to proto file */
+  virtual void write_proto(lbann_data::Layer* proto) const;
 
   /** Get forward propagation output, as seen by next layer. */
   virtual void get_fp_output(AbsDistMat& fp_output, const Layer* next_layer = nullptr) const;
@@ -332,7 +336,6 @@ class Layer {
    */
   int m_max_num_child_layers;
 
-  execution_mode  m_execution_mode;
   model *m_model;
 
   /** Setup views of the matrices for the layer's forward propagation. */

@@ -104,7 +104,7 @@ EvalType l2_weight_regularization::evaluate() {
   return m_scale_factor * value;
 }
 
-void l2_weight_regularization::differentiate() {
+void l2_weight_regularization::compute_weight_regularization() {
   if (m_scale_factor == EvalType(0)) { return; }
   for (weights* w : m_weights) {
     optimizer* opt = w->get_optimizer();

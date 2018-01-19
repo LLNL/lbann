@@ -331,3 +331,25 @@ bool lbann::image_utils::export_image(const std::string& fileExt, std::vector<uc
   return false;
 #endif // LBANN_HAS_OPENCV
 }
+
+bool lbann::image_utils::load_image(std::vector<unsigned char>& image_buf,
+                                    int& Width, int& Height, int& Type, cv_process& pp, ::Mat& data) {
+#ifdef __LIB_OPENCV
+  cv::Mat image = cv::imdecode(image_buf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+  bool ok = !image.empty() && pp.preprocess(image);
+  ok = ok && cv_utils::copy_cvMat_to_buf(image, data, pp);
+  // Disabling normalizer is needed because normalizer is not necessarily
+  // called during preprocessing but implicitly applied during data copying to
+  // reduce overhead.
+  pp.disable_lazy_normalizer();
+
+  _LBANN_MILD_EXCEPTION(!ok, "Image preprocessing or copying failed.", false)
+
+  Width  = image.cols;
+  Height = image.rows;
+  Type   = image.type();
+  return ok;
+#else
+  return false;
+#endif // __LIB_OPENCV
+}

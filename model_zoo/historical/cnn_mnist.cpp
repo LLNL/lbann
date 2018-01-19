@@ -205,7 +205,7 @@ int main(int argc, char *argv[]) {
 
 
     //first layer
-    Layer *ilayer = new input_layer_distributed_minibatch<data_layout::DATA_PARALLEL>(comm, parallel_io, data_readers);
+    Layer *ilayer = new input_layer<distributed_io_buffer, data_layout::DATA_PARALLEL>(comm, parallel_io, data_readers);
     dnn.add_layer(ilayer);
 
     // First convolution layer
@@ -301,7 +301,7 @@ int main(int argc, char *argv[]) {
     dnn.add_layer(sl);
 
     // Target layer
-    Layer *tlayer = new target_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(comm, dynamic_cast<input_layer*>(ilayer), parallel_io, data_readers, true);
+    Layer *tlayer = new target_layer<distributed_io_buffer, data_layout::MODEL_PARALLEL>(comm, dynamic_cast<generic_input_layer*>(ilayer), parallel_io, data_readers, true);
     dnn.add_layer(tlayer);
 
     auto* print_cb = new lbann_callback_print;
@@ -361,7 +361,7 @@ int main(int argc, char *argv[]) {
 
     // train
     dnn.train(trainParams.EpochCount);
-    
+
     // testing
     dnn.evaluate(execution_mode::testing);
 

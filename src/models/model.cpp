@@ -29,12 +29,13 @@
 #include "lbann/models/model.hpp"
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/io/persist.hpp"
-#include "lbann/layers/io/input/input_layer.hpp"
+#include "lbann/layers/io/input/generic_input_layer.hpp"
 #include <string>
 #include <unistd.h>
 #include <iomanip>
 #include <queue>
 #include <unordered_set>
+#include <lbann.pb.h>
 
 #include "mpi.h"
 
@@ -248,7 +249,7 @@ optimizer* model::create_optimizer() const {
 
 bool model::is_execution_mode_valid(execution_mode mode) const {
   for (const auto& layer : m_layers) {
-    const auto *input = dynamic_cast<const input_layer*>(layer);
+    const auto *input = dynamic_cast<const generic_input_layer*>(layer);
     if (input != nullptr
         && !input->is_execution_mode_valid(mode)) {
       return false;
@@ -567,6 +568,7 @@ bool model::train_mini_batch() {
   clear_error_signals();
   m_objective_function->differentiate();
   backward_prop();
+  m_objective_function->compute_weight_regularization();
 
   // Update step
   update_weights();
@@ -975,6 +977,12 @@ bool model::load_from_checkpoint_shared(persist& p) {
     m->load_from_checkpoint_shared(p);
   }
   return true;
+}
+
+void model::write_proto(lbann_data::Model* proto) {
+  proto->Clear();
+  if (m_comm->am_world_master()) 
+    proto->set_mini_batch_size(m_max_mini_batch_size);
 }
 
 }  // namespace lbann

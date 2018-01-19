@@ -27,8 +27,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/models/recurrent.hpp"
-#include "lbann/layers/io/input/input_layer.hpp"
-#include "lbann/layers/io/target/target_layer.hpp"
+#include "lbann/layers/io/input/generic_input_layer.hpp"
+#include "lbann/layers/io/target/generic_target_layer.hpp"
 #include "lbann/layers/transform/constant.hpp"
 #include "lbann/layers/activations/id.hpp"
 
@@ -64,10 +64,10 @@ void recurrent_model::setup_layer_topology() {
   auto input_slice   = *(m_layers.begin() + 1);
   auto target_concat = *(m_layers.end() - 2);
   auto target        = *(m_layers.end() - 1);
-  if (dynamic_cast<input_layer *>(m_layers.front()) == nullptr
+  if (dynamic_cast<generic_input_layer *>(m_layers.front()) == nullptr
       || input_slice->get_type() != "slice"
       || target_concat->get_type() != "concatenation"
-      || dynamic_cast<target_layer *>(m_layers.back()) == nullptr) {
+      || dynamic_cast<generic_target_layer *>(m_layers.back()) == nullptr) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
         << "expected the first layer to be an input layer, "
@@ -101,7 +101,7 @@ void recurrent_model::setup_layer_topology() {
                                             m_layers.end() - 2);
   const int roll_size = previous_roll_layers.size();
   for (int roll = 1; roll < m_unroll_depth; ++roll) {
-    
+
     // Construct current roll by copying layers from previous roll
     std::vector<Layer *> current_roll_layers;
     for (const auto& previous_layer : previous_roll_layers) {
@@ -324,7 +324,7 @@ void recurrent_model::setup_layer_execution_order() {
 
   // Reorder layers
   permute_layers(order);
-  
+
 }
 
 void recurrent_model::setup_layers() {

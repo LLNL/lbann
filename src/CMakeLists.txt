@@ -8,8 +8,8 @@ set_full_path(THIS_DIR_SOURCES
 
 # Add the subdirectories
 add_subdirectory(callbacks)
-add_subdirectory(data_distributions)
 add_subdirectory(data_readers)
+add_subdirectory(data_store)
 add_subdirectory(io)
 add_subdirectory(layers)
 add_subdirectory(metrics)

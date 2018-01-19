@@ -43,6 +43,7 @@ void imagenet_reader_org::set_defaults() {
   m_image_width = 256;
   m_image_height = 256;
   m_image_num_channels = 3;
+  set_linearized_image_size();
   m_num_labels = 1000;
 }
 
@@ -54,14 +55,12 @@ void imagenet_reader_org::set_input_params(const int width, const int height, co
 void imagenet_reader_org::allocate_pixel_bufs() {
   // Preallocate buffer space for each thread.
   m_pixel_bufs.resize(omp_get_max_threads());
-  const int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
   for (int i = 0; i < omp_get_max_threads(); ++i) {
-    m_pixel_bufs[i].resize(num_channel_values * sizeof(unsigned char));
+    m_pixel_bufs[i].resize(m_image_linearized_size * sizeof(unsigned char));
   }
 }
 
 bool imagenet_reader_org::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
-  const int num_channel_values = m_image_width * m_image_height * m_image_num_channels;
   const std::string imagepath = get_file_dir() + m_image_list[data_id].first;
 
   int width, height;
@@ -78,7 +77,7 @@ bool imagenet_reader_org::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) 
                           + imagepath + "[w,h]=[" + std::to_string(width) + "x" + std::to_string(height) +"]");
   }
 
-  for (int p = 0; p < num_channel_values; p++) {
+  for (int p = 0; p < m_image_linearized_size; p++) {
     X(p, mb_idx) = pixels[p];
   }
 

@@ -35,13 +35,13 @@ model {
   }
 
   ###################################################
-  # Callbacks 
+  # Callbacks
   ###################################################
   callback {
     imcomm {
       intermodel_comm_method: "normal"
       all_optimizers: true
-    }  
+    }
   }
   callback { print {} }
   callback { timer {} }
@@ -60,7 +60,9 @@ model {
     name: "data"
     children: "slice"
     data_layout: "data_parallel"
-    input_partitioned_minibatch {}
+    input {
+      io_buffer: "partitioned"
+    }
   }
 
   layer {
@@ -375,7 +377,8 @@ model {
     name: "target"
     children: ""
     data_layout: "data_parallel"
-    target_partitioned_minibatch {
+    target {
+      io_buffer: "partitioned"
       shared_data_reader: true
     }
   }

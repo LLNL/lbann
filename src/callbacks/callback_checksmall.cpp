@@ -32,7 +32,7 @@
 namespace lbann {
 
 void lbann_callback_checksmall::on_forward_prop_end(model *m, Layer *l) {
-  if (dynamic_cast<target_layer*>(l) != nullptr) {
+  if (dynamic_cast<generic_target_layer*>(l) != nullptr) {
     return;
   }
   const AbsDistMat& acts = l->get_activations();

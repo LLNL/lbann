@@ -50,7 +50,9 @@ model {
   layer {
     name: "data"
     data_layout: "model_parallel"
-    input_distributed_minibatch {}
+    input {
+      io_buffer: "distributed"
+    }
   }
 
   # encode1
