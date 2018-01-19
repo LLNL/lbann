@@ -45,9 +45,9 @@ ExternalProject_Add(JPEG-TURBO
   set(JPEG-TURBO_DIR ${JPEG-TURBO_CMAKE_INSTALL_PREFIX}
     CACHE INTERNAL "The install prefix of JPEG-TURBO.")
 
-  set(OPENCV_JPEG_INCLUDE_DIR "${JPEG_CMAKE_INSTALL_PREFIX}/include" 
-    CACHE PATH "JPEG include directory")
+  #set(OPENCV_JPEG_INCLUDE_DIR "${JPEG-TURBO_CMAKE_INSTALL_PREFIX}/include" 
+  #  CACHE PATH "JPEG include directory")
 
-  set(OPENCV_JPEG_LIBRARY "${JPEG_CMAKE_INSTALL_PREFIX}/lib/libjpeg.so" 
-    CACHE PATH "JPEG library")
-  include_directories(BEFORE ${JPEG-TURBO_CMAKE_INSTALL_PREFIX}/src)
+  #set(OPENCV_JPEG_LIBRARY "${JPEG-TURBO_CMAKE_INSTALL_PREFIX}/lib/libjpeg.so" 
+  #  CACHE PATH "JPEG library")
+  #include_directories(BEFORE ${JPEG-TURBO_CMAKE_INSTALL_PREFIX}/src)
