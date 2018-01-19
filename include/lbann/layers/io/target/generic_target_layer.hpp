@@ -46,7 +46,7 @@ class generic_target_layer : public io_layer {
 
  public:
   generic_target_layer(lbann_comm *comm, generic_input_layer* input_layer, std::map<execution_mode, generic_data_reader *> data_readers, bool for_regression = false)
-    : io_layer(comm, true, for_regression), m_paired_input_layer(input_layer) {
+    : io_layer(comm, true, for_regression), m_paired_input_layer(input_layer), io_buffer(nullptr)  {
     // Target layers have no children
     m_max_num_child_layers = 0;
   }
@@ -118,9 +118,11 @@ class generic_target_layer : public io_layer {
 
   void fp_set_std_matrix_view() override {
     io_layer::fp_set_std_matrix_view();
-    El::Int cur_mini_batch_size = m_model->get_current_mini_batch_size();
-    io_buffer->set_local_matrix_bypass(&this->m_activations_v->Matrix());
-    io_buffer->set_std_matrix_view(cur_mini_batch_size);
+    if(io_buffer != nullptr) {  /// Note that reconstruction layers do not have io_buffers
+      El::Int cur_mini_batch_size = m_model->get_current_mini_batch_size();
+      io_buffer->set_local_matrix_bypass(&this->m_activations_v->Matrix());
+      io_buffer->set_std_matrix_view(cur_mini_batch_size);
+    }
   }
 
   void fp_compute() override {
