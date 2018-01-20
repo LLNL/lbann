@@ -29,14 +29,14 @@ else
     export VTUNE_DIR=/usr/local/tools/vtune
 fi
 if [ "${ARCH}" == "x86_64" ]; then
-    cuDNN_DIR=/usr/gapps/brain/installs/cudnn/v5
+    export CUDNN_DIR=/usr/gapps/brain/installs/cudnn/v5
     if [ "${CLUSTER}" == "quartz" ]; then
         IPPROOT=/p/lscratchh/brainusr/ippicv_lnx
     else
         IPPROOT=/p/lscratchf/brainusr/ippicv_lnx
     fi
 elif [ "${ARCH}" == "ppc64le" ]; then
-    cuDNN_DIR=/usr/gapps/brain/cuda/targets/ppc64le-linux
+    export CUDNN_DIR=/usr/gapps/brain/cuda/targets/ppc64le-linux
 fi
 ELEMENTAL_MATH_LIBS=
 PATCH_OPENBLAS=ON
@@ -533,22 +533,22 @@ if [ "${CLUSTER}" == "surface" ] || [ "${CLUSTER}" == "ray" ]; then
     WITH_CUB=ON
     ELEMENTAL_USE_CUBLAS=OFF
     if [ "${CLUSTER}" == "ray" ]; then
-      NCCL_HOME_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.0.5-3+cuda8.0_ppc64el
+      export NCCL_HOME_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.0.5-3+cuda8.0_ppc64el
     else
-      NCCL_HOME_DIR=/usr/workspace/wsb/brain/nccl2/nccl-2.0.5+cuda8.0
+      export NCCL_HOME_DIR=/usr/workspace/wsb/brain/nccl2/nccl-2.0.5+cuda8.0
     fi
     if [ "${ARCH}" == "ppc64le" ]; then
-        CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda
+        export CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda
         CUDATOOLKIT_VERSION=$(ls -l ${CUDA_TOOLKIT_ROOT_DIR} | awk '{print $NF}' | cut -d '-' -f 2)
     elif [ -n "${CUDA_PATH}" ]; then
         CUDATOOLKIT_VERSION=$(basename "$CUDA_PATH" | sed 's/cudatoolkit-//')
-        CUDA_TOOLKIT_ROOT_DIR=${CUDA_PATH}
+      export  CUDA_TOOLKIT_ROOT_DIR=${CUDA_PATH}
     else
         CUDATOOLKIT_VERSION=8.0
         if [ ${USE_MODULES} -ne 0 ]; then
             module load cudatoolkit/${CUDATOOLKIT_VERSION}
         fi
-        CUDA_TOOLKIT_ROOT_DIR=/opt/cudatoolkit-${CUDATOOLKIT_VERSION}
+        export CUDA_TOOLKIT_ROOT_DIR=/opt/cudatoolkit-${CUDATOOLKIT_VERSION}
     fi
 else
     HAS_GPU=0
