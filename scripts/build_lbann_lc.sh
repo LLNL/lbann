@@ -530,6 +530,7 @@ if [ "${CLUSTER}" == "surface" ] || [ "${CLUSTER}" == "ray" ]; then
     HAS_GPU=1
     WITH_CUDA=${WITH_CUDA:-ON}
     WITH_CUDNN=ON
+    WITH_CUB=ON
     ELEMENTAL_USE_CUBLAS=OFF
     if [ "${CLUSTER}" == "ray" ]; then
       NCCL_HOME_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.0.5-3+cuda8.0_ppc64el
@@ -650,6 +651,7 @@ ${CMAKE_PATH}cmake \
 -D LBANN_SB_BUILD_OPENCV=ON \
 -D LBANN_SB_BUILD_JPEG_TURBO=ON \
 -D LBANN_SB_BUILD_PROTOBUF=ON \
+-D LBANN_SB_BUILD_CUB=${WITH_CUB}
 -D LBANN_SB_BUILD_LBANN=ON \ 
 -D CMAKE_CXX_FLAGS="${CXX_FLAGS}" \
 -D CMAKE_C_FLAGS="${C_FLAGS}" \
