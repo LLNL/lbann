@@ -20,13 +20,13 @@ Elemental_DIR=
 if [ "${TOSS}" == "3.10.0" ]; then
     OpenCV_DIR=""
     if [ "${ARCH}" == "x86_64" ]; then
-        VTUNE_DIR=/usr/tce/packages/vtune/default
+        export VTUNE_DIR=/usr/tce/packages/vtune/default
     elif [ "${ARCH}" == "ppc64le" ]; then
-        VTUNE_DIR=
+        export VTUNE_DIR=
     fi
 else
     OpenCV_DIR=/usr/gapps/brain/tools/OpenCV/2.4.13
-    VTUNE_DIR=/usr/local/tools/vtune
+    export VTUNE_DIR=/usr/local/tools/vtune
 fi
 if [ "${ARCH}" == "x86_64" ]; then
     cuDNN_DIR=/usr/gapps/brain/installs/cudnn/v5
