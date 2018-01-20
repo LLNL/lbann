@@ -105,16 +105,17 @@ class split_layer : public transform_layer {
       auto& gradient_wrt_input_d = m_error_signals_d[0];
       for (const auto& gradient_wrt_output_d : this->m_prev_error_signals_d) {
         for (int i=0; i<num_gpus; ++i) {
+          CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
           CHECK_CUBLAS(cublas::geam(this->m_cudnn->get_cublas_handle(i),
                                     CUBLAS_OP_N, CUBLAS_OP_N,
                                     gradient_wrt_input_d.get_height(),
                                     this->m_mini_batch_size_per_gpu,
                                     DataType(1),
-                                    gradient_wrt_input_d.get_locked_data(i),
-                                    gradient_wrt_input_d.get_leading_dim(),
-                                    DataType(1),
                                     gradient_wrt_output_d.get_locked_data(i),
                                     gradient_wrt_output_d.get_leading_dim(),
+                                    DataType(1),
+                                    gradient_wrt_input_d.get_locked_data(i),
+                                    gradient_wrt_input_d.get_leading_dim(),
                                     gradient_wrt_input_d.get_data(i),
                                     gradient_wrt_input_d.get_leading_dim()));
         }

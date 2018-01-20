@@ -311,7 +311,6 @@ class slice_layer : public transform_layer {
 
     // Input tensor
     const auto& input_d = m_prev_activations_d[0];
-    const int width_per_gpu = this->m_mini_batch_size_per_gpu;
 
     // Get number of contiguous regions in a tensor slice of width 1
     const auto& input_dims = this->m_prev_neuron_dims;
@@ -346,7 +345,7 @@ class slice_layer : public transform_layer {
         for (auto& ptr : input_ptrs) { ptr += input_region_start; }
         output_d.locked_attach(input_ptrs,
                                output_d.get_height(),
-                               width_per_gpu,
+                               input_d.get_width_per_gpu(),
                                input_d.get_leading_dim());
       } else {
         for (int region = 0; region < num_regions; ++region) {
@@ -360,11 +359,11 @@ class slice_layer : public transform_layer {
           }
           input_region_d.locked_attach(input_ptrs,
                                        output_region_stride,
-                                       width_per_gpu,
+                                       this->m_mini_batch_size_per_gpu,
                                        input_d.get_leading_dim());
           output_region_d.attach(output_ptrs,
                                  output_region_stride,
-                                 width_per_gpu,
+                                 this->m_mini_batch_size_per_gpu,
                                  output_d.get_leading_dim());
           output_region_d.copy(input_region_d);
         }
@@ -383,7 +382,6 @@ class slice_layer : public transform_layer {
 
     // Gradient w.r.t. input
     auto& gradient_wrt_input_d = m_error_signals_d[0];
-    const int width_per_gpu = this->m_mini_batch_size_per_gpu;
 
     // Get number of contiguous regions in a tensor slice of width 1
     const auto& input_dims = this->m_prev_neuron_dims;
@@ -425,18 +423,19 @@ class slice_layer : public transform_layer {
         }
         gradient_wrt_input_region_d.attach(gradient_wrt_input_ptrs,
                                            output_region_stride,
-                                           width_per_gpu,
+                                           this->m_mini_batch_size_per_gpu,
                                            gradient_wrt_input_d.get_leading_dim());
         gradient_wrt_output_region_d.locked_attach(gradient_wrt_output_ptrs,
                                                    output_region_stride,
-                                                   width_per_gpu,
+                                                   this->m_mini_batch_size_per_gpu,
                                                    gradient_wrt_output_d.get_leading_dim());
         const int num_gpus = m_cudnn->get_num_gpus();
         for (int gpu = 0; gpu < num_gpus; ++gpu) {
+          CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(gpu)));
           CHECK_CUBLAS(cublas::geam(this->m_cudnn->get_cublas_handle(gpu),
                                     CUBLAS_OP_N, CUBLAS_OP_N,
                                     gradient_wrt_output_region_d.get_height(),
-                                    gradient_wrt_output_region_d.get_width_per_gpu(),
+                                    this->m_mini_batch_size_per_gpu,
                                     DataType(1),
                                     gradient_wrt_output_region_d.get_locked_data(gpu),
                                     gradient_wrt_output_region_d.get_leading_dim(),

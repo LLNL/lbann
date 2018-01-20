@@ -239,7 +239,8 @@ void Layer::forward_prop() {
                                     m_max_mini_batch_size_per_gpu);
         m_cudnn->scatter_to_gpus(gpu_prev_activations.get_data(),
                                  get_local_prev_activations(i),
-                                 m_mini_batch_size_per_gpu);
+                                 m_mini_batch_size_per_gpu,
+                                 gpu_prev_activations.get_leading_dim());
       }
     }
 
@@ -270,14 +271,17 @@ void Layer::forward_prop() {
 #ifdef __LIB_CUDNN
   // Transfer outputs from GPUs to CPU if needed
   if (m_using_gpus) {
+    bool synchronization_needed = false;
     for (int i = 0; i < get_num_children(); ++i) {
       if (!m_child_layers[i]->using_gpus()) {
         m_cudnn->gather_from_gpus(get_local_activations(i),
                                   m_activations_d[i].get_locked_data(),
-                                  m_mini_batch_size_per_gpu);
-        m_cudnn->synchronize();
+                                  m_mini_batch_size_per_gpu,
+                                  m_activations_d[i].get_leading_dim());
+        synchronization_needed = true;
       }
     }
+    if (synchronization_needed) { m_cudnn->synchronize(); }
   }
 #endif // __LIB_CUDNN
 
@@ -304,7 +308,8 @@ void Layer::back_prop() {
                                       m_max_mini_batch_size_per_gpu);
         m_cudnn->scatter_to_gpus(gpu_prev_error_signals.get_data(),
                                  get_local_prev_error_signals(i),
-                                 m_mini_batch_size_per_gpu);
+                                 m_mini_batch_size_per_gpu,
+                                 gpu_prev_error_signals.get_leading_dim());
       }
     }
 
@@ -335,14 +340,17 @@ void Layer::back_prop() {
 #ifdef __LIB_CUDNN
   // Transfer outputs from GPUs to CPU if needed
   if (m_using_gpus) {
+    bool synchronization_needed = false;
     for (int i = 0; i < get_num_parents(); ++i) {
       if (!m_parent_layers[i]->using_gpus()) {
         m_cudnn->gather_from_gpus(get_local_error_signals(i),
                                   m_error_signals_d[i].get_locked_data(),
-                                  m_mini_batch_size_per_gpu);
-        m_cudnn->synchronize();
+                                  m_mini_batch_size_per_gpu,
+                                  m_error_signals_d[i].get_leading_dim());
+        synchronization_needed = true;
       }
     }
+    if (synchronization_needed) { m_cudnn->synchronize(); }
   }
 #endif // __LIB_CUDNN
 

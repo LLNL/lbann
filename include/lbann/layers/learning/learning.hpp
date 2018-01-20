@@ -31,6 +31,9 @@
 
 namespace lbann {
 
+/** Abstract base class for learning layers.
+ *  Learning layers have learnable parameters.
+ */
 class learning_layer : public Layer {
  public:
   /** Constructor. */
