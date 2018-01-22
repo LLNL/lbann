@@ -43,6 +43,10 @@ class imagenet_reader_single : public imagenet_reader {
 
   imagenet_reader_single* copy() const override { return new imagenet_reader_single(*this); }
 
+  std::string get_type() const override {
+    return "imagenet_reader_single";
+  }
+
   // ImageNet specific functions
   void load() override;
 

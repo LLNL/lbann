@@ -264,6 +264,9 @@ class generic_data_reader : public lbann_image_preprocessor {
    */
   void setup();
 
+  /** Return this data_reader's type */
+  virtual std::string get_type() const = 0;
+
   /** returns, in 'indicies,' all indicies that would be used internally
    *  in a call to fetch_data(). These are NOT shuffled indices.
    *  This method is added to support data_store functionality.

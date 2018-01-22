@@ -48,6 +48,9 @@ class pilot2_molecular_reader : public generic_data_reader {
   pilot2_molecular_reader* copy() const override {
     return new pilot2_molecular_reader(*this);
   }
+  std::string get_type() const override {
+    return "pilot2_molecular_reader";
+  }
 
   void load() override;
 

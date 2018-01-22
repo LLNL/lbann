@@ -43,6 +43,10 @@ class imagenet_reader_patches : public image_data_reader {
 
   imagenet_reader_patches* copy() const override { return new imagenet_reader_patches(*this); }
 
+  std::string get_type() const override {
+    return "imagenet_reader_patches";
+  }
+
   int get_linearized_data_size() const override {
     return m_image_linearized_size * m_num_patches;
   }
