@@ -231,25 +231,25 @@ void Layer::forward_prop() {
     // Transfer inputs from CPU to GPUs if needed
     for (int i = 0; i < get_num_parents(); ++i) {
       const auto& parent = *m_parent_layers[i];
-      auto& gpu_prev_activations = m_prev_activations_d[i];
+      auto& prev_activations_d = m_prev_activations_d[i];
       if (parent.using_gpus()) {
-        parent.get_gpu_fp_output(gpu_prev_activations, this);
+        parent.get_gpu_fp_output(prev_activations_d, this);
       } else {
-        gpu_prev_activations.resize(m_num_prev_neurons,
-                                    m_max_mini_batch_size_per_gpu);
-        m_cudnn->scatter_to_gpus(gpu_prev_activations.get_data(),
+        prev_activations_d.resize(m_num_prev_neurons,
+                                  m_max_mini_batch_size_per_gpu);
+        m_cudnn->scatter_to_gpus(prev_activations_d.get_data(),
                                  get_local_prev_activations(i),
                                  m_mini_batch_size_per_gpu,
-                                 gpu_prev_activations.get_leading_dim());
+                                 prev_activations_d.get_leading_dim());
       }
     }
 
     // Set tensor descriptors
     const int input_stride = (m_prev_activations_d.empty() ?
-                              0 :
+                              m_num_prev_neurons :
                               m_prev_activations_d[0].get_leading_dim());
     const int output_stride = (m_activations_d.empty() ?
-                               0 :
+                               m_num_neurons :
                                m_activations_d[0].get_leading_dim());
     cudnn::set_tensor_cudnn_desc(m_prev_activations_cudnn_desc,
                                  m_mini_batch_size_per_gpu,
@@ -269,8 +269,24 @@ void Layer::forward_prop() {
   m_fp_compute_time += get_time() - fp_compute_start;
 
 #ifdef __LIB_CUDNN
-  // Transfer outputs from GPUs to CPU if needed
   if (m_using_gpus) {
+
+    // Clear unused columns on GPU
+    const int local_mini_batch_size = (get_num_parents() > 0 ?
+                                       get_prev_activations().LocalWidth() :
+                                       get_activations().LocalWidth());
+    for (int i = 0; i < get_num_children(); ++i) {
+      auto& activations_d = m_activations_d[i];
+      if (!activations_d.is_locked()) {
+        m_cudnn->clear_unused_columns_on_gpus(activations_d.get_data(),
+                                              activations_d.get_height(),
+                                              local_mini_batch_size,
+                                              m_mini_batch_size_per_gpu,
+                                              activations_d.get_leading_dim());
+      }
+    }    
+
+    // Transfer outputs from GPUs to CPU if needed
     bool synchronization_needed = false;
     for (int i = 0; i < get_num_children(); ++i) {
       if (!m_child_layers[i]->using_gpus()) {
@@ -282,6 +298,7 @@ void Layer::forward_prop() {
       }
     }
     if (synchronization_needed) { m_cudnn->synchronize(); }
+
   }
 #endif // __LIB_CUDNN
 
@@ -300,25 +317,25 @@ void Layer::back_prop() {
     // Transfer inputs from CPU to GPUs if needed
     for (int i = 0; i < get_num_children(); ++i) {
       const auto& child = *m_child_layers[i];
-      auto& gpu_prev_error_signals = m_prev_error_signals_d[i];
+      auto& prev_error_signals_d = m_prev_error_signals_d[i];
       if (child.using_gpus()) {
-        child.get_gpu_bp_output(gpu_prev_error_signals, this);
+        child.get_gpu_bp_output(prev_error_signals_d, this);
       } else {
-        gpu_prev_error_signals.resize(m_num_neurons,
-                                      m_max_mini_batch_size_per_gpu);
-        m_cudnn->scatter_to_gpus(gpu_prev_error_signals.get_data(),
+        prev_error_signals_d.resize(m_num_neurons,
+                                    m_max_mini_batch_size_per_gpu);
+        m_cudnn->scatter_to_gpus(prev_error_signals_d.get_data(),
                                  get_local_prev_error_signals(i),
                                  m_mini_batch_size_per_gpu,
-                                 gpu_prev_error_signals.get_leading_dim());
+                                 prev_error_signals_d.get_leading_dim());
       }
     }
 
     // Set tensor descriptors
     const int input_stride = (m_prev_error_signals_d.empty() ?
-                              0 :
+                              m_num_neurons :
                               m_prev_error_signals_d[0].get_leading_dim());
     const int output_stride = (m_error_signals_d.empty() ?
-                               0 :
+                               m_num_prev_neurons :
                                m_error_signals_d[0].get_leading_dim());
     cudnn::set_tensor_cudnn_desc(m_prev_error_signals_cudnn_desc,
                                  m_mini_batch_size_per_gpu,
@@ -338,8 +355,24 @@ void Layer::back_prop() {
   m_bp_compute_time += get_time() - bp_compute_start;
 
 #ifdef __LIB_CUDNN
-  // Transfer outputs from GPUs to CPU if needed
   if (m_using_gpus) {
+
+    // Clear unused columns on GPU
+    const int local_mini_batch_size = (get_num_parents() > 0 ?
+                                       get_prev_activations().LocalWidth() :
+                                       get_activations().LocalWidth());
+    for (int i = 0; i < get_num_parents(); ++i) {
+      auto& error_signals_d = m_error_signals_d[i];
+      if (!error_signals_d.is_locked()) {
+        m_cudnn->clear_unused_columns_on_gpus(error_signals_d.get_data(),
+                                              error_signals_d.get_height(),
+                                              local_mini_batch_size,
+                                              m_mini_batch_size_per_gpu,
+                                              error_signals_d.get_leading_dim());
+      }
+    }    
+
+    // Transfer outputs from GPUs to CPU if needed
     bool synchronization_needed = false;
     for (int i = 0; i < get_num_parents(); ++i) {
       if (!m_parent_layers[i]->using_gpus()) {

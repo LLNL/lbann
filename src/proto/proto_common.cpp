@@ -537,7 +537,7 @@ void add_layers(
           pool_strides.push_back(i);
         }
         if (layout == data_layout::MODEL_PARALLEL and master) {
-          err << __FILE__ << " " << __LINE__ << " :: local_response_normalization "
+          err << __FILE__ << " " << __LINE__ << " :: pooling_layer "
               << "does not support MODEL_PARALLEL layouts";
           throw lbann_exception(err.str());
         } else {
@@ -553,7 +553,7 @@ void add_layers(
         }
       } else {
         if (layout == data_layout::MODEL_PARALLEL and master) {
-          err << __FILE__ << " " << __LINE__ << " :: local_response_normalization "
+          err << __FILE__ << " " << __LINE__ << " :: pooling_layer "
               << "does not support MODEL_PARALLEL layouts";
           throw lbann_exception(err.str());
         } else {
