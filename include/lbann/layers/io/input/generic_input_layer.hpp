@@ -46,6 +46,7 @@ class generic_input_layer : public io_layer {
               std::map<execution_mode, generic_data_reader *> data_readers,
               bool data_set_spans_models = true)
     : io_layer(comm, data_set_spans_models),
+      io_buffer(nullptr),
       m_training_dataset(),
       m_testing_dataset(),
       m_validation_dataset(),
