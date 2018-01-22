@@ -73,7 +73,7 @@ endif ()
 
 # Initialize C++ flags
 lbann_check_and_append_flag(CMAKE_CXX_FLAGS
-  -fPIC -g -Wall -Wextra -Wno-unused-parameter -Wnon-virtual-dtor -Wshadow -ldl)
+  -fPIC -g -Wall -Wextra -Wno-unused-parameter -Wnon-virtual-dtor -Wshadow)
 
 # Disable all optimization in debug for better viewing under debuggers (cmake already adds -g)
 lbann_check_and_append_flag(CMAKE_CXX_FLAGS_DEBUG -O0)

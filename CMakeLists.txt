@@ -189,6 +189,18 @@ if (LBANN_HAS_CUDA)
   endif (LBANN_WITH_NCCL)
 endif (LBANN_HAS_CUDA)
 
+# This shouldn't be here, but is ok for now. This will occasionally be
+# part of another TPL's libraries (e.g., MKL), but it's no
+# guarantee. There's no harm including it multiple times.
+find_library(DL_LIBRARY dl DOC "The dynamic loader library.")
+if (DL_LIBRARY)
+  message("Found dl: ${DL_LIBRARY}")
+else ()
+  message(FATAL_ERROR
+    "dl library not found! This is a required library.\n"
+    "Please add the path to libdl to CMAKE_LIBRARY_PATH.")
+endif (DL_LIBRARY)
+
 # Other optional dependencies
 if (LBANN_WITH_TBINF)
   add_subdirectory(external/TBinf)
@@ -291,8 +303,9 @@ if(LBANN_HAS_CUDNN)
 endif ()
 if (LBANN_HAS_VTUNE)
   target_link_libraries(lbann PUBLIC ${VTUNE_STATIC_LIB})
-  target_link_libraries(lbann PUBLIC dl)
 endif ()
+
+target_link_libraries(lbann PUBLIC ${DL_LIBRARY})
 
 # Add the rest of the things
 add_subdirectory(model_zoo)
