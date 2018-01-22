@@ -276,7 +276,7 @@ fi
 
 if [ ${CLUSTER} == "ray" ]; then
     module load cmake
-    CMAKE_PATH=
+    CMAKE_PATH=$(dirname $(which cmake))
 fi
 
 ################################################################
