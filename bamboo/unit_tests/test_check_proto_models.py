@@ -15,6 +15,9 @@ def test_models(exe):
         if 'greedy' in subdir:
             print('Skipping greedy_layerwise_autoencoder_mnist, kills bamboo agent')
             continue
+        elif 'autoencoder_imagenet' in subdir:
+            print('Skipping autoencoder_imagenet, kills bamboo agent')
+            continue            
         for file_name in files:
             if file_name.endswith('.prototext') and "model" in file_name:
                 model_path = subdir + '/' + file_name
