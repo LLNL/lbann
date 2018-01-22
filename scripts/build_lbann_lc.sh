@@ -20,24 +20,25 @@ Elemental_DIR=
 if [ "${TOSS}" == "3.10.0" ]; then
     OpenCV_DIR=""
     if [ "${ARCH}" == "x86_64" ]; then
-        VTUNE_DIR=/usr/tce/packages/vtune/default
+        export VTUNE_DIR=/usr/tce/packages/vtune/default
     elif [ "${ARCH}" == "ppc64le" ]; then
-        VTUNE_DIR=
+        export VTUNE_DIR=
     fi
 else
     OpenCV_DIR=/usr/gapps/brain/tools/OpenCV/2.4.13
-    VTUNE_DIR=/usr/local/tools/vtune
+    export VTUNE_DIR=/usr/local/tools/vtune
 fi
 if [ "${ARCH}" == "x86_64" ]; then
-    CUDNN_DIR=/usr/gapps/brain/installs/cudnn/v5
+    export CUDNN_DIR=/usr/gapps/brain/installs/cudnn/v5
     if [ "${CLUSTER}" == "quartz" ]; then
         IPPROOT=/p/lscratchh/brainusr/ippicv_lnx
     else
         IPPROOT=/p/lscratchf/brainusr/ippicv_lnx
     fi
 elif [ "${ARCH}" == "ppc64le" ]; then
-    CUDNN_DIR=/usr/gapps/brain/cuda/targets/ppc64le-linux
+    export CUDNN_DIR=/usr/gapps/brain/cuda/targets/ppc64le-linux
 fi
+
 ELEMENTAL_MATH_LIBS=
 PATCH_OPENBLAS=ON
 C_FLAGS=
@@ -493,10 +494,11 @@ else
 fi
 
 # Get MPI compilers
-CMAKE_PREFIX_PATH=${MPI_DIR}:${CMAKE_PREFIX_PATH}
-MPI_C_COMPILER=${MPI_DIR}/bin/mpicc
-MPI_CXX_COMPILER=${MPI_DIR}/bin/mpicxx
-MPI_Fortran_COMPILER=${MPI_DIR}/bin/mpifort
+export MPI_HOME=${MPI_DIR}
+export CMAKE_PREFIX_PATH=${MPI_HOME}:${CMAKE_PREFIX_PATH}
+export MPI_C_COMPILER=${MPI_DIR}/bin/mpicc
+export MPI_CXX_COMPILER=${MPI_DIR}/bin/mpicxx
+export MPI_Fortran_COMPILER=${MPI_DIR}/bin/mpifort
 
 ################################################################
 # Initialize GPU libraries
@@ -509,22 +511,22 @@ if [ "${CLUSTER}" == "surface" ] || [ "${CLUSTER}" == "ray" ]; then
     WITH_CUB=ON
     ELEMENTAL_USE_CUBLAS=OFF
     if [ "${CLUSTER}" == "ray" ]; then
-      NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.0.5-3+cuda8.0_ppc64el
+        export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.0.5-3+cuda8.0_ppc64el
     else
-      NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl-2.0.5+cuda8.0
+        export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl-2.0.5+cuda8.0
     fi
     if [ "${ARCH}" == "ppc64le" ]; then
-        CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda
+        export CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda
         CUDATOOLKIT_VERSION=$(ls -l ${CUDA_TOOLKIT_ROOT_DIR} | awk '{print $NF}' | cut -d '-' -f 2)
     elif [ -n "${CUDA_PATH}" ]; then
         CUDATOOLKIT_VERSION=$(basename "$CUDA_PATH" | sed 's/cudatoolkit-//')
-       CUDA_TOOLKIT_ROOT_DIR=${CUDA_PATH}
+       export CUDA_TOOLKIT_ROOT_DIR=${CUDA_PATH}
     else
         CUDATOOLKIT_VERSION=8.0
         if [ ${USE_MODULES} -ne 0 ]; then
             module load cudatoolkit/${CUDATOOLKIT_VERSION}
         fi
-        CUDA_TOOLKIT_ROOT_DIR=/opt/cudatoolkit-${CUDATOOLKIT_VERSION}
+        export CUDA_TOOLKIT_ROOT_DIR=/opt/cudatoolkit-${CUDATOOLKIT_VERSION}
     fi
     # Hack for surface
     if [ "${CLUSTER}" == "surface" ]; then
@@ -532,7 +534,7 @@ if [ "${CLUSTER}" == "surface" ] || [ "${CLUSTER}" == "ray" ]; then
         . /usr/share/[mM]odules/init/bash
         module load cudatoolkit/${CUDATOOLKIT_VERSION}
         
-        CUDA_TOOLKIT_ROOT_DIR=/opt/cudatoolkit-${CUDATOOLKIT_VERSION}
+        export CUDA_TOOLKIT_ROOT_DIR=/opt/cudatoolkit-${CUDATOOLKIT_VERSION}
     fi
 else
     HAS_GPU=0
