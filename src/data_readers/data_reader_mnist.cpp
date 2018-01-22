@@ -90,7 +90,7 @@ void mnist_reader::load() {
   if (!fplbl) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: MNIST data reader: failed to open file: " + labelpath);
+      " :: " + get_type() + ": failed to open file: " + labelpath);
   }
 
   if (is_master()) {
@@ -108,7 +108,7 @@ void mnist_reader::load() {
   if (!fpimg) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: MNIST data reader: failed to open file: " + imagepath);
+      " :: " + get_type() + ": failed to open file: " + imagepath);
   }
 
   int magicnum2, numitems2, imgwidth, imgheight;
@@ -126,7 +126,7 @@ void mnist_reader::load() {
     fclose(fpimg);
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: MNIST data reader: numitems1 != numitems2");
+      " :: " + get_type() + ": numitems1 != numitems2");
   }
 
   if (m_first_n > 0) {

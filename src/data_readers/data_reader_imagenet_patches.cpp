@@ -38,7 +38,7 @@ imagenet_reader_patches::imagenet_reader_patches(const std::shared_ptr<cv_proces
 
   if (!pp) {
     std::stringstream err;
-    err << __FILE__<<" "<<__LINE__<< " :: Imagenet data reader construction error: no image processor";
+    err << __FILE__<<" "<<__LINE__<< " :: " << get_type() << " construction error: no image processor";
     throw lbann_exception(err.str());
   }
 
@@ -50,10 +50,11 @@ imagenet_reader_patches::imagenet_reader_patches(const imagenet_reader_patches& 
 {
   if (rhs.m_pps.size() == 0u || !rhs.m_pps[0]) {
     std::stringstream err;
-    err << __FILE__<<" "<<__LINE__<< " :: Imagenet data reader construction error: no image processor";
+    err << __FILE__<<" "<<__LINE__<< " :: " << get_type() << " construction error: no image processor";
     throw lbann_exception(err.str());
   }
   replicate_processor(*rhs.m_pps[0]);
+  m_num_patches = rhs.m_num_patches;
 }
 
 imagenet_reader_patches& imagenet_reader_patches::operator=(const imagenet_reader_patches& rhs) {
@@ -66,11 +67,10 @@ imagenet_reader_patches& imagenet_reader_patches::operator=(const imagenet_reade
 
   if (rhs.m_pps.size() == 0u || !rhs.m_pps[0]) {
     std::stringstream err;
-    err << __FILE__<<" "<<__LINE__<< " :: Imagenet data reader construction error: no image processor";
+    err << __FILE__<<" "<<__LINE__<< " :: " << get_type() << " construction error: no image processor";
     throw lbann_exception(err.str());
   }
   replicate_processor(*rhs.m_pps[0]);
-  m_num_patches = rhs.m_num_patches;
   return (*this);
 }
 
@@ -106,7 +106,7 @@ bool imagenet_reader_patches::replicate_processor(const cv_process_patches& pp) 
 
   if (!ok || (nthreads <= 0)) {
     std::stringstream err;
-    err << __FILE__<<" "<<__LINE__<< " :: Imagenet data reader construction error: cannot replicate image processor";
+    err << __FILE__<<" "<<__LINE__<< " :: " << get_type() << " construction error: cannot replicate image processor";
     throw lbann_exception(err.str());
     return false;
   }
@@ -128,8 +128,8 @@ bool imagenet_reader_patches::replicate_processor(const cv_process_patches& pp) 
 std::vector<::Mat> imagenet_reader_patches::create_datum_views(::Mat& X, const int mb_idx) const {
 /*
   if (X.Height() != get_linearized_data_size()) {
-    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
-                          + "ImageNet: inconsistent number of patches");
+    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " "
+                          + get_type() + ": inconsistent number of patches");
   }
 */
   std::vector<::Mat> X_v(m_num_patches);
@@ -155,13 +155,13 @@ bool imagenet_reader_patches::fetch_datum(Mat& X, int data_id, int mb_idx, int t
   }
 
   if(!ret) {
-    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
-                          + "ImageNet: image_utils::load_image failed to load - " 
+    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " "
+                          + get_type() + ": image_utils::load_image failed to load - "
                           + imagepath);
   }
   if((width * height * CV_MAT_CN(img_type)) != m_image_linearized_size) {
-    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
-                          + "ImageNet: mismatch data size -- either width, height or channel - "
+    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " "
+                          + get_type() + ": mismatch data size -- either width, height or channel - "
                           + imagepath + " [w,h,c]=[" + std::to_string(width) + "x" + std::to_string(height)
                           + "x" + std::to_string(CV_MAT_CN(img_type)) + "] != " + std::to_string(m_image_linearized_size));
   }
