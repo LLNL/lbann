@@ -53,8 +53,8 @@ imagenet_reader_patches::imagenet_reader_patches(const imagenet_reader_patches& 
     err << __FILE__<<" "<<__LINE__<< " :: " << get_type() << " construction error: no image processor";
     throw lbann_exception(err.str());
   }
-  replicate_processor(*rhs.m_pps[0]);
   m_num_patches = rhs.m_num_patches;
+  replicate_processor(*rhs.m_pps[0]);
 }
 
 imagenet_reader_patches& imagenet_reader_patches::operator=(const imagenet_reader_patches& rhs) {
@@ -70,6 +70,7 @@ imagenet_reader_patches& imagenet_reader_patches::operator=(const imagenet_reade
     err << __FILE__<<" "<<__LINE__<< " :: " << get_type() << " construction error: no image processor";
     throw lbann_exception(err.str());
   }
+  m_num_patches = rhs.m_num_patches;
   replicate_processor(*rhs.m_pps[0]);
   return (*this);
 }
