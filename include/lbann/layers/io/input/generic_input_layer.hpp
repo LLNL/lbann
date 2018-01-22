@@ -69,6 +69,9 @@ class generic_input_layer : public io_layer {
   }
 
   ~generic_input_layer() override {
+    if(io_buffer != nullptr) {
+      delete io_buffer;
+    }
     // Input layer always frees data readers.
     for (auto& dr : m_data_readers) {
       delete dr.second;
@@ -78,6 +81,7 @@ class generic_input_layer : public io_layer {
   // Input layers copy their datareaders.
   generic_input_layer(const generic_input_layer& other)
     : io_layer(other),
+      io_buffer(other.io_buffer),
       m_training_dataset(other.m_training_dataset),
       m_testing_dataset(other.m_testing_dataset),
       m_validation_dataset(other.m_validation_dataset),
@@ -89,6 +93,7 @@ class generic_input_layer : public io_layer {
 
   generic_input_layer& operator=(const generic_input_layer& other) {
     io_layer::operator=(other);
+    io_buffer = other.io_buffer->copy();
     for (auto& dr : m_data_readers) {
       dr.second = dr.second->copy();
     }

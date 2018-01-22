@@ -51,7 +51,11 @@ class generic_target_layer : public io_layer {
     m_max_num_child_layers = 0;
   }
 
-  ~generic_target_layer() override = default;
+  ~generic_target_layer() override {
+    if(io_buffer != nullptr) {
+      delete io_buffer;
+    }
+  };
 
   generic_target_layer(const generic_target_layer& other) = default;
 

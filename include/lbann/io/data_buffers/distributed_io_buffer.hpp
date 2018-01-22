@@ -91,6 +91,7 @@ class distributed_io_buffer : public generic_io_buffer {
       delete buf.second;
     }
   }
+  distributed_io_buffer* copy() const override { return new distributed_io_buffer(*this); }
 
   std::string get_type() const override { return "distributed_io_buffer"; }
 
