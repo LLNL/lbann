@@ -20,23 +20,23 @@ Elemental_DIR=
 if [ "${TOSS}" == "3.10.0" ]; then
     OpenCV_DIR=""
     if [ "${ARCH}" == "x86_64" ]; then
-        VTUNE_DIR=/usr/tce/packages/vtune/default
+        export VTUNE_DIR=/usr/tce/packages/vtune/default
     elif [ "${ARCH}" == "ppc64le" ]; then
-        VTUNE_DIR=
+        export VTUNE_DIR=
     fi
 else
     OpenCV_DIR=/usr/gapps/brain/tools/OpenCV/2.4.13
-    VTUNE_DIR=/usr/local/tools/vtune
+    export VTUNE_DIR=/usr/local/tools/vtune
 fi
 if [ "${ARCH}" == "x86_64" ]; then
-    cuDNN_DIR=/usr/gapps/brain/installs/cudnn/v5
+    export CUDNN_DIR=/usr/gapps/brain/installs/cudnn/v5
     if [ "${CLUSTER}" == "quartz" ]; then
         IPPROOT=/p/lscratchh/brainusr/ippicv_lnx
     else
         IPPROOT=/p/lscratchf/brainusr/ippicv_lnx
     fi
 elif [ "${ARCH}" == "ppc64le" ]; then
-    cuDNN_DIR=/usr/gapps/brain/cuda/targets/ppc64le-linux
+    export CUDNN_DIR=/usr/gapps/brain/cuda/targets/ppc64le-linux
 fi
 ELEMENTAL_MATH_LIBS=
 PATCH_OPENBLAS=ON
@@ -263,38 +263,45 @@ fi
 # Load packages
 if [ ${USE_MODULES} -ne 0 ]; then
     module load git
-    module load cmake
+    CMAKE_PATH=/usr/workspace/wsb/brain/utils/toss3/cmake-3.9.6/bin/ 
 else
     if [ "${CLUSTER}" == "surface" ]; then
         use git-2.8.0
-        use cmake-3.4.1
+        CMAKE_PATH=/usr/workspace/wsb/brain/utils/toss2/cmake-3.9.6/bin/
     else
         use git
-        use cmake
+        #use cmake
     fi
 fi
 
+if [ ${CLUSTER} == "ray" ]; then
+    module load cmake
+    CMAKE_PATH=
+fi
+ 
 ################################################################
 # Initialize directories
 ################################################################
 
 # Get LBANN root directory
-ROOT_DIR=$(git rev-parse --show-toplevel)
+#ROOT_DIR=$(git rev-parse --show-toplevel)
 
 # Initialize build directory
-if [ -z "${BUILD_DIR}" ]; then
-    BUILD_DIR=${ROOT_DIR}/build/${CLUSTER}.llnl.gov
-fi
-if [ -n "${BUILD_SUFFIX}" ]; then
-    BUILD_DIR=${BUILD_DIR}.${BUILD_SUFFIX}
-fi
-mkdir -p ${BUILD_DIR}
+#if [ -z "${BUILD_DIR}" ]; then
+#    BUILD_DIR=${ROOT_DIR}/build/${CLUSTER}.llnl.gov
+#fi
+#if [ -n "${BUILD_SUFFIX}" ]; then
+#    BUILD_DIR=${BUILD_DIR}.${BUILD_SUFFIX}
+#fi
+#mkdir -p ${BUILD_DIR}
 
 # Initialize install directory
-if [ -z "${INSTALL_DIR}" ]; then
-    INSTALL_DIR=${BUILD_DIR}
-fi
-mkdir -p ${INSTALL_DIR}
+#if [ -z "${INSTALL_DIR}" ]; then
+#    INSTALL_DIR=${BUILD_DIR}
+#fi
+#mkdir -p ${INSTALL_DIR}
+
+#SUPERBUILD_DIR="${ROOT_DIR}/superbuild"
 
 ################################################################
 # Initialize C/C++/Fortran compilers
@@ -307,7 +314,7 @@ if [ ${USE_MODULES} -ne 0 ]; then
         COMPILER_=gcc
     fi
     if [ -z "$(module list 2>&1 | grep ${COMPILER_})" ]; then
-        COMPILER_=$(module --terse spider ${COMPILER_} 2>&1 | sed '/^$/d' | tail -1)
+        #COMPILER_=$(module --terse spider ${COMPILER_} 2>&1 | sed '/^$/d' | tail -1)
         module load ${COMPILER_}
     fi
     if [ -z "$(module list 2>&1 | grep ${COMPILER_})" ]; then
@@ -331,7 +338,7 @@ else
     fi
     COMPILER_BASE="$(use -hv ${COMPILER_} | grep 'dk_alter PATH' | awk '{print $3}' | sed 's/\/bin//')"
 fi
-
+#COMPILER_STRIP="$(echo ${COMPILER_} | sed "s/[^[a-z]//g")"
 # Get compiler paths
 if [ "${COMPILER}" == "gnu" ]; then
     # GNU compilers
@@ -376,7 +383,6 @@ else
     echo "Unrecognized compiler (${COMPILER})"
     exit 1
 fi
-
 # Add compiler optimization flags
 if [ "${BUILD_TYPE}" == "Release" ]; then
     if [ "${COMPILER}" == "gnu" ]; then
@@ -384,6 +390,7 @@ if [ "${BUILD_TYPE}" == "Release" ]; then
         CXX_FLAGS="${CXX_FLAGS} -O3 ${INSTRUMENT}"
         Fortran_FLAGS="${Fortran_FLAGS} -O3"
         if [ "${CLUSTER}" == "catalyst" ]; then
+            #CMAKE_PATH="/usr/workspace/wsb/brain/utils/toss3/cmake-3.9.6/bin/"
             C_FLAGS="${C_FLAGS} -march=ivybridge -mtune=ivybridge"
             CXX_FLAGS="${CXX_FLAGS} -march=ivybridge -mtune=ivybridge"
             Fortran_FLAGS="${Fortran_FLAGS} -march=ivybridge -mtune=ivybridge"
@@ -417,6 +424,32 @@ C_FLAGS="${CXX_FLAGS} -ldl"
 # Set environment variables
 export CC=${C_COMPILER}
 export CXX=${CXX_COMPILER}
+
+
+################################################################
+# Initialize directories
+################################################################
+
+# Get LBANN root directory
+ROOT_DIR=$(git rev-parse --show-toplevel)
+
+# Initialize build directory
+if [ -z "${BUILD_DIR}" ]; then
+    BUILD_DIR=${ROOT_DIR}/build/${COMPILER}.${CLUSTER}.llnl.gov
+fi
+if [ -n "${BUILD_SUFFIX}" ]; then
+    BUILD_DIR=${BUILD_DIR}.${BUILD_SUFFIX}
+fi
+mkdir -p ${BUILD_DIR}
+
+# Initialize install directory
+if [ -z "${INSTALL_DIR}" ]; then
+    INSTALL_DIR=${BUILD_DIR}
+fi
+mkdir -p ${INSTALL_DIR}
+
+SUPERBUILD_DIR="${ROOT_DIR}/superbuild"
+
 
 ################################################################
 # Initialize MPI compilers
@@ -497,24 +530,25 @@ if [ "${CLUSTER}" == "surface" ] || [ "${CLUSTER}" == "ray" ]; then
     HAS_GPU=1
     WITH_CUDA=${WITH_CUDA:-ON}
     WITH_CUDNN=ON
+    WITH_CUB=ON
     ELEMENTAL_USE_CUBLAS=OFF
     if [ "${CLUSTER}" == "ray" ]; then
-      NCCL_HOME_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.0.5-3+cuda8.0_ppc64el
+      export NCCL_HOME_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.0.5-3+cuda8.0_ppc64el
     else
-      NCCL_HOME_DIR=/usr/workspace/wsb/brain/nccl2/nccl-2.0.5+cuda8.0
+      export NCCL_HOME_DIR=/usr/workspace/wsb/brain/nccl2/nccl-2.0.5+cuda8.0
     fi
     if [ "${ARCH}" == "ppc64le" ]; then
-        CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda
+        export CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda
         CUDATOOLKIT_VERSION=$(ls -l ${CUDA_TOOLKIT_ROOT_DIR} | awk '{print $NF}' | cut -d '-' -f 2)
     elif [ -n "${CUDA_PATH}" ]; then
         CUDATOOLKIT_VERSION=$(basename "$CUDA_PATH" | sed 's/cudatoolkit-//')
-        CUDA_TOOLKIT_ROOT_DIR=${CUDA_PATH}
+      export  CUDA_TOOLKIT_ROOT_DIR=${CUDA_PATH}
     else
         CUDATOOLKIT_VERSION=8.0
         if [ ${USE_MODULES} -ne 0 ]; then
             module load cudatoolkit/${CUDATOOLKIT_VERSION}
         fi
-        CUDA_TOOLKIT_ROOT_DIR=/opt/cudatoolkit-${CUDATOOLKIT_VERSION}
+        export CUDA_TOOLKIT_ROOT_DIR=/opt/cudatoolkit-${CUDATOOLKIT_VERSION}
     fi
 else
     HAS_GPU=0
@@ -606,49 +640,35 @@ fi
 
 # Configure build with CMake
 CONFIGURE_COMMAND=$(cat << EOF
-cmake \
+${CMAKE_PATH}cmake \
 -D CMAKE_EXPORT_COMPILE_COMMANDS=ON \
 -D CMAKE_BUILD_TYPE=${BUILD_TYPE} \
 -D CMAKE_INSTALL_MESSAGE=${CMAKE_INSTALL_MESSAGE} \
 -D CMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
+-D LBANN_SB_BUILD_CNPY=ON \
+-D LBANN_SB_BUILD_HYDROGEN=ON \
+-D LBANN_SB_BUILD_OPENBLAS=ON \
+-D LBANN_SB_BUILD_OPENCV=ON \
+-D LBANN_SB_BUILD_JPEG_TURBO=ON \
+-D LBANN_SB_BUILD_PROTOBUF=ON \
+-D LBANN_SB_BUILD_CUB=${WITH_CUB}
+-D LBANN_SB_BUILD_LBANN=ON \ 
+-D CMAKE_CXX_FLAGS="${CXX_FLAGS}" \
+-D CMAKE_C_FLAGS="${C_FLAGS}" \
 -D CMAKE_C_COMPILER=${C_COMPILER} \
 -D CMAKE_CXX_COMPILER=${CXX_COMPILER} \
 -D CMAKE_Fortran_COMPILER=${Fortran_COMPILER} \
--D GFORTRAN_LIB=${FORTRAN_LIB} \
--D MPI_C_COMPILER=${MPI_C_COMPILER} \
--D MPI_CXX_COMPILER=${MPI_CXX_COMPILER} \
--D MPI_Fortran_COMPILER=${MPI_Fortran_COMPILER} \
--D CMAKE_CXX_FLAGS="${CXX_FLAGS}" \
--D CMAKE_C_FLAGS="${C_FLAGS}" \
--D CMAKE_Fortran_FLAGS="${Fortran_FLAGS}" \
--D WITH_CUDA=${WITH_CUDA} \
--D WITH_CUDNN=${WITH_CUDNN} \
--D WITH_TBINF=${WITH_TBINF} \
--D WITH_VTUNE=${WITH_VTUNE} \
--D WITH_NVPROF=${WITH_NVPROF} \
--D Elemental_DIR=${Elemental_DIR} \
--D CUDA_TOOLKIT_ROOT_DIR=${CUDA_TOOLKIT_ROOT_DIR} \
--D cuDNN_DIR=${cuDNN_DIR} \
--D VTUNE_DIR=${VTUNE_DIR} \
--D ELEMENTAL_MATH_LIBS=${ELEMENTAL_MATH_LIBS} \
--D DATATYPE=${DATATYPE} \
--D VERBOSE=${VERBOSE} \
--D MAKE_NUM_PROCESSES=${MAKE_NUM_PROCESSES} \
--D LBANN_HOME=${ROOT_DIR} \
--D SEQ_INIT=${SEQ_INIT} \
--D COMPILER_VERSION=${COMPILER_VERSION} \
--D COMPILER_BASE=${COMPILER_BASE} \
--D WITH_LIBJPEG_TURBO=${WITH_LIBJPEG_TURBO} \
--D LIBJPEG_TURBO_DIR=${LIBJPEG_TURBO_DIR} \
--D PATCH_OPENBLAS=${PATCH_OPENBLAS} \
--D ELEMENTAL_USE_CUBLAS=${ELEMENTAL_USE_CUBLAS} \
--D WITH_NCCL=${WITH_NCCL} \
--D NCCL_HOME_DIR=${NCCL_HOME_DIR} \
--D WITH_TOPO_AWARE=${WITH_TOPO_AWARE} \
--D IPPROOT=${IPPROOT} \
-${ROOT_DIR}
+-D LBANN_WITH_NCCL=${WITH_NCCL} \
+-D LBANN_WITH_CUDA=${WITH_CUDA} \
+-D LBANN_WITH_NVPROF=${WITH_NVPROF} \
+-D LBANN_WITH_VTUNE=${WITH_VTUNE} \
+-D LBANN_WITH_TOPO_AWARE=${WITH_TOPO_AWARE} \
+-D LBANN_SEQUENTIAL_INITIALIZATION=${SEQ_INIT}
+${SUPERBUILD_DIR}
 EOF
 )
+
+
 if [ ${VERBOSE} -ne 0 ]; then
     echo "${CONFIGURE_COMMAND}"
 fi
@@ -659,10 +679,9 @@ if [ $? -ne 0 ]; then
     echo "--------------------"
     exit 1
 fi
-
 # Build LBANN with make
 # Note: Ensure Elemental to be built before LBANN. Dependency violation appears to occur only when using cuda_add_library.
-BUILD_COMMAND="make -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE} project_Elemental all"
+BUILD_COMMAND="make -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}"
 if [ ${VERBOSE} -ne 0 ]; then
     echo "${BUILD_COMMAND}"
 fi
