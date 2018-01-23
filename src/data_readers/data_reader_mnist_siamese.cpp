@@ -46,7 +46,9 @@ data_reader_mnist_siamese::data_reader_mnist_siamese(const std::shared_ptr<cv_pr
 }
 
 data_reader_mnist_siamese::data_reader_mnist_siamese(const data_reader_mnist_siamese& rhs)
-  : data_reader_multi_images(rhs)
+  : data_reader_multi_images(rhs),
+    m_shuffled_indices2(rhs.m_shuffled_indices2),
+    m_image_data(rhs.m_image_data)
 {}
 
 data_reader_mnist_siamese& data_reader_mnist_siamese::operator=(const data_reader_mnist_siamese& rhs) {
@@ -56,6 +58,8 @@ data_reader_mnist_siamese& data_reader_mnist_siamese::operator=(const data_reade
   }
 
   data_reader_multi_images::operator=(rhs);
+  m_shuffled_indices2 = rhs.m_shuffled_indices2;
+  m_image_data = rhs.m_image_data;
 
   return (*this);
 }
@@ -78,6 +82,10 @@ void data_reader_mnist_siamese::set_input_params() {
 }
 
 
+/**
+ * Fill the input minibatch matrix with the samples of image pairs by using
+ * the overloaded fetch_datum()
+ */
 int data_reader_mnist_siamese::fetch_data(Mat& X) {
   int nthreads = omp_get_max_threads();
   if(!position_valid()) {
@@ -137,6 +145,9 @@ int data_reader_mnist_siamese::fetch_data(Mat& X) {
 }
 
 
+/**
+ * Fill the ground truth table by using the overloaded fetch_label()
+ */
 int data_reader_mnist_siamese::fetch_labels(Mat& Y) {
   if(!position_valid()) {
     throw lbann_exception(
@@ -183,6 +194,10 @@ int data_reader_mnist_siamese::fetch_labels(Mat& Y) {
 }
 
 
+/**
+ * Take a pair of indices to the preloaded sample list, and copy the corresponding image
+ * data to the given minibatch matrix Y at the specified column with index mb_idx.
+ */
 bool data_reader_mnist_siamese::fetch_datum(Mat& X, std::pair<int, int> data_id, int mb_idx, int tid) {
 
   std::vector<::Mat> X_v = create_datum_views(X, mb_idx);
@@ -203,7 +218,7 @@ bool data_reader_mnist_siamese::fetch_datum(Mat& X, std::pair<int, int> data_id,
     using InputBuf_T = lbann::cv_image_type<uint8_t>;
     const cv::Mat image_buf(1, sample[i]->size()-1, InputBuf_T::T(1), &((*sample[i])[1]));
 #else
-    raw_data_t image_buf(sample[i]->begin()+1, sample[i]->end());
+    raw_data_t image_buf(sample[i]->begin()+1, sample[i]->end()); // make copy of the raw data
 #endif
     ret = lbann::image_utils::import_image(image_buf, width, height, img_type, *(m_pps[tid]), X_v[i]);
   
@@ -222,6 +237,11 @@ bool data_reader_mnist_siamese::fetch_datum(Mat& X, std::pair<int, int> data_id,
 }
 
 
+/**
+ * Take a pair of indices to the preloaded sample list, and compare the labels
+ * of the corresponding samples. Store 1 if equal or 0 to the given matrix Y at
+ * the specified column with index mb_idx.
+ */
 bool data_reader_mnist_siamese::fetch_label(Mat& Y, std::pair<int, int> data_id, int mb_idx, int tid) {
   const label_t label_1 = m_image_data[data_id.first][0];
   const label_t label_2 = m_image_data[data_id.second][0];
@@ -231,8 +251,10 @@ bool data_reader_mnist_siamese::fetch_label(Mat& Y, std::pair<int, int> data_id,
 }
 
 
+// The function is defined in data_readers/data_reader_mnist.cpp
 extern void load_mnist_data(const std::string imagepath, const std::string labelpath,
-  const int m_first_n, std::vector<std::vector<unsigned char> >& m_image_data);
+  const int first_n, std::vector<std::vector<unsigned char> >& m_image_data);
+
 
 void data_reader_mnist_siamese::load() {
   if (is_master()) {
@@ -273,6 +295,10 @@ void data_reader_mnist_siamese::load() {
 }
 
 
+/**
+ * Overrides to shuffle the second indices, m_shuffled_indices, managed by this
+ * derived class whenever the primary m_shuffle_indice gets shuffled.
+ */
 void data_reader_mnist_siamese::shuffle_indices() {
   if (m_shuffled_indices2.size() != m_shuffled_indices.size()) {
     m_shuffled_indices2 = m_shuffled_indices;

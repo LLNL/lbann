@@ -30,7 +30,7 @@
 #ifndef DATA_READER_TRIPLET_HPP
 #define DATA_READER_TRIPLET_HPP
 
-#include "data_reader_imagenet.hpp"
+#include "data_reader_multi_images.hpp"
 #include "cv_process.hpp"
 #include "offline_patches_npz.hpp"
 #include <vector>
@@ -39,12 +39,11 @@
 #include <iostream>
 
 namespace lbann {
-class data_reader_triplet : public imagenet_reader {
+class data_reader_triplet : public data_reader_multi_images {
  public:
   using label_t = offline_patches_npz::label_t;
   using sample_t = offline_patches_npz::sample_t;
 
-  data_reader_triplet(bool shuffle) = delete;
   data_reader_triplet(const std::shared_ptr<cv_process>& pp, bool shuffle = true);
   data_reader_triplet(const data_reader_triplet&);
   data_reader_triplet& operator=(const data_reader_triplet&);
@@ -69,13 +68,6 @@ class data_reader_triplet : public imagenet_reader {
   // dataset specific functions
   void load() override;
 
-  int get_linearized_data_size() const override {
-    return m_image_linearized_size * m_num_img_srcs;
-  }
-  const std::vector<int> get_data_dims() const override {
-    return {static_cast<int>(m_num_img_srcs)*m_image_num_channels, m_image_height, m_image_width};
-  }
-
   /// Return the sample list of current minibatch
   std::vector<sample_t> get_image_list_of_current_mb() const;
 
@@ -84,14 +76,12 @@ class data_reader_triplet : public imagenet_reader {
 
  protected:
   void set_defaults() override;
-  virtual std::vector<::Mat> create_datum_views(::Mat& X, const int mb_idx) const;
   bool fetch_datum(::Mat& X, int data_id, int mb_idx, int tid) override;
   bool fetch_label(::Mat& Y, int data_id, int mb_idx, int tid) override;
 
  protected:
   /// preprocessor for patches duplicated for each omp thread
   std::vector<std::unique_ptr<cv_process> > m_pps;
-  unsigned int m_num_img_srcs;
   offline_patches_npz m_samples;
 };
 

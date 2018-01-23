@@ -37,13 +37,13 @@
 namespace lbann {
 
 data_reader_triplet::data_reader_triplet(const std::shared_ptr<cv_process>& pp, bool shuffle)
-  : imagenet_reader(pp, shuffle) {
+  : data_reader_multi_images(pp, shuffle) {
   set_defaults();
 }
 
 data_reader_triplet::data_reader_triplet(const data_reader_triplet& rhs)
-  : imagenet_reader(rhs),
-    m_num_img_srcs(rhs.m_num_img_srcs)
+  : data_reader_multi_images(rhs),
+    m_samples(rhs.m_samples)
 {}
 
 data_reader_triplet& data_reader_triplet::operator=(const data_reader_triplet& rhs) {
@@ -52,8 +52,8 @@ data_reader_triplet& data_reader_triplet::operator=(const data_reader_triplet& r
     return (*this);
   }
 
-  imagenet_reader::operator=(rhs);
-  m_num_img_srcs = rhs.m_num_img_srcs;
+  data_reader_multi_images::operator=(rhs);
+  m_samples = rhs.m_samples;
 
   return (*this);
 }
@@ -70,26 +70,12 @@ void data_reader_triplet::set_defaults() {
   m_num_img_srcs = 3;
 }
 
+/**
+ * Same as the parent class method except the default value of the last argument,
+ * num_img_srcs, which is 3 here.
+ */
 void data_reader_triplet::set_input_params(const int width, const int height, const int num_ch, const int num_labels, const int num_img_srcs) {
-  imagenet_reader::set_input_params(width, height, num_ch, num_labels);
-  if (num_img_srcs > 0) {
-    m_num_img_srcs = num_img_srcs;
-  } else if (num_img_srcs < 0) {
-    std::stringstream err;
-    err << __FILE__<<" "<<__LINE__<< " :: " << get_type() << " setup error: invalid number of image sources";
-    throw lbann_exception(err.str());
-  }
-}
-
-
-std::vector<::Mat> data_reader_triplet::create_datum_views(::Mat& X, const int mb_idx) const {
-  std::vector<::Mat> X_v(m_num_img_srcs);
-  El::Int h = 0;
-  for(unsigned int i=0u; i < m_num_img_srcs; ++i) {
-    El::View(X_v[i], X, El::IR(h, h + m_image_linearized_size), El::IR(mb_idx, mb_idx + 1));
-    h = h + m_image_linearized_size;
-  }
-  return X_v;
+  data_reader_multi_images::set_input_params(width, height, num_ch, num_labels, num_img_srcs);
 }
 
 
@@ -105,6 +91,7 @@ bool data_reader_triplet::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) 
     if (m_data_store != nullptr) {
       std::vector<unsigned char> *image_buf;
       m_data_store->get_data_buf(data_id, image_buf, tid);
+      // This could probably have used image_utils::import_image()
       ret = lbann::image_utils::load_image(*image_buf, width, height, img_type, *(m_pps[tid]), X_v[i]);
     } else {
       ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v[i]);

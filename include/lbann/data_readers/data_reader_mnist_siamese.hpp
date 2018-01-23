@@ -71,6 +71,7 @@ class data_reader_mnist_siamese : public data_reader_multi_images {
   int fetch_labels(Mat& Y) override;
   
  protected:
+  /// Set the default configuration such as the width, height, and number of channels of the image sample
   void set_defaults() override;
   virtual bool fetch_datum(::Mat& X, std::pair<int,int> data_id, int mb_idx, int tid);
   virtual bool fetch_label(Mat& Y, std::pair<int, int> data_id, int mb_idx, int tid);
@@ -80,11 +81,10 @@ class data_reader_mnist_siamese : public data_reader_multi_images {
  protected:
   /// preprocessor for patches duplicated for each omp thread
   std::vector<std::unique_ptr<cv_process> > m_pps;
-  unsigned int m_num_img_srcs;
   using generic_data_reader::m_shuffled_indices;
   /// To randomly choose the siamese pair input online
   std::vector<int> m_shuffled_indices2;
-  /// To preload the data
+  /// Store the preloaded data
   std::vector<std::vector<unsigned char>> m_image_data;
 };
 
