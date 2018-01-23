@@ -1678,8 +1678,7 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
     model = new sequential_model(comm, mini_batch_size, obj_fn, default_optimizer);
     if (master) std::cout << "instantiating sequential_model\n";
   } 
-#if 0
-else if (name == "directed_acyclic_graph_model") {
+  else if (name == "directed_acyclic_graph_model") {
     model = new directed_acyclic_graph_model(comm, mini_batch_size, obj_fn, default_optimizer);
     if (master) std::cout << "instantiating directed_acyclic_graph_model\n";
   } else if (name == "recurrent_model") {
@@ -1700,7 +1699,6 @@ else if (name == "directed_acyclic_graph_model") {
     model = new greedy_layerwise_autoencoder(comm, mini_batch_size, obj_fn, default_optimizer);
     if (master) std::cout << "instantiating greedy_layerwise_autoencoder\n";
   }
-#endif
   else {
     if (master) {
       err << __FILE__ << " " << __LINE__

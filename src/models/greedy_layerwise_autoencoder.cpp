@@ -243,13 +243,6 @@ void greedy_layerwise_autoencoder::restore_sequential_model() {
 
 }
 
-void greedy_layerwise_autoencoder::clear_error_signals() {
-  sequential_model::clear_error_signals();
-  if (m_reconstruction != nullptr) {
-    m_reconstruction->clear_error_signals();
-  }
-}
-
 void greedy_layerwise_autoencoder::forward_prop(execution_mode mode) {
 
   // Use base implementation if model is sequential

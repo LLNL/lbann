@@ -30,7 +30,7 @@
 #include "lbann/layers/io/input/input_layer.hpp"
 #include "lbann/layers/io/target/target_layer.hpp"
 #include "lbann/layers/transform/constant.hpp"
-#include "lbann/layers/activations/id.hpp"
+#include "lbann/layers/transform/dummy.hpp"
 
 namespace lbann {
 
@@ -217,10 +217,10 @@ void recurrent_model::setup_layer_topology() {
           Layer *placeholder;
           switch (child->get_data_layout()) {
           case data_layout::DATA_PARALLEL:
-            placeholder = new id_layer<data_layout::DATA_PARALLEL>(get_comm());
+            placeholder = new dummy_layer<data_layout::DATA_PARALLEL>(get_comm());
             break;
           case data_layout::MODEL_PARALLEL:
-            placeholder = new id_layer<data_layout::MODEL_PARALLEL>(get_comm());
+            placeholder = new dummy_layer<data_layout::MODEL_PARALLEL>(get_comm());
             break;
           default:
             std::stringstream err;
