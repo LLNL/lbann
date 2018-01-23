@@ -604,6 +604,9 @@ class generic_data_reader : public lbann_image_preprocessor {
    */
   virtual void postprocess_data_source(int tid) {};
 
+  /// Shuffle indices
+  virtual void shuffle_indices();
+
   int m_mini_batch_size;
   int m_current_pos;
   /// Batch Stride is typically batch_size, but may be a multiple of batch size if there are multiple readers
