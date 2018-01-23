@@ -274,6 +274,24 @@ class Layer {
   /** Replace weights with another Layer's weights*/
   void replace_weights(Layer* other_layer);
 
+  AbsDistMat& get_prev_activations(int parent_index = 0);
+  AbsDistMat& get_activations(int child_index = 0);
+  AbsDistMat& get_prev_error_signals(int child_index = 0);
+  AbsDistMat& get_error_signals(int parent_index = 0);
+  const AbsDistMat& get_prev_activations(int parent_index = 0) const;
+  const AbsDistMat& get_activations(int child_index = 0) const;
+  const AbsDistMat& get_prev_error_signals(int child_index = 0) const;
+  const AbsDistMat& get_error_signals(int parent_index = 0) const;
+
+  Mat& get_local_prev_activations(int parent_index = 0);
+  Mat& get_local_activations(int child_index = 0);
+  Mat& get_local_prev_error_signals(int child_index = 0);
+  Mat& get_local_error_signals(int parent_index = 0);
+  const Mat& get_local_prev_activations(int parent_index = 0) const;
+  const Mat& get_local_activations(int child_index = 0) const;
+  const Mat& get_local_prev_error_signals(int child_index = 0) const;
+  const Mat& get_local_error_signals(int parent_index = 0) const;
+
  protected:
 
   lbann_comm *m_comm;
@@ -378,24 +396,6 @@ class Layer {
   virtual void bp_compute() = 0;
   /** Perform the main computation for an update step. */
   virtual bool update_compute() { return true; }
-
-  AbsDistMat& get_prev_activations(int parent_index = 0);
-  AbsDistMat& get_activations(int child_index = 0);
-  AbsDistMat& get_prev_error_signals(int child_index = 0);
-  AbsDistMat& get_error_signals(int parent_index = 0);
-  const AbsDistMat& get_prev_activations(int parent_index = 0) const;
-  const AbsDistMat& get_activations(int child_index = 0) const;
-  const AbsDistMat& get_prev_error_signals(int child_index = 0) const;
-  const AbsDistMat& get_error_signals(int parent_index = 0) const;
-
-  Mat& get_local_prev_activations(int parent_index = 0);
-  Mat& get_local_activations(int child_index = 0);
-  Mat& get_local_prev_error_signals(int child_index = 0);
-  Mat& get_local_error_signals(int parent_index = 0);
-  const Mat& get_local_prev_activations(int parent_index = 0) const;
-  const Mat& get_local_activations(int child_index = 0) const;
-  const Mat& get_local_prev_error_signals(int child_index = 0) const;
-  const Mat& get_local_error_signals(int parent_index = 0) const;
 
   /** Whether current layer is using GPUs. */
   bool m_using_gpus;

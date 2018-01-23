@@ -40,23 +40,12 @@ class reconstruction_layer : public target_layer {
 
   /** Original layer to reconstruct. */
   Layer *m_original_layer;
-  /** View of original layer activation */
-  AbsDistMat *original_layer_act_v;
 
  public:
   reconstruction_layer(lbann_comm *comm,
                        Layer *original_layer)
     :  target_layer(comm, dynamic_cast<input_layer*>(original_layer), {}, false),
        m_original_layer(original_layer) {}
-
-  reconstruction_layer(const reconstruction_layer& other) :
-    target_layer(other),
-    m_original_layer(other.m_original_layer) {}
-
-  reconstruction_layer& operator=(const reconstruction_layer& other) {
-    target_layer::operator=(other);
-    m_original_layer = other.m_original_layer;
-  }
 
   reconstruction_layer* copy() const override {
     throw lbann_exception("reconstruction_layer can't be copied");
@@ -93,34 +82,14 @@ class reconstruction_layer : public target_layer {
   }
 
  protected:
-  void fp_setup_data() override {
-    int64_t cur_mini_batch_size = this->m_model->get_current_mini_batch_size();
-
-    target_layer::fp_setup_data();
-
-    //view of original layer
-    AbsDistMat& orig_acts = m_original_layer->get_activations();
-    original_layer_act_v = orig_acts.Construct(orig_acts.Grid(),orig_acts.Root());
-    El::View(*original_layer_act_v, orig_acts, El::ALL, El::IR(0, cur_mini_batch_size));
-  }
 
   void fp_compute() override {
-
-    //Copy prev (decoder) activations for greedy layer wise training
-    El::Copy(*original_layer_act_v,*this->m_activations_v);
-
+    El::Copy(m_original_layer->get_activations(), *m_ground_truth);
   }
 
   void bp_compute() override {}
 
  public:
-  bool update_compute() override {
-    if(this->m_model->get_execution_mode() == execution_mode::training) {
-      double start = get_time();
-      this->update_time += get_time() - start;
-    }
-    return true;
-  }
 
   void summarize_stats(lbann_summary& summarizer, int step) override {
     std::string tag = this->m_name + "/ReconstructionCost";

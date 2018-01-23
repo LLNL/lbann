@@ -210,13 +210,13 @@ class target_layer : public io_layer {
   }
 
   /** Get prediction matrix. */
-  AbsDistMat& get_prediction()             { return get_prev_activations(); }
+  virtual AbsDistMat& get_prediction()             { return get_prev_activations(); }
   /** Get prediction matrix (const). */
-  const AbsDistMat& get_prediction() const { return get_prev_activations(); }
+  virtual const AbsDistMat& get_prediction() const { return get_prev_activations(); }
   /** Get ground truth matrix. */
-  AbsDistMat& get_ground_truth()             { return *m_ground_truth; }
+  virtual AbsDistMat& get_ground_truth()             { return *m_ground_truth; }
   /** Get ground truth matrix (const). */
-  const AbsDistMat& get_ground_truth() const { return *m_ground_truth; }
+  virtual const AbsDistMat& get_ground_truth() const { return *m_ground_truth; }
 
   std::vector<Layer*> get_layer_pointers() override {
     std::vector<Layer*> layers = io_layer::get_layer_pointers();

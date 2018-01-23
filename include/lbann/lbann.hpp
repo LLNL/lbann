@@ -66,7 +66,7 @@
 /// Transform Layers
 #include "lbann/layers/transform/reshape.hpp"
 #include "lbann/layers/transform/pooling.hpp"
-// #include "lbann/layers/transform/unpooling.hpp"
+#include "lbann/layers/transform/unpooling.hpp"
 #include "lbann/layers/transform/split.hpp"
 #include "lbann/layers/transform/sum.hpp"
 #include "lbann/layers/transform/slice.hpp"
@@ -79,7 +79,7 @@
 /// Regularization layers.
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
 #include "lbann/layers/regularizers/dropout.hpp"
-// #include "lbann/layers/regularizers/selu_dropout.hpp"
+#include "lbann/layers/regularizers/selu_dropout.hpp"
 #include "lbann/layers/regularizers/batch_normalization.hpp"
 
 /// I/O Layers
@@ -89,7 +89,7 @@
 #include "lbann/layers/io/target/target_layer_partitioned_minibatch.hpp"
 
 /// Reconstruction Layer
-// #include "lbann/layers/io/target/reconstruction.hpp"
+#include "lbann/layers/io/target/reconstruction.hpp"
 
 /// Data Readers
 #include "lbann/data_readers/data_reader_imagenet_org.hpp"

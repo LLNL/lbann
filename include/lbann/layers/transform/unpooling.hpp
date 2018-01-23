@@ -22,8 +22,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_layer_unpooling .hpp .cpp - Unpooling Layer (max, average)
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_LAYER_UNPOOLING_HPP_INCLUDED
@@ -37,26 +35,23 @@
 
 namespace lbann {
 
-/// Unpooling layer
+/** Unpooling layer. */
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
 class unpooling_layer : public transform_layer {
  private:
  
-  /// Corresponding pooling layer
+  /** Corresponding pooling layer. */
   pooling_layer<T_layout>* m_pooling_layer;
 
  public:
 
-  /// Constructor
+  /** Constructor. */
   unpooling_layer(lbann_comm *comm,
-                  pooling_layer<T_layout>* p_layer)
+                  pooling_layer<T_layout>* pool)
     : transform_layer(comm),
-      m_pooling_layer(p_layer) {
+      m_pooling_layer(pool) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "unpooling only supports DATA_PARALLEL");
-
-    // Setup the data distribution
-    initialize_distributed_matrices();
 
     // Check that pooling layer is valid
     if(m_pooling_layer->m_pool_mode != pool_mode::max) {
@@ -68,17 +63,10 @@ class unpooling_layer : public transform_layer {
 
   }
 
-  unpooling_layer(const unpooling_layer&) = default;
-  unpooling_layer& operator=(const unpooling_layer&) = default;
-  ~unpooling_layer() override = default;
-
   unpooling_layer* copy() const override { return new unpooling_layer(*this); }
 
   std::string get_type() const override { return "unpooling"; }
 
-  virtual inline void initialize_distributed_matrices() {
-    transform_layer::initialize_distributed_matrices<T_layout>();
-  }
   data_layout get_data_layout() const override { return T_layout; }
 
   void setup_dims() override {
@@ -124,8 +112,8 @@ class unpooling_layer : public transform_layer {
   void fp_compute_im2col() {
 
     // Get local matrices
-    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
-    Mat& activations_local = this->m_activations_v->Matrix();
+    const Mat& prev_activations_local = get_local_prev_activations();
+    Mat& activations_local = get_local_activations();
 
     // Get parameters
     const int local_width = prev_activations_local.Width();
@@ -166,9 +154,9 @@ class unpooling_layer : public transform_layer {
              num_channels,
              this->m_num_neuron_dims - 1,
              this->m_neuron_dims.data() + 1,
-             m_pooling_layer->m_pool_pads.data(),
+             m_pooling_layer->m_pads.data(),
              m_pooling_layer->m_pool_dims.data(),
-             m_pooling_layer->m_pool_strides.data(),
+             m_pooling_layer->m_strides.data(),
              static_cast<const DataType&(*)(const DataType&,const DataType&)>(&std::max<DataType>));
 
     }
@@ -179,8 +167,8 @@ class unpooling_layer : public transform_layer {
   void bp_compute_im2col() {
 
     // Get local matrices
-    const Mat& prev_error_signal_local = this->m_prev_error_signal_v->LockedMatrix();
-    Mat& error_signal_local = this->m_error_signal_v->Matrix();
+    const Mat& prev_error_signal_local = get_local_prev_error_signals();
+    Mat& error_signal_local = get_local_error_signals();
 
     // Get parameters
     const int local_width = prev_error_signal_local.Width();
@@ -202,9 +190,9 @@ class unpooling_layer : public transform_layer {
              num_channels,
              this->m_num_neuron_dims - 1,
              this->m_neuron_dims.data() + 1,
-             m_pooling_layer->m_pool_pads.data(),
+             m_pooling_layer->m_pads.data(),
              m_pooling_layer->m_pool_dims.data(),
-             m_pooling_layer->m_pool_strides.data());
+             m_pooling_layer->m_strides.data());
 
       // Propagate error signal based on pooling layer
       DataType *output_buffer = error_signal_local.Buffer(0, sample);
@@ -244,14 +232,6 @@ class unpooling_layer : public transform_layer {
   }
 
 };
-
-template<> inline void unpooling_layer<data_layout::MODEL_PARALLEL>::initialize_distributed_matrices() {
-  transform_layer::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>();
-}
-
-template<> inline void unpooling_layer<data_layout::DATA_PARALLEL>::initialize_distributed_matrices() {
-  transform_layer::initialize_distributed_matrices<data_layout::DATA_PARALLEL>();
-}
 
 }  // namespace lbann
 
