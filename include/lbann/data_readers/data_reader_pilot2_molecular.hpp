@@ -69,6 +69,7 @@ class pilot2_molecular_reader : public generic_data_reader {
   /// 'BL12'] (20)]
   template <class T>
   T scale_data(int idx, T datum) {
+    idx = idx % 20;
     T scaled_datum = datum;
     if(idx >= 0 && idx <= 2) { /// x,y,z
       scaled_datum /= position_scale_factor;
@@ -105,7 +106,7 @@ class pilot2_molecular_reader : public generic_data_reader {
   /// Neighbor information (adjacency matrix).
   cnpy::NpyArray m_neighbors;
 
-  DataType position_scale_factor = 350.0;
+  DataType position_scale_factor = 320.0;
   DataType bond_len_scale_factor = 10.0;
 };
 

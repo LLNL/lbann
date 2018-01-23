@@ -1659,6 +1659,10 @@ objective_function *init_objective_function(lbann_data::ObjectiveFunction obj_fn
     const lbann_data::GroupLassoWeightRegularization &params = obj_fn_params.group_lasso_weight_regularization(j);
     obj_fn->add_term(new group_lasso_weight_regularization(params.scale_factor()));
   }
+  for (int j=0; j<obj_fn_params.kl_divergence_size(); j++) {
+    const lbann_data::KLDivergence &params = obj_fn_params.kl_divergence(j);
+    obj_fn->add_term(new kl_divergence(params.layer1(),params.layer2()));
+  }
   return obj_fn;
 }
 

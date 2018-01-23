@@ -83,6 +83,7 @@ public:
       delete update_data_reader_fn;
     }
   }
+  virtual generic_io_buffer* copy() const = 0;
 
   /** Return this buffer's type, e.g: "partitioned_io_buffer," "distributed_io_buffer," etc. */
   virtual std::string get_type() const = 0;

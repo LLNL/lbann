@@ -42,6 +42,7 @@ class partitioned_io_buffer : public generic_io_buffer {
   partitioned_io_buffer& operator=(
     const partitioned_io_buffer&) = default;
   ~partitioned_io_buffer() override {}
+  partitioned_io_buffer* copy() const override { return new partitioned_io_buffer(*this); }
 
   std::string get_type() const override { return "partitioned_io_buffer"; }
   void set_local_matrix_bypass(Mat *m) override { M_local = m; }
