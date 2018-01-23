@@ -1,8 +1,3 @@
-add_sources(  callback_print.cpp
-  callback_timer.cpp
-  callback_gradient_check.cpp
-)
-if(FALSE)
 add_sources(
   callback_print.cpp
   callback_summary.cpp
@@ -31,4 +26,3 @@ add_sources(
   callback_checkpoint.cpp
   callback_save_model.cpp
 )
-endif()

@@ -32,6 +32,7 @@
 #include <chrono>
 #include <vector>
 #include "lbann/callbacks/callback.hpp"
+#include "lbann/layers/io/input/input_layer.hpp"
 
 namespace lbann {
 

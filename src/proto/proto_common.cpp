@@ -164,7 +164,6 @@ void setup_pointers(
         throw lbann_exception(err.str());
       }
 
-#if 0
       // Set original layer
       Layer *original_layer = model_layers[name];
       if (dynamic_cast<reconstruction_layer<data_layout::MODEL_PARALLEL>*>(layer)) {
@@ -177,14 +176,12 @@ void setup_pointers(
           = dynamic_cast<reconstruction_layer<data_layout::DATA_PARALLEL>*>(layer);
         reconstruction->set_original_layer(original_layer);
       }
-#endif
 
     }
 
   }
 }
 
-#if 0
 lbann_callback_imcomm::comm_type get_comm_type(const std::string &s, bool master)
 {
   if (s == "none") {
@@ -209,7 +206,6 @@ lbann_callback_imcomm::comm_type get_comm_type(const std::string &s, bool master
     }
   }
 }
-#endif
 
 pool_mode get_pool_mode(const std::string& s, bool master)
 {
@@ -1135,7 +1131,6 @@ void init_callbacks(
   for (int j=0; j<size; j++) {
     const lbann_data::Callback& callback = m.callback(j);
 
-#if 0
     //////////////////////////////////////////////////////////////////
     // CALLBACK: ltfb
     //////////////////////////////////////////////////////////////////
@@ -1156,7 +1151,7 @@ void init_callbacks(
       lbann_callback_save_images *image_cb = new lbann_callback_save_images(reader, image_dir, extension);
       model->add_callback(image_cb);
     }
-#endif
+
     //////////////////////////////////////////////////////////////////
     // CALLBACK: print
     //////////////////////////////////////////////////////////////////
@@ -1176,7 +1171,7 @@ void init_callbacks(
       auto *timer_cb = new lbann_callback_timer(summarizer);
       model->add_callback(timer_cb);
     }
-#if 0
+
     //////////////////////////////////////////////////////////////////
     // CALLBACK: summary
     //////////////////////////////////////////////////////////////////
@@ -1544,7 +1539,7 @@ void init_callbacks(
         lbann_callback_minibatch_schedule(c.starting_mbsize(), steps);
       model->add_callback(mb_sched);
     }
-#endif
+
     //////////////////////////////////////////////////////////////////
     // CALLBACK: gradient_check
     //////////////////////////////////////////////////////////////////
@@ -1557,7 +1552,7 @@ void init_callbacks(
       lbann_callback_gradient_check(c.step_size(), c.verbose(), c.fail_on_error());
       model->add_callback(gradient_check_cb);
     }
-#if 0
+
     //////////////////////////////////////////////////////////////////
     // CALLBACK: optimizerwise_adaptive_learning_rate
     //////////////////////////////////////////////////////////////////
@@ -1610,7 +1605,6 @@ void init_callbacks(
       model->add_callback(model_cb);
     }
 
-#endif
   }
 
 }

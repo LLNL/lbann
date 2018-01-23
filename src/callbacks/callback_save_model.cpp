@@ -32,6 +32,7 @@
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <fstream>
+#include <unistd.h>
 
 namespace lbann {
 
@@ -53,7 +54,6 @@ void lbann_callback_save_model::write_proto_binary(const lbann_data::Model& prot
 
 void lbann_callback_save_model::write_proto_text(const lbann_data::Model& proto,
                                                  const std::string filename) {
-
   int fd = open(filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
   auto output = new google::protobuf::io::FileOutputStream(fd);
   google::protobuf::TextFormat::Print(proto, output);
