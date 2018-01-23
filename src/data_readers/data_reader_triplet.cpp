@@ -23,7 +23,8 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// data_reader_triplet .hpp .cpp - data reader class for triplet datasets
+// data_reader_triplet .hpp .cpp - data reader to use triplet patches
+//                                 generated offline.
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_triplet.hpp"

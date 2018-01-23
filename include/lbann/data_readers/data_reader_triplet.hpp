@@ -23,8 +23,8 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// data_reader_triplet .hpp .cpp - generic data reader class for datasets
-//                                      employing multiple images per sample
+// data_reader_triplet .hpp .cpp - data reader to use triplet patches
+//                                 generated offline.
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef DATA_READER_TRIPLET_HPP

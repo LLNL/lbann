@@ -38,6 +38,17 @@
 #include <iostream>
 
 namespace lbann {
+
+/**
+ * With MNIST dataset, there is no individual image file. All the images or
+ * labels are packed into a single binary file respectively. This reader
+ * pre-loads all the data into memory as minist_reader does.
+ * However, to feed a siamese model, this reader randomly chooses the paired
+ * input on-line. It maintains another data index list, 'm_shuffled_indices2'.
+ * It first copies the primary list maintined by the base class to the secondary
+ * list, and shuffles the secondary whenever the primary gets shuffled via the
+ * overridden shuffle_indices() method.
+ */
 class data_reader_mnist_siamese : public data_reader_multi_images {
  public:
   using label_t = unsigned char;
@@ -65,21 +76,41 @@ class data_reader_mnist_siamese : public data_reader_multi_images {
   // dataset specific functions
   void load() override;
 
-  /// Fetch this mini-batch's samples into X.
+  /// Fetch this mini-batch's samples into X by calling the new overloaded fetch_datum()
   int fetch_data(Mat& X) override;
-  /// Fetch this mini-batch's labels into Y.
+  /// Fetch this mini-batch's labels into Y by calling the new overloaded fetch_label()
   int fetch_labels(Mat& Y) override;
   
  protected:
-  /// Set the default configuration such as the width, height, and number of channels of the image sample
+  /**
+   * Set the default configuration such as the width, height, and number of
+   * channels of the image sample.
+   */
   void set_defaults() override;
+
+  // unused virtual interfaces replaced by the new interfaces that taks a pair
+  // of indices to sample list.
   using data_reader_multi_images::fetch_datum;
   using data_reader_multi_images::fetch_label;
   bool fetch_datum(::Mat& X, int data_id, int mb_idx, int tid) override;
   bool fetch_label(::Mat& Y, int data_id, int mb_idx, int tid) override;
+
+  /**
+   * Fetch two data items identified by the pair of indices to the pre-loaded data list,
+   * and put them into the column mb_idx of matrix x.
+   */
   virtual bool fetch_datum(::Mat& X, std::pair<int, int> data_id, int mb_idx, int tid);
+  /**
+   * Take a pair of indices to the preloaded sample list, and compare the labels
+   * of the corresponding samples. Store 1 if equal or 0 at the column mb_idx of
+   * the given matrix Y.
+   */
   virtual bool fetch_label(::Mat& Y, std::pair<int, int> data_id, int mb_idx, int tid);
 
+  /**
+   * Shuffle the second index list added in this class as well as the one in the
+   * base class whenever the latter gets shuffled.
+   */
   void shuffle_indices() override;
 
  protected:

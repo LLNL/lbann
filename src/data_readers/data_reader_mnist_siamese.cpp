@@ -195,10 +195,6 @@ int data_reader_mnist_siamese::fetch_labels(Mat& Y) {
 }
 
 
-/**
- * Take a pair of indices to the preloaded sample list, and copy the corresponding image
- * data to the given minibatch matrix Y at the specified column with index mb_idx.
- */
 bool data_reader_mnist_siamese::fetch_datum(Mat& X, std::pair<int, int> data_id, int mb_idx, int tid) {
 
   std::vector<::Mat> X_v = create_datum_views(X, mb_idx);
@@ -238,11 +234,6 @@ bool data_reader_mnist_siamese::fetch_datum(Mat& X, std::pair<int, int> data_id,
 }
 
 
-/**
- * Take a pair of indices to the preloaded sample list, and compare the labels
- * of the corresponding samples. Store 1 if equal or 0 to the given matrix Y at
- * the specified column with index mb_idx.
- */
 bool data_reader_mnist_siamese::fetch_label(Mat& Y, std::pair<int, int> data_id, int mb_idx, int tid) {
   const label_t label_1 = m_image_data[data_id.first][0];
   const label_t label_2 = m_image_data[data_id.second][0];
@@ -251,17 +242,20 @@ bool data_reader_mnist_siamese::fetch_label(Mat& Y, std::pair<int, int> data_id,
   return true;
 }
 
+
 bool data_reader_mnist_siamese::fetch_datum(::Mat& X, int data_id, int mb_idx, int tid) {
   throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " "
                         + get_type() + ": unused interface is called");
   return false;
 }
 
+
 bool data_reader_mnist_siamese::fetch_label(::Mat& Y, int data_id, int mb_idx, int tid) {
   throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " "
                         + get_type() + ": unused interface is called");
   return false;
 }
+
 
 // The function is defined in data_readers/data_reader_mnist.cpp
 extern void load_mnist_data(const std::string imagepath, const std::string labelpath,
@@ -307,10 +301,6 @@ void data_reader_mnist_siamese::load() {
 }
 
 
-/**
- * Overrides to shuffle the second indices, m_shuffled_indices, managed by this
- * derived class whenever the primary m_shuffle_indice gets shuffled.
- */
 void data_reader_mnist_siamese::shuffle_indices() {
   if (m_shuffled_indices2.size() != m_shuffled_indices.size()) {
     m_shuffled_indices2 = m_shuffled_indices;
