@@ -19,7 +19,7 @@ fi
 BLAS=openblas
 BUILD_TYPE=Release
 COMPILER=gcc@4.9.3
-DTYPE=4
+DTYPE=float
 EL_VER=develop
 MPI=mvapich2
 VARIANTS=
