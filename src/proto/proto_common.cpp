@@ -462,7 +462,7 @@ void add_layers(
         d = new reshape_layer<data_layout::DATA_PARALLEL>(comm, num_dims, dims.data());
       }
     }
-#if 0
+
     //////////////////////////////////////////////////////////////////
     // LAYER: concatenation
     //////////////////////////////////////////////////////////////////
@@ -470,7 +470,7 @@ void add_layers(
       const lbann_data::Concatenation &ell = layer.concatenation();
       d = new concatenation_layer<>(comm, ell.concatenation_axis(), cudnn);
     }
-#endif
+
     //////////////////////////////////////////////////////////////////
     // LAYER: slice
     //////////////////////////////////////////////////////////////////

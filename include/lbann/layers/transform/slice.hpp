@@ -22,15 +22,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// slice.hpp - Slice layer
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_LAYER_SLICE_HPP_INCLUDED
 #define LBANN_LAYER_SLICE_HPP_INCLUDED
 
-#include <utility>
-#include <vector>
 #include "lbann/layers/transform/transform.hpp"
 #include "lbann/utils/exception.hpp"
 

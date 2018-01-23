@@ -70,7 +70,7 @@
 #include "lbann/layers/transform/split.hpp"
 #include "lbann/layers/transform/sum.hpp"
 #include "lbann/layers/transform/slice.hpp"
-// #include "lbann/layers/transform/concatenation.hpp"
+#include "lbann/layers/transform/concatenation.hpp"
 // #include "lbann/layers/transform/constant.hpp"
 // #include "lbann/layers/transform/noise.hpp"
 // #include "lbann/layers/transform/safe_inv.hpp"
