@@ -71,30 +71,15 @@ bool mnist_reader::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
 
 //===================================================
 
-void mnist_reader::load() {
-  if (is_master()) {
-    std::cerr << "starting lbann::mnist_reader::load\n";
-  }
-  m_image_data.clear();
-
-  std::string FileDir = get_file_dir();
-  std::string ImageFile = get_data_filename();
-  std::string LabelFile = get_label_filename();
-
-  // set filepath
-  std::string imagepath = FileDir + "/" + ImageFile;
-  std::string labelpath = FileDir + "/" + LabelFile;
+void load_mnist_data(const std::string imagepath, const std::string labelpath,
+  const int m_first_n, std::vector<std::vector<unsigned char> >& m_image_data) {
 
   // read labels
   FILE *fplbl = fopen(labelpath.c_str(), "rb");
   if (!fplbl) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: " + get_type() + ": failed to open file: " + labelpath);
-  }
-
-  if (is_master()) {
-    std::cerr << "read labels!\n";
+      " :: load_mnist_data: failed to open file: " + labelpath);
   }
 
   int magicnum1, numitems1;
@@ -108,7 +93,7 @@ void mnist_reader::load() {
   if (!fpimg) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: " + get_type() + ": failed to open file: " + imagepath);
+      " :: load_mnist_data: failed to open file: " + imagepath);
   }
 
   int magicnum2, numitems2, imgwidth, imgheight;
@@ -126,13 +111,11 @@ void mnist_reader::load() {
     fclose(fpimg);
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: " + get_type() + ": numitems1 != numitems2");
+      " :: load_mnist_data: numitems1 != numitems2");
   }
 
   if (m_first_n > 0) {
     numitems1 = m_first_n > numitems1 ? numitems1 : m_first_n;
-    set_use_percent(1.0);
-    set_absolute_sample_count(0.0);
   }
 
   // set to array
@@ -144,6 +127,32 @@ void mnist_reader::load() {
   }
   fclose(fpimg);
   fclose(fplbl);
+}
+
+void mnist_reader::load() {
+  if (is_master()) {
+    std::cerr << "starting lbann::mnist_reader::load\n";
+  }
+  m_image_data.clear();
+
+  const std::string FileDir = get_file_dir();
+  const std::string ImageFile = get_data_filename();
+  const std::string LabelFile = get_label_filename();
+
+  // set filepath
+  const std::string imagepath = FileDir + "/" + ImageFile;
+  const std::string labelpath = FileDir + "/" + LabelFile;
+
+  if (is_master()) {
+    std::cerr << "read labels!\n";
+  }
+
+  load_mnist_data(imagepath, labelpath, m_first_n, m_image_data);
+
+  if (m_first_n > 0) {
+    set_use_percent(1.0);
+    set_absolute_sample_count(0.0);
+  }
 
   // reset indices
   m_shuffled_indices.clear();
