@@ -63,7 +63,10 @@ class data_reader_multi_images : public imagenet_reader {
    *  zero or both non-zero.
    */
   void set_input_params(const int width, const int height, const int num_ch,
-                        const int num_labels, const int num_img_srcs = 1);
+                        const int num_labels, const int num_img_srcs);
+
+  void set_input_params(const int width, const int height, const int num_ch,
+                        const int num_labels) override;
 
   // dataset specific functions
   void load() override;

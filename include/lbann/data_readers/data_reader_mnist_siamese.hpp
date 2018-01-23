@@ -60,7 +60,7 @@ class data_reader_mnist_siamese : public data_reader_multi_images {
    *  and also set as the default. This does not change the setup, but only
    *  preserves the default.
    */
-  void set_input_params();
+  void set_input_params(const int, const int, const int, const int) override;
 
   // dataset specific functions
   void load() override;
@@ -73,8 +73,12 @@ class data_reader_mnist_siamese : public data_reader_multi_images {
  protected:
   /// Set the default configuration such as the width, height, and number of channels of the image sample
   void set_defaults() override;
-  virtual bool fetch_datum(::Mat& X, std::pair<int,int> data_id, int mb_idx, int tid);
-  virtual bool fetch_label(Mat& Y, std::pair<int, int> data_id, int mb_idx, int tid);
+  using data_reader_multi_images::fetch_datum;
+  using data_reader_multi_images::fetch_label;
+  bool fetch_datum(::Mat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_label(::Mat& Y, int data_id, int mb_idx, int tid) override;
+  virtual bool fetch_datum(::Mat& X, std::pair<int, int> data_id, int mb_idx, int tid);
+  virtual bool fetch_label(::Mat& Y, std::pair<int, int> data_id, int mb_idx, int tid);
 
   void shuffle_indices() override;
 

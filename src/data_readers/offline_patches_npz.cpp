@@ -33,11 +33,14 @@ offline_patches_npz::offline_patches_npz()
   : m_checked_ok(false), m_num_patches(3u), m_variant_divider(".JPEG.")
 {}
 
+
 bool offline_patches_npz::load(const std::string filename) {
   m_item_class_list.clear();
   m_file_root_list.clear();
   m_file_variant_list.clear();
 
+  // The list of arrays expected to be packed in the file.
+  // 'max_class' and 'variant_divider' are scalar values, and known in advance.
   const std::set<std::string> dict =
     {"item_root_list",
      "item_variant_list",
@@ -49,16 +52,19 @@ bool offline_patches_npz::load(const std::string filename) {
 
   cnpy::npz_t dataset = cnpy::npz_load(filename);
 
+  // check if all the arrays are included
   for (const auto& np : dataset) {
     if (dict.find(np.first) == dict.end()) {
       return false;
     }
   }
 
+  // Load the array of index sequences for root type into a cnpy structure
   m_item_root_list = dataset["item_root_list"];
+  // Load the array of index sequences for variant type into a cnpy structure
   m_item_variant_list = dataset["item_variant_list"];
 
-  {
+  { // load the label array into a vector of label_t (uint8_t)
     cnpy::NpyArray d_item_class_list = dataset["item_class_list"];
     m_checked_ok = (d_item_class_list.shape.size() == 1u);
     if (m_checked_ok) {
@@ -71,7 +77,7 @@ bool offline_patches_npz::load(const std::string filename) {
     }
   }
 
-  {
+  { // load the array of dictionary substrings of root type
     cnpy::NpyArray d_file_root_list = dataset["file_root_list"];
     m_checked_ok = m_checked_ok && (d_file_root_list.shape.size() == 1u);
     if (m_checked_ok) {
@@ -85,7 +91,7 @@ bool offline_patches_npz::load(const std::string filename) {
   }
   //for (const auto& fl: m_file_root_list) std::cout << fl << std::endl;
 
-  {
+  { // load the array of dictionary substrings of variant type
     cnpy::NpyArray d_file_variant_list = dataset["file_variant_list"];
     m_checked_ok = m_checked_ok && (d_file_variant_list.shape.size() == 1u);
     if (m_checked_ok) {
@@ -111,6 +117,7 @@ bool offline_patches_npz::load(const std::string filename) {
   return m_checked_ok;
 }
 
+
 bool offline_patches_npz::check_data() const {
   bool ok = (m_item_root_list.shape.size() == 2u) &&
             (m_item_variant_list.shape.size() == 3u) &&
@@ -125,6 +132,7 @@ bool offline_patches_npz::check_data() const {
             (m_item_variant_list.word_size == sizeof(size_t));
   return ok;
 }
+
 
 std::string offline_patches_npz::get_description() const {
   using std::string;
@@ -141,6 +149,7 @@ std::string offline_patches_npz::get_description() const {
   return ret;
 }
 
+
 std::string offline_patches_npz::show_shape(const cnpy::NpyArray& na) {
   std::string ret;
   for (const size_t s: na.shape) {
@@ -155,7 +164,7 @@ std::string offline_patches_npz::show_shape(const cnpy::NpyArray& na) {
   return ret;
 }
 
-/// Reassemble the file names for samples at the given index
+
 offline_patches_npz::sample_t offline_patches_npz::get_sample(const size_t idx) const {
   if (!m_checked_ok || idx >= get_num_samples()) {
     throw lbann_exception("invalid sample index");
@@ -181,6 +190,7 @@ offline_patches_npz::sample_t offline_patches_npz::get_sample(const size_t idx) 
   }
   return std::make_pair(file_names, m_item_class_list[idx]);
 }
+
 
 size_t offline_patches_npz::compute_cnpy_array_offset(
   const cnpy::NpyArray& na, const std::vector<size_t> indices) {

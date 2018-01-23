@@ -36,35 +36,74 @@
 
 namespace lbann {
 
+/**
+ * Loads the list of patche files, generated off-line, and the label per sample.
+ * As the list is quite large itself in the ASCII text format, it is packed and
+ * loaded as a compressed NumPy file (*.npz).
+ * Each image file name is compressed further by representing it as a sequence of
+ * indices to common substring dictionaries. There are two types of substring
+ * dictionaries, root and variant. There is an array of index sequences and an
+ * array of dictionary substrings per type, and a label array.
+ * For example, a file path train/n000111/abc.tag1.tag2.jpg would be represented
+ * as 'r[i][j][k]', 'v[i][j][x]', 'v[i][j][y]', 'v[i][j][z]' for the j-th patch
+ * of the i-th sample where 'r[i][j][k]' is "train/n000111", and 'v[i][j][x]',
+ * 'v[i][j][y]' and 'v[i][j][z]' is "abc", "tag1", and "tag2" respectively.
+ * 'r' is the root directionary and 'v' is the variant directionary.
+ * The list is kept in a compressed form, and uncompressed on-demand during execution.
+ * Each index sequence array is kept as a CNPY data structure, and each dictionary
+ * array is loaded into a vector of strings. The label array is loaded into a
+ * vector of uint8_t.
+ */
 class offline_patches_npz {
  public:
   using label_t = uint8_t;
   using sample_t = std::pair<std::vector<std::string>, label_t>;
 
   offline_patches_npz();
+  // TODO: copy constructor and assignment operator for deep-copying if needed
+  // The cnpy structure relies on shared_ptr
+
+  /// Load the data in the compressed numpy format file
   bool load(const std::string filename);
+  /// Show the description
   std::string get_description() const;
 
+  /// Return the number of samples
   size_t get_num_samples() const {
     return m_item_class_list.size();
   }
+  /// Return the number of patches per sample (the number of image data sources)
   size_t get_num_patches() const {
     return m_num_patches;
   }
-  /// Return the meta-data (patch file names and the label) of idx-th sample
+  /// Reconsturct and return the meta-data (patch file names and the label) of idx-th sample
   sample_t get_sample(const size_t idx) const;
   /// Return the label of idx-th sample
   label_t get_label(const size_t idx) const;
 
  protected:
+  /// Check the dimensions of loaded data
   bool check_data() const;
+  /// Show the dimensions of loaded data
   static std::string show_shape(const cnpy::NpyArray& na);
 
+  /**
+   * Return the offset to the element (in terms of the number of elements from
+   * the beginning of the array) of a loaded numpy array na specified by indices
+   */
   static size_t compute_cnpy_array_offset(const cnpy::NpyArray& na, const std::vector<size_t> indices);
 
+  /**
+   * Allow the access to the data element identified by the indices and the
+   * word_size of the array na, but present it as a type T element at the address.
+   */
   template<typename T>
   T& data(const cnpy::NpyArray& na, const std::vector<size_t> indices) const;
 
+  /**
+   * Return the address of the data element identified by the indices and the
+   * word_size of the array na, but present it as the address of a type T element
+   */
   template<typename T>
   T* data_ptr(const cnpy::NpyArray& na, const std::vector<size_t> indices) const;
 
@@ -73,8 +112,15 @@ class offline_patches_npz {
   bool m_checked_ok;
   /// The number of image patches per sample (i.e. the num of patch files to read)
   size_t m_num_patches;
-  /// index to the list of common file path substrings (m_file_root_list) per patch file (dimension: num_samples * num_patches)
+  /**
+   * List of index sequences to the dictionary of common file path substrings (m_file_root_list)
+   * per patch file (dimension: num_samples * num_patches)
+   */
   cnpy::NpyArray m_item_root_list;
+  /**
+   * List of index sequences to the dictionary of common file path substrings (m_file_variant_list)
+   * per patch file (dimension: num_samples * num_patches)
+   */
   cnpy::NpyArray m_item_variant_list;
   /// list of labels (dimension: num_samples)
   std::vector<label_t> m_item_class_list;

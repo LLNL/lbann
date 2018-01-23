@@ -84,6 +84,10 @@ void data_reader_multi_images::set_input_params(const int width, const int heigh
   }
 }
 
+void data_reader_multi_images::set_input_params(const int width, const int height, const int num_ch, const int num_labels) {
+  set_input_params(width, height, num_ch, num_labels, 1);
+}
+
 std::vector<::Mat> data_reader_multi_images::create_datum_views(::Mat& X, const int mb_idx) const {
   std::vector<::Mat> X_v(m_num_img_srcs);
   El::Int h = 0;

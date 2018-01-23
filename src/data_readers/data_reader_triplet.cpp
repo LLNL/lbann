@@ -74,8 +74,8 @@ void data_reader_triplet::set_defaults() {
  * Same as the parent class method except the default value of the last argument,
  * num_img_srcs, which is 3 here.
  */
-void data_reader_triplet::set_input_params(const int width, const int height, const int num_ch, const int num_labels, const int num_img_srcs) {
-  data_reader_multi_images::set_input_params(width, height, num_ch, num_labels, num_img_srcs);
+void data_reader_triplet::set_input_params(const int width, const int height, const int num_ch, const int num_labels) {
+  data_reader_multi_images::set_input_params(width, height, num_ch, num_labels, 3);
 }
 
 

@@ -77,7 +77,8 @@ void data_reader_mnist_siamese::set_defaults() {
 }
 
 
-void data_reader_mnist_siamese::set_input_params() {
+void data_reader_mnist_siamese::set_input_params(
+  const int, const int, const int, const int) {
   set_defaults();
 }
 
@@ -250,6 +251,17 @@ bool data_reader_mnist_siamese::fetch_label(Mat& Y, std::pair<int, int> data_id,
   return true;
 }
 
+bool data_reader_mnist_siamese::fetch_datum(::Mat& X, int data_id, int mb_idx, int tid) {
+  throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " "
+                        + get_type() + ": unused interface is called");
+  return false;
+}
+
+bool data_reader_mnist_siamese::fetch_label(::Mat& Y, int data_id, int mb_idx, int tid) {
+  throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " "
+                        + get_type() + ": unused interface is called");
+  return false;
+}
 
 // The function is defined in data_readers/data_reader_mnist.cpp
 extern void load_mnist_data(const std::string imagepath, const std::string labelpath,

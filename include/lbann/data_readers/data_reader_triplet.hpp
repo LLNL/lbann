@@ -63,7 +63,7 @@ class data_reader_triplet : public data_reader_multi_images {
    *  zero or both non-zero.
    */
   void set_input_params(const int width, const int height, const int num_ch,
-                        const int num_labels, const int num_img_srcs = 3);
+                        const int num_labels) override;
 
   // dataset specific functions
   void load() override;
