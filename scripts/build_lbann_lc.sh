@@ -38,6 +38,7 @@ if [ "${ARCH}" == "x86_64" ]; then
 elif [ "${ARCH}" == "ppc64le" ]; then
     export CUDNN_DIR=/usr/gapps/brain/cuda/targets/ppc64le-linux
 fi
+
 ELEMENTAL_MATH_LIBS=
 PATCH_OPENBLAS=ON
 C_FLAGS=
@@ -74,7 +75,7 @@ if [ "${CLUSTER}" == "surface" ]; then
     AUTOCONF_VER_CUSTOM=`${AUTOCONF_CUSTOM_DIR}/autoconf --version | awk '(FNR==1){print $NF}'`
 
     if version_gt ${AUTOCONF_VER_CUSTOM} ${AUTOCONF_VER_DEFAULT}; then
-        export PATH=${AUTOCONF_CUSTOM_DIR}:${PATH}
+        PATH=${AUTOCONF_CUSTOM_DIR}:${PATH}
     fi
 fi
 
@@ -132,7 +133,7 @@ while :; do
             else
                 echo "\"${1}\" option requires a non-empty option argument" >&2
                 exit 1
-            fi  
+            fi
             ;;
         --suffix)
             # Specify suffix for build directory
@@ -263,11 +264,11 @@ fi
 # Load packages
 if [ ${USE_MODULES} -ne 0 ]; then
     module load git
-    CMAKE_PATH=/usr/workspace/wsb/brain/utils/toss3/cmake-3.9.6/bin/ 
+    CMAKE_PATH=/usr/workspace/wsb/brain/utils/toss3/cmake-3.9.6/bin
 else
     if [ "${CLUSTER}" == "surface" ]; then
         use git-2.8.0
-        CMAKE_PATH=/usr/workspace/wsb/brain/utils/toss2/cmake-3.9.6/bin/
+        CMAKE_PATH=/usr/workspace/wsb/brain/utils/toss2/cmake-3.9.6/bin
     else
         use git
         #use cmake
@@ -276,32 +277,8 @@ fi
 
 if [ ${CLUSTER} == "ray" ]; then
     module load cmake
-    CMAKE_PATH=
+    CMAKE_PATH=$(dirname $(which cmake))
 fi
- 
-################################################################
-# Initialize directories
-################################################################
-
-# Get LBANN root directory
-#ROOT_DIR=$(git rev-parse --show-toplevel)
-
-# Initialize build directory
-#if [ -z "${BUILD_DIR}" ]; then
-#    BUILD_DIR=${ROOT_DIR}/build/${CLUSTER}.llnl.gov
-#fi
-#if [ -n "${BUILD_SUFFIX}" ]; then
-#    BUILD_DIR=${BUILD_DIR}.${BUILD_SUFFIX}
-#fi
-#mkdir -p ${BUILD_DIR}
-
-# Initialize install directory
-#if [ -z "${INSTALL_DIR}" ]; then
-#    INSTALL_DIR=${BUILD_DIR}
-#fi
-#mkdir -p ${INSTALL_DIR}
-
-#SUPERBUILD_DIR="${ROOT_DIR}/superbuild"
 
 ################################################################
 # Initialize C/C++/Fortran compilers
@@ -314,7 +291,7 @@ if [ ${USE_MODULES} -ne 0 ]; then
         COMPILER_=gcc
     fi
     if [ -z "$(module list 2>&1 | grep ${COMPILER_})" ]; then
-        #COMPILER_=$(module --terse spider ${COMPILER_} 2>&1 | sed '/^$/d' | tail -1)
+        COMPILER_=$(module --terse spider ${COMPILER_} 2>&1 | sed '/^$/d' | tail -1)
         module load ${COMPILER_}
     fi
     if [ -z "$(module list 2>&1 | grep ${COMPILER_})" ]; then
@@ -338,7 +315,7 @@ else
     fi
     COMPILER_BASE="$(use -hv ${COMPILER_} | grep 'dk_alter PATH' | awk '{print $3}' | sed 's/\/bin//')"
 fi
-#COMPILER_STRIP="$(echo ${COMPILER_} | sed "s/[^[a-z]//g")"
+COMPILER_STRIP="$(echo ${COMPILER_} | sed "s/[^[a-z]//g")"
 # Get compiler paths
 if [ "${COMPILER}" == "gnu" ]; then
     # GNU compilers
@@ -376,7 +353,7 @@ elif [ "${COMPILER}" == "clang" ]; then
     Fortran_COMPILER=${GNU_DIR}/bin/gfortran
     FORTRAN_LIB=${GNU_DIR}/lib64/libgfortran.so
     COMPILER_VERSION=$(${C_COMPILER} --version | awk '(($1=="clang")&&($2=="version")){print $3}')
-    export MPICH_FC=${GNU_DIR}/bin/gfortran
+    MPICH_FC=${GNU_DIR}/bin/gfortran
     #MPI_Fortran_COMPILER="${MPI_DIR}/bin/mpifort -fc=${Fortran_COMPILER}" $ done by exporting MPICH_FC
 else
     # Unrecognized compiler
@@ -390,7 +367,6 @@ if [ "${BUILD_TYPE}" == "Release" ]; then
         CXX_FLAGS="${CXX_FLAGS} -O3 ${INSTRUMENT}"
         Fortran_FLAGS="${Fortran_FLAGS} -O3"
         if [ "${CLUSTER}" == "catalyst" ]; then
-            #CMAKE_PATH="/usr/workspace/wsb/brain/utils/toss3/cmake-3.9.6/bin/"
             C_FLAGS="${C_FLAGS} -march=ivybridge -mtune=ivybridge"
             CXX_FLAGS="${CXX_FLAGS} -march=ivybridge -mtune=ivybridge"
             Fortran_FLAGS="${Fortran_FLAGS} -march=ivybridge -mtune=ivybridge"
@@ -408,7 +384,7 @@ if [ "${BUILD_TYPE}" == "Release" ]; then
             Fortran_FLAGS="${Fortran_FLAGS} -mcpu=power8 -mtune=power8"
         fi
     fi
-else 
+else
     if [ "${COMPILER}" == "gnu" ]; then
         C_FLAGS="${C_FLAGS} -g ${INSTRUMENT}"
         CXX_FLAGS="${CXX_FLAGS} -g ${INSTRUMENT}"
@@ -422,8 +398,8 @@ C_FLAGS="${CXX_FLAGS} -ldl"
 
 
 # Set environment variables
-export CC=${C_COMPILER}
-export CXX=${CXX_COMPILER}
+CC=${C_COMPILER}
+CXX=${CXX_COMPILER}
 
 
 ################################################################
@@ -444,7 +420,7 @@ mkdir -p ${BUILD_DIR}
 
 # Initialize install directory
 if [ -z "${INSTALL_DIR}" ]; then
-    INSTALL_DIR=${BUILD_DIR}
+    INSTALL_DIR=${BUILD_DIR}/install
 fi
 mkdir -p ${INSTALL_DIR}
 
@@ -491,7 +467,7 @@ else
         # The default MVAPICH version does not work on surface
         if [ "${CLUSTER}" == "surface" -a "${MPI}" == "mvapich2" ]; then
             MPI_DOTKIT+="-2.2"
-        fi  
+        fi
         use ${MPI_DOTKIT}
         if [ -z "$(use | grep ${MPI_DOTKIT})" ]; then
             echo "Could not load dotkit (${MPI_DOTKIT})"
@@ -518,9 +494,11 @@ else
 fi
 
 # Get MPI compilers
-MPI_C_COMPILER=${MPI_DIR}/bin/mpicc
-MPI_CXX_COMPILER=${MPI_DIR}/bin/mpicxx
-MPI_Fortran_COMPILER=${MPI_DIR}/bin/mpifort
+export MPI_HOME=${MPI_DIR}
+export CMAKE_PREFIX_PATH=${MPI_HOME}:${CMAKE_PREFIX_PATH}
+export MPI_C_COMPILER=${MPI_DIR}/bin/mpicc
+export MPI_CXX_COMPILER=${MPI_DIR}/bin/mpicxx
+export MPI_Fortran_COMPILER=${MPI_DIR}/bin/mpifort
 
 ################################################################
 # Initialize GPU libraries
@@ -533,21 +511,29 @@ if [ "${CLUSTER}" == "surface" ] || [ "${CLUSTER}" == "ray" ]; then
     WITH_CUB=ON
     ELEMENTAL_USE_CUBLAS=OFF
     if [ "${CLUSTER}" == "ray" ]; then
-      export NCCL_HOME_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.0.5-3+cuda8.0_ppc64el
+        export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.0.5-3+cuda8.0_ppc64el
     else
-      export NCCL_HOME_DIR=/usr/workspace/wsb/brain/nccl2/nccl-2.0.5+cuda8.0
+        export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl-2.0.5+cuda8.0
     fi
     if [ "${ARCH}" == "ppc64le" ]; then
         export CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda
         CUDATOOLKIT_VERSION=$(ls -l ${CUDA_TOOLKIT_ROOT_DIR} | awk '{print $NF}' | cut -d '-' -f 2)
     elif [ -n "${CUDA_PATH}" ]; then
         CUDATOOLKIT_VERSION=$(basename "$CUDA_PATH" | sed 's/cudatoolkit-//')
-      export  CUDA_TOOLKIT_ROOT_DIR=${CUDA_PATH}
+       export CUDA_TOOLKIT_ROOT_DIR=${CUDA_PATH}
     else
         CUDATOOLKIT_VERSION=8.0
         if [ ${USE_MODULES} -ne 0 ]; then
             module load cudatoolkit/${CUDATOOLKIT_VERSION}
         fi
+        export CUDA_TOOLKIT_ROOT_DIR=/opt/cudatoolkit-${CUDATOOLKIT_VERSION}
+    fi
+    # Hack for surface
+    if [ "${CLUSTER}" == "surface" ]; then
+        CUDATOOLKIT_VERSION=8.0
+        . /usr/share/[mM]odules/init/bash
+        module load cudatoolkit/${CUDATOOLKIT_VERSION}
+        
         export CUDA_TOOLKIT_ROOT_DIR=/opt/cudatoolkit-${CUDATOOLKIT_VERSION}
     fi
 else
@@ -640,7 +626,7 @@ fi
 
 # Configure build with CMake
 CONFIGURE_COMMAND=$(cat << EOF
-${CMAKE_PATH}cmake \
+${CMAKE_PATH}/cmake \
 -D CMAKE_EXPORT_COMPILE_COMMANDS=ON \
 -D CMAKE_BUILD_TYPE=${BUILD_TYPE} \
 -D CMAKE_INSTALL_MESSAGE=${CMAKE_INSTALL_MESSAGE} \
@@ -652,7 +638,7 @@ ${CMAKE_PATH}cmake \
 -D LBANN_SB_BUILD_JPEG_TURBO=ON \
 -D LBANN_SB_BUILD_PROTOBUF=ON \
 -D LBANN_SB_BUILD_CUB=${WITH_CUB}
--D LBANN_SB_BUILD_LBANN=ON \ 
+-D LBANN_SB_BUILD_LBANN=ON \
 -D CMAKE_CXX_FLAGS="${CXX_FLAGS}" \
 -D CMAKE_C_FLAGS="${C_FLAGS}" \
 -D CMAKE_C_COMPILER=${C_COMPILER} \
