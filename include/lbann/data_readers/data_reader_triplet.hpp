@@ -80,8 +80,6 @@ class data_reader_triplet : public data_reader_multi_images {
   bool fetch_label(::Mat& Y, int data_id, int mb_idx, int tid) override;
 
  protected:
-  /// preprocessor for patches duplicated for each omp thread
-  std::vector<std::unique_ptr<cv_process> > m_pps;
   offline_patches_npz m_samples;
 };
 

@@ -97,8 +97,6 @@ class data_reader_multi_images : public imagenet_reader {
 
  protected:
   std::vector<sample_t> m_image_list; ///< list of image files and labels
-  /// preprocessor for patches duplicated for each omp thread
-  std::vector<std::unique_ptr<cv_process> > m_pps;
   /// The number of image sources or the number of siamese heads. e.g., 2
   unsigned int m_num_img_srcs;
 };

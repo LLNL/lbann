@@ -48,7 +48,7 @@ namespace lbann {
  * as 'r[i][j][k]', 'v[i][j][x]', 'v[i][j][y]', 'v[i][j][z]' for the j-th patch
  * of the i-th sample where 'r[i][j][k]' is "train/n000111", and 'v[i][j][x]',
  * 'v[i][j][y]' and 'v[i][j][z]' is "abc", "tag1", and "tag2" respectively.
- * 'r' is the root directionary and 'v' is the variant directionary.
+ * 'r' is the root dictionary and 'v' is the variant dictionary.
  * The list is kept in a compressed form, and uncompressed on-demand during execution.
  * Each index sequence array is kept as a CNPY data structure, and each dictionary
  * array is loaded into a vector of strings. The label array is loaded into a

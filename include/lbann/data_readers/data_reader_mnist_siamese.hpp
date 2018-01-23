@@ -83,8 +83,6 @@ class data_reader_mnist_siamese : public data_reader_multi_images {
   void shuffle_indices() override;
 
  protected:
-  /// preprocessor for patches duplicated for each omp thread
-  std::vector<std::unique_ptr<cv_process> > m_pps;
   using generic_data_reader::m_shuffled_indices;
   /// To randomly choose the siamese pair input online
   std::vector<int> m_shuffled_indices2;
