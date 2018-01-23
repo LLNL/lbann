@@ -8,6 +8,9 @@ add_sources(data_reader.cpp
             data_reader_imagenet_org.cpp
             data_reader_imagenet_patches.cpp
             data_reader_multi_images.cpp
+            data_reader_mnist_siamese.cpp
+            data_reader_triplet.cpp
+            offline_patches_npz.cpp
             data_reader_nci.cpp
             data_reader_cifar10.cpp
             image_utils.cpp
