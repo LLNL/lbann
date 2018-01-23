@@ -260,6 +260,11 @@ void Layer::forward_prop() {
                                  m_neuron_dims,
                                  output_stride);
 
+#ifdef LBANN_DEBUG
+    // Synchronize GPUs and check for errors
+    this->m_cudnn->check_error();
+#endif // LBANN_DEBUG
+
   }
 #endif // __LIB_CUDNN
 
@@ -270,6 +275,11 @@ void Layer::forward_prop() {
 
 #ifdef __LIB_CUDNN
   if (m_using_gpus) {
+
+#ifdef LBANN_DEBUG
+    // Synchronize GPUs and check for errors
+    this->m_cudnn->check_error();
+#endif // LBANN_DEBUG
 
     // Clear unused columns on GPU
     const int local_mini_batch_size = (get_num_parents() > 0 ?
@@ -346,6 +356,11 @@ void Layer::back_prop() {
                                  m_prev_neuron_dims,
                                  output_stride);
 
+#ifdef LBANN_DEBUG
+    // Synchronize GPUs and check for errors
+    this->m_cudnn->check_error();
+#endif // LBANN_DEBUG
+
   }
 #endif // __LIB_CUDNN
 
@@ -356,6 +371,11 @@ void Layer::back_prop() {
 
 #ifdef __LIB_CUDNN
   if (m_using_gpus) {
+
+#ifdef LBANN_DEBUG
+    // Synchronize GPUs and check for errors
+    this->m_cudnn->check_error();
+#endif // LBANN_DEBUG
 
     // Clear unused columns on GPU
     const int local_mini_batch_size = (get_num_parents() > 0 ?
@@ -902,7 +922,16 @@ bool Layer::load_from_checkpoint_shared(persist& p) {
 }
 
 void Layer::write_proto(lbann_data::Layer* proto) const {
+  proto->Clear();
   proto->set_name(get_name());
+  proto->set_type(get_type());
+  if(!m_parent_layers.empty()) proto->set_bottom(m_parent_layers.front()->get_name());
+  proto->set_top(get_name());
+  //Add weights
+  for (weights *w : m_weights) {
+    auto weight_proto = proto->add_weights();
+    w->write_proto(weight_proto);
+  }
 }
 
 void Layer::fp_setup_data(int mini_batch_size) {

@@ -73,7 +73,7 @@ class lbann_callback_debug_io : public lbann_callback {
   void on_test_begin(model *m) override;
 
   /** Common format for printing I/O stats at the start of a mini-batch */
-  void print_fp_start(model *m, input_layer *input);
+  void print_fp_start(model *m, generic_input_layer *input);
   /** Common format for printing I/O stats at the start of a phase */
   void print_phase_start(model *m, execution_mode mode);
 

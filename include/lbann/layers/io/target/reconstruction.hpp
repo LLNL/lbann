@@ -28,14 +28,14 @@
 #define LBANN_LAYERS_RECONSTRUCTION_HPP_INCLUDED
 
 #include "lbann/layers/layer.hpp"
-#include "lbann/layers/io/target/target_layer.hpp"
+#include "lbann/layers/io/target/generic_target_layer.hpp"
 #include "lbann/models/model.hpp"
 #include <string>
 #include "lbann/utils/random.hpp"
 
 namespace lbann {
 template <data_layout T_layout>
-class reconstruction_layer : public target_layer {
+class reconstruction_layer : public generic_target_layer {
  private:
 
   /** Original layer to reconstruct. */
@@ -44,7 +44,7 @@ class reconstruction_layer : public target_layer {
  public:
   reconstruction_layer(lbann_comm *comm,
                        Layer *original_layer)
-    :  target_layer(comm, dynamic_cast<input_layer*>(original_layer), {}, false),
+    :  generic_target_layer(comm, dynamic_cast<generic_input_layer*>(original_layer), {}, false),
        m_original_layer(original_layer) {}
 
   reconstruction_layer* copy() const override {
@@ -68,7 +68,7 @@ class reconstruction_layer : public target_layer {
   }
 
   void setup_dims() override {
-    target_layer::setup_dims();
+    generic_target_layer::setup_dims();
     this->m_neuron_dims = m_original_layer->get_neuron_dims();
     this->m_num_neuron_dims = m_original_layer->get_num_neuron_dims();
     this->m_num_neurons = m_original_layer->get_num_neurons();
@@ -100,7 +100,7 @@ class reconstruction_layer : public target_layer {
   }
 
   std::vector<Layer*> get_layer_pointers() override {
-    std::vector<Layer*> layers = target_layer::get_layer_pointers();
+    std::vector<Layer*> layers = generic_target_layer::get_layer_pointers();
     layers.push_back(m_original_layer);
     return layers;
   }
@@ -108,7 +108,7 @@ class reconstruction_layer : public target_layer {
   void set_layer_pointers(std::vector<Layer*> layers) override {
     m_original_layer = layers.back();
     layers.pop_back();
-    target_layer::set_layer_pointers(layers);
+    generic_target_layer::set_layer_pointers(layers);
   }
 
 };

@@ -138,7 +138,7 @@ class batch_normalization : public regularizer_layer {
     m_var_gradient(other.m_var_gradient),
     m_scale_gradient(other.m_scale_gradient),
     m_bias_gradient(other.m_bias_gradient) {
-    
+
     // Deep copy matrices
     if (m_mean != nullptr)           { m_mean = m_mean->Copy(); }
     if (m_var != nullptr)            { m_var = m_var->Copy(); }
@@ -268,7 +268,7 @@ class batch_normalization : public regularizer_layer {
     this->m_weights[1]->setup(this->m_neuron_dims[0], 1, El::STAR, El::STAR);
     this->m_weights[2]->setup(this->m_neuron_dims[0], 1, El::STAR, El::STAR);
     this->m_weights[3]->setup(this->m_neuron_dims[0], 1, El::STAR, El::STAR);
-    
+
     // Initialize matrices
     El::Zeros(*m_mean, this->m_neuron_dims[0], 1);
     El::Zeros(*m_var, this->m_neuron_dims[0], 1);
@@ -389,7 +389,7 @@ class batch_normalization : public regularizer_layer {
                                running_var_d[i],
                                this->m_cudnn->get_stream(i));
       }
-      
+
     }
 
     // Get GPU objects
@@ -446,7 +446,7 @@ class batch_normalization : public regularizer_layer {
                                           m_weights[3]->get_values_gpu());
 
     // Matrix parameters
-    const int mini_batch_size = this->m_model->get_current_mini_batch_size();
+    const int mini_batch_size = this->m_model->get_effective_mini_batch_size();
     const auto& input = get_prev_activations();
     const int height = input.Height();
     const int width = input.Width();
@@ -544,7 +544,7 @@ class batch_normalization : public regularizer_layer {
   }
 
   void fp_compute_cpu() {
-    
+
     // Check execution mode
     const bool is_training = this->m_model->get_execution_mode() == execution_mode::training;
 
@@ -617,7 +617,7 @@ class batch_normalization : public regularizer_layer {
       }
       m_weights[2]->set_values(*m_mean_gradient);
       m_weights[3]->set_values(*m_var_gradient);
-      
+
     }
 
     // Get matrices
@@ -655,10 +655,10 @@ class batch_normalization : public regularizer_layer {
 
     }
 
-  }  
+  }
 
   void bp_compute_cpu() {
-    
+
     // Check execution mode
     const bool is_training = this->m_model->get_execution_mode() == execution_mode::training;
 
@@ -680,7 +680,7 @@ class batch_normalization : public regularizer_layer {
     auto& local_bias_gradient = m_bias_gradient->Matrix();
     
     // Matrix parameters
-    const int mini_batch_size = this->m_model->get_current_mini_batch_size();
+    const int mini_batch_size = this->m_model->get_effective_mini_batch_size();
     const int width = input.Width();
     const El::Int local_width = local_input.Width();
     const int num_channels = this->m_neuron_dims[0];
@@ -749,7 +749,7 @@ class batch_normalization : public regularizer_layer {
         *m_bias_gradient,
         DataType(1) / mini_batch_size);
     }
-    
+
     // Compute error signal
     #pragma omp parallel for
     for (int channel = 0; channel < num_channels; ++channel) {

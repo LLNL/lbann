@@ -484,7 +484,7 @@ class base_convolution_layer : public learning_layer {
     const DataType zero = DataType(0);
     const DataType one = DataType(1);
     const int num_gpus = this->m_cudnn->get_num_gpus();
-    const int mini_batch_size = this->m_model->get_current_mini_batch_size();
+    const int mini_batch_size = this->m_model->get_effective_mini_batch_size();
 
     const auto& input_d = this->m_prev_activations_d[0];
     const auto& gradient_wrt_output_d = this->m_prev_error_signals_d[0];
@@ -746,8 +746,8 @@ class base_convolution_layer : public learning_layer {
     const int num_input_channels = this->m_prev_neuron_dims[0];
     const int num_output_channels = this->m_neuron_dims[0];
     const int num_per_output_channel = this->m_num_neurons / num_output_channels;
-    const int mini_batch_size = this->m_model->get_current_mini_batch_size();
-    
+    const int mini_batch_size = this->m_model->get_effective_mini_batch_size();
+
     // Compute bias gradient
     // Note: Sum is computed with Kahan summation
     optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();

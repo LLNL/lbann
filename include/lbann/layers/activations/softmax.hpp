@@ -131,7 +131,7 @@ class softmax_layer : public activation_layer {
   std::string get_type() const override { return "softmax"; }
 
   std::string get_description() const override {
-    return std::string {} + " softmax" + " dataLayout: " 
+    return std::string {} + " softmax" + " dataLayout: "
            + this->get_data_layout_string(get_data_layout());
   }
 
@@ -165,7 +165,7 @@ class softmax_layer : public activation_layer {
     activation_layer::fp_setup_data(mini_batch_size);
     m_workspace->Resize(1, mini_batch_size);
   }
-  
+
   void fp_compute() override {
     if(this->m_using_gpus) {
       fp_compute_cudnn();
@@ -233,7 +233,7 @@ class softmax_layer : public activation_layer {
         y *= scale;
       #ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
         y = std::max(y, m_min_output);
-      #endif
+      #endif // LBANN_ENABLE_SOFTMAX_CUTOFF
       }
     }
 
@@ -313,9 +313,9 @@ class softmax_layer : public activation_layer {
                             get_num_neurons(),
                             this->m_mini_batch_size_per_gpu,
                             m_min_output);
-  #endif
+  #endif // LBANN_ENABLE_SOFTMAX_CUTOFF
     
-  #endif
+  #endif // __LIB_CUDNN
   }
 
   void bp_compute_cudnn() {
@@ -357,10 +357,10 @@ class softmax_layer : public activation_layer {
                             error_signals_d.get_data(),
                             get_num_neurons(),
                             this->m_mini_batch_size_per_gpu,
-                            m_min_output);
-  #endif
+                            this->m_min_output);
+  #endif // LBANN_ENABLE_SOFTMAX_CUTOFF
     
-  #endif
+  #endif // __LIB_CUDNN
   }
 
 };

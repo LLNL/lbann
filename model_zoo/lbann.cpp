@@ -30,16 +30,19 @@
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/protobuf_utils.hpp"
 #include "lbann/utils/stack_profiler.hpp"
+#include "lbann/data_store/generic_data_store.hpp"
 
 
 using namespace lbann;
 
 const int lbann_default_random_seed = 42;
 
+
 int main(int argc, char *argv[]) {
   int random_seed = lbann_default_random_seed;
   lbann_comm *comm = initialize(argc, argv, random_seed);
   bool master = comm->am_world_master();
+
 
 
   if (master) {
@@ -199,9 +202,20 @@ int main(int argc, char *argv[]) {
     add_layers(model, data_readers, cudnn, pb);
     init_callbacks(comm, model, data_readers, pb);
     model->setup();
+
+    //under development; experimental
+    if (opts->has_bool("use_data_store") && opts->get_bool("use_data_store")) {
+      if (master) {
+        std::cerr << "\nUSING DATA STORE!\n\n";
+      }  
+      for (auto r : data_readers) {
+        r.second->setup_data_store(comm);
+      }  
+    }  
+
     // restart model from checkpoint if we have one
     //@todo
-    
+
     if (comm->am_world_master()) {
       std::cout << std::endl;
       if (default_optimizer != nullptr) {
@@ -230,7 +244,7 @@ int main(int argc, char *argv[]) {
       init_random(random_seed + comm->get_rank_in_world());
 #else
       if(comm->am_world_master()) {
-        std::cout << 
+        std::cout <<
           "--------------------------------------------------------------------------------\n"
           "ALERT: executing in sequentially consistent mode -- performance will suffer\n"
           "--------------------------------------------------------------------------------\n";
@@ -248,7 +262,7 @@ int main(int argc, char *argv[]) {
 
     } else {
       if (comm->am_world_master()) {
-        std::cout << 
+        std::cout <<
           "--------------------------------------------------------------------------------\n"
           "ALERT: model has been setup; we are now exiting due to command\n"
           "       line option: --exit_after_setup\n"
@@ -268,6 +282,7 @@ int main(int argc, char *argv[]) {
   } catch (std::exception& e) {
     El::ReportException(e);  // Elemental exceptions
   }
+
 
   // free all resources by El and MPI
   finalize(comm);

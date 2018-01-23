@@ -40,7 +40,7 @@ motif_definitions {
     layer {
       name: "branch1"
       parents: "split"
-      children: "branch1_bn" 
+      children: "branch1_bn"
       data_layout: "data_parallel"
       convolution {
         num_dims: 2
@@ -72,7 +72,7 @@ motif_definitions {
     layer {
       name: "branch2a"
       parents: "split"
-      children: "branch2a_bn" 
+      children: "branch2a_bn"
       data_layout: "data_parallel"
       convolution {
         num_dims: 2
@@ -106,7 +106,7 @@ motif_definitions {
     layer {
       name: "branch2b"
       parents: "branch2a_relu"
-      children: "branch2b_bn" 
+      children: "branch2b_bn"
       data_layout: "data_parallel"
       convolution {
         num_dims: 2
@@ -139,7 +139,7 @@ motif_definitions {
     layer {
       name: "branch2c"
       parents: "branch2b_relu"
-      children: "branch2c_bn" 
+      children: "branch2c_bn"
       data_layout: "data_parallel"
       convolution {
         num_dims: 2
@@ -211,7 +211,8 @@ model {
     name: "data"
     children: "conv1"
     data_layout: "data_parallel"
-    input_partitioned_minibatch {
+    input {
+      io_buffer: "partitioned"
     }
   }
   layer {
@@ -544,7 +545,8 @@ model {
     name: "target"
     children: ""
     data_layout: "data_parallel"
-    target_partitioned_minibatch {
+    target {
+      io_buffer: "partitioned"
       shared_data_reader: true
     }
   }

@@ -111,21 +111,18 @@ void setup_pointers(
     }
 
     // Set a target layer's paired input layer
-    if (dynamic_cast<target_layer*>(layer) != nullptr) {
-      auto *target = dynamic_cast<target_layer*>(layer);
+    if (dynamic_cast<generic_target_layer*>(layer) != nullptr) {
+      auto *target = dynamic_cast<generic_target_layer*>(layer);
 
       std::string name;
 
       // Get input layer name
-      if (proto_layers[i].has_target_distributed_minibatch()) {
-        name = proto_layers[i].target_distributed_minibatch().paired_input_layer();
-      }
-      if (proto_layers[i].has_target_partitioned_minibatch()) {
-        name = proto_layers[i].target_partitioned_minibatch().paired_input_layer();
+      if (proto_layers[i].has_target()) {
+        name = proto_layers[i].target().paired_input_layer();
       }
       if (name.empty()) {
         for (auto& other_layer : model_layers) {
-          if (dynamic_cast<input_layer*>(other_layer.second) != nullptr) {
+          if (dynamic_cast<generic_input_layer*>(other_layer.second) != nullptr) {
             name = other_layer.first;
             break;
           }
@@ -138,7 +135,7 @@ void setup_pointers(
       }
 
       // Set input layer
-      auto *input = dynamic_cast<input_layer*>(model_layers[name]);
+      auto *input = dynamic_cast<generic_input_layer*>(model_layers[name]);
       target->set_paired_input_layer(input);
 
     }
@@ -152,7 +149,7 @@ void setup_pointers(
       name = proto_layers[i].reconstruction().original_layer();
       if (name.empty()) {
         for (auto& other_layer : model_layers) {
-          if (dynamic_cast<input_layer*>(other_layer.second) != nullptr) {
+          if (dynamic_cast<generic_input_layer*>(other_layer.second) != nullptr) {
             name = other_layer.first;
             break;
           }
@@ -198,7 +195,7 @@ lbann_callback_imcomm::comm_type get_comm_type(const std::string &s, bool master
     if (master) {
       std::stringstream err;
       err << __FILE__ << " " <<__LINE__
-         << " :: unkown comm_type: " << s
+          << " :: unkown comm_type: " << s
           << " should be one of: none, normal, onebit_quantization, thresh_quantization, adaptive_quantization";
       throw lbann_exception(err.str());
     } else {
@@ -358,40 +355,37 @@ void add_layers(
     }
 
     //////////////////////////////////////////////////////////////////
-    // LAYER: input_distributed_minibatch
+    // LAYER: input
     //////////////////////////////////////////////////////////////////
-    else if (layer.has_input_distributed_minibatch()) {
-      const lbann_data::InputDistributedMiniBatch& ell = layer.input_distributed_minibatch();
-      if (layout == data_layout::MODEL_PARALLEL) {
-        d = new input_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(
-          comm,
-          m.num_parallel_readers(),
-          data_readers,
-          !ell.data_set_per_model());
-      } else {
-        d = new input_layer_distributed_minibatch<data_layout::DATA_PARALLEL>(
-          comm,
-          m.num_parallel_readers(),
-          data_readers,
-          !ell.data_set_per_model());
-      }
-    }
-
-    //////////////////////////////////////////////////////////////////
-    // LAYER: input_partitioned_minibatch
-    //////////////////////////////////////////////////////////////////
-    else if (layer.has_input_partitioned_minibatch()) {
-      const lbann_data::InputPartitionedMiniBatch& ell = layer.input_partitioned_minibatch();
-      if (layout == data_layout::MODEL_PARALLEL and master) {
-        err << __FILE__ << " " << __LINE__ << " :: input_layer_partitioned_minibatch "
-            << "does not support MODEL_PARALLEL layouts";
-        throw lbann_exception(err.str());
-      } else {
-        d = new input_layer_partitioned_minibatch<data_layout::DATA_PARALLEL>(
-          comm,
-          m.num_parallel_readers(),
-          data_readers,
-          !ell.data_set_per_model());
+    else if (layer.has_input()) {
+      const lbann_data::Input& ell = layer.input();
+      const std::string& io_buffer = ell.io_buffer();
+      if(io_buffer == "distributed") {
+        if (layout == data_layout::MODEL_PARALLEL) {
+          d = new input_layer<distributed_io_buffer, data_layout::MODEL_PARALLEL>(
+            comm,
+            m.num_parallel_readers(),
+            data_readers,
+            !ell.data_set_per_model());
+        } else {
+          d = new input_layer<distributed_io_buffer, data_layout::DATA_PARALLEL>(
+            comm,
+            m.num_parallel_readers(),
+            data_readers,
+            !ell.data_set_per_model());
+        }
+      }else if(io_buffer == "partitioned") {
+        if (layout == data_layout::MODEL_PARALLEL and master) {
+          err << __FILE__ << " " << __LINE__ << " :: input_layer_partitioned_minibatch "
+              << "does not support MODEL_PARALLEL layouts";
+          throw lbann_exception(err.str());
+        } else {
+          d = new input_layer<partitioned_io_buffer, data_layout::DATA_PARALLEL>(
+            comm,
+            m.num_parallel_readers(),
+            data_readers,
+            !ell.data_set_per_model());
+        }
       }
     }
 
@@ -973,44 +967,41 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     // LAYER: target_partitioned_minibatch
     //////////////////////////////////////////////////////////////////
-    else if (layer.has_target_partitioned_minibatch()) {
-      const lbann_data::TargetPartitionedMinibatch& ell = layer.target_partitioned_minibatch();
-      if (layout == data_layout::MODEL_PARALLEL and master) {
-        err << __FILE__ << " " << __LINE__ << " :: target_layer_partitioned_minibatch "
-            << "does not support MODEL_PARALLEL layouts";
-        throw lbann_exception(err.str());
-      } else {
-        d = new  target_layer_partitioned_minibatch<data_layout::DATA_PARALLEL>(
-          comm,
-          nullptr,
-          m.num_parallel_readers(),
-          data_readers,
-          ell.shared_data_reader(),
-          ell.for_regression());
-      }
-    }
-
-    //////////////////////////////////////////////////////////////////
-    // LAYER: target_distributed_minibatch
-    //////////////////////////////////////////////////////////////////
-    else if (layer.has_target_distributed_minibatch()) {
-      const lbann_data::TargetDistributedMinibatch& ell = layer.target_distributed_minibatch();
-      if (layout == data_layout::MODEL_PARALLEL) {
-        d = new  target_layer_distributed_minibatch<data_layout::MODEL_PARALLEL>(
-          comm,
-          nullptr,
-          m.num_parallel_readers(),
-          data_readers,
-          ell.shared_data_reader(),
-          ell.for_regression());
-      } else {
-        d = new  target_layer_distributed_minibatch<data_layout::DATA_PARALLEL>(
-          comm,
-          nullptr,
-          m.num_parallel_readers(),
-          data_readers,
-          ell.shared_data_reader(),
-          ell.for_regression());
+    else if (layer.has_target()) {
+      const lbann_data::Target& ell = layer.target();
+      const std::string& io_buffer = ell.io_buffer();
+      if(io_buffer == "distributed") {
+        if (layout == data_layout::MODEL_PARALLEL) {
+          d = new  target_layer<distributed_io_buffer, data_layout::MODEL_PARALLEL>(
+            comm,
+            nullptr,
+            m.num_parallel_readers(),
+            data_readers,
+            ell.shared_data_reader(),
+            ell.for_regression());
+        } else {
+          d = new  target_layer<distributed_io_buffer, data_layout::DATA_PARALLEL>(
+            comm,
+            nullptr,
+            m.num_parallel_readers(),
+            data_readers,
+            ell.shared_data_reader(),
+            ell.for_regression());
+        }
+      }else if(io_buffer == "partitioned") {
+        if (layout == data_layout::MODEL_PARALLEL and master) {
+          err << __FILE__ << " " << __LINE__ << " :: target_layer "
+              << "does not support MODEL_PARALLEL layouts";
+          throw lbann_exception(err.str());
+        } else {
+          d = new  target_layer<partitioned_io_buffer, data_layout::DATA_PARALLEL>(
+            comm,
+            nullptr,
+            m.num_parallel_readers(),
+            data_readers,
+            ell.shared_data_reader(),
+            ell.for_regression());
+        }
       }
     }
 
@@ -1586,7 +1577,7 @@ void init_callbacks(
     if (callback.has_checkpoint()) {
       const lbann_data::CallbackCheckpoint& c = callback.checkpoint();
       if (master) {
-        std::cout << "checkpoint saving on interval <epoch:" << c.checkpoint_epochs() << " steps:" << c.checkpoint_steps() << " secs:" << c.checkpoint_secs()  
+        std::cout << "checkpoint saving on interval <epoch:" << c.checkpoint_epochs() << " steps:" << c.checkpoint_steps() << " secs:" << c.checkpoint_secs()
 	          << "> to dir: " << c.checkpoint_dir() << std::endl;
       }
       lbann_callback_checkpoint *checkpoint_cb = new
@@ -1654,6 +1645,10 @@ objective_function *init_objective_function(lbann_data::ObjectiveFunction obj_fn
   for (int j=0; j<obj_fn_params.group_lasso_weight_regularization_size(); j++) {
     const lbann_data::GroupLassoWeightRegularization &params = obj_fn_params.group_lasso_weight_regularization(j);
     obj_fn->add_term(new group_lasso_weight_regularization(params.scale_factor()));
+  }
+  for (int j=0; j<obj_fn_params.kl_divergence_size(); j++) {
+    const lbann_data::KLDivergence &params = obj_fn_params.kl_divergence(j);
+    obj_fn->add_term(new kl_divergence(params.layer1(),params.layer2()));
   }
   return obj_fn;
 }
@@ -1879,15 +1874,15 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
         reader = merged_samples;
       }else {
         //create label file
-        auto* label_csv = new csv_reader(shuffle); 
+        auto* label_csv = new csv_reader(shuffle);
         label_csv->set_data_filename(readme.label_filename());
-        label_csv->disable_labels(false); 
+        label_csv->disable_labels(false);
         label_csv->set_has_header(readme.has_header()); //use same as parent file
         label_csv->set_label_col(0); //assume there is only one label file and the column and is label column
         data_reader_merge_features* merged_features = new data_reader_merge_features(npy_readers,label_csv, shuffle);
         reader = merged_features;
       }
-  
+
     } else if (name == "synthetic") {
       reader = new data_reader_synthetic(readme.num_samples(), readme.num_features(), shuffle);
     } else if (name == "ascii") {

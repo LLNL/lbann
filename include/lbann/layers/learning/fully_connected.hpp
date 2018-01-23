@@ -51,7 +51,7 @@ template <data_layout T_layout>
 class fully_connected_layer : public learning_layer {
  private:
 
-  /** Scaling factor for bias term. 
+  /** Scaling factor for bias term.
    *  If the scaling factor is zero, bias is not applied.
    */
   DataType m_bias_scaling_factor;
@@ -103,13 +103,13 @@ class fully_connected_layer : public learning_layer {
       this->m_using_gpus = true;
       this->m_cudnn = cudnn;
     }
-#endif
+#endif // __LIB_CUDNN
   }
 
   /** Returns description of ctor params */
   std::string get_description() const override {
     return std::string {} +
-     " fully_connected; num_neurons: " 
+     " fully_connected; num_neurons: "
      + std::to_string(this->m_num_neurons)
      + " has_bias: " + std::to_string(this->m_bias_scaling_factor)
      + " dataLayout: " + this->get_data_layout_string(get_data_layout());
@@ -133,7 +133,7 @@ class fully_connected_layer : public learning_layer {
     m_linearity_gradient_d = other.m_linearity_gradient_d;
     m_bias_gradient_d = other.m_bias_gradient_d;
 #endif // __LIB_CUDNN
-    
+
   }
 
   fully_connected_layer& operator=(const fully_connected_layer& other) {
@@ -339,7 +339,7 @@ class fully_connected_layer : public learning_layer {
   void bp_compute_cpu() {
 
     // Effective mini-batch size
-    const int mini_batch_size = this->m_model->get_current_mini_batch_size();
+    const int mini_batch_size = this->m_model->get_effective_mini_batch_size();
 
     // Matrices
     const auto& linearity = m_weights[0]->get_values();
@@ -463,10 +463,7 @@ class fully_connected_layer : public learning_layer {
       }
 
     }
-#ifdef LBANN_DEBUG
-    this->m_cudnn->check_error();
-#endif
-#endif
+#endif // __LIB_CUDNN
   }
 
   void bp_compute_cuda() {
@@ -526,7 +523,7 @@ class fully_connected_layer : public learning_layer {
       }
       bias_optimizer->stage_gradient_for_accumulation_gpu(
         m_bias_gradient_d.get_locked_data(),
-        m_bias_scaling_factor / this->m_model->get_current_mini_batch_size());
+        m_bias_scaling_factor / this->m_model->get_effective_mini_batch_size());
     }
       
     // Compute gradient w.r.t. linearity if needed
@@ -545,7 +542,7 @@ class fully_connected_layer : public learning_layer {
       }
       linearity_optimizer->stage_gradient_for_accumulation_gpu(
         m_linearity_gradient_d.get_locked_data(),
-        DataType(1) / this->m_model->get_current_mini_batch_size());
+        DataType(1) / this->m_model->get_effective_mini_batch_size());
     }
 
     // Compute gradient w.r.t. input
@@ -561,9 +558,6 @@ class fully_connected_layer : public learning_layer {
                                 gradient_wrt_input_d.get_data(i), gradient_wrt_input_ldim));
     }
 
-#ifdef LBANN_DEBUG
-    this->m_cudnn->check_error();
-#endif
 #endif // __LIB_CUDNN
   }
 

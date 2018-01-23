@@ -96,7 +96,9 @@ model {
   layer {
     name: "data"
     data_layout: "data_parallel"
-    input_partitioned_minibatch {}
+    input {
+      io_buffer: "partitioned"
+    }
   }
 
   layer {
@@ -146,8 +148,8 @@ model {
       pool_pads_i: 0
       pool_strides_i: 2
       pool_mode: "max"
-    } 
-  } 
+    }
+  }
 
   layer {
     name: "ip1"
@@ -182,10 +184,10 @@ model {
   layer {
     name: "target"
     data_layout: "data_parallel"
-    target_partitioned_minibatch {
+    target {
+      io_buffer: "partitioned"
       shared_data_reader: true
     }
   }
 
 }
-

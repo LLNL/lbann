@@ -37,7 +37,7 @@ namespace lbann {
 // Forward declarations
 class model;
 class Layer;
-class target_layer;
+class generic_target_layer;
 
 /** Metric statistics. */
 struct metric_statistics {
@@ -113,7 +113,7 @@ class metric {
 
   /** Setup metric. */
   virtual void setup(model& m);
-  
+
   /** Evaluate the metric value. */
   EvalType evaluate(execution_mode mode);
 
@@ -131,9 +131,9 @@ class metric {
   int get_statistics_num_samples(execution_mode mode) const;
 
   /** Set pointer to target layer. */
-  void set_target_layer(const target_layer *target) { m_target_layer = target; }
+  void set_target_layer(const generic_target_layer *target) { m_target_layer = target; }
   /** Get target layer. */
-  const target_layer& get_target_layer() const;
+  const generic_target_layer& get_target_layer() const;
 
   /** Get list of pointers to layers. */
   std::vector<Layer*> get_layer_pointers() const;
@@ -163,7 +163,7 @@ class metric {
   lbann_comm *m_comm;
 
   /** Pointer to target layer. */
-  const target_layer *m_target_layer;
+  const generic_target_layer *m_target_layer;
 
   /** Metric statistics. */
   std::map<execution_mode,metric_statistics> m_statistics;

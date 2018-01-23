@@ -35,7 +35,7 @@ namespace lbann {
 void lbann_callback_dump_activations::on_forward_prop_end(model *m, Layer *l) {
 
   // Skip target layers
-  if (dynamic_cast<target_layer*>(l) != nullptr) {
+  if (dynamic_cast<generic_target_layer*>(l) != nullptr) {
     return;
   }
 
@@ -48,7 +48,7 @@ void lbann_callback_dump_activations::on_forward_prop_end(model *m, Layer *l) {
        + "-" + l->get_name()
        + "-Activations");
   El::Write(l->get_activations(), file, El::ASCII);
-  
+
 }
 
 }  // namespace lbann

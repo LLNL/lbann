@@ -1,0 +1,200 @@
+model {
+  name: "directed_acyclic_graph_model"
+  data_layout: "model_parallel"
+  mini_batch_size: 10
+  block_size: 256
+  num_epochs: 10
+  num_parallel_readers: 0
+  procs_per_model: 0
+  use_cudnn: true
+  num_gpus: -1
+
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    mean_squared_error {}
+    kl_divergence {
+      layer1: "z_mean"
+      layer2: "z_log_sigma" 
+    }
+  }
+
+  ###################################################
+  # Metrics
+  ###################################################
+
+  metric { mean_squared_error {} }
+
+  ###################################################
+  # Callbacks
+  ###################################################
+  callback {
+    print {
+      interval: 1
+    }
+  }
+#  callback {
+#    timer {
+#    }
+#  }
+  callback {
+    save_images {
+      image_dir: "images_"
+      extension: "pgm"
+    }
+  }
+
+  ###################################################
+  # start of layers
+  ###################################################
+
+  # INPUT
+  layer {
+    name: "data"
+    data_layout: "model_parallel"
+    input {
+      io_buffer: "distributed"
+    }
+  }
+
+  # FULLY_CONNECTED encode1
+  layer {
+    parents: "data"
+    name: "encode1"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 256
+      weight_initialization: "glorot_uniform"
+      has_bias: true
+    }
+  }
+
+  # RELU relu1
+  layer {
+    parents: "encode1"
+    name: "relu1"
+    data_layout: "model_parallel"
+    relu {
+    }
+  }
+
+  #split
+  layer {
+    parents: "relu1"
+    name: "split"
+    children: "z_mean z_log_sigma"
+    data_layout: "model_parallel"
+    split {
+    }
+  }
+  
+  # FULLY_CONNECTED z_mean
+  layer {
+    parents: "split"
+    name: "z_mean"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 2
+      weight_initialization: "glorot_uniform"
+      has_bias: true
+    }
+  }
+
+  # FULLY_CONNECTED z_log_sigma
+  layer {
+    parents: "split"
+    name: "z_log_sigma"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 2
+      weight_initialization: "glorot_uniform"
+      has_bias: true
+    }
+  }
+  
+  # Exponent exp
+  layer {
+    parents: "z_log_sigma"
+    name: "exp"
+    data_layout: "model_parallel"
+    exponential {
+    }
+  }
+
+  # Noise noise
+  layer {
+    parents: "exp"
+    name: "noise"
+    data_layout: "model_parallel"
+    noise {
+    }
+  }
+
+  # Sum sum
+  layer {
+    parents: "z_mean noise"
+    name: "sum"
+    children: "decode1"
+    data_layout: "model_parallel"
+    sum {
+    }
+  }
+
+  # FULLY_CONNECTED decode1
+  layer {
+    parents: "sum"
+    name: "decode1"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 256
+      weight_initialization: "glorot_uniform"
+      has_bias: true
+    }
+  }
+
+  # RELU relu2
+  layer {
+    parents: "decode1"
+    name: "relu2"
+    data_layout: "model_parallel"
+    relu {
+    }
+  }
+
+  # FULLY_CONNECTED decode0
+  layer {
+    parents: "relu2"
+    name: "decode0"
+    data_layout: "model_parallel"
+    num_neurons_from_data_reader: true
+    fully_connected {
+      weight_initialization: "glorot_uniform"
+      has_bias: true
+    }
+  }
+
+  # SIGMOID sigmoid
+  layer {
+    parents: "decode0"
+    name: "sigmoid"
+    data_layout: "model_parallel"
+    sigmoid {
+    }
+  }
+
+  # RECONSTRUCTION
+  layer {
+    parents: "sigmoid"
+    name: "reconstruction"
+    data_layout: "model_parallel"
+    reconstruction {
+      original_layer: "data"
+    }
+  }
+
+  ###################################################
+  # end of layers
+  ###################################################
+}

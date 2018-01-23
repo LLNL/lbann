@@ -107,7 +107,7 @@ bool pilot2_molecular_reader::fetch_datum(
   // Fetch the actual molecule.
   fetch_molecule(X, data_id, 0, mb_idx);
   // Fetch the neighbors - note that the offset is 2x the max
-  // neighborhood size to accomodate the top and bottom of the
+  // neighborhood size to accommodate the top and bottom of the
   // bilayer
   const int neighbor_frame_offset =
     frame * m_num_samples_per_frame * (2 * m_max_neighborhood);

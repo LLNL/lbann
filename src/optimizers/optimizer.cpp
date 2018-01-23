@@ -421,6 +421,7 @@ void optimizer::setup(weights& w) {
   const int height = m_weights->get_height();
   const int width = m_weights->get_width();
   const AbsDistMat& values = m_weights->get_values();
+
   m_gradient = values.Construct(values.Grid(), values.Root());
   m_staging = values.Construct(values.Grid(), values.Root());
   El::Zeros(*m_gradient, height, width);

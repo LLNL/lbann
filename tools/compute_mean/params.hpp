@@ -59,6 +59,8 @@ class params {
   bool m_enable_colorizer;
   /// Whether to enable mean_extractor. The default is true.
   bool m_enable_mean_extractor;
+  /// to only create output directories and do nothing else
+  bool m_only_create_output_dirs;
 
   /**
    * The parameter used by mean_extractor. If 0, turns off mean_extractor.
@@ -120,6 +122,9 @@ class params {
   }
   bool to_enable_mean_extractor() const {
     return (m_enable_mean_extractor && (m_mean_batch_size > 0));
+  }
+  bool check_to_create_dirs_only() const {
+    return m_only_create_output_dirs;
   }
   unsigned int get_mean_batch_size() const {
     return m_mean_batch_size;

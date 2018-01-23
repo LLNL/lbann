@@ -24,33 +24,41 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_PARTITIONED_MINIBATCH_HPP_INCLUDED
-#define LBANN_PARTITIONED_MINIBATCH_HPP_INCLUDED
+#ifndef LBANN_PARTITIONED_IO_BUFFER_HPP_INCLUDED
+#define LBANN_PARTITIONED_IO_BUFFER_HPP_INCLUDED
 
-#include "lbann/data_distributions/data_distribution.hpp"
+#include "lbann/io/data_buffers/generic_io_buffer.hpp"
 
 namespace lbann {
 
 /**
  * Parallel I/O routines for managing partitioned minibatches
  */
-class partitioned_minibatch : public virtual generic_data_distribution {
+class partitioned_io_buffer : public generic_io_buffer {
  public:
-  partitioned_minibatch(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers);
-  partitioned_minibatch(
-    const partitioned_minibatch&) = default;
-  partitioned_minibatch& operator=(
-    const partitioned_minibatch&) = default;
-  ~partitioned_minibatch() override {}
+  partitioned_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers);
+  partitioned_io_buffer(
+    const partitioned_io_buffer&) = default;
+  partitioned_io_buffer& operator=(
+    const partitioned_io_buffer&) = default;
+  ~partitioned_io_buffer() override {}
+  partitioned_io_buffer* copy() const override { return new partitioned_io_buffer(*this); }
 
-  int fetch_to_local_matrix(Mat& M_local, generic_data_reader *data_reader) override;
-  void distribute_from_local_matrix(Mat& M_local, CircMat& Ms, generic_data_reader *data_reader) override;
-  bool is_data_set_processed(generic_data_reader *data_reader) override;
+  std::string get_type() const override { return "partitioned_io_buffer"; }
+  void set_local_matrix_bypass(Mat *m) override { M_local = m; }
+  void set_std_matrix_view(El::Int cur_mini_batch_size) override {}
+  void setup_data(El::Int num_neurons, El::Int max_minibatch_size) override {}
+
+  int fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) override;
+  void distribute_from_local_matrix(AbsDistMat& Ms, generic_data_reader *data_reader, execution_mode mode) override;
+  bool is_data_set_processed(generic_data_reader *data_reader, execution_mode mode) override;
 
   void calculate_num_iterations_per_epoch_spanning_models(int max_mini_batch_size, generic_data_reader *data_reader) override;
   void calculate_num_iterations_per_epoch_single_model(int max_mini_batch_size, generic_data_reader *data_reader) override;
   int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) const override;
+
+  Mat *M_local;
 };
 }
 
-#endif  // LBANN_PARTITIONED_MINIBATCH_HPP_INCLUDED
+#endif  // LBANN_PARTITIONED_IO_BUFFER_HPP_INCLUDED

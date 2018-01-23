@@ -826,6 +826,7 @@ void cudnn_manager::set_maximum_work_space_size(int i) {
   // Search parameters for work space size
   const double decay_factor = 0.8;
   size_t free_memory, total_memory;
+  CHECK_CUDA(cudaSetDevice(m_gpus[i]));  
   CHECK_CUDA(cudaMemGetInfo(&free_memory, &total_memory));
 
   // Clear work space

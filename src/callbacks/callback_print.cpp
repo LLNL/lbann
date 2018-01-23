@@ -47,10 +47,10 @@ void lbann_callback_print::on_epoch_begin(model *m) {
   lbann_comm *comm = m->get_comm();
   if (comm->am_world_master()) {
     const std::vector<Layer *>layers = m->get_layers();
-    auto *layer = dynamic_cast<input_layer*>(layers[0]);
-    std::cout << "--------------------------------------------------------------------------------" 
+    auto *layer = dynamic_cast<generic_input_layer*>(layers[0]);
+    std::cout << "--------------------------------------------------------------------------------"
               << std::endl;
-    std::cout << "[" << m->get_cur_epoch() << "] Epoch : stats formated [tr/v/te]" 
+    std::cout << "[" << m->get_cur_epoch() << "] Epoch : stats formated [tr/v/te]"
               << " iter/epoch ="
               << " ["
               << layer->get_num_iterations_per_epoch(execution_mode::training)
@@ -121,7 +121,7 @@ void lbann_callback_print::report_results(model *m) {
   std::string mode_string;
   switch (mode) {
   case execution_mode::training:
-    mode_string = "training epoch " + std::to_string(m->get_cur_epoch());
+    mode_string = "training epoch " + std::to_string(m->get_cur_epoch()-1);
     break;
   case execution_mode::validation:
     mode_string = "validation";
@@ -173,7 +173,7 @@ void lbann_callback_print::report_results(model *m) {
         comm->intermodel_gather(num_samples, num_samples_list);
         for (int i = 0; i < num_models; ++i) {
           std::cout << "Model " << i << " " << mode_string << " "
-                    << met->name() << " : " 
+                    << met->name() << " : "
                     << score_list[i] << met->get_unit()
                     << std::endl;
         }
@@ -197,7 +197,7 @@ void lbann_callback_print::report_results(model *m) {
     }
 
   }
-  
+
 }
 
 }  // namespace lbann
