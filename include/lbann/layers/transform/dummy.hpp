@@ -22,64 +22,60 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// noise.hpp - Noise layer
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYER_NOISE_HPP_INCLUDED
-#define LBANN_LAYER_NOISE_HPP_INCLUDED
+#ifndef LBANN_LAYER_DUMMY_HPP_INCLUDED
+#define LBANN_LAYER_DUMMY_HPP_INCLUDED
 
 #include "lbann/layers/transform/transform.hpp"
-#include "lbann/utils/random.hpp"
 
 namespace lbann {
 
-/** Layer adds (Gaussian) noise to data. */
+/** Dummy layer with no output. */
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
-class noise_layer : public transform_layer {
- private:
-  /** Noise factor */
-  DataType m_noise_factor;
+class dummy_layer : public transform_layer {
 
  public:
-  /// Constructor
-  noise_layer(lbann_comm *comm,
-              DataType noise_factor=DataType(0.5),
+  /** Constructor. */
+  dummy_layer(lbann_comm *comm,
               cudnn::cudnn_manager *cudnn = nullptr)
-    : transform_layer(comm),
-      m_noise_factor(noise_factor) {}
+    : transform_layer(comm) {
 
-  /** Returns description of ctor params */
+    // Dummy layer has no children
+    m_expected_num_child_layers = 0;
+
+  #ifdef __LIB_CUDNN
+    // Initialize GPU memory if using GPU
+    if (cudnn) {
+      this->m_using_gpus = true;
+      this->m_cudnn = cudnn;
+    }
+  #endif // __LIB_CUDNN
+
+  }
+
+  /** Copy function. */
+  dummy_layer* copy() const override { return new dummy_layer(*this); }
+
+  /** Returns description. */
   std::string get_description() const override {
     std::stringstream s;
-     s << "noise_layer  noise_factor: " << m_noise_factor
-       << " dataLayout: " << this->get_data_layout_string(get_data_layout());
+     s << "dummy_layer  dataLayout: " << this->get_data_layout_string(get_data_layout());
      return s.str();
   }
 
-  noise_layer* copy() const override { return new noise_layer(*this); }
-
-  std::string get_type() const override { return "noise"; }
+  /** Get layer type. */
+  std::string get_type() const override { return "dummy"; }
 
   data_layout get_data_layout() const override { return T_layout; }
 
  protected:
 
-  void fp_compute() override {
-    const auto& input = get_prev_activations();
-    auto& output = get_activations();
-    gaussian_fill(output,
-                  output.Height(), output.Width(),
-                  DataType(0), m_noise_factor);
-    El::Axpy(DataType(1), input, output);
-  }
-
-  void bp_compute() override {
-    El::Axpy(DataType(1), get_prev_error_signals(), get_error_signals());
-  }
+  void fp_compute() override {}
+  void bp_compute() override {}
 
 };
 
 }  // namespace lbann
 
-#endif  // LBANN_LAYER_NOISE_HPP_INCLUDED
+#endif  // LBANN_LAYER_DUMMY_HPP_INCLUDED

@@ -54,14 +54,16 @@ class constant_layer : public transform_layer {
     // Constant layer has no parents
     m_expected_num_parent_layers = 0;
 
+  #ifdef __LIB_CUDNN
+    // Initialize GPU memory if using GPU
+    if (cudnn) {
+      this->m_using_gpus = true;
+      this->m_cudnn = cudnn;
+    }
+  #endif // __LIB_CUDNN
+
   }
 
-  /** Copy constructor. */
-  constant_layer(const constant_layer& other) = default;
-  /** Copy assignment operator. */
-  constant_layer& operator=(const constant_layer& other) = default;
-  /** Destructor. */
-  ~constant_layer() override = default;
   /** Copy function. */
   constant_layer* copy() const override { return new constant_layer(*this); }
 
@@ -96,6 +98,19 @@ class constant_layer : public transform_layer {
     if (m_value != DataType(0)) {
       El::Fill(get_activations(), m_value);
     }
+  }
+
+  void setup_gpu() override {
+    transform_layer::setup_gpu();
+  #ifndef __LIB_CUDNN
+    throw lbann_exception("constant_layer: cuDNN not detected");
+  #else
+    auto& activations_d = m_activations_d[0];
+    m_cudnn->set_on_gpus(activations_d.get_data(),
+                         m_value,
+                         activations_d.get_height(),
+                         activations_d.get_width_per_gpu());
+  #endif // #ifndef __LIB_CUDNN
   }
 
   void fp_compute() override {}
