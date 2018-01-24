@@ -73,6 +73,7 @@
 #include "lbann/layers/transform/dummy.hpp"
 #include "lbann/layers/transform/noise.hpp"
 #include "lbann/layers/transform/safe_inv.hpp"
+#include "lbann/layers/transform/hadamard.hpp"
 
 /// Regularization layers.
 #include "lbann/layers/regularizers/local_response_normalization.hpp"

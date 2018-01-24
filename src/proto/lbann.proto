@@ -629,6 +629,7 @@ message Layer {
    Sum sum = 303;
    Noise noise = 307;
    Unpooling unpooling = 304;
+   Hadamard hadamard = 308;
 
    // learning Layers
    FullyConnected fully_connected = 11;
@@ -809,6 +810,10 @@ message Sum {
 message Noise {
   double noise_factor=1;
 }
+
+message Hadamard {
+}
+
 /////////////////////
 // learning Layers //
 /////////////////////

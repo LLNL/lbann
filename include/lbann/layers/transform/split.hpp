@@ -33,7 +33,9 @@
 
 namespace lbann {
 
-/// Split layer
+/** Split layer.
+ *  This layer can accommodate an arbitrary number of outputs.
+ */
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
 class split_layer : public transform_layer {
  private:

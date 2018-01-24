@@ -133,6 +133,16 @@ class concatenation_layer : public transform_layer {
 
   data_layout get_data_layout() const override { return T_layout; }
 
+  void setup_pointers() override {
+    transform_layer::setup_pointers();
+    std::stringstream err;
+    if (get_num_parents() <= 0) {
+      err << __FILE__ << " " << __LINE__ << " :: concatenation_layer: "
+          << "concatenation layer has no parents";
+      throw lbann_exception(err.str());
+    }
+  }
+
   void setup_matrices(const El::Grid& grid) override {
     transform_layer::setup_matrices(grid);
     if (m_input_region_v != nullptr)  { delete m_input_region_v; }
@@ -148,18 +158,10 @@ class concatenation_layer : public transform_layer {
     // Initialize previous neuron tensor dimensions
     transform_layer::setup_dims();
 
-    // Check that layer has at least one parent
-    const int num_parents = get_num_parents();
-    if (num_parents <= 0) {
-      err << __FILE__ << " " << __LINE__ << " :: concatenation_layer: "
-          << "concatenation layer has no parents";
-      throw lbann_exception(err.str());
-    }
-
     // Get concatenation axis indices corresponding to parent layers
     m_concatenation_points.empty();
     m_concatenation_points.push_back(0);
-    for(int i = 0; i < num_parents; ++i) {
+    for(int i = 0; i < get_num_parents(); ++i) {
       const auto& parent_dims = get_prev_neuron_dims(i);
       
       // Check that parent layer has valid dimensions

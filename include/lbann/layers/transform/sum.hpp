@@ -33,7 +33,9 @@
 
 namespace lbann {
 
-/// Sum layer
+/** Sum layer.
+ *  This layer adds input tensors.
+ */
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
 class sum_layer : public transform_layer {
  private:

@@ -32,7 +32,9 @@
 
 namespace lbann {
 
-/// Slice layer
+/** Slice layer.
+ *  This layer slices an input tensor along a specified axis.
+ */
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
 class slice_layer : public transform_layer {
  private:
@@ -132,6 +134,16 @@ class slice_layer : public transform_layer {
   std::string get_type() const override { return "slice"; }
 
   data_layout get_data_layout() const override { return T_layout; }
+
+  void setup_pointers() override {
+    transform_layer::setup_pointers();
+    std::stringstream err;
+    if (get_num_children() <= 0) {
+      err << __FILE__ << " " << __LINE__ << " :: slice_layer: "
+          << "slice layer has no children";
+      throw lbann_exception(err.str());
+    }
+  }
 
   void setup_matrices(const El::Grid& grid) override {
     transform_layer::setup_matrices(grid);
