@@ -30,7 +30,7 @@
 #include "lbann/utils/exception.hpp"
 //#include <iostream>
 
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
 namespace lbann {
 
 
@@ -90,5 +90,4 @@ std::ostream& operator<<(std::ostream& os, const cv_transform& tr) {
 
 
 } // end of namespace lbann
-
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV

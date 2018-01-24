@@ -31,7 +31,7 @@
 #include "lbann/utils/mild_exception.hpp"
 #include <cmath> //fabs
 
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
 namespace lbann {
 
 cv_normalizer::cv_normalizer()
@@ -270,19 +270,19 @@ bool cv_normalizer::scale(cv::Mat& image, const std::vector<channel_trans_t>& tr
 
   switch(image.depth()) {
   case CV_8U:
-    return scale_with_known_type<_depth_type(CV_8U),  ::DataType>(image, trans);
+    return scale_with_known_type<_depth_type(CV_8U),  DataType>(image, trans);
   case CV_8S:
-    return scale_with_known_type<_depth_type(CV_8S),  ::DataType>(image, trans);
+    return scale_with_known_type<_depth_type(CV_8S),  DataType>(image, trans);
   case CV_16U:
-    return scale_with_known_type<_depth_type(CV_16U), ::DataType>(image, trans);
+    return scale_with_known_type<_depth_type(CV_16U), DataType>(image, trans);
   case CV_16S:
-    return scale_with_known_type<_depth_type(CV_16S), ::DataType>(image, trans);
+    return scale_with_known_type<_depth_type(CV_16S), DataType>(image, trans);
   case CV_32S:
-    return scale_with_known_type<_depth_type(CV_32S), ::DataType>(image, trans);
+    return scale_with_known_type<_depth_type(CV_32S), DataType>(image, trans);
   case CV_32F:
-    return scale_with_known_type<_depth_type(CV_32F), ::DataType>(image, trans);
+    return scale_with_known_type<_depth_type(CV_32F), DataType>(image, trans);
   case CV_64F:
-    return scale_with_known_type<_depth_type(CV_64F), ::DataType>(image, trans);
+    return scale_with_known_type<_depth_type(CV_64F), DataType>(image, trans);
   }
   return false;
 }
@@ -339,4 +339,4 @@ std::ostream& cv_normalizer::print(std::ostream& os) const {
 
 
 } // end of namespace lbann
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV

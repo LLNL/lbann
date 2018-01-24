@@ -41,7 +41,7 @@ class relu_layer : public entrywise_activation_layer {
 
  private:
 
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
   /// Activation descriptor
   cudnnActivationDescriptor_t m_activation_cudnn_desc;
 #endif
@@ -53,7 +53,7 @@ class relu_layer : public entrywise_activation_layer {
 
     initialize_distributed_matrices();
 
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
 
     m_activation_cudnn_desc = nullptr;
 
@@ -62,29 +62,29 @@ class relu_layer : public entrywise_activation_layer {
       this->m_cudnn = cudnn;
     }
 
-  #endif // #ifdef __LIB_CUDNN
+  #endif // #ifdef LBANN_HAS_CUDNN
 
   }
 
   relu_layer(const relu_layer& other) :
     entrywise_activation_layer(other) {
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
     m_activation_cudnn_desc = nullptr;
     cudnn::copy_activation_cudnn_desc(other.m_activation_cudnn_desc,
                                       m_activation_cudnn_desc);
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
   }
 
   relu_layer& operator=(const relu_layer& other) {
     entrywise_activation_layer::operator=(other);
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
     cudnn::copy_activation_cudnn_desc(other.m_activation_cudnn_desc,
                                       m_activation_cudnn_desc);
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
   }
 
   ~relu_layer() override {
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
     if(m_activation_cudnn_desc) {
       CHECK_CUDNN(cudnnDestroyActivationDescriptor(m_activation_cudnn_desc));
     }
@@ -108,7 +108,7 @@ class relu_layer : public entrywise_activation_layer {
 
   void setup_gpu() override {
     entrywise_activation_layer::setup_gpu();
-  #ifndef __LIB_CUDNN
+  #ifndef LBANN_HAS_CUDNN
     throw lbann_exception("relu_layer: cuDNN not detected");
   #else
 
@@ -132,7 +132,7 @@ class relu_layer : public entrywise_activation_layer {
   }
 
   void fp_compute_gpu() override {
-  #ifndef __LIB_CUDNN
+  #ifndef LBANN_HAS_CUDNN
     throw lbann_exception("relu_layer: cuDNN not detected");
   #else
 
@@ -156,11 +156,11 @@ class relu_layer : public entrywise_activation_layer {
                                          this->m_activations_d[i]));
     }
 
-  #endif // #ifndef __LIB_CUDNN
+  #endif // #ifndef LBANN_HAS_CUDNN
   }
 
   void bp_compute_gpu() override {
-  #ifndef __LIB_CUDNN
+  #ifndef LBANN_HAS_CUDNN
     throw lbann_exception("relu_layer: cuDNN not detected");
   #else
 
@@ -188,7 +188,7 @@ class relu_layer : public entrywise_activation_layer {
                                           this->m_error_signal_d[i]));
     }
 
-  #endif // #ifndef __LIB_CUDNN
+  #endif // #ifndef LBANN_HAS_CUDNN
   }
 
 };

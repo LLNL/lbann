@@ -52,13 +52,13 @@ class noise_layer : public transform_layer {
     // Setup the data distribution
     initialize_distributed_matrices();
 
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
     // Initialize GPU if available
     if(cudnn) {
       this->m_using_gpus = true;
       this->m_cudnn = cudnn;
     }
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
 
   }
 
@@ -73,10 +73,10 @@ class noise_layer : public transform_layer {
   }
 
   ~noise_layer() override {
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
     // GPU memory for activations is a copy of previous layer's activations
     this->m_error_signal_d.clear();
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
   }
 
   /** Returns description of ctor params */
@@ -99,12 +99,12 @@ class noise_layer : public transform_layer {
 
   void setup_gpu() override {
     transform_layer::setup_gpu();
-  #ifndef __LIB_CUDNN
+  #ifndef LBANN_HAS_CUDNN
     throw lbann_exception("noise_layer: cuDNN not detected");
   #else
     m_copy_bp_output_from_gpus = true;
 
-  #endif // #ifndef __LIB_CUDNN
+  #endif // #ifndef LBANN_HAS_CUDNN
   }
 
   protected:

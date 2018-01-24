@@ -34,13 +34,13 @@
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 
-#ifdef __HAVE_TBINF
+#ifdef LBANN_HAS_TBINF
 #include "TBinf.hpp"
 #endif
 
 namespace lbann {
 
-#ifdef __HAVE_TBINF
+#ifdef LBANN_HAS_TBINF
 
 /**
  * Interface for computing summary statistics within and among models and
@@ -208,7 +208,7 @@ class lbann_summary {
   void flush() {}
 };
 
-#endif  // __HAVE_TBINF
+#endif  // LBANN_HAS_TBINF
 
 }  // namespace lbann
 

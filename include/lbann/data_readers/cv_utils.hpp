@@ -36,7 +36,7 @@
 #include "lbann/utils/mild_exception.hpp"
 
 
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
 namespace lbann {
 
 class cv_utils {
@@ -483,6 +483,6 @@ inline cv::Mat cv_utils::copy_buf_to_cvMat_with_known_type(
 //vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 
 } // end of namespace lbann
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV
 
 #endif // LBANN_CV_UTILS_HPP

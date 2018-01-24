@@ -30,9 +30,9 @@
 #define LBANN_LAYER_REGULARIZER_BATCH_NORMALIZATION_HPP_INCLUDED
 
 #include "lbann/layers/regularizers/regularizer.hpp"
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
 #include "lbann/layers/regularizers/batch_normalization_cuda.hpp"
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 namespace lbann {
 
 /**
@@ -80,7 +80,7 @@ class batch_normalization : public regularizer_layer {
   /** Gradient w.r.t. bias terms. */
   AbsDistMat *m_bias_gradient;
 
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
   /** GPU memory for current minibatch means. */
   std::vector<DataType *> m_mean_d;
   /** GPU memory for current minibatch variances. */
@@ -93,7 +93,7 @@ class batch_normalization : public regularizer_layer {
   std::vector<DataType *> m_scale_gradient_d;
   /** GPU memory for bias term gradient. */
   std::vector<DataType *> m_bias_gradient_d;
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 
  public:
   /**
@@ -133,13 +133,13 @@ class batch_normalization : public regularizer_layer {
     // Setup the data distribution
     initialize_distributed_matrices();
 
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
     // Initialize GPU memory if using GPU
     if(cudnn != nullptr) {
       this->m_using_gpus = true;
       this->m_cudnn = cudnn;
     }
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
 
   }
 
@@ -171,7 +171,7 @@ class batch_normalization : public regularizer_layer {
     if (m_scale_gradient != nullptr) { m_scale_gradient = m_scale_gradient->Copy(); }
     if (m_bias_gradient != nullptr)  { m_bias_gradient = m_bias_gradient->Copy(); }
 
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
     // Copy GPU data
     if (m_cudnn != nullptr) {
       m_mean_d = m_cudnn->copy(other.m_mean_d,
@@ -193,7 +193,7 @@ class batch_normalization : public regularizer_layer {
                                         m_bias_gradient->Height(),
                                         m_bias_gradient->Width());
     }
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
   }
 
   batch_normalization& operator=(const batch_normalization& other) {
@@ -228,7 +228,7 @@ class batch_normalization : public regularizer_layer {
     COPY_MATRIX(other.m_bias_gradient, m_bias_gradient);
   #undef COPY_MATRIX
 
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
     // Copy GPU data
     if (m_cudnn != nullptr) {
       m_cudnn->deallocate_on_gpus(m_mean_d);
@@ -256,7 +256,7 @@ class batch_normalization : public regularizer_layer {
                                         m_bias_gradient->Height(),
                                         m_bias_gradient->Width());
     }
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
 
     return *this;
   }
@@ -272,7 +272,7 @@ class batch_normalization : public regularizer_layer {
   }
 
   ~batch_normalization() override {
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
     // Deallocate GPU memory
     if (m_cudnn != nullptr) {
       this->m_cudnn->deallocate_on_gpus(m_mean_d);
@@ -282,7 +282,7 @@ class batch_normalization : public regularizer_layer {
       this->m_cudnn->deallocate_on_gpus(m_scale_gradient_d);
       this->m_cudnn->deallocate_on_gpus(m_bias_gradient_d);
     }
-  #endif // #ifdef __LIB_CUDNN
+  #endif // #ifdef LBANN_HAS_CUDNN
 
     // Deallocate matrices
     if (m_mean != nullptr)           { delete m_mean; }
@@ -381,7 +381,7 @@ class batch_normalization : public regularizer_layer {
 
   void setup_gpu() override {
     regularizer_layer::setup_gpu();
-  #ifndef __LIB_CUDNN
+  #ifndef LBANN_HAS_CUDNN
     throw lbann_exception("convolution_layer: cuDNN not detected");
   #else
 
@@ -405,7 +405,7 @@ class batch_normalization : public regularizer_layer {
                                     m_var_gradient->Height(),
                                     m_var_gradient->Width());
 
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
 
   }
 
@@ -426,7 +426,7 @@ class batch_normalization : public regularizer_layer {
   }
 
   void fp_compute_gpu() {
-  #ifndef __LIB_CUDNN
+  #ifndef LBANN_HAS_CUDNN
     throw lbann_exception("batch_normalization_layer: cuDNN not detected");
   #else
 
@@ -524,11 +524,11 @@ class batch_normalization : public regularizer_layer {
                                         this->m_cudnn->get_stream(i));
     }
 
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
   }
 
   void bp_compute_gpu() {
-  #ifndef __LIB_CUDNN
+  #ifndef LBANN_HAS_CUDNN
     throw lbann_exception("batch_normalization_layer: cuDNN not detected");
   #else
 
@@ -623,7 +623,7 @@ class batch_normalization : public regularizer_layer {
                                                   this->m_cudnn->get_stream(i));
     }
 
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
   }
 
   void fp_compute_cpu() {

@@ -34,36 +34,29 @@
 #include "lbann/utils/cyg_profile.hpp"
 
 
-// Datatype for numerical computation
-// Default: float
-#if LBANN_DATATYPE == 8
-using DataType = double;
-#elif LBANN_DATATYPE == 4
-using DataType = float;
-#else
-#define LBANN_DATATYPE 4
-using DataType = float;
-#endif
+// Defines, among other things, lbann::DataType.
+#include "lbann_config.hpp"
+
+using EGrid = El::Grid;
+using Grid = El::Grid;
+using Mat = El::Matrix<lbann::DataType>;
+using AbsDistMat = El::AbstractDistMatrix<lbann::DataType>;
+using DistMat = El::DistMatrix<lbann::DataType, El::MC, El::MR>;
+using CircMat = El::DistMatrix<lbann::DataType, El::CIRC, El::CIRC>;
+using StarMat = El::DistMatrix<lbann::DataType, El::STAR, El::STAR>;
+/* Summary matrix over columns */
+using ColSumMat = El::DistMatrix<lbann::DataType, El::MR, El::STAR>;
+using RowSumMat = El::DistMatrix<lbann::DataType, El::MC, El::STAR>;
+using StarVCMat = El::DistMatrix<lbann::DataType, El::STAR, El::VC>;
+using StarMRMat = El::DistMatrix<lbann::DataType, El::STAR, El::MR>;
+/* Summary matrix over columns */
+using ColSumStarVCMat = El::DistMatrix<lbann::DataType, El::VC, El::STAR>;
+using BlockMat = El::BlockMatrix<lbann::DataType>;
+using ElMat = El::ElementalMatrix<lbann::DataType>;
 
 // Datatype for model evaluation
 // Examples: timing, metrics, objective functions
 using EvalType = double;
-
-// Elemental matrices
-using EGrid = El::Grid;
-using Grid = El::Grid;
-using Mat = El::Matrix<DataType>;
-using AbsDistMat = El::AbstractDistMatrix<DataType>;
-using DistMat = El::DistMatrix<DataType, El::MC, El::MR>;
-using CircMat = El::DistMatrix<DataType, El::CIRC, El::CIRC>;
-using StarMat = El::DistMatrix<DataType, El::STAR, El::STAR>;
-using ColSumMat = El::DistMatrix<DataType, El::MR, El::STAR>; /* Summary matrix over columns */
-using RowSumMat = El::DistMatrix<DataType, El::MC, El::STAR>;
-using StarVCMat = El::DistMatrix<DataType, El::STAR, El::VC>;
-using StarMRMat = El::DistMatrix<DataType, El::STAR, El::MR>;
-using ColSumStarVCMat = El::DistMatrix<DataType, El::VC, El::STAR>; /* Summary matrix over columns */
-using BlockMat = El::BlockMatrix<DataType>;
-using ElMat = El::ElementalMatrix<DataType>;
 
 /// Distributed matrix format
 enum class matrix_format {MC_MR, CIRC_CIRC, STAR_STAR, STAR_VC, MC_STAR, invalid};
@@ -144,11 +137,8 @@ static void __attribute__((used)) _display_matrix(ElMat *m, const char *name) {
 }
 #define DISPLAY_MATRIX(x) _display_matrix(x, #x);
 
-#ifndef DEBUG
-#define DEBUG 1 // set debug mode
-#endif
-
-#if DEBUG
+// FIXME
+#if 1
 // __FILE__
 #define log_msg(...) {\
   char str[256];\

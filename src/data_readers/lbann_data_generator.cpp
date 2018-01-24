@@ -27,7 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/lbann_data_generator.hpp"
-#include "lbann/utils/lbann_random.hpp"
+#include "lbann/utils/random.hpp"
 #include <stdio.h>
 
 lbann::DataGenerator::DataGenerator(Int num_samples, Int width, Int height, Int batchSize)
@@ -102,4 +102,3 @@ lbann::DataGenerator& lbann::DataGenerator::operator=(const DataGenerator& sourc
 
   return *this;
 }
-
