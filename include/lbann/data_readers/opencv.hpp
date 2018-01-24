@@ -32,7 +32,9 @@
  *  - use newer built-in variables in place of the deprecated ones for newer OpenCV
  */
 
-#ifdef __LIB_OPENCV
+#include "lbann_config.hpp"
+
+#ifdef LBANN_HAS_OPENCV
 #ifndef _LBANN_OPENCV_H_INCLUDED_
 #define _LBANN_OPENCV_H_INCLUDED_
 
@@ -63,4 +65,4 @@
 #define _LBANN_CV_RED_   2
 
 #endif // _LBANN_OPENCV_H_INCLUDED_
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV

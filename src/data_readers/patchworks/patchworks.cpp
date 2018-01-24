@@ -31,8 +31,9 @@
  *  - includes the main interface function definitions
  */
 
-#ifdef __LIB_OPENCV
 #include "lbann/data_readers/patchworks/patchworks.hpp"
+
+#ifdef LBANN_HAS_OPENCV
 #include "lbann/utils/random.hpp"
 #include "lbann/data_readers/patchworks/patchworks_stats.hpp"
 
@@ -178,4 +179,4 @@ cv::Mat drop_2channels(const cv::Mat& _img) {
 
 } // end of namespace patchworks
 } // end of namespace lbann
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV

@@ -32,96 +32,114 @@
 #include <vector>
 #include "lbann/base.hpp"
 
-#ifdef __LIB_CUDA
+#ifdef LBANN_HAS_CUDA
 #include <cuda_runtime.h>
 #include <cublas_v2.h>
 
 namespace lbann {
 namespace cublas {
+namespace internal {
 
-// cuBLAS routines for floats
-#if LBANN_DATATYPE == 4
-inline
-cublasStatus_t axpy(const cublasHandle_t &handle,
-                    int n,
-                    float alpha,
-                    const float *x, int incx,
-                    float *y, int incy) {
-  return cublasSaxpy(handle, n, &alpha, x, incx, y, incy);
-}
-inline
-float nrm2(const cublasHandle_t &handle,
-           int n, const float *x, int incx) {
-  float result;
-  CHECK_CUBLAS(cublasSnrm2(handle, n, x, incx, &result));
-  return result;
-}
-inline
-cublasStatus_t scal(const cublasHandle_t &handle,
-                    int n,
-                    float alpha,
-                    float *x, int incx) {
-  return cublasSscal(handle, n, &alpha, x, incx);
-}
-inline
-cublasStatus_t gemm(const cublasHandle_t &handle,
-                    cublasOperation_t transa,
-                    cublasOperation_t transb,
-                    int m, int n, int k,
-                    float alpha,
-                    const float *A, int lda,
-                    const float *B, int ldb,
-                    float beta,
-                    float *C, int ldc) {
-  return cublasSgemm(handle, transa, transb, m, n, k,
-                     &alpha, A, lda, B, ldb, &beta, C, ldc);
-}
+template <typename T>
+struct cuBLAS_Caller;
 
-// cuBLAS routines for doubles
-#elif LBANN_DATATYPE == 8
-inline
-cublasStatus_t axpy(const cublasHandle_t &handle,
-                    int n,
-                    double alpha,
-                    const double *x, int incx,
-                    double *y, int incy) {
-  return cublasDaxpy(handle, n, &alpha, x, incx, y, incy);
-}
-inline
-double nrm2(const cublasHandle_t &handle,
-            int n, const double *x, int incx) {
-  double result;
-  CHECK_CUBLAS(cublasDnrm2(handle, n, x, incx, &result));
-  return result;
-}
-inline
-cublasStatus_t scal(const cublasHandle_t &handle,
-                    int n,
-                    double alpha,
-                    double *x, int incx) {
-  return cublasDscal(handle, n, &alpha, x, incx);
-}
-inline
-cublasStatus_t gemm(const cublasHandle_t &handle,
-                    cublasOperation_t transa,
-                    cublasOperation_t transb,
-                    int m, int n, int k,
-                    double alpha,
-                    const double *A, int lda,
-                    const double *B, int ldb,
-                    double beta,
-                    double *C, int ldc) {
-  return cublasDgemm(handle, transa, transb, m, n, k,
-                     &alpha, A, lda, B, ldb, &beta, C, ldc);
+template <>
+struct cuBLAS_Caller<float>
+{
+    template <typename... Ts>
+    cublasStatus_t axpy(Ts&&... args)
+    {
+        return cublasSaxpy(std::forward<Ts>(args)...);
+    }
+
+    template <typename... Ts>
+    float nrm2(Ts&&... args)
+    {
+        float result;
+        CHECK_CUBLAS(cublasSnrm2(std::forward<Ts>(args)..., &result));
+        return result;
+    }
+
+    template <typename... Ts>
+    cublasStatus_t scal(Ts&&... args)
+    {
+        return cublasSscal(std::forward<Ts>(args)...);
+    }
+
+    template <typename... Ts>
+    cublasStatus_t gemm(Ts&&... args)
+    {
+        return cublasSgemm(std::forward<Ts>(args)...);
+    }
+};
+
+template <>
+struct cuBLAS_Caller<double>
+{
+    template <typename... Ts>
+    cublasStatus_t axpy(Ts&&... args)
+    {
+        return cublasDaxpy(std::forward<Ts>(args)...);
+    }
+
+    template <typename... Ts>
+    double nrm2(Ts&&... args)
+    {
+        double result;
+        CHECK_CUBLAS(cublasDnrm2(std::forward<Ts>(args)..., &result));
+        return result;
+    }
+
+    template <typename... Ts>
+    cublasStatus_t scal(Ts&&... args)
+    {
+        return cublasDscal(std::forward<Ts>(args)...);
+    }
+
+    template <typename... Ts>
+    cublasStatus_t gemm(Ts&&... args)
+    {
+        return cublasDgemm(std::forward<Ts>(args)...);
+    }
+};
+
+}// namespace internal
+
+inline cublasStatus_t axpy(cublasHandle_t const& handle,
+                           int n, DataType alpha, DataType const* x, int incx,
+                           DataType * y, int incy)
+{
+    return internal::cuBLAS_Caller<DataType>{}.axpy(
+        handle, n, &alpha, x, incx, y, incy);
 }
 
-// cuBLAS routines for an invalid datatype
-#else
-#error Invalid floating-point datatype (must be float or double)
-#endif
-                    
-}
+inline DataType nrm2(cublasHandle_t const& handle,
+                     int n, DataType const* x, int incx)
+{
+    return internal::cuBLAS_Caller<DataType>{}.nrm2(handle, n, x, incx);
 }
 
-#endif // #ifdef __LIB_CUDA
+inline cublasStatus_t scal(cublasHandle_t const& handle,
+                           int n, DataType alpha, DataType * x, int incx)
+{
+    return internal::cuBLAS_Caller<DataType>{}.scal(handle, n, &alpha, x, incx);
+}
+
+inline cublasStatus_t gemm(cublasHandle_t const& handle,
+                           cublasOperation_t transa, cublasOperation_t transb,
+                           int m, int n, int k,
+                           DataType alpha,
+                           DataType const * A, int lda,
+                           DataType const * B, int ldb,
+                           DataType beta,
+                           DataType * C, int ldc)
+{
+    return internal::cuBLAS_Caller<DataType>{}.gemm(
+        handle, transa, transb, m, n, k, &alpha, A, lda, B, ldb, &beta, C, ldc);
+}
+
+}// namespace cublas
+}// namespace lbann
+
+#endif // #ifdef LBANN_HAS_CUDA
 #endif // CUBLAS_WRAPPER_HPP_INCLUDED

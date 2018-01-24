@@ -50,10 +50,10 @@ class local_response_normalization_layer : public regularizer_layer {
   /// LRN k parameter
   DataType m_lrn_k;
 
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
   /// Pooling descriptor
   cudnnLRNDescriptor_t m_lrn_cudnn_desc;
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 
  public:
   local_response_normalization_layer
@@ -71,7 +71,7 @@ class local_response_normalization_layer : public regularizer_layer {
     // Setup the data distribution
     initialize_distributed_matrices();
 
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
 
     // Initialize cuDNN objects
     m_lrn_cudnn_desc = nullptr;
@@ -81,7 +81,7 @@ class local_response_normalization_layer : public regularizer_layer {
       this->m_using_gpus = true;
       this->m_cudnn = cudnn;
     }
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
   }
 
   local_response_normalization_layer(const local_response_normalization_layer& other) :
@@ -90,10 +90,10 @@ class local_response_normalization_layer : public regularizer_layer {
     m_lrn_alpha(other.m_lrn_alpha),
     m_lrn_beta(other.m_lrn_beta),
     m_lrn_k(other.m_lrn_k) {
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
     m_lrn_cudnn_desc = nullptr;
     cudnn::copy_lrn_cudnn_desc(other.m_lrn_cudnn_desc, m_lrn_cudnn_desc);
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
   }
 
   local_response_normalization_layer& operator=(const local_response_normalization_layer& other) {
@@ -102,18 +102,18 @@ class local_response_normalization_layer : public regularizer_layer {
     m_lrn_alpha = other.m_lrn_alpha;
     m_lrn_beta = other.m_lrn_beta;
     m_lrn_k = other.m_lrn_k;
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
     cudnn::copy_lrn_cudnn_desc(other.m_lrn_cudnn_desc, m_lrn_cudnn_desc);
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
   }
 
   ~local_response_normalization_layer() override {
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
     // Destroy cuDNN objects
     if(m_lrn_cudnn_desc) {
       CHECK_CUDNN(cudnnDestroyLRNDescriptor(m_lrn_cudnn_desc));
     }
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
   }
 
   local_response_normalization_layer* copy() const override {
@@ -138,7 +138,7 @@ class local_response_normalization_layer : public regularizer_layer {
   /// Initialize GPU objects
   void setup_gpu() override {
     regularizer_layer::setup_gpu();
-  #ifndef __LIB_CUDNN
+  #ifndef LBANN_HAS_CUDNN
     throw lbann_exception("lbann_layer_local_response_normalization: cuDNN not detected");
   #else
 
@@ -150,7 +150,7 @@ class local_response_normalization_layer : public regularizer_layer {
                                       (double) m_lrn_beta,
                                       (double) m_lrn_k));
 
-  #endif // #ifndef __LIB_CUDNN
+  #endif // #ifndef LBANN_HAS_CUDNN
   }
 
   void fp_compute() override {
@@ -172,7 +172,7 @@ class local_response_normalization_layer : public regularizer_layer {
  private:
   /// GPU implementation of forward propagation
   void fp_compute_cudnn() {
-  #ifndef __LIB_CUDNN
+  #ifndef LBANN_HAS_CUDNN
     throw lbann_exception("lbann_layer_local_response_normalization: cuDNN not detected");
   #else
 
@@ -197,12 +197,12 @@ class local_response_normalization_layer : public regularizer_layer {
                                               this->m_activations_d[i]));
     }
 
-  #endif // #ifndef __LIB_CUDNN
+  #endif // #ifndef LBANN_HAS_CUDNN
   }
 
   /// GPU implementation of backward propagation
   void bp_compute_cudnn() {
-  #ifndef __LIB_CUDNN
+  #ifndef LBANN_HAS_CUDNN
     throw lbann_exception("lbann_layer_local_response_normalization: cuDNN not detected");
   #else
 
@@ -233,7 +233,7 @@ class local_response_normalization_layer : public regularizer_layer {
                                                this->m_error_signal_d[i]));
     }
 
-  #endif // #ifndef __LIB_CUDNN
+  #endif // #ifndef LBANN_HAS_CUDNN
   }
 
   /// CPU implementation of forward propagation

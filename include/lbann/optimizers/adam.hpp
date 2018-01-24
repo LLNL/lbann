@@ -67,11 +67,11 @@ class adam : public optimizer {
 
   /** Perform the computation in an optimization step. */
   void step_compute(AbsDistMat& values, const AbsDistMat& gradient) override;
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
   /** Perform the computation in an optimization step on GPU. */
   void step_compute_gpu(std::vector<DataType*> values_d,
                         std::vector<DataType*> gradient_d) override;
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 
  private:
 
@@ -90,12 +90,12 @@ class adam : public optimizer {
   /** Second moment estimates. */
   AbsDistMat *m_moment2;
 
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
   /** GPU memory for first moment estimates. */
   std::vector<DataType*> m_moment1_d;
   /** GPU memory for second moment estimates. */
   std::vector<DataType*> m_moment2_d;
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 
 //************************************************************************
 // Checkpointing

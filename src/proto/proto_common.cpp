@@ -2351,7 +2351,7 @@ void print_help(lbann::lbann_comm *comm)
        "  --procs_per_model=<int>\n"
        "  --num_gpus=<int>\n"
        "  --use_cudnn=<bool>\n"
-       "     has no effect unless lbann was compiled with: __LIB_CUDNN\n"
+       "     has no effect unless lbann was compiled with: LBANN_HAS_CUDNN\n"
        "  --random_seed=<int>\n"
        "  --objective_function<string>\n"
        "      <string> must be: categorical_cross_entropy or mean_squared_error\n"

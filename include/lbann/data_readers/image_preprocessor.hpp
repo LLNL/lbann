@@ -29,7 +29,9 @@
 #ifndef LBANN_IMAGE_PREPROCESSOR
 #define LBANN_IMAGE_PREPROCESSOR
 
-#ifdef __LIB_OPENCV
+#include "lbann_config.hpp"
+
+#ifdef LBANN_HAS_OPENCV
 #include "lbann/data_readers/opencv.hpp"
 #else
 #error OpenCV required
@@ -110,8 +112,8 @@ class lbann_image_preprocessor {
     vertical_shift(0.0f);
     shear_range(0.0f);
   }
- 
-  /** 
+
+  /**
    * Add noise to data (disable by default)
    * noise_factor control the ammount of noise
    * to be set to a value above zero but less than 1 (say 0.5)

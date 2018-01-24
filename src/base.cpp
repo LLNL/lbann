@@ -26,6 +26,8 @@
 // lbann_base .cpp - Basic definitions, functions
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/base.hpp"
+
 #include <omp.h>
 #if defined(LBANN_TOPO_AWARE)
 #include <hwloc.h>
@@ -34,7 +36,6 @@
 #endif
 #endif
 
-#include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/utils/random.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
@@ -104,4 +105,3 @@ std::string get_pool_mode_name(pool_mode m) {
   }
   return pool_mode_names[(int)m];
 }
-

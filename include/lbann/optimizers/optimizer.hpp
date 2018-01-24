@@ -77,12 +77,12 @@ class optimizer {
    *  The gradient is accumulated on the CPU.
    */
   AbsDistMat& get_gradient();
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
   /** Get gradient matrix on GPU.
    *  The gradient is accumulated on the GPU.
    */
   std::vector<DataType*> get_gradient_gpu();
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 
   /** Clear gradient matrix. */
   void clear_gradient();
@@ -96,7 +96,7 @@ class optimizer {
    */
   void stage_gradient_for_accumulation(const AbsDistMat& gradient,
                                        DataType scale = DataType(1));
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
   /** Add to the gradient matrix on GPU. */
   void add_to_gradient_gpu(std::vector<DataType*>& gradient,
                            DataType scale = DataType(1));
@@ -107,7 +107,7 @@ class optimizer {
    */
   void stage_gradient_for_accumulation_gpu(std::vector<DataType*>& gradient,
                                            DataType scale = DataType(1));
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 
   /** Setup optimizer. */
   virtual void setup(weights& w);
@@ -119,14 +119,14 @@ class optimizer {
    *  have the same matrix distribution.
    */
   virtual void step_compute(AbsDistMat& values, const AbsDistMat& gradient) = 0;
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
   /** Perform the computation in an optimization step on GPU.
    *  The default implementation is to transfer data to CPU and call
    *  step_compute.
    */
   virtual void step_compute_gpu(std::vector<DataType*> values_d,
                                 std::vector<DataType*> gradient_d);
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 
   /** Get the time spent in step(). */
   double get_step_time() const { return m_step_time; }
@@ -150,10 +150,10 @@ class optimizer {
 
   /** Gradient matrix. */
   AbsDistMat* m_gradient;
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
   /** GPU memory for gradient matrix. */
   std::vector<DataType*> m_gradient_d;
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 
  private:
 
@@ -167,7 +167,7 @@ class optimizer {
    *  added to the gradient matrix.
    */
   AbsDistMat* m_staging;
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
   /** Whether the GPU gradient matrix is non-zero. */
   bool m_gpu_gradient_is_nonzero;
   /** Whether the GPU staging matrix is non-zero. */
@@ -178,7 +178,7 @@ class optimizer {
    *  and the result is added to the gradient matrix.
    */
   std::vector<DataType*> m_staging_d;
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 
   /** Running count of the time spent in step(). */
   double m_step_time = 0.0;

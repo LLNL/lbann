@@ -30,7 +30,7 @@
 #include "lbann/data_readers/cv_decolorizer.hpp"
 #include "lbann/utils/mild_exception.hpp"
 
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
 namespace lbann {
 
 cv_decolorizer::cv_decolorizer(const cv_decolorizer& rhs)
@@ -94,4 +94,4 @@ std::ostream& cv_decolorizer::print(std::ostream& os) const {
 }
 
 } // end of namespace lbann
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV

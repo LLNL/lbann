@@ -30,9 +30,10 @@
 #ifndef LBANN_CV_DECOLORIZER_HPP
 #define LBANN_CV_DECOLORIZER_HPP
 
+#include "lbann_config.hpp"
 #include "cv_transform.hpp"
 
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
 namespace lbann {
 
 class cv_decolorizer : public cv_transform {
@@ -78,6 +79,6 @@ class cv_decolorizer : public cv_transform {
 };
 
 } // end of namespace lbann
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV
 
 #endif // LBANN_CV_DECOLORIZER_HPP

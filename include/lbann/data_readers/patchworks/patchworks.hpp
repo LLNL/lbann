@@ -31,7 +31,9 @@
  *  - includes the main interface function declarations
  */
 
-#ifdef __LIB_OPENCV
+#include "lbann_config.hpp"
+
+#ifdef LBANN_HAS_OPENCV
 #ifndef _PATCHWORKS_H_INCLUDED_
 #define _PATCHWORKS_H_INCLUDED_
 #include <vector>
@@ -54,4 +56,4 @@ cv::Mat drop_2channels(const cv::Mat& _img);
 } // end of namespace lbann
 
 #endif //_PATCHWORKS_H_INCLUDED_
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV

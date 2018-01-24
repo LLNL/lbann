@@ -16,17 +16,17 @@ void init_data_readers(
   const lbann_data::LbannPB& p,
   std::map<execution_mode, lbann::generic_data_reader *>& data_readers);
 
-/// adjusts the number of parallel data readers 
+/// adjusts the number of parallel data readers
 void set_num_parallel_readers(lbann::lbann_comm *comm, lbann_data::LbannPB& p);
 
 /// adjusts the values in p by querying the options db
-void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p); 
+void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p);
 
 /// print various params (learn_rate, etc) to cout
 void print_parameters(lbann::lbann_comm *comm, lbann_data::LbannPB& p);
 
 /// prints usage information
-void print_help(lbann::lbann_comm *comm); 
+void print_help(lbann::lbann_comm *comm);
 
 /// prints prototext file, cmd line, etc to file
 void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::LbannPB& p);
@@ -40,13 +40,13 @@ lbann::model *init_model(
 void add_layers(
   lbann::model *model,
   std::map<execution_mode, lbann::generic_data_reader *>& data_readers,
-  cudnn::cudnn_manager *cudnn,
+  lbann::cudnn::cudnn_manager *cudnn,
   const lbann_data::LbannPB& p);
 
 /// returns a optimizer factory that is one of: adagrad, rmsprop, adam, sgd
 lbann::optimizer *init_default_optimizer(
   lbann::lbann_comm *comm,
-  cudnn::cudnn_manager *cudnn,  
+  lbann::cudnn::cudnn_manager *cudnn,
   const lbann_data::LbannPB& p);
 
 void init_callbacks(

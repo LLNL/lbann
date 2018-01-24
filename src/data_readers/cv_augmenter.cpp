@@ -30,7 +30,7 @@
 #include "lbann/utils/mild_exception.hpp"
 #include "lbann/utils/random.hpp"
 
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
 namespace lbann {
 
 cv_augmenter::cv_augmenter()
@@ -250,5 +250,5 @@ std::ostream& cv_augmenter::print(std::ostream& os) const {
 }
 
 } // end of namespace lbann
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV
 

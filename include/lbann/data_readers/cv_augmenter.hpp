@@ -35,7 +35,7 @@
 #include <cstring>
 #include <string>
 
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
 namespace lbann {
 
 /**
@@ -109,6 +109,6 @@ class cv_augmenter : public cv_transform {
 };
 
 } // end of namespace lbann
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV
 
 #endif // LBANN_CV_AUGMENTER_HPP
