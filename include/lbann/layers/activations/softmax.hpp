@@ -44,7 +44,7 @@
 
 namespace lbann {
 
-#if LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_CUDNN
 namespace softmax_cuda {
 /** Apply minimum cutoff to activation entries.
  *  A minimum output value helps avoid denormalized floats.
@@ -86,11 +86,11 @@ class softmax_layer : public activation_layer {
       m_workspace(nullptr),
       m_min_output(std::sqrt(std::numeric_limits<DataType>::min())) {
     this->m_cudnn = cudnn;
-#if LBANN_HAS_CUDNN
+  #ifdef LBANN_HAS_CUDNN
     if (this->m_cudnn && T_layout == data_layout::DATA_PARALLEL) {
       this->m_using_gpus = true;
     }
-#endif // LBANN_HAS_CUDNN
+  #endif // LBANN_HAS_CUDNN
   }
 
   softmax_layer(const softmax_layer& other)

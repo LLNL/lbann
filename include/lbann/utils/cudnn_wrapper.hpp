@@ -39,11 +39,25 @@
 #include <cudnn.h>
 #include <cublas_v2.h>
 
-#ifdef __LIB_NCCL
+#ifdef LBANN_HAS_NCCL2
 #include "nccl.h"
-#include "nccl1_compat.h"
-#include "common.h"
-#endif // #ifdef __LIB_NCCL
+
+#define NCCLCHECK(cmd)                                                  \
+    {                                                                   \
+        ncclResult_t result__ = cmd;                                    \
+        if (result__ != ncclSuccess)                                    \
+        {                                                               \
+            std::ostringstream oss;                                     \
+            oss << "NCCL failure in " << __FILE__ << " at line "        \
+                << __LINE__ << ": " << ncclGetErrorString(result__)     \
+                << std::endl;                                           \
+            throw lbann::lbann_exception(oss.str());                    \
+        }                                                               \
+    }
+
+//#include "nccl1_compat.h"
+//#include "common.h"
+#endif // #ifdef LBANN_HAS_NCCL2
 
 #endif // #ifdef LBANN_HAS_CUDNN
 
@@ -90,7 +104,10 @@
 #endif // #ifdef LBANN_DEBUG
 #endif // #ifdef LBANN_HAS_CUDNN
 
-namespace cudnn {
+namespace lbann
+{
+namespace cudnn
+{
 
 // Forward declaration
 class cudnn_manager;
@@ -364,7 +381,7 @@ class cudnn_manager {
                               int height,
                               int width_per_gpu,
                               int leading_dim = 0);
-  
+
   /** Pin matrix memory.
    *  Pinned memory accelerates memory transfers with GPU, but may
    *  degrade system performance. This function assumes that the
@@ -411,11 +428,11 @@ class cudnn_manager {
   void nccl_destroy();
 
   /** List of NCCL 2 related variables. */
-#ifdef __LIB_NCCL
+#ifdef LBANN_HAS_NCCL2
   // One GPU per single thread of one MPI rank is assumed
   std::vector<ncclComm_t> m_nccl_comm;
   ncclDataType_t nccl_datatype();
-#endif // #ifdef __LIB_NCCL
+#endif // #ifdef LBANN_HAS_NCCL2
 
 #endif // #ifdef LBANN_HAS_CUDNN
 };
@@ -476,6 +493,7 @@ void copy_lrn_cudnn_desc(const cudnnLRNDescriptor_t& src,
 
 #endif // #ifdef LBANN_HAS_CUDNN
 
-}
+}// namespace cudnn
+}// namespace lbann
 
 #endif // CUDNN_WRAPPER_HPP_INCLUDED

@@ -132,7 +132,7 @@ class base_convolution_layer : public learning_layer {
     m_bias_cudnn_desc = nullptr;
     m_kernel_cudnn_desc = nullptr;
     m_convolution_cudnn_desc = nullptr;
-  #endif // #ifdef LBANN_HAS_CUDNN
+  #endif // LBANN_HAS_CUDNN
 
   }
 
@@ -299,7 +299,7 @@ class base_convolution_layer : public learning_layer {
                                         m_bias_gradient.Width());
     }
 
-  #endif // #ifdef LBANN_HAS_CUDNN
+  #endif // LBANN_HAS_CUDNN
   }
 
  protected:
@@ -374,7 +374,7 @@ class base_convolution_layer : public learning_layer {
 
     }
 
-  #endif // #ifndef LBANN_HAS_CUDNN
+  #endif // LBANN_HAS_CUDNN
   }
 
   /** Transposed convolution with cuDNN. */
@@ -447,7 +447,7 @@ class base_convolution_layer : public learning_layer {
 
     }
 
-  #endif // #ifndef LBANN_HAS_CUDNN
+  #endif // LBANN_HAS_CUDNN
   }
 
   void apply_bias_cudnn() {

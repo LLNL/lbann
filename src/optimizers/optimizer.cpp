@@ -181,7 +181,7 @@ AbsDistMat& optimizer::get_gradient() {
     m_cpu_staging_is_nonzero = false;
   }
 
-#if LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_CUDNN
 
   // Get matrix dimensions
   const int height = m_weights->get_height();
@@ -217,7 +217,7 @@ AbsDistMat& optimizer::get_gradient() {
 
 }
 
-#if LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_CUDNN
 std::vector<DataType*> optimizer::get_gradient_gpu() {
 
   // Check if gradient is initialized
@@ -288,7 +288,7 @@ void optimizer::clear_gradient() {
   // Zero out matrices
   El::Zero(*m_gradient);
   El::Zero(*m_staging);
-#if LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_CUDNN
   if (m_cudnn != nullptr) {
     m_cudnn->clear_on_gpus(m_gradient_d,
                            m_weights->get_height(),
@@ -302,7 +302,7 @@ void optimizer::clear_gradient() {
   // Reset flags
   m_cpu_gradient_is_nonzero = false;
   m_cpu_staging_is_nonzero = false;
-#if LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_CUDNN
   m_gpu_gradient_is_nonzero = false;
   m_gpu_staging_is_nonzero = false;
 #endif // LBANN_HAS_CUDNN
@@ -350,7 +350,7 @@ void optimizer::stage_gradient_for_accumulation(const AbsDistMat& gradient,
   }
 }
 
-#if LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_CUDNN
 
 void optimizer::add_to_gradient_gpu(const std::vector<DataType*>& gradient,
                                     DataType scale) {
@@ -452,7 +452,7 @@ void optimizer::step() {
   double step_start = get_time();
   // Apply optimization step
   if (m_cudnn != nullptr) {
-  #if LBANN_HAS_CUDNN
+  #ifdef LBANN_HAS_CUDNN
     std::vector<DataType*> values_d = m_weights->m_values_d;
     std::vector<DataType*> gradient_d = get_gradient_gpu();
     step_compute_gpu(values_d, gradient_d);

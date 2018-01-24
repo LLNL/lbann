@@ -30,7 +30,7 @@
 
 
 bool lbann::image_utils::loadIMG(const std::string& Imagefile, int& Width, int& Height, bool Flip, unsigned char *&Pixels) {
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
   cv::Mat image = cv::imread(Imagefile, _LBANN_CV_COLOR_);
   if (image.empty()) {
     return false;
@@ -56,7 +56,7 @@ bool lbann::image_utils::loadIMG(const std::string& Imagefile, int& Width, int& 
 }
 
 bool lbann::image_utils::loadIMG(std::vector<unsigned char>& image_buf, int& Width, int& Height, bool Flip, unsigned char *&Pixels) {
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
   cv::Mat image = cv::imdecode(image_buf, _LBANN_CV_COLOR_);
   //cv::Mat image = cv::imdecode(image_buf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
   if (image.empty()) {
@@ -83,7 +83,7 @@ bool lbann::image_utils::loadIMG(std::vector<unsigned char>& image_buf, int& Wid
 }
 
 bool lbann::image_utils::saveIMG(const std::string& Imagefile, int Width, int Height, bool Flip, unsigned char *Pixels) {
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
   cv::Mat image = cv::Mat(Height, Width, CV_8UC3);
 
   for (int y = 0; y < Height; y++) {
@@ -106,7 +106,7 @@ bool lbann::image_utils::saveIMG(const std::string& Imagefile, int Width, int He
 
 bool lbann::image_utils::load_image(const std::string& filename,
                                     int& Width, int& Height, int& Type, cv_process& pp, std::vector<uint8_t>& buf) {
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
   cv::Mat image = cv::imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
   bool ok = !image.empty() && pp.preprocess(image);
   ok = ok && cv_utils::copy_cvMat_to_buf(image, buf, pp);
@@ -120,12 +120,12 @@ bool lbann::image_utils::load_image(const std::string& filename,
   return ok;
 #else
   return false;
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV
 }
 
 bool lbann::image_utils::save_image(const std::string& filename,
                                     const int Width, const int Height, const int Type, cv_process& pp, const std::vector<uint8_t>& buf) {
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
   pp.determine_inverse_lazy_normalization();
   cv::Mat image = cv_utils::copy_buf_to_cvMat(buf, Width, Height, Type, pp);
   bool ok = !image.empty() && pp.postprocess(image);
@@ -135,7 +135,7 @@ bool lbann::image_utils::save_image(const std::string& filename,
   return (ok && cv::imwrite(filename, image));
 #else
   return false;
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV
 }
 
 /**
@@ -148,7 +148,7 @@ bool lbann::image_utils::save_image(const std::string& filename,
  */
 bool lbann::image_utils::load_image(const std::string& filename,
                                     int& Width, int& Height, int& Type, cv_process& pp, ::Mat& data) {
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
   cv::Mat image = cv::imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
   bool ok = !image.empty() && pp.preprocess(image);
   ok = ok && cv_utils::copy_cvMat_to_buf(image, data, pp);
@@ -165,7 +165,7 @@ bool lbann::image_utils::load_image(const std::string& filename,
   return ok;
 #else
   return false;
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV
 }
 
 /**
@@ -178,7 +178,7 @@ bool lbann::image_utils::load_image(const std::string& filename,
  */
 bool lbann::image_utils::load_image(const std::string& filename,
                                     int& Width, int& Height, int& Type, cv_process_patches& pp, std::vector<::Mat>& data) {
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
   cv::Mat image = cv::imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
 
   std::vector<cv::Mat> patches;
@@ -204,7 +204,7 @@ bool lbann::image_utils::load_image(const std::string& filename,
   return ok;
 #else
   return false;
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV
 }
 
 /**
@@ -217,7 +217,7 @@ bool lbann::image_utils::load_image(const std::string& filename,
  */
 bool lbann::image_utils::save_image(const std::string& filename,
                                     const int Width, const int Height, const int Type, cv_process& pp, const ::Mat& data) {
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
   pp.determine_inverse_lazy_normalization();
   cv::Mat image = cv_utils::copy_buf_to_cvMat(data, Width, Height, Type, pp);
   bool ok = !image.empty() && pp.postprocess(image);
@@ -227,7 +227,7 @@ bool lbann::image_utils::save_image(const std::string& filename,
   return (ok && cv::imwrite(filename, image));
 #else
   return false;
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV
 }
 
 /**
@@ -242,7 +242,7 @@ bool lbann::image_utils::save_image(const std::string& filename,
  */
 bool lbann::image_utils::import_image(cv::InputArray inbuf,
                                       int& Width, int& Height, int& Type, cv_process& pp, ::Mat& data) {
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
   cv::Mat image = cv::imdecode(inbuf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
   bool ok = !image.empty() && pp.preprocess(image);
   ok = ok && cv_utils::copy_cvMat_to_buf(image, data, pp);
@@ -256,7 +256,7 @@ bool lbann::image_utils::import_image(cv::InputArray inbuf,
   return ok;
 #else
   return false;
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV
 }
 
 /**
@@ -271,7 +271,7 @@ bool lbann::image_utils::import_image(cv::InputArray inbuf,
  */
 bool lbann::image_utils::import_image(cv::InputArray inbuf,
                                       int& Width, int& Height, int& Type, cv_process_patches& pp, std::vector<::Mat>& data) {
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
   cv::Mat image = cv::imdecode(inbuf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
 
   std::vector<cv::Mat> patches;
@@ -294,7 +294,7 @@ bool lbann::image_utils::import_image(cv::InputArray inbuf,
   return ok;
 #else
   return false;
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV
 }
 
 /**
@@ -308,7 +308,7 @@ bool lbann::image_utils::import_image(cv::InputArray inbuf,
  */
 bool lbann::image_utils::export_image(const std::string& fileExt, std::vector<uchar>& outbuf,
                                       const int Width, const int Height, const int Type, cv_process& pp, const ::Mat& data) {
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
   pp.determine_inverse_lazy_normalization();
   cv::Mat image = cv_utils::copy_buf_to_cvMat(data, Width, Height, Type, pp);
   bool ok = !image.empty() && pp.postprocess(image);
@@ -329,7 +329,7 @@ bool lbann::image_utils::export_image(const std::string& fileExt, std::vector<uc
   return (ok && cv::imencode(ext, image, outbuf));
 #else
   return false;
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV
 }
 
 bool lbann::image_utils::load_image(std::vector<unsigned char>& image_buf,

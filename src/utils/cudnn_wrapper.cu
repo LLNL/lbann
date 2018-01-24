@@ -31,9 +31,7 @@
 
 #include "El.hpp"
 
-using namespace cudnn;
-using namespace lbann;
-
+namespace lbann {
 namespace cudnn {
 
 namespace {
@@ -53,7 +51,8 @@ __global__ void reduce_kernel(DataType *dst, const DataType *src,
   dst[offset] += src[offset];
 }
 
-__global__ void scale_kernel(DataType *data, 
+#ifdef LBANN_HAS_NCCL2
+__global__ void scale_kernel(DataType *data,
                              const DataType scale,
                              El::Int len) {
 
@@ -62,7 +61,7 @@ __global__ void scale_kernel(DataType *data,
   data[offset] *= scale;
 
 }
-
+#endif // LBANN_HAS_NCCL2
 }
 
 void cudnn_manager::set_on_gpu(int i,
@@ -128,7 +127,7 @@ void cudnn_manager::allreduce_on_gpus(std::vector<DataType*>& gpu_data,
       }
       synchronize();
       for(int i = 0; i < m_num_gpus; ++i) {
-        CHECK_CUDA(cudaSetDevice(m_gpus[i]));        
+        CHECK_CUDA(cudaSetDevice(m_gpus[i]));
         DataType *dst_buf = bufs[dbuf_idx][i];
         // TODO: use Thrust
         int tb_dim = 256;
@@ -155,16 +154,16 @@ void cudnn_manager::global_allreduce_on_gpus(std::vector<DataType*>& gpu_data,
     El::AllReduce(cpu_workspace, comm);
     broadcast_to_gpus(gpu_data, cpu_workspace);
   } else{
-#ifdef __LIB_NCCL
+#ifdef LBANN_HAS_NCCL2
     global_allreduce_on_gpus_nccl (gpu_data, height, width);
     synchronize();
 #else
     throw lbann_exception("cudnn_manager: NCCL not detected");
-#endif // #ifdef __LIB_NCCL
+#endif // #ifdef LBANN_HAS_NCCL2
   }
 }
 
-#ifdef __LIB_NCCL
+#ifdef LBANN_HAS_NCCL2
 /// Convert DataType to NCCL data type. DataType is either double or float (default).
 ncclDataType_t cudnn_manager::nccl_datatype() {
   switch(sizeof(DataType) ) {
@@ -209,6 +208,7 @@ void cudnn_manager::global_allreduce_on_gpus_nccl(std::vector<DataType*>& gpu_da
   }
   if(num_gpus_assigned > 1) ncclGroupEnd();
 }
-#endif // __LIB_NCCL
+#endif // LBANN_HAS_NCCL2
 
 } // namespace cudnn
+} // namespace lbann

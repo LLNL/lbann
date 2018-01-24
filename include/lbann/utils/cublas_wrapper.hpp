@@ -32,7 +32,7 @@
 #include <vector>
 #include "lbann/base.hpp"
 
-#ifdef __LIB_CUDA
+#ifdef LBANN_HAS_CUDA
 #include <cuda_runtime.h>
 #include <cublas_v2.h>
 
@@ -40,7 +40,8 @@ namespace lbann {
 namespace cublas {
 
 // cuBLAS routines for floats
-#if LBANN_DATATYPE == 4
+// #if sizeof(DataType) == 4
+#if 1
 inline
 cublasStatus_t axpy(const cublasHandle_t &handle,
                     int n,
@@ -101,7 +102,8 @@ cublasStatus_t geam(const cublasHandle_t &handle,
 }
 
 // cuBLAS routines for doubles
-#elif LBANN_DATATYPE == 8
+// #elif sizeof(DataType) == 8
+#elif 0
 inline
 cublasStatus_t axpy(const cublasHandle_t &handle,
                     int n,
@@ -169,5 +171,5 @@ cublasStatus_t geam(const cublasHandle_t &handle,
 }
 }
 
-#endif // #ifdef __LIB_CUDA
+#endif // LBANN_HAS_CUDA
 #endif // CUBLAS_WRAPPER_HPP_INCLUDED

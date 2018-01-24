@@ -33,7 +33,7 @@
 #include <algorithm>
 #include <ostream>
 
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
 namespace lbann {
 
 const int cv_cropper::m_interpolation_choices[3] = {cv::INTER_LINEAR, cv::INTER_AREA, cv::INTER_LINEAR};
@@ -193,5 +193,5 @@ std::ostream& cv_cropper::print(std::ostream& os) const {
 }
 
 } // end of namespace lbann
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV
 

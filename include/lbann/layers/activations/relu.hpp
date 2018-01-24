@@ -43,21 +43,19 @@ class relu_layer : public entrywise_activation_layer {
 #ifdef LBANN_HAS_CUDNN
   /// Activation descriptor
   cudnnActivationDescriptor_t m_activation_cudnn_desc;
-#endif
+#endif // LBANN_HAS_CUDNN
 
  public:
   relu_layer(lbann_comm *comm,
              cudnn::cudnn_manager *cudnn = nullptr) :
     entrywise_activation_layer(comm) {
-
   #ifdef LBANN_HAS_CUDNN
     m_activation_cudnn_desc = nullptr;
     this->m_cudnn = cudnn;
     if (this->m_cudnn) {
       this->m_using_gpus = true;
     }
-  #endif // #ifdef LBANN_HAS_CUDNN
-
+  #endif // LBANN_HAS_CUDNN
   }
 
   relu_layer(const relu_layer& other) :
@@ -71,10 +69,10 @@ class relu_layer : public entrywise_activation_layer {
 
   relu_layer& operator=(const relu_layer& other) {
     entrywise_activation_layer::operator=(other);
-#ifdef LBANN_HAS_CUDNN
+  #ifdef LBANN_HAS_CUDNN
     cudnn::copy_activation_cudnn_desc(other.m_activation_cudnn_desc,
                                       m_activation_cudnn_desc);
-#endif // LBANN_HAS_CUDNN
+  #endif // LBANN_HAS_CUDNN
   }
 
   ~relu_layer() override {
@@ -82,7 +80,7 @@ class relu_layer : public entrywise_activation_layer {
     if (m_activation_cudnn_desc != nullptr) {
       CHECK_CUDNN(cudnnDestroyActivationDescriptor(m_activation_cudnn_desc));
     }
-  #endif
+  #endif // LBANN_HAS_CUDNN
   }
 
   relu_layer* copy() const override { return new relu_layer(*this); }
@@ -107,7 +105,7 @@ class relu_layer : public entrywise_activation_layer {
                                              CUDNN_ACTIVATION_RELU,
                                              CUDNN_PROPAGATE_NAN,
                                              0.0));
-  #endif
+  #endif // LBANN_HAS_CUDNN
   }
 
  protected:
@@ -145,7 +143,7 @@ class relu_layer : public entrywise_activation_layer {
                                          this->m_activations_d[0].get_data(i)));
     }
 
-  #endif // #ifndef LBANN_HAS_CUDNN
+  #endif // LBANN_HAS_CUDNN
   }
 
   void bp_compute_gpu() override {
@@ -176,12 +174,12 @@ class relu_layer : public entrywise_activation_layer {
                                           this->m_error_signals_d[0].get_data(i)));
     }
 
-  #endif // #ifndef LBANN_HAS_CUDNN
+  #endif // LBANN_HAS_CUDNN
   }
 
 };
 
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_LAYER_ACTIVATION_RELU_HPP_INCLUDED
+#endif // LBANN_LAYER_ACTIVATION_RELU_HPP_INCLUDED

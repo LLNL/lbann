@@ -233,7 +233,7 @@ const AbsDistMat& weights::get_values() {
     throw lbann_exception(err.str());
   }
 
-  #if LBANN_HAS_CUDNN
+  #ifdef LBANN_HAS_CUDNN
   // Copy weights matrix from GPU if needed
   if (m_cudnn != nullptr) {
     m_cudnn->copy_from_gpu(0, m_values->Matrix(), m_values_d[0]);
@@ -256,7 +256,7 @@ void weights::set_values(const AbsDistMat& values) {
   // Copy input to weights matrix
   El::Copy(values, *m_values);
 
-  #if LBANN_HAS_CUDNN
+  #ifdef LBANN_HAS_CUDNN
   // Copy weights matrix to GPU if needed
   if (m_cudnn != nullptr) {
     m_cudnn->broadcast_to_gpus(m_values_d, m_values->Matrix());
@@ -273,7 +273,7 @@ void weights::set_value(int row, int col, DataType value) {
       m_values->SetLocal(local_row, local_col, value);
     }
   } else {
-    #if LBANN_HAS_CUDNN
+    #ifdef LBANN_HAS_CUDNN
     Mat cpu_value(1, 1);
     cpu_value(0, 0) = value;
     std::vector<DataType*> gpu_value = m_values_d;
@@ -292,7 +292,7 @@ void weights::get_values_view(AbsDistMat& values_v) {
     El::LockedView(values_v, values);
   }
   else {
-    #if LBANN_HAS_CUDNN
+    #ifdef LBANN_HAS_CUDNN
     if (m_cudnn != nullptr) {
       m_cudnn->copy_from_gpu(0, m_values->Matrix(), m_values_d[0]);
     }

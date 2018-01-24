@@ -30,7 +30,9 @@
  * LBANN PATCHWORKS header for pixel statistics
  */
 
-#ifdef __LIB_OPENCV
+#include "lbann_config.hpp"
+
+#ifdef LBANN_HAS_OPENCV
 #ifndef _PATCHWORKS_STATS_INCLUDED_
 #define _PATCHWORKS_STATS_INCLUDED_
 
@@ -88,4 +90,4 @@ bool get_channel_stats(const cv::Mat& img, std::vector<image_stats>& stats);
 } // end of namespace patchworks
 } // end of namespace lbann
 #endif // _PATCHWORKS_STATS_INCLUDED_
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV

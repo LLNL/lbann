@@ -757,7 +757,6 @@ void Layer::setup_gpu() {
   cudnn::set_tensor_cudnn_desc(m_error_signals_cudnn_desc,
                                m_mini_batch_size_per_gpu,
                                m_prev_neuron_dims);
-  
 #endif // LBANN_HAS_CUDNN
 }
 
