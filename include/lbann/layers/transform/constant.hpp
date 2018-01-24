@@ -54,13 +54,13 @@ class constant_layer : public transform_layer {
     // Constant layer has no parents
     m_expected_num_parent_layers = 0;
 
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
     // Initialize GPU memory if using GPU
     if (cudnn) {
       this->m_using_gpus = true;
       this->m_cudnn = cudnn;
     }
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
 
   }
 
@@ -102,7 +102,7 @@ class constant_layer : public transform_layer {
 
   void setup_gpu() override {
     transform_layer::setup_gpu();
-  #ifndef __LIB_CUDNN
+  #ifndef LBANN_HAS_CUDNN
     throw lbann_exception("constant_layer: cuDNN not detected");
   #else
     auto& activations_d = m_activations_d[0];
@@ -110,7 +110,7 @@ class constant_layer : public transform_layer {
                          m_value,
                          activations_d.get_height(),
                          activations_d.get_width_per_gpu());
-  #endif // #ifndef __LIB_CUDNN
+  #endif // #ifndef LBANN_HAS_CUDNN
   }
 
   void fp_compute() override {}

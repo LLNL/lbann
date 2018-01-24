@@ -64,10 +64,10 @@ class pooling_layer : public transform_layer {
    */
   std::vector<int> m_max_pool_indices;
 
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
   /// Pooling descriptor
   cudnnPoolingDescriptor_t m_pooling_cudnn_desc;
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 
   friend class unpooling_layer<T_layout>;
 
@@ -109,7 +109,7 @@ class pooling_layer : public transform_layer {
                                   1,
                                   std::multiplies<int>());
 
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
 
     // Initialize cuDNN objects
     m_pooling_cudnn_desc = nullptr;
@@ -119,7 +119,7 @@ class pooling_layer : public transform_layer {
       this->m_using_gpus = true;
       this->m_cudnn = cudnn;
     }
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
 
   }
 
@@ -131,10 +131,10 @@ class pooling_layer : public transform_layer {
     m_pads(other.m_pads),
     m_strides(other.m_strides),
     m_max_pool_indices(other.m_max_pool_indices) {
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
     m_pooling_cudnn_desc = nullptr;
     cudnn::copy_pooling_cudnn_desc(other.m_pooling_cudnn_desc, m_pooling_cudnn_desc);
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
   }
 
   pooling_layer& operator=(const pooling_layer& other){
@@ -145,9 +145,9 @@ class pooling_layer : public transform_layer {
     m_pads = other.m_pads;
     m_strides = other.m_strides;
     m_max_pool_indices = other.m_max_pool_indices;
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
     cudnn::copy_pooling_cudnn_desc(other.m_pooling_cudnn_desc, m_pooling_cudnn_desc);
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
     return *this;
   }
     
@@ -174,12 +174,12 @@ class pooling_layer : public transform_layer {
 
   /// Destructor
   ~pooling_layer() override {
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
     // Destroy cuDNN objects
     if (m_pooling_cudnn_desc) {
       CHECK_CUDNN(cudnnDestroyPoolingDescriptor(m_pooling_cudnn_desc));
     }
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
   }
 
   pooling_layer* copy() const override { return new pooling_layer(*this); }
@@ -210,7 +210,7 @@ class pooling_layer : public transform_layer {
   /// Initialize GPU objects
   void setup_gpu() override {
     transform_layer::setup_gpu();
-  #ifndef __LIB_CUDNN
+  #ifndef LBANN_HAS_CUDNN
     throw lbann_exception("lbann_layer_pooling: cuDNN not detected");
   #else
 
@@ -235,7 +235,7 @@ class pooling_layer : public transform_layer {
                                             m_pads.data(),
                                             m_strides.data()));
 
-  #endif // #ifndef __LIB_CUDNN
+  #endif // #ifndef LBANN_HAS_CUDNN
   }
 
   protected:
@@ -260,7 +260,7 @@ class pooling_layer : public transform_layer {
 
   /// Pooling forward propagation with cuDNN
   void fp_compute_cudnn() {
-  #ifndef __LIB_CUDNN
+  #ifndef LBANN_HAS_CUDNN
     throw lbann_exception("pooling_layer: cuDNN not detected");
   #else
 
@@ -284,12 +284,12 @@ class pooling_layer : public transform_layer {
                                       this->m_activations_d[0].get_data(i)));
     }
 
-  #endif // #ifndef __LIB_CUDNN
+  #endif // #ifndef LBANN_HAS_CUDNN
   }
 
   /// Pooling backward propagation with cuDNN
   void bp_compute_cudnn() {    
-  #ifndef __LIB_CUDNN
+  #ifndef LBANN_HAS_CUDNN
     throw lbann_exception("pooling_layer: cuDNN not detected");
   #else
 
@@ -318,7 +318,7 @@ class pooling_layer : public transform_layer {
                                        this->m_error_signals_d[0].get_data(i)));
     }
 
-  #endif // #ifndef __LIB_CUDNN
+  #endif // #ifndef LBANN_HAS_CUDNN
   }
 
   /// Pooling forward propagation with im2col

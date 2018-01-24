@@ -49,13 +49,13 @@ class sum_layer : public transform_layer {
     // Sum layer has no limit on parents
     m_expected_num_parent_layers = -1;
 
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
     // Initialize GPU if available
     if(cudnn) {
       this->m_using_gpus = true;
       this->m_cudnn = cudnn;
     }
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
 
   }
 
@@ -80,7 +80,7 @@ class sum_layer : public transform_layer {
 
   void fp_compute() override {
     if(this->m_using_gpus) {
-  #ifndef __LIB_CUDNN
+  #ifndef LBANN_HAS_CUDNN
       throw lbann_exception("sum_layer: cuDNN not detected");
   #else
       const int num_gpus = m_cudnn->get_num_gpus();
@@ -107,7 +107,7 @@ class sum_layer : public transform_layer {
                                     output_d.get_leading_dim()));
         }
       }
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
     } else {
       auto& output = get_activations();
       El::Zero(output);
@@ -119,7 +119,7 @@ class sum_layer : public transform_layer {
 
   void bp_compute() override {
     if(this->m_using_gpus) {
-  #ifndef __LIB_CUDNN
+  #ifndef LBANN_HAS_CUDNN
       throw lbann_exception("sum_layer: cuDNN not detected");
   #else
       const int num_gpus = m_cudnn->get_num_gpus();
@@ -141,7 +141,7 @@ class sum_layer : public transform_layer {
                                     gradient_wrt_input_d.get_leading_dim()));
         }
       }
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
     } else {
       const auto& gradient_wrt_output = get_prev_error_signals();
       for (auto& gradient_wrt_input : this->m_error_signals) {

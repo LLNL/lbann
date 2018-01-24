@@ -80,11 +80,11 @@ class hadamard_layer : public transform_layer {
 
   void fp_compute() override {
     if(this->m_using_gpus) {
-  #ifndef __LIB_CUDNN
+  #ifndef LBANN_HAS_CUDNN
       throw lbann_exception("hadamard_layer: cuDNN not detected");
   #else
       throw lbann_exception("hadamard_layer: no GPU implementation");
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
     } else {
 
       // Get local matrices
@@ -113,11 +113,11 @@ class hadamard_layer : public transform_layer {
 
   void bp_compute() override {
     if(this->m_using_gpus) {
-  #ifndef __LIB_CUDNN
+  #ifndef LBANN_HAS_CUDNN
       throw lbann_exception("hadamard_layer: cuDNN not detected");
   #else
       throw lbann_exception("hadamard_layer: no GPU implementation");
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
     } else {
 
       // Get local matrices

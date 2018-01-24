@@ -26,9 +26,9 @@
 
 #include "lbann/objective_functions/weight_regularization/l2.hpp"
 #include "lbann/models/model.hpp"
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
 #include "lbann/utils/cublas_wrapper.hpp"
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 
 
 namespace lbann {
@@ -87,13 +87,13 @@ EvalType l2_weight_regularization::evaluate() {
   for (weights* w : m_weights) {
     cudnn::cudnn_manager* cudnn = w->get_cudnn_manager();
     if (cudnn != nullptr) {
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
       CHECK_CUDA(cudaSetDevice(cudnn->get_gpu(0)));
       EvalType norm = cublas::nrm2(cudnn->get_cublas_handle(0),
                                    w->get_height() * w->get_width(),
                                    w->get_values_gpu()[0], 1);
       value += norm * norm;
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
     } else {
       // Further optimization: Can batch allreduces on the same communicator.
       const AbsDistMat& values = w->get_values();
@@ -109,10 +109,10 @@ void l2_weight_regularization::compute_weight_regularization() {
   for (weights* w : m_weights) {
     optimizer* opt = w->get_optimizer();
     if (w->get_cudnn_manager() != nullptr) {
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
       std::vector<DataType*> values_d = w->get_values_gpu();
       opt->add_to_gradient_gpu(values_d, 2 * m_scale_factor);
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
     } else {
       opt->add_to_gradient(w->get_values(), 2 * m_scale_factor);
     }

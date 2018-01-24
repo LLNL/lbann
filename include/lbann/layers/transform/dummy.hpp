@@ -44,13 +44,13 @@ class dummy_layer : public transform_layer {
     // Dummy layer has no children
     m_expected_num_child_layers = 0;
 
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
     // Initialize GPU memory if using GPU
     if (cudnn) {
       this->m_using_gpus = true;
       this->m_cudnn = cudnn;
     }
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
 
   }
 

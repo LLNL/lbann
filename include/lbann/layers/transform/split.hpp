@@ -49,13 +49,13 @@ class split_layer : public transform_layer {
     // Split layer has no limit on children
     m_expected_num_child_layers = -1;
 
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
     // Initialize GPU if available
     if(cudnn) {
       this->m_using_gpus = true;
       this->m_cudnn = cudnn;
     }
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
 
   }
 
@@ -80,14 +80,14 @@ class split_layer : public transform_layer {
 
   void fp_compute() override {
     if(this->m_using_gpus) {
-  #ifndef __LIB_CUDNN
+  #ifndef LBANN_HAS_CUDNN
       throw lbann_exception("split_layer: cuDNN not detected");
   #else
       const auto& input_d = this->m_prev_activations_d[0];
       for (auto& output_d : this->m_activations_d ) {
         output_d.locked_view(input_d);
       }
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
     } else {
       const auto& input = get_prev_activations();
       for (auto& output : this->m_activations) {
@@ -98,7 +98,7 @@ class split_layer : public transform_layer {
 
   void bp_compute() override {
     if(this->m_using_gpus) {
-  #ifndef __LIB_CUDNN
+  #ifndef LBANN_HAS_CUDNN
       throw lbann_exception("split_layer: cuDNN not detected");
   #else
       const int num_gpus = m_cudnn->get_num_gpus();
@@ -120,7 +120,7 @@ class split_layer : public transform_layer {
                                     gradient_wrt_input_d.get_leading_dim()));
         }
       }
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
     } else {
       auto& gradient_wrt_input = get_error_signals();
       for (const auto& gradient_wrt_output : this->m_prev_error_signals) {

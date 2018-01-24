@@ -34,7 +34,7 @@
 #include "El.hpp"
 #include <unistd.h>
 
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
 
 using namespace cudnn;
 using namespace lbann;
@@ -1325,4 +1325,4 @@ void cudnn::copy_lrn_cudnn_desc(const cudnnLRNDescriptor_t& src,
 
 }
 
-#endif // #ifdef __LIB_CUDNN
+#endif // #ifdef LBANN_HAS_CUDNN

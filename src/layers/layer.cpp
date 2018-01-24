@@ -64,14 +64,14 @@ Layer::Layer(lbann_comm *comm)
 
   // Initialize GPU information
   m_using_gpus = false;
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
   m_mini_batch_size_per_gpu = 0;
   m_max_mini_batch_size_per_gpu = 0;
   m_prev_activations_cudnn_desc = nullptr;
   m_activations_cudnn_desc = nullptr;
   m_prev_error_signals_cudnn_desc = nullptr;
   m_error_signals_cudnn_desc = nullptr;
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 
   // Reset timing counters
   reset_counters();
@@ -94,10 +94,10 @@ Layer::Layer(const Layer& other) :
   m_model(other.m_model),
   m_using_gpus(other.m_using_gpus),
   m_cudnn(other.m_cudnn),
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
   m_mini_batch_size_per_gpu(other.m_mini_batch_size_per_gpu),
   m_max_mini_batch_size_per_gpu(other.m_max_mini_batch_size_per_gpu),
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
   m_fp_time(other.m_fp_time),
   m_fp_compute_time(other.m_fp_compute_time),
   m_bp_time(other.m_bp_time),
@@ -115,7 +115,7 @@ Layer::Layer(const Layer& other) :
   for (auto& m : m_prev_error_signals) { m = m->Copy(); }
   for (auto& m : m_error_signals)      { m = m->Copy(); }
 
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
   // Copy GPU objects
   m_prev_activations_d = other.m_prev_activations_d;
   m_activations_d = other.m_activations_d;
@@ -133,7 +133,7 @@ Layer::Layer(const Layer& other) :
                                 m_prev_error_signals_cudnn_desc);
   cudnn::copy_tensor_cudnn_desc(other.m_error_signals_cudnn_desc,
                                 m_error_signals_cudnn_desc);
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 }
 
 Layer& Layer::operator=(const Layer& other) {
@@ -154,10 +154,10 @@ Layer& Layer::operator=(const Layer& other) {
   m_model = other.m_model;
   m_using_gpus = other.m_using_gpus;
   m_cudnn = other.m_cudnn;
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
   m_mini_batch_size_per_gpu = other.m_mini_batch_size_per_gpu;
   m_max_mini_batch_size_per_gpu = other.m_max_mini_batch_size_per_gpu;
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
   m_fp_time = other.m_fp_time;
   m_fp_compute_time = other.m_fp_compute_time;
   m_bp_time = other.m_bp_time;
@@ -176,7 +176,7 @@ Layer& Layer::operator=(const Layer& other) {
   for (auto& m : m_prev_error_signals) { m = m->Copy(); }
   for (auto& m : m_error_signals)      { m = m->Copy(); }
 
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
   m_prev_activations_d = other.m_prev_activations_d;
   m_activations_d = other.m_activations_d;
   m_prev_error_signals_d = other.m_prev_error_signals_d;
@@ -189,13 +189,13 @@ Layer& Layer::operator=(const Layer& other) {
                                 m_prev_error_signals_cudnn_desc);
   cudnn::copy_tensor_cudnn_desc(other.m_error_signals_cudnn_desc,
                                 m_error_signals_cudnn_desc);
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 
   return *this;
 }
 
 Layer::~Layer() {
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
   if(m_prev_activations_cudnn_desc != nullptr) {
     CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_prev_activations_cudnn_desc));
   }
@@ -208,7 +208,7 @@ Layer::~Layer() {
   if(m_error_signals_cudnn_desc != nullptr) {
     CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_error_signals_cudnn_desc));
   }
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
   deallocate_matrices();
 }
 
@@ -218,7 +218,7 @@ void Layer::forward_prop() {
   // Setup matrix data, e.g. input matrices
   fp_setup_data(m_model->get_current_mini_batch_size());
 
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
   if(m_using_gpus) {
 
     // Determine mini-batch size per GPU
@@ -266,14 +266,14 @@ void Layer::forward_prop() {
 #endif // LBANN_DEBUG
 
   }
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 
   // Apply layer's compute function
   const auto fp_compute_start = get_time();
   fp_compute();
   m_fp_compute_time += get_time() - fp_compute_start;
 
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
   if (m_using_gpus) {
 
 #ifdef LBANN_DEBUG
@@ -310,7 +310,7 @@ void Layer::forward_prop() {
     if (synchronization_needed) { m_cudnn->synchronize(); }
 
   }
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 
   m_fp_time += get_time() - fp_start;
 }
@@ -321,7 +321,7 @@ void Layer::back_prop() {
   // Setup matrix data, e.g. input matrices
   bp_setup_data(m_model->get_current_mini_batch_size());
 
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
   if(m_using_gpus) {
 
     // Transfer inputs from CPU to GPUs if needed
@@ -362,14 +362,14 @@ void Layer::back_prop() {
 #endif // LBANN_DEBUG
 
   }
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 
   // Backprop the compute function.
   const auto bp_compute_start = get_time();
   bp_compute();
   m_bp_compute_time += get_time() - bp_compute_start;
 
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
   if (m_using_gpus) {
 
 #ifdef LBANN_DEBUG
@@ -405,7 +405,7 @@ void Layer::back_prop() {
     }
     if (synchronization_needed) { m_cudnn->synchronize(); }
   }
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 
   m_bp_time += get_time() - bp_start;
 }
@@ -565,9 +565,9 @@ void Layer::clear_error_signals(int mini_batch_size) {
   for (int i = 0; i < get_num_parents(); ++i) {
     get_error_signals(i).Resize(get_num_prev_neurons(i), mini_batch_size);
     if (m_using_gpus) {
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
       m_error_signals_d[i].zero();
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
     } else {
       El::Zero(get_error_signals(i));
     }
@@ -696,15 +696,15 @@ void Layer::setup_data() {
               mini_batch_size);
   }
 
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
   // Pin host memory if needed for GPU memory transfers
   pin_data();
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 
 }
 
 void Layer::setup_gpu() {
-#ifndef __LIB_CUDNN
+#ifndef LBANN_HAS_CUDNN
   throw lbann_exception(
       std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
       "Layer: cuDNN not detected");
@@ -758,7 +758,7 @@ void Layer::setup_gpu() {
                                m_mini_batch_size_per_gpu,
                                m_prev_neuron_dims);
   
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 }
 
 void Layer::check_setup() {
@@ -845,7 +845,7 @@ void Layer::replace_weights(Layer* other_layer) {
 }
 
 void Layer::deallocate_matrices() {
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
   // Deallocate GPU memory
   m_prev_activations_d.clear();
   m_activations_d.clear();
@@ -867,7 +867,7 @@ void Layer::deallocate_matrices() {
       if (m != nullptr) { m_cudnn->unpin_matrix(*m); }
     }
   }
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 
   // Deallocate matrices
   for (const auto& m : m_prev_activations) {
@@ -986,7 +986,7 @@ void Layer::bp_setup_data(int mini_batch_size) {
 }
 
 
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
 void Layer::pin_data() {
   for (int i = 0; i < get_num_parents(); ++i) {
     const auto& parent = *m_parent_layers[i];
@@ -1009,7 +1009,7 @@ void Layer::pin_data() {
   }
 }
 
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 
 void Layer::get_fp_output(AbsDistMat& output, const Layer* child) const {
 
@@ -1063,7 +1063,7 @@ void Layer::get_bp_output(AbsDistMat& output, const Layer* parent) const {
 
 }
 
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
 
 void Layer::get_gpu_fp_output(cudnn::matrix& output_d,
                               const Layer* child) const {
@@ -1097,7 +1097,7 @@ void Layer::get_gpu_bp_output(cudnn::matrix& output_d,
   output_d.locked_view(m_error_signals_d[parent_index]);
 }
 
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 
 std::string Layer::get_data_layout_string(data_layout d) const {
   switch(d) {

@@ -64,13 +64,13 @@ class slice_layer : public transform_layer {
     // Slice layer has no limit on children
     m_expected_num_child_layers = -1;
 
-  #ifdef __LIB_CUDNN
+  #ifdef LBANN_HAS_CUDNN
     // Initialize GPU if available
     if(cudnn) {
       this->m_using_gpus = true;
       this->m_cudnn = cudnn;
     }
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
 
   }
 
@@ -311,7 +311,7 @@ class slice_layer : public transform_layer {
   }
 
   void fp_compute_gpu() {
-  #ifndef __LIB_CUDNN
+  #ifndef LBANN_HAS_CUDNN
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: slice_layer: cuDNN not detected";
     throw lbann_exception(err.str());
@@ -378,11 +378,11 @@ class slice_layer : public transform_layer {
       }
     }
 
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
   }
 
   void bp_compute_gpu() {
-  #ifndef __LIB_CUDNN
+  #ifndef LBANN_HAS_CUDNN
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: slice_layer: cuDNN not detected";
     throw lbann_exception(err.str());
@@ -457,7 +457,7 @@ class slice_layer : public transform_layer {
 
     }
 
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
   }
 
   std::vector<int> get_neuron_dims(int child_index = 0) const override {

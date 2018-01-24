@@ -30,7 +30,7 @@
 #define LBANN_LAYER_REGULARIZER_BATCH_NORMALIZATION_CUDA_HPP_INCLUDED
 #include "lbann/base.hpp"
 
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
 
 namespace lbann {
 
@@ -114,5 +114,5 @@ void batch_normalization_backprop2(int height,
 
 } // namespace lbann
 
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 #endif  // LBANN_LAYER_REGULARIZER_BATCH_NORMALIZATION_CUDA_HPP_INCLUDED

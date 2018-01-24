@@ -44,7 +44,7 @@
 
 namespace lbann {
 
-#if __LIB_CUDNN
+#if LBANN_HAS_CUDNN
 namespace softmax_cuda {
 /** Apply minimum cutoff to activation entries.
  *  A minimum output value helps avoid denormalized floats.
@@ -60,7 +60,7 @@ void bp_cutoff(cudnn::cudnn_manager& cudnn,
                El::Int h, El::Int w,
                DataType min_output);
 } // namespace softmax
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
 
 /** Softmax layer. */
 template <data_layout T_layout>
@@ -86,11 +86,11 @@ class softmax_layer : public activation_layer {
       m_workspace(nullptr),
       m_min_output(std::sqrt(std::numeric_limits<DataType>::min())) {
     this->m_cudnn = cudnn;
-#if __LIB_CUDNN
+#if LBANN_HAS_CUDNN
     if (this->m_cudnn && T_layout == data_layout::DATA_PARALLEL) {
       this->m_using_gpus = true;
     }
-#endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
   }
 
   softmax_layer(const softmax_layer& other)
@@ -277,7 +277,7 @@ class softmax_layer : public activation_layer {
   }
 
   void fp_compute_cudnn() {
-  #ifndef __LIB_CUDNN
+  #ifndef LBANN_HAS_CUDNN
     throw lbann_exception("softmax_layer: cuDNN not detected");
   #else
     
@@ -315,11 +315,11 @@ class softmax_layer : public activation_layer {
                             m_min_output);
   #endif // LBANN_ENABLE_SOFTMAX_CUTOFF
     
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
   }
 
   void bp_compute_cudnn() {
-  #ifndef __LIB_CUDNN
+  #ifndef LBANN_HAS_CUDNN
     throw lbann_exception("softmax_layer: cuDNN not detected");
   #else
     
@@ -360,7 +360,7 @@ class softmax_layer : public activation_layer {
                             this->m_min_output);
   #endif // LBANN_ENABLE_SOFTMAX_CUTOFF
     
-  #endif // __LIB_CUDNN
+  #endif // LBANN_HAS_CUDNN
   }
 
 };
