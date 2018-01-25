@@ -6,7 +6,7 @@ def pytest_addoption(parser):
     key = 'bamboo_planKey'
     if key in os.environ:
         plan = os.environ['bamboo_planKey']
-        default_exe = '%s/../%s-BDE/build/%s.llnl.gov/model_zoo/lbann' % (default_dirname, plan, cluster)
+        default_exe = '%s/../%s-BDE/build/gnu.%s.llnl.gov/install/bin/lbann' % (default_dirname, plan, cluster)
     else:
         default_exe = '%s/build/%s.llnl.gov/model_zoo/lbann' % (default_dirname,cluster)
     parser.addoption('--log', action='store', default=0,
