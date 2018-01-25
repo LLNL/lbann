@@ -92,19 +92,19 @@ class sum_layer : public transform_layer {
       for (const auto& input_d : this->m_prev_activations_d ) {
         for (int i=0; i<num_gpus; ++i) {
           CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-          CHECK_CUBLAS(cublas::geam(this->m_cudnn->get_cublas_handle(i),
-                                    CUBLAS_OP_N,
-                                    CUBLAS_OP_N,
-                                    input_d.get_height(),
-                                    this->m_mini_batch_size_per_gpu,
-                                    DataType(1),
-                                    input_d.get_locked_data(i),
-                                    input_d.get_leading_dim(),
-                                    DataType(1),
-                                    output_d.get_locked_data(i),
-                                    output_d.get_leading_dim(),
-                                    output_d.get_data(i),
-                                    output_d.get_leading_dim()));
+          cublas::geam(this->m_cudnn->get_cublas_handle(i),
+                       CUBLAS_OP_N,
+                       CUBLAS_OP_N,
+                       input_d.get_height(),
+                       this->m_mini_batch_size_per_gpu,
+                       DataType(1),
+                       input_d.get_locked_data(i),
+                       input_d.get_leading_dim(),
+                       DataType(1),
+                       output_d.get_locked_data(i),
+                       output_d.get_leading_dim(),
+                       output_d.get_data(i),
+                       output_d.get_leading_dim());
         }
       }
   #endif // LBANN_HAS_CUDNN
@@ -127,18 +127,18 @@ class sum_layer : public transform_layer {
       for (auto& gradient_wrt_input_d : this->m_error_signals_d) {
         for (int i=0; i<num_gpus; ++i) {
           CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-          CHECK_CUBLAS(cublas::geam(this->m_cudnn->get_cublas_handle(i),
-                                    CUBLAS_OP_N, CUBLAS_OP_N,
-                                    gradient_wrt_input_d.get_height(),
-                                    this->m_mini_batch_size_per_gpu,
-                                    DataType(1),
-                                    gradient_wrt_output_d.get_locked_data(i),
-                                    gradient_wrt_output_d.get_leading_dim(),
-                                    DataType(1),
-                                    gradient_wrt_input_d.get_locked_data(i),
-                                    gradient_wrt_input_d.get_leading_dim(),
-                                    gradient_wrt_input_d.get_data(i),
-                                    gradient_wrt_input_d.get_leading_dim()));
+          cublas::geam(this->m_cudnn->get_cublas_handle(i),
+                       CUBLAS_OP_N, CUBLAS_OP_N,
+                       gradient_wrt_input_d.get_height(),
+                       this->m_mini_batch_size_per_gpu,
+                       DataType(1),
+                       gradient_wrt_output_d.get_locked_data(i),
+                       gradient_wrt_output_d.get_leading_dim(),
+                       DataType(1),
+                       gradient_wrt_input_d.get_locked_data(i),
+                       gradient_wrt_input_d.get_leading_dim(),
+                       gradient_wrt_input_d.get_data(i),
+                       gradient_wrt_input_d.get_leading_dim());
         }
       }
   #endif // LBANN_HAS_CUDNN

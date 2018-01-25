@@ -436,18 +436,18 @@ class concatenation_layer : public transform_layer {
         const int num_gpus = m_cudnn->get_num_gpus();
         for (int gpu = 0; gpu < num_gpus; ++gpu) {
           CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(gpu)));
-          CHECK_CUBLAS(cublas::geam(this->m_cudnn->get_cublas_handle(gpu),
-                                    CUBLAS_OP_N, CUBLAS_OP_N,
-                                    gradient_wrt_input_region_d.get_height(),
-                                    this->m_mini_batch_size_per_gpu,
-                                    DataType(1),
-                                    gradient_wrt_output_region_d.get_locked_data(gpu),
-                                    gradient_wrt_output_region_d.get_leading_dim(),
-                                    DataType(1),
-                                    gradient_wrt_input_region_d.get_locked_data(gpu),
-                                    gradient_wrt_input_region_d.get_leading_dim(),
-                                    gradient_wrt_input_region_d.get_data(gpu),
-                                    gradient_wrt_input_region_d.get_leading_dim()));
+          cublas::geam(this->m_cudnn->get_cublas_handle(gpu),
+                       CUBLAS_OP_N, CUBLAS_OP_N,
+                       gradient_wrt_input_region_d.get_height(),
+                       this->m_mini_batch_size_per_gpu,
+                       DataType(1),
+                       gradient_wrt_output_region_d.get_locked_data(gpu),
+                       gradient_wrt_output_region_d.get_leading_dim(),
+                       DataType(1),
+                       gradient_wrt_input_region_d.get_locked_data(gpu),
+                       gradient_wrt_input_region_d.get_leading_dim(),
+                       gradient_wrt_input_region_d.get_data(gpu),
+                       gradient_wrt_input_region_d.get_leading_dim());
         }
       }
 

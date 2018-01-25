@@ -34,8 +34,6 @@
 #include "lbann/models/model.hpp"
 #include <unistd.h>
 #include <string>
-#include <typeinfo>
-#include <typeindex>
 
 #include <cassert>
 

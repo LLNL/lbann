@@ -83,24 +83,12 @@
       throw lbann::lbann_exception("cuDNN error");                      \
     }                                                                   \
   } while (0)
-#define FORCE_CHECK_CUBLAS(cublas_call)                                 \
-  do {                                                                  \
-    const cublasStatus_t cublas_status = cublas_call;                   \
-    if (cublas_status != CUBLAS_STATUS_SUCCESS) {                       \
-      std::cerr << "CUBLAS error";                                      \
-      std::cerr << "Error at " << __FILE__ << ":" << __LINE__ << "\n";  \
-      cudaDeviceReset();                                                \
-      throw lbann::lbann_exception("CUBLAS error");                     \
-    }                                                                   \
-  } while (0)
 #ifdef LBANN_DEBUG
 #define CHECK_CUDA(cuda_call)     FORCE_CHECK_CUDA(cuda_call)
 #define CHECK_CUDNN(cudnn_call)   FORCE_CHECK_CUDNN(cudnn_call)
-#define CHECK_CUBLAS(cublas_call) FORCE_CHECK_CUBLAS(cublas_call)
 #else
 #define CHECK_CUDA(cuda_call)     cuda_call
 #define CHECK_CUDNN(cudnn_call)   cudnn_call
-#define CHECK_CUBLAS(cublas_call) cublas_call
 #endif // #ifdef LBANN_DEBUG
 #endif // #ifdef LBANN_HAS_CUDNN
 

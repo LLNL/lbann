@@ -1,5 +1,6 @@
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
+  cublas_wrapper.cpp
   cudnn_wrapper.cpp
   file_utils.cpp
   graph.cpp

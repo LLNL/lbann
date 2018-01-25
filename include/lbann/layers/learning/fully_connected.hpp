@@ -34,9 +34,7 @@
 #include "lbann/models/model.hpp"
 #include "lbann/weights/initializer.hpp"
 #include "lbann/weights/fan_in_fan_out_initializers.hpp"
-#ifdef LBANN_HAS_CUDNN
 #include "lbann/utils/cublas_wrapper.hpp"
-#endif // LBANN_HAS_CUDNN
 #include <string>
 #include <sstream>
 
@@ -416,14 +414,14 @@ class fully_connected_layer : public learning_layer {
     // Apply linearity
     for (int i=0; i<num_gpus; ++i) {
       CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-      CHECK_CUBLAS(cublas::gemm(this->m_cudnn->get_cublas_handle(i),
-                                CUBLAS_OP_N, CUBLAS_OP_N,
-                                output_size, mini_batch_size, input_size,
-                                DataType(1),
-                                linearity_d[i], output_size,
-                                input_d.get_locked_data(i), input_ldim,
-                                DataType(0),
-                                output_d.get_data(i), output_ldim));
+      cublas::gemm(this->m_cudnn->get_cublas_handle(i),
+                   CUBLAS_OP_N, CUBLAS_OP_N,
+                   output_size, mini_batch_size, input_size,
+                   DataType(1),
+                   linearity_d[i], output_size,
+                   input_d.get_locked_data(i), input_ldim,
+                   DataType(0),
+                   output_d.get_data(i), output_ldim);
     }
 
     // Apply bias if needed
@@ -451,15 +449,14 @@ class fully_connected_layer : public learning_layer {
       // Apply bias with outer product
       for (int i = 0; i < num_gpus; ++i) {
         CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-        CHECK_CUBLAS(cublas::gemm(this->m_cudnn->get_cublas_handle(i),
-                                  CUBLAS_OP_N, CUBLAS_OP_T,
-                                  output_size, mini_batch_size, 1,
-                                  DataType(1),
-                                  bias_d[i], output_size,
-                                  ones_d[i], mini_batch_size,
-                                  DataType(1),
-                                  output_d.get_data(i), output_ldim));
-
+        cublas::gemm(this->m_cudnn->get_cublas_handle(i),
+                     CUBLAS_OP_N, CUBLAS_OP_T,
+                     output_size, mini_batch_size, 1,
+                     DataType(1),
+                     bias_d[i], output_size,
+                     ones_d[i], mini_batch_size,
+                     DataType(1),
+                     output_d.get_data(i), output_ldim);
       }
 
     }
@@ -512,14 +509,14 @@ class fully_connected_layer : public learning_layer {
       // Obtain gradient with a sum over rows
       for (int i = 0; i < num_gpus; ++i) {
         CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-        CHECK_CUBLAS(cublas::gemv(this->m_cudnn->get_cublas_handle(i),
-                                  CUBLAS_OP_N, 
-                                  output_size, mini_batch_size,
-                                  DataType(1),
-                                  gradient_wrt_output_d.get_locked_data(i), gradient_wrt_output_ldim,
-                                  ones_d[i], 1,
-                                  DataType(0),
-                                  m_bias_gradient_d.get_data(i), 1));
+        cublas::gemv(this->m_cudnn->get_cublas_handle(i),
+                     CUBLAS_OP_N, 
+                     output_size, mini_batch_size,
+                     DataType(1),
+                     gradient_wrt_output_d.get_locked_data(i), gradient_wrt_output_ldim,
+                     ones_d[i], 1,
+                     DataType(0),
+                     m_bias_gradient_d.get_data(i), 1);
       }
       bias_optimizer->stage_gradient_for_accumulation_gpu(
         m_bias_gradient_d.get_locked_data(),
@@ -531,14 +528,14 @@ class fully_connected_layer : public learning_layer {
     if (linearity_optimizer != nullptr) {
       for (int i = 0; i < num_gpus; ++i) {
         CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-        CHECK_CUBLAS(cublas::gemm(this->m_cudnn->get_cublas_handle(i),
-                                  CUBLAS_OP_N, CUBLAS_OP_T,
-                                  output_size, input_size, mini_batch_size,
-                                  DataType(1),
-                                  gradient_wrt_output_d.get_locked_data(i), gradient_wrt_output_ldim,
-                                  input_d.get_locked_data(i), input_ldim,
-                                  DataType(0),
-                                  m_linearity_gradient_d.get_data(i), output_size));
+        cublas::gemm(this->m_cudnn->get_cublas_handle(i),
+                     CUBLAS_OP_N, CUBLAS_OP_T,
+                     output_size, input_size, mini_batch_size,
+                     DataType(1),
+                     gradient_wrt_output_d.get_locked_data(i), gradient_wrt_output_ldim,
+                     input_d.get_locked_data(i), input_ldim,
+                     DataType(0),
+                     m_linearity_gradient_d.get_data(i), output_size);
       }
       linearity_optimizer->stage_gradient_for_accumulation_gpu(
         m_linearity_gradient_d.get_locked_data(),
@@ -548,14 +545,14 @@ class fully_connected_layer : public learning_layer {
     // Compute gradient w.r.t. input
     for (int i = 0; i < num_gpus; ++i) {
       CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-      CHECK_CUBLAS(cublas::gemm(this->m_cudnn->get_cublas_handle(i),
-                                CUBLAS_OP_T, CUBLAS_OP_N,
-                                input_size, mini_batch_size, output_size,
-                                DataType(1),
-                                linearity_d[i], output_size,
-                                gradient_wrt_output_d.get_locked_data(i), gradient_wrt_output_ldim,
-                                DataType(1),
-                                gradient_wrt_input_d.get_data(i), gradient_wrt_input_ldim));
+      cublas::gemm(this->m_cudnn->get_cublas_handle(i),
+                   CUBLAS_OP_T, CUBLAS_OP_N,
+                   input_size, mini_batch_size, output_size,
+                   DataType(1),
+                   linearity_d[i], output_size,
+                   gradient_wrt_output_d.get_locked_data(i), gradient_wrt_output_ldim,
+                   DataType(1),
+                   gradient_wrt_input_d.get_data(i), gradient_wrt_input_ldim);
     }
 
 #endif // LBANN_HAS_CUDNN

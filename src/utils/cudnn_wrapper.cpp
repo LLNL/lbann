@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/utils/cudnn_wrapper.hpp"
+#include "lbann/utils/cublas_wrapper.hpp"
 #include "lbann/utils/exception.hpp"
 
 #include <iostream>
