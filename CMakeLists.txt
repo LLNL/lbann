@@ -12,6 +12,10 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
   set(LBANN_DEBUG TRUE)
 endif ()
 
+if (NOT DEFINED BUILD_SHARED_LIBS)
+  set(BUILD_SHARED_LIBS ON)
+endif ()
+
 # Build with at least C++11 standard; allow newer standards.
 if (NOT CMAKE_CXX_STANDARD OR CMAKE_CXX_STANDARD EQUAL 98)
   set(CMAKE_CXX_STANDARD 11)
