@@ -12,7 +12,7 @@ set(CNPY_URL "https://github.com/rogersce/cnpy.git"
   CACHE STRING "The URL from which to clone CNPY")
 
 # ... then the tag.
-set(CNPY_TAG "b39d58d3640f77c043bfe92591afeafdd82e78db"
+set(CNPY_TAG "f19917f6c442885dcf171de485ba8b17bd178da6"
   CACHE STRING "The git tag or hash to checkout for CNPY")
 
 # Where to install CNPY
