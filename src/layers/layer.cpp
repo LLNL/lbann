@@ -22,8 +22,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_layer .hpp .cpp - Parent class for all layer types
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/layers/layer.hpp"
@@ -54,13 +52,6 @@ Layer::Layer(lbann_comm *comm)
   m_num_prev_neurons = 0;
   m_num_prev_neuron_dims = 1;
   m_neuron_dims = std::vector<int>(1, 0);
-
-  // Default number of parent and child layers
-  m_expected_num_parent_layers = 1;
-  m_expected_num_child_layers = 1;
-
-  // Initialize model
-  m_model = nullptr;
 
   // Initialize GPU information
   m_using_gpus = false;
@@ -210,6 +201,44 @@ Layer::~Layer() {
   }
 #endif // LBANN_HAS_CUDNN
   deallocate_matrices();
+}
+
+std::string Layer::get_description() const {
+  std::stringstream ss;
+  ss << get_name() << " (" << get_type() << "): ";
+  return ss.str();
+}
+
+std::string Layer::get_topo_description() const {
+  std::stringstream ss;
+  const size_t num_children = m_child_layers.size();
+  for (size_t i = 0; i < num_children; ++i) {
+    const auto& dims = get_neuron_dims(i);
+    if (i > 0) { ss << ", "; }
+    ss << "activations";
+    if (num_children > 1) { ss << "[" << i << "]"; }
+    ss << " = [";
+    switch (dims.size()) {
+    case 0:
+      ss << "0"; break;
+    case 2:
+      ss << dims[0] << "c x "
+         << dims[1] << "w";
+      break;
+    case 3:
+      ss << dims[0] << "c x "
+         << dims[1] << "w x "
+         << dims[2] << "h";
+      break;
+    default:
+      ss << dims[0];
+      for (size_t j = 1; j < dims.size(); ++j) {
+        ss << " x " << dims[j];
+      }
+    }
+    ss << ", " << get_activations(i).Width() << "s]";
+  }
+  return ss.str();
 }
 
 void Layer::forward_prop() {
@@ -472,8 +501,20 @@ void Layer::summarize_matrices(lbann_summary& summarizer, int step) {
 
 }
 
+// Data matrix access functions
+// Note: Using idiom from Item 3, p. 23 in "Effective C++", 3rd ed.,
+// by Scott Meyers.
 AbsDistMat& Layer::get_prev_activations(int parent_index) {
   return const_cast<AbsDistMat&>(static_cast<const Layer&>(*this).get_prev_activations(parent_index));
+}
+AbsDistMat& Layer::get_activations(int child_index) {
+  return const_cast<AbsDistMat&>(static_cast<const Layer&>(*this).get_activations(child_index));
+}
+AbsDistMat& Layer::get_prev_error_signals(int child_index) {
+  return const_cast<AbsDistMat&>(static_cast<const Layer&>(*this).get_prev_error_signals(child_index));
+}
+AbsDistMat& Layer::get_error_signals(int parent_index) {
+  return const_cast<AbsDistMat&>(static_cast<const Layer&>(*this).get_error_signals(parent_index));
 }
 const AbsDistMat& Layer::get_prev_activations(int parent_index) const {
   if (parent_index < 0 || parent_index >= (int) m_prev_activations.size()) {
@@ -487,10 +528,6 @@ const AbsDistMat& Layer::get_prev_activations(int parent_index) const {
   }
   return *m_prev_activations[parent_index];
 }
-
-AbsDistMat& Layer::get_activations(int child_index) {
-  return const_cast<AbsDistMat&>(static_cast<const Layer&>(*this).get_activations(child_index));
-}
 const AbsDistMat& Layer::get_activations(int child_index) const {
   if (child_index < 0 || child_index >= (int) m_activations.size()) {
     std::stringstream err;
@@ -502,10 +539,6 @@ const AbsDistMat& Layer::get_activations(int child_index) const {
     throw lbann_exception(err.str());
   }
   return *m_activations[child_index];
-}
-
-AbsDistMat& Layer::get_prev_error_signals(int child_index) {
-  return const_cast<AbsDistMat&>(static_cast<const Layer&>(*this).get_prev_error_signals(child_index));
 }
 const AbsDistMat& Layer::get_prev_error_signals(int child_index) const {
   if (child_index < 0 || child_index >= (int) m_prev_error_signals.size()) {
@@ -519,10 +552,6 @@ const AbsDistMat& Layer::get_prev_error_signals(int child_index) const {
   }
   return *m_prev_error_signals[child_index];
 }
-
-AbsDistMat& Layer::get_error_signals(int parent_index) {
-  return const_cast<AbsDistMat&>(static_cast<const Layer&>(*this).get_error_signals(parent_index));
-}
 const AbsDistMat& Layer::get_error_signals(int parent_index) const {
   if (parent_index < 0 || parent_index >= (int) m_error_signals.size()) {
     std::stringstream err;
@@ -535,27 +564,26 @@ const AbsDistMat& Layer::get_error_signals(int parent_index) const {
   }
   return *m_error_signals[parent_index];
 }
-
 Mat& Layer::get_local_prev_activations(int parent_index) {
   return get_prev_activations(parent_index).Matrix();
-}
-const Mat& Layer::get_local_prev_activations(int parent_index) const {
-  return get_prev_activations(parent_index).LockedMatrix();
 }
 Mat& Layer::get_local_activations(int child_index) {
   return get_activations(child_index).Matrix();
 }
-const Mat& Layer::get_local_activations(int child_index) const {
-  return get_activations(child_index).LockedMatrix();
-}
 Mat& Layer::get_local_prev_error_signals(int child_index) {
   return get_prev_error_signals(child_index).Matrix();
 }
-const Mat& Layer::get_local_prev_error_signals(int child_index) const {
-  return get_prev_error_signals(child_index).LockedMatrix();
-}
 Mat& Layer::get_local_error_signals(int parent_index) {
   return get_error_signals(parent_index).Matrix();
+}
+const Mat& Layer::get_local_prev_activations(int parent_index) const {
+  return get_prev_activations(parent_index).LockedMatrix();
+}
+const Mat& Layer::get_local_activations(int child_index) const {
+  return get_activations(child_index).LockedMatrix();
+}
+const Mat& Layer::get_local_prev_error_signals(int child_index) const {
+  return get_prev_error_signals(child_index).LockedMatrix();
 }
 const Mat& Layer::get_local_error_signals(int parent_index) const {
   return get_error_signals(parent_index).LockedMatrix();
@@ -1111,26 +1139,6 @@ std::string Layer::get_data_layout_string(data_layout d) const {
   }
 }
 
-std::vector<int> Layer::fp_output_dims(const Layer* next_layer) const {
-  return m_neuron_dims;
-}
-
-std::vector<const Layer*>& Layer::get_parent_layers() {
-  return m_parent_layers;
-}
-
-const std::vector<const Layer*>& Layer::get_parent_layers() const {
-  return m_parent_layers;
-}
-
-std::vector<const Layer*>& Layer::get_child_layers() {
-  return m_child_layers;
-}
-
-const std::vector<const Layer*>& Layer::get_child_layers() const {
-  return m_child_layers;
-}
-
 std::string Layer::get_layer_names(const std::vector<const Layer*>& list) {
   std::string layer_names = ((list.size()==0u || !list[0])? "" : list[0]->get_name());
 
@@ -1160,14 +1168,6 @@ void Layer::add_child_layer(const Layer* child) {
      && child_pos == m_child_layers.end()) {
     m_child_layers.push_back(child);
   }
-}
-
-void Layer::clear_parent_layers() {
-  m_parent_layers.clear();
-}
-
-void Layer::clear_child_layers() {
-  m_child_layers.clear();
 }
 
 std::vector<Layer*> Layer::get_layer_pointers() {
