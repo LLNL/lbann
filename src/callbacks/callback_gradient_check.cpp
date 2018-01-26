@@ -77,6 +77,7 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
   for (int l = layers.size() - 1; l > 0; --l) {
     layers[l]->back_prop();
   }
+  m->get_objective_function()->compute_weight_regularization();
 
   // Print objective function value
   if (comm->am_world_master()) {
