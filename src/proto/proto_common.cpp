@@ -1623,6 +1623,10 @@ objective_function *init_objective_function(lbann_data::ObjectiveFunction obj_fn
     const lbann_data::MeanAbsoluteDeviation &params = obj_fn_params.mean_absolute_deviation(j);
     obj_fn->add_term(new mean_absolute_deviation_loss(params.scale_factor()));
   }
+  for (int j=0; j<obj_fn_params.mean_absolute_error_size(); j++) {
+    const lbann_data::MeanAbsoluteError &params = obj_fn_params.mean_absolute_error(j);
+    obj_fn->add_term(new mean_absolute_error_loss(params.scale_factor()));
+  }
   for (int j=0; j<obj_fn_params.cross_entropy_size(); j++) {
     const lbann_data::CrossEntropy &params = obj_fn_params.cross_entropy(j);
     obj_fn->add_term(new cross_entropy(params.scale_factor()));

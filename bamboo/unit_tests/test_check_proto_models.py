@@ -14,9 +14,6 @@ def test_models(exe):
     for subdir, dirs, files in os.walk(lbann_dir + '/model_zoo/models/'):
         if 'greedy' in subdir:
             print('Skipping greedy_layerwise_autoencoder_mnist, kills bamboo agent')
-            continue
-        elif 'autoencoder_imagenet' in subdir:
-            print('Skipping autoencoder_imagenet, kills bamboo agent')
             continue            
         for file_name in files:
             if file_name.endswith('.prototext') and "model" in file_name:

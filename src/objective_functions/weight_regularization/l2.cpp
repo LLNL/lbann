@@ -90,7 +90,7 @@ EvalType l2_weight_regularization::evaluate() {
 #ifdef LBANN_HAS_CUDNN
       CHECK_CUDA(cudaSetDevice(cudnn->get_gpu(0)));
       EvalType norm = cublas::nrm2(cudnn->get_cublas_handle(0),
-                                   w->get_height() * w->get_width(),
+                                   w->get_size(),
                                    w->get_values_gpu()[0], 1);
       value += norm * norm;
 #endif // LBANN_HAS_CUDNN

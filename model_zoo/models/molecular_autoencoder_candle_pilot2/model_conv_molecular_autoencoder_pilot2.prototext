@@ -15,6 +15,9 @@ model {
 
   objective_function {
     mean_squared_error {}
+    mean_absolute_deviation {
+      scale_factor: 0.01
+    }
     l2_weight_regularization {
       scale_factor: 0.0005
     }

@@ -7,7 +7,7 @@
 #
 #   -DOpenMP_CXX_FLAGS="-fopenmp -I/usr/local/include/libiomp/ -L/usr/local/lib/"
 
-find_package(OpenMP REQUIRED)
+find_package(OpenMP REQUIRED CXX)
 
 if (NOT TARGET OpenMP::OpenMP_CXX)
   add_library(OpenMP::OpenMP_CXX INTERFACE IMPORTED)
