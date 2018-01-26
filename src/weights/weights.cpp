@@ -127,7 +127,7 @@ void weights::setup(int matrix_height,
                     El::Distribution row_dist) {
   setup(std::vector<int>(1, matrix_height),
         std::vector<int>(1, matrix_width),
-        El::STAR, El::STAR);
+        col_dist, row_dist);
 }
 
 void weights::setup(std::vector<int> matrix_height_dims,
@@ -139,10 +139,12 @@ void weights::setup(std::vector<int> matrix_height_dims,
     // Check that dimensions are unchanged if weights are already
     // initialized
     const El::DistData dist_data(*m_values);
-    if (m_matrix_height_dims != matrix_height_dims
-        || m_matrix_width_dims != matrix_width_dims
-        || dist_data.colDist != col_dist
-        || dist_data.rowDist != row_dist) {
+    if (m_matrix_height_dims == matrix_height_dims
+        && m_matrix_width_dims == matrix_width_dims
+        && dist_data.colDist == col_dist
+        && dist_data.rowDist == row_dist) {
+      return;
+    } else {
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
           << "attempted to setup " << m_name << " as a "
@@ -210,17 +212,16 @@ void weights::setup_gpu() {
         << "attempted to setup GPU weights matrix "
         << "before initializing CPU weights matrix";
     throw lbann_exception(err.str());
-  } else {
-    const El::DistData dist_data(*m_values);
-    if (dist_data.colDist != El::STAR || dist_data.rowDist != El::STAR) {
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "attempted to setup weights as a matrix with "
-          << "col_dist=" << dist_data.colDist << ", "
-          << "row_dist=" << dist_data.rowDist << ", "
-          << "but weights matrix with GPU support must have STAR,STAR format";
-      throw lbann_exception(err.str());
-    }
+  }
+  const El::DistData dist_data(*m_values);
+  if (dist_data.colDist != El::STAR || dist_data.rowDist != El::STAR) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "attempted to setup weights as a matrix with "
+        << "col_dist=" << dist_data.colDist << ", "
+        << "row_dist=" << dist_data.rowDist << ", "
+        << "but weights matrix with GPU support must have STAR,STAR format";
+    throw lbann_exception(err.str());
   }
 
   // Copy weights matrix to GPU
@@ -258,7 +259,6 @@ void weights::set_initializer(weights_initializer* initializer) {
   if (m_initializer != nullptr) { delete m_initializer; }
   m_initializer = initializer;
 }
-
 
 void weights::set_optimizer(optimizer* opt) {
   if (m_optimizer != nullptr) { delete m_optimizer; }
@@ -329,9 +329,11 @@ void weights::set_value(DataType value, int index) {
 
 void weights::set_value(DataType value, std::vector<int> pos) {
 
+  // Get tensor dimensions
+  const auto& dims = get_dims();
+
 #ifdef LBANN_DEBUG  
   // Check that tensor position is valid
-  const auto& dims = get_dims();
   bool pos_is_valid = true;
   if (dims.size() != pos.size()) {
     pos_is_valid = false;
@@ -355,25 +357,12 @@ void weights::set_value(DataType value, std::vector<int> pos) {
   }
 #endif // LBANN_DEBUG
 
-  // Get tensor positions and dimensions corresponding to matrix
-  // height and width
-  const auto& height_dims = get_matrix_height_dims();
-  const auto& width_dims = get_matrix_height_dims();
-  std::vector<int> height_pos(pos.begin() + width_dims.size(), pos.end());
-  std::vector<int> width_pos(pos.begin(), pos.begin() + width_dims.size());
-
-  // Get matrix row and column corresponding to tensor position
-  int row = 0;
-  int col = 0;
-  for (size_t i = 0; i < height_dims.size(); ++i) {
-    row = row * height_dims[i] + height_pos[i];
+  // Get index of weight value and set
+  int index = 0;
+  for (size_t i = 0; i < dims.size(); ++i) {
+    index = index * dims[i] + pos[i];
   }
-  for (size_t i = 0; i < width_dims.size(); ++i) {
-    col = col * width_dims[i] + width_pos[i];
-  }
-
-  // Set matrix entry
-  set_value(value, row, col);
+  set_value(value, index);
 
 }
 

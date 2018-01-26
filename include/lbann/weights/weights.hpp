@@ -44,12 +44,13 @@ class optimizer;
 /** Neural network weights.
  *  Weights are tensors that act as trainable parameters for a neural
  *  network. The values can be initialized with a weights initializer
- *  and are optimized with first-order methods.
+ *  and are optimized with first-order methods (e.g. stochastic
+ *  gradient descent).
  *
- *  Internally, the weight values are stored in a distributed
- *  matrix. The matrix height dimensions are tensor dimensions that
- *  correspond to the matrix height. Similarly, the matrix width
- *  dimensions correspond to the matrix width.
+ *  Internally, the weight values are stored in a 2D distributed
+ *  matrix. The "matrix height dimensions" are tensor dimensions that
+ *  correspond to the matrix height. The remaining dimensions, the
+ *  "matrix width dimensions," correspond to the matrix width.
  *
  *  Note that LBANN weights are similar to Tensorflow variables and
  *  Caffe parameters.
@@ -65,7 +66,8 @@ class weights {
   virtual ~weights();
 
   /** Set weights name.
-   *  Each set of weights in a model should have a unique name.
+   *  Each set of weights in a model should have a unique,
+   *  human-readable name.
    */
   inline void set_name(const std::string name) { m_name = name; }
   /** Get weights name. */
@@ -78,33 +80,67 @@ class weights {
    */
   virtual weights* copy() const { return new weights(*this); }
 
-  /** Setup weights as a vector. */
+  /** Setup weights as a vector.
+   *  The weight matrix is setup as a (size x 1) matrix in STAR,STAR
+   *  format.
+   */
   virtual void setup(int size);
-  /** Setup weights as a tensor. */
-  virtual void setup(std::vector<int> tensor_dims);
-  /** Setup weights as a matrix. */
-  virtual void setup(int height,
-                     int width,
+  /** Setup weights as a tensor.
+   *  The weight matrix is setup as a (prod(dims) x 1) matrix in
+   *  STAR,STAR format.
+   */
+  virtual void setup(std::vector<int> dims);
+  /** Setup weights as a matrix.
+   *  The weight matrix is setup as a (matrix_height x matrix_width)
+   *  matrix in col_dist,row_dist format.
+   */
+  virtual void setup(int matrix_height,
+                     int matrix_width,
                      El::Distribution col_dist,
                      El::Distribution row_dist);
-  /** Setup weights as a matrix with tensor height and width. */
+  /** Setup weights as a matrix with tensor dimensions.
+   *  The weight matrix is setup as a (prod(matrix_height_dims) x
+   *  prod(matrix_width_dims)) matrix in col_dist,row_dist format.
+   */
   virtual void setup(std::vector<int> matrix_height_dims,
                      std::vector<int> matrix_width_dims,
                      El::Distribution col_dist,
                      El::Distribution row_dist);
 
-  /** Get weight tensor dimensions. */
+  /** Get weight tensor dimensions.
+   *  The dimensions are sorted in decreasing order of the data
+   *  strides. This is a generalization of the "NCHW/NHWC" notation
+   *  commonly used to describe image data.
+   *
+   *  These dimensions are obtained by concatenating the matrix width
+   *  dimensions with the matrix height dimensions (in that order). If
+   *  the weight matrix is duplicated on all processes (i.e. in
+   *  STAR,STAR layout) and the local matrices are fully-packed, the
+   *  tensor data is fully-packed. If the matrix is STAR,STAR and the
+   *  local matrices are not fully-packed, the tensor data is
+   *  fully-packed w.r.t. the matrix height dimensions.
+   */
   std::vector<int> get_dims() const;
   /** Get number of weights. */
   inline int get_size() const { return get_matrix_height() * get_matrix_width(); }
 
-  /** Get tensor dimensions corresponding to weights matrix height. */
+  /** Get tensor dimensions corresponding to weight matrix height.
+   *  The dimensions are sorted in decreasing order of strides. Matrix
+   *  rows are fully-packed w.r.t. the matrix height dimensions.
+   */
   inline const std::vector<int>& get_matrix_height_dims() const { return m_matrix_height_dims; }
-  /** Get tensor dimensions corresponding to weights matrix width. */
+  /** Get tensor dimensions corresponding to weight matrix width.
+   *  The dimensions are sorted in decreasing order of strides. Matrix
+   *  columns are fully-packed w.r.t. the matrix width dimensions.
+   */
   inline const std::vector<int>& get_matrix_width_dims() const { return m_matrix_width_dims; }
-  /** Get weights matrix height. */
+  /** Get weight matrix height.
+   *  If there are no matrix height dimensions, the height is one.
+   */
   int get_matrix_height() const;
-  /** Get weights matrix width. */
+  /** Get weight matrix width.
+   *  If there are no matrix width dimensions, the width is one.
+   */
   int get_matrix_width() const;
 
   /** Get reference to cuDNN manager. */
@@ -130,25 +166,26 @@ class weights {
    */
   void set_optimizer(optimizer* opt);
 
-  /** Get the weights matrix. */
+  /** Get the weight matrix. */
   const AbsDistMat& get_values();
-  /** Set the weights matrix. */
+  /** Set the weight matrix. */
   void set_values(const AbsDistMat& values);
+
   /** Set a weight value. */
   void set_value(DataType value, int index);
-  /** Set an entry in the weights tensor. */
+  /** Set an entry in the weight tensor. */
   void set_value(DataType value, std::vector<int> pos);
-  /** Set an entry in the weights matrix. */
+  /** Set an entry in the weight matrix. */
   void set_value(DataType value, int row, int col);
 
-  /** Get a view into the weights matrix.
-   *  If values_v has a different matrix distribution than the
-   *  weights matrix, the matrix values are copied into values_v.
+  /** Get a view into the weight matrix.
+   *  If values_v has a different matrix distribution than the weight
+   *  matrix, the matrix values are copied into values_v.
    */
   void get_values_view(AbsDistMat& values_v);
 
 #ifdef LBANN_HAS_CUDNN
-  /** Get the weights matrix on GPU. */
+  /** Get the weight matrix on GPU. */
   std::vector<DataType*> get_values_gpu();
 #endif // LBANN_HAS_CUDNN
 
@@ -160,7 +197,7 @@ class weights {
  private:
 
   /** Weights name.
-   *  Each set of weights in a model should have a unique name.
+   *  See get_name function.
    */
   std::string m_name;
 
@@ -169,9 +206,13 @@ class weights {
   /** Reference to cuDNN manager. */
   cudnn::cudnn_manager* m_cudnn;
 
-  /** Tensor dimensions corresponding to matrix height. */
+  /** Tensor dimensions corresponding to matrix height.
+   *  See get_matrix_height_dims function.
+   */
   std::vector<int> m_matrix_height_dims;
-  /** Tensor dimensions corresponding to matrix width. */
+  /** Tensor dimensions corresponding to matrix width.
+   *  See get_matrix_width_dims function.
+   */
   std::vector<int> m_matrix_width_dims;
 
   /** Weights matrix. */
@@ -194,9 +235,12 @@ class weights {
   /** Setup GPU objects for weights. */
   virtual void setup_gpu();
 
-  /** Get string describing weight tensor dimensions. */
-  std::string get_dims_string(const std::vector<int>& matrix_height_dims,
-                              const std::vector<int>& matrix_width_dims);
+  /** Get string describing weight tensor dimensions.
+   *  height_dims and width_dims are the dimensions of the weight
+   *  matrix.
+   */
+  static std::string get_dims_string(const std::vector<int>& height_dims,
+                                     const std::vector<int>& width_dims);
 
 };
 
