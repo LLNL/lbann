@@ -7,6 +7,7 @@ set_full_path(THIS_DIR_SOURCES
   loss_function.cpp
   mean_absolute_deviation.cpp
   mean_squared_error.cpp
+  mean_absolute_error.cpp
   poisson_negloglike.cpp
   polya_negloglike.cpp
   )
