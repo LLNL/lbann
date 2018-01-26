@@ -28,18 +28,14 @@
 
 #include "lbann/weights/weights.hpp"
 #include "lbann/optimizers/optimizer.hpp"
+#include <numeric>
 
 namespace lbann {
 
 weights::weights(lbann_comm* comm,
                  cudnn::cudnn_manager* cudnn)
   : m_comm(comm),
-    m_cudnn(cudnn),
-    m_height(0),
-    m_width(0),
-    m_values(nullptr),
-    m_initializer(nullptr),
-    m_optimizer(nullptr) {
+    m_cudnn(cudnn) {
 
   // Initialize weights name
   static int num_weights = 0;
@@ -47,9 +43,7 @@ weights::weights(lbann_comm* comm,
   num_weights++;
 
   // Zero initialization is default
-  if (m_initializer == nullptr) {
-    m_initializer = new constant_initializer(m_comm, DataType(0));
-  }
+  m_initializer = new constant_initializer(m_comm, DataType(0));
 
 }
 
@@ -57,8 +51,8 @@ weights::weights(const weights& other)
   : m_name(other.m_name),
     m_comm(other.m_comm),
     m_cudnn(other.m_cudnn),
-    m_height(other.m_height),
-    m_width(other.m_width),
+    m_matrix_height_dims(other.m_matrix_height_dims),
+    m_matrix_width_dims(other.m_matrix_width_dims),
     m_values(other.m_values),
     m_initializer(other.m_initializer),
     m_optimizer(other.m_optimizer) {
@@ -74,7 +68,9 @@ weights::weights(const weights& other)
   #ifdef LBANN_HAS_CUDNN
   // Copy GPU data
   if (m_cudnn != nullptr) {
-    m_values_d = m_cudnn->copy(other.m_values_d, m_height, m_width);
+    m_values_d = m_cudnn->copy(other.m_values_d,
+                               get_matrix_height(),
+                               get_matrix_width());
   }
   #endif // LBANN_HAS_CUDNN
 
@@ -84,46 +80,27 @@ weights& weights::operator=(const weights& other) {
   m_name = other.m_name;
   m_comm = other.m_comm;
   m_cudnn = other.m_cudnn;
-  m_height = other.m_height;
-  m_width = other.m_width;
+  m_matrix_height_dims = other.m_matrix_height_dims;
+  m_matrix_width_dims = other.m_matrix_width_dims;
 
-  // Copy weights matrix
-  if (m_values != nullptr && other.m_values != nullptr
-      && m_values->DistData() == other.m_values->DistData()) {
-    El::Copy(*other.m_values, *m_values);
-  }
-  if (m_values != nullptr) {
-    delete m_values;
-    m_values = nullptr;
-  }
-  if (other.m_values != nullptr) {
-    m_values = other.m_values->Copy();
-  }
-
-  // Copy initializer
-  if (m_initializer != nullptr) {
-    delete m_initializer;
-    m_initializer = nullptr;
-  }
-  if (other.m_initializer != nullptr) {
-    m_initializer = other.m_initializer->copy();
-  }
-
-  // Copy optimizer
-  if (m_optimizer != nullptr) {
-    delete m_optimizer;
-    m_optimizer = nullptr;
-  }
-  if (other.m_optimizer != nullptr) {
-    m_optimizer = other.m_optimizer->copy();
-    m_optimizer->set_weights(*this);
-  }
+  // Deep copies
+  if (m_values != nullptr)      { delete m_values; }
+  if (m_initializer != nullptr) { delete m_initializer; }
+  if (m_optimizer != nullptr)   { delete m_optimizer; }
+  m_values = other.m_values;
+  m_initializer = other.m_initializer;
+  m_optimizer = other.m_optimizer;
+  if (m_values != nullptr)      { m_values = m_values->Copy(); }
+  if (m_initializer != nullptr) { m_initializer = m_initializer->copy(); }
+  if (m_optimizer != nullptr)   { m_optimizer = m_optimizer->copy(); }
 
   #ifdef LBANN_HAS_CUDNN
   // Copy GPU data
   if (m_cudnn != nullptr) {
     m_cudnn->deallocate_on_gpus(m_values_d);
-    m_values_d = m_cudnn->copy(other.m_values_d, m_height, m_width);
+    m_values_d = m_cudnn->copy(other.m_values_d,
+                               get_matrix_height(),
+                               get_matrix_width());
   }
   #endif // LBANN_HAS_CUDNN
 
@@ -136,41 +113,74 @@ weights::~weights() {
   if (m_optimizer != nullptr)   { delete m_optimizer; }
 }
 
-void weights::setup(int height,
-                    int width,
+void weights::setup(int size) {
+  setup(std::vector<int>(1, size), std::vector<int>(), El::STAR, El::STAR);
+}
+
+void weights::setup(std::vector<int> tensor_dims) {
+  setup(tensor_dims, std::vector<int>(), El::STAR, El::STAR);
+}
+
+void weights::setup(int matrix_height,
+                    int matrix_width,
+                    El::Distribution col_dist,
+                    El::Distribution row_dist) {
+  setup(std::vector<int>(1, matrix_height),
+        std::vector<int>(1, matrix_width),
+        El::STAR, El::STAR);
+}
+
+void weights::setup(std::vector<int> matrix_height_dims,
+                    std::vector<int> matrix_width_dims,
                     El::Distribution col_dist,
                     El::Distribution row_dist) {
 
-  // Check if weights has already been set up
   if (m_values != nullptr) {
+    // Check that dimensions are unchanged if weights are already
+    // initialized
     const El::DistData dist_data(*m_values);
-    if (m_height == height
-        && m_width == width
-        && dist_data.colDist == col_dist
-        && dist_data.rowDist == row_dist) {
-      return;
-    } else {
+    if (m_matrix_height_dims != matrix_height_dims
+        || m_matrix_width_dims != matrix_width_dims
+        || dist_data.colDist != col_dist
+        || dist_data.rowDist != row_dist) {
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
-          << "attempted to setup " << m_name << " with "
-          << "height=" << height << ","
-          << "width=" << width << ","
-          << "col_dist=" << col_dist << ","
+          << "attempted to setup " << m_name << " as a "
+          << get_dims_string(matrix_height_dims, matrix_width_dims) << " "
+          << "weights matrix with "
+          << "col_dist=" << col_dist << ", "
           << "row_dist=" << row_dist << ", "
-          << "but the it is already setup with "
-          << "height=" << m_height << ","
-          << "width=" << m_width << ","
-          << "col_dist=" << dist_data.colDist << ","
+          << "but it is already setup as a "
+          << get_dims_string(m_matrix_height_dims, m_matrix_width_dims) << " "
+          << "matrix with "
+          << "col_dist=" << dist_data.colDist << ", "
           << "row_dist=" << dist_data.rowDist;
+      throw lbann_exception(err.str());
+    }
+  } else {
+    // Check that tensor dimensions are valid
+    bool dims_are_valid = true;
+    for (const auto& d : matrix_height_dims) {
+      if (d <= 0) { dims_are_valid = false; }
+    }
+    for (const auto& d : matrix_width_dims) {
+      if (d <= 0) { dims_are_valid = false; }
+    }
+    if (!dims_are_valid) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "attempted to setup " << m_name << " as a "
+          << get_dims_string(matrix_height_dims, matrix_width_dims) << " "
+          << "weights matrix";
       throw lbann_exception(err.str());
     }
   }
 
   // Initialize weights matrix
-  m_height = height;
-  m_width = width;
-  m_values = m_initializer->construct_matrix(m_height,
-                                             m_width,
+  m_matrix_height_dims = matrix_height_dims;
+  m_matrix_width_dims = matrix_width_dims;
+  m_values = m_initializer->construct_matrix(get_matrix_height(),
+                                             get_matrix_width(),
                                              col_dist,
                                              row_dist);
 
@@ -193,23 +203,55 @@ void weights::setup_gpu() {
   throw lbann_exception(err.str());
   #else
 
-  // Check that distributed matrix is in STAR,STAR format
-  const El::DistData dist_data(*m_values);
-  if (dist_data.colDist != El::STAR || dist_data.rowDist != El::STAR) {
+  // Check that weights matrix is valid
+  if (m_values == nullptr) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to setup weights with "
-        << "col_dist=" << dist_data.colDist << ","
-        << "row_dist=" << dist_data.rowDist << ", "
-        << "but weights with GPU support must have STAR,STAR format";
+        << "attempted to setup GPU weights matrix "
+        << "before initializing CPU weights matrix";
     throw lbann_exception(err.str());
+  } else {
+    const El::DistData dist_data(*m_values);
+    if (dist_data.colDist != El::STAR || dist_data.rowDist != El::STAR) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "attempted to setup weights as a matrix with "
+          << "col_dist=" << dist_data.colDist << ", "
+          << "row_dist=" << dist_data.rowDist << ", "
+          << "but weights matrix with GPU support must have STAR,STAR format";
+      throw lbann_exception(err.str());
+    }
   }
 
   // Copy weights matrix to GPU
-  m_cudnn->allocate_on_gpus(m_values_d, m_height, m_width);
+  m_cudnn->allocate_on_gpus(m_values_d,
+                            m_values->LocalHeight(),
+                            m_values->LocalWidth());
   m_cudnn->broadcast_to_gpus(m_values_d, m_values->LockedMatrix());
 
   #endif // LBANN_HAS_CUDNN
+}
+
+std::vector<int> weights::get_dims() const {
+  const auto& width_dims = get_matrix_width_dims();
+  const auto& height_dims = get_matrix_height_dims();
+  std::vector<int> dims;
+  dims.reserve(width_dims.size() + height_dims.size());
+  for (const auto& d : width_dims)  { dims.push_back(d); }
+  for (const auto& d : height_dims) { dims.push_back(d); }
+  return dims;
+}
+
+int weights::get_matrix_height() const {
+  const auto& height_dims = get_matrix_height_dims();
+  return std::accumulate(height_dims.begin(), height_dims.end(),
+                         1, std::multiplies<int>());
+}
+
+int weights::get_matrix_width() const {
+  const auto& width_dims = get_matrix_width_dims();
+  return std::accumulate(width_dims.begin(), width_dims.end(),
+                         1, std::multiplies<int>());
 }
 
 void weights::set_initializer(weights_initializer* initializer) {
@@ -265,24 +307,113 @@ void weights::set_values(const AbsDistMat& values) {
 
 }
 
-void weights::set_value(int row, int col, DataType value) {
+void weights::set_value(DataType value, int index) {
+
+#ifdef LBANN_DEBUG  
+  // Check that tensor position is valid
+  const auto& size = get_size();
+  if (index < 0 || index >= size) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "attempted to set weight value at index " << index << ", "
+        << "but there are " << size << " values";
+    throw lbann_exception(err.str());
+  }
+#endif // LBANN_DEBUG
+
+  // Set matrix entry
+  const auto& height = get_matrix_height();
+  set_value(value, index % height, index / height);
+
+}
+
+void weights::set_value(DataType value, std::vector<int> pos) {
+
+#ifdef LBANN_DEBUG  
+  // Check that tensor position is valid
+  const auto& dims = get_dims();
+  bool pos_is_valid = true;
+  if (dims.size() != pos.size()) {
+    pos_is_valid = false;
+  } else {
+    for (size_t i = 0 ; i < dims.size(); ++i) {
+      if (pos[i] < 0 || pos[i] >= dims[i]) { pos_is_valid = false;}
+    }
+  }
+  if (!pos_is_valid) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "attempted to set weight value at position (";
+    for (size_t i = 0 ; i < pos.size(); ++i) {
+      err << (i > 0 ? "x" : "") << pos[i];
+    }
+    err << ") in a tensor with dimensions ";
+    for (size_t i = 0 ; i < dims.size(); ++i) {
+      err << (i > 0 ? "x" : "") << dims[i];
+    }
+    throw lbann_exception(err.str());
+  }
+#endif // LBANN_DEBUG
+
+  // Get tensor positions and dimensions corresponding to matrix
+  // height and width
+  const auto& height_dims = get_matrix_height_dims();
+  const auto& width_dims = get_matrix_height_dims();
+  std::vector<int> height_pos(pos.begin() + width_dims.size(), pos.end());
+  std::vector<int> width_pos(pos.begin(), pos.begin() + width_dims.size());
+
+  // Get matrix row and column corresponding to tensor position
+  int row = 0;
+  int col = 0;
+  for (size_t i = 0; i < height_dims.size(); ++i) {
+    row = row * height_dims[i] + height_pos[i];
+  }
+  for (size_t i = 0; i < width_dims.size(); ++i) {
+    col = col * width_dims[i] + width_pos[i];
+  }
+
+  // Set matrix entry
+  set_value(value, row, col);
+
+}
+
+void weights::set_value(DataType value, int row, int col) {
+
+#ifdef LBANN_DEBUG
+  // Check that matrix entry is valid
+  const auto& height = get_matrix_height();
+  const auto& width = get_matrix_width();
+  if (row < 0 || row >= height || col < 0 || col > width ) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "attempted to set weights value at entry "
+        << "(" << row << "," << col << ") "
+        << "in a " << height << "x" << width << " matrix";
+    throw lbann_exception(err.str());
+  }
+#endif // LBANN_DEBUG
+
   if (m_cudnn == nullptr) {
+    // Set value if it is local
     if (m_values->IsLocal(row, col)) {
       const El::Int local_row = m_values->LocalRow(row);
       const El::Int local_col = m_values->LocalCol(col);
       m_values->SetLocal(local_row, local_col, value);
     }
   } else {
+    // Set value on GPU
     #ifdef LBANN_HAS_CUDNN
     Mat cpu_value(1, 1);
     cpu_value(0, 0) = value;
     std::vector<DataType*> gpu_value = m_values_d;
+    const int height = get_matrix_height();
     for (DataType*& pointer : gpu_value) {
-      pointer += row + col * m_height;
+      pointer += row + col * height;
     }
     m_cudnn->broadcast_to_gpus(gpu_value, cpu_value);
     #endif // LBANN_HAS_CUDNN
   }
+
 }
 
 void weights::get_values_view(AbsDistMat& values_v) {
@@ -313,6 +444,21 @@ std::vector<DataType*> weights::get_values_gpu() {
 }
 #endif // LBANN_HAS_CUDNN
 
+std::string weights::get_dims_string(const std::vector<int>& matrix_height_dims,
+                                     const std::vector<int>& matrix_width_dims) {
+  std::stringstream ss;
+  ss << "(";
+  for (size_t i = 0; i < matrix_height_dims.size(); ++i) {
+    ss << (i > 0 ? "x" : "") << matrix_height_dims[i];
+  }
+  ss << ")x(";
+  for (size_t i = 0; i < matrix_width_dims.size(); ++i) {
+    ss << (i > 0 ? "x" : "") << matrix_width_dims[i];
+  }
+  ss << ")";
+  return ss.str();
+}
+
 bool weights::save_to_checkpoint_shared(lbann::persist& p)
 {
   // define name to store our parameters
@@ -332,8 +478,8 @@ void weights::write_proto(lbann_data::Weights* proto) const {
   proto->Clear();
   std::cout << "Write weight params: " << std::endl;
   proto->set_name(m_name);
-  proto->set_height(m_height);
-  proto->set_width(m_width);
+  proto->set_height(get_matrix_height());
+  proto->set_width(get_matrix_width());
   //Write weight values; mimic elemental Write/Print
   //@todo openMP
   for(auto i = 0; i < m_values->Height(); ++i) {

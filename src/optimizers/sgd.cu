@@ -69,7 +69,7 @@ void sgd::step_compute_gpu(std::vector<DataType*> values_d,
                            std::vector<DataType*> gradient_d) {
 
   // Get matrix dimensions
-  const int num_entries = m_weights->get_height() * m_weights->get_width();
+  const int num_entries = m_weights->get_size();
   if (num_entries == 0) return;
 
   // SGD without momentum

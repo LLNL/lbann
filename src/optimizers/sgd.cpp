@@ -48,8 +48,8 @@ sgd::sgd(const sgd& other)
   if (m_velocity != nullptr) { m_velocity = m_velocity->Copy(); }
   #ifdef LBANN_HAS_CUDNN
   if (m_cudnn != nullptr && other.m_weights != nullptr) {
-    const int height = other.m_weights->get_height();
-    const int width = other.m_weights->get_width();
+    const int height = other.m_weights->get_matrix_height();
+    const int width = other.m_weights->get_matrix_width();
     m_velocity_d = m_cudnn->copy(other.m_velocity_d, height, width);
   }
   #endif // LBANN_HAS_CUDNN
@@ -74,8 +74,8 @@ sgd& sgd::operator=(const sgd& other) {
   // Copy GPU data
   #ifdef LBANN_HAS_CUDNN
   if (m_cudnn != nullptr && other.m_weights != nullptr) {
-    const int height = other.m_weights->get_height();
-    const int width = other.m_weights->get_width();
+    const int height = other.m_weights->get_matrix_height();
+    const int width = other.m_weights->get_matrix_width();
     m_cudnn->deallocate_on_gpus(m_velocity_d);
     m_velocity_d = m_cudnn->copy(other.m_velocity_d, height, width);
   }

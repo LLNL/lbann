@@ -117,15 +117,15 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
         // Compute objective function values
         // Note: matrix entry is reset after computing objective
         // function values
-        w->set_value(row, col, initial_weight + 2 * step_size);
+        w->set_value(initial_weight + 2 * step_size, row, col);
         const DataType f_2h = compute_objective_function(m);
-        w->set_value(row, col, initial_weight + step_size);
+        w->set_value(initial_weight + step_size, row, col);
         const DataType f_h = compute_objective_function(m);
-        w->set_value(row, col, initial_weight - step_size);
+        w->set_value(initial_weight - step_size, row, col);
         const DataType f_nh = compute_objective_function(m);
-        w->set_value(row, col, initial_weight - 2 * step_size);
+        w->set_value(initial_weight - 2 * step_size, row, col);
         const DataType f_n2h = compute_objective_function(m);
-        w->set_value(row, col, initial_weight);
+        w->set_value(initial_weight, row, col);
 
         // Compute relative error in gradient.
         // Note: only weight owner participates
