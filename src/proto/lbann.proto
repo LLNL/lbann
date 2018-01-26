@@ -221,6 +221,7 @@ message Model {
 message ObjectiveFunction {
   repeated MeanSquaredError mean_squared_error = 10;
   repeated MeanAbsoluteDeviation mean_absolute_deviation = 11;
+  repeated MeanAbsoluteError mean_absolute_error = 24;
   repeated CrossEntropy cross_entropy = 12;
   repeated BinaryCrossEntropy binary_cross_entropy = 13;
   repeated CrossEntropyWithUncertainty cross_entropy_with_uncertainty = 14;
@@ -238,6 +239,10 @@ message MeanSquaredError {
 }
 
 message MeanAbsoluteDeviation {
+  double scale_factor = 1;
+}
+
+message MeanAbsoluteError {
   double scale_factor = 1;
 }
 
@@ -293,6 +298,7 @@ message Metric {
   TopKCategoricalAccuracy top_k_categorical_accuracy = 2;
   MeanSquaredError mean_squared_error = 3;
   MeanAbsoluteDeviation mean_absolute_deviation = 4;
+  MeanAbsoluteError mean_absolute_error = 6;
   PearsonCorrelation pearson_correlation = 5;
 }
 

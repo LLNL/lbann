@@ -155,6 +155,7 @@
 #include "lbann/objective_functions/loss_functions/cross_entropy_with_uncertainty.hpp"
 #include "lbann/objective_functions/loss_functions/geom_negloglike.hpp"
 #include "lbann/objective_functions/loss_functions/mean_absolute_deviation.hpp"
+#include "lbann/objective_functions/loss_functions/mean_absolute_error.hpp"
 #include "lbann/objective_functions/loss_functions/poisson_negloglike.hpp"
 #include "lbann/objective_functions/loss_functions/polya_negloglike.hpp"
 #include "lbann/objective_functions/weight_regularization/l1.hpp"
