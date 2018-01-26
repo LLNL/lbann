@@ -77,7 +77,6 @@ class softmax_layer : public activation_layer {
 
  public:
 
-  /** Constructor. */
   softmax_layer(lbann_comm *comm,
                 cudnn::cudnn_manager *cudnn=nullptr)
     : activation_layer(comm),
@@ -125,7 +124,6 @@ class softmax_layer : public activation_layer {
   }
 
   softmax_layer* copy() const override { return new softmax_layer(*this); }
-
   std::string get_type() const override { return "softmax"; }
 
   std::string get_description() const override {
@@ -363,6 +361,6 @@ class softmax_layer : public activation_layer {
 
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_LAYER_SOFTMAX_HPP_INCLUDED
+#endif // LBANN_LAYER_SOFTMAX_HPP_INCLUDED

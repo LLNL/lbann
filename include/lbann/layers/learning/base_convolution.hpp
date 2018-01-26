@@ -835,6 +835,7 @@ class base_convolution_layer : public learning_layer {
   }
 
 };
-}
+
+} // namespace lbann
 
 #endif // LBANN_LAYER_BASE_CONVOLUTION_HPP_INCLUDED

@@ -22,8 +22,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// batch_normalization.hpp - Batch normalization layer
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_LAYER_REGULARIZER_BATCH_NORMALIZATION_HPP_INCLUDED
@@ -33,18 +31,20 @@
 #ifdef LBANN_HAS_CUDNN
 #include "lbann/layers/regularizers/batch_normalization_cuda.hpp"
 #endif // LBANN_HAS_CUDNN
+
 namespace lbann {
 
-/**
- * Batch normalization: normalize layers to zero mean/unit standard deviation.
- * See paper:
- * Sergey Ioffe and Christian Szegedy. "Batch Normalization:
- * Accelerating Deep Network Training by Reducing Internal Covariate
- * Shift." ICML 2015.  This keeps a running mean and standard
- * deviation (with exponential decay) instead of computing it over the
- * data at test time. This approach seems to have become standard.
- * See also:
- * https://cthorey.github.io/backpropagation/
+/** Batch normalization layer.
+ *  Each input channel is normalized across the mini-batch to have
+ *  zero mean and unit standard deviation. Learned scaling factors and
+ *  biases are then applied. See:
+ *    Sergey Ioffe and Christian Szegedy. "Batch Normalization:
+ *    Accelerating Deep Network Training by Reducing Internal
+ *    Covariate Shift." ICML 2015.
+ *  This uses the standard approach of maintaining the running mean
+ *  and standard deviation (with exponential decay) for use at test
+ *  time. See:
+ *    https://cthorey.github.io/backpropagation/
  */
 template <data_layout T_layout>
 class batch_normalization : public regularizer_layer {
@@ -809,4 +809,4 @@ class batch_normalization : public regularizer_layer {
 
 } // namespace lbann
 
-#endif  // LBANN_LAYER_REGULARIZER_BATCH_NORMALIZATION_HPP_INCLUDED
+#endif // LBANN_LAYER_REGULARIZER_BATCH_NORMALIZATION_HPP_INCLUDED

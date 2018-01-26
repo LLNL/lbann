@@ -217,6 +217,7 @@ class convolution_layer : public base_convolution_layer {
   }
 
 };
-}
+
+} // namespace lbann
 
 #endif // LBANN_LAYER_CONVOLUTION_HPP_INCLUDED

@@ -22,8 +22,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_dropout .hpp - SELU dropout
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_LAYER_REGULARIZER_SELU_DROPOUT_HPP_INCLUDED
@@ -68,7 +66,7 @@ class selu_dropout : public regularizer_layer {
     m_b(other.m_b),
     m_keep_prob(other.m_keep_prob),
     m_mask(other.m_mask) {
-    if (m_mask) { m_mask = m_mask->Copy(); }
+    if (m_mask != nullptr) { m_mask = m_mask->Copy(); }
   }
 
   selu_dropout& operator=(const selu_dropout& other) {
@@ -77,9 +75,9 @@ class selu_dropout : public regularizer_layer {
     m_a = other.m_a;
     m_b = other.m_b;
     m_keep_prob = other.m_keep_prob;
-    if (m_mask) { delete m_mask; }
+    if (m_mask != nullptr) { delete m_mask; }
     m_mask = other.m_mask;
-    if (m_mask) { m_mask = m_mask->Copy(); }
+    if (m_mask != nullptr) { m_mask = m_mask->Copy(); }
     return *this;
   }
 
@@ -95,7 +93,7 @@ class selu_dropout : public regularizer_layer {
 
   void setup_matrices(const El::Grid& grid) override {
     regularizer_layer::setup_matrices(grid);
-    if (m_mask != nullptr) delete m_mask;
+    if (m_mask != nullptr) { delete m_mask; }
     m_mask = get_activations().Copy();    
   }
 
@@ -168,6 +166,6 @@ class selu_dropout : public regularizer_layer {
   AbsDistMat *m_mask;
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_LAYER_REGULARIZER_SELU_DROPOUT_HPP_INCLUDED
+#endif // LBANN_LAYER_REGULARIZER_SELU_DROPOUT_HPP_INCLUDED

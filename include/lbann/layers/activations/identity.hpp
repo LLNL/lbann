@@ -35,11 +35,8 @@ namespace lbann {
 template <data_layout T_layout>
 class identity_layer : public activation_layer {
  public:
-  /** Constructor. */
   identity_layer(lbann_comm *comm) : activation_layer(comm) {}
-  /** Copy function. */
   identity_layer* copy() const override { return new identity_layer(*this); }
-
   std::string get_type() const override { return "identity"; }
   data_layout get_data_layout() const override { return T_layout; }
 
@@ -53,6 +50,6 @@ class identity_layer : public activation_layer {
 
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // IDENTITY_HPP_INCLUDED
+#endif // IDENTITY_HPP_INCLUDED

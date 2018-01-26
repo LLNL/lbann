@@ -41,8 +41,7 @@ class smooth_relu_layer : public entrywise_activation_layer {
   smooth_relu_layer(lbann_comm *comm)
     : entrywise_activation_layer(comm) {}
   smooth_relu_layer* copy() const override { return new smooth_relu_layer(*this); }
-
-  std::string get_type() const override { return "smooth relu"; }
+  std::string get_type() const override { return "smooth ReLU"; }
   data_layout get_data_layout() const override { return T_layout; }
 
  protected:
@@ -55,6 +54,6 @@ class smooth_relu_layer : public entrywise_activation_layer {
   }
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // SMOOTH_RELU_ACTIVATIONS_HPP_INCLUDED
+#endif // SMOOTH_RELU_ACTIVATIONS_HPP_INCLUDED

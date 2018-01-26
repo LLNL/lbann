@@ -191,6 +191,7 @@ class deconvolution_layer : public base_convolution_layer {
   }
 
 };
-}
+
+} // namespace lbann
 
 #endif // LBANN_LAYER_DECONVOLUTION_HPP_INCLUDED

@@ -38,7 +38,6 @@ namespace lbann {
  */
 class activation_layer : public Layer {
  public:
-  /** Constructor. */
   activation_layer(lbann_comm *comm) : Layer(comm) {}
 };
 
@@ -47,12 +46,8 @@ class activation_layer : public Layer {
  *  input entry.
  */
 class entrywise_activation_layer : public activation_layer {
-
  public:
-
-  /** Constructor. */
-  entrywise_activation_layer(lbann_comm *comm)
-    : activation_layer(comm) {}
+  entrywise_activation_layer(lbann_comm *comm) : activation_layer(comm) {}
 
  protected:
 
@@ -175,6 +170,6 @@ class entrywise_activation_layer : public activation_layer {
 
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_LAYER_ACTIVATION_HPP_INCLUDED
+#endif // LBANN_LAYER_ACTIVATION_HPP_INCLUDED

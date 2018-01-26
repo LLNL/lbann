@@ -42,11 +42,8 @@ class reshape_layer : public transform_layer {
     this->m_num_neuron_dims = num_dims;
     this->m_neuron_dims.assign(dims, dims+num_dims);
   }
-
   reshape_layer* copy() const override { return new reshape_layer(*this); }
-
   std::string get_type() const override { return "reshape"; }
-
   data_layout get_data_layout() const override { return T_layout; }
 
   void setup_dims() override {
@@ -101,6 +98,6 @@ class reshape_layer : public transform_layer {
 
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // RESHAPE_HPP_INCLUDED
+#endif // RESHAPE_HPP_INCLUDED

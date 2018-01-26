@@ -22,8 +22,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_layer_local_response_normalization .hpp .cpp - LRN layer
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_LAYER_LOCAL_RESPONSE_NORMALIZATION_HPP_INCLUDED
@@ -36,7 +34,7 @@
 
 namespace lbann {
 
-/// Local Response Normalization layer
+/** Local Response Normalization layer. */
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
 class local_response_normalization_layer : public regularizer_layer {
  private:
@@ -101,7 +99,7 @@ class local_response_normalization_layer : public regularizer_layer {
   #endif // LBANN_HAS_CUDNN
   }
 
-  virtual ~local_response_normalization_layer() override {
+  ~local_response_normalization_layer() override {
   #ifdef LBANN_HAS_CUDNN
     // Destroy cuDNN objects
     if (m_lrn_cudnn_desc != nullptr) {
@@ -420,6 +418,6 @@ class local_response_normalization_layer : public regularizer_layer {
 
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_LAYER_LOCAL_RESPONSE_NORMALIZATION_HPP_INCLUDED
+#endif // LBANN_LAYER_LOCAL_RESPONSE_NORMALIZATION_HPP_INCLUDED

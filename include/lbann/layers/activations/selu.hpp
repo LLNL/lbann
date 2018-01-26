@@ -47,7 +47,6 @@ class selu_layer : public entrywise_activation_layer {
              DataType scale = DataType(1.0507009873554804934193349852946))
     : entrywise_activation_layer(comm), m_alpha(alpha), m_scale(scale) {}
   selu_layer* copy() const override { return new selu_layer(*this); }
-
   std::string get_type() const override { return "SELU"; }
   data_layout get_data_layout() const override { return T_layout; }
 
@@ -69,6 +68,6 @@ class selu_layer : public entrywise_activation_layer {
   DataType m_scale;
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // SELU_HPP_INCLUDED
+#endif // SELU_HPP_INCLUDED

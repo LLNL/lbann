@@ -40,12 +40,14 @@ class noise_layer : public transform_layer {
   DataType m_noise_factor;
 
  public:
-  /// Constructor
   noise_layer(lbann_comm *comm,
               DataType noise_factor=DataType(0.5),
               cudnn::cudnn_manager *cudnn = nullptr)
     : transform_layer(comm),
       m_noise_factor(noise_factor) {}
+  noise_layer* copy() const override { return new noise_layer(*this); }
+  std::string get_type() const override { return "noise"; }
+  data_layout get_data_layout() const override { return T_layout; }
 
   /** Returns description of ctor params */
   std::string get_description() const override {
@@ -54,12 +56,6 @@ class noise_layer : public transform_layer {
        << " dataLayout: " << this->get_data_layout_string(get_data_layout());
      return s.str();
   }
-
-  noise_layer* copy() const override { return new noise_layer(*this); }
-
-  std::string get_type() const override { return "noise"; }
-
-  data_layout get_data_layout() const override { return T_layout; }
 
  protected:
 
@@ -78,6 +74,6 @@ class noise_layer : public transform_layer {
 
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_LAYER_NOISE_HPP_INCLUDED
+#endif // LBANN_LAYER_NOISE_HPP_INCLUDED

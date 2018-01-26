@@ -36,11 +36,11 @@
 
 namespace lbann {
 
-// Forward declaration for unpooling layer
+// Forward declaration
 template <data_layout T_layout>
 class unpooling_layer;
 
-/// Pooling layer
+/** Pooling layer. */
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
 class pooling_layer : public transform_layer {
  private:
@@ -151,6 +151,10 @@ class pooling_layer : public transform_layer {
     return *this;
   }
     
+  pooling_layer* copy() const override { return new pooling_layer(*this); }
+  std::string get_type() const override { return "pooling"; }
+  data_layout get_data_layout() const override { return T_layout; }
+
   /** Returns description of ctor params */
   std::string get_description() const override {
     std::stringstream s;
@@ -181,12 +185,6 @@ class pooling_layer : public transform_layer {
     }
   #endif // LBANN_HAS_CUDNN
   }
-
-  pooling_layer* copy() const override { return new pooling_layer(*this); }
-
-  std::string get_type() const override { return "pooling"; }
-  
-  data_layout get_data_layout() const override { return T_layout; }
 
   void setup_dims() override {
 
@@ -497,6 +495,6 @@ class pooling_layer : public transform_layer {
 
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_LAYER_POOLING_HPP_INCLUDED
+#endif // LBANN_LAYER_POOLING_HPP_INCLUDED

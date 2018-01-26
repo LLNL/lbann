@@ -38,10 +38,8 @@ namespace lbann {
 template <data_layout T_layout>
 class swish_layer : public entrywise_activation_layer {
  public:
-
   swish_layer(lbann_comm *comm) : entrywise_activation_layer(comm) {}
   swish_layer* copy() const override { return new swish_layer(*this); }
-
   std::string get_type() const override { return "swish"; }
   data_layout get_data_layout() const override { return T_layout; }
 
@@ -56,6 +54,6 @@ class swish_layer : public entrywise_activation_layer {
   }
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // SWISH_HPP_INCLUDED
+#endif // SWISH_HPP_INCLUDED

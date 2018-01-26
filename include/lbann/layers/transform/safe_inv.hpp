@@ -45,11 +45,14 @@ class safe_inv_layer : public transform_layer {
 
  public:
 
-  /** Constructor. */
   safe_inv_layer(lbann_comm *comm,
                  DataType threshhold = DataType(0),
                  cudnn::cudnn_manager *cudnn = nullptr)
     : transform_layer(comm), m_threshhold(threshhold) {}
+
+  safe_inv_layer* copy() const override { return new safe_inv_layer(*this); }
+  std::string get_type() const override { return "safe_inv"; }
+  data_layout get_data_layout() const override { return T_layout; }
 
   /** Returns description of ctor params */
   std::string get_description() const override {
@@ -57,12 +60,6 @@ class safe_inv_layer : public transform_layer {
      s << " dataLayout: " << this->get_data_layout_string(get_data_layout());
      return s.str();
   }
-
-  safe_inv_layer* copy() const override { return new safe_inv_layer(*this); }
-
-  std::string get_type() const override { return "safe_inv"; }
-
-  data_layout get_data_layout() const override { return T_layout; }
 
  protected:
 
@@ -98,6 +95,6 @@ class safe_inv_layer : public transform_layer {
 
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_LAYER_SAFE_INV_HPP_INCLUDED
+#endif // LBANN_LAYER_SAFE_INV_HPP_INCLUDED

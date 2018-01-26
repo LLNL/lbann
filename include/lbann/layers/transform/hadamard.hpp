@@ -39,7 +39,7 @@ namespace lbann {
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
 class hadamard_layer : public transform_layer {
  public:
-  /// Constructor
+
   hadamard_layer(lbann_comm *comm,
                  cudnn::cudnn_manager *cudnn = nullptr)
     : transform_layer(comm) {
@@ -48,6 +48,10 @@ class hadamard_layer : public transform_layer {
     m_expected_num_parent_layers = -1;
 
   }
+
+  hadamard_layer* copy() const override { return new hadamard_layer(*this); }
+  std::string get_type() const override { return "Hadamard"; }
+  data_layout get_data_layout() const override { return T_layout; }
 
   /** Returns description of ctor params */
   std::string get_description() const override {
@@ -59,12 +63,6 @@ class hadamard_layer : public transform_layer {
     s << " dataLayout: " << this->get_data_layout_string(get_data_layout());
     return s.str();
   }
-
-  hadamard_layer* copy() const override { return new hadamard_layer(*this); }
-
-  std::string get_type() const override { return "Hadamard"; }
-
-  data_layout get_data_layout() const override { return T_layout; }
 
   protected:
 
@@ -156,6 +154,6 @@ class hadamard_layer : public transform_layer {
 
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_LAYER_HADAMARD_HPP_INCLUDED
+#endif // LBANN_LAYER_HADAMARD_HPP_INCLUDED

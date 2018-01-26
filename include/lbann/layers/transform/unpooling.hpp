@@ -45,7 +45,6 @@ class unpooling_layer : public transform_layer {
 
  public:
 
-  /** Constructor. */
   unpooling_layer(lbann_comm *comm,
                   pooling_layer<T_layout>* pool)
     : transform_layer(comm),
@@ -64,9 +63,7 @@ class unpooling_layer : public transform_layer {
   }
 
   unpooling_layer* copy() const override { return new unpooling_layer(*this); }
-
   std::string get_type() const override { return "unpooling"; }
-
   data_layout get_data_layout() const override { return T_layout; }
 
   void setup_dims() override {

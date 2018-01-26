@@ -40,7 +40,6 @@ class bent_identity_layer : public entrywise_activation_layer {
   bent_identity_layer(lbann_comm *comm)
     : entrywise_activation_layer(comm) {}
   bent_identity_layer* copy() const override { return new bent_identity_layer(*this); }
-
   std::string get_type() const override { return "bent identity"; }
   data_layout get_data_layout() const override { return T_layout; }
 
@@ -55,6 +54,6 @@ class bent_identity_layer : public entrywise_activation_layer {
   }
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // BENT_IDENTITY_HPP_INCLUDED
+#endif // BENT_IDENTITY_HPP_INCLUDED

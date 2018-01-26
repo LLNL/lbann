@@ -560,6 +560,6 @@ class fully_connected_layer : public learning_layer {
 
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_LAYER_FULL_CONNECTED_HPP_INCLUDED
+#endif // LBANN_LAYER_FULL_CONNECTED_HPP_INCLUDED

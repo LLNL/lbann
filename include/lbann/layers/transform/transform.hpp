@@ -36,10 +36,9 @@ namespace lbann {
  */
 class transform_layer : public Layer {
  public:
-  /** Constructor. */
   transform_layer(lbann_comm *comm) : Layer(comm) {}
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_LAYER_TRANSFORM_HPP_INCLUDED
+#endif // LBANN_LAYER_TRANSFORM_HPP_INCLUDED

@@ -41,7 +41,7 @@ class split_layer : public transform_layer {
  private:
 
  public:
-  /// Constructor
+
   split_layer(lbann_comm *comm,
               cudnn::cudnn_manager *cudnn = nullptr)
     : transform_layer(comm) {
@@ -59,6 +59,10 @@ class split_layer : public transform_layer {
 
   }
 
+  split_layer* copy() const override { return new split_layer(*this); }
+  std::string get_type() const override { return "split"; }
+  data_layout get_data_layout() const override { return T_layout; }
+
   /** Returns description of ctor params */
   std::string get_description() const override {
     std::stringstream s;
@@ -69,12 +73,6 @@ class split_layer : public transform_layer {
     s << " dataLayout: " << this->get_data_layout_string(get_data_layout());
     return s.str();
   }
-
-  split_layer* copy() const override { return new split_layer(*this); }
-
-  std::string get_type() const override { return "split"; }
-
-  data_layout get_data_layout() const override { return T_layout; }
 
   protected:
 
@@ -131,6 +129,6 @@ class split_layer : public transform_layer {
 
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_LAYER_SPLIT_HPP_INCLUDED
+#endif // LBANN_LAYER_SPLIT_HPP_INCLUDED

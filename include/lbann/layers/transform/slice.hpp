@@ -50,7 +50,7 @@ class slice_layer : public transform_layer {
   AbsDistMat *m_output_region_v;
 
  public:
-  /// Constructor
+
   slice_layer(lbann_comm *comm,
               int slice_axis,
               std::vector<int> slice_points,
@@ -113,6 +113,10 @@ class slice_layer : public transform_layer {
     if (m_output_region_v != nullptr) { delete m_output_region_v; }
   }
 
+  slice_layer* copy() const override { return new slice_layer(*this); }
+  std::string get_type() const override { return "slice"; }
+  data_layout get_data_layout() const override { return T_layout; }
+
   /** Returns description of ctor params */
   std::string get_description() const override {
     std::stringstream s;
@@ -128,12 +132,6 @@ class slice_layer : public transform_layer {
     s << " dataLayout: " << this->get_data_layout_string(get_data_layout());
     return s.str();
   }
-
-  slice_layer* copy() const override { return new slice_layer(*this); }
-
-  std::string get_type() const override { return "slice"; }
-
-  data_layout get_data_layout() const override { return T_layout; }
 
   void setup_pointers() override {
     transform_layer::setup_pointers();

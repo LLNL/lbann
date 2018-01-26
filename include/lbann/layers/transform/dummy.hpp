@@ -36,7 +36,7 @@ template <data_layout T_layout = data_layout::DATA_PARALLEL>
 class dummy_layer : public transform_layer {
 
  public:
-  /** Constructor. */
+
   dummy_layer(lbann_comm *comm,
               cudnn::cudnn_manager *cudnn = nullptr)
     : transform_layer(comm) {
@@ -54,8 +54,9 @@ class dummy_layer : public transform_layer {
 
   }
 
-  /** Copy function. */
   dummy_layer* copy() const override { return new dummy_layer(*this); }
+  std::string get_type() const override { return "dummy"; }
+  data_layout get_data_layout() const override { return T_layout; }
 
   /** Returns description. */
   std::string get_description() const override {
@@ -64,11 +65,6 @@ class dummy_layer : public transform_layer {
      return s.str();
   }
 
-  /** Get layer type. */
-  std::string get_type() const override { return "dummy"; }
-
-  data_layout get_data_layout() const override { return T_layout; }
-
  protected:
 
   void fp_compute() override {}
@@ -76,6 +72,6 @@ class dummy_layer : public transform_layer {
 
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_LAYER_DUMMY_HPP_INCLUDED
+#endif // LBANN_LAYER_DUMMY_HPP_INCLUDED

@@ -40,7 +40,6 @@ class softplus_layer : public entrywise_activation_layer {
 public :
   softplus_layer(lbann_comm *comm) : entrywise_activation_layer(comm) {}
   softplus_layer* copy() const override { return new softplus_layer(*this); }
-
   std::string get_type() const override { return "softplus"; }
   data_layout get_data_layout() const override { return T_layout; }
 
@@ -56,6 +55,6 @@ public :
   }
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // SOFTPLUS_HPP_INCLUDED
+#endif // SOFTPLUS_HPP_INCLUDED

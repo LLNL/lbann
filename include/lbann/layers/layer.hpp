@@ -529,6 +529,7 @@ class Layer {
   void deallocate_matrices();
 
 };
-}
+
+} // namespace lbann
 
 #endif // LBANN_LAYER_HPP_INCLUDED

@@ -35,12 +35,8 @@ namespace lbann {
 template <data_layout T_layout>
 class exponential_layer : public entrywise_activation_layer {
  public:
-
-  /** Constructor. */
   exponential_layer(lbann_comm *comm) : entrywise_activation_layer(comm) {}
-  /** Copy function. */
   exponential_layer* copy() const override { return new exponential_layer(*this); }
-
   std::string get_type() const override { return "exponential"; }
   data_layout get_data_layout() const override { return T_layout; }
 
@@ -53,6 +49,6 @@ class exponential_layer : public entrywise_activation_layer {
   }
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // EXPONENTIAL_HPP_INCLUDED
+#endif // EXPONENTIAL_HPP_INCLUDED

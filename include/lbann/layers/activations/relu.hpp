@@ -41,7 +41,7 @@ class relu_layer : public entrywise_activation_layer {
  private:
 
 #ifdef LBANN_HAS_CUDNN
-  /// Activation descriptor
+  /** Activation descriptor. */
   cudnnActivationDescriptor_t m_activation_cudnn_desc;
 #endif // LBANN_HAS_CUDNN
 
@@ -84,8 +84,7 @@ class relu_layer : public entrywise_activation_layer {
   }
 
   relu_layer* copy() const override { return new relu_layer(*this); }
-
-  std::string get_type() const override { return "relu"; }
+  std::string get_type() const override { return "ReLU"; }
 
   /** Returns description of ctor params */
   std::string get_description() const override {

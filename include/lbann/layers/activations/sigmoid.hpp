@@ -37,19 +37,15 @@ namespace lbann {
 template <data_layout T_layout>
 class sigmoid_layer : public entrywise_activation_layer {
  public:
-
-  /** Constructor. */
   sigmoid_layer(lbann_comm *comm) : entrywise_activation_layer(comm) {}
-  /** Copy function. */
   sigmoid_layer* copy() const override { return new sigmoid_layer(*this); }
-
   std::string get_type() const override { return "sigmoid"; }
+  data_layout get_data_layout() const override { return T_layout; }
 
   std::string get_description() const override {
     return std::string{} +
      " sigmoid dataLayout: " + this->get_data_layout_string(get_data_layout());
   }
-  data_layout get_data_layout() const override { return T_layout; }
 
  protected:
   DataType activation(DataType z) const override {
@@ -61,6 +57,6 @@ class sigmoid_layer : public entrywise_activation_layer {
   }
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // SIGMOID_HPP_INCLUDED
+#endif // SIGMOID_HPP_INCLUDED

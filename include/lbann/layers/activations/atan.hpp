@@ -35,12 +35,8 @@ namespace lbann {
 template <data_layout T_layout>
 class atan_layer : public entrywise_activation_layer {
  public:
-
-  /** Constructor. */
   atan_layer(lbann_comm *comm) : entrywise_activation_layer(comm) {}
-  /** Copy function. */
   atan_layer* copy() const override { return new atan_layer(*this); }
-
   std::string get_type() const override { return "atan"; }
   data_layout get_data_layout() const override { return T_layout; }
 
@@ -53,6 +49,6 @@ class atan_layer : public entrywise_activation_layer {
   }
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // ATAN_HPP_INCLUDED
+#endif // ATAN_HPP_INCLUDED

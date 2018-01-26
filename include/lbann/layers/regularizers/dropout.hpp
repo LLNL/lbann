@@ -22,8 +22,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_dropout .cpp .hpp - Dropout implementation
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_LAYER_REGULARIZER_DROPOUT_HPP_INCLUDED
@@ -33,16 +31,15 @@
 
 namespace lbann {
 
-/**
- * Dropout: probabilistically drop units from a layer.
- * See this paper for full details:
- * Srivastava, Nitish, et al. "Dropout: a simple way to prevent neural networks
- * from overfitting." Journal of Machine Learning Research 15.1 (2014).
- * This implementation uses the approach noted in section 10 of that paper of
- * multiplying weights by 1/(keep probability) at training time and not
- * modifying them at test time.
- * The implementation recommends a keep probability of 0.5 for fully-connected
- * layers and 0.8 for input layers as good starting points.
+/** Dropout layer.
+ *  Probabilistically drop layer outputs. See:
+ *    Srivastava, Nitish, et al. "Dropout: a simple way to prevent
+ *    neural networks from overfitting." Journal of Machine Learning
+ *    Research 15.1 (2014).
+ *  The weights are multiplied by 1/(keep probability) at training
+ *  time, as discussed in section 10 of the paper. Keep probabilities
+ *  of 0.5 for fully-connected layers and 0.8 for input layers are
+ *  good starting points.
  */
 template <data_layout T_layout>
 class dropout : public regularizer_layer {
@@ -55,20 +52,22 @@ class dropout : public regularizer_layer {
 
   dropout(const dropout& other) :
     regularizer_layer(other),
-    m_keep_prob(other.m_keep_prob) {
-    m_mask = other.m_mask->Copy();
+    m_keep_prob(other.m_keep_prob),
+    m_mask(other.m_mask) {
+    if (m_mask != nullptr) { m_mask = m_mask->Copy(); }
   }
 
   dropout& operator=(const dropout& other) {
     regularizer_layer::operator=(other);
     m_keep_prob = other.m_keep_prob;
-    if(m_mask) delete m_mask;
-    m_mask = other.m_mask->Copy();
+    if (m_mask != nullptr) { delete m_mask; }
+    m_mask = other.m_mask;
+    if (m_mask != nullptr) { m_mask = m_mask->Copy(); }
     return *this;
   }
 
   ~dropout() override {
-    if (m_mask != nullptr) delete m_mask;
+    if (m_mask != nullptr) { delete m_mask; }
   }
 
   dropout* copy() const override { return new dropout(*this); }
@@ -82,7 +81,7 @@ class dropout : public regularizer_layer {
 
   void setup_matrices(const El::Grid& grid) override {
     regularizer_layer::setup_matrices(grid);
-    if (m_mask != nullptr) delete m_mask;
+    if (m_mask != nullptr) { delete m_mask; }
     m_mask = get_activations().Copy();    
   }
   data_layout get_data_layout() const override { return T_layout; }
@@ -145,6 +144,6 @@ class dropout : public regularizer_layer {
 
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_LAYER_REGULARIZER_DROPOUT_HPP_INCLUDED
+#endif // LBANN_LAYER_REGULARIZER_DROPOUT_HPP_INCLUDED

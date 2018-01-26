@@ -36,10 +36,9 @@ namespace lbann {
  */
 class learning_layer : public Layer {
  public:
-  /** Constructor. */
   learning_layer(lbann_comm *comm) : Layer(comm) {}
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_LAYER_LEARNING_HPP_INCLUDED
+#endif // LBANN_LAYER_LEARNING_HPP_INCLUDED

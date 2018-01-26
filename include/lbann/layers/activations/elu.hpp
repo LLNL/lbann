@@ -53,7 +53,6 @@ class elu_layer : public entrywise_activation_layer {
             DataType alpha = DataType(1.0))
     : entrywise_activation_layer(comm), m_alpha(alpha) {}
   elu_layer* copy() const override { return new elu_layer(*this); }
-
   std::string get_type() const override { return "ELU"; }
   data_layout get_data_layout() const override { return T_layout; }
 
@@ -68,6 +67,6 @@ class elu_layer : public entrywise_activation_layer {
   DataType m_alpha;
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // ELU_HPP_INCLUDED
+#endif // ELU_HPP_INCLUDED

@@ -37,7 +37,6 @@ class tanh_layer : public entrywise_activation_layer {
  public:
   tanh_layer(lbann_comm *comm) : entrywise_activation_layer(comm) {}
   tanh_layer* copy() const override { return new tanh_layer(*this); }
-
   std::string get_type() const override { return "tanh"; }
   data_layout get_data_layout() const override { return T_layout; }
 
@@ -51,6 +50,6 @@ class tanh_layer : public entrywise_activation_layer {
   }
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // TANH_HPP_INCLUDED
+#endif // TANH_HPP_INCLUDED

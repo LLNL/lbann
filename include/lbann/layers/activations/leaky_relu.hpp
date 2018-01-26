@@ -46,7 +46,6 @@ class leaky_relu_layer : public entrywise_activation_layer {
                    DataType leak = DataType(0.01))
     : entrywise_activation_layer(comm), m_leak(leak) {}
   leaky_relu_layer* copy() const override { return new leaky_relu_layer(*this); }
-
   std::string get_type() const override { return "leaky relu"; }
   data_layout get_data_layout() const override { return T_layout; }
 
@@ -61,6 +60,6 @@ class leaky_relu_layer : public entrywise_activation_layer {
   DataType m_leak;
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LEAKY_RELU_HPP_INCLUDED
+#endif // LEAKY_RELU_HPP_INCLUDED

@@ -50,7 +50,7 @@ class concatenation_layer : public transform_layer {
   AbsDistMat *m_output_region_v;
 
  public:
-  /// Constructor
+
   concatenation_layer(lbann_comm *comm,
                       int concatenation_axis,
                       cudnn::cudnn_manager *cudnn = nullptr)
@@ -111,6 +111,10 @@ class concatenation_layer : public transform_layer {
     if (m_output_region_v != nullptr) { delete m_output_region_v; }
   }
 
+  concatenation_layer* copy() const override { return new concatenation_layer(*this); }
+  std::string get_type() const override { return "concatenation"; }
+  data_layout get_data_layout() const override { return T_layout; }
+
   /** Returns description of ctor params */
   std::string get_description() const override {
     std::stringstream s;
@@ -126,12 +130,6 @@ class concatenation_layer : public transform_layer {
     s << " dataLayout: " << this->get_data_layout_string(get_data_layout());
     return s.str();
   }
-
-  concatenation_layer* copy() const override { return new concatenation_layer(*this); }
-
-  std::string get_type() const override { return "concatenation"; }
-
-  data_layout get_data_layout() const override { return T_layout; }
 
   void setup_pointers() override {
     transform_layer::setup_pointers();
