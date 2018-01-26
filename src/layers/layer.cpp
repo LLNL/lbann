@@ -211,7 +211,7 @@ std::string Layer::get_description() const {
 
 std::string Layer::get_topo_description() const {
   std::stringstream ss;
-  const size_t num_children = m_child_layers.size();
+  const size_t num_children = get_num_children();
   for (size_t i = 0; i < num_children; ++i) {
     const auto& dims = get_neuron_dims(i);
     if (i > 0) { ss << ", "; }

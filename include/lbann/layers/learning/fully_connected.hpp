@@ -262,11 +262,11 @@ class fully_connected_layer : public learning_layer {
 
     // Setup weight gradients
     El::Zeros(*this->m_linearity_gradient,
-              this->m_weights[0]->get_height(),
-              this->m_weights[0]->get_width());
+              this->m_weights[0]->get_matrix_height(),
+              this->m_weights[0]->get_matrix_width());
     El::Zeros(*this->m_bias_gradient,
-              this->m_weights[1]->get_height(),
-              this->m_weights[1]->get_width());
+              this->m_weights[1]->get_matrix_height(),
+              this->m_weights[1]->get_matrix_width());
 
   }
 
