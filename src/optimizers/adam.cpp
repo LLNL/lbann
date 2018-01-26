@@ -61,8 +61,8 @@ adam::adam(const adam& other)
   if (m_moment2 != nullptr) { m_moment2 = m_moment2->Copy(); }
   #ifdef LBANN_HAS_CUDNN
   if (m_cudnn != nullptr && other.m_weights != nullptr) {
-    const int height = other.m_weights->get_height();
-    const int width = other.m_weights->get_width();
+    const int height = other.m_weights->get_matrix_height();
+    const int width = other.m_weights->get_matrix_width();
     m_moment1_d = m_cudnn->copy(other.m_moment1_d, height, width);
     m_moment2_d = m_cudnn->copy(other.m_moment2_d, height, width);
   }
@@ -100,8 +100,8 @@ adam& adam::operator=(const adam& other) {
   // Copy GPU data
   #ifdef LBANN_HAS_CUDNN
   if (m_cudnn != nullptr && other.m_weights != nullptr) {
-    const int height = other.m_weights->get_height();
-    const int width = other.m_weights->get_width();
+    const int height = other.m_weights->get_matrix_height();
+    const int width = other.m_weights->get_matrix_width();
     m_cudnn->deallocate_on_gpus(m_moment1_d);
     m_cudnn->deallocate_on_gpus(m_moment2_d);
     m_moment1_d = m_cudnn->copy(other.m_moment1_d, height, width);
