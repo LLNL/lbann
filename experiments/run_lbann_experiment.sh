@@ -194,7 +194,7 @@ if [ -n "${TEST_DATASET_LABELS}" ]; then
 fi
 
 # Initialize experiment command
-LBANN_EXE="${LBANN_DIR}/build/${CLUSTER}.llnl.gov/model_zoo/lbann"
+LBANN_EXE="${LBANN_DIR}/build/gnu.${CLUSTER}.llnl.gov/lbann/build/model_zoo/lbann"
 case ${USE_GPU} in
     YES|yes|TRUE|true|ON|on|1)
         case ${HAS_GPU} in
