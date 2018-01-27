@@ -317,11 +317,11 @@ class fully_connected_layer : public learning_layer {
 
     // Setup weight gradients
     El::Zeros(*this->m_matrix_weights_gradient,
-              this->m_weights[0]->get_height(),
-              this->m_weights[0]->get_width());
+              this->m_weights[0]->get_matrix_height(),
+              this->m_weights[0]->get_matrix_width());
     El::Zeros(*this->m_bias_weights_gradient,
-              this->m_weights[1]->get_height(),
-              this->m_weights[1]->get_width());
+              this->m_weights[1]->get_matrix_height(),
+              this->m_weights[1]->get_matrix_width());
 
   }
 
@@ -532,12 +532,12 @@ fully_connected_layer<data_layout::DATA_PARALLEL>::fp_compute_weights<device::CU
     CHECK_CUBLAS(cublas::gemm(this->m_cudnn->get_cublas_handle(i),
                               CUBLAS_OP_N,
                               CUBLAS_OP_N,
-                              m_weights[0]->get_height(),
+                              m_weights[0]->get_matrix_height(),
                               m_mini_batch_size_per_gpu,
-                              m_weights[0]->get_width(),
+                              m_weights[0]->get_matrix_width(),
                               DataType(1),
                               matrix_weights_d[i],
-                              m_weights[0]->get_height(),
+                              m_weights[0]->get_matrix_height(),
                               this->m_prev_activations_dv[i],
                               this->m_prev_activations_v->Height(),
                               DataType(0),
@@ -604,12 +604,12 @@ fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_weights<device::CU
     CHECK_CUBLAS(cublas::gemm(this->m_cudnn->get_cublas_handle(i),
                               CUBLAS_OP_T,
                               CUBLAS_OP_N,
-                              m_weights[0]->get_width(),
+                              m_weights[0]->get_matrix_width(),
                               m_mini_batch_size_per_gpu,
-                              m_weights[0]->get_height(),
+                              m_weights[0]->get_matrix_height(),
                               DataType(1),
                               matrix_weights_d[i],
-                              m_weights[0]->get_height(),
+                              m_weights[0]->get_matrix_height(),
                               this->m_prev_error_signal_dv[i],
                               this->m_prev_error_signal_v->Height(),
                               DataType(0),
@@ -625,8 +625,8 @@ fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_weights<device::CU
       CHECK_CUBLAS(cublas::gemm(this->m_cudnn->get_cublas_handle(i),
                                 CUBLAS_OP_N,
                                 CUBLAS_OP_T,
-                                m_weights[0]->get_height(),
-                                m_weights[0]->get_width(),
+                                m_weights[0]->get_matrix_height(),
+                                m_weights[0]->get_matrix_width(),
                                 m_mini_batch_size_per_gpu,
                                 DataType(1),
                                 this->m_prev_error_signal_dv[i],

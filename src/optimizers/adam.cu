@@ -66,7 +66,7 @@ void adam::step_compute_gpu(std::vector<DataType*> values_d,
                                / (DataType(1) - m_current_beta1));
 
   // Get matrix dimensions
-  const int num_entries = m_weights->get_height() * m_weights->get_width();
+  const int num_entries = m_weights->get_size();
   if (num_entries == 0) return;
 
   // Launch CUDA kernels

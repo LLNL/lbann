@@ -71,8 +71,8 @@ optimizer::optimizer(const optimizer& other)
   if (m_staging != nullptr)  { m_staging = m_staging->Copy(); }
   #ifdef LBANN_HAS_CUDNN
   if (m_cudnn != nullptr && other.m_weights != nullptr) {
-    const int height = other.m_weights->get_height();
-    const int width = other.m_weights->get_width();
+    const int height = other.m_weights->get_matrix_height();
+    const int width = other.m_weights->get_matrix_width();
     m_gradient_d = m_cudnn->copy(other.m_gradient_d, height, width);
     m_staging_d = m_cudnn->copy(other.m_staging_d, height, width);
   }
@@ -110,8 +110,8 @@ optimizer& optimizer::operator=(const optimizer& other) {
   // Copy GPU data
   #ifdef LBANN_HAS_CUDNN
   if (m_cudnn != nullptr && other.m_weights != nullptr) {
-    const int height = other.m_weights->get_height();
-    const int width = other.m_weights->get_width();
+    const int height = other.m_weights->get_matrix_height();
+    const int width = other.m_weights->get_matrix_width();
     m_cudnn->deallocate_on_gpus(m_gradient_d);
     m_cudnn->deallocate_on_gpus(m_staging_d);
     m_gradient_d = m_cudnn->copy(other.m_gradient_d, height, width);
@@ -184,8 +184,8 @@ AbsDistMat& optimizer::get_gradient() {
 #ifdef LBANN_HAS_CUDNN
 
   // Get matrix dimensions
-  const int height = m_weights->get_height();
-  const int width = m_weights->get_width();
+  const int height = m_weights->get_matrix_height();
+  const int width = m_weights->get_matrix_width();
 
   // Accumulate GPU allreduce staging matrix
   if (m_gpu_staging_is_nonzero) {
@@ -235,8 +235,8 @@ std::vector<DataType*> optimizer::get_gradient_gpu() {
   }
 
   // Get matrix dimensions
-  const int height = m_weights->get_height();
-  const int width = m_weights->get_width();
+  const int height = m_weights->get_matrix_height();
+  const int width = m_weights->get_matrix_width();
 
   // Accumulate GPU allreduce staging matrix
   if (m_gpu_staging_is_nonzero) {
@@ -291,11 +291,11 @@ void optimizer::clear_gradient() {
 #ifdef LBANN_HAS_CUDNN
   if (m_cudnn != nullptr) {
     m_cudnn->clear_on_gpus(m_gradient_d,
-                           m_weights->get_height(),
-                           m_weights->get_width());
+                           m_weights->get_matrix_height(),
+                           m_weights->get_matrix_width());
     m_cudnn->clear_on_gpus(m_staging_d,
-                           m_weights->get_height(),
-                           m_weights->get_width());
+                           m_weights->get_matrix_height(),
+                           m_weights->get_matrix_width());
   }
 #endif // LBANN_HAS_CUDNN
 
@@ -371,7 +371,7 @@ void optimizer::add_to_gradient_gpu(std::vector<DataType*>& gradient,
     for(int i=0; i<num_gpus; ++i) {
       CHECK_CUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
       CHECK_CUBLAS(cublas::axpy(m_cudnn->get_cublas_handle(i),
-                                m_weights->get_height() * m_weights->get_width(),
+                                m_weights->get_size(),
                                 scale, gradient[i], 1,
                                 m_gradient_d[i], 1));
     }
@@ -398,7 +398,7 @@ void optimizer::stage_gradient_for_accumulation_gpu(std::vector<DataType*>& grad
     for(int i=0; i<num_gpus; ++i) {
       CHECK_CUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
       CHECK_CUBLAS(cublas::axpy(m_cudnn->get_cublas_handle(i),
-                                m_weights->get_height() * m_weights->get_width(),
+                                m_weights->get_size(),
                                 scale, gradient[i], 1,
                                 m_staging_d[i], 1));
     }
@@ -418,8 +418,8 @@ void optimizer::setup(weights& w) {
   set_weights(w);
 
   // Initialize matrices
-  const int height = m_weights->get_height();
-  const int width = m_weights->get_width();
+  const int height = m_weights->get_matrix_height();
+  const int width = m_weights->get_matrix_width();
   const AbsDistMat& values = m_weights->get_values();
 
   m_gradient = values.Construct(values.Grid(), values.Root());

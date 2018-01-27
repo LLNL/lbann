@@ -7,6 +7,7 @@ set_full_path(THIS_DIR_HEADERS
   loss_function.hpp
   mean_absolute_deviation.hpp
   mean_squared_error.hpp
+  mean_absolute_error.hpp
   poisson_negloglike.hpp
   polya_negloglike.hpp
   )

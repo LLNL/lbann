@@ -325,8 +325,8 @@ class base_convolution_layer : public learning_layer {
     this->m_weights[1]->setup(this->m_neuron_dims[0], 1,
                               El::STAR, El::STAR);
     El::Zeros(*this->m_bias_weights_gradient,
-              this->m_weights[1]->get_height(),
-              this->m_weights[1]->get_width());
+              this->m_weights[1]->get_matrix_height(),
+              this->m_weights[1]->get_matrix_width());
 
   }
 

@@ -184,8 +184,8 @@ class deconvolution_layer : public base_convolution_layer {
                               this->m_prev_neuron_dims[0],
                               El::STAR, El::STAR);
     El::Zeros(*this->m_kernel_weights_gradient,
-              this->m_weights[0]->get_height(),
-              this->m_weights[0]->get_width());
+              this->m_weights[0]->get_matrix_height(),
+              this->m_weights[0]->get_matrix_width());
   }
 
  protected:
