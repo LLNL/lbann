@@ -762,20 +762,34 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     else if (layer.has_selu_dropout()) {
       const lbann_data::SeluDropout& ell = layer.selu_dropout();
-      if (layout == data_layout::MODEL_PARALLEL) {
-        d = new selu_dropout<data_layout::MODEL_PARALLEL>(
-          comm,
-          ell.keep_prob(),
-          ell.alpha(),
-          ell.scale()
-        );
+      if (ell.alpha() != 0.0 && ell.scale() != 0.0) {
+        if (layout == data_layout::MODEL_PARALLEL) {
+          d = new selu_dropout<data_layout::MODEL_PARALLEL>(
+            comm,
+            ell.keep_prob(),
+            ell.alpha(),
+            ell.scale()
+            );
+        } else {
+          d = new selu_dropout<data_layout::DATA_PARALLEL>(
+            comm,
+            ell.keep_prob(),
+            ell.alpha(),
+            ell.scale()
+            );
+        }
       } else {
-        d = new selu_dropout<data_layout::DATA_PARALLEL>(
-          comm,
-          ell.keep_prob(),
-          ell.alpha(),
-          ell.scale()
-        );
+        if (layout == data_layout::MODEL_PARALLEL) {
+          d = new selu_dropout<data_layout::MODEL_PARALLEL>(
+            comm,
+            ell.keep_prob()
+            );
+        } else {
+          d = new selu_dropout<data_layout::DATA_PARALLEL>(
+            comm,
+            ell.keep_prob()
+            );
+        }
       }
     }
 
@@ -803,18 +817,26 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     else if (layer.has_selu()) {
       const lbann_data::Selu& ell = layer.selu();
-      if (layout == data_layout::MODEL_PARALLEL) {
-        d = new selu_layer<data_layout::MODEL_PARALLEL>(
-          comm,
-          ell.alpha(),
-          ell.scale()
-        );
+      if (ell.alpha() != 0.0 && ell.scale() != 0.0) {
+        if (layout == data_layout::MODEL_PARALLEL) {
+          d = new selu_layer<data_layout::MODEL_PARALLEL>(
+            comm,
+            ell.alpha(),
+            ell.scale()
+            );
+        } else {
+          d = new selu_layer<data_layout::DATA_PARALLEL>(
+            comm,
+            ell.alpha(),
+            ell.scale()
+            );
+        }
       } else {
-        d = new selu_layer<data_layout::DATA_PARALLEL>(
-          comm,
-          ell.alpha(),
-          ell.scale()
-        );
+        if (layout == data_layout::MODEL_PARALLEL) {
+          d = new selu_layer<data_layout::MODEL_PARALLEL>(comm);
+        } else {
+          d = new selu_layer<data_layout::DATA_PARALLEL>(comm);
+        }
       }
     }
 

@@ -56,6 +56,13 @@ class selu_layer : public entrywise_activation_layer {
 
   std::string get_type() const override { return "SELU"; }
 
+  std::string get_description() const override {
+    return std::string {}
+      + " selu" + " alpha: " + std::to_string(m_alpha) + " scale: "
+      + std::to_string(m_scale) + " dataLayout: "
+      + this->get_data_layout_string(get_data_layout());
+  }
+
   inline void initialize_distributed_matrices() override {
     entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
   }
