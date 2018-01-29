@@ -206,7 +206,7 @@ class model {
   void collect_indices(execution_mode mode);
 
   /** Checkpoint model to given file descriptor, return number of bytes written */
-  virtual bool save_to_checkpoint_shared(persist& p);
+  virtual bool save_to_checkpoint_shared(persist& p, bool val_end);
   /** Restore model by reading checkpoint from given file descriptor, return number of bytes read */
   virtual bool load_from_checkpoint_shared(persist& p);
 

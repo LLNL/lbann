@@ -32,14 +32,28 @@
 namespace lbann {
 
 void lbann_callback_checkpoint::setup(model *m) {
+  m_epoch_end = false;
+  m_val_end = false;
   restartShared(m);
 }
 
 void lbann_callback_checkpoint::on_epoch_end(model *m) {
-  m_epoch_end = true; 
+  m_epoch_end = true;
+  m_val_end = false; 
   if(need_checkpoint(m)){
     checkpointShared(m);
   }
+  m_epoch_end = false;
+  
+}
+
+void lbann_callback_checkpoint::on_validation_end(model *m) {
+  m_val_end = true;
+  if(need_checkpoint(m)){
+    checkpointShared(m);
+  }
+  //m_epoch_end = false;
+  m_val_end = false;
 }
 
 void lbann_callback_checkpoint::on_batch_end(model *m) {
@@ -61,7 +75,7 @@ bool lbann_callback_checkpoint::need_checkpoint(model *m) {
   lbann_comm *comm = m->get_comm();
   // if at start of epoch and evenly divide
   if (!checkpoint_now && m_checkpoint_epochs > 0) {
-    if (m_epoch_end) {
+    if (m_epoch_end || m_val_end) {
       checkpoint_now = (m->get_cur_epoch() > 0) && (m->get_cur_epoch() % m_checkpoint_epochs == 0);
     }
   }
@@ -87,7 +101,7 @@ bool lbann_callback_checkpoint::need_checkpoint(model *m) {
     MPI_Bcast(&flag, 1, MPI_INT, 0, MPI_COMM_WORLD);
     checkpoint_now = (bool) flag;
   }
-  m_epoch_end = false;
+  //m_epoch_end = false;
   return checkpoint_now;
 }
 
@@ -161,9 +175,14 @@ bool lbann_callback_checkpoint::checkpointShared(model *m) {
   snprintf(epochdir, sizeof(epochdir), "%s/shared.epoch.%d.step.%d", dir, epoch, step);
   // start our checkpoint
   persist p;
-  p.open_checkpoint(epochdir,m_checkpoint_per_rank);
+  p.open_checkpoint(epochdir,m_checkpoint_per_rank, m_val_end);
   // call virtual function to checkpoint model state
-  m->save_to_checkpoint_shared(p);
+  if(m_epoch_end){
+    m->save_to_checkpoint_shared(p,m_val_end);
+  }
+  if(m_val_end){
+    m->save_to_checkpoint_shared(p,m_val_end);
+  }
   // close our checkpoint
   p.close_checkpoint();
   uint64_t bytes_count = p.get_bytes();

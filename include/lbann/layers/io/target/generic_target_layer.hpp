@@ -332,14 +332,14 @@ class generic_target_layer : public io_layer {
     return Layer::loadFromCheckpoint(fd, filename, bytes);
   }
 
-  bool save_to_checkpoint_shared(persist& p) const override {
+  bool save_to_checkpoint_shared(persist& p, bool val_end) const override {
     // rank 0 writes softmax cost to file
-    if (p.get_rank() == 0) {
+    //if (p.get_rank() == 0) {
       // p.write_double(persist_type::train, "aggregate cost", (double) aggregate_cost);
       // p.write_uint64(persist_type::train, "num backprop steps", (uint64_t) num_backprop_steps);
-    }
+    //}
 
-    return Layer::save_to_checkpoint_shared(p);
+    return Layer::save_to_checkpoint_shared(p,val_end);
   }
 
   bool load_from_checkpoint_shared(persist& p) override {

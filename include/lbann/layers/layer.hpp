@@ -210,7 +210,7 @@ class Layer {
   virtual bool saveToCheckpoint(int fd, const char *filename, size_t *bytes) const;
   virtual bool loadFromCheckpoint(int fd, const char *filename, size_t *bytes);
 
-  virtual bool save_to_checkpoint_shared(persist& p) const;
+  virtual bool save_to_checkpoint_shared(persist& p,bool val_end) const;
   virtual bool load_from_checkpoint_shared(persist& p);
   
   /** Write layer to proto file */
