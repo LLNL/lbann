@@ -50,6 +50,13 @@ class selu_layer : public entrywise_activation_layer {
   std::string get_type() const override { return "SELU"; }
   data_layout get_data_layout() const override { return T_layout; }
 
+  std::string get_description() const override {
+    return std::string {}
+      + " selu" + " alpha: " + std::to_string(m_alpha) + " scale: "
+      + std::to_string(m_scale) + " dataLayout: "
+      + this->get_data_layout_string(get_data_layout());
+  }
+
  protected:
   DataType activation(DataType z) const override {
     return (z >= DataType(0) ?
