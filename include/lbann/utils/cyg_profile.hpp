@@ -49,7 +49,7 @@ extern "C" {
     extern char **c_hash_default_discard_strings;
     extern int c_hash_num_default_discard_items;
 
-    extern int c_hash_func_id;
+    extern short c_hash_func_id;
 
     extern short c_hash_depth;
     extern Dl_info c_hash_info;
