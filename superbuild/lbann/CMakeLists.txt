@@ -1,8 +1,9 @@
 enable_language(CXX)
 
-# Add all the LBANN options; this is just for the GUI, of course
-#list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
-#include(AddLBANNOptions)
+# Contrary to the top-level CMake, here we make warnings-as-errors the
+# default. This should *not* be the persistent norm, but may as well
+# save everyone some typing in the meantime.
+option(LBANN_WARNINGS_AS_ERRORS "Promote LBANN warnings to errors" ON)
 
 set(LBANN_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
   CACHE PATH "The installation destination of LBANN")
