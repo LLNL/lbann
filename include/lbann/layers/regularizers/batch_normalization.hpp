@@ -609,7 +609,7 @@ class batch_normalization : public regularizer_layer {
       batch_normalization_cuda
         ::batch_normalization_backprop2<DataType>(height,
                                                   current_width,
-                                                  width,
+                                                  m_use_global_stats ? width : local_width,
                                                   num_channels,
                                                   this->m_prev_activations_dv[i],
                                                   this->m_prev_error_signal_dv[i],
@@ -845,7 +845,9 @@ class batch_normalization : public regularizer_layer {
       const DataType dvar = var_gradient_local(channel, 0);
 
       // Compute useful constants
-      const DataType num_samples = width * channel_size;
+      const DataType num_samples = (m_use_global_stats ?
+                                    width * channel_size :
+                                    local_width * channel_size);
       const DataType inv_stdev = 1 / std::sqrt(var + m_epsilon);
       const DataType dmean_term = dmean / num_samples;
       const DataType dvar_term = dvar * 2 / (num_samples - DataType(1));
