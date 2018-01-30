@@ -315,7 +315,19 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
   if (master) std::cout << reader->get_type() << " is set" << std::endl;
 
   // configure the data reader
-  image_data_reader_ptr->set_input_params(width, height, channels, n_labels);
+  if (name == "multi_images") {
+    const int n_img_srcs = pb_readme.num_image_srcs();
+    data_reader_multi_images* multi_image_dr_ptr
+      = dynamic_cast<data_reader_multi_images*>(image_data_reader_ptr);
+    if (multi_image_dr_ptr == nullptr) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " no data_reader_multi_images";
+      throw lbann_exception(err.str());
+    }
+    multi_image_dr_ptr->set_input_params(width, height, channels, n_labels, n_img_srcs);
+  } else {
+    image_data_reader_ptr->set_input_params(width, height, channels, n_labels);
+  }
 }
 
 

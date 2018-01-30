@@ -130,6 +130,12 @@ bool data_reader_multi_images::fetch_datum(Mat& X, int data_id, int mb_idx, int 
   return true;
 }
 
+bool data_reader_multi_images::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
+  const label_t label = m_image_list[data_id].second;
+  Y.Set(label, mb_idx, 1);
+  return true;
+}
+
 std::vector<data_reader_multi_images::sample_t> data_reader_multi_images::get_image_list_of_current_mb() const {
   std::vector<sample_t> ret;
   ret.reserve(m_mini_batch_size);
@@ -197,7 +203,7 @@ void data_reader_multi_images::load() {
   if (!ok) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: failed to open: " + image_list_file);
+      " :: failed to load: " + image_list_file);
   }
 
   // reset indices
