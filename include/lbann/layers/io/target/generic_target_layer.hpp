@@ -188,7 +188,11 @@ class generic_target_layer : public io_layer {
   void bp_compute() override {}
 
   bool update_compute() override {
-    return io_buffer->is_data_set_processed(m_paired_input_layer->get_data_reader(), this->m_model->get_execution_mode());
+    if (io_buffer != nullptr) {
+      return io_buffer->is_data_set_processed(m_paired_input_layer->get_data_reader(), this->m_model->get_execution_mode());
+    } else {
+      return true;
+    }
   }
   // lbann::generic_data_reader *set_training_data_reader(generic_data_reader *data_reader, bool shared_data_reader) {
   //   return io_layer::set_training_data_reader(data_reader);

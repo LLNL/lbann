@@ -50,7 +50,7 @@ model {
     name: "data"
     data_layout: "data_parallel"
     input {
-      io_buffer: "distributed"
+      io_buffer: "partitioned"
     }
   }
 
