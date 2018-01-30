@@ -28,7 +28,9 @@
 
 #include "lbann/data_readers/data_reader.hpp"
 #include "lbann/data_store/data_store_imagenet.hpp"
+#include "lbann/data_store/data_store_merge_samples.hpp"
 #include "lbann/data_readers/data_reader_imagenet.hpp"
+#include "lbann/data_readers/data_reader_merge_samples.hpp"
 #include <omp.h>
 
 namespace lbann {
@@ -67,11 +69,13 @@ int lbann::generic_data_reader::fetch_data(Mat& X) {
       + " and there are " + std::to_string(m_shuffled_indices.size()) + " indices");
   }
 
-  /// Allow each thread to perform any preprocessing necessary on the
-  /// data source prior to fetching data
-  #pragma omp parallel for schedule(static, 1)
-  for (int t = 0; t < nthreads; t++) {
-    preprocess_data_source(omp_get_thread_num());
+  if (!m_save_minibatch_indices) {
+    /// Allow each thread to perform any preprocessing necessary on the
+    /// data source prior to fetching data
+    #pragma omp parallel for schedule(static, 1)
+    for (int t = 0; t < nthreads; t++) {
+      preprocess_data_source(omp_get_thread_num());
+    }
   }
 
   int loaded_batch_size = get_loaded_mini_batch_size();
@@ -81,34 +85,47 @@ int lbann::generic_data_reader::fetch_data(Mat& X) {
     El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
     X.Width());
 
-  El::Zeros(X, X.Height(), X.Width());
-  El::Zeros(m_indices_fetched_per_mb, mb_size, 1);
+  if (!m_save_minibatch_indices) {
+    El::Zeros(X, X.Height(), X.Width());
+    El::Zeros(m_indices_fetched_per_mb, mb_size, 1);
+  }
 
-  #pragma omp parallel for
-  for (int s = 0; s < mb_size; s++) {
-    // Catch exceptions within the OpenMP thread.
-    try {
+  if (m_save_minibatch_indices) {
+    m_my_minibatch_indices.resize(m_my_minibatch_indices.size() + 1);
+    for (int s = 0; s < mb_size; s++) {
       int n = m_current_pos + (s * m_sample_stride);
-      int index = m_shuffled_indices[n];
-      bool valid = fetch_datum(X, index, s, omp_get_thread_num());
-      if (!valid) {
-        throw lbann_exception(
-          std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-          " :: generic data reader load error: datum not valid");
-      }
-      m_indices_fetched_per_mb.Set(s, 0, index);
-    } catch (lbann_exception& e) {
-      lbann_report_exception(e);
-    } catch (std::exception& e) {
-      El::ReportException(e);
+      m_my_minibatch_indices.back().push_back(n);
     }
   }
 
-  /// Allow each thread to perform any postprocessing necessary on the
-  /// data source prior to fetching data
-  #pragma omp parallel for schedule(static, 1)
-  for (int t = 0; t < nthreads; t++) {
-    postprocess_data_source(omp_get_thread_num());
+  else {
+
+    #pragma omp parallel for
+    for (int s = 0; s < mb_size; s++) {
+      // Catch exceptions within the OpenMP thread.
+      try {
+        int n = m_current_pos + (s * m_sample_stride);
+        int index = m_shuffled_indices[n];
+        bool valid = fetch_datum(X, index, s, omp_get_thread_num());
+        if (!valid) {
+          throw lbann_exception(
+            std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+            " :: generic data reader load error: datum not valid");
+        }
+        m_indices_fetched_per_mb.Set(s, 0, index);
+      } catch (lbann_exception& e) {
+        lbann_report_exception(e);
+      } catch (std::exception& e) {
+        El::ReportException(e);
+      }
+    }
+  
+    /// Allow each thread to perform any postprocessing necessary on the
+    /// data source prior to fetching data
+    #pragma omp parallel for schedule(static, 1)
+    for (int t = 0; t < nthreads; t++) {
+      postprocess_data_source(omp_get_thread_num());
+    }
   }
 
   return mb_size;
@@ -206,7 +223,7 @@ bool generic_data_reader::is_data_reader_done(bool is_active_reader) {
   return reader_not_done;
 }
 
-bool generic_data_reader::update(bool is_active_reader, bool fake) {
+bool generic_data_reader::update(bool is_active_reader) {
   bool reader_not_done = true; // BVE The sense of this should be fixed
   m_current_mini_batch_idx++;
 
@@ -214,7 +231,7 @@ bool generic_data_reader::update(bool is_active_reader, bool fake) {
     m_current_pos = get_next_position();
 
     /// Maintain the current height of the matrix
-    if (!fake) {
+    if (!m_save_minibatch_indices) {
       El::Zeros(m_indices_fetched_per_mb, m_indices_fetched_per_mb.Height(), 1);
     }  
 
@@ -223,11 +240,9 @@ bool generic_data_reader::update(bool is_active_reader, bool fake) {
   if (m_loaded_mini_batch_idx >= m_num_iterations_per_epoch) {
     reader_not_done = false;
   }
-  if (fake) {
-    if ((size_t)m_current_pos >= m_shuffled_indices.size()) {
-      reader_not_done = false;
-    }  
-  }
+  if ((size_t)m_current_pos >= m_shuffled_indices.size()) {
+    reader_not_done = false;
+  }  
   if (m_current_mini_batch_idx == m_num_iterations_per_epoch) {
     if ((get_rank() < m_num_parallel_readers) && (m_current_pos < (int)m_shuffled_indices.size())) {
       throw lbann_exception(
@@ -237,7 +252,7 @@ bool generic_data_reader::update(bool is_active_reader, bool fake) {
         + " and there are " + std::to_string(m_shuffled_indices.size()) + " indices");
     }
 
-    if (!fake) {
+    if (!m_save_minibatch_indices) {
       if (m_shuffle) {
         std::shuffle(m_shuffled_indices.begin(), m_shuffled_indices.end(),
                      get_data_seq_generator());
@@ -580,44 +595,32 @@ double generic_data_reader::get_use_percent() const {
   return m_use_percent;
 }
 
-void generic_data_reader::setup_data_store(lbann_comm *comm) {
+void generic_data_reader::setup_data_store(model *m, lbann_comm *comm) {
+  m_data_store = nullptr;
+  generic_data_reader *the_reader = nullptr;
 
-  generic_data_reader *the_reader = dynamic_cast<imagenet_reader*>(this);
-
+  if (dynamic_cast<imagenet_reader*>(this) != nullptr) {
+    the_reader = dynamic_cast<imagenet_reader*>(this);
+    m_data_store = new data_store_imagenet(comm, this, m);
+  } else if (dynamic_cast<data_reader_merge_samples*>(this) != nullptr) {
+    the_reader = dynamic_cast<data_reader_merge_samples*>(this);
+    m_data_store = new data_store_merge_samples(comm, this, m);
+  }
+ 
+  //note: this is not an error, since data readers for a single model
+  //      may be of different types (e.g, pilot2 has merge_samples and
+  //      pilot2 readers), and it's possible that we don't want to use
+  //      data store for one of these (possibly because the code
+  //      has not been written. @todo revisit in future: should this
+  //      be considered an error condition with thrown exception?
   if (the_reader == nullptr && m_master) {
     std::cerr << "WARNING: " << __FILE__ << " " << __LINE__
               << " dynamic_cast<imagenet_reader*> failed; NOT using data_store\n";
     return;
   }
 
-  generic_data_store *store = new data_store_imagenet(comm, this);
-  m_data_store = store; 
-  store->setup();
-}
+  m_data_store->setup();
 
-int lbann::generic_data_reader::fetch_data_indices(std::vector<int> &indicies) {
-  if(!position_valid()) {
-    throw lbann_exception(
-      std::string{} + __FILE__ + " " + std::to_string(__LINE__)
-      + " :: generic data reader load error: !position_valid"
-      + " -- current pos = " + std::to_string(m_current_pos)
-      + " and there are " + std::to_string(m_shuffled_indices.size()) + " indices");
-  }
-
-  indicies.clear();
-
-  int loaded_batch_size = get_loaded_mini_batch_size();
-  const int end_pos = std::min(static_cast<size_t>(m_current_pos+loaded_batch_size),
-                               m_shuffled_indices.size());
-  const int mb_size = std::min(
-    El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
-    (El::Int)get_mini_batch_size());
-
-  for (int s = 0; s < mb_size; s++) {
-      int n = m_current_pos + (s * m_sample_stride);
-      indicies.push_back(n);
-  }
-  return mb_size;
 }
 
 }  // namespace lbann

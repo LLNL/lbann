@@ -209,7 +209,9 @@ int main(int argc, char *argv[]) {
         std::cerr << "\nUSING DATA STORE!\n\n";
       }  
       for (auto r : data_readers) {
-        r.second->setup_data_store(comm);
+        if (r.second->get_role() == "train") {
+          r.second->setup_data_store(model, comm);
+        }  
       }  
     }  
 

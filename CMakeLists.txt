@@ -65,6 +65,11 @@ endif ()
 # Options
 #
 
+# This option is off by default because non-developers should not use
+# this option under normal circumstances.
+option(${UPPER_PROJECT_NAME}_WARNINGS_AS_ERRORS
+  "Build with warnings promoted to errors." OFF)
+
 option(${UPPER_PROJECT_NAME}_WITH_CUDA "Include Nvidia CUDA" OFF)
 
 option(${UPPER_PROJECT_NAME}_WITH_NCCL "Include Nvidia NCCL2" OFF)
@@ -307,6 +312,10 @@ if(LBANN_HAS_CUDNN)
 endif ()
 if (LBANN_HAS_VTUNE)
   target_link_libraries(lbann PUBLIC ${VTUNE_STATIC_LIB})
+endif ()
+
+if (TARGET CXX::werror)
+  target_link_libraries(lbann PUBLIC CXX::werror)
 endif ()
 
 target_link_libraries(lbann PUBLIC ${DL_LIBRARY})

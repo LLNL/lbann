@@ -25,8 +25,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __DATA_STORE_IMAGENET_HPP__
-#define __DATA_STORE_IMAGENET_HPP__
+#ifndef __DATA_STORE_MERGE_SAMPLES_HPP__
+#define __DATA_STORE_MERGE_SAMPLES_HPP__
 
 #include "lbann/data_store/generic_data_store.hpp"
 
@@ -36,37 +36,37 @@ namespace lbann {
  * todo
  */
 
-class data_store_imagenet : public generic_data_store {
+class data_store_merge_samples : public generic_data_store {
  public:
 
   //! ctor
-  data_store_imagenet(lbann_comm *comm, generic_data_reader *reader, model *m) :
+  data_store_merge_samples(lbann_comm *comm, generic_data_reader *reader, model *m) :
     generic_data_store(comm, reader, m) {}
 
   //! copy ctor
-  data_store_imagenet(const data_store_imagenet&) = default;
+  data_store_merge_samples(const data_store_merge_samples&) = default;
 
   //! operator=
-  data_store_imagenet& operator=(const data_store_imagenet&) = default;
+  data_store_merge_samples& operator=(const data_store_merge_samples&) = default;
 
-  generic_data_store * copy() const override { return new data_store_imagenet(*this); }
+  data_store_merge_samples * copy() const override { return new data_store_merge_samples(*this); }
 
   //! dtor
-  ~data_store_imagenet() override;
+  ~data_store_merge_samples() override;
 
   void setup() override;
 
-  void exchange_data() override;
+  void exchange_data() override {}
 
   /// for use during development and testing
-  void test_data() override;
+  void test_data() override {}
 
   /// for use during development and testing
-  void test_file_sizes() override;
+  void test_file_sizes() override {}
 
-  void get_data_buf(std::string dir, std::string filename, std::vector<unsigned char> *&buf, int tid) override;
+  void get_data_buf(std::string dir, std::string filename, std::vector<unsigned char> *&buf, int tid) override {}
 
-  void get_data_buf(int data_id, std::vector<unsigned char> *&buf, int tid) override;
+  void get_data_buf(int data_id, std::vector<unsigned char> *&buf, int tid) override {}
 
  protected :
 
@@ -105,4 +105,4 @@ class data_store_imagenet : public generic_data_store {
 
 }  // namespace lbann
 
-#endif  // __DATA_STORE_IMAGENET_HPP__
+#endif  // __DATA_STORE_MERGE_SAMPLES_HPP__
