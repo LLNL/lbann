@@ -147,14 +147,29 @@ std::vector<data_reader_triplet::sample_t> data_reader_triplet::get_image_list()
 
 void data_reader_triplet::load() {
   const std::string data_filename = get_data_filename();
-  if (!m_samples.load(data_filename)) {
+
+  // To support m_first_n semantic, m_samples.load() takes m_first_n
+  // as an argument and attempt to shrink the CNPY arrays loaded as needed
+  if (!m_samples.load(data_filename, m_first_n)) {
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " "
                             + get_type() + ": failed to load the file " + data_filename);
   }
 
+  size_t num_samples = m_samples.get_num_samples();
+
+  if (m_first_n > 0) {
+    num_samples = (static_cast<size_t>(m_first_n) <= num_samples)?
+                   static_cast<size_t>(m_first_n) : num_samples;
+
+    m_first_n = num_samples;
+    set_use_percent(1.0);
+    set_absolute_sample_count(0u);
+  }
+
   // reset indices
   m_shuffled_indices.clear();
-  m_shuffled_indices.resize(m_samples.get_num_samples());
+
+  m_shuffled_indices.resize(num_samples);
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
 
   select_subset_of_data();
