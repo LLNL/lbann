@@ -141,12 +141,7 @@ static bool read_latest(const char *dir, const char *name, int *epochLast, int *
   }
   return true;
 }
-struct lbann_checkpoint {
-  int epoch; // current epoch number
-  int step;  // current offset into list of training example indices array
-  float learning_rate; // current learning rate
-};
-//bool model::checkpointShared(TrainingParams& trainParams)
+
 bool lbann_callback_checkpoint::checkpointShared(model *m) {
   // if the checkpoint directory is not defined, bail
   if (m_checkpoint_dir.length() == 0) {
@@ -177,12 +172,13 @@ bool lbann_callback_checkpoint::checkpointShared(model *m) {
   persist p;
   p.open_checkpoint(epochdir,m_checkpoint_per_rank, m_val_end);
   // call virtual function to checkpoint model state
-  if(m_epoch_end){
-    m->save_to_checkpoint_shared(p,m_val_end);
-  }
-  if(m_val_end){
-    m->save_to_checkpoint_shared(p,m_val_end);
-  }
+  //if(m_epoch_end){
+
+  m->save_to_checkpoint_shared(p,m_val_end);
+  //}
+  //if(m_val_end){
+  //  m->save_to_checkpoint_shared(p,m_val_end);
+  //}
   // close our checkpoint
   p.close_checkpoint();
   uint64_t bytes_count = p.get_bytes();
