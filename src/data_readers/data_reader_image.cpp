@@ -99,7 +99,7 @@ void image_data_reader::set_input_params(const int width, const int height, cons
 }
 
 bool image_data_reader::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
-  const int label = m_image_list[data_id].second;
+  const label_t label = m_image_list[data_id].second;
   Y.Set(label, mb_idx, 1);
   return true;
 }
@@ -120,7 +120,7 @@ void image_data_reader::load() {
 
   while (!feof(fplist)) {
     char imagepath[512];
-    int imagelabel;
+    label_t imagelabel;
     if (fscanf(fplist, "%s%d", imagepath, &imagelabel) <= 1) {
       break;
     }
@@ -136,8 +136,8 @@ void image_data_reader::load() {
   select_subset_of_data();
 }
 
-std::vector<std::pair<std::string, int> > image_data_reader::get_image_list_of_current_mb() const {
-  std::vector<std::pair<std::string, int> > ret;
+std::vector<image_data_reader::sample_t> image_data_reader::get_image_list_of_current_mb() const {
+  std::vector<sample_t> ret;
   ret.reserve(m_mini_batch_size);
 
   for (El::Int i = 0; i < m_indices_fetched_per_mb.Height(); ++i) {

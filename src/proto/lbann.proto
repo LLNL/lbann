@@ -45,6 +45,7 @@ message Reader {
   string data_file_pattern = 111;
   int64 num_neighbors = 112; // pilot2_molecular_reader
   int64 max_neighborhood = 113; // pilot2_molecular_reader
+  int32 num_image_srcs = 114; // data_reader_multi_images
 }
 
 message ImagePreprocessor {

@@ -52,6 +52,10 @@ class data_reader_merge_features : public generic_compound_data_reader {
     return new data_reader_merge_features(*this);
   }
 
+  std::string get_type() const override {
+    return "data_reader_merge_features";
+  }
+
   /// Call load on the subsidiary data readers.
   void load() override;
 

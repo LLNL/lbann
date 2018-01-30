@@ -1849,7 +1849,8 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
     if ((name == "imagenet_org") || (name == "mnist") || (name == "cifar10")) {
       init_org_image_data_reader(readme, master, reader);
       set_up_generic_preprocessor = false;
-    } else if ((name == "imagenet") || (name == "imagenet_single") || (name == "imagenet_patches")) {
+    } else if ((name == "imagenet") || (name == "imagenet_single") || (name == "imagenet_patches") ||
+               (name == "triplet") || (name == "mnist_siamese") || (name == "multi_images")) {
       init_image_data_reader(readme, master, reader);
       set_up_generic_preprocessor = false;
     } else if (name == "nci") {
@@ -1985,6 +1986,12 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
         reader_validation = new imagenet_reader_single(*dynamic_cast<const imagenet_reader_single*>(reader));
       } else if (name == "imagenet_patches") {
         reader_validation = new imagenet_reader_patches(*dynamic_cast<const imagenet_reader_patches*>(reader));
+      } else if (name == "triplet") {
+        reader_validation = new data_reader_triplet(*dynamic_cast<const data_reader_triplet*>(reader));
+      } else if (name == "mnist_siamese") {
+        reader_validation = new data_reader_mnist_siamese(*dynamic_cast<const data_reader_mnist_siamese*>(reader));
+      } else if (name == "multi_images") {
+        reader_validation = new data_reader_multi_images(*dynamic_cast<const data_reader_multi_images*>(reader));
       } else if (name == "nci") {
         reader_validation = new data_reader_nci(shuffle);
         (*(data_reader_nci *)reader_validation) = (*(data_reader_nci *)reader);

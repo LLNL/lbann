@@ -35,6 +35,14 @@
 
 namespace lbann {
 
+void generic_data_reader::shuffle_indices() {
+  // Shuffle the data
+  if (m_shuffle) {
+    std::shuffle(m_shuffled_indices.begin(), m_shuffled_indices.end(),
+                 get_data_seq_generator());
+  }
+}
+
 void generic_data_reader::setup() {
   m_base_offset = 0;
   m_sample_stride = 1;
@@ -51,12 +59,7 @@ void generic_data_reader::setup() {
 
   set_initial_position();
 
-  // Shuffle the data
-  if (m_shuffle) {
-    std::shuffle(m_shuffled_indices.begin(), m_shuffled_indices.end(),
-                 get_data_seq_generator());
-  }
-
+  shuffle_indices();
 }
 
 int lbann::generic_data_reader::fetch_data(Mat& X) {
@@ -303,9 +306,7 @@ int generic_data_reader::get_next_position() const {
 }
 
 void generic_data_reader::select_subset_of_data() {
-  if(m_shuffle) {
-    std::shuffle(m_shuffled_indices.begin(), m_shuffled_indices.end(), get_data_seq_generator());
-  }
+  shuffle_indices();
 
   size_t count = get_absolute_sample_count();
   double use_percent = get_use_percent();

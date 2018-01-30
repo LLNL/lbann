@@ -29,6 +29,9 @@
 #define _LBANN_FILE_UTILS_HPP_
 #include <string>
 #include <vector>
+#include <iostream>
+#include <fstream>
+#include <iterator>
 
 namespace lbann {
 
@@ -56,6 +59,35 @@ std::string modify_file_name(const std::string file_name, const std::string tag,
 
 bool check_if_file_exists(const std::string& filename);
 bool create_dir(const std::string output_dir);
+
+
+/// Load a file into a buffer
+template <typename T = std::vector<unsigned char> >
+inline bool load_file(const std::string filename, T& buf) {
+  std::ifstream file(filename, std::ios::binary);
+  if (!file.good()) {
+    return false;
+  }
+
+  file.unsetf(std::ios::skipws);
+
+  file.seekg(0, std::ios::end);
+  const std::streampos file_size = file.tellg();
+
+  file.seekg(0, std::ios::beg);
+
+  buf.reserve(file_size);
+
+  buf.insert(buf.begin(),
+             std::istream_iterator<unsigned char>(file),
+             std::istream_iterator<unsigned char>());
+
+  return true;
+}
+
+inline void __swapEndianInt(unsigned int& ui) {
+  ui = ((ui >> 24) | ((ui<<8) & 0x00FF0000) | ((ui>>8) & 0x0000FF00) | (ui << 24));
+}
 
 } // end of namespace lbann
 #endif // _LBANN_FILE_UTILS_HPP_

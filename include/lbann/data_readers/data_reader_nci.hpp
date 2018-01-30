@@ -44,6 +44,10 @@ class data_reader_nci : public csv_reader {
   ~data_reader_nci() override {}
   data_reader_nci* copy() const override { return new data_reader_nci(*this); }
 
+  std::string get_type() const override {
+    return "data_reader_nci";
+  }
+
   // Todo: Support regression/get response.
 };
 

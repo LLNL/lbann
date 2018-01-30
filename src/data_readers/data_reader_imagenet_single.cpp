@@ -154,11 +154,11 @@ bool imagenet_reader_single::fetch_datum(Mat& X, int data_id, int mb_idx, int ti
   const bool ret = image_utils::import_image(m_work_buffer[tid], width, height, img_type, *(m_pps[tid]), X_v);
 
   if(!ret) {
-    err << __FILE__ << " " << __LINE__ << " :: ImageNetSingle: image_utils::import_image failed to load index: " << data_id;
+    err << __FILE__ << " " << __LINE__ << " :: " << get_type() << ": image_utils::import_image failed to load index: " << data_id;
     throw lbann_exception(err.str());
   }
   if ((width * height * CV_MAT_CN(img_type)) != m_image_linearized_size) {
-    err << __FILE__ << " " << __LINE__ << " :: ImageNetSingle: mismatch data size -- either width, height or channel";
+    err << __FILE__ << " " << __LINE__ << " :: " << get_type() << ": mismatch data size -- either width, height or channel";
     throw lbann_exception(err.str());
   }
 

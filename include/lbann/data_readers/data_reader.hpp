@@ -265,6 +265,9 @@ class generic_data_reader : public lbann_image_preprocessor {
    */
   void setup();
 
+  /** Return this data_reader's type */
+  virtual std::string get_type() const = 0;
+
   /// Fetch this mini-batch's samples into X.
   virtual int fetch_data(Mat& X);
   /// Fetch this mini-batch's labels into Y.
@@ -591,6 +594,9 @@ class generic_data_reader : public lbann_image_preprocessor {
    * Called after fetch_datum/label/response to allow initialization.
    */
   virtual void postprocess_data_source(int tid) {};
+
+  /// Shuffle indices
+  virtual void shuffle_indices();
 
   int m_mini_batch_size;
   int m_current_pos;
