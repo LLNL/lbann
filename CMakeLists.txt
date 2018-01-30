@@ -65,6 +65,11 @@ endif ()
 # Options
 #
 
+# This option is off by default because non-developers should not use
+# this option under normal circumstances.
+option(${UPPER_PROJECT_NAME}_WARNINGS_AS_ERRORS
+  "Build with warnings promoted to errors." OFF)
+
 option(${UPPER_PROJECT_NAME}_WITH_CUDA "Include Nvidia CUDA" OFF)
 
 option(${UPPER_PROJECT_NAME}_WITH_NCCL "Include Nvidia NCCL2" OFF)
