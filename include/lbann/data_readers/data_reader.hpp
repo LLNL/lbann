@@ -531,11 +531,92 @@ class generic_data_reader : public lbann_image_preprocessor {
   void use_unused_index_set();
 
   /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
-  bool saveToCheckpointShared(persist& p, const char *name) const;
+  bool saveToCheckpointShared(persist& p, const char *name);
 
   /** \brief Given directory to store checkpoint files, read state from file and add to number of bytes read */
   bool loadFromCheckpointShared(persist& p, const char *name);
 
+  struct packing_header {
+    uint64_t current_pos;
+    uint64_t current_mini_batch_idx;
+    uint64_t data_size;
+    std::vector<int> shuffled_indices;
+  };  
+  bool pack_scalars(persist& p, const char *name) {
+    char fieldname[1024];
+    lbann::persist_type persist_value;
+    std::string s_name(name);
+    if(s_name.compare("data_reader_validation") == 0){
+      persist_value = persist_type::validate;
+    } else {
+       persist_value= persist_type::train;
+    }
+
+    snprintf(fieldname, sizeof(fieldname), "%s_current_mini_batch_idx", name);
+    p.write_uint64(persist_value, fieldname, (uint64_t) m_current_mini_batch_idx);
+    
+    int size = m_shuffled_indices.size();
+    snprintf(fieldname, sizeof(fieldname), "%s_data_size", name);
+    p.write_uint64(persist_value, fieldname, (uint64_t) size);
+    
+    snprintf(fieldname, sizeof(fieldname), "%s_data_position", name);
+    p.write_uint64(persist_value, fieldname, (uint64_t) m_current_pos);
+    
+    snprintf(fieldname, sizeof(fieldname), "%s_data_indices", name);
+    p.write_int32_contig(persist_value, fieldname, &m_shuffled_indices[0], (uint64_t) size);
+
+    return true;
+  }
+
+  bool unpack_scalars(persist& p, struct packing_header *header, const char *name){
+    char fieldname[1024];
+    lbann::persist_type persist_value;
+    std::string s_name(name);
+    if(s_name.compare("data_reader_validation") == 0){
+      persist_value = persist_type::validate;
+    } else {
+       persist_value= persist_type::train;
+    }
+    // Closest to non checkpoint run only loads m_current_pos
+
+    // record minibatch index
+    uint64_t val;
+    snprintf(fieldname, sizeof(fieldname), "%s_current_mini_batch_idx", name);
+    p.read_uint64(persist_value, fieldname, &val);
+    m_current_mini_batch_idx = (int) val;
+
+    snprintf(fieldname, sizeof(fieldname), "%s_data_size", name);
+    p.read_uint64(persist_value, fieldname, &val);
+    auto size = (int) val;
+
+    // get current position within data
+    snprintf(fieldname, sizeof(fieldname), "%s_data_position", name);
+    p.read_uint64(persist_value, fieldname, &val);
+    m_current_pos = (int) val;
+    //resize shuffled index array to hold values
+    m_shuffled_indices.resize(size);
+
+     //read list of indices
+    snprintf(fieldname, sizeof(fieldname), "%s_data_indices", name);
+    p.read_int32_contig(persist_value, fieldname, &m_shuffled_indices[0], (uint64_t) size);
+    
+   if(header != nullptr){
+      header->current_pos = m_current_pos;
+      header->current_mini_batch_idx = m_current_mini_batch_idx;
+      header->data_size = size;
+      header->shuffled_indices = m_shuffled_indices;
+    }
+
+  return true;
+  }
+
+  void unpack_header(struct packing_header& header){
+    m_current_pos = header.current_pos;
+    m_current_mini_batch_idx = header.current_mini_batch_idx;
+    m_shuffled_indices.resize(header.data_size);
+    m_shuffled_indices = header.shuffled_indices;
+  }
+  
   /// returns the data store, which may be a nullptr
   generic_data_store * get_data_store() {
     return m_data_store;

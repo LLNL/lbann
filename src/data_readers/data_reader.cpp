@@ -384,10 +384,10 @@ void generic_data_reader::use_unused_index_set() {
 }
 
 /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
-bool generic_data_reader::saveToCheckpointShared(persist& p, const char *name) const {
+bool generic_data_reader::saveToCheckpointShared(persist& p, const char *name) {
   // rank 0 writes the training state file
   if (p.get_rank() == 0) {
-    char fieldname[1024];
+    /*char fieldname[1024];
     lbann::persist_type persist_value;
     //printf("%s\n",name);
     //  data_reader_validation
@@ -439,7 +439,8 @@ bool generic_data_reader::saveToCheckpointShared(persist& p, const char *name) c
     snprintf(fieldname, sizeof(fieldname), "%s_reset_mini_batch_index", name);
     p.write_uint64(persist_value, fieldname, (uint64_t) m_reset_mini_batch_index);
         
-    std::cout << "training indices: " << m_shuffled_indices[0] << "\n";
+    std::cout << "training indices: " << m_shuffled_indices[0] << "\n";*/
+    pack_scalars(p,name);
   }
   return true;
 }
@@ -447,8 +448,13 @@ bool generic_data_reader::saveToCheckpointShared(persist& p, const char *name) c
 /** \brief Given directory to store checkpoint files, read state from file and add to number of bytes read */
 bool lbann::generic_data_reader::loadFromCheckpointShared(persist& p, const char *name) {
   // rank 0 reads the training state file
+  struct packing_header header;
   if (p.get_rank() == 0) {
-    char fieldname[1024];
+    unpack_scalars(p,&header,name);
+  }
+  MPI_Bcast(&header, sizeof(header), MPI_BYTE, 0, MPI_COMM_WORLD);
+  unpack_header(header);  
+    /*char fieldname[1024];
     // Closest to non checkpoint run only loads m_current_pos
 
     lbann::persist_type persist_value;
@@ -477,10 +483,10 @@ bool lbann::generic_data_reader::loadFromCheckpointShared(persist& p, const char
 
      //read list of indices
     snprintf(fieldname, sizeof(fieldname), "%s_data_indices", name);
-    p.read_int32_contig(persist_value, fieldname, &m_shuffled_indices[0], (uint64_t) size);
+    p.read_int32_contig(persist_value, fieldname, &m_shuffled_indices[0], (uint64_t) size);*/
 
     /* Everything below is things i have tried loading to see if it was needed. No impact as far as I could tell*/
-    snprintf(fieldname, sizeof(fieldname), "%s_stride_to_last_mini_batch", name);
+    /*snprintf(fieldname, sizeof(fieldname), "%s_stride_to_last_mini_batch", name);
     p.read_uint64(persist_value, fieldname, &val);
     m_stride_to_last_mini_batch = (int) val;
 
@@ -547,7 +553,7 @@ bool lbann::generic_data_reader::loadFromCheckpointShared(persist& p, const char
 
   /// broadcast index array
   MPI_Bcast(&m_shuffled_indices[0], size, MPI_INT, 0, MPI_COMM_WORLD);
-  //set_initial_position();
+  //set_initial_position();*/
   return true;
 }
 
