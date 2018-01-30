@@ -465,7 +465,12 @@ bool weights::save_to_checkpoint_shared(lbann::persist& p)
 
 void weights::write_proto(lbann_data::Weights* proto) const {
   proto->Clear();
-  std::cout << "Write weight params: " << std::endl;
+  if(!m_proto_dims.empty()){
+    for(const auto& d : m_proto_dims) proto->mutable_shape()->add_dim(d);
+  }else {
+    for (const auto& d : get_dims())  proto->mutable_shape()->add_dim(d);
+  }
+
   proto->set_name(m_name);
   proto->set_height(get_matrix_height());
   proto->set_width(get_matrix_width());

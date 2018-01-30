@@ -143,6 +143,9 @@ class weights {
    */
   int get_matrix_width() const;
 
+  /** proto kernel dimensions*/
+  void set_proto_dims(std::vector<int> dims) { m_proto_dims = dims; }
+
   /** Get reference to cuDNN manager. */
   inline cudnn::cudnn_manager* get_cudnn_manager() { return m_cudnn; }
 
@@ -214,6 +217,9 @@ class weights {
    *  See get_matrix_width_dims function.
    */
   std::vector<int> m_matrix_width_dims;
+
+  /** proto  kernel dimensions*/
+  std::vector<int> m_proto_dims;
 
   /** Weights matrix. */
   AbsDistMat* m_values = nullptr;
