@@ -48,6 +48,10 @@ class data_reader_merge_samples : public generic_compound_data_reader {
     return new data_reader_merge_samples(*this);
   }
 
+  std::string get_type() const override {
+    return "data_reader_merge_samples";
+  }
+
   /// Load subsidiary data readers.
   void load() override;
 

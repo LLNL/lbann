@@ -53,6 +53,10 @@ class csv_reader : public generic_data_reader {
 
   csv_reader* copy() const override { return new csv_reader(*this); }
 
+  std::string get_type() const override {
+    return "csv_reader";
+  }
+
   /// Set the label column.
   void set_label_col(int col) { m_label_col = col; }
   /// Set the response column.

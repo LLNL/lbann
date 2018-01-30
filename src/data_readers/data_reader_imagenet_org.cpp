@@ -67,13 +67,13 @@ bool imagenet_reader_org::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) 
   unsigned char *pixels = m_pixel_bufs[tid].data();
   bool ret = lbann::image_utils::loadIMG(imagepath, width, height, false, pixels);
   if(!ret) {
-    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
-                          + "ImageNet: image_utils::loadIMG failed to load - "
+    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " "
+                          + get_type() + ": image_utils::loadIMG failed to load - "
                           + imagepath);
   }
   if(width != m_image_width || height != m_image_height) {
-    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
-                          + "ImageNet: mismatch data size -- either width or height - " 
+    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " "
+                          + get_type() + ": mismatch data size -- either width or height - "
                           + imagepath + "[w,h]=[" + std::to_string(width) + "x" + std::to_string(height) +"]");
   }
 

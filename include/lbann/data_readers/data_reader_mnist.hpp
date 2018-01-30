@@ -43,6 +43,10 @@ class mnist_reader : public image_data_reader {
   ~mnist_reader() override {}
   mnist_reader* copy() const override { return new mnist_reader(*this); }
 
+  std::string get_type() const override {
+    return "mnist_reader";
+  }
+
   void set_input_params(const int, const int, const int, const int) override { set_defaults(); }
 
   // MNIST-specific functions
@@ -53,7 +57,7 @@ class mnist_reader : public image_data_reader {
   bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
   bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;
 
- private:
+ protected:
   std::vector<std::vector<unsigned char>> m_image_data;
 };
 

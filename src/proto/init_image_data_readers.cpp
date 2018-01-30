@@ -270,7 +270,8 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
 
   std::shared_ptr<cv_process> pp;
   // set up the image preprocessor
-  if ((name == "imagenet") || (name == "imagenet_single")) {
+  if ((name == "imagenet") || (name == "imagenet_single") ||
+      (name == "triplet") || (name == "mnist_siamese") || (name == "multi_images")) {
     pp = std::make_shared<cv_process>();
   } else if (name == "imagenet_patches") {
     pp = std::make_shared<cv_process_patches>();
@@ -293,13 +294,16 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
   if (name == "imagenet_patches") {
     std::shared_ptr<cv_process_patches> ppp = std::dynamic_pointer_cast<cv_process_patches>(pp);
     reader = new imagenet_reader_patches(ppp, shuffle);
-    if (master) std::cout << "imagenet_reader_patches is set" << std::endl;
   } else if (name == "imagenet") {
     reader = new imagenet_reader(pp, shuffle);
-    if (master) std::cout << "imagenet_reader is set" << std::endl;
-  } else { // imagenet_single
+  } else if (name == "triplet") {
+    reader = new data_reader_triplet(pp, shuffle);
+  } else if (name == "mnist_siamese") {
+    reader = new data_reader_mnist_siamese(pp, shuffle);
+  } else if (name == "multi_images") {
+    reader = new data_reader_multi_images(pp, shuffle);
+  } else if (name == "imagenet_single") { // imagenet_single
     reader = new imagenet_reader_single(pp, shuffle);
-    if (master) std::cout << "imagenet_reader_single is set" << std::endl;
   }
 
   auto* image_data_reader_ptr = dynamic_cast<image_data_reader*>(reader);
@@ -308,9 +312,22 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
     err << __FILE__ << " " << __LINE__ << " :: invalid image data reader pointer";
     throw lbann_exception(err.str());
   }
+  if (master) std::cout << reader->get_type() << " is set" << std::endl;
 
   // configure the data reader
-  image_data_reader_ptr->set_input_params(width, height, channels, n_labels);
+  if (name == "multi_images") {
+    const int n_img_srcs = pb_readme.num_image_srcs();
+    data_reader_multi_images* multi_image_dr_ptr
+      = dynamic_cast<data_reader_multi_images*>(image_data_reader_ptr);
+    if (multi_image_dr_ptr == nullptr) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " no data_reader_multi_images";
+      throw lbann_exception(err.str());
+    }
+    multi_image_dr_ptr->set_input_params(width, height, channels, n_labels, n_img_srcs);
+  } else {
+    image_data_reader_ptr->set_input_params(width, height, channels, n_labels);
+  }
 }
 
 

@@ -359,7 +359,7 @@ case ${SCHEDULER} in
 esac
 case ${SUBMIT_JOB} in
     YES|yes|TRUE|true|ON|on|1)
-        eval "${SUBMIT_EXE} ${BATCH_SCRIPT} > ${LOG_FILE} 2>&1"
+        eval "${SUBMIT_EXE} ${BATCH_SCRIPT} 2>&1 | tee ${LOG_FILE}"
         ;;
 esac
 

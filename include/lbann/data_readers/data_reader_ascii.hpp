@@ -41,6 +41,10 @@ class ascii_reader : public generic_data_reader {
   ~ascii_reader() override = default;
   ascii_reader* copy() const override { return new ascii_reader(*this); }
 
+  std::string get_type() const override {
+    return "ascii_reader";
+  }
+
   void load() override;
 
   int get_linearized_data_size() const override {

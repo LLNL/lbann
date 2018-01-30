@@ -45,6 +45,10 @@ class cifar10_reader : public image_data_reader {
 
   cifar10_reader* copy() const override { return new cifar10_reader(*this); }
 
+  std::string get_type() const override {
+    return "cifar10_reader";
+  }
+
   void set_input_params(const int, const int, const int, const int) override { set_defaults(); }
   void load() override;
 

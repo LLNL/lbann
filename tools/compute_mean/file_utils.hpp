@@ -31,34 +31,9 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
-#include <iterator>
 #include "lbann/utils/file_utils.hpp"
 
 namespace tools_compute_mean {
-
-template <typename T = std::vector<unsigned char> >
-inline bool read_file(const std::string filename, T& buf) {
-  std::ifstream file(filename, std::ios::binary);
-  if (!file.good()) {
-    return false;
-  }
-
-  file.unsetf(std::ios::skipws);
-
-  file.seekg(0, std::ios::end);
-  const std::streampos file_size = file.tellg();
-
-  file.seekg(0, std::ios::beg);
-
-  buf.reserve(file_size);
-
-  buf.insert(buf.begin(),
-             std::istream_iterator<unsigned char>(file),
-             std::istream_iterator<unsigned char>());
-
-  return true;
-}
-
 
 /**
  * Write the contents in a given buffer into a binary file.

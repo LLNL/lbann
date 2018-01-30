@@ -75,8 +75,19 @@ endif ()
 lbann_check_and_append_flag(CMAKE_CXX_FLAGS
   -fPIC -g -Wall -Wextra -Wno-unused-parameter -Wnon-virtual-dtor -Wshadow)
 
-# Disable all optimization in debug for better viewing under debuggers (cmake already adds -g)
+# Disable all optimization in debug for better viewing under debuggers
+# (cmake already adds -g)
 lbann_check_and_append_flag(CMAKE_CXX_FLAGS_DEBUG -O0)
+
+if (${UPPER_PROJECT_NAME}_WARNINGS_AS_ERRORS)
+  lbann_check_and_append_flag(_WERROR_FLAGS -Werror)
+  separate_arguments(_WERROR_FLAGS NATIVE_COMMAND "${_WERROR_FLAGS}")
+  if (NOT TARGET CXX::werror)
+    add_library(CXX::werror INTERFACE IMPORTED)
+    set_property(TARGET CXX::werror PROPERTY
+      INTERFACE_COMPILE_OPTIONS $<$<COMPILE_LANGUAGE:CXX>:${_WERROR_FLAGS}>)
+  endif ()
+endif ()
 
 # Some behavior is dependent on the compiler version.
 if (NOT CMAKE_CXX_COMPILER_VERSION)

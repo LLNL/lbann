@@ -95,6 +95,9 @@
 #include "lbann/data_readers/data_reader_imagenet_patches.hpp"
 #include "lbann/data_readers/data_reader_cifar10.hpp"
 #include "lbann/data_readers/data_reader_mnist.hpp"
+#include "lbann/data_readers/data_reader_multi_images.hpp"
+#include "lbann/data_readers/data_reader_mnist_siamese.hpp"
+#include "lbann/data_readers/data_reader_triplet.hpp"
 #include "lbann/data_readers/data_reader_synthetic.hpp"
 #include "lbann/data_readers/data_reader_nci.hpp"
 #include "lbann/data_readers/data_reader_numpy.hpp"
@@ -107,6 +110,7 @@
 /// Data Store
 #include "lbann/data_store/generic_data_store.hpp"
 #include "lbann/data_store/data_store_imagenet.hpp"
+#include "lbann/data_store/data_store_merge_samples.hpp"
 
 /// Callbacks
 #include "lbann/callbacks/callback_check_init.hpp"

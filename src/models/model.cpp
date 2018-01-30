@@ -491,6 +491,22 @@ void model::evaluate(execution_mode mode) {
   do_evaluate_end_cbs(mode);
 }
 
+//this is for data store functionality
+void model::collect_indices(execution_mode mode) {
+  reset_mode_and_model(mode);
+  while (true) {
+    m_layers[0]->forward_prop();
+    bool finished = true;
+    finished = m_layers[0]->update() && finished;
+    if (finished) {
+      break;
+    }
+  }
+  //this may not be necessary, but shouldn't hurt
+  reset_epoch_statistics(mode);
+}
+
+
 void model::train(int num_epochs) {
   do_train_begin_cbs();
   for (int epoch = m_current_epoch; epoch < num_epochs; ++epoch) {

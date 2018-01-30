@@ -291,7 +291,7 @@ bool test_image_io(const std::string filename,
   for (unsigned int i=0; i < mp.m_num_iter; ++i)
   {
     // This has nothing to do with the image type but only to create view on a block of bytes
-    typedef lbann::cv_image_type<uint8_t> InputBuf_T;
+    using InputBuf_T = lbann::cv_image_type<uint8_t>;
     // Construct a zero copying view to a portion of a preloaded data buffer
     const cv::Mat inbuf(1, (img_end - img_begin), InputBuf_T::T(1), &(buf[img_begin]));
 

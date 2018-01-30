@@ -27,6 +27,10 @@ set_full_path(THIS_DIR_SOURCES
   data_reader_numpy.cpp
   data_reader_pilot2_molecular.cpp
   data_reader_synthetic.cpp
+  data_reader_multi_images.cpp
+  data_reader_mnist_siamese.cpp
+  data_reader_triplet.cpp
+  offline_patches_npz.cpp
   image_preprocessor.cpp
   image_utils.cpp
   )

@@ -42,6 +42,10 @@ class imagenet_reader_org : public image_data_reader {
 
   imagenet_reader_org* copy() const override { return new imagenet_reader_org(*this); }
 
+  std::string get_type() const override {
+    return "imagenet_reader_org";
+  }
+
   /// Set up imagenet specific input parameters
   void set_input_params(const int width=256, const int height=256, const int num_ch=3, const int num_labels=1000) override;
 

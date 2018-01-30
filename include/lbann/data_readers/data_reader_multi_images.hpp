@@ -23,63 +23,59 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// data_reader_image .hpp .cpp - generic data reader class for image dataset
+// data_reader_multi_images .hpp .cpp - generic data reader class for datasets
+//                                      employing multiple images per sample
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef IMAGE_DATA_READER_HPP
-#define IMAGE_DATA_READER_HPP
+#ifndef DATA_READER_MULTI_IMAGES_HPP
+#define DATA_READER_MULTI_IMAGES_HPP
 
-#include "data_reader.hpp"
-#include "image_preprocessor.hpp"
+#include "data_reader_imagenet.hpp"
 #include "cv_process.hpp"
+#include <vector>
+#include <string>
+#include <utility>
+#include <iostream>
 
 namespace lbann {
-class image_data_reader : public generic_data_reader {
+class data_reader_multi_images : public imagenet_reader {
  public:
-  using img_src_t = std::string;
-  using label_t = int;
+  using img_src_t = std::vector<std::string>;
   using sample_t = std::pair<img_src_t, label_t>;
 
-  image_data_reader(bool shuffle = true);
-  image_data_reader(const image_data_reader&);
-  image_data_reader& operator=(const image_data_reader&);
+  data_reader_multi_images(bool shuffle) = delete;
+  data_reader_multi_images(const std::shared_ptr<cv_process>& pp, bool shuffle = true);
+  data_reader_multi_images(const data_reader_multi_images&);
+  data_reader_multi_images& operator=(const data_reader_multi_images&);
+  ~data_reader_multi_images() override;
+
+  data_reader_multi_images* copy() const override {
+    return new data_reader_multi_images(*this);
+  }
+
+  std::string get_type() const override {
+    return "data_reader_multi_images";
+  }
 
   /** Set up imagenet specific input parameters
    *  If argument is set to 0, then this method does not change the value of
    *  the corresponding parameter. However, width and height can only be both
    *  zero or both non-zero.
    */
-  virtual void set_input_params(const int width=0, const int height=0, const int num_ch=0, const int num_labels=0);
+  void set_input_params(const int width, const int height, const int num_ch,
+                        const int num_labels, const int num_img_srcs);
+
+  void set_input_params(const int width, const int height, const int num_ch,
+                        const int num_labels) override;
 
   // dataset specific functions
   void load() override;
 
-  int get_num_labels() const override {
-    return m_num_labels;
-  }
-  virtual int get_image_width() const {
-    return m_image_width;
-  }
-  virtual int get_image_height() const {
-    return m_image_height;
-  }
-  virtual int get_image_num_channels() const {
-    return m_image_num_channels;
-  }
-  /// Get the total number of channel values in a sample of image(s).
   int get_linearized_data_size() const override {
-    return m_image_linearized_size;
-  }
-  int get_linearized_label_size() const override {
-    return m_num_labels;
+    return m_image_linearized_size * m_num_img_srcs;
   }
   const std::vector<int> get_data_dims() const override {
-    return {m_image_num_channels, m_image_height, m_image_width};
-  }
-
-  void save_image(Mat& pixels, const std::string filename, bool do_scale = true) override {
-    internal_save_image(pixels, filename, m_image_height, m_image_width,
-                        m_image_num_channels, do_scale);
+    return {static_cast<int>(m_num_img_srcs)*m_image_num_channels, m_image_height, m_image_width};
   }
 
   /// Return the sample list of current minibatch
@@ -91,21 +87,21 @@ class image_data_reader : public generic_data_reader {
   }
 
  protected:
-  /// Set the default values for the width, the height, the number of channels, and the number of labels of an image
-  virtual void set_defaults();
-  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;
-  void set_linearized_image_size();
+  void set_defaults() override;
+  virtual std::vector<::Mat> create_datum_views(::Mat& X, const int mb_idx) const;
+  bool fetch_datum(::Mat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_label(::Mat& Y, int data_id, int mb_idx, int tid) override;
+
+  bool read_text_stream(std::istream& text_stream, std::vector<sample_t>& list);
+  bool load_list(const std::string file_name, std::vector<sample_t>& list,
+                 const bool fetch_list_at_once = false);
 
  protected:
-  std::string m_image_dir; ///< where images are stored
   std::vector<sample_t> m_image_list; ///< list of image files and labels
-  int m_image_width; ///< image width
-  int m_image_height; ///< image height
-  int m_image_num_channels; ///< number of image channels
-  int m_image_linearized_size; ///< linearized image size
-  int m_num_labels; ///< number of labels
+  /// The number of image sources or the number of siamese heads. e.g., 2
+  unsigned int m_num_img_srcs;
 };
 
 }  // namespace lbann
 
-#endif  // IMAGE_DATA_READER_HPP
+#endif  // DATA_READER_MULTI_IMAGES_HPP

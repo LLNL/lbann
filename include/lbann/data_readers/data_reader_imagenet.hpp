@@ -43,6 +43,10 @@ class imagenet_reader : public image_data_reader {
 
   imagenet_reader* copy() const override { return new imagenet_reader(*this); }
 
+  std::string get_type() const override {
+    return "imagenet_reader";
+  }
+
  protected:
   void set_defaults() override;
   virtual bool replicate_processor(const cv_process& pp);

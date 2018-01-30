@@ -38,6 +38,7 @@ namespace lbann {
 
 class generic_data_reader;
 class lbann_comm;
+class model;
 
 /**
  * todo
@@ -47,7 +48,7 @@ class generic_data_store {
  public:
 
   //! ctor
-  generic_data_store(lbann_comm *comm, generic_data_reader *reader); 
+  generic_data_store(lbann_comm *comm, generic_data_reader *reader, model *m); 
 
   //! copy ctor
   generic_data_store(const generic_data_store&) = default;
@@ -103,9 +104,6 @@ class generic_data_store {
   /// the indices that this processor owns
   std::vector<size_t> m_my_datastore_indices;
 
-  /// fills in m_my_indices and m_index_mapping
-  void get_my_indices();
-
   /// fills in m_my_datastore_indices
   void get_my_datastore_indices();
 
@@ -127,6 +125,8 @@ class generic_data_store {
 
   /// maps global indices (wrt shuffled_indices) to owning processor
   std::unordered_map<size_t, size_t> m_owner_mapping;
+
+  model *m_model;
 };
 
 }  // namespace lbann

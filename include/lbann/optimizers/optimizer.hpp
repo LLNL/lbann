@@ -29,6 +29,7 @@
 #ifndef LBANN_OPTIMIZER_HPP
 #define LBANN_OPTIMIZER_HPP
 
+#include "lbann/utils/compiler_control.hpp"
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/utils/exception.hpp"
