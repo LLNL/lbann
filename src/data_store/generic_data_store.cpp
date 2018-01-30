@@ -33,11 +33,12 @@
 
 namespace lbann {
 
-generic_data_store::generic_data_store(lbann_comm *comm, generic_data_reader *reader) :
+generic_data_store::generic_data_store(lbann_comm *comm, generic_data_reader *reader, model *m) :
     m_rank(comm->get_rank_in_model()),
     m_epoch(0),
     m_in_memory(true),
-    m_comm(comm), m_master(comm->am_world_master()), m_reader(reader)
+    m_comm(comm), m_master(comm->am_world_master()), m_reader(reader),
+    m_model(m)
     //m_cur_idx(0)
   {
   /*
@@ -49,17 +50,12 @@ generic_data_store::generic_data_store(lbann_comm *comm, generic_data_reader *re
 
 void generic_data_store::setup() {
 
-  set_shuffled_indices( &(m_reader->get_shuffled_indices()) );
+  //set_shuffled_indices( &(m_reader->get_shuffled_indices()) );
 
   m_num_global_indices = m_shuffled_indices->size();
 
   m_num_readers = m_reader->get_num_parallel_readers();
 
-  m_reader->save_initial_state();
-  get_my_indices();
-  m_reader->restore_initial_state();
-
-  get_my_datastore_indices();
 }
 
 
@@ -69,30 +65,6 @@ void generic_data_store::get_my_datastore_indices() {
       m_my_datastore_indices.push_back((*m_shuffled_indices)[j]);
     }
   }    
-}
-
-void generic_data_store::get_my_indices() {
-  std::vector<int> indices;
-  bool is_active_reader = true; //@todo needs fixing for distributed 
-
-  m_my_minibatch_indices.clear();
-  while (true) {
-    int n = m_reader->fetch_data_indices(indices);
-    if (n != (int)indices.size()) {
-      std::stringstream s2;
-      s2 << __FILE__ << " " << __LINE__ << " :: "
-         << " something is badly wrong!";
-      throw lbann_exception(s2.str());
-    }
-    for (auto t : indices) {
-      m_my_minibatch_indices.push_back(t);
-    }
-
-    bool is_done = m_reader->update(is_active_reader, true);
-    if (!is_done) { 
-      break;
-    }
-  }
 }
 
 }  // namespace lbann

@@ -105,6 +105,7 @@
 /// Data Store
 #include "lbann/data_store/generic_data_store.hpp"
 #include "lbann/data_store/data_store_imagenet.hpp"
+#include "lbann/data_store/data_store_merge_samples.hpp"
 
 /// Callbacks
 #include "lbann/callbacks/callback_check_init.hpp"

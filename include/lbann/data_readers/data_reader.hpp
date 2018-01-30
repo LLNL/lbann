@@ -51,6 +51,7 @@
 namespace lbann {
 
 class generic_data_store;
+class model;
 
 /**
  * A data reader manages reading in data in a particular format.
@@ -264,12 +265,6 @@ class generic_data_reader : public lbann_image_preprocessor {
    */
   void setup();
 
-  /** returns, in 'indicies,' all indicies that would be used internally
-   *  in a call to fetch_data(). These are NOT shuffled indices.
-   *  This method is added to support data_store functionality.
-   */
-  int fetch_data_indices(std::vector<int> &indicies);
-
   /// Fetch this mini-batch's samples into X.
   virtual int fetch_data(Mat& X);
   /// Fetch this mini-batch's labels into Y.
@@ -290,10 +285,9 @@ class generic_data_reader : public lbann_image_preprocessor {
   /**
    * During the network's update phase, the data reader will
    * advanced the current position pointer.  If the pointer wraps
-   * around, then reshuffle the data indicies. "fake" is added
-   * to support data store functionality.
+   * around, then reshuffle the data indicies.
    */
-  virtual bool update(bool is_active_reader, bool fake = false);
+  virtual bool update(bool is_active_reader);
 
   /// Return the number of labels (classes) in this dataset.
   virtual int get_num_labels() const {
@@ -526,21 +520,6 @@ class generic_data_reader : public lbann_image_preprocessor {
 
   /** \brief Given directory to store checkpoint files, read state from file and add to number of bytes read */
   bool loadFromCheckpointShared(persist& p, const char *name);
-
-  //! experimental: to support data_store functionality
-  void save_initial_state() {
-    m_current_pos_save = m_current_pos;
-    m_loaded_mini_batch_idx_save = m_loaded_mini_batch_idx;
-    m_current_mini_batch_idx_save = m_current_mini_batch_idx;
-  }
-
-  //! experimental: to support data_store functionality
-  void restore_initial_state() {
-    m_current_pos = m_current_pos_save;
-    m_loaded_mini_batch_idx = m_loaded_mini_batch_idx_save;
-    m_current_mini_batch_idx = m_current_mini_batch_idx_save;
-  }
-
   
   /// returns the data store, which may be a nullptr
   generic_data_store * get_data_store() {
@@ -549,7 +528,16 @@ class generic_data_reader : public lbann_image_preprocessor {
 
   /// sets up a data_store. @todo: must modify this method
   /// anytime you derive a class from generic_data_store
-  void setup_data_store(lbann_comm *comm); 
+  void setup_data_store(model *m, lbann_comm *comm); 
+
+  /** This call changes the functionality of fetch_data(); when set,
+    * indices are added to m_my_minibatch_indices, but fetch_datum()
+    * is not called. This method is added to support data store functionality.
+    */
+  void set_save_minibatch_entries(bool b) {
+      m_save_minibatch_indices = b;
+  }
+
 
  protected:
 
@@ -657,10 +645,12 @@ class generic_data_reader : public lbann_image_preprocessor {
   friend class data_reader_merge_samples;
 
  private :
-  //! experimental: to support data_store functionality
-  int m_current_pos_save;
-  int m_loaded_mini_batch_idx_save;
-  int m_current_mini_batch_idx_save;
+   /// added to support data store functionality
+   bool m_save_minibatch_indices;
+ 
+   /// added to support data store functionality
+   std::vector<std::vector<int> > m_my_minibatch_indices;
+
 };
 
 }  // namespace lbann

@@ -40,8 +40,8 @@ class data_store_imagenet : public generic_data_store {
  public:
 
   //! ctor
-  data_store_imagenet(lbann_comm *comm, generic_data_reader *reader) :
-    generic_data_store(comm, reader) {}
+  data_store_imagenet(lbann_comm *comm, generic_data_reader *reader, model *m) :
+    generic_data_store(comm, reader, m) {}
 
   //! copy ctor
   data_store_imagenet(const data_store_imagenet&) = default;
