@@ -200,6 +200,11 @@ class model {
   /** Evaluate model. */
   virtual void evaluate(execution_mode mode);
 
+  /** Run one epoch using only the input layer; this supports
+   *  data_store functionality
+   */
+  void collect_indices(execution_mode mode);
+
   /** Checkpoint model to given file descriptor, return number of bytes written */
   virtual bool save_to_checkpoint_shared(persist& p);
   /** Restore model by reading checkpoint from given file descriptor, return number of bytes read */

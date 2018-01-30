@@ -244,8 +244,8 @@ void data_store_imagenet::exchange_data() {
     int idx = (*m_shuffled_indices)[m_my_minibatch_indices[j]];
     int offset = m_offsets[idx];
     int file_len = m_file_sizes[idx];
-    if (file_len <= 0) throw lbann_exception(std::string{} + "ERROR A " + std::to_string(file_len));
-    if (file_len > 100000000) throw lbann_exception(std::string{} + "ERROR B " + std::to_string(file_len));
+    if (file_len <= 0) throw lbann_exception(std::string{} + "ERROR A; file_len: " + std::to_string(file_len) + " (is <= 0)");
+    if (file_len > 100000000) throw lbann_exception(std::string{} + "ERROR B file:len: " + std::to_string(file_len) + " (is > 100000000)");
     if (j >= m_my_data.size()) {
       throw lbann_exception(std::string{} + "ERROR C; j: " + std::to_string(j) + " m_my_data.size: " + std::to_string(m_my_data.size()));
     }

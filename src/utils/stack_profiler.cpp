@@ -22,7 +22,7 @@ FILE *c_hash_fp_full_stack_trace = NULL;
 FILE *c_hash_fp_full_stack_trace_metadata = NULL;
 int c_hash_profiling_is_turned_on = 0;
 int c_hash_thread_id;
-int c_hash_func_id = 0;
+short c_hash_func_id = 0;
 
 Dl_info c_hash_info;
 short c_hash_depth = 0;
@@ -44,7 +44,7 @@ void c_hash_create(long size) {
   //initial size for hash table; want this to be a power of 2
   long sz = 16;
   while (sz < size) { sz *= 2; }
-  // rule-of-thumb: ensure there's some padding 
+  // rule-of-thumb: ensure there's some padding
   if ( (sz-size) < (.1 * sz) ) { sz *= 2.0; }
   h->size = sz;
 
@@ -75,9 +75,9 @@ stack_profiler::~stack_profiler() {
   }
 }
 
-stack_profiler::stack_profiler() 
+stack_profiler::stack_profiler()
   : m_full_stack_trace(false)
-  {} 
+  {}
 
 void stack_profiler::activate(int thread) {
   m_thread_id = thread;
