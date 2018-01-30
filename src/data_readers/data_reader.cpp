@@ -618,6 +618,9 @@ void generic_data_reader::setup_data_store(model *m, lbann_comm *comm) {
               << " dynamic_cast<imagenet_reader*> failed; NOT using data_store\n";
     return;
   }
+
+  m_data_store->setup();
+
 }
 
 }  // namespace lbann

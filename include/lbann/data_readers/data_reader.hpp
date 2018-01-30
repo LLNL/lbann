@@ -538,6 +538,9 @@ class generic_data_reader : public lbann_image_preprocessor {
       m_save_minibatch_indices = b;
   }
 
+  const std::vector<std::vector<int> > & get_minibatch_indices() const {
+    return m_my_minibatch_indices;
+  }
 
  protected:
 
