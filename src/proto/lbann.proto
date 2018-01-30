@@ -569,7 +569,12 @@ enum Imcomm {
                 //in the CallbackImComm is set to true or false
 }
 
+message WeightShape {
+  repeated int64 dim = 1 [packed = true];
+}
+
 message Weights {
+  WeightShape shape = 5;
   string name = 1;
   int64 height = 2;
   int64 width = 3;
