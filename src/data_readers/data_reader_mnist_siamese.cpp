@@ -284,7 +284,7 @@ void data_reader_mnist_siamese::load() {
 
   if (m_first_n > 0) {
     set_use_percent(1.0);
-    set_absolute_sample_count(0.0);
+    set_absolute_sample_count(0u);
   }
 
   // reset indices

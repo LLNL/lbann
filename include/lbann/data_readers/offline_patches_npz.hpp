@@ -63,8 +63,11 @@ class offline_patches_npz {
   // TODO: copy constructor and assignment operator for deep-copying if needed
   // The cnpy structure relies on shared_ptr
 
-  /// Load the data in the compressed numpy format file
-  bool load(const std::string filename);
+  /**
+   * Load the data in the compressed numpy format file.
+   * Use only first_n available samples if specified.
+   */
+  bool load(const std::string filename, size_t first_n = 0u);
   /// Show the description
   std::string get_description() const;
 
@@ -107,6 +110,12 @@ class offline_patches_npz {
   template<typename T>
   T* data_ptr(const cnpy::NpyArray& na, const std::vector<size_t> indices) const;
 
+  /**
+   * Shrink the first dimension of cnpy::NpyArray to the given size.
+   * This is used to choose only first sz samples in data.
+   */
+  void shrink_to_fit(cnpy::NpyArray& na, size_t sz);
+
  protected:
   /// Whether loaded data have passed the format check
   bool m_checked_ok;
@@ -138,10 +147,6 @@ class offline_patches_npz {
   bool m_fetch_text_dict_at_once;
 };
 
-
-inline offline_patches_npz::label_t offline_patches_npz::get_label(const size_t idx) const {
-  return m_item_class_list[idx];
-}
 
 template<typename T>
 inline T& offline_patches_npz::data(

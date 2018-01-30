@@ -45,6 +45,7 @@ message Reader {
   string data_file_pattern = 111;
   int64 num_neighbors = 112; // pilot2_molecular_reader
   int64 max_neighborhood = 113; // pilot2_molecular_reader
+  int32 num_image_srcs = 114; // data_reader_multi_images
 }
 
 message ImagePreprocessor {
@@ -568,7 +569,12 @@ enum Imcomm {
                 //in the CallbackImComm is set to true or false
 }
 
+message WeightShape {
+  repeated int64 dim = 1 [packed = true];
+}
+
 message Weights {
+  WeightShape shape = 5;
   string name = 1;
   int64 height = 2;
   int64 width = 3;
