@@ -335,9 +335,9 @@ bool lbann::image_utils::export_image(const std::string& fileExt, std::vector<uc
 
 bool lbann::image_utils::load_image(std::vector<unsigned char>& image_buf,
                                     int& Width, int& Height, int& Type, cv_process& pp, ::Mat& data) {
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
   cv::Mat image = cv::imdecode(image_buf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
-  if (image.empty) {
+  if (image.empty()) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: image is empty";
     throw lbann_exception(err.str());
@@ -349,9 +349,9 @@ bool lbann::image_utils::load_image(std::vector<unsigned char>& image_buf,
     throw lbann_exception(err.str());
   }
   //bool ok = !image.empty() && pp.preprocess(image);
-  ok = ok && cv_utils::copy_cvMat_to_buf(image, data, pp);
+  bool ok = cv_utils::copy_cvMat_to_buf(image, data, pp);
   if (! ok) {
-    stringstream err;
+    std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: cv_utils::copy_cvMat_to_buf() failed";
     throw lbann_exception(err.str());
   }
