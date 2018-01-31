@@ -661,6 +661,30 @@ void Layer::setup_dims() {
   
 }
 
+template <>
+void Layer::instantiate_matrices<data_layout::MODEL_PARALLEL>(const El::Grid& grid) {
+  for (int i = 0; i < get_num_parents(); ++i) {
+    m_prev_activations.push_back(new MCMRMat(grid));
+    m_error_signals.push_back(new MCMRMat(grid));
+  }
+  for (int i = 0; i < get_num_children(); ++i) {
+    m_activations.push_back(new MCMRMat(grid));
+    m_prev_error_signals.push_back(new MCMRMat(grid));
+  }
+}
+
+template <>
+void Layer::instantiate_matrices<data_layout::DATA_PARALLEL>(const El::Grid& grid) {
+  for (int i = 0; i < get_num_parents(); ++i) {
+    m_prev_activations.push_back(new StarVCMat(grid));
+    m_error_signals.push_back(new StarVCMat(grid));
+  }
+  for (int i = 0; i < get_num_children(); ++i) {
+    m_activations.push_back(new StarVCMat(grid));
+    m_prev_error_signals.push_back(new StarVCMat(grid));
+  }
+}
+
 void Layer::setup_matrices(const El::Grid& grid) {
 
   // Delete any previously allocated matrices
@@ -669,25 +693,9 @@ void Layer::setup_matrices(const El::Grid& grid) {
   // Allocate input and output matrices for forward an back prop
   switch (get_data_layout()) {
   case data_layout::MODEL_PARALLEL:
-    for (int i = 0; i < get_num_parents(); ++i) {
-      m_prev_activations.push_back(new MCMRMat(grid));
-      m_error_signals.push_back(new MCMRMat(grid));
-    }
-    for (int i = 0; i < get_num_children(); ++i) {
-      m_activations.push_back(new MCMRMat(grid));
-      m_prev_error_signals.push_back(new MCMRMat(grid));
-    }
-    break;
+    instantiate_matrices<data_layout::MODEL_PARALLEL>(grid); break;
   case data_layout::DATA_PARALLEL:
-    for (int i = 0; i < get_num_parents(); ++i) {
-      m_prev_activations.push_back(new StarVCMat(grid));
-      m_error_signals.push_back(new StarVCMat(grid));
-    }
-    for (int i = 0; i < get_num_children(); ++i) {
-      m_activations.push_back(new StarVCMat(grid));
-      m_prev_error_signals.push_back(new StarVCMat(grid));
-    }
-    break;
+    instantiate_matrices<data_layout::DATA_PARALLEL>(grid); break;
   default:
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "

@@ -525,6 +525,10 @@ class Layer {
 
  private:
 
+  /** Instantiate distributed matrices. */
+  template <data_layout T>
+  void instantiate_matrices(const El::Grid& grid);
+
   /** Deallocate distributed matrices. */
   void deallocate_matrices();
 

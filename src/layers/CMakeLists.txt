@@ -5,6 +5,7 @@ set_full_path(THIS_DIR_SOURCES
 
 # Add the subdirectories
 add_subdirectory(activations)
+add_subdirectory(learning)
 add_subdirectory(regularizers)
 
 # Propagate the files up the tree

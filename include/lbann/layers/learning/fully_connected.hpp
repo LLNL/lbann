@@ -72,11 +72,6 @@ class fully_connected_layer : public learning_layer {
   cudnn::matrix m_bias_gradient_d;
 #endif // __LIB_CUNN
 
-  void deallocate_matrices() {
-    if (m_linearity_gradient != nullptr) delete m_linearity_gradient;
-    if (m_bias_gradient != nullptr) delete m_bias_gradient;
-  }
-
  public:
 
   fully_connected_layer(lbann_comm *comm,
@@ -169,25 +164,7 @@ class fully_connected_layer : public learning_layer {
 
   data_layout get_data_layout() const override { return T_layout; }
 
-  void setup_matrices(const El::Grid& grid) override {
-    learning_layer::setup_matrices(grid);
-    deallocate_matrices();
-    switch (get_data_layout()) {
-    case data_layout::MODEL_PARALLEL:
-      m_linearity_gradient = new MCMRMat(grid);
-      m_bias_gradient = new MCStarMat(grid);
-      break;
-    case data_layout::DATA_PARALLEL:
-      m_linearity_gradient = new StarMat(grid);
-      m_bias_gradient = new StarMat(grid);
-      break;
-    default:
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "invalid distributed matrix layout";
-      throw lbann_exception(err.str());
-    }
-  }
+  void setup_matrices(const El::Grid& grid) override;
 
   void setup_dims() override {
     // Store neuron tensor dimensions
@@ -302,97 +279,14 @@ class fully_connected_layer : public learning_layer {
     }
   }
 
-  void fp_compute_cpu() {
+ private:
 
-    // Matrices
-    const auto& input = get_prev_activations();
-    auto& output = get_activations();
+  /** CPU implementation of forward prop computation. */
+  void fp_compute_cpu();
+  /** CPU implementation of backward prop computation. */
+  void bp_compute_cpu();
 
-    // Apply linearity
-    const auto& linearity = m_weights[0]->get_values();
-    if (linearity.DistSize() == 1) {
-      El::Gemm(El::NORMAL, El::NORMAL,
-               DataType(1), linearity.LockedMatrix(), input.LockedMatrix(),
-               DataType(0), output.Matrix());
-    } else {
-      El::Gemm(El::NORMAL, El::NORMAL,
-               DataType(1), linearity, input,
-               DataType(0), output);
-    }
-
-    // Apply bias if needed
-    if(m_bias_scaling_factor != DataType(0)) {
-      const auto& local_bias = m_weights[1]->get_values().LockedMatrix();
-      auto& local_output = output.Matrix();
-      El::IndexDependentMap(local_output,
-                            (std::function<DataType(El::Int,El::Int,const DataType&)>)
-                            ([this,&local_bias](El::Int r, El::Int c,const DataType& z)
-                             ->DataType {
-                              return z + m_bias_scaling_factor * local_bias(r, 0);
-                            }));
-    }
-
-  }
-
-  void bp_compute_cpu() {
-
-    // Effective mini-batch size
-    const int mini_batch_size = this->m_model->get_effective_mini_batch_size();
-
-    // Matrices
-    const auto& linearity = m_weights[0]->get_values();
-    const auto& input = get_prev_activations();
-    const auto& gradient_wrt_output = get_prev_error_signals();
-    auto& gradient_wrt_input = get_error_signals();
-    const auto& local_linearity = linearity.LockedMatrix();
-    const auto& local_input = input.LockedMatrix();
-    const auto& local_gradient_wrt_output = gradient_wrt_output.LockedMatrix();
-    auto& local_gradient_wrt_input = gradient_wrt_input.Matrix();
-
-    // Compute gradient w.r.t. bias if needed
-    optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
-    if (m_bias_scaling_factor != DataType(0)
-        && bias_optimizer != nullptr) {
-      El::RowSum(local_gradient_wrt_output,
-                 m_bias_gradient->Matrix());
-      bias_optimizer->stage_gradient_for_accumulation(
-        *m_bias_gradient,
-        m_bias_scaling_factor / mini_batch_size);
-    }
-
-    // Compute gradient w.r.t. linearity if needed
-    optimizer* linearity_optimizer = this->m_weights[0]->get_optimizer();
-    if (linearity_optimizer != nullptr) {
-      if (linearity.DistSize() == 1) {
-        El::Gemm(El::NORMAL, El::TRANSPOSE,
-                 DataType(1), local_gradient_wrt_output, local_input,
-                 DataType(0), m_linearity_gradient->Matrix());
-        linearity_optimizer->stage_gradient_for_accumulation(
-          *m_linearity_gradient,
-          DataType(1) / mini_batch_size);
-      } else {
-        El::Gemm(El::NORMAL, El::TRANSPOSE,
-                 DataType(1), gradient_wrt_output, input,
-                 DataType(0), *m_linearity_gradient);
-        linearity_optimizer->add_to_gradient(
-          *m_linearity_gradient,
-          DataType(1) / mini_batch_size);
-      }
-    }
-
-    // Compute gradient w.r.t. input
-    if (linearity.DistSize() == 1) {
-      El::Gemm(El::TRANSPOSE, El::NORMAL,
-               DataType(1), local_linearity, local_gradient_wrt_output,
-               DataType(1), local_gradient_wrt_input);
-    } else {
-      El::Gemm(El::TRANSPOSE, El::NORMAL,
-               DataType(1), linearity, gradient_wrt_output,
-               DataType(1), gradient_wrt_input);
-    }
-
-  }
-
+  /** GPU implementation of forward prop computation. */
   void fp_compute_cuda() {
 #ifndef LBANN_HAS_CUDNN
     throw lbann_exception("fully_connected: CUDA not detected");
@@ -463,6 +357,7 @@ class fully_connected_layer : public learning_layer {
 #endif // LBANN_HAS_CUDNN
   }
 
+  /** GPU implementation of backward prop computation. */
   void bp_compute_cuda() {
 #ifndef LBANN_HAS_CUDNN
     throw lbann_exception("fully_connected: CUDA not detected");
@@ -556,6 +451,12 @@ class fully_connected_layer : public learning_layer {
     }
 
 #endif // LBANN_HAS_CUDNN
+  }
+
+  /** Deallocate distributed matrices. */
+  void deallocate_matrices() {
+    if (m_linearity_gradient != nullptr) delete m_linearity_gradient;
+    if (m_bias_gradient != nullptr) delete m_bias_gradient;
   }
 
 };
