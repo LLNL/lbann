@@ -46,12 +46,12 @@ Layer::Layer(lbann_comm *comm)
   num_layers++;
 
   // Initialize neuron tensor dimensions
+  m_neuron_dims = std::vector<int>(1, 0);
   m_num_neurons = 0;
   m_num_neuron_dims = 1;
-  m_neuron_dims = std::vector<int>(1, 0);
+  m_prev_neuron_dims = std::vector<int>(1, 0);
   m_num_prev_neurons = 0;
   m_num_prev_neuron_dims = 1;
-  m_neuron_dims = std::vector<int>(1, 0);
 
   // Initialize GPU information
   m_using_gpus = false;
@@ -71,12 +71,12 @@ Layer::Layer(lbann_comm *comm)
 
 Layer::Layer(const Layer& other) :
   m_comm(other.m_comm),
+  m_neuron_dims(other.m_neuron_dims),
   m_num_neurons(other.m_num_neurons),
   m_num_neuron_dims(other.m_num_neuron_dims),
-  m_neuron_dims(other.m_neuron_dims),
+  m_prev_neuron_dims(other.m_prev_neuron_dims),
   m_num_prev_neurons(other.m_num_prev_neurons),
   m_num_prev_neuron_dims(other.m_num_prev_neuron_dims),
-  m_prev_neuron_dims(other.m_prev_neuron_dims),
   m_weights(other.m_weights),
   m_parent_layers(other.m_parent_layers),
   m_child_layers(other.m_child_layers),
@@ -131,12 +131,12 @@ Layer& Layer::operator=(const Layer& other) {
   
   // Shallow copies
   m_comm = other.m_comm;
+  m_neuron_dims = other.m_neuron_dims;
   m_num_neurons = other.m_num_neurons;
   m_num_neuron_dims = other.m_num_neuron_dims;
-  m_neuron_dims = other.m_neuron_dims;
+  m_prev_neuron_dims = other.m_prev_neuron_dims;
   m_num_prev_neurons = other.m_num_prev_neurons;
   m_num_prev_neuron_dims = other.m_num_prev_neuron_dims;
-  m_prev_neuron_dims = other.m_prev_neuron_dims;
   m_weights = other.m_weights;
   m_parent_layers = other.m_parent_layers;
   m_child_layers = other.m_child_layers;
@@ -984,9 +984,9 @@ void Layer::fp_setup_data(int mini_batch_size) {
         || input.Width() != mini_batch_size) {
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
-          << get_name() << " expected a "
+          << "layer \"" << get_name() << "\" expected a "
           << expected_height << " x " << mini_batch_size
-          << " input matrix from " << parent->get_name()
+          << " input matrix from layer \"" << parent->get_name() << "\""
           << " during forward prop, but got a "
           << input.Height() << " x " << input.Width() << " matrix";
       throw lbann_exception(err.str());
@@ -1015,9 +1015,9 @@ void Layer::bp_setup_data(int mini_batch_size) {
         || input.Width() != mini_batch_size) {
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
-          << get_name() << " expected a "
+          << "layer \"" << get_name() << "\" expected a "
           << expected_height << " x " << mini_batch_size
-          << " input matrix from " << child->get_name()
+          << " input matrix from layer \"" << child->get_name() << "\""
           << " during backward prop, but got a "
           << input.Height() << " x " << input.Width() << " matrix";
       throw lbann_exception(err.str());
