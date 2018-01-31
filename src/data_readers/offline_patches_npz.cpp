@@ -143,7 +143,7 @@ bool offline_patches_npz::check_data() const {
             (m_file_root_list.size() > 0u) &&
             (m_file_variant_list.size() > 0u) &&
             (m_item_root_list.shape[0] == m_item_class_list.size()) &&
-            (m_item_variant_list.shape[0] == m_item_class_list.size());
+            (m_item_variant_list.shape[0] == m_item_class_list.size()) &&
             (m_item_root_list.shape[1] == m_num_patches) &&
             (m_item_variant_list.shape[1] == m_num_patches) &&
             (m_item_variant_list.shape[2] > 0u) &&

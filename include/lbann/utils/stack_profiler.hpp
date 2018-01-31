@@ -66,18 +66,19 @@ private :
 
   int m_thread_id ;
 
-  Dl_info m_info;
+  // This variable is unused, causing a certain clangy compiler to complain
+  //Dl_info m_info;
 
 };
 
 } //namespace lbann
- 
+
 
 #if 0
 /**
  * This module contains pure C declaration for stack profiling support
  * for stack tracing
- */ 
+ */
 
 #define IGNORE_BIN_CT 2000000
 
@@ -122,7 +123,7 @@ struct c_hash_table {
 extern c_hash_table * c_hash_the_hash_table;
 
 //! the hash table! This is a singleton
-//! creates the singleton hash table; the table will contain at least 
+//! creates the singleton hash table; the table will contain at least
 //! "size" slots (FYI, the table size is a power of two)
 void c_hash_create(long size) __attribute__((no_instrument_function));
 
@@ -132,4 +133,3 @@ void c_hash_set_thread_id(int id) __attribute__((no_instrument_function));
 
 #endif
 #endif
-
