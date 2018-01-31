@@ -368,8 +368,9 @@ bool lbann::image_utils::load_image(std::vector<unsigned char>& image_buf,
   return ok;
 #else
   std::stringstream err;
-  err << __FILE__ << " " << __LINE__ << " :: not compiled with __LIB_OPENCV!";
+  err << __FILE__ << " " << __LINE__
+      << " :: not compiled with LBANN_ENABLE_OPENCV!";
   throw lbann_exception(err.str());
   return false;
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV
 }
