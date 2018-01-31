@@ -590,7 +590,10 @@ const Mat& Layer::get_local_error_signals(int parent_index) const {
 }
 
 void Layer::clear_error_signals(int mini_batch_size) {
+  // Note: Error signal matrices are cleared (without deallocating
+  // memory) in case they are matrix views.
   for (int i = 0; i < get_num_parents(); ++i) {
+    get_error_signals(i).Empty(false);
     get_error_signals(i).Resize(get_num_prev_neurons(i), mini_batch_size);
     if (m_using_gpus) {
 #ifdef LBANN_HAS_CUDNN
@@ -983,8 +986,11 @@ void Layer::fp_setup_data(int mini_batch_size) {
   }
 
   // Initialize activation matrices
+  // Note: Activation matrices are cleared (without deallocating
+  // memory) in case they are matrix views.
   for (int i = 0; i < get_num_children(); ++i) {
-    m_activations[i]->Resize(get_num_neurons(i), mini_batch_size);
+    get_activations(i).Empty(false);
+    get_activations(i).Resize(get_num_neurons(i), mini_batch_size);
   }
   
 }
