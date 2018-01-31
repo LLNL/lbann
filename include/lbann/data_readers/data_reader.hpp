@@ -82,7 +82,8 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_file_dir(""), m_data_fn(""), m_label_fn(""),
     m_shuffle(shuffle), m_absolute_sample_count(0), m_validation_percent(0.0),
     m_use_percent(1.0),
-    m_master(false)
+    m_master(false),
+    m_save_minibatch_indices(false)
   {}
   generic_data_reader(const generic_data_reader&) = default;
   generic_data_reader& operator=(const generic_data_reader&) = default;
