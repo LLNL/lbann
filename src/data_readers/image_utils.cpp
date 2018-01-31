@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/image_utils.hpp"
+#include "lbann/utils/exception.hpp"
 
 
 bool lbann::image_utils::loadIMG(const std::string& Imagefile, int& Width, int& Height, bool Flip, unsigned char *&Pixels) {
@@ -336,8 +337,24 @@ bool lbann::image_utils::load_image(std::vector<unsigned char>& image_buf,
                                     int& Width, int& Height, int& Type, cv_process& pp, ::Mat& data) {
 #ifdef __LIB_OPENCV
   cv::Mat image = cv::imdecode(image_buf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
-  bool ok = !image.empty() && pp.preprocess(image);
+  if (image.empty) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: image is empty";
+    throw lbann_exception(err.str());
+  }
+  bool pp_test = pp.preprocess(image);
+  if (! pp_test) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: pp.preprocess(image) failed";
+    throw lbann_exception(err.str());
+  }
+  //bool ok = !image.empty() && pp.preprocess(image);
   ok = ok && cv_utils::copy_cvMat_to_buf(image, data, pp);
+  if (! ok) {
+    stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: cv_utils::copy_cvMat_to_buf() failed";
+    throw lbann_exception(err.str());
+  }
   // Disabling normalizer is needed because normalizer is not necessarily
   // called during preprocessing but implicitly applied during data copying to
   // reduce overhead.
@@ -350,6 +367,9 @@ bool lbann::image_utils::load_image(std::vector<unsigned char>& image_buf,
   Type   = image.type();
   return ok;
 #else
+  std::stringstream err;
+  err << __FILE__ << " " << __LINE__ << " :: not compiled with __LIB_OPENCV!";
+  throw lbann_exception(err.str());
   return false;
 #endif // __LIB_OPENCV
 }
