@@ -41,17 +41,19 @@ data_store_imagenet::~data_store_imagenet() {
 
 void data_store_imagenet::setup() {
   double tm1 = get_time();
+  if (m_rank == 0) {
+    std::cout << "starting data_store_imagenet::setup() for data reader with role: " << m_reader->get_role() << std::endl;
+  }
+
   generic_data_store::setup();
 
+  //optionally run some tests at the end of setup()
   bool run_tests = false;
   if (options::get()->has_bool("test_data_store") && options::get()->get_bool("test_data_store")) {
     run_tests = true;
   }
-
-  if (m_rank == 0) {
-    std::cout << "starting data_store_imagenet::setup() for data reader with role: " << m_reader->get_role() << std::endl;
-  }
   
+  //@todo needs to be designed and implemented!
   if (! m_in_memory) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
@@ -163,16 +165,29 @@ void data_store_imagenet::get_file_sizes() {
   imagenet_reader *reader = dynamic_cast<imagenet_reader*>(m_reader);
   const std::vector<std::pair<std::string, int> > & image_list = reader->get_image_list();
   int my_num_images = num_images[m_rank];
-  std::vector<Triple> my_file_sizes(my_num_images);
   std::string file_dir = m_reader->get_file_dir();
+
+  //construct a vector or Triples 
+  std::vector<Triple> my_file_sizes(my_num_images);
   size_t cur_offset = 0;
   for (size_t j=0; j<m_my_datastore_indices.size(); j++) {
-  if (j >= image_list.size()) throw lbann_exception("err 2\n");
+    if (j >= image_list.size()) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: " << " j: " << j 
+        << " >= image_list.size() [" << image_list.size() << "]"; 
+      throw lbann_exception(err.str());
+    }
     size_t index = m_my_datastore_indices[j];
     my_file_sizes[j].global_index = index;
     my_file_sizes[j].num_bytes = get_file_size(file_dir, image_list[index].first);
     my_file_sizes[j].offset = cur_offset;
     cur_offset += my_file_sizes[j].num_bytes;
+    if (my_file_sizes[j].num_bytes ==0) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: " << " j: " << j 
+        << " file size is 0 (" << file_dir << "/" + image_list[index].first;
+      throw lbann_exception(err.str());
+    }
   }
 
   //exchange files sizes
@@ -192,9 +207,16 @@ void data_store_imagenet::get_file_sizes() {
   MPI_Allgatherv(&my_file_sizes[0], my_file_sizes.size()*sizeof(Triple), MPI_BYTE,
                         &global_file_sizes[0], &num_images[0], &disp[0], MPI_BYTE, m_comm->get_model_comm().comm);
 
+
   for (auto t : global_file_sizes) {
     m_file_sizes[t.global_index] = t.num_bytes;
     m_offsets[t.global_index] = t.offset;
+    if (t.num_bytes <= 0) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: " 
+        << "num_bytes  <= 0 (" << t.num_bytes << ")";
+      throw lbann_exception(err.str());
+    }
   }
 }
 
@@ -244,10 +266,21 @@ void data_store_imagenet::exchange_data() {
     int idx = (*m_shuffled_indices)[m_my_minibatch_indices[j]];
     int offset = m_offsets[idx];
     int file_len = m_file_sizes[idx];
-    if (file_len <= 0) throw lbann_exception(std::string{} + "ERROR A; file_len: " + std::to_string(file_len) + " (is <= 0)");
-    if (file_len > 100000000) throw lbann_exception(std::string{} + "ERROR B file:len: " + std::to_string(file_len) + " (is > 100000000)");
+    if (file_len <= 0) {
+      throw lbann_exception(
+        std::string{} + __FILE__ + " :: " + std::to_string(__LINE__) + " :: "
+        + " file_len: " + std::to_string(file_len) + " (is <= 0)");
+    }    
+    if (file_len > 100000000) {
+      throw lbann_exception(
+        std::string{} + __FILE__ + " :: " + std::to_string(__LINE__) + " :: "
+        + " file_len: " + std::to_string(file_len) + " (is > 100000000)");
+    }    
     if (j >= m_my_data.size()) {
-      throw lbann_exception(std::string{} + "ERROR C; j: " + std::to_string(j) + " m_my_data.size: " + std::to_string(m_my_data.size()));
+      throw lbann_exception(
+        std::string{} + __FILE__ + " :: " + std::to_string(__LINE__) + " :: "
+        + " j: " + std::to_string(j) + " is >= m_my_data.size(): "
+        + std::to_string(m_my_data.size()));
     }
     m_my_data[j].resize(file_len);
     m_my_data_hash[idx] = j;

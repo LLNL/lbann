@@ -133,6 +133,54 @@ void columnwise_mean_and_stdev(const Mat& data,
 }
 
 /// @todo Numerically stable implementation
+void columnwise_sums_and_sqsums(const AbsDistMat& data,
+                               AbsDistMat& sums,
+                               AbsDistMat& sqsums) {
+
+#ifdef LBANN_DEBUG
+  El::DistData data_dist(data), sum_dist(sums), sqsum_dist(sqsums);
+  if(sum_dist.colDist != El::STAR
+      || sum_dist.rowDist != data_dist.rowDist
+      || sqsum_dist.colDist != El::STAR
+      || sqsum_dist.rowDist != data_dist.rowDist) {
+    throw lbann_exception("columnwise_sum_and_sqsum: invalid matrix format");
+  }
+#endif // #ifdef LBANN_DEBUG
+
+  // Matrix dimensions
+  const El::Int width = data.Width();
+  const El::Int local_height = data.LocalHeight();
+  const El::Int local_width = data.LocalWidth();
+
+  // Initialize outputs
+  sums.Resize(1, width);
+  sqsums.Resize(1, width);
+
+  // Local matrices
+  const Mat& local_data = data.LockedMatrix();
+  Mat& local_sum = sums.Matrix();
+  Mat& local_sqsum = sqsums.Matrix();
+
+  // Compute sum and sum of squares of each matrix column
+  #pragma omp parallel for
+  for(El::Int col = 0; col < local_width; ++col) {
+    DataType sum_val = 0;
+    DataType sqsum_val = 0;
+    for(El::Int row = 0; row < local_height; ++row) {
+      const DataType val = local_data(row, col);
+      sum_val += val;
+      sqsum_val += val * val;
+    }
+    local_sum(0, col) = sum_val;
+    local_sqsum(0, col) = sqsum_val;
+  }
+
+  // Allreduce sums and sums of squares
+  AllReduce(sums, sums.RedundantComm(), El::mpi::SUM);
+  AllReduce(sqsums, sqsums.RedundantComm(), El::mpi::SUM);
+
+}
+/// @todo Numerically stable implementation
 void columnwise_mean_and_stdev(const AbsDistMat& data,
                                AbsDistMat& means,
                                AbsDistMat& stdevs) {
@@ -149,39 +197,13 @@ void columnwise_mean_and_stdev(const AbsDistMat& data,
 
   // Matrix dimensions
   const El::Int height = data.Height();
-  const El::Int width = data.Width();
-  const El::Int local_height = data.LocalHeight();
   const El::Int local_width = data.LocalWidth();
 
-  // Initialize outputs
-  means.Resize(1, width);
-  stdevs.Resize(1, width);
-
+  columnwise_sums_and_sqsums(data, means, stdevs);
   // Local matrices
-  const Mat& local_data = data.LockedMatrix();
   Mat& local_means = means.Matrix();
   Mat& local_stdevs = stdevs.Matrix();
 
-  // Compute sum and sum of squares of each matrix column
-  #pragma omp parallel for
-  for(El::Int col = 0; col < local_width; ++col) {
-    DataType sum = 0;
-    DataType sqsum = 0;
-    for(El::Int row = 0; row < local_height; ++row) {
-      const DataType val = local_data(row, col);
-      sum += val;
-      sqsum += val * val;
-    }
-    local_means(0, col) = sum;
-    local_stdevs(0, col) = sqsum;
-  }
-
-  // Allreduce sums and sums of squares
-  AllReduce(means, means.RedundantComm(), El::mpi::SUM);
-  AllReduce(stdevs, stdevs.RedundantComm(), El::mpi::SUM);
-
-  // Compute mean and standard deviation of each matrix column
-  #pragma omp parallel for
   for(El::Int col = 0; col < local_width; ++col) {
     const DataType mean = local_means(0, col) / height;
     const DataType sqmean = local_stdevs(0, col) / height;
@@ -255,34 +277,33 @@ void rowwise_mean_and_stdev(const Mat& data,
 }
 
 /// @todo Numerically stable implementation
-void rowwise_mean_and_stdev(const AbsDistMat& data,
-                            AbsDistMat& means,
-                            AbsDistMat& stdevs) {
+void rowwise_sums_and_sqsums(const AbsDistMat& data,
+                            AbsDistMat& sums,
+                            AbsDistMat& sqsums) {
 
 #ifdef LBANN_DEBUG
-  El::DistData data_dist(data), means_dist(means), stdevs_dist(stdevs);
-  if(means_dist.colDist != data_dist.colDist
-      || means_dist.rowDist != El::STAR
-      || stdevs_dist.colDist != data_dist.colDist
-      || stdevs_dist.rowDist != El::STAR) {
-    throw lbann_exception("rowwise_mean_and_stdev: invalid matrix format");
+  El::DistData data_dist(data), sum_dist(sums), sqsum_dist(sqsums);
+  if(sum_dist.colDist != data_dist.colDist
+      || sum_dist.rowDist != El::STAR
+      || sqsum_dist.colDist != data_dist.colDist
+      || sqsum_dist.rowDist != El::STAR) {
+    throw lbann_exception("rowwise_sums_and_sqsums: invalid matrix format");
   }
 #endif // #ifdef LBANN_DEBUG
 
   // Matrix dimensions
   const El::Int height = data.Height();
-  const El::Int width = data.Width();
   const El::Int local_height = data.LocalHeight();
   const El::Int local_width = data.LocalWidth();
 
   // Initialize outputs
-  means.Resize(height, 1);
-  stdevs.Resize(height, 1);
+  sums.Resize(height, 1);
+  sqsums.Resize(height, 1);
 
   // Local matrices
   const Mat& local_data = data.LockedMatrix();
-  Mat& local_means = means.Matrix();
-  Mat& local_stdevs = stdevs.Matrix();
+  Mat& local_sum = sums.Matrix();
+  Mat& local_sqsum = sqsums.Matrix();
 
   // Iterate through row blocks
   const El::Int block_size = 16;
@@ -298,8 +319,8 @@ void rowwise_mean_and_stdev(const AbsDistMat& data,
       for(El::Int col = col_start; col < col_end; ++col) {
         for(El::Int row = row_start; row < row_end; ++row) {
           const DataType val = local_data(row, col);
-          local_means(row, 0) += val;
-          local_stdevs(row, 0) += val * val;
+          local_sum(row, 0) += val;
+          local_sqsum(row, 0) += val * val;
         }
       }
 
@@ -308,9 +329,26 @@ void rowwise_mean_and_stdev(const AbsDistMat& data,
   }
 
   // Allreduce sums and sums of squares
-  AllReduce(means, means.RedundantComm(), El::mpi::SUM);
-  AllReduce(stdevs, stdevs.RedundantComm(), El::mpi::SUM);
+  AllReduce(sums, sums.RedundantComm(), El::mpi::SUM);
+  AllReduce(sqsums, sqsums.RedundantComm(), El::mpi::SUM);
 
+}
+
+/// @todo Numerically stable implementation
+void rowwise_mean_and_stdev(const AbsDistMat& data,
+                            AbsDistMat& means,
+                            AbsDistMat& stdevs) {
+
+  
+  const El::Int width = data.Width();
+  const El::Int local_height = data.LocalHeight();
+
+  rowwise_sums_and_sqsums(data, means, stdevs);
+  
+  // Local matrices
+  Mat& local_means = means.Matrix();
+  Mat& local_stdevs = stdevs.Matrix();
+  
   // Compute mean and standard deviation of each matrix row
   #pragma omp parallel for
   for(El::Int row = 0; row < local_height; ++row) {
