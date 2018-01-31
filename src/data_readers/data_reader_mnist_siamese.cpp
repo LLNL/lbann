@@ -200,8 +200,8 @@ bool data_reader_mnist_siamese::fetch_datum(Mat& X, std::pair<int, int> data_id,
   std::vector<::Mat> X_v = create_datum_views(X, mb_idx);
 
   using raw_data_t = std::vector<unsigned char>;
-  using sample_t = std::array<raw_data_t*, 2>;
-  sample_t sample;
+  using local_sample_t = std::array<raw_data_t*, 2>;
+  local_sample_t sample;
   sample[0] = &m_image_data[data_id.first];
   sample[1] = &m_image_data[data_id.second];
 
@@ -218,7 +218,7 @@ bool data_reader_mnist_siamese::fetch_datum(Mat& X, std::pair<int, int> data_id,
     raw_data_t image_buf(sample[i]->begin()+1, sample[i]->end()); // make copy of the raw data
 #endif
     ret = lbann::image_utils::import_image(image_buf, width, height, img_type, *(m_pps[tid]), X_v[i]);
-  
+
     if(!ret) {
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " "
                             + get_type() + ": image_utils::import_image failed to load");
