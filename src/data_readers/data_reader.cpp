@@ -260,8 +260,11 @@ bool generic_data_reader::update(bool is_active_reader) {
         std::shuffle(m_shuffled_indices.begin(), m_shuffled_indices.end(),
                      get_data_seq_generator());
       }
-      set_initial_position();
+    }
 
+    set_initial_position();
+
+    if (!m_save_minibatch_indices) {
       if (m_data_store) {
         m_data_store->set_shuffled_indices(&m_shuffled_indices);
       }

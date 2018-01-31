@@ -32,7 +32,7 @@
 #include "lbann/models/model.hpp"
 
 #undef DEBUG
-#define DEBUG
+//#define DEBUG
 
 namespace lbann {
 
@@ -57,7 +57,7 @@ void generic_data_store::setup() {
   m_num_readers = m_reader->get_num_parallel_readers();
 
   if (m_master) {
-    std::cerr << "calling m_model->collect_indices for role: " << m_reader->get_role() << "\n";
+    std::cerr << "calling m_model->collect_indices\n";
   }
   m_reader->set_save_minibatch_entries(true);
   if (m_reader->get_role() == "train") {
@@ -85,7 +85,7 @@ void generic_data_store::setup() {
     }
   }
 
-  //#ifdef DEBUG
+  #ifdef DEBUG
   std::stringstream s;
   s << "debug_" << m_reader->get_role() << "_" << m_rank << ".txt";
   std::ofstream out(s.str().c_str());
@@ -93,8 +93,9 @@ void generic_data_store::setup() {
     out << t << " ";
   }
   out.close();
-  //#endif
+  #endif
 
+  get_my_datastore_indices();
 }
 
 
