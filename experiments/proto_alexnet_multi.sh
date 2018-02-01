@@ -18,7 +18,7 @@ TASKS_PER_NODE=12
 export SLURM_NNODES=$SLURM_JOB_NUM_NODES
 
 # Look for the binary in the cluster specific build directory
-BINDIR="${DIRNAME}/../build/${CLUSTER}.llnl.gov${DEBUGDIR}/model_zoo"
+BINDIR="${DIRNAME}/../build/gnu.${CLUSTER}.llnl.gov${DEBUGDIR}/model_zoo"
 
 #add whatever is on the command line to options
 OPTS=""
