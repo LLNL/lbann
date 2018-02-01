@@ -86,7 +86,7 @@ class data_reader_multi_images : public imagenet_reader {
     return m_image_list;
   }
 
-  sample_t get_sample(size_t idx, const sample_t dummy = sample_t()) const {
+  sample_t get_sample(size_t idx) const {
     return m_image_list.at(idx);
   }
 
