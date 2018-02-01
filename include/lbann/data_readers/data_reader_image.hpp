@@ -90,6 +90,14 @@ class image_data_reader : public generic_data_reader {
     return m_image_list;
   }
 
+  /**
+   * Returns idx-th sample in the initial loading order.
+   * The second argument is only to facilitate overloading, and not to be used by users.
+   */
+  sample_t get_sample(const size_t idx, const sample_t dummy = sample_t()) const {
+    return m_image_list.at(idx);
+  }
+
  protected:
   /// Set the default values for the width, the height, the number of channels, and the number of labels of an image
   virtual void set_defaults();

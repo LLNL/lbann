@@ -74,6 +74,11 @@ class data_reader_triplet : public data_reader_multi_images {
   /// Allow read-only access to the entire sample list
   std::vector<sample_t> get_image_list() const;
 
+  sample_t get_sample(size_t idx, const sample_t dummy = sample_t()) const {
+    return m_samples.get_sample(idx);
+  }
+
+
  protected:
   void set_defaults() override;
   bool fetch_datum(::Mat& X, int data_id, int mb_idx, int tid) override;
