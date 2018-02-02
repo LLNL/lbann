@@ -92,11 +92,11 @@ int main(int argc, char *argv[]) {
 
     // Initialize cuDNN manager
     lbann::cudnn::cudnn_manager *cudnn = nullptr;
-#ifdef LBANN_HAS_CUDNN
     if (using_gpus) {
+#ifdef LBANN_HAS_CUDNN
       cudnn = new lbann::cudnn::cudnn_manager(comm);
-    }
 #endif // LBANN_HAS_CUDNN
+    }
     if (is_world_master) {
       std::cout << "cuDNN: "
                 << ((cudnn != nullptr) ? "enabled" : "disabled")
