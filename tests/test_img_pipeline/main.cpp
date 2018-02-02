@@ -298,9 +298,9 @@ bool test_image_io(const std::string filename,
     if (num_bytes == 0) {
       ok = lbann::image_utils::import_image(inbuf, width, height, type, pp, Images);
       num_bytes = Images.Height();
-      View(Image_v, Images, 0, 0, num_bytes, 1);
+      El::View(Image_v, Images, 0, 0, num_bytes, 1);
     } else {
-      View(Image_v, Images, 0, 0, num_bytes, 1);
+      El::View(Image_v, Images, 0, 0, num_bytes, 1);
       ok = lbann::image_utils::import_image(inbuf, width, height, type, pp, Image_v);
     }
     if (!ok) {
