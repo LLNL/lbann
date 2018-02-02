@@ -1,0 +1,182 @@
+/** \mainpage Overview
+
+This is the API documentation for LBANN ( Livermore Big Artificial Neural Network). LBANN is a toolkit for deep
+learning training on HPC systems. For installation and basic usage information refer to the \subpage getting_started section. For more detailed descriptions of the tools available in LBANN refer to the \subpage next_steps section. This section contains information about building models using our prototext defintion files, and what is available in the toolkit.   
+
+\warning This manual is under construction.  Please direct questions
+to lbann-dev@llnl.gov. Users are encourage to join
+lbann-users@llnl.gov.
+
+
+\page getting_started Getting Started
+\section gs_download Download
+
+LBANN can be cloned from the 
+<a href="https://github.com/LLNL/lbann">GitHub repository</a>:
+  
+  \code{.sh}
+  $ git clone https://github.com/LLNL/lbann.git
+  \endcode
+
+
+  \section gs_building Building LBANN
+  The build process for LBANN differs on a machine to machine basis. This section describes the build process for \ref Livermore Computing resources, \ref Spack package manager, and \ref OSX. For users attempting to build on systems not listed above, refer to the LBANN \ref dependencies. 
+
+  \subsection lc Livermore Computing Build 
+  Building on LC systems is supported via a build script. To run this script navigate to the LBANN directory and run \code{.sh}$ build_lbann_lc.sh \endcode located in scripts directory. This will creates a build directory located at $LBANN_HOME/build/<compiler>.<cluster_name>.llnl.gov. This script invokes the CMake superbuild of LBANN, meaning all LBANN dependencies are downloaded and built. 
+
+  \subsection spack Spack Build
+  <a href="https://github.com/LLNL/spack">Spack package manager</a> supports LBANN. Spack users can install lbann by simply running \code{.sh} spack install lbann \endcode
+  
+  \subsection osx OSX Build
+  
+  \subsection dependencies Dependency List
+  LBANN requires the following to build and operate. 
+  - CMake
+  - MPI
+  - Elemental
+  - OpenCV
+  - CuDA (optional)
+  - cuDNN (optional)
+  - Protocol Buffers (optional)
+  - Doxygen (optional)
+
+  \section gs_basic_usage Basic Usage
+  LBANN is run via the lbann executable with command line arguments consisting of prototext files. When using the LC build script this executable can be found in $LBANN_HOME/build/<compiler>.<cluster_name>.llnl.gov/install/bin. The prototext files are located in the model_zoo directory. LBANN requires three prototext files as input: model, data reader, and optimizer. The model and reader must be paired based on the data required by the model (i.e MNIST model and MNIST reader). Therefore
+  an example execution from the main lbann directory on Catalyst would be:
+  \code{.sh}
+   build/gnu.catalyst.llnl.gov/install/bin/lbann \
+   --model=model_zoo/models/lenet_model/model_lenet_mnist.prototext \
+   --reader=model_zoo/data_reader/data_reader_mnist.prototext \
+   --optimizer=model_zoo/optimizers/opt_adagrad.prototext
+  \endcode
+
+  \subsection verification Verification
+  To verify functionality of LBANN users can run a test MNIST experiment. Using the command found in the \ref gs_basic_usage section and 2 MPI ranks (srun -n2) should produce the following results on Catalyst:
+  \code{.sh}
+
+   srun -n2 build/gnu.catalyst.llnl.gov/install/bin/lbann \
+   --model=model_zoo/models/lenet_model/model_lenet_mnist.prototext \
+   --reader=model_zoo/data_reader/data_reader_mnist.prototext \
+   --optimizer=model_zoo/optimizers/opt_adagrad.prototext
+  
+   ...
+
+  --------------------------------------------------------------------------------
+  [20] Epoch : stats formated [tr/v/te] iter/epoch = [2700/600/1000]
+  global MB = [  20/  10/  10] global last MB = [  20/  10/  10]
+  local MB = [  10/  10/  10]  local last MB = [  10/  10/  10]
+  --------------------------------------------------------------------------------
+  Model 0 @54000 steps Training categorical accuracy: 99.9741% @12000 validation steps Validation categorical accuracy: 97.95%
+  Model 1 @54000 steps Training categorical accuracy: 99.9926% @12000 validation steps Validation categorical accuracy: 97.9833%
+  Model 0 average categorical cross entropy: 0.00176223
+  Model 1 average categorical cross entropy: 0.00126326
+  Model 0 Epoch time: 62.8982s; Mean minibatch time: 0.0218984s; Min: 0.0214709s; Max: 0.0306295s; Stdev: 0.000214515s
+  Model 1 Epoch time: 62.9628s; Mean minibatch time: 0.0219376s; Min: 0.0216846s; Max: 0.127405s; Stdev: 0.00204183s
+  Model 0 @20000 testing steps external validation categorical accuracy: 98.32%
+  Model 1 @20000 testing steps external validation categorical accuracy: 98.27%
+  \endcode
+  LBANN performance will vary on a machine to machine basis. Results will also vary, but should not do so significantly. 
+
+  
+
+
+\page next_steps Next Steps
+
+\section prototext Prototext
+LBANN models are created using protocol buffer files called prototext. To create a model, users define model architectures and parameters in prototext. The following subsections will describe the pieces that go in to a prototext model file. These next sections will walk through the construction of a model. For a completed example please see our <a href="https://github.com/LLNL/lbann/blob/develop/model_zoo/models/lenet_mnist/model_lenet_mnist.prototext">MNIST LeNet model</a>.
+
+\subsection model_params Model Parameters
+Prototext model files must first define certain parameters e.g. 
+\code{.sh}
+  name: "sequential_model"
+  data_layout: "data_parallel" # versus model parallel
+  mini_batch_size: 64
+  block_size: 256
+  num_epochs: 20
+  num_parallel_readers: 0
+  procs_per_model: 0 
+  use_cudnn: false 
+  num_gpus: -1 
+\endcode 
+
+Descriptions of these options can be found here, \ref Model, in the Public Attributes and Detailed description sections.
+
+\subsection objective_functions Objective Functions
+Next a user needs to select an Objective Function for the model e.g.
+
+\code.{sh}
+ objective_function {
+    cross_entropy {}
+    l2_weight_regularization {
+      scale_factor: 1e-4
+    }
+  }
+\endcode
+Available objective function options can be found here, \ref ObjectiveFunction "Objective Functions", in the Public Attributes and Detailed description sections.
+ 
+\subsection metrics Metrics
+ Next a metric is selected, in the same way an objective function was. 
+ \code{.sh}
+  metric {
+    categorical_accuracy {}
+  }
+ \endcode
+ Available metrics can be found here, \ref Metric "Metrics", in the Public Attributes and Detailed description sections.
+
+\subsection callbacks Callbacks
+Users then define which callbacks to include when running their model. Callbacks can serve a variety of purposes. The available callbacks in LBANN can be found here, \ref Callback "Callbacks". Here are how some commonly used callbacks are defined in prototext:
+\code{.sh}
+ callback { print {} }
+  callback { timer {} }
+  callback {
+    summary {
+      dir: "."
+      mat_interval: 25
+    }
+  }
+\endcode
+These callacks time the model, and print summary statistics during training. 
+
+\subsection layers Layers
+Finally, layers describe the actual model architecture. LBANN has a variety of layer types, and within these layers there are many parameters a user may set. These can be found here, \ref Layer "Layers".
+
+
+\page team LBANN Development Team
+
+LLNL Team
+- <a href="http://people.llnl.gov/vanessen1">Brian Van Essen</a> \<vanessen1@llnl.gov\>
+- <a href="http://people.llnl.gov/kim63">Hyojin Kim</a> \<kim63@llnl.gov\>
+- <a href="http://people.llnl.gov/jacobs32">Sam Jacobs</a> \<jacobs32@llnl.gov\>
+- <a href="http://people.llnl.gov/moody20">Adam Moody</a> \<moody20@llnl.gov\>
+
+LLNL Summer Interns
+
+- Nikoli Dryden \<dryden1@llnl.gov\>
+- <a href="https://web.stanford.edu/~tym1">Tim Moon</a> \<tym1@stanford.edu\>
+
+\page license License
+
+Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. 
+Produced at the Lawrence Livermore National Laboratory. 
+Written by the LBANN Research Team (B. Van Essen, et al.) listed in
+the CONTRIBUTORS file. \<lbann-dev@llnl.gov\>
+
+LLNL-CODE-697807.
+All rights reserved.
+
+This file is part of LBANN: Livermore Big Artificial Neural Network
+Toolkit. For details, see http://software.llnl.gov/LBANN or
+https://github.com/LLNL/LBANN.  Licensed under the Apache License,
+Version 2.0 (the “Licensee”); you may not use this file except in
+compliance with the License.  You may obtain a copy of the License at:
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an “AS IS” BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+implied. See the License for the specific language governing
+permissions and limitations under the license.
+
+*/
