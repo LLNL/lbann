@@ -309,7 +309,7 @@ void weights::set_values(const AbsDistMat& values) {
 
 void weights::set_value(DataType value, int index) {
 
-#ifdef LBANN_DEBUG  
+#ifdef LBANN_DEBUG
   // Check that tensor position is valid
   const auto& size = get_size();
   if (index < 0 || index >= size) {
@@ -332,7 +332,7 @@ void weights::set_value(DataType value, std::vector<int> pos) {
   // Get tensor dimensions
   const auto& dims = get_dims();
 
-#ifdef LBANN_DEBUG  
+#ifdef LBANN_DEBUG
   // Check that tensor position is valid
   bool pos_is_valid = true;
   if (dims.size() != pos.size()) {
@@ -369,16 +369,18 @@ void weights::set_value(DataType value, std::vector<int> pos) {
 void weights::set_value(DataType value, int row, int col) {
 
 #ifdef LBANN_DEBUG
-  // Check that matrix entry is valid
-  const auto& height = get_matrix_height();
-  const auto& width = get_matrix_width();
-  if (row < 0 || row >= height || col < 0 || col > width ) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to set weights value at entry "
-        << "(" << row << "," << col << ") "
-        << "in a " << height << "x" << width << " matrix";
-    throw lbann_exception(err.str());
+  {
+    // Check that matrix entry is valid
+    const auto& height = get_matrix_height();
+    const auto& width = get_matrix_width();
+    if (row < 0 || row >= height || col < 0 || col > width ) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "attempted to set weights value at entry "
+          << "(" << row << "," << col << ") "
+          << "in a " << height << "x" << width << " matrix";
+      throw lbann_exception(err.str());
+    }
   }
 #endif // LBANN_DEBUG
 
@@ -483,7 +485,7 @@ void weights::write_proto(lbann_data::Weights* proto) const {
       proto->add_data(m_values->Get(i,j));
     }
   }
-  
+
 }
 
 bool weights::load_from_checkpoint_shared(lbann::persist& p)
