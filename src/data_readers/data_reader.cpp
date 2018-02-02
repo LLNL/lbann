@@ -122,7 +122,7 @@ int lbann::generic_data_reader::fetch_data(Mat& X) {
         El::ReportException(e);
       }
     }
-  
+
     /// Allow each thread to perform any postprocessing necessary on the
     /// data source prior to fetching data
     #pragma omp parallel for schedule(static, 1)
@@ -236,7 +236,7 @@ bool generic_data_reader::update(bool is_active_reader) {
     /// Maintain the current height of the matrix
     if (!m_save_minibatch_indices) {
       El::Zeros(m_indices_fetched_per_mb, m_indices_fetched_per_mb.Height(), 1);
-    }  
+    }
 
     m_loaded_mini_batch_idx += m_iteration_stride;
   }
@@ -245,14 +245,22 @@ bool generic_data_reader::update(bool is_active_reader) {
   }
   if ((size_t)m_current_pos >= m_shuffled_indices.size()) {
     reader_not_done = false;
-  }  
+  }
   if (m_current_mini_batch_idx == m_num_iterations_per_epoch) {
     if ((get_rank() < m_num_parallel_readers) && (m_current_pos < (int)m_shuffled_indices.size())) {
       throw lbann_exception(
         std::string{} + __FILE__ + " " + std::to_string(__LINE__)
         + " :: generic data reader update error: the epoch is complete,"
         + " but not all of the data has been used -- current pos = " + std::to_string(m_current_pos)
-        + " and there are " + std::to_string(m_shuffled_indices.size()) + " indices");
+        + " and there are " + std::to_string(m_shuffled_indices.size()) + " indices"
+        + " : iteration="
+        + std::to_string(m_current_mini_batch_idx) + "C ["
+        + std::to_string(m_loaded_mini_batch_idx) +"L] of "
+        + std::to_string(m_num_iterations_per_epoch) + "+"
+        + std::to_string(m_iteration_stride) + " : "
+        + " index stride="
+        + std::to_string(m_stride_to_next_mini_batch) + "/"
+        + std::to_string(m_stride_to_last_mini_batch));
     }
 
     if (!m_save_minibatch_indices) {
@@ -301,7 +309,7 @@ int generic_data_reader::get_next_position() const {
   /// Is the mini-batch that is finishing corresponds to the second to
   /// last mini-batch, take the proper (possibly reduced) step to
   /// setup for the last mini-batch
-  if (m_loaded_mini_batch_idx >= (m_num_iterations_per_epoch-2)) {
+  if (m_loaded_mini_batch_idx == (m_num_iterations_per_epoch-2)) {
     return m_current_pos + m_stride_to_last_mini_batch;
   } else {
     return m_current_pos + m_stride_to_next_mini_batch;
@@ -610,7 +618,7 @@ void generic_data_reader::setup_data_store(model *m, lbann_comm *comm) {
     the_reader = dynamic_cast<data_reader_merge_samples*>(this);
     m_data_store = new data_store_merge_samples(comm, this, m);
   }
- 
+
   //note: this is not an error, since data readers for a single model
   //      may be of different types (e.g, pilot2 has merge_samples and
   //      pilot2 readers), and it's possible that we don't want to use
