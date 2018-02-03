@@ -60,9 +60,13 @@ class objective_function {
   void setup(model& m);
 
   /** Evaluate the objective function.
-   *  The result is stored in history.
+   *  This function takes the model's current mini-batch size. If
+   *  multiple models are being trained, the current mini-batch size
+   *  may be different from the effective mini-batch size. The result
+   *  is stored in history.
    */
-  EvalType evaluate(execution_mode mode);
+  EvalType evaluate(execution_mode mode,
+                    int mini_batch_size);
 
   /** Compute the objective function gradient.
    *  The gradient is with respect to the objective function inputs
@@ -80,8 +84,8 @@ class objective_function {
   void reset_statistics(execution_mode mode) { m_statistics.erase(mode); }
 
   /** Get mean objective function value.
-   *  The mean is over the mini-batches, even if the mini-batch sizes
-   *  are not identical.
+   *  This is a weighted average such that each mini-batch sample makes
+   *  an equal contribution.
    */
   EvalType get_mean_value(execution_mode mode) const;
   /** Get number of samples for statistics. */
