@@ -25,10 +25,10 @@ add_definitions(-std=c++11)
 add_definitions(-DLBANN_HAS_OPENCV)
 
 
-list(APPEND OpenCV_DIR /usr/local/tools/opencv-3.0.0)
-list(APPEND OpenCV_DIR /usr)
-find_package(OpenCV QUIET HINTS ${OpenCV_DIR})
-message(STATUS "OpenCV_DIR: ${OpenCV_DIR}")
+#list(APPEND OpenCV_DIR /usr/local/tools/opencv-3.0.0)
+#list(APPEND OpenCV_DIR /usr)
+#find_package(OpenCV QUIET HINTS ${OpenCV_DIR})
+#message(STATUS "OpenCV_DIR: ${OpenCV_DIR}")
 
 if(NOT OpenCV_FOUND)
   set(OpenCV_DIR ${LBANN_BUILD_DIR})
