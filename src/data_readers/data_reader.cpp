@@ -102,7 +102,6 @@ int lbann::generic_data_reader::fetch_data(Mat& X) {
   }
 
   else {
-
     #pragma omp parallel for
     for (int s = 0; s < mb_size; s++) {
       // Catch exceptions within the OpenMP thread.
@@ -306,10 +305,10 @@ int generic_data_reader::get_current_global_mini_batch_size() const {
 }
 
 int generic_data_reader::get_next_position() const {
-  /// Is the mini-batch that is finishing corresponds to the second to
-  /// last mini-batch, take the proper (possibly reduced) step to
+  /// If the next mini-batch for this rank is going to be the last
+  /// mini-batch, take the proper (possibly reduced) step to
   /// setup for the last mini-batch
-  if (m_loaded_mini_batch_idx == (m_num_iterations_per_epoch-2)) {
+  if ((m_current_mini_batch_idx + m_iteration_stride - 1) == (m_num_iterations_per_epoch-1)) {
     return m_current_pos + m_stride_to_last_mini_batch;
   } else {
     return m_current_pos + m_stride_to_next_mini_batch;
