@@ -27,6 +27,8 @@
 
 #include "lbann/data_readers/offline_patches_npz.hpp"
 #include "lbann/utils/file_utils.hpp"
+#include "lbann/utils/cnpy_utils.hpp"
+#include <set>
 
 namespace lbann {
 
@@ -64,8 +66,8 @@ bool offline_patches_npz::load(const std::string filename, size_t first_n) {
   }
 
   if (first_n > 0u) { // to use only first_n samples
-    shrink_to_fit(dataset["item_root_list"], first_n);
-    shrink_to_fit(dataset["item_variant_list"], first_n);
+    cnpy_utils::shrink_to_fit(dataset["item_root_list"], first_n);
+    cnpy_utils::shrink_to_fit(dataset["item_variant_list"], first_n);
   }
   // Set the array of index sequences for root type
   m_item_root_list = dataset["item_root_list"];
@@ -83,7 +85,7 @@ bool offline_patches_npz::load(const std::string filename, size_t first_n) {
       const size_t num_samples = m_item_root_list.shape[0];
       m_item_class_list.resize(num_samples);
       for (size_t i=0u; i < num_samples; ++i) {
-        std::string digits(data_ptr<char>(d_item_class_list, {i}), d_item_class_list.word_size);
+        std::string digits(cnpy_utils::data_ptr<char>(d_item_class_list, {i}), d_item_class_list.word_size);
         m_item_class_list[i] = static_cast<label_t>(atoi(digits.c_str()));
       }
     }
@@ -98,7 +100,7 @@ bool offline_patches_npz::load(const std::string filename, size_t first_n) {
       const size_t num_roots = d_file_root_list.shape[0];
       m_file_root_list.resize(num_roots);
       for (size_t i=0u; i < num_roots; ++i) {
-        std::string file_root(data_ptr<char>(d_file_root_list, {i}), d_file_root_list.word_size);
+        std::string file_root(cnpy_utils::data_ptr<char>(d_file_root_list, {i}), d_file_root_list.word_size);
         m_file_root_list[i] = std::string(file_root.c_str());
       }
     }
@@ -114,7 +116,7 @@ bool offline_patches_npz::load(const std::string filename, size_t first_n) {
       const size_t num_variants = d_file_variant_list.shape[0];
       m_file_variant_list.resize(num_variants);
       for (size_t i=0u; i < num_variants; ++i) {
-        std::string file_variant(data_ptr<char>(d_file_variant_list, {i}), d_file_variant_list.word_size);
+        std::string file_variant(cnpy_utils::data_ptr<char>(d_file_variant_list, {i}), d_file_variant_list.word_size);
         m_file_variant_list[i] = std::string(file_variant.c_str());
       }
     }
@@ -157,29 +159,14 @@ std::string offline_patches_npz::get_description() const {
   using std::string;
   using std::to_string;
   string ret = string("offline_patches_npz:\n")
-    + " - item_root_list: "    + show_shape(m_item_root_list) + "\n"
-    + " - item_variant_list: " + show_shape(m_item_variant_list) + "\n"
+    + " - item_root_list: "    + cnpy_utils::show_shape(m_item_root_list) + "\n"
+    + " - item_variant_list: " + cnpy_utils::show_shape(m_item_variant_list) + "\n"
     + " - item_class_list: "   + to_string(m_item_class_list.size()) + "\n"
     + " - file_root_list: "    + to_string(m_file_root_list.size()) + "\n"
     + " - file_variant_list: " + to_string(m_file_variant_list.size()) + "\n"
     + " - variant_divider: "   + m_variant_divider + "\n"
     + " - num of samples: "    + to_string(get_num_samples()) + "\n"
     + " - num of patches: "    + to_string(m_num_patches) + "\n";
-  return ret;
-}
-
-
-std::string offline_patches_npz::show_shape(const cnpy::NpyArray& na) {
-  std::string ret;
-  for (const size_t s: na.shape) {
-    ret += std::to_string(s) + 'x';
-  }
-  if (ret.size() == 0u) {
-    return "empty";
-  } else {
-    ret.pop_back(); // remove the last 'x'
-    ret += " " + std::to_string(na.word_size);
-  }
   return ret;
 }
 
@@ -192,7 +179,7 @@ offline_patches_npz::sample_t offline_patches_npz::get_sample(const size_t idx) 
   std::vector<std::string> file_names;
 
   for (size_t p = 0u; p < m_num_patches; ++p) {
-    const size_t root = data<size_t>(m_item_root_list, {idx, p});
+    const size_t root = cnpy_utils::data<size_t>(m_item_root_list, {idx, p});
     if (root >= m_file_root_list.size()) {
       using std::to_string;
       throw lbann_exception("offline_patches_npz: invalid file_root_list index: "
@@ -200,7 +187,7 @@ offline_patches_npz::sample_t offline_patches_npz::get_sample(const size_t idx) 
     }
     std::string file_name = m_file_root_list.at(root);
 
-    const size_t* variant = &(data<size_t>(m_item_variant_list, {idx, p, 0u}));
+    const size_t* variant = &(cnpy_utils::data<size_t>(m_item_variant_list, {idx, p, 0u}));
     const int ve = m_item_variant_list.shape.back()-1;
     for (int i = 0; i < ve; ++i) {
       file_name += m_file_variant_list.at(variant[i]) + m_variant_divider;
@@ -220,38 +207,5 @@ offline_patches_npz::label_t offline_patches_npz::get_label(const size_t idx) co
 
   return m_item_class_list[idx];
 }
-
-
-size_t offline_patches_npz::compute_cnpy_array_offset(
-  const cnpy::NpyArray& na, const std::vector<size_t> indices) {
-
-  bool ok = (indices.size() == na.shape.size());
-  size_t unit_stride = 1u;
-  size_t offset = 0u;
-
-  for (size_t i = indices.size(); ok && (i-- > 0u); ) {
-    ok = (indices[i] < na.shape[i]);
-    offset += indices[i] * unit_stride;
-    unit_stride *= na.shape[i];
-  }
-  if (!ok) {
-    throw lbann_exception("offline_patches_npz: invalid data index");
-  }
-  return offset;
-}
-
-
-void offline_patches_npz::shrink_to_fit(cnpy::NpyArray& na, size_t sz) {
-  if ((na.shape.size() == 0u) || (na.shape[0] <= sz)) return;
-  size_t new_size = sz;
-  for(size_t i = 1u; i < na.shape.size(); ++i) {
-    new_size *= na.shape[i];
-  }
-  na.data_holder->resize(new_size*na.word_size);
-  na.data_holder->shrink_to_fit();
-  na.num_vals = new_size;
-  na.shape[0] = sz;
-}
-
 
 } // end of namespace lbann
