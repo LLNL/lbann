@@ -8,8 +8,6 @@ set(LBANN_DIR ../..)
 set(LBANN_BUILD_DIR ${LBANN_DIR}/build/${COMPILER}.${CLUSTER}.llnl.gov/install)
 include(${LBANN_DIR}/cmake/modules/SetupMPI.cmake)
 include(${LBANN_DIR}/cmake/modules/SetupOpenMP.cmake)
-include_directories(SYSTEM ${LBANN_INCLUDE_DIRS})
-include_directories(SYSTEM ${LBANN_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 set(COMPUTE_MEAN_EXE compute_mean)

@@ -7,6 +7,7 @@
 #include <algorithm>
 #include "lbann/data_readers/image_utils.hpp"
 #include "lbann/data_readers/cv_process.hpp"
+#include "lbann/utils/file_utils.hpp"
 
 
 struct cropper_params {
@@ -163,36 +164,6 @@ void show_image_size(const int width, const int height, const int type) {
   std::cout << "Total bytes                    : " << width *height *NCh *esz << std::endl;
 }
 
-std::string get_file_extention(const std::string filename) {
-  size_t pos = filename.find_last_of('.');
-  if (pos == 0u) {
-    return "";
-  }
-  return filename.substr(pos+1, filename.size());
-}
-
-bool read_file(const std::string filename, std::vector<unsigned char>& buf) {
-  std::ifstream file(filename, std::ios::binary);
-  if (!file.good()) {
-    return false;
-  }
-
-  file.unsetf(std::ios::skipws);
-
-  file.seekg(0, std::ios::end);
-  const std::streampos file_size = file.tellg();
-
-  file.seekg(0, std::ios::beg);
-
-  buf.reserve(file_size);
-
-  buf.insert(buf.begin(),
-             std::istream_iterator<unsigned char>(file),
-             std::istream_iterator<unsigned char>());
-
-  return true;
-}
-
 void write_file(const std::string filename, const std::vector<unsigned char>& buf) {
   std::ofstream file(filename, std::ios::out | std::ios::binary);
   file.write((const char *) buf.data(), buf.size() * sizeof(unsigned char));
@@ -272,7 +243,7 @@ bool test_image_io(const std::string filename,
 
   // Load an image bytestream into memory
   std::vector<unsigned char> buf;
-  bool ok = read_file(filename, buf);
+  bool ok = lbann::load_file(filename, buf);
   if (!ok) {
     std::cout << "Failed to load" << std::endl;
     return false;
@@ -298,9 +269,10 @@ bool test_image_io(const std::string filename,
     if (num_bytes == 0) {
       ok = lbann::image_utils::import_image(inbuf, width, height, type, pp, Images);
       num_bytes = Images.Height();
-      View(Image_v, Images, 0, 0, num_bytes, 1);
+      El::View(Image_v, Images, 0, 0, num_bytes, 1);
     } else {
-      View(Image_v, Images, 0, 0, num_bytes, 1);
+      El::View(Image_v, Images, 0, 0, num_bytes, 1);
+      //ok = lbann::image_utils::import_image(buf, width, height, type, pp, Image_v);
       ok = lbann::image_utils::import_image(inbuf, width, height, type, pp, Image_v);
     }
     if (!ok) {
@@ -329,7 +301,7 @@ bool test_image_io(const std::string filename,
   }
 
   // Export the unnormalized image
-  const std::string ext = get_file_extention(filename);
+  const std::string ext = lbann::get_ext_name(filename);
   std::vector<unsigned char> outbuf;
   ok = lbann::image_utils::export_image(ext, outbuf, width, height, type, pp, Image_v);
   write_file("copy." + ext, outbuf);

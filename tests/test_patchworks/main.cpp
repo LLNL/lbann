@@ -9,6 +9,7 @@
 #include "lbann/utils/random.hpp"
 #include "lbann/data_readers/patchworks/patchworks.hpp"
 #include "patchworks_image.hpp"
+#include "lbann/utils/file_utils.hpp"
 //#include <opencv2/cvconfig.h>
 
 
@@ -62,7 +63,7 @@ bool test_patch(const int argc, char *argv[]) {
     return false;
   }
 
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
   // load input image
   image *img = new image(filename);
   if (img->empty()) {
@@ -109,7 +110,7 @@ bool test_patch(const int argc, char *argv[]) {
  #endif
 
   std::string patched_filename = basename_with_no_extention(filename)
-                                 + ".patched." + get_file_extention(filename);
+                                 + ".patched." + lbann::get_ext_name(filename);
   ok = img->write(patched_filename);
   if (!ok) {
     std::cout << "failed to write patch map" << std::endl;
@@ -119,5 +120,5 @@ bool test_patch(const int argc, char *argv[]) {
   return true;
 #else
   return false;
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV
 }

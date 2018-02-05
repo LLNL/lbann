@@ -101,7 +101,8 @@ void metric::setup(model& m) {
 
 }
 
-EvalType metric::evaluate(execution_mode mode) {
+EvalType metric::evaluate(execution_mode mode,
+                          int mini_batch_size) {
 
   // Check if target layer pointer has been setup
   if (m_target_layer == nullptr) {
@@ -112,7 +113,6 @@ EvalType metric::evaluate(execution_mode mode) {
   }
 
   // Evaluate objective function
-  const int mini_batch_size = m_target_layer->get_prediction().Width();
   const EvalType total_value = evaluate_compute(m_target_layer->get_prediction(),
                                                 m_target_layer->get_ground_truth());
 
