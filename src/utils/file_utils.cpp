@@ -35,7 +35,7 @@ namespace lbann {
 const std::string path_delimiter::characters = "/";
 
 
-std::vector<int> get_tokens(const std::vector<char> delims, std::string str) {
+std::vector<int> get_tokens(std::string str, const std::vector<char> delims) {
   std::vector<int> tokens;
   size_t pos;
 
@@ -50,6 +50,21 @@ std::vector<int> get_tokens(const std::vector<char> delims, std::string str) {
   }
 
   return tokens;
+}
+
+std::vector<std::string> get_tokens(const std::string str, const std::string delims) {
+  std::vector<std::string> parsed;
+  size_t pos_start = 0u;
+  size_t pos_end = 0u;
+
+  while ((pos_end != std::string::npos) && (pos_start != std::string::npos)) {
+    pos_start = str.find_first_not_of(delims, pos_end);
+    if (pos_start != std::string::npos) {
+      pos_end = str.find_first_of(delims, pos_start);
+      parsed.push_back(str.substr(pos_start, (pos_end-pos_start)));
+    }
+  }
+  return parsed;
 }
 
 /// Divide a given path into dir and basename.
