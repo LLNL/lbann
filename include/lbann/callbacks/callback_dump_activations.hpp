@@ -37,12 +37,14 @@ namespace lbann {
 
 /**
  * Dump activations matrices to files.
- * This will dump each hidden layer's activation matrix after each minibatch.
+ * This will dump each or selected hidden layer's activation matrix after each minibatch or 
+ * at the end of an epoch.
  * The matrices are written to files using Elemental's simple ASCII format. This
  * is not meant for checkpointing, but for exporting acitvation matrices for
  * analysis that isn't easily done in LBANN.
- * Note this dumps matrices during each mini-batch. This will be slow and
- * produce a lot of output.
+ * This will be slow and produce a lot of output if matrices are dumped during each minibatch.
+ * If list of layers at which to dump activations is provided, activations/inferences will be dumped 
+ * at the end of testing
  */
 class lbann_callback_dump_activations : public lbann_callback {
  public:
@@ -51,8 +53,9 @@ class lbann_callback_dump_activations : public lbann_callback {
   /**
    * @param basename The basename for writing files.
    */
-  lbann_callback_dump_activations(std::string basename, int batch_interval = 1) :
-    lbann_callback(batch_interval), m_basename(std::move(basename)) {}
+  lbann_callback_dump_activations(std::string basename, int batch_interval = 1, 
+    std::vector<std::string> layer_names=std::vector<std::string>()) :
+    lbann_callback(batch_interval), m_basename(std::move(basename)), m_layer_names(layer_names) {}
   lbann_callback_dump_activations(
     const lbann_callback_dump_activations&) = default;
   lbann_callback_dump_activations& operator=(
@@ -61,10 +64,15 @@ class lbann_callback_dump_activations : public lbann_callback {
     return new lbann_callback_dump_activations(*this);
   }
   void on_forward_prop_end(model *m, Layer *l) override;
+  /** Write activations/inferences to file on test end. */
+  void on_test_end(model *m) override;
   std::string name() const override { return "dump activations"; }
  private:
   /** Basename for writing files. */
   std::string m_basename;
+  /** List of layers at which to save activations/inferences*/
+  std::vector<std::string> m_layer_names;
+
 };
 
 }  // namespace lbann
