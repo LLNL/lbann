@@ -38,8 +38,10 @@ namespace cnpy_utils {
 /**
  * Return the offset to the element (in terms of the number of elements from
  * the beginning of the array) of a loaded numpy array na specified by indices
+ * If the number of indices is less than the dimension of na array, the indices
+ * vector is appended with zeros to match the dimension.
  */
-size_t compute_cnpy_array_offset(const cnpy::NpyArray& na, const std::vector<size_t> indices);
+size_t compute_cnpy_array_offset(const cnpy::NpyArray& na, std::vector<size_t> indices);
 
 
 /**
@@ -49,7 +51,7 @@ size_t compute_cnpy_array_offset(const cnpy::NpyArray& na, const std::vector<siz
 template<typename T>
 inline T& data(const cnpy::NpyArray& na, const std::vector<size_t> indices) {
   if ((sizeof(T) != na.word_size) && (sizeof(T) != 1u)) {
-    throw lbann_exception("The data type is not consistent with the word size of the array.");
+    throw lbann_exception("cnpy_utils::data() : The data type is not consistent with the word size of the array.");
   }
   const size_t offset = compute_cnpy_array_offset(na, indices)
                         * ((sizeof(T) == 1u)? na.word_size : 1u);
@@ -64,7 +66,7 @@ inline T& data(const cnpy::NpyArray& na, const std::vector<size_t> indices) {
 template<typename T>
 inline T* data_ptr(const cnpy::NpyArray& na, const std::vector<size_t> indices) {
   if ((sizeof(T) != na.word_size) && (sizeof(T) != 1u)) {
-    throw lbann_exception("The data type is not consistent with the word size of the array.");
+    throw lbann_exception("cnpy_utils::data_ptr() : The data type is not consistent with the word size of the array.");
   }
   const size_t offset = compute_cnpy_array_offset(na, indices)
                         * ((sizeof(T) == 1u)? na.word_size : 1u);
