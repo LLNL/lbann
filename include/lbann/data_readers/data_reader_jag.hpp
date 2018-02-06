@@ -64,9 +64,8 @@ class data_reader_jag : public generic_data_reader {
     return "data_reader_jag";
   }
 
-  void set_model_mode(const model_mode_t mm) {
-    m_model_mode = mm;
-  }
+  /// Set the modeling mode: Inverse, AutoI, or AutoS
+  void set_model_mode(const model_mode_t mm);
 
   /// Load data and do data reader's chores.
   void load() override;

@@ -52,6 +52,14 @@ data_reader_jag::data_reader_jag(bool shuffle)
 data_reader_jag::~data_reader_jag() {
 }
 
+void data_reader_jag::set_model_mode(const model_mode_t mm) {
+  if (static_cast<int>(AutoS) < static_cast<int>(mm)) {
+    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+      " :: unrecognized mode " + std::to_string(static_cast<int>(mm)));
+  }
+  m_model_mode = mm;
+}
+
 size_t data_reader_jag::get_num_samples() const {
   return m_num_samples;
 }
@@ -146,7 +154,7 @@ const std::vector<int> data_reader_jag::get_data_dims() const {
 
 
 void data_reader_jag::load() {
-  const std::string data_dir = get_file_dir();
+  const std::string data_dir = add_delimiter(get_file_dir());
   const std::string namestr = get_data_filename();
   std::vector<std::string> file_names = get_tokens(namestr);
   if (file_names.size() != 3u) {
@@ -155,6 +163,9 @@ void data_reader_jag::load() {
       " :: unexpected number of files " + std::to_string(file_names.size()));
   }
 
+  for(auto& str : file_names) {
+    str = data_dir + str;
+  }
   load(file_names[0], file_names[1], file_names[2], m_first_n);
 
   size_t num_samples = get_num_samples();

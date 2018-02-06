@@ -1861,6 +1861,11 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
                (name == "triplet") || (name == "mnist_siamese") || (name == "multi_images")) {
       init_image_data_reader(readme, master, reader);
       set_up_generic_preprocessor = false;
+    } else if (name == "jag") {
+      auto* reader_jag = new data_reader_jag(shuffle);
+      reader_jag->set_model_mode(static_cast<data_reader_jag::model_mode_t>(readme.modeling_mode()));
+      reader = reader_jag;
+      set_up_generic_preprocessor = false;
     } else if (name == "nci") {
       reader = new data_reader_nci(shuffle);
     } else if (name == "csv") {
@@ -2000,6 +2005,9 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
         reader_validation = new data_reader_mnist_siamese(*dynamic_cast<const data_reader_mnist_siamese*>(reader));
       } else if (name == "multi_images") {
         reader_validation = new data_reader_multi_images(*dynamic_cast<const data_reader_multi_images*>(reader));
+      } else if (name == "jag") {
+        reader_validation = new data_reader_jag(shuffle);
+        *dynamic_cast<data_reader_jag*>(reader_validation) = *dynamic_cast<const data_reader_jag*>(reader);
       } else if (name == "nci") {
         reader_validation = new data_reader_nci(shuffle);
         (*(data_reader_nci *)reader_validation) = (*(data_reader_nci *)reader);
