@@ -71,6 +71,11 @@ inline T* data_ptr(const cnpy::NpyArray& na, const std::vector<size_t> indices) 
   return (reinterpret_cast<T*>(&(* na.data_holder)[0]) + offset);
 }
 
+template<>
+inline void* data_ptr<void>(const cnpy::NpyArray& na, const std::vector<size_t> indices) {
+  return data_ptr<uint8_t>(na, indices);
+}
+
 
 /**
  * Shrink the first dimension of cnpy::NpyArray to the given size.

@@ -448,6 +448,8 @@ message CallbackDumpWeights {
 message CallbackDumpActivations {
   string basename = 1;
   int64 interval = 2;
+  string layer_names = 3; //layer(s) at which to dump activations e.g., "relu1 relu4 relu12"
+  
 }
 
 message CallbackDumpGradients {

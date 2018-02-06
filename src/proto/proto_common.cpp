@@ -1221,9 +1221,17 @@ void init_callbacks(
       const lbann_data::CallbackDumpActivations& c = callback.dump_activations();
       if (master) {
         std::cout << "adding dump activations callback with basename: " << c.basename()
-                  << " and interval: " << c.interval() << std::endl;
+                  << " and interval: " << c.interval() 
+                  << " and layer names " << c.layer_names() << std::endl;
       }
-      lbann_callback_dump_activations *activations_cb = new lbann_callback_dump_activations(c.basename(), c.interval());
+      std::vector<std::string> layer_names;
+      std::stringstream ss;
+      std::string name;
+      ss.str(c.layer_names());
+      while (ss >> name) {
+        layer_names.push_back(name);
+      }
+      lbann_callback_dump_activations *activations_cb = new lbann_callback_dump_activations(c.basename(), c.interval(),layer_names);
       model->add_callback(activations_cb);
     }
 
