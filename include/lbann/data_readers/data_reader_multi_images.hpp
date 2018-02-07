@@ -93,7 +93,7 @@ class data_reader_multi_images : public imagenet_reader {
   /// The number of image sources or the number of siamese heads. e.g., 2;
   /// this method is added to support data_store functionality
   unsigned int get_num_img_src() {
-    return m_num_img_srcs
+    return m_num_img_srcs;
   }
 
  protected:
