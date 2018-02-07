@@ -138,6 +138,218 @@ Users then define which callbacks to include when running their model. Callbacks
 \endcode
 These callacks time the model, and print summary statistics during training. 
 
+Example callback usage can be found below. Latest callbacks may not yet have an example, but can be found here \ref Callback "Callbacks".
+
+
+\subsubsection checkdata Check Dataset
+    \copydetails lbann::lbann_callback_check_dataset
+    Check Dataset has no parameters to specify. To add: 
+    \code{.sh}       
+      callback { check_dataset {} }
+    \endcode
+#\subsubsection checkinit Check Initialization
+#    \copydetails lbann::lbann_callback_check_init
+#    Check Initialization has no parameters to specify. To add:   
+#     \code{.sh}
+#       callback { check_init {} }
+#     \endcode
+\subsubsection checkreconstruction Check Reconstruction
+    \copydetails lbann::lbann_callback_check_reconstruction_error
+    Check Reconstruction Error has no parameters to specify. To add:
+    \code{.sh}
+      callback { check_reconstruction_error {} }
+    \endcode
+
+\subsubsection checknan Check NAN
+    \copydetails lbann::lbann_callback_checknan
+     Check NaN has no parameters to specify. To add:
+     \code{.sh}
+       callback { checknan {} }
+     \endcode      
+
+\subsubsection checksmall Check Small
+    \copydetails lbann::lbann_callback_checksmall
+    Check Small has no parameters to specify. To add:
+    \code{.sh}
+      callback { checksmall {} }
+    \endcode   
+    
+
+\subsubsection dump_acts Dump Activations
+    \copydetails lbann::lbann_callback_dump_activations
+    Dump Activations parameters: basename: directory name activations dump to. interval: interval on which activations are reported. layer_names: at which layers to report activations.    
+     \code{.sh}
+     callback { 
+       dump_activations {
+         basename: "debug_example/"
+         interval: 1
+         layer_names: "relu1 relu4" 
+       } 
+     }
+     \endcode
+
+\subsubsection dump_grads Dump Gradients
+    \copydetails lbann::lbann_callback_dump_gradients
+     Dump Gradients parameters: basename: directory name activations dump to. interval: interval on which activations are reported.
+      \code{.sh}
+      callback { 
+        dump_gradients {
+          basename: "debug_example/"
+          interval: 1
+         }
+      }
+      \endcode       
+
+\subsubsection dump_mb_sample_indices Dump Minibatch Sample Indices
+    \copydetails lbann::lbann_callback_dump_minibatch_sample_indices
+      
+      Dump Mini Batch Indices parameters: basename: directory name activations dump to. interval: interval on which activations are reported.
+       \code{.sh}
+        callback { 
+          dump_mb_indices {
+            basename: "debug_example/"
+            interval: 1
+          }
+        }
+       \endcode
+
+\subsubsection dump_weights Dump Weights
+    \copydetails lbann::lbann_callback_dump_weights
+      
+       Dump Weights parameters -  basename: directory name activations dump to. interval: interval on which activations are reported.
+        \code{.sh}
+         callback {  
+           dump_weights {
+             basename: "debug_example/"
+             interval: 1
+           } 
+         }
+        \endcode
+
+#\subsubsection earlystop Early Stopping
+#    \copydetails lbann::lbann_callback_early_stopping
+#       
+#    Implementation details: lbann::lbann_callback_early_stopping
+
+\subsubsection gradientcheck Gradient Check
+    \copydetails lbann::lbann_callback_gradient_check
+    Gradient Check parameters - step_size: - . verbose: Verbose output. fail_on_error: end execution if gradient check results in error.
+    \code{.sh}
+    callback {
+      gradient_check {
+        verbose: false
+        fail_on_error: true
+      }
+    }      
+    \endcode
+\subsubsection hang Hang
+    \copydetails lbann::lbann_callback_hang
+    Hang parameter - rank: Hanging rank. -1 hangs every rank
+    \code{.sh}    
+    callback {
+      hang {
+        rank: -1
+      }
+    }   
+    \endcode
+
+\subsubsection im_comm Inter-model Communication
+    \copydetails lbann::lbann_callback_imcomm
+    Inter-model Communication parameters - intermodel_comm_method: method of intermodel communication. all_optimizers: apply this callback to all optimizers
+    \code{.sh}
+    callback {
+      imcomm {
+        intermodel_comm_method: "normal"
+        all_optimizers: true
+      }
+    }
+    \endcode
+
+#\subsubsection io Print IO
+#    \copydetails lbann::lbann_callback_io
+#      
+#
+\subsubsection adaptive_learning_rate Adaptive Learning Rate
+    \copydetails lbann::lbann_callback_adaptive_learning_rate
+    Adaptive Learning Rate parameters - weights: default applies to all weights. patience: number of epochs until learning rate is lowered when no improvement is seen. amt: learning rate interval  
+    \code{.sh}
+    callback {
+      adaptive_learning_rate {
+        patience: 4
+        amt: 0.1
+      }
+    }
+    \endcode
+\subsubsection LTFB Manage LTFB
+    \copydetails lbann::lbann_callback_ltfb
+    LTFB parameter - round_size: set tournament round size
+    \code{.sh}
+    callback {
+      ltfb {
+        round_size: 4
+      }
+    }
+    \endcode  
+
+\subsubsection print_acc Print Accuracy
+    \copydetails lbann::lbann_callback_print
+    Print parameter - interval: interval with which to print accuracy.
+    \code{.sh}
+    callback{
+      print {
+        interval: 1
+      }
+    }
+    \endcode
+
+\subsubsection save_images Save Images
+    \copydetails lbann::lbann_callback_save_images
+    Save Images parameters - image_dir: directory to save images to. extension: image file extension.
+     \code{.sh}
+     callback{
+       save_images {
+         image_dir: "example_image_dir/"
+         extension: "png"
+       }
+     }
+     \endcode    
+
+\subsubsection summary Summary
+    \copydetails lbann::lbann_callback_summary
+    Summary parameters - dir: directory for the summary. batch_interval: interval for batch summarization. mat_interval: interval for matrix summarization 
+    \code{.sh}
+    callback {
+      summary {
+        dir: "."
+        batch_interval: 1
+        mat_interval: 25
+      }
+    }
+    \endcode  
+
+\subsubsection timer Timer
+    \copydetails lbann::lbann_callback_timer
+    Timer has no parameters.
+    \code{.sh}
+    callback { timer{} }  
+    \endcode
+
+\subsubsection dbg Debug
+    \copydetails lbann::lbann_callback_debug
+    Debug parameter - phase: - which execution mode to debug.
+    \code{.sh}
+      callback{
+        debug{
+          phase: test
+        }
+      }
+    \endoce
+
+#\subsubsection variable_mb Variable Minibatch
+#    \copydetails lbann::lbann_callback_variable_minibatch
+#    Variable Minibatch parameter
+
+
 \subsection layers Layers
 Finally, layers describe the actual model architecture. LBANN has a variety of layer types, and within these layers there are many parameters a user may set. These can be found here, \ref Layer "Layers".
 
