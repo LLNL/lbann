@@ -1,4 +1,4 @@
-import os, pytest
+import os, pytest, sys
 
 def test_checkpoint_lenet(exe, dirname):
     slurm_cmd = 'srun -n1'

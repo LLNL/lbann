@@ -1,3 +1,0 @@
-Model_name,  max_epoch_time, max_mean_minibatch_time, max_max_time, max_min_time, max_stdev, min_accuracy
-alexnet,     368.67,         0.75,                    3.50,         0.55,         0.27,      1.01
-lenet_mnist, 15.74,          0.04,                    0.11,         0.04,         0.01,      98.66

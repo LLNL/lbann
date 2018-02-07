@@ -154,9 +154,6 @@ class generic_input_layer : public io_layer {
     }
 
     int max_mb_size = this->m_model->get_max_mini_batch_size();
-    #ifdef LBANN_DEBUG
-    std::cout << "Setting up data for the input layer " << io_layer::m_data_set_spans_models << std::endl;
-    #endif
     if(io_layer::m_data_set_spans_models) {
       calculate_num_iterations_per_epoch_training_spans_models(max_mb_size);
     } else {
@@ -206,11 +203,27 @@ class generic_input_layer : public io_layer {
         update_num_samples_processed(num_samples_in_batch);
       }
 
+      int expected_num_samples_in_batch = this->m_model->get_current_mini_batch_size();
+
       /// Let each rank know this size of the current mini-batch
       /// Note that this field has to be updated before distributing the data
-      this->m_model->set_current_mini_batch_size(Layer::m_comm->model_broadcast(((distributed_io_buffer*) io_buffer)->current_root_rank(mode), num_samples_in_batch));
+      num_samples_in_batch = Layer::m_comm->model_broadcast(((distributed_io_buffer*) io_buffer)->current_root_rank(mode), num_samples_in_batch);
+      this->m_model->set_current_mini_batch_size(num_samples_in_batch
+                                                 + get_current_world_master_mini_batch_adjustment(m_comm->get_model_rank()));
 
       io_buffer->distribute_from_local_matrix(get_activations(), get_data_reader(), mode);
+
+      if(num_samples_in_batch !=
+         (expected_num_samples_in_batch - get_current_world_master_mini_batch_adjustment(m_comm->get_model_rank()))) {
+        std::stringstream err;
+        err << __FILE__ << " " << __LINE__ << " :: "
+            << "I/O layers number of samples processed ("<< num_samples_in_batch
+            <<") does not match the mini-batch size ("
+            << (expected_num_samples_in_batch -
+                get_current_world_master_mini_batch_adjustment(m_comm->get_model_rank()))
+            << ")";
+        throw lbann_exception(err.str());
+      }
     }else {
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
@@ -259,7 +272,7 @@ class generic_input_layer : public io_layer {
 
   virtual int get_num_parallel_readers(execution_mode mode) const {
     const generic_data_reader *data_reader = get_data_reader(mode);
-    return data_reader->get_num_parallel_readers();
+    return (data_reader != nullptr) ? data_reader->get_num_parallel_readers() : 0;
   }
 
   virtual int get_num_parallel_readers() const {
@@ -268,7 +281,7 @@ class generic_input_layer : public io_layer {
 
   virtual int get_num_iterations_per_epoch(execution_mode mode) const {
     const generic_data_reader *data_reader = get_data_reader(mode);
-    return data_reader->get_num_iterations_per_epoch();
+    return (data_reader != nullptr) ? data_reader->get_num_iterations_per_epoch() : 0;
   }
 
   virtual int get_num_iterations_per_epoch() const {
@@ -277,7 +290,7 @@ class generic_input_layer : public io_layer {
 
   virtual int get_current_step_in_epoch(execution_mode mode) const {
     const generic_data_reader *data_reader = get_data_reader(mode);
-    return data_reader->get_current_step_in_epoch();
+    return (data_reader != nullptr) ? data_reader->get_current_step_in_epoch() : 0;
   }
 
   virtual int get_current_step_in_epoch() const {
@@ -286,12 +299,12 @@ class generic_input_layer : public io_layer {
 
   virtual int get_mini_batch_size(execution_mode mode) const {
     const generic_data_reader *data_reader = get_data_reader(mode);
-    return data_reader->get_mini_batch_size();
+    return (data_reader != nullptr) ? data_reader->get_mini_batch_size() : 0;
   }
 
   virtual int get_last_mini_batch_size(execution_mode mode) const {
     const generic_data_reader *data_reader = get_data_reader(mode);
-    return data_reader->get_last_mini_batch_size();
+    return (data_reader != nullptr) ? data_reader->get_last_mini_batch_size() : 0;
   }
 
   virtual int get_last_mini_batch_size() const {
@@ -300,7 +313,7 @@ class generic_input_layer : public io_layer {
 
   virtual int get_current_mini_batch_size(execution_mode mode) const {
     const generic_data_reader *data_reader = get_data_reader(mode);
-    return data_reader->get_current_mini_batch_size();
+    return (data_reader != nullptr) ? data_reader->get_current_mini_batch_size() : 0;
   }
 
   virtual int get_current_mini_batch_size() const {
@@ -309,21 +322,39 @@ class generic_input_layer : public io_layer {
 
   virtual int get_global_mini_batch_size(execution_mode mode) const {
     const generic_data_reader *data_reader = get_data_reader(mode);
-    return data_reader->get_global_mini_batch_size();
+    return (data_reader != nullptr) ? data_reader->get_global_mini_batch_size() : 0;
   }
 
   virtual int get_global_last_mini_batch_size(execution_mode mode) const {
     const generic_data_reader *data_reader = get_data_reader(mode);
-    return data_reader->get_global_last_mini_batch_size();
+    return (data_reader != nullptr) ? data_reader->get_global_last_mini_batch_size() : 0;
   }
 
   virtual int get_current_global_mini_batch_size(execution_mode mode) const {
     const generic_data_reader *data_reader = get_data_reader(mode);
-    return data_reader->get_current_global_mini_batch_size();
+    return (data_reader != nullptr) ? data_reader->get_current_global_mini_batch_size() : 0;
   }
 
   virtual int get_current_global_mini_batch_size() const {
     return get_current_global_mini_batch_size(this->m_model->get_execution_mode());
+  }
+
+  virtual int get_world_master_mini_batch_adjustment(execution_mode mode) const {
+    const generic_data_reader *data_reader = get_data_reader(mode);
+    return (data_reader != nullptr) ? data_reader->get_world_master_mini_batch_adjustment() : 0;
+  }
+
+  virtual int get_world_master_mini_batch_adjustment() const {
+    return get_world_master_mini_batch_adjustment(this->m_model->get_execution_mode());
+  }
+
+  virtual int get_current_world_master_mini_batch_adjustment(execution_mode mode, int model_rank) const {
+    const generic_data_reader *data_reader = get_data_reader(mode);
+    return (data_reader != nullptr) ? data_reader->get_current_world_master_mini_batch_adjustment(model_rank) : 0;
+  }
+
+  virtual int get_current_world_master_mini_batch_adjustment(int model_rank) const {
+    return get_current_world_master_mini_batch_adjustment(this->m_model->get_execution_mode(), model_rank);
   }
 
   /** Calculate how many iterations are required for training, testing,
