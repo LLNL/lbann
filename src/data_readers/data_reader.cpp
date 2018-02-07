@@ -28,9 +28,7 @@
 
 #include "lbann/data_readers/data_reader.hpp"
 #include "lbann/data_store/data_store_imagenet.hpp"
-#include "lbann/data_store/data_store_merge_samples.hpp"
 #include "lbann/data_readers/data_reader_imagenet.hpp"
-#include "lbann/data_readers/data_reader_merge_samples.hpp"
 #include <omp.h>
 
 namespace lbann {
@@ -626,9 +624,6 @@ void generic_data_reader::setup_data_store(model *m, lbann_comm *comm) {
   if (dynamic_cast<imagenet_reader*>(this) != nullptr) {
     the_reader = dynamic_cast<imagenet_reader*>(this);
     m_data_store = new data_store_imagenet(comm, this, m);
-  } else if (dynamic_cast<data_reader_merge_samples*>(this) != nullptr) {
-    the_reader = dynamic_cast<data_reader_merge_samples*>(this);
-    m_data_store = new data_store_merge_samples(comm, this, m);
   }
 
   //note: this is not an error, since data readers for a single model
