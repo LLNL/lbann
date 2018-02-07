@@ -30,9 +30,9 @@
 #include "lbann/data_readers/data_reader_imagenet.hpp"
 #include "lbann/utils/options.hpp"
 #include "lbann/models/model.hpp"
-
-#undef DEBUG
-//#define DEBUG
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 namespace lbann {
 
@@ -41,7 +41,8 @@ generic_data_store::generic_data_store(lbann_comm *comm, generic_data_reader *re
     m_epoch(0),
     m_in_memory(true),
     m_comm(comm), m_master(comm->am_world_master()), m_reader(reader),
-    m_model(m)
+    m_model(m),
+    m_dir(".")
   {
   /*
     if (options::get()->has_bool("ds_in_memory")) {
@@ -51,14 +52,15 @@ generic_data_store::generic_data_store(lbann_comm *comm, generic_data_reader *re
   }
 
 void generic_data_store::setup() {
-
   set_shuffled_indices( &(m_reader->get_shuffled_indices()) );
-  m_num_global_indices = m_shuffled_indices->size();
+  set_num_global_indices(); //virtual override in child classes
   m_num_readers = m_reader->get_num_parallel_readers();
 
-  if (m_master) {
-    std::cerr << "calling m_model->collect_indices\n";
-  }
+  // get the set of global indices used by this processor in
+  // generic_data_reader::fetch_data(). Note that these are
+  // "original' indices, not shuffled indices, i.e, these indices
+  // remain constant through all epochs
+  if (m_master) { std::cerr << "calling m_model->collect_indices\n"; }
   m_reader->set_save_minibatch_entries(true);
   if (m_reader->get_role() == "train") {
     m_model->collect_indices(execution_mode::training);
@@ -74,37 +76,25 @@ void generic_data_store::setup() {
       throw lbann_exception(s2.str());
   }
   m_reader->set_save_minibatch_entries(false);
-  
+
   //@todo: when we get to not-in-memory mode, probably need to keep
   //       the vector<vector<>> representation. But for all-in-memory,
   //       only need the single m_my_minibatch_indices list.
-  const std::vector<std::vector<int> > indices = m_reader->get_minibatch_indices();
-  for (auto t1 : indices) {
-    for (auto t2 : t1) {
-      m_my_minibatch_indices.push_back(t2);
-    }
-  }
-
-  #ifdef DEBUG
-  std::stringstream s;
-  s << "debug_" << m_reader->get_role() << "_" << m_rank << ".txt";
-  std::ofstream out(s.str().c_str());
-  for (auto t : m_my_minibatch_indices) {
-    out << t << " ";
-  }
-  out.close();
-  #endif
-
-  get_my_datastore_indices();
+  m_minibatch_indices = &(m_reader->get_minibatch_indices());
 }
 
 
-void generic_data_store::get_my_datastore_indices() {
-  for (size_t j=0; j<m_num_global_indices; j++) {
-    if (j % m_num_readers == m_rank) {
-      m_my_datastore_indices.push_back((*m_shuffled_indices)[j]);
-    }
-  }    
+size_t generic_data_store::get_file_size(std::string dir, std::string fn) {
+  std::string imagepath = dir + fn;
+  struct stat st;
+  if (stat(imagepath.c_str(), &st) != 0) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "stat failed for dir: " << dir
+        << " and fn: " << fn;
+    throw lbann_exception(err.str());
+  }
+  return st.st_size;   
 }
 
 }  // namespace lbann

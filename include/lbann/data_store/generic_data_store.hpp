@@ -70,9 +70,6 @@ class generic_data_store {
 
   virtual void exchange_data() {}
 
-  /// for use during development and testing
-  virtual void test_data() {}
-
   void set_shuffled_indices(const std::vector<int> *indices) {
     m_shuffled_indices = indices;
     ++m_epoch;
@@ -82,30 +79,35 @@ class generic_data_store {
     //m_cur_idx = 0;
   }
 
-  virtual void get_data_buf(std::string dir, std::string filename, std::vector<unsigned char> *&buf, int tid) = 0;
-
-  virtual void get_data_buf(int data_id, std::vector<unsigned char> *&buf, int tid) = 0; 
-
-  /// for use during development and debugging
-  void print_indices(std::ostream &out);
-
-  /// for use during development and debugging
-  virtual void test_file_sizes() = 0;
+  /// image data readers call this method
+  virtual void get_data_buf(int data_id, std::vector<unsigned char> *&buf, int tid, int multi_idx = 0) {}
 
  protected :
+
+  /// returns the number of bytes in dir/fn
+  size_t get_file_size(std::string dir, std::string fn);
 
   /// number of indices that m_reader owns (in a global sense);
   /// equal to m_shuffled_indices->size()
   size_t m_num_global_indices;
 
-  /// the indices that will be used locally
-  std::vector<size_t> m_my_minibatch_indices;
+  virtual void set_num_global_indices() = 0;
 
-  /// the indices that this processor owns
+  /// the indices that will be used locally; the inner j-th vector
+  /// contains indices referenced during the j-th call to
+  /// genreic_data_reader::fetch_data(...)
+  const std::vector<std::vector<int> > *m_minibatch_indices;
+
+  /// the indices that this processor owns; these are in the
+  /// range [0..m_num_global_indices]
   std::vector<size_t> m_my_datastore_indices;
 
-  /// fills in m_my_datastore_indices
-  void get_my_datastore_indices();
+  ///m_my_shuffled_indices[i] = m_shuffled_indices[ m_my_datastore_indices[i]]
+  /// wrt the initial shuffled index vector
+  std::vector<size_t> m_my_shuffled_indices;
+
+  /// fills in m_my_datastore_indices and m_my_shuffled_indices
+  virtual void get_my_datastore_indices() = 0;
 
   size_t m_num_readers;
 
@@ -126,7 +128,12 @@ class generic_data_store {
   /// maps global indices (wrt shuffled_indices) to owning processor
   std::unordered_map<size_t, size_t> m_owner_mapping;
 
+  virtual void compute_owner_mapping() = 0;
+
   model *m_model;
+
+  /// base directory for data; default is "."
+  std::string m_dir;
 };
 
 }  // namespace lbann

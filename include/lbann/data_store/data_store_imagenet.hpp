@@ -28,7 +28,7 @@
 #ifndef __DATA_STORE_IMAGENET_HPP__
 #define __DATA_STORE_IMAGENET_HPP__
 
-#include "lbann/data_store/generic_data_store.hpp"
+#include "lbann/data_store/data_store_image.hpp"
 
 namespace lbann {
 
@@ -36,12 +36,12 @@ namespace lbann {
  * todo
  */
 
-class data_store_imagenet : public generic_data_store {
+class data_store_imagenet : public data_store_image {
  public:
 
   //! ctor
   data_store_imagenet(lbann_comm *comm, generic_data_reader *reader, model *m) :
-    generic_data_store(comm, reader, m) {}
+    data_store_image(comm, reader, m) {}
 
   //! copy ctor
   data_store_imagenet(const data_store_imagenet&) = default;
@@ -52,55 +52,34 @@ class data_store_imagenet : public generic_data_store {
   generic_data_store * copy() const override { return new data_store_imagenet(*this); }
 
   //! dtor
-  ~data_store_imagenet() override;
+  ~data_store_imagenet() override {};
 
   void setup() override;
 
-  void exchange_data() override;
-
-  /// for use during development and testing
-  void test_data() override;
-
-  /// for use during development and testing
-  void test_file_sizes() override;
-
-  void get_data_buf(std::string dir, std::string filename, std::vector<unsigned char> *&buf, int tid) override;
-
-  void get_data_buf(int data_id, std::vector<unsigned char> *&buf, int tid) override;
+  /// only used during development and testing
+  void get_data_buf(std::string dir, std::string filename, std::vector<unsigned char> *&buf, int tid);
 
  protected :
 
-  /// maps a global index (wrt image_list) to number of bytes in the file
-  std::unordered_map<size_t, size_t> m_file_sizes;
+  void get_my_datastore_indices() override;
 
-  /// maps a global index (wrt image_list) to the file's data location 
-  /// wrt m_data
-  std::map<size_t, size_t> m_offsets;
+  void compute_owner_mapping() override;
 
-  /// fills in m_file_offsets
-  //void compute_offsets();  
+  void compute_num_images() override; 
 
-  /// fills in m_file_sizes
-  void get_file_sizes();
+  void set_num_global_indices() override {
+    m_num_global_indices = m_shuffled_indices->size();
+  }
 
-  /// when running in in-memory mode, this buffer will contain
-  /// the concatenated data
-  std::vector<unsigned char> m_data;
+  void compute_my_filenames() override;
 
-  /// allocate mem for m_data
-  void allocate_memory(); 
+  void get_file_sizes() override;
 
-  void load_file(const std::string &dir, const std::string &fn, unsigned char *p, size_t sz); 
+  /// for use during development and testing
+  void test_data();
 
-  void read_files();
-
-  /// will contain data to be passed to the data_reader
-  std::vector<std::vector<unsigned char> > m_my_data;
-
-  /// maps indices wrt shuffled indices to indices in m_my_data
-  std::unordered_map<size_t, size_t> m_my_data_hash;
-
-  MPI_Win m_win;
+  /// for use during development and testing
+  void test_file_sizes();
 };
 
 }  // namespace lbann
