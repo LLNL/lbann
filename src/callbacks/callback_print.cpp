@@ -71,10 +71,13 @@ void lbann_callback_print::on_epoch_begin(model *m) {
               << " global last MB ="
               << " ["
               << std::setw(4) << layer->get_global_last_mini_batch_size(execution_mode::training)
+              << std::setw(2) << " "
               << "/"
               << std::setw(4) << layer->get_global_last_mini_batch_size(execution_mode::validation)
+              << std::setw(2) << " "
               << "/"
               << std::setw(4) << layer->get_global_last_mini_batch_size(execution_mode::testing)
+              << std::setw(2) << " "
               << "]"
               << std::endl;
     std::cout << std::setfill(' ') << std::setw(23)
@@ -89,10 +92,13 @@ void lbann_callback_print::on_epoch_begin(model *m) {
               << "  local last MB ="
               << " ["
               << std::setw(4) << layer->get_last_mini_batch_size(execution_mode::training)
+              << "+" << layer->get_world_master_mini_batch_adjustment(execution_mode::training)
               << "/"
               << std::setw(4) << layer->get_last_mini_batch_size(execution_mode::validation)
+              << "+" << layer->get_world_master_mini_batch_adjustment(execution_mode::validation)
               << "/"
               << std::setw(4) << layer->get_last_mini_batch_size(execution_mode::testing)
+              << "+" << layer->get_world_master_mini_batch_adjustment(execution_mode::testing)
               << "]"
               << std::endl;
     std::cout << "--------------------------------------------------------------------------------"

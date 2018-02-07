@@ -78,6 +78,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_current_mini_batch_idx(0),
     m_num_iterations_per_epoch(0), m_global_mini_batch_size(0),
     m_global_last_mini_batch_size(0),
+    m_world_master_mini_batch_adjustment(0),
     m_num_parallel_readers(0), m_model_rank(0),
     m_file_dir(""), m_data_fn(""), m_label_fn(""),
     m_shuffle(shuffle), m_absolute_sample_count(0), m_validation_percent(0.0),
@@ -325,7 +326,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   bool at_new_epoch() const {
     /// Note that data readers can start at a non-zero index if there
     /// are parallel data readers in a model
-    return ((m_loaded_mini_batch_idx == m_reset_mini_batch_index) 
+    return ((m_loaded_mini_batch_idx == m_reset_mini_batch_index)
             && (m_current_mini_batch_idx == 0));
   }
   /// Set the mini batch size
@@ -342,6 +343,8 @@ class generic_data_reader : public lbann_image_preprocessor {
   int get_current_mini_batch_size() const;
   /// Get the current global mini-batch size.
   int get_current_global_mini_batch_size() const;
+  /// Get the current mini-batch size.
+  int get_current_world_master_mini_batch_adjustment(int model_rank) const;
   /// Return the full mini_batch_size.
   int get_mini_batch_max() const {
     return m_mini_batch_size;
@@ -409,6 +412,14 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// Return the last mini batch size across all models (global)
   int get_global_last_mini_batch_size() const {
     return m_global_last_mini_batch_size;
+  }
+  /// Set the world master mini batch adjustment (global)
+  void set_world_master_mini_batch_adjustment(const int s) {
+    m_world_master_mini_batch_adjustment = s;
+  }
+  /// Return the world master mini batch adjustment (global)
+  int get_world_master_mini_batch_adjustment() const {
+    return m_world_master_mini_batch_adjustment;
   }
   /// Set the last mini batch stride
   void set_stride_to_last_mini_batch(const int s) {
@@ -524,7 +535,7 @@ class generic_data_reader : public lbann_image_preprocessor {
 
   /** \brief Given directory to store checkpoint files, read state from file and add to number of bytes read */
   bool loadFromCheckpointShared(persist& p, const char *name);
-  
+
   /// returns the data store, which may be a nullptr
   generic_data_store * get_data_store() {
     return m_data_store;
@@ -532,7 +543,7 @@ class generic_data_reader : public lbann_image_preprocessor {
 
   /// sets up a data_store. @todo: must modify this method
   /// anytime you derive a class from generic_data_store
-  void setup_data_store(model *m, lbann_comm *comm); 
+  void setup_data_store(model *m, lbann_comm *comm);
 
   /** This call changes the functionality of fetch_data(); when set,
     * indices are added to m_my_minibatch_indices, but fetch_datum()
@@ -632,6 +643,7 @@ class generic_data_reader : public lbann_image_preprocessor {
 
   int m_global_mini_batch_size;
   int m_global_last_mini_batch_size;
+  int m_world_master_mini_batch_adjustment;
 
   int m_num_parallel_readers; /// How many parallel readers are being used
 
@@ -657,7 +669,7 @@ class generic_data_reader : public lbann_image_preprocessor {
  private :
    /// added to support data store functionality
    bool m_save_minibatch_indices;
- 
+
    /// added to support data store functionality
    std::vector<std::vector<int> > m_my_minibatch_indices;
 
