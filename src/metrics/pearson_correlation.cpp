@@ -149,6 +149,13 @@ EvalType pearson_correlation_metric::evaluate_compute(const AbsDistMat& predicti
     const EvalType pred_stdev = m_prediction_stdevs->GetLocal(0, col);
     const EvalType true_stdev = m_ground_truth_stdevs->GetLocal(0, col);
     const EvalType cov        = m_covariances->GetLocal(0, col);
+    /// If there is no valid true value and it is the last column of
+    /// the matrix, the data may not exist due to a mini-batch size
+    /// imbalance with multiple models.  Just skip this element.
+    if(true_stdev == 0
+       && m_ground_truth_stdevs->GlobalCol(col) == (m_ground_truth_stdevs->Width()-1)) {
+      continue;
+    }
     local_sum += cov / (pred_stdev * true_stdev);
   }
   return get_comm().allreduce(local_sum, m_covariances->DistComm());
