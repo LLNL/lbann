@@ -133,23 +133,7 @@ class softmax_layer : public activation_layer {
 
   data_layout get_data_layout() const override { return T_layout; }
 
-  void setup_matrices(const El::Grid& grid) override {
-    activation_layer::setup_matrices(grid);
-    if (m_workspace != nullptr) { delete m_workspace; }
-    switch (get_data_layout()) {
-    case data_layout::MODEL_PARALLEL:
-      m_workspace = new StarMRMat(grid);
-      break;
-    case data_layout::DATA_PARALLEL:
-      m_workspace = new StarVCMat(grid);
-      break;
-    default:
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "invalid distributed matrix layout";
-      throw lbann_exception(err.str());
-    }
-  }
+  void setup_matrices(const El::Grid& grid) override;
 
   void setup_data() override {
     activation_layer::setup_data();

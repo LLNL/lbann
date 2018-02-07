@@ -133,9 +133,9 @@ class Layer {
 
   /** Setup layer members.
    *  By default, this calls the setup_pointers, setup_dims,
-   *  setup_matrices, setup_data, setup_views, and setup_gpu (if
-   *  needed) functions. Unless the setup_pointers function has been
-   *  replaced in an inherited class, it is assumed that pointers to
+   *  setup_matrices, setup_data, and setup_gpu (if needed)
+   *  functions. Unless the setup_pointers function has been replaced
+   *  in an inherited class, it is assumed that pointers to
    *  parent/child layers have already been initialized.
    *
    *  If the layer has already been setup, this function should
@@ -452,10 +452,6 @@ class Layer {
    *  buffers are pinned if needed for GPU transfers.
    */
   virtual void setup_data();
-  /** Setup matrix views.
-   *  Called by the setup function. The base method does nothing.
-   */
-  virtual void setup_views() {}
   /** Setup GPU objects.
    *  Called by the setup function if GPUs are enabled. The base
    *  method initializes GPU matrices for the previous activations,

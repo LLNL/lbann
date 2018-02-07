@@ -610,7 +610,6 @@ void Layer::setup() {
   setup_dims();
   setup_matrices(m_comm->get_model_grid());
   setup_data();
-  setup_views();
   if (m_using_gpus) {
     setup_gpu();
   }
