@@ -1858,6 +1858,9 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
     } else if (name == "jag") {
       auto* reader_jag = new data_reader_jag(shuffle);
       reader_jag->set_model_mode(static_cast<data_reader_jag::model_mode_t>(readme.modeling_mode()));
+      const lbann_data::ImagePreprocessor& pb_preproc = readme.image_preprocessor();
+      reader_jag->set_image_dims(pb_preproc.raw_width(), pb_preproc.raw_height());
+      reader_jag->set_normalization_mode(pb_preproc.early_normalization());
       reader = reader_jag;
       set_up_generic_preprocessor = false;
     } else if (name == "nci") {
