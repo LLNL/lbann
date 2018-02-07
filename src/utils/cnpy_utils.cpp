@@ -30,8 +30,11 @@ namespace lbann {
 namespace cnpy_utils {
 
 size_t compute_cnpy_array_offset(
-  const cnpy::NpyArray& na, const std::vector<size_t> indices) {
+  const cnpy::NpyArray& na, std::vector<size_t> indices) {
 
+  if (indices.size() < na.shape.size()) {
+    indices.resize(na.shape.size(), 0u);
+  }
   bool ok = (indices.size() == na.shape.size());
   size_t unit_stride = 1u;
   size_t offset = 0u;

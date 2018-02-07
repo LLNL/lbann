@@ -20,6 +20,7 @@ set_full_path(THIS_DIR_SOURCES
   data_reader_imagenet_org.cpp
   data_reader_imagenet_patches.cpp
   data_reader_imagenet_single.cpp
+  data_reader_jag.cpp
   data_reader_merge_features.cpp
   data_reader_merge_samples.cpp
   data_reader_mnist.cpp
