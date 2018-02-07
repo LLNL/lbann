@@ -100,7 +100,7 @@ EvalType kl_divergence::evaluate() {
   delete z_mean;
   delete z_log1;
  
-  return (0.5 * mean_value);
+  return (-0.5 * mean_value);
 }
 
 void kl_divergence::differentiate() {

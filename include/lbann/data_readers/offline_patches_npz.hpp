@@ -24,15 +24,12 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef OFFLINE_PATCHES_NPZ_H
-#define OFFLINE_PATCHES_NPZ_H
+#ifndef _OFFLINE_PATCHES_NPZ_HPP_
+#define _OFFLINE_PATCHES_NPZ_HPP_
 
 #include "cnpy.h"
-#include <iostream>
 #include <string>
-#include <set>
 #include <vector>
-#include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
@@ -87,34 +84,6 @@ class offline_patches_npz {
  protected:
   /// Check the dimensions of loaded data
   bool check_data() const;
-  /// Show the dimensions of loaded data
-  static std::string show_shape(const cnpy::NpyArray& na);
-
-  /**
-   * Return the offset to the element (in terms of the number of elements from
-   * the beginning of the array) of a loaded numpy array na specified by indices
-   */
-  static size_t compute_cnpy_array_offset(const cnpy::NpyArray& na, const std::vector<size_t> indices);
-
-  /**
-   * Allow the access to the data element identified by the indices and the
-   * word_size of the array na, but present it as a type T element at the address.
-   */
-  template<typename T>
-  T& data(const cnpy::NpyArray& na, const std::vector<size_t> indices) const;
-
-  /**
-   * Return the address of the data element identified by the indices and the
-   * word_size of the array na, but present it as the address of a type T element
-   */
-  template<typename T>
-  T* data_ptr(const cnpy::NpyArray& na, const std::vector<size_t> indices) const;
-
-  /**
-   * Shrink the first dimension of cnpy::NpyArray to the given size.
-   * This is used to choose only first sz samples in data.
-   */
-  void shrink_to_fit(cnpy::NpyArray& na, size_t sz);
 
  protected:
   /// Whether loaded data have passed the format check
@@ -147,28 +116,5 @@ class offline_patches_npz {
   bool m_fetch_text_dict_at_once;
 };
 
-
-template<typename T>
-inline T& offline_patches_npz::data(
-  const cnpy::NpyArray& na, const std::vector<size_t> indices) const {
-  if ((sizeof(T) != na.word_size) && (sizeof(T) != 1u)) {
-    throw lbann_exception("The data type is not consistent with the word size of the array.");
-  }
-  const size_t offset = compute_cnpy_array_offset(na, indices)
-                        * ((sizeof(T) == 1u)? na.word_size : 1u);
-  return *(reinterpret_cast<T*>(&(* na.data_holder)[0]) + offset);
-}
-
-template<typename T>
-inline T* offline_patches_npz::data_ptr(
-  const cnpy::NpyArray& na, const std::vector<size_t> indices) const {
-  if ((sizeof(T) != na.word_size) && (sizeof(T) != 1u)) {
-    throw lbann_exception("The data type is not consistent with the word size of the array.");
-  }
-  const size_t offset = compute_cnpy_array_offset(na, indices)
-                        * ((sizeof(T) == 1u)? na.word_size : 1u);
-  return (reinterpret_cast<T*>(&(* na.data_holder)[0]) + offset);
-}
-
 } // end of namespace lbann
-#endif // OFFLINE_PATCHES_NPZ_H
+#endif // _OFFLINE_PATCHES_NPZ_HPP_

@@ -91,30 +91,33 @@ void print_stack_trace() {
   Dl_info info;
   for (int i=0; i<trace_size; i++) {
     std::cerr << "rank: " << my_lbann_tracing_id << " :: ";
-    if (to_file.is_open()) {
-      to_file << "  >>>> ";
-    }
     dladdr(stack_traces[i], &info);
     if (info.dli_sname != NULL) {
       char *demangled_name = abi::__cxa_demangle(info.dli_sname, nullptr, nullptr, nullptr);
       if (demangled_name != NULL) {
-        std::cerr << demangled_name << std::endl;
-        if (to_file.is_open()) {
-          to_file << demangled_name << std::endl;
+        std::string test(demangled_name);
+        /*if (test.find("__libc_start_main") != std::string::npos) {
+          i = 100000;
+          break;
+        }
+        */
+        if (test.find("lbann::stack_trace::print_stack_trace") == std::string::npos && test.find("lbann::stack_trace::print_lbann_exception_stack_trace") == std::string::npos) {
+          std::cerr << demangled_name << std::endl;
+          if (to_file.is_open()) {
+            to_file << "  >>>> " << demangled_name << std::endl;
+          }
         }
         free(demangled_name);
       } else {
         std::cerr << "demangling failed for: " << info.dli_sname << std::endl;
         if (to_file.is_open()) {
-          to_file << "demangling failed for: " << info.dli_sname << std::endl;
+          to_file << "  >>>> demangling failed for: " << info.dli_sname << std::endl;
         }
       }
     } else {
-      std::cerr << "dli_sname == NULL for: " << stack_traces[i] << " backtrace message was: "
-                << "     " << messages[i] << std::endl;
+      std::cerr << "dli_sname == NULL for: " << stack_traces[i] << " backtrace message was: " << messages[i] << std::endl;
       if (to_file.is_open()) {
-        to_file << "dli_sname == NULL for: " << stack_traces[i] << " backtrace message was: "
-            << "     " << messages[i] << std::endl;
+        to_file << "  >>>> dli_sname == NULL for: " << stack_traces[i] << " backtrace message was: " << messages[i] << std::endl;
       }
     }
   }
@@ -137,7 +140,7 @@ void print_lbann_exception_stack_trace(std::string m) {
   std::stringstream s;
   s << "\n**************************************************************************\n"
     << " This lbann_exception is about to be thrown:" << m << "\n\n"
-    << " Am now attemptting to print the stack trace ...\n"
+    << " Am now attempting to print the stack trace ...\n"
     << "**************************************************************************\n";
   if (to_file.is_open()) {
     to_file << s.str();
@@ -245,7 +248,7 @@ std::cerr << "starting lbann_signal_handler\n";
          "\n**************************************************************************\n"
          " Caught this signal: " << sig_name(signal) << "\n"
          " Note: see /usr/include/bits/signum.h for signal explanations\n"
-         " Am now attemptting to print the stack trace ...\n"
+         " Am now attempting to print the stack trace ...\n"
          "**************************************************************************\n";
   if (to_file.is_open()) {
     to_file << s.str();

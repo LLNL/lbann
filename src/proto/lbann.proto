@@ -29,6 +29,7 @@ message Reader {
   int64 first_n = 200;
   double percent_of_data_to_use = 12;
   ImagePreprocessor image_preprocessor = 13;
+  int32 modeling_mode = 98; // only for jag
   int32 num_labels = 99; //for imagenet
   int64 num_samples = 100; //only for synthetic
   int64 num_features = 101; //only for synthetic
@@ -448,6 +449,8 @@ message CallbackDumpWeights {
 message CallbackDumpActivations {
   string basename = 1;
   int64 interval = 2;
+  string layer_names = 3; //layer(s) at which to dump activations e.g., "relu1 relu4 relu12"
+  
 }
 
 message CallbackDumpGradients {

@@ -48,8 +48,10 @@ struct path_delimiter {
   }
 };
 
-/// Tokenize a string by a sequence of delimiter characters.
-std::vector<int> get_tokens(const std::vector<char> delims, std::string str);
+/// Tokenize a string into integers by an ordered sequence of delimiter characters.
+std::vector<int> get_tokens(std::string str, const std::vector<char> delims);
+/// Tokenize a string into substrings by set of delimiter characters.
+std::vector<std::string> get_tokens(const std::string str, const std::string delims = " :;\t\r\n");
 
 bool parse_path(const std::string& path, std::string& dir, std::string& basename);
 std::string get_ext_name(const std::string file_name);

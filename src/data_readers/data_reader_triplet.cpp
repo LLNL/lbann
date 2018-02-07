@@ -151,8 +151,8 @@ void data_reader_triplet::load() {
   // To support m_first_n semantic, m_samples.load() takes m_first_n
   // as an argument and attempt to shrink the CNPY arrays loaded as needed
   if (!m_samples.load(data_filename, m_first_n)) {
-      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " "
-                            + get_type() + ": failed to load the file " + data_filename);
+    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " "
+                          + get_type() + ": failed to load the file " + data_filename);
   }
 
   size_t num_samples = m_samples.get_num_samples();

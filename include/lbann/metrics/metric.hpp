@@ -114,8 +114,14 @@ class metric {
   /** Setup metric. */
   virtual void setup(model& m);
 
-  /** Evaluate the metric value. */
-  EvalType evaluate(execution_mode mode);
+  /** Evaluate the metric value.
+   *  This function takes the model's current mini-batch size. If
+   *  multiple models are being trained, the current mini-batch size
+   *  may be different from the effective mini-batch size. The result
+   *  is stored in history.
+   */
+  EvalType evaluate(execution_mode mode,
+                    int mini_batch_size);
 
   /** Clear all statistics. */
   void reset_statistics() { m_statistics.clear(); }

@@ -10,6 +10,8 @@ option(Hydrogen_USE_64BIT_INTS
 option(Hydrogen_USE_64BIT_BLAS_INTS
   "Hydrogen use 64-bit integers in BLAS calls" OFF)
 
+option(Hydrogen_ENABLE_TESTING "Enable the hydrogen tests." OFF)
+
 # Where to install Hydrogen
 set(Hydrogen_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
   CACHE PATH "The installation location of Hydrogen.")

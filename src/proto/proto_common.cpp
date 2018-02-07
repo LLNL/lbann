@@ -1228,9 +1228,17 @@ void init_callbacks(
       const lbann_data::CallbackDumpActivations& c = callback.dump_activations();
       if (master) {
         std::cout << "adding dump activations callback with basename: " << c.basename()
-                  << " and interval: " << c.interval() << std::endl;
+                  << " and interval: " << c.interval() 
+                  << " and layer names " << c.layer_names() << std::endl;
       }
-      lbann_callback_dump_activations *activations_cb = new lbann_callback_dump_activations(c.basename(), c.interval());
+      std::vector<std::string> layer_names;
+      std::stringstream ss;
+      std::string name;
+      ss.str(c.layer_names());
+      while (ss >> name) {
+        layer_names.push_back(name);
+      }
+      lbann_callback_dump_activations *activations_cb = new lbann_callback_dump_activations(c.basename(), c.interval(),layer_names);
       model->add_callback(activations_cb);
     }
 
@@ -1853,6 +1861,11 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
                (name == "triplet") || (name == "mnist_siamese") || (name == "multi_images")) {
       init_image_data_reader(readme, master, reader);
       set_up_generic_preprocessor = false;
+    } else if (name == "jag") {
+      auto* reader_jag = new data_reader_jag(shuffle);
+      reader_jag->set_model_mode(static_cast<data_reader_jag::model_mode_t>(readme.modeling_mode()));
+      reader = reader_jag;
+      set_up_generic_preprocessor = false;
     } else if (name == "nci") {
       reader = new data_reader_nci(shuffle);
     } else if (name == "csv") {
@@ -1992,6 +2005,9 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
         reader_validation = new data_reader_mnist_siamese(*dynamic_cast<const data_reader_mnist_siamese*>(reader));
       } else if (name == "multi_images") {
         reader_validation = new data_reader_multi_images(*dynamic_cast<const data_reader_multi_images*>(reader));
+      } else if (name == "jag") {
+        reader_validation = new data_reader_jag(shuffle);
+        *dynamic_cast<data_reader_jag*>(reader_validation) = *dynamic_cast<const data_reader_jag*>(reader);
       } else if (name == "nci") {
         reader_validation = new data_reader_nci(shuffle);
         (*(data_reader_nci *)reader_validation) = (*(data_reader_nci *)reader);
