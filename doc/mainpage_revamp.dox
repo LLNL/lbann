@@ -343,7 +343,7 @@ Example callback usage can be found below. Latest callbacks may not yet have an 
           phase: test
         }
       }
-    \endoce
+    \endcode
 
 #\subsubsection variable_mb Variable Minibatch
 #    \copydetails lbann::lbann_callback_variable_minibatch
