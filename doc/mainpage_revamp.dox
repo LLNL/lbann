@@ -105,7 +105,7 @@ Descriptions of these options can be found here, \ref Model, in the Public Attri
 \subsection objective_functions Objective Functions
 Next a user needs to select an Objective Function for the model e.g.
 
-\code.{sh}
+\code{.sh}
  objective_function {
     cross_entropy {}
     l2_weight_regularization {
@@ -147,12 +147,7 @@ Example callback usage can be found below. Latest callbacks may not yet have an 
     \code{.sh}       
       callback { check_dataset {} }
     \endcode
-#\subsubsection checkinit Check Initialization
-#    \copydetails lbann::lbann_callback_check_init
-#    Check Initialization has no parameters to specify. To add:   
-#     \code{.sh}
-#       callback { check_init {} }
-#     \endcode
+
 \subsubsection checkreconstruction Check Reconstruction
     \copydetails lbann::lbann_callback_check_reconstruction_error
     Check Reconstruction Error has no parameters to specify. To add:
@@ -226,11 +221,6 @@ Example callback usage can be found below. Latest callbacks may not yet have an 
          }
         \endcode
 
-#\subsubsection earlystop Early Stopping
-#    \copydetails lbann::lbann_callback_early_stopping
-#       
-#    Implementation details: lbann::lbann_callback_early_stopping
-
 \subsubsection gradientcheck Gradient Check
     \copydetails lbann::lbann_callback_gradient_check
     Gradient Check parameters - step_size: - . verbose: Verbose output. fail_on_error: end execution if gradient check results in error.
@@ -265,10 +255,6 @@ Example callback usage can be found below. Latest callbacks may not yet have an 
     }
     \endcode
 
-#\subsubsection io Print IO
-#    \copydetails lbann::lbann_callback_io
-#      
-#
 \subsubsection adaptive_learning_rate Adaptive Learning Rate
     \copydetails lbann::lbann_callback_adaptive_learning_rate
     Adaptive Learning Rate parameters - weights: default applies to all weights. patience: number of epochs until learning rate is lowered when no improvement is seen. amt: learning rate interval  
