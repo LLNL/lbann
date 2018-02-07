@@ -890,10 +890,9 @@ void add_layers(
     }
 
     //////////////////////////////////////////////////////////////////
-    // LAYER: id
+    // LAYER: identity
     //////////////////////////////////////////////////////////////////
-    else if (layer.has_id()) {
-      //const lbann_data::ID& ell = layer.id();
+    else if (layer.has_identity()) {
       if (layout == data_layout::MODEL_PARALLEL) {
         d = new identity_layer<data_layout::MODEL_PARALLEL>(comm);
       } else {
