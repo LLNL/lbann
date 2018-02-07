@@ -209,9 +209,7 @@ int main(int argc, char *argv[]) {
         std::cerr << "\nUSING DATA STORE!\n\n";
       }  
       for (auto r : data_readers) {
-        if (r.second->get_role() == "train") {
           r.second->setup_data_store(model, comm);
-        }  
       }  
     }  
 
@@ -237,7 +235,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    if (!opts->has_string("exit_after_setup")) {
+    if (! (opts->has_bool("exit_after_setup") && opts->get_bool("exit_after_setup"))) {
 
 #ifndef LBANN_SEQUENTIAL_CONSISTENCY
       // Under normal conditions, reinitialize the random number generator so
