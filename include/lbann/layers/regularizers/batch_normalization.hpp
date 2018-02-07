@@ -446,7 +446,7 @@ class batch_normalization : public regularizer_layer {
                                           m_weights[3]->get_values_gpu());
 
     // Matrix parameters
-    const int mini_batch_size = this->m_model->get_effective_mini_batch_size();
+    const int effective_mini_batch_size = this->m_model->get_effective_mini_batch_size();
     const auto& input = get_prev_activations();
     const int height = input.Height();
     const int width = input.Width();
@@ -505,13 +505,13 @@ class batch_normalization : public regularizer_layer {
     if (scale_optimizer != nullptr) {
       scale_optimizer->stage_gradient_for_accumulation_gpu(
         m_scale_gradient_d.get_locked_data(),
-        DataType(1) / mini_batch_size);
+        DataType(1) / effective_mini_batch_size);
     }
     optimizer* bias_optimizer = m_weights[1]->get_optimizer();
     if (bias_optimizer != nullptr) {
       bias_optimizer->stage_gradient_for_accumulation_gpu(
         m_bias_gradient_d.get_locked_data(),
-        DataType(1) / mini_batch_size);
+        DataType(1) / effective_mini_batch_size);
     }
 
     // Compute error signal
@@ -680,7 +680,7 @@ class batch_normalization : public regularizer_layer {
     auto& local_bias_gradient = m_bias_gradient->Matrix();
     
     // Matrix parameters
-    const int mini_batch_size = this->m_model->get_effective_mini_batch_size();
+    const int effective_mini_batch_size = this->m_model->get_effective_mini_batch_size();
     const int width = input.Width();
     const El::Int local_width = local_input.Width();
     const int num_channels = this->m_neuron_dims[0];
@@ -741,13 +741,13 @@ class batch_normalization : public regularizer_layer {
     if (scale_optimizer != nullptr) {
       scale_optimizer->stage_gradient_for_accumulation(
         *m_scale_gradient,
-        DataType(1) / mini_batch_size);
+        DataType(1) / effective_mini_batch_size);
     }
     optimizer* bias_optimizer = m_weights[1]->get_optimizer();
     if (bias_optimizer != nullptr) {
       bias_optimizer->stage_gradient_for_accumulation(
         *m_bias_gradient,
-        DataType(1) / mini_batch_size);
+        DataType(1) / effective_mini_batch_size);
     }
 
     // Compute error signal

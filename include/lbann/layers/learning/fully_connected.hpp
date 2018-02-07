@@ -215,27 +215,21 @@ class fully_connected_layer : public learning_layer {
     }
 
     // Setup weights
-    switch (get_data_layout()) {
-    case data_layout::MODEL_PARALLEL:
-      this->m_weights[0]->setup(this->m_num_neurons,
-                                this->m_num_prev_neurons,
-                                El::MC, El::MR);
-      this->m_weights[1]->setup(this->m_num_neurons, 1,
-                                El::MC, El::STAR);
-      break;
-    case data_layout::DATA_PARALLEL:
-      this->m_weights[0]->setup(this->m_num_neurons,
-                                this->m_num_prev_neurons,
-                                El::STAR, El::STAR);
-      this->m_weights[1]->setup(this->m_num_neurons, 1,
-                                El::STAR, El::STAR);
-      break;
-    default:
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "attempted to setup " << m_name << " with an invalid data layout";
-      throw lbann_exception(err.str());
+    // Note: linearity matrix is duplicated across processes unless
+    // the data layout is model-parallel.
+    El::Distribution col_dist = El::STAR;
+    El::Distribution row_dist = El::STAR;
+    if (get_data_layout() == data_layout::MODEL_PARALLEL) {
+      col_dist = El::MC;
+      row_dist = El::MR;
     }
+    this->m_weights[0]->setup(this->m_num_neurons,
+                              this->m_num_prev_neurons,
+                              col_dist, row_dist);
+    this->m_weights[1]->setup(this->m_num_neurons,
+                              1,
+                              get_activations().DistData().colDist,
+                              El::STAR);
 
     // Setup weight gradients
     El::Zeros(*this->m_linearity_gradient,

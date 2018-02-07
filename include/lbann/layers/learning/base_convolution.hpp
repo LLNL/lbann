@@ -484,7 +484,7 @@ class base_convolution_layer : public learning_layer {
     const DataType zero = DataType(0);
     const DataType one = DataType(1);
     const int num_gpus = this->m_cudnn->get_num_gpus();
-    const int mini_batch_size = this->m_model->get_effective_mini_batch_size();
+    const int effective_mini_batch_size = this->m_model->get_effective_mini_batch_size();
 
     const auto& input_d = this->m_prev_activations_d[0];
     const auto& gradient_wrt_output_d = this->m_prev_error_signals_d[0];
@@ -506,7 +506,7 @@ class base_convolution_layer : public learning_layer {
       }
       bias_optimizer->stage_gradient_for_accumulation_gpu(
         m_bias_gradient_d.get_locked_data(),
-        m_bias_scaling_factor / mini_batch_size);
+        m_bias_scaling_factor / effective_mini_batch_size);
     }
 
     // Compute kernel gradient
@@ -574,7 +574,7 @@ class base_convolution_layer : public learning_layer {
       // Add gradient contribution
       kernel_optimizer->stage_gradient_for_accumulation_gpu(
         m_kernel_gradient_d.get_locked_data(),
-        one / mini_batch_size);
+        one / effective_mini_batch_size);
     }
 
   #endif // LBANN_HAS_CUDNN
@@ -746,7 +746,7 @@ class base_convolution_layer : public learning_layer {
     const int num_input_channels = this->m_prev_neuron_dims[0];
     const int num_output_channels = this->m_neuron_dims[0];
     const int num_per_output_channel = this->m_num_neurons / num_output_channels;
-    const int mini_batch_size = this->m_model->get_effective_mini_batch_size();
+    const int effective_mini_batch_size = this->m_model->get_effective_mini_batch_size();
 
     // Compute bias gradient
     // Note: Sum is computed with Kahan summation
@@ -771,7 +771,7 @@ class base_convolution_layer : public learning_layer {
       }
       bias_optimizer->stage_gradient_for_accumulation(
         m_bias_gradient,
-        DataType(1) / mini_batch_size);
+        DataType(1) / effective_mini_batch_size);
     }
 
     // Stop early if kernel is not being optimized
@@ -830,7 +830,7 @@ class base_convolution_layer : public learning_layer {
     // Scale and accumulate gradients
     kernel_optimizer->stage_gradient_for_accumulation(
       m_kernel_gradient,
-      DataType(1) / mini_batch_size);
+      DataType(1) / effective_mini_batch_size);
 
   }
 
