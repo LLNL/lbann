@@ -42,8 +42,9 @@ class input_layer : public generic_input_layer {
  public:
 
   /// @todo make the map and vector references
-  input_layer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, bool data_set_spans_models = true)
-    : generic_input_layer(comm, num_parallel_readers, data_readers, data_set_spans_models) {
+  input_layer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode,
+    generic_data_reader *> data_readers, bool data_set_spans_models = true, bool for_regression = false)
+    : generic_input_layer(comm, num_parallel_readers, data_readers, data_set_spans_models, for_regression) {
     validate_data_layout();
     initialize_io_buffer(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), data_readers);
     io_buffer->fetch_data_fn = new fetch_data_functor(true, false);
