@@ -423,7 +423,7 @@ cv::Mat data_reader_jag::get_image(const size_t i) const {
   } else {
     img_org.convertTo(img, cv_image_type<DataType>::T(1u));
   }
-  return img;
+  return img.reshape(0, m_image_height);
 }
 
 data_reader_jag::data_t data_reader_jag::get_image_max() const {
