@@ -1220,7 +1220,7 @@ void init_callbacks(
       const lbann_data::CallbackDumpActivations& c = callback.dump_activations();
       if (master) {
         std::cout << "adding dump activations callback with basename: " << c.basename()
-                  << " and interval: " << c.interval() 
+                  << " and interval: " << c.interval()
                   << " and layer names " << c.layer_names() << std::endl;
       }
       std::vector<std::string> layer_names;
@@ -1712,7 +1712,7 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
   if (name == "sequential_model") {
     model = new sequential_model(comm, mini_batch_size, obj_fn, default_optimizer);
     if (master) std::cout << "instantiating sequential_model\n";
-  } 
+  }
   else if (name == "directed_acyclic_graph_model") {
     model = new directed_acyclic_graph_model(comm, mini_batch_size, obj_fn, default_optimizer);
     if (master) std::cout << "instantiating directed_acyclic_graph_model\n";
@@ -2119,6 +2119,13 @@ void set_data_readers_filenames(std::string which, lbann_data::LbannPB& p)
       s << "data_filedir_" << which;
       if (opts->has_string(s.str().c_str())) {
         r->set_data_filedir(opts->get_string(s.str().c_str()));
+      }else {
+        s.clear();
+        s.str("");
+        s << "data_filedir";
+        if (opts->has_string(s.str().c_str())) {
+          r->set_data_filedir(opts->get_string(s.str().c_str()));
+        }
       }
       s.clear();
       s.str("");
@@ -2187,11 +2194,15 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
     model->set_name("dag_model");
   }
 
-  if (opts->has_string("data_filedir_train") or opts->has_string("data_filename_train")
+  if (opts->has_string("data_filedir")
+      or opts->has_string("data_filedir_train")
+      or opts->has_string("data_filename_train")
       or opts->has_string("label_filename_train")) {
     set_data_readers_filenames("train", p);
   }
-  if (opts->has_string("data_filedir_test") or opts->has_string("data_filename_test")
+  if (opts->has_string("data_filedir")
+      or opts->has_string("data_filedir_test")
+      or opts->has_string("data_filename_test")
       or opts->has_string("label_filename_test")) {
     set_data_readers_filenames("test", p);
   }
@@ -2409,6 +2420,8 @@ void print_help(lbann::lbann_comm *comm)
        "      display information on how OpenMP threads are provisioned\n"
        "\n"
        "DataReaders:\n"
+       "  --data_filedir=<string>\n"
+       "      sets the file directory for train and test data\n"
        "  --data_filedir_train=<string>   --data_filedir_test=<string>\n"
        "  --data_filename_train=<string>  --data_filename_test=<string>\n"
        "  --label_filename_train=<string> --label_filename_test=<string>\n"

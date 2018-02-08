@@ -133,6 +133,21 @@ class CUtility {
                           uint InputWidth, uint InputHeight);
 };
 
+/*
+ * endsWith: http://thispointer.com/c-how-to-check-if-a-string-ends-with-an-another-given-string/
+ * Case Sensitive Implementation of endsWith()
+ * It checks if the string 'mainStr' ends with given string
+ * 'toMatch'
+ */
+static bool __attribute__((used)) endsWith(const std::string &mainStr, const std::string &toMatch)
+{
+  if(mainStr.size() >= toMatch.size() &&
+     mainStr.compare(mainStr.size() - toMatch.size(), toMatch.size(), toMatch) == 0)
+    return true;
+  else
+    return false;
+}
+
 }  // namespace lbann
 
 /// Print the dimensions and name of a Elemental matrix
