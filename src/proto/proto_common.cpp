@@ -136,6 +136,11 @@ void setup_pointers(
 
       // Set input layer
       auto *input = dynamic_cast<generic_input_layer*>(model_layers[name]);
+      if(master and (target->is_for_regression() != input->is_for_regression())) {
+        err << __FILE__ << " " << __LINE__ << " :: "
+            << "target layer and its paired input layer are not consistent regarding regression/classification";
+        throw lbann_exception(err.str());
+      }
       target->set_paired_input_layer(input);
 
     }
@@ -366,13 +371,15 @@ void add_layers(
             comm,
             m.num_parallel_readers(),
             data_readers,
-            !ell.data_set_per_model());
+            !ell.data_set_per_model(),
+            ell.for_regression());
         } else {
           d = new input_layer<distributed_io_buffer, data_layout::DATA_PARALLEL>(
             comm,
             m.num_parallel_readers(),
             data_readers,
-            !ell.data_set_per_model());
+            !ell.data_set_per_model(),
+            ell.for_regression());
         }
       }else if(io_buffer == "partitioned") {
         if (layout == data_layout::MODEL_PARALLEL and master) {
@@ -384,7 +391,8 @@ void add_layers(
             comm,
             m.num_parallel_readers(),
             data_readers,
-            !ell.data_set_per_model());
+            !ell.data_set_per_model(),
+            ell.for_regression());
         }
       }
     }
