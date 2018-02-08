@@ -150,6 +150,7 @@ message ImagePreprocessor {
   int32 resized_width = 30;
   int32 resized_height = 31;
   bool adaptive_interpolation = 32;
+  int32 early_normalization = 33; // for jag
 }
 
 // TODO: wrap El::Mat based normalization into a generic preprocessor

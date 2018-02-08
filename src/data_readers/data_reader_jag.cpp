@@ -33,6 +33,7 @@
 #include <algorithm>  // max_element
 #include <numeric>    // accumulate
 #include <functional> // multiplies
+#include <type_traits>// is_same
 
 namespace lbann {
 
@@ -43,9 +44,10 @@ data_reader_jag::data_reader_jag(bool shuffle)
     m_linearized_image_size(0u),
     m_linearized_scalar_size(0u),
     m_linearized_input_size(0u),
+    m_image_normalization(0u),
+    m_image_width(0u), m_image_height(0u),
     m_img_min(std::numeric_limits<data_t>::max()), 
-    m_img_max(std::numeric_limits<data_t>::min()),
-    m_alpha(1.0), m_beta(0.0) {
+    m_img_max(std::numeric_limits<data_t>::min()) {
 }
 
 
@@ -58,6 +60,26 @@ void data_reader_jag::set_model_mode(const model_mode_t mm) {
       " :: unrecognized mode " + std::to_string(static_cast<int>(mm)));
   }
   m_model_mode = mm;
+}
+
+void data_reader_jag::set_normalization_mode(int mode) {
+  if ((mode < 0) || (2 < mode)) {
+    throw lbann_exception("data_reader_jag: invalid normalization mode " +
+                          std::to_string(mode));
+  }
+  m_image_normalization = mode;
+}
+
+void data_reader_jag::set_image_dims(const int width, const int height) {
+  if ((width > 0) && (height > 0)) { // set and valid
+    m_image_width = width;
+    m_image_height = height;
+  } else if (!((width == 0) && (height == 0))) { // set but not valid
+    std::stringstream err;
+    err << __FILE__<<" "<<__LINE__
+        << " :: data_reader_jag::set_image_dims() invalid image dims";
+    throw lbann_exception(err.str());
+  }
 }
 
 size_t data_reader_jag::get_num_samples() const {
@@ -79,10 +101,23 @@ size_t data_reader_jag::get_linearized_input_size() const {
 void data_reader_jag::set_linearized_image_size() {
   if (!m_image_loaded) {
     m_linearized_image_size = 0u;
+    m_image_width = 0u;
+    m_image_height = 0u;
   } else {
     m_linearized_image_size
       = std::accumulate(m_images.shape.begin()+1, m_images.shape.end(),
                         1u, std::multiplies<size_t>());
+    if (m_linearized_image_size != static_cast<size_t>(m_image_width*m_image_height)) {
+      if ((m_image_width == 0u) && (m_image_height == 0u)) {
+        m_image_height = 1;
+        m_image_width = static_cast<int>(m_linearized_image_size);
+      } else {
+        std::stringstream err;
+        err << __FILE__<<" "<<__LINE__
+            << " :: data_reader_jag::set_linearized_image_size() image size mismatch";
+        throw lbann_exception(err.str());
+      }
+    }
   }
 }
 
@@ -139,8 +174,8 @@ int data_reader_jag::get_linearized_response_size() const {
 const std::vector<int> data_reader_jag::get_data_dims() const {
   switch (m_model_mode) {
     case Inverse:
-      //return {1, 50, 50};
-      return {static_cast<int>(m_linearized_image_size)};
+      return {1, m_image_height, m_image_width};
+      //return {static_cast<int>(m_linearized_image_size)};
     case AutoI:
       return {static_cast<int>(m_linearized_image_size)};
     case AutoS:
@@ -193,20 +228,24 @@ void data_reader_jag::load(const std::string image_file,
             const std::string scalar_file,
             const std::string input_file,
             const size_t first_n) {
-  if (!image_file.empty() && !check_if_file_exists(image_file)) {
+  if ((m_model_mode == Inverse || m_model_mode == AutoI) &&
+      !image_file.empty() && !check_if_file_exists(image_file)) {
     throw lbann_exception("data_reader_jag: failed to load " + image_file);
   }
-  if (!scalar_file.empty() && !check_if_file_exists(scalar_file)) {
+  if ((m_model_mode == AutoS) &&
+      !scalar_file.empty() && !check_if_file_exists(scalar_file)) {
     throw lbann_exception("data_reader_jag: failed to load " + scalar_file);
   }
-  if (!input_file.empty() && !check_if_file_exists(input_file)) {
+  if ((m_model_mode == Inverse) &&
+      !input_file.empty() && !check_if_file_exists(input_file)) {
     throw lbann_exception("data_reader_jag: failed to load " + input_file);
   }
 
   
   m_num_samples = 0u;
 
-  if (!image_file.empty()) {
+  // read in only those that will be used
+  if ((m_model_mode == Inverse || m_model_mode == AutoI) && !image_file.empty()) {
     m_images  = cnpy::npy_load(image_file);
     if (first_n > 0u) { // to use only first_n samples
       cnpy_utils::shrink_to_fit(m_images, first_n);
@@ -214,7 +253,7 @@ void data_reader_jag::load(const std::string image_file,
     m_image_loaded = true;
     set_linearized_image_size();
   }
-  if (!scalar_file.empty()) {
+  if ((m_model_mode == AutoS) && !scalar_file.empty()) {
     m_scalars = cnpy::npy_load(scalar_file);
     if (first_n > 0u) { // to use only first_n samples
       cnpy_utils::shrink_to_fit(m_scalars, first_n);
@@ -222,7 +261,7 @@ void data_reader_jag::load(const std::string image_file,
     m_scalar_loaded = true;
     set_linearized_scalar_size();
   }
-  if (!input_file.empty()) {
+  if ((m_model_mode == Inverse) && !input_file.empty()) {
     m_inputs  = cnpy::npy_load(input_file);
     if (first_n > 0u) { // to use only first_n samples
       cnpy_utils::shrink_to_fit(m_inputs, first_n);
@@ -239,13 +278,14 @@ void data_reader_jag::load(const std::string image_file,
     throw lbann_exception("data_reader_jag: loaded data format not consistent");
   }
   m_num_samples = num_samples;
-  m_img_min = get_image_min();
-  m_img_max = get_image_max();
-  if (m_img_min == m_img_max) {
-    throw lbann_exception("data_reader_jag: no_variation in data");
+  if (m_image_loaded) {
+    m_img_min = get_image_min();
+    m_img_max = get_image_max();
+    if (m_img_min == m_img_max) {
+      throw lbann_exception("data_reader_jag: no_variation in data");
+    }
+    normalize_image();
   }
-  m_alpha = 1.0/(m_img_max - m_img_min);
-  m_beta = m_img_min/(m_img_min - m_img_max);
 }
 
 
@@ -295,6 +335,20 @@ bool data_reader_jag::check_data(size_t& num_samples) const {
   }
   if (!ok) {
     num_samples = 0u;
+  } else {
+    switch (m_model_mode) {
+      case Inverse:
+        ok = m_image_loaded && m_input_loaded;
+        break;
+      case AutoI:
+        ok = m_image_loaded;
+        break;
+      case AutoS:
+        ok = m_scalar_loaded;
+        break;
+      default:
+        throw lbann_exception("data_reader_jag::check_data() : unknown mode");
+    }
   }
 
   return ok;
@@ -308,12 +362,45 @@ std::string data_reader_jag::get_description() const {
     + " - mode: " + to_string(static_cast<int>(m_model_mode)) + "\n"
     + " - images: "   + cnpy_utils::show_shape(m_images) + "\n"
     + " - scalars: "  + cnpy_utils::show_shape(m_scalars) + "\n"
-    + " - inputs: "   + cnpy_utils::show_shape(m_inputs) + "\n"
-    + " - min pixel value: " + to_string(m_img_min) + "\n";
-    + " - max pixel value: " + to_string(m_img_max) + "\n";
+    + " - inputs: "   + cnpy_utils::show_shape(m_inputs) + "\n";
+  if (m_image_loaded) {
+    ret += " - min pixel value: " + to_string(m_img_min) + "\n"
+         + " - max pixel value: " + to_string(m_img_max) + "\n"
+         + " - image width " + to_string(m_image_width) + "\n"
+         + " - image height " + to_string(m_image_height) + "\n"
+         + " - image normalization: " + to_string(m_image_normalization) + "\n";
+  }
   return ret;
 }
 
+
+void data_reader_jag::normalize_image() {
+  if (!m_image_loaded) {
+    return;
+  }
+  using depth_t = cv_image_type<data_t>;
+  const int type_code = depth_t::T(1u);
+
+  if (m_image_normalization == 1) {
+    data_t* const ptr = get_image_ptr(0);
+    // Present the entire image data as a single image
+    // and normalize it once and for all
+    cv::Mat img(m_num_samples, m_linearized_image_size,
+                type_code, reinterpret_cast<void*>(ptr));
+    cv::normalize(img, img, 0.0, 1.0, cv::NORM_MINMAX);
+  } else if (m_image_normalization == 2) {
+    // normalize each image independently
+    for (size_t i=0u; i < m_num_samples; ++i) {
+      data_t* const ptr = get_image_ptr(i);
+      cv::Mat img(1, m_linearized_image_size,
+                  type_code, reinterpret_cast<void*>(ptr));
+      cv::normalize(img, img, 0.0, 1.0, cv::NORM_MINMAX);
+    }
+  } else if (m_image_normalization != 0) {
+    throw lbann_exception("data_reader_jag: invalid normalization mode " +
+                          std::to_string(m_image_normalization));
+  }
+}
 
 data_reader_jag::data_t* data_reader_jag::get_image_ptr(const size_t i) const {
   return (m_image_loaded? cnpy_utils::data_ptr<data_t>(m_images, {i}) : nullptr);
@@ -330,23 +417,28 @@ cv::Mat data_reader_jag::get_image(const size_t i) const {
   const cv::Mat img_org(m_linearized_image_size, 1, InputBuf_T::T(1u),
                         reinterpret_cast<void*>(ptr));
 
-  // Normalzie pixel values to the range [0.0 1.0].
   cv::Mat img;
-#if 0 // sample-wide normalization
-  cv::normalize(img_org, img, 0.0, 1.0, cv::NORM_MINMAX, cv_image_type<DataType>::T(1u));
-#else // dataset-wide normalization
-  img_org.convertTo(img, cv_image_type<DataType>::T(1u), m_alpha, m_beta);
-#endif
+  if (std::is_same<data_t, DataType>::value) {
+    img = img_org.clone();
+  } else {
+    img_org.convertTo(img, cv_image_type<DataType>::T(1u));
+  }
   return img;
 }
 
 data_reader_jag::data_t data_reader_jag::get_image_max() const {
+  if (!m_image_loaded) {
+    return std::numeric_limits<data_t>::min();
+  }
   const data_t* ptr = get_image_ptr(0);
   const size_t tot_num_pixels = m_images.shape[0]*m_linearized_image_size;
   return *std::max_element(ptr, ptr + tot_num_pixels);
 }
 
 data_reader_jag::data_t data_reader_jag::get_image_min() const {
+  if (!m_image_loaded) {
+    return std::numeric_limits<data_t>::max();
+  }
   const data_t* ptr = get_image_ptr(0);
   const size_t tot_num_pixels = m_images.shape[0]*m_linearized_image_size;
   return *std::min_element(ptr, ptr + tot_num_pixels);
@@ -432,4 +524,9 @@ bool data_reader_jag::fetch_response(Mat& Y, int data_id, int mb_idx, int tid) {
   }
   return true;
 }
+
+void data_reader_jag::save_image(Mat& pixels, const std::string filename, bool do_scale) {
+  internal_save_image(pixels, filename, m_image_height, m_image_width, 1, do_scale);
+}
+
 } // end of namespace lbann
