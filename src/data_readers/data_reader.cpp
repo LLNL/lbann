@@ -543,7 +543,11 @@ bool lbann::generic_data_reader::loadFromCheckpointShared(persist& p, const char
 }
 
 void generic_data_reader::set_file_dir(std::string s) {
-  m_file_dir = s;
+  if(endsWith(s, "/")) {
+    m_file_dir = s;
+  }else {
+    m_file_dir = s + "/";
+  }
 }
 
 std::string generic_data_reader::get_file_dir() const {
