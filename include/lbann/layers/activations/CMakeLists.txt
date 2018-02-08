@@ -5,14 +5,13 @@ set_full_path(THIS_DIR_HEADERS
   bent_identity.hpp
   elu.hpp
   exponential.hpp
-  id.hpp
+  identity.hpp
   leaky_relu.hpp
   relu.hpp
   selu.hpp
   sigmoid.hpp
   smooth_relu.hpp
   softmax.hpp
-  softmax_cuda.hpp
   softplus.hpp
   swish.hpp
   tanh.hpp

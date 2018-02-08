@@ -433,7 +433,7 @@ std::vector<DataType*> weights::get_values_gpu() {
   }
   return m_values_d;
 }
-#endif // LBANN_HAS_CUDNN
+#endif // __LIB_CUDN
 
 std::string weights::get_dims_string(const std::vector<int>& matrix_height_dims,
                                      const std::vector<int>& matrix_width_dims) {

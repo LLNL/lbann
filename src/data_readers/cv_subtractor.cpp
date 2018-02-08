@@ -69,7 +69,7 @@ cv::Mat cv_subtractor::read_binary_image_file(const std::string filename) {
     std::string basename;
 
     parse_path(filename, dir, basename);
-    tokens = get_tokens(delims, basename);
+    tokens = get_tokens(basename, delims);
     if (tokens.size() != delims.size()) {
       return cv::Mat();
     }

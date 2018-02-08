@@ -551,9 +551,9 @@ void model::reset_epoch_statistics(execution_mode mode) {
 bool model::evaluate_mini_batch(execution_mode mode) {
   do_batch_begin_cbs(mode);
   forward_prop(mode);
-  m_objective_function->evaluate(mode);
+  m_objective_function->evaluate(mode, get_current_mini_batch_size());
   for (const auto& m : m_metrics) {
-    m->evaluate(mode);
+    m->evaluate(mode, get_current_mini_batch_size());
   }
   const bool finished = update_layers();
   switch(m_execution_mode) {
@@ -575,9 +575,11 @@ bool model::train_mini_batch() {
 
   // Forward prop step
   forward_prop(execution_mode::training);
-  m_objective_function->evaluate(execution_mode::training);
+  m_objective_function->evaluate(execution_mode::training,
+                                 get_current_mini_batch_size());
   for (const auto& m : m_metrics) {
-    m->evaluate(execution_mode::training);
+    m->evaluate(execution_mode::training,
+                get_current_mini_batch_size());
   }
 
   // Backward prop step
@@ -597,7 +599,7 @@ bool model::train_mini_batch() {
 
 void model::clear_error_signals() {
   for (const auto& layer : m_layers) {
-    layer->clear_error_signal();
+    layer->clear_error_signals(m_current_mini_batch_size);
   }
 }
 

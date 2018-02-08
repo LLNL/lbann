@@ -71,7 +71,7 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
 
   // Compute gradients
   for (auto layer : layers) {
-    layer->clear_error_signal();
+    layer->clear_error_signals(m->get_current_mini_batch_size());
   }
   m->get_objective_function()->differentiate();
   for (int l = layers.size() - 1; l > 0; --l) {
@@ -182,7 +182,8 @@ DataType lbann_callback_gradient_check::compute_objective_function(model *m) {
   for (size_t l = 1; l < layers.size(); l++) {
     layers[l]->forward_prop();
   }
-  return obj_fn->evaluate(m->get_execution_mode());
+  return obj_fn->evaluate(m->get_execution_mode(),
+                          m->get_current_mini_batch_size());
 }
 
 }  // namespace lbann

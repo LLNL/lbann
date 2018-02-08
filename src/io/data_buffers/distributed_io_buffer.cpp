@@ -72,7 +72,7 @@ void lbann::distributed_io_buffer::distribute_from_local_matrix(AbsDistMat& Ms, 
           << " :: lbann_distributed_io_buffer: No valid data for this step -- local data was invalid";
       lbann_exception(err.str());
     }
-    CopyFromRoot(buf->M_local, buf->Ms);
+    CopyFromRoot(buf->M_local(El::ALL, El::IR(0, Ms.Width())), buf->Ms);
     buf->m_local_data_valid = false;
     buf->m_num_samples_in_batch = 0;
   } else {

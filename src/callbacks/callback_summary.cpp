@@ -102,9 +102,11 @@ void lbann_callback_summary::on_test_end(model *m) {
 void lbann_callback_summary::save_histograms(model *m) {
   for (const auto& layer : m->get_layers()) {
     const std::string prefix = layer->get_name() + "/";
-    m_summarizer->reduce_histogram(prefix + "activations",
-                                   layer->get_activations(),
-                                   m->get_cur_step());
+    for (int i = 0; i < layer->get_num_children(); ++i) {
+      m_summarizer->reduce_histogram(prefix + "activations" + std::to_string(i),
+                                     layer->get_activations(i),
+                                     m->get_cur_step());
+    }
   }
   for (const auto& w : m->get_weights()) {
     const std::string prefix = w->get_name() + "/";

@@ -31,7 +31,6 @@
 
 #include "lbann/models/model.hpp"
 #include "lbann/layers/layer.hpp"
-#include "lbann/layers/activations/activation.hpp"
 #include "lbann/data_readers/data_reader.hpp"
 #include "lbann/io/persist.hpp"
 #include <vector>

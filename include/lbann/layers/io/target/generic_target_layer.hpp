@@ -44,29 +44,50 @@ class generic_target_layer : public io_layer {
   generic_input_layer *m_paired_input_layer;
   generic_io_buffer *io_buffer;
 
+  /** Ground truth matrix. */
+  AbsDistMat* m_ground_truth;
+
  public:
   generic_target_layer(lbann_comm *comm, generic_input_layer* input_layer, std::map<execution_mode, generic_data_reader *> data_readers, bool for_regression = false)
-    : io_layer(comm, true, for_regression), m_paired_input_layer(input_layer), io_buffer(nullptr)  {
+    : io_layer(comm, true, for_regression),
+      m_paired_input_layer(input_layer),
+      io_buffer(nullptr),
+      m_ground_truth(nullptr) {
     // Target layers have no children
-    m_max_num_child_layers = 0;
+    m_expected_num_child_layers = 0;
   }
 
+  generic_target_layer(const generic_target_layer& other)
+    : io_layer(other),
+      m_paired_input_layer(other.m_paired_input_layer),
+      io_buffer(other.io_buffer), /// @todo Should this be a shallow copy?
+      m_ground_truth(other.m_ground_truth) {
+    if (m_ground_truth != nullptr) { m_ground_truth = m_ground_truth->Copy(); }
+  }
+
+  generic_target_layer& operator=(const generic_target_layer& other) {
+    io_layer::operator=(other);
+
+    // Shallow copies
+    m_paired_input_layer = other.m_paired_input_layer;
+    io_buffer = other.io_buffer; /// @todo Should this be a shallow copy?
+    
+    // Deep copy matrix
+    if (m_ground_truth != nullptr) { delete m_ground_truth; }
+    m_ground_truth = other.m_ground_truth;
+    if (m_ground_truth != nullptr) { m_ground_truth = m_ground_truth->Copy(); }
+
+    return *this;
+  }
+
+
   ~generic_target_layer() override {
-    if(io_buffer != nullptr) {
-      delete io_buffer;
-    }
+    if(io_buffer != nullptr) { delete io_buffer; }
+    if (m_ground_truth != nullptr) { delete m_ground_truth; }
   };
-
-  generic_target_layer(const generic_target_layer& other) = default;
-
-  generic_target_layer& operator=(const generic_target_layer& other) = default;
 
   template<typename T_io_buffer>
   inline void initialize_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers);
-
-  template<data_layout T_layout> inline void initialize_distributed_matrices() {
-    io_layer::initialize_distributed_matrices<T_layout>();
-  }
 
   generic_input_layer* get_paired_input_layer() const {
     return m_paired_input_layer;
@@ -82,6 +103,12 @@ class generic_target_layer : public io_layer {
     return std::string {} + " target_layer " + io_buffer->get_type()
            + " dataLayout: " + this->get_data_layout_string(get_data_layout())
            + " (" + s + ")";
+  }
+
+  void setup_matrices(const El::Grid& grid) override {
+    io_layer::setup_matrices(grid);
+    if (m_ground_truth != nullptr) delete m_ground_truth;
+    m_ground_truth = get_prev_activations().Copy();
   }
 
   void setup_dims() override {
@@ -120,12 +147,12 @@ class generic_target_layer : public io_layer {
     }
   }
 
-  void fp_set_std_matrix_view() override {
-    io_layer::fp_set_std_matrix_view();
+  void fp_setup_data(int mini_batch_size) override {
+    io_layer::fp_setup_data(mini_batch_size);
     if(io_buffer != nullptr) {  /// Note that reconstruction layers do not have io_buffers
-      El::Int cur_mini_batch_size = m_model->get_current_mini_batch_size();
-      io_buffer->set_local_matrix_bypass(&this->m_activations_v->Matrix());
-      io_buffer->set_std_matrix_view(cur_mini_batch_size);
+      m_ground_truth->Resize(get_num_prev_neurons(), mini_batch_size);
+      io_buffer->set_local_matrix_bypass(&m_ground_truth->Matrix());
+      io_buffer->set_std_matrix_view(mini_batch_size);
     }
   }
 
@@ -149,7 +176,7 @@ class generic_target_layer : public io_layer {
                               );
       }
       /// @todo should this distribute the entire matrix even if there is only a partial mini-batch
-      io_buffer->distribute_from_local_matrix(*this->m_activations, m_paired_input_layer->get_data_reader(), mode);
+      io_buffer->distribute_from_local_matrix(*m_ground_truth, m_paired_input_layer->get_data_reader(), mode);
     }else {
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
@@ -271,10 +298,10 @@ class generic_target_layer : public io_layer {
     return m_paired_input_layer->is_execution_mode_valid(mode);
   }
 
-  AbsDistMat& get_prediction() { return *this->m_prev_activations_v; }
-  AbsDistMat& get_ground_truth() { return *this->m_activations_v; }
-  const AbsDistMat& get_prediction() const { return *this->m_prev_activations_v; }
-  const AbsDistMat& get_ground_truth() const { return *this->m_activations_v; }
+  virtual AbsDistMat& get_prediction() { return get_prev_activations(); }
+  virtual const AbsDistMat& get_prediction() const { return get_prev_activations(); }
+  virtual AbsDistMat& get_ground_truth() { return *m_ground_truth; }
+  virtual const AbsDistMat& get_ground_truth() const { return *m_ground_truth; }
 
   std::vector<Layer*> get_layer_pointers() override {
     std::vector<Layer*> layers = io_layer::get_layer_pointers();

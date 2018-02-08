@@ -29,6 +29,7 @@ message Reader {
   int64 first_n = 200;
   double percent_of_data_to_use = 12;
   ImagePreprocessor image_preprocessor = 13;
+  int32 modeling_mode = 98; // only for jag
   int32 num_labels = 99; //for imagenet
   int64 num_samples = 100; //only for synthetic
   int64 num_features = 101; //only for synthetic
@@ -149,6 +150,7 @@ message ImagePreprocessor {
   int32 resized_width = 30;
   int32 resized_height = 31;
   bool adaptive_interpolation = 32;
+  int32 early_normalization = 33; // for jag
 }
 
 // TODO: wrap El::Mat based normalization into a generic preprocessor
@@ -448,6 +450,8 @@ message CallbackDumpWeights {
 message CallbackDumpActivations {
   string basename = 1;
   int64 interval = 2;
+  string layer_names = 3; //layer(s) at which to dump activations e.g., "relu1 relu4 relu12"
+  
 }
 
 message CallbackDumpGradients {
@@ -641,6 +645,7 @@ message Layer {
    Sum sum = 303;
    Noise noise = 307;
    Unpooling unpooling = 304;
+   Hadamard hadamard = 308;
 
    // learning Layers
    FullyConnected fully_connected = 11;
@@ -660,7 +665,7 @@ message Layer {
    // activation Layers
    Softmax softmax = 200;
    ELU elu = 30;
-   ID id = 31;
+   Identity identity = 31;
    LeakyRelu leaky_relu = 32;
    Relu relu = 33;
    Sigmoid sigmoid = 34;
@@ -689,7 +694,7 @@ message ELU {
   double alpha = 2; //default: 1.0; must be >= 0
 }
 
-message ID {
+message Identity {
 }
 
 message LeakyRelu {
@@ -821,6 +826,10 @@ message Sum {
 message Noise {
   double noise_factor=1;
 }
+
+message Hadamard {
+}
+
 /////////////////////
 // learning Layers //
 /////////////////////

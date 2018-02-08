@@ -28,10 +28,14 @@
 
 #include <vector>
 #include "lbann/callbacks/callback_dump_activations.hpp"
+#include "lbann/layers/io/target/target_layer.hpp"
 
 namespace lbann {
 
 void lbann_callback_dump_activations::on_forward_prop_end(model *m, Layer *l) {
+
+  //Skip if we are interested in saving inferences at (a) given layer(s)
+  if(!m_layer_names.empty()) return;
 
   // Skip target layers
   if (dynamic_cast<generic_target_layer*>(l) != nullptr) {
@@ -49,5 +53,26 @@ void lbann_callback_dump_activations::on_forward_prop_end(model *m, Layer *l) {
   El::Write(l->get_activations(), file, El::ASCII);
 
 }
+
+void lbann_callback_dump_activations::on_test_end(model *m) {
+  //Skip if layer list is empty, user may interested in the saving all activations
+  //Use method above 
+  if(m_layer_names.empty()) return;
+
+  const auto layers = m->get_layers();
+  for(auto& l: layers) {
+    if(std::find(std::begin(m_layer_names), std::end(m_layer_names),
+                  l->get_name()) != std::end(m_layer_names)) {
+      //@todo: generalize to support different format
+      const std::string file
+        = (m_basename
+           + "model" + std::to_string(m->get_comm()->get_model_rank())
+           + "-" + l->get_name()
+           + "-Activations");
+       El::Write(l->get_activations(), file, El::ASCII);
+      }
+    }
+}
+
 
 }  // namespace lbann

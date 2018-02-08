@@ -83,24 +83,12 @@
       throw lbann::lbann_exception("cuDNN error");                      \
     }                                                                   \
   } while (0)
-#define FORCE_CHECK_CUBLAS(cublas_call)                                 \
-  do {                                                                  \
-    const cublasStatus_t cublas_status = cublas_call;                   \
-    if (cublas_status != CUBLAS_STATUS_SUCCESS) {                       \
-      std::cerr << "CUBLAS error";                                      \
-      std::cerr << "Error at " << __FILE__ << ":" << __LINE__ << "\n";  \
-      cudaDeviceReset();                                                \
-      throw lbann::lbann_exception("CUBLAS error");                     \
-    }                                                                   \
-  } while (0)
 #ifdef LBANN_DEBUG
 #define CHECK_CUDA(cuda_call)     FORCE_CHECK_CUDA(cuda_call)
 #define CHECK_CUDNN(cudnn_call)   FORCE_CHECK_CUDNN(cudnn_call)
-#define CHECK_CUBLAS(cublas_call) FORCE_CHECK_CUBLAS(cublas_call)
 #else
 #define CHECK_CUDA(cuda_call)     cuda_call
 #define CHECK_CUDNN(cudnn_call)   cudnn_call
-#define CHECK_CUBLAS(cublas_call) cublas_call
 #endif // #ifdef LBANN_DEBUG
 #endif // #ifdef LBANN_HAS_CUDNN
 
@@ -108,6 +96,102 @@ namespace lbann
 {
 namespace cudnn
 {
+
+// Forward declaration
+class cudnn_manager;
+class matrix;
+
+/** GPU matrix class.
+ *  This will soon be deprecated by native GPU support in Hydrogen.
+ */
+class matrix {
+#ifdef LBANN_HAS_CUDNN
+  
+public:
+
+  /** Constructor. */
+  matrix(cudnn_manager *cudnn = nullptr,
+         int height = 0,
+         int width_per_gpu = 0);
+  /** Copy constructor. */
+  matrix(const matrix& other);
+  /** Copy assignment operator. */
+  matrix& operator=(const matrix& other);
+  /** Move constructor. */
+  matrix(matrix&& other);
+  /** Move assignment operator. */
+  matrix& operator=(matrix&& other);
+  /** Destructor. */
+  virtual ~matrix();
+
+  /** Clear data. */
+  void clear();
+  /** Resize matrix. */
+  void resize(int height, int width_per_gpu);
+  /** Copy matrix entries.
+   *  The matrix is resized if needed.
+   */
+  void copy(const matrix& other);
+  /** Make a view of another matrix.
+   *  There is no check whether the original matrix is still valid.
+   */
+  void view(matrix& other);
+  /** Make a view of another matrix.
+   *  There is no check whether the original matrix is still valid.
+   */
+  void locked_view(const matrix& other);
+  /** Set matrix entries to zero. */
+  void zero();
+
+  /** Attach matrix to GPU data. */
+  void attach(std::vector<DataType*>& data,
+              int height,
+              int width_per_gpu,
+              int leading_dim = 0);
+  /** Attach matrix to GPU data. */
+  void locked_attach(const std::vector<DataType*>& data,
+                     int height,
+                     int width_per_gpu,
+                     int leading_dim = 0);
+
+  /** Get matrix height. */
+  inline int get_height() const { return m_height; }
+  /** Get matrix width per GPU. */
+  inline int get_width_per_gpu() const { return m_width_per_gpu; }
+  /** Get matrix leading dimension. */
+  inline int get_leading_dim() const { return m_leading_dim; }
+  /** Whether the matrix is responsible for managing its memory. */
+  inline bool is_view() const { return m_is_view; }
+  /** Whether the matrix can modify its entries. */
+  inline bool is_locked() const { return m_is_locked; }
+  /** Get GPU data pointers. */
+  std::vector<DataType*>& get_data();
+  /** Get GPU data pointers (const). */
+  const std::vector<DataType*>& get_locked_data() const;
+  /** Get GPU data pointer on ith GPU. */
+  DataType* get_data(int i);
+  /** Get GPU data pointer on ith GPU (const). */
+  const DataType* get_locked_data(int i) const;
+
+private:
+
+  /** cuDNN manager. */
+  cudnn_manager *m_cudnn;
+  /** GPU data pointers. */
+  std::vector<DataType*> m_data;
+  /** Matrix height. */
+  int m_height;
+  /** Matrix width per GPU. */
+  int m_width_per_gpu;
+  /** Matrix leading dimension. */
+  int m_leading_dim;
+  /** Whether the matrix is responsible for managing its memory. */
+  bool m_is_view;
+  /** Whether the matrix can modify its entries. */
+  bool m_is_locked;
+
+#endif
+};
 
 /** cuDNN manager class */
 class cudnn_manager {
@@ -162,14 +246,16 @@ class cudnn_manager {
   std::vector<void*> get_work_spaces();
   /** Get ith GPU work space. */
   void *get_work_space(int i);
-  /** Get GPU work space sizes (in bytes) (const). */
-  const std::vector<size_t> get_work_space_sizes() const;
+  /** Get a lower bound on GPU work space sizes (in bytes). */
+  size_t get_minimum_work_space_size();
+  /** Get GPU work space sizes (in bytes). */
+  std::vector<size_t> get_work_space_sizes();
   /** Get ith GPU work space size (in bytes). */
-  size_t get_work_space_size(int i) const;
-  /** Set ith GPU work space size (in bytes). */
-  void set_work_space_size(int i, size_t size);
+  size_t get_work_space_size(int i);
   /** Set ith GPU work space to occupy all available GPU memory. */
   void set_maximum_work_space_size(int i);
+  /** Free ith GPU work space. */
+  void free_work_space(int i);
   /** Free all GPU work spaces. */
   void free_work_spaces();
 
@@ -208,6 +294,18 @@ class cudnn_manager {
                                     int width,
                                     int width_per_gpu,
                                     int leading_dim = 0);
+
+  /** Set memory on ith GPU to a constant. */
+  void set_on_gpu(int i,
+                  DataType* gpu_data,
+                  DataType val,
+                  int height,
+                  int width = 1);
+  /** Set memory on GPU to a constant. */
+  void set_on_gpus(std::vector<DataType*>& gpu_data,
+                   DataType val,
+                   int height,
+                   int width_per_gpu = 1);
 
   /** Copy data on GPUs. */
   void copy_on_gpus(std::vector<DataType*>& gpu_dst_data,
@@ -342,7 +440,8 @@ cudnnDataType_t get_cudnn_data_type();
  */
 void set_tensor_cudnn_desc(cudnnTensorDescriptor_t& desc,
                            int num_samples,
-                           const std::vector<int>& sample_dims);
+                           const std::vector<int>& sample_dims,
+                           int sample_stride = 0);
 
 /** Copy cuDNN tensor descriptor.
  *  dst is created or destroyed if needed.

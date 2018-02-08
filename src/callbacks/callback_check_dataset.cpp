@@ -26,6 +26,8 @@
 
 #include <vector>
 #include "lbann/callbacks/callback_check_dataset.hpp"
+#include "lbann/layers/io/io_layer.hpp"
+#include "lbann/layers/io/input/input_layer.hpp"
 #include <iomanip>
 
 namespace lbann {

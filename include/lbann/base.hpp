@@ -33,26 +33,30 @@
 #include "lbann/Elemental_extensions.hpp"
 #include "lbann/utils/cyg_profile.hpp"
 
-
 // Defines, among other things, lbann::DataType.
 #include "lbann_config.hpp"
 
-using EGrid = El::Grid;
-using Grid = El::Grid;
-using Mat = El::Matrix<lbann::DataType>;
+// Typedefs for Elemental matrices
+using EGrid      = El::Grid;
+using Grid       = El::Grid;
+using Mat        = El::Matrix<lbann::DataType>;
 using AbsDistMat = El::AbstractDistMatrix<lbann::DataType>;
-using DistMat = El::DistMatrix<lbann::DataType, El::MC, El::MR>;
-using CircMat = El::DistMatrix<lbann::DataType, El::CIRC, El::CIRC>;
-using StarMat = El::DistMatrix<lbann::DataType, El::STAR, El::STAR>;
-/* Summary matrix over columns */
-using ColSumMat = El::DistMatrix<lbann::DataType, El::MR, El::STAR>;
-using RowSumMat = El::DistMatrix<lbann::DataType, El::MC, El::STAR>;
-using StarVCMat = El::DistMatrix<lbann::DataType, El::STAR, El::VC>;
-using StarMRMat = El::DistMatrix<lbann::DataType, El::STAR, El::MR>;
-/* Summary matrix over columns */
-using ColSumStarVCMat = El::DistMatrix<lbann::DataType, El::VC, El::STAR>;
-using BlockMat = El::BlockMatrix<lbann::DataType>;
-using ElMat = El::ElementalMatrix<lbann::DataType>;
+using ElMat      = El::ElementalMatrix<lbann::DataType>;
+using BlockMat   = El::BlockMatrix<lbann::DataType>;
+using MCMRMat    = El::DistMatrix<lbann::DataType, El::MC  , El::MR  >;
+using CircMat    = El::DistMatrix<lbann::DataType, El::CIRC, El::CIRC>;
+using StarMat    = El::DistMatrix<lbann::DataType, El::STAR, El::STAR>;
+using StarVCMat  = El::DistMatrix<lbann::DataType, El::STAR, El::VC  >;
+using VCStarMat  = El::DistMatrix<lbann::DataType, El::VC  , El::STAR>;
+using MCStarMat  = El::DistMatrix<lbann::DataType, El::MC  , El::STAR>;
+using MRStarMat  = El::DistMatrix<lbann::DataType, El::MR  , El::STAR>;
+using StarMRMat  = El::DistMatrix<lbann::DataType, El::STAR, El::MR  >;
+
+// Deprecated typedefs for Elemental matrices
+using DistMat         = MCMRMat;
+using RowSumMat       = MCStarMat;
+using ColSumStarVCMat = VCStarMat;
+using ColSumMat       = MRStarMat;
 
 // Datatype for model evaluation
 // Examples: timing, metrics, objective functions

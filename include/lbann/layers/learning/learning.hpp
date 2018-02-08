@@ -22,8 +22,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// learning .hpp - Base class for learning layers
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_LAYER_LEARNING_HPP_INCLUDED
@@ -33,18 +31,14 @@
 
 namespace lbann {
 
+/** Abstract base class for learning layers.
+ *  Learning layers have learnable parameters.
+ */
 class learning_layer : public Layer {
  public:
-  /** Constructor. */
   learning_layer(lbann_comm *comm) : Layer(comm) {}
-  /** Copy constructor. */
-  learning_layer(const learning_layer&) = default;
-  /** Copy assignment operator. */
-  learning_layer& operator=(const learning_layer&) = default;
-  /** Destructor. */
-  virtual ~learning_layer() override = default;
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_LAYER_LEARNING_HPP_INCLUDED
+#endif // LBANN_LAYER_LEARNING_HPP_INCLUDED

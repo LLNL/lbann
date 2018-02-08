@@ -56,4 +56,7 @@ inline const T *ElMatLike<T>::LockedBuffer() const {
   return (&(m_buf[0]));
 }
 
+#include "El.hpp"
+using Mat = El::Matrix<lbann::DataType>;
+
 #endif // _TOOLS_MAT_HPP_

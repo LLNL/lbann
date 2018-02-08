@@ -25,9 +25,6 @@
 #cmakedefine LBANN_HAS_CUDNN
 #cmakedefine LBANN_HAS_NCCL2
 
-/* Defined if LBANN uses CUDA-enabled softmax */
-#cmakedefine LBANN_SOFTMAX_CUDA
-
 #cmakedefine LBANN_NVPROF
 
 // Define the LBANN datatype

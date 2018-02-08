@@ -56,6 +56,7 @@ model {
       all_optimizers: true
     }
   }
+  # callback { gradient_check {} }
 
   ###################################################
   # Layers

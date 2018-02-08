@@ -57,10 +57,6 @@ class io_layer : public Layer {
       m_for_regression(for_regression) {
   }
 
-  template<data_layout T_layout> inline void initialize_distributed_matrices() {
-    Layer::initialize_distributed_matrices<T_layout>();
-  }
-
   /**
    * Return the dataset for the given execution mode.
    */

@@ -22,8 +22,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// split.hpp - Split layer
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_LAYER_SPLIT_HPP_INCLUDED
@@ -35,22 +33,21 @@
 
 namespace lbann {
 
-/// Split layer
+/** Split layer.
+ *  This layer can accommodate an arbitrary number of outputs.
+ */
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
 class split_layer : public transform_layer {
  private:
 
  public:
-  /// Constructor
+
   split_layer(lbann_comm *comm,
               cudnn::cudnn_manager *cudnn = nullptr)
     : transform_layer(comm) {
 
-    // Setup the data distribution
-    initialize_distributed_matrices();
-
     // Split layer has no limit on children
-    m_max_num_child_layers = -1;
+    m_expected_num_child_layers = -1;
 
   #ifdef LBANN_HAS_CUDNN
     // Initialize GPU if available
@@ -62,14 +59,9 @@ class split_layer : public transform_layer {
 
   }
 
-  split_layer(const split_layer&) = default;
-  split_layer& operator=(const split_layer&) = default;
-  ~split_layer() override {
-  #ifdef LBANN_HAS_CUDNN
-    // GPU memory for activations is a copy of previous layer's activations
-    this->m_activations_d.clear();
-  #endif // LBANN_HAS_CUDNN
-  }
+  split_layer* copy() const override { return new split_layer(*this); }
+  std::string get_type() const override { return "split"; }
+  data_layout get_data_layout() const override { return T_layout; }
 
   /** Returns description of ctor params */
   std::string get_description() const override {
@@ -82,32 +74,6 @@ class split_layer : public transform_layer {
     return s.str();
   }
 
-  split_layer* copy() const override { return new split_layer(*this); }
-
-  std::string get_type() const override { return "split"; }
-
-  virtual inline void initialize_distributed_matrices() {
-    transform_layer::initialize_distributed_matrices<T_layout>();
-  }
-  data_layout get_data_layout() const override { return T_layout; }
-
-  void setup_gpu() override {
-    transform_layer::setup_gpu();
-  #ifndef LBANN_HAS_CUDNN
-    throw lbann_exception("split_layer: cuDNN not detected");
-  #else
-
-    // Copy forward propagation output from GPUs if a child layer is
-    // not using GPU implementation
-    for(size_t i=1; i<this->m_child_layers.size(); ++i) {
-      if(!this->m_child_layers[i]->using_gpus()) {
-        m_copy_fp_output_from_gpus = true;
-      }
-    }
-
-  #endif // #ifndef LBANN_HAS_CUDNN
-  }
-
   protected:
 
   void fp_compute() override {
@@ -115,96 +81,54 @@ class split_layer : public transform_layer {
   #ifndef LBANN_HAS_CUDNN
       throw lbann_exception("split_layer: cuDNN not detected");
   #else
-      this->m_cudnn->copy_on_gpus(this->m_activations_d,
-                                  this->m_prev_activations_dv,
-                                  this->m_num_prev_neurons,
-                                  this->m_mini_batch_size_per_gpu);
+      const auto& input_d = this->m_prev_activations_d[0];
+      for (auto& output_d : this->m_activations_d ) {
+        output_d.locked_view(input_d);
+      }
   #endif // LBANN_HAS_CUDNN
-    }
-    else {
-      El::LockedView(*this->m_activations_v, *this->m_prev_activations_v);
+    } else {
+      const auto& input = get_prev_activations();
+      for (auto& output : this->m_activations) {
+        El::LockedView(*output, input);
+      }
     }
   }
 
   void bp_compute() override {
     if(this->m_using_gpus) {
-      bp_compute_cudnn();
-    } else {
-      bp_compute_cpu();
-    }
-  }
-
-  void bp_compute_cudnn() {
   #ifndef LBANN_HAS_CUDNN
-    throw lbann_exception("split_layer: cuDNN not detected");
+      throw lbann_exception("split_layer: cuDNN not detected");
   #else
-
-    // Useful constant
-    const DataType one = 1;
-
-    // Copy error signal from first child layer
-    this->m_cudnn->copy_on_gpus(this->m_error_signal_d,
-                                this->m_prev_error_signal_dv,
-                                this->m_num_neurons,
-                                this->m_mini_batch_size_per_gpu);
-
-    // Iterate through child layers
-    const int num_gpus = this->m_cudnn->get_num_gpus();
-    for(size_t child_index = 1;
-        child_index < this->m_child_layers.size();
-        ++child_index) {
-      const Layer* child = this->m_child_layers[child_index];
-
-      // Get child error signal on GPUs
-      if(child->using_gpus()) {
-        child->get_gpu_bp_output(this->m_prev_error_signal_dv,
-                                 this->m_prev_error_signal_d,
-                                 this);
-      }
-      else {
-        child->get_bp_output(*this->m_prev_error_signal_v, this);
-        if(m_prev_error_signal_d.empty()) {
-          m_cudnn->allocate_on_gpus(m_prev_error_signal_d,
-                                    m_num_neurons,
-                                    m_max_mini_batch_size_per_gpu);
+      const int num_gpus = m_cudnn->get_num_gpus();
+      auto& gradient_wrt_input_d = m_error_signals_d[0];
+      for (const auto& gradient_wrt_output_d : this->m_prev_error_signals_d) {
+        for (int i=0; i<num_gpus; ++i) {
+          CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
+          cublas::geam(this->m_cudnn->get_cublas_handle(i),
+                       CUBLAS_OP_N, CUBLAS_OP_N,
+                       gradient_wrt_input_d.get_height(),
+                       this->m_mini_batch_size_per_gpu,
+                       DataType(1),
+                       gradient_wrt_output_d.get_locked_data(i),
+                       gradient_wrt_output_d.get_leading_dim(),
+                       DataType(1),
+                       gradient_wrt_input_d.get_locked_data(i),
+                       gradient_wrt_input_d.get_leading_dim(),
+                       gradient_wrt_input_d.get_data(i),
+                       gradient_wrt_input_d.get_leading_dim());
         }
-        this->m_cudnn->scatter_to_gpus(this->m_prev_error_signal_d,
-                                       this->m_prev_error_signal_v->LockedMatrix(),
-                                       this->m_mini_batch_size_per_gpu);
-        m_prev_error_signal_dv = m_prev_error_signal_d;
       }
-
-      // Add child error signal to this layer's error signal
-      for(int i=0; i<num_gpus; ++i) {
-        CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-        CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
-                                   this->m_cudnn->get_stream(i)));
-        CHECK_CUDNN(cudnnAddTensor(this->m_cudnn->get_handle(i),
-                                   &one,
-                                   this->m_neurons_cudnn_desc,
-                                   this->m_prev_error_signal_dv[i],
-                                   &one,
-                                   this->m_prev_neurons_cudnn_desc,
-                                   this->m_error_signal_d[i]));
+  #endif // LBANN_HAS_CUDNN
+    } else {
+      auto& gradient_wrt_input = get_error_signals();
+      for (const auto& gradient_wrt_output : this->m_prev_error_signals) {
+        El::Axpy(DataType(1), *gradient_wrt_output, gradient_wrt_input);
       }
-
-    }
-
-  #endif // #ifndef LBANN_HAS_CUDNN
-  }
-
-  void bp_compute_cpu() {
-    El::Copy(*this->m_prev_error_signal_v, *this->m_error_signal_v);
-    for(size_t i=1; i<this->m_child_layers.size(); ++i) {
-      this->m_child_layers[i]->get_bp_output(*this->m_prev_error_signal_v, this);
-      El::Axpy(DataType(1),
-               *this->m_prev_error_signal_v,
-               *this->m_error_signal_v);
     }
   }
 
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_LAYER_SPLIT_HPP_INCLUDED
+#endif // LBANN_LAYER_SPLIT_HPP_INCLUDED
