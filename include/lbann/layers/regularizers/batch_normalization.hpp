@@ -264,10 +264,10 @@ class batch_normalization : public regularizer_layer {
     }
 
     // Setup weights
-    this->m_weights[0]->setup(this->m_neuron_dims[0], 1, El::STAR, El::STAR);
-    this->m_weights[1]->setup(this->m_neuron_dims[0], 1, El::STAR, El::STAR);
-    this->m_weights[2]->setup(this->m_neuron_dims[0], 1, El::STAR, El::STAR);
-    this->m_weights[3]->setup(this->m_neuron_dims[0], 1, El::STAR, El::STAR);
+    this->m_weights[0]->setup(this->m_neuron_dims[0]);
+    this->m_weights[1]->setup(this->m_neuron_dims[0]);
+    this->m_weights[2]->setup(this->m_neuron_dims[0]);
+    this->m_weights[3]->setup(this->m_neuron_dims[0]);
 
     // Initialize matrices
     El::Zeros(*m_mean, this->m_neuron_dims[0], 1);

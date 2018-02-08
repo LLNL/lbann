@@ -186,10 +186,8 @@ class convolution_layer : public base_convolution_layer {
 
   void setup_data() override {
     base_convolution_layer::setup_data();
-    this->m_weights[0]->setup(m_kernel_size / this->m_neuron_dims[0],
-                              this->m_neuron_dims[0],
-                              El::STAR, El::STAR);
-    this->m_weights[0]->set_proto_dims(this->m_kernel_dims);
+    this->m_weights[0]->setup(m_kernel_dims);
+    this->m_weights[0]->set_proto_dims(m_kernel_dims);
     El::Zeros(this->m_kernel_gradient,
               this->m_weights[0]->get_matrix_height(),
               this->m_weights[0]->get_matrix_width());

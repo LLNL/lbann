@@ -249,8 +249,7 @@ class base_convolution_layer : public learning_layer {
     }
 
     // Initialize bias
-    this->m_weights[1]->setup(this->m_neuron_dims[0], 1,
-                              El::STAR, El::STAR);
+    this->m_weights[1]->setup(this->m_neuron_dims[0]);
     El::Zeros(m_bias_gradient,
               this->m_weights[1]->get_matrix_height(),
               this->m_weights[1]->get_matrix_width());
@@ -300,6 +299,40 @@ class base_convolution_layer : public learning_layer {
     }
 
   #endif // LBANN_HAS_CUDNN
+  }
+
+  virtual void check_setup() override {
+    learning_layer::check_setup();
+    std::stringstream err;
+
+    // Check that kernel and bias weights are both initialized
+    if (this->m_weights.size() != 2
+        || this->m_weights[0] == nullptr
+        || this->m_weights[1] == nullptr) {
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "invalid weights setup in layer " << m_name;
+      throw lbann_exception(err.str());
+    }
+
+    // Check that kernel data is contiguous
+    const auto& kernel = this->m_weights[0]->get_values();
+    if (kernel.LocalWidth() > 1
+        && kernel.LDim() != kernel.LocalHeight()) {
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "kernel data in layer " << m_name << " "
+          << "is not contiguous";
+      throw lbann_exception(err.str());
+    }
+
+    // Check that kernel gradient data is contiguous
+    if (m_kernel_gradient.LocalWidth() > 1
+        && m_kernel_gradient.LDim() != m_kernel_gradient.LocalHeight()) {
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "kernel gradient data in layer " << m_name << " "
+          << "is not contiguous";
+      throw lbann_exception(err.str());
+    }
+
   }
 
  protected:
@@ -612,8 +645,9 @@ class base_convolution_layer : public learning_layer {
     const int m = output_size / output_dims[0];
     const int n = output_dims[0];
     const int k = m_kernel_size / output_dims[0];
-    Mat im2col_matrix(k, m);
     Mat input_col, output_col;
+    Mat im2col_matrix(k, m);
+    const Mat kernel_matrix(k, n, local_kernel.LockedBuffer(), k);
 
     // Iterate through input columns
     for (El::Int col = 0; col < local_width; ++col) {
@@ -632,7 +666,7 @@ class base_convolution_layer : public learning_layer {
       // Apply convolution to current input column
       output_col.Attach(m, n, local_output.Buffer(0, col), m);
       El::Gemm(El::TRANSPOSE, El::NORMAL,
-               DataType(1), im2col_matrix, local_kernel,
+               DataType(1), im2col_matrix, kernel_matrix,
                mixing_factor, output_col);
 
     }
@@ -669,8 +703,9 @@ class base_convolution_layer : public learning_layer {
     const int m = m_kernel_size / input_dims[0];
     const int n = input_size / input_dims[0];
     const int k = input_dims[0];
-    Mat im2col_matrix(m, n);
     Mat input_col, output_col;
+    Mat im2col_matrix(m, n);
+    const Mat kernel_matrix(m, k, local_kernel.LockedBuffer(), m);
 
     // Iterate through input columns
     for (El::Int col = 0; col < local_width; ++col) {
@@ -678,7 +713,7 @@ class base_convolution_layer : public learning_layer {
       // Apply transposed convolution to current input column
       input_col.LockedAttach(n, k, local_input.LockedBuffer(0, col), n);
       El::Gemm(El::NORMAL, El::TRANSPOSE,
-               DataType(1), local_kernel, input_col,
+               DataType(1), kernel_matrix, input_col,
                DataType(0), im2col_matrix);
 
       // Perform col2im to accumulate contributions from each kernel
@@ -778,7 +813,7 @@ class base_convolution_layer : public learning_layer {
     optimizer* kernel_optimizer = this->m_weights[0]->get_optimizer();
     if (kernel_optimizer == nullptr) { return; }
 
-    // Initialize im2col matrix
+    // Initialize matrices
     const int m = (using_transposed_convolution ?
                    m_kernel_size / num_input_channels :
                    m_kernel_size / num_output_channels);
@@ -789,9 +824,10 @@ class base_convolution_layer : public learning_layer {
                    this->m_num_prev_neurons / num_input_channels :
                    this->m_num_neurons / num_output_channels);
     Mat im2col_matrix(m, k);
+    Mat kernel_gradient_matrix(m, n, local_kernel_gradient.Buffer(), m);
+    El::Zero(kernel_gradient_matrix);
 
     // Compute kernel gradient contributions from each data sample
-    El::Zero(local_kernel_gradient);
     for (El::Int col = 0; col < local_width; ++col) {
       if (using_transposed_convolution) {
         const Mat input_col(k, n, local_input.LockedBuffer(0,col), k);
@@ -807,7 +843,7 @@ class base_convolution_layer : public learning_layer {
                m_strides.data());
         El::Gemm(El::NORMAL, El::NORMAL,
                  DataType(1), im2col_matrix, input_col,
-                 DataType(1), local_kernel_gradient);
+                 DataType(1), kernel_gradient_matrix);
       }
       else {
         const Mat input_col
@@ -823,7 +859,7 @@ class base_convolution_layer : public learning_layer {
                m_strides.data());
         El::Gemm(El::NORMAL, El::NORMAL,
                  DataType(1), im2col_matrix, gradient_wrt_output_col,
-                 DataType(1), local_kernel_gradient);
+                 DataType(1), kernel_gradient_matrix);
       }
     }
 
