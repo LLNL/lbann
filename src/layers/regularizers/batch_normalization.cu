@@ -106,12 +106,13 @@ __device__ inline double reciprocal_square_root(double x) {
 namespace lbann {
 namespace batch_normalization_cuda {
 
-template <typename DataType, int block_size>
+template <int block_size>
 __global__ void channel_sums_and_sqsums_kernel(
   int height,
   int width,
   int channel_size,
   const DataType * __restrict__ global_data,
+  int data_ldim,
         DataType * __restrict__ global_sums,
         DataType * __restrict__ global_sqsums) {
 
@@ -130,7 +131,7 @@ __global__ void channel_sums_and_sqsums_kernel(
   if(gidx < channel_size) {
     const int row = gidx + bidy * channel_size;
     for(int col = 0; col < width; ++col) {
-      const DataType x = global_data[row + col * height];
+      const DataType x = global_data[row + col * data_ldim];
       sum += x;
       sqsum += x * x;
     }
@@ -156,11 +157,11 @@ __global__ void channel_sums_and_sqsums_kernel(
 
 }
 
-template <typename DataType>
 void channel_sums_and_sqsums(int height,
                              int width,
                              int num_channels,
                              const DataType *data_d,
+                             int data_ldim,
                                    DataType *sums_d,
                                    DataType *sqsums_d,
                              cudaStream_t stream) {
@@ -181,13 +182,12 @@ void channel_sums_and_sqsums(int height,
   block_dims.x = block_size;
   grid_dims.x = (channel_size + block_size - 1) / block_size;
   grid_dims.y = num_channels;
-  channel_sums_and_sqsums_kernel<DataType,block_size>
+  channel_sums_and_sqsums_kernel<block_size>
     <<<grid_dims, block_dims, 0, stream>>>
-    (height, width, channel_size, data_d, sums_d, sqsums_d);
+    (height, width, channel_size, data_d, data_ldim, sums_d, sqsums_d);
 
 }
 
-template <typename DataType>
 __global__ void sums_to_statistics_kernel(
   int num_entries,
   DataType samples_per_sum,
@@ -218,7 +218,6 @@ __global__ void sums_to_statistics_kernel(
   }
 }
 
-template <typename DataType>
 void sums_to_statistics(int num_entries,
                         int samples_per_sum,
                         DataType decay,
@@ -230,24 +229,26 @@ void sums_to_statistics(int num_entries,
   dim3 block_dims, grid_dims;
   block_dims.x = 256;
   grid_dims.x = (num_entries + block_dims.x - 1) / block_dims.x;
-  sums_to_statistics_kernel<DataType>
+  sums_to_statistics_kernel
     <<<grid_dims, block_dims, 0, stream>>>
     (num_entries, (DataType)samples_per_sum, decay,
      mean_d, var_d, running_mean_d, running_var_d);
 }
 
-template <typename DataType, int block_size>
+template <int block_size>
 __global__ void batch_normalization_kernel(
   int height,
   int width,
   int channel_size,
-  const DataType * __restrict__ global_prev_activations,
+  const DataType * __restrict__ global_input,
+  int input_ldim,
   const DataType * __restrict__ global_mean,
   const DataType * __restrict__ global_var,
   DataType epsilon,
   const DataType * __restrict__ global_scale,
   const DataType * __restrict__ global_bias,
-        DataType * __restrict__ global_activations) {
+        DataType * __restrict__ global_output,
+  int output_ldim) {
 
   // Indices
   const int gidx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -266,26 +267,27 @@ __global__ void batch_normalization_kernel(
   if(gidx < channel_size) {
     const int row = gidx + bidy * channel_size;
     for(int col = 0; col < width; ++col) {
-      const DataType x = global_prev_activations[row + col * height];
+      const DataType x = global_input[row + col * input_ldim];
       const DataType xhat = (x - mean) * inv_stdev;
       const DataType y = scale * xhat + bias;
-      global_activations[row + col * height] = y;
+      global_output[row + col * output_ldim] = y;
     }
   }
 
 }
 
-template <typename DataType>
 void batch_normalization(int height,
                          int width,
                          int num_channels,
-                         const DataType *prev_activations_d,
+                         const DataType *input_d,
+                         int input_ldim,
                          const DataType *mean_d,
                          const DataType *var_d,
                          DataType epsilon,
                          const DataType *scale_d,
                          const DataType *bias_d,
-                               DataType *activations_d,
+                               DataType *output_d,
+                         int output_ldim,
                          cudaStream_t stream) {
 
   // CUDA block size
@@ -300,23 +302,25 @@ void batch_normalization(int height,
   block_dims.x = block_size;
   grid_dims.x = (channel_size + block_size - 1) / block_size;
   grid_dims.y = num_channels;
-  batch_normalization_kernel<DataType,block_size>
+  batch_normalization_kernel<block_size>
     <<<grid_dims, block_dims, 0, stream>>>
     (height, width, channel_size,
-     prev_activations_d,
+     input_d, input_ldim,
      mean_d, var_d, epsilon,
      scale_d, bias_d,
-     activations_d);
+     output_d, output_ldim);
 
 }
 
-template <typename DataType, int block_size>
+template <int block_size>
 __global__ void batch_normalization_backprop1_kernel(
   int height,
   int width,
   int channel_size,
-  const DataType * __restrict__ global_prev_activations,
-  const DataType * __restrict__ global_prev_error_signal,
+  const DataType * __restrict__ global_input,
+  int input_ldim,
+  const DataType * __restrict__ global_gradient_wrt_output,
+  int gradient_wrt_output_ldim,
   const DataType * __restrict__ global_mean,
   const DataType * __restrict__ global_var,
   DataType epsilon,
@@ -354,9 +358,9 @@ __global__ void batch_normalization_backprop1_kernel(
   if(gidx < channel_size) {
     const int row = gidx + bidy * channel_size;
     for(int col = 0; col < width; ++col) {
-      const DataType x = global_prev_activations[row + col * height];
+      const DataType x = global_input[row + col * input_ldim];
       const DataType xhat = (x - mean) * inv_stdev;
-      const DataType dy = global_prev_error_signal[row + col * height];
+      const DataType dy = global_gradient_wrt_output[row + col * gradient_wrt_output_ldim];
       dscale += dy * xhat;
       dbias += dy;
       const DataType dxhat = dy * scale;
@@ -391,12 +395,13 @@ __global__ void batch_normalization_backprop1_kernel(
 
 }
 
-template <typename DataType>
 void batch_normalization_backprop1(int height,
                                    int width,
                                    int num_channels,
-                                   const DataType *prev_activations_d,
-                                   const DataType *prev_error_signal_d,
+                                   const DataType *input_d,
+                                   int input_ldim,
+                                   const DataType *gradient_wrt_output_d,
+                                   int gradient_wrt_output_ldim,
                                    const DataType *mean_d,
                                    const DataType *var_d,
                                    DataType epsilon,
@@ -425,30 +430,33 @@ void batch_normalization_backprop1(int height,
   block_dims.x = block_size;
   grid_dims.x = (channel_size + block_size - 1) / block_size;
   grid_dims.y = num_channels;
-  batch_normalization_backprop1_kernel<DataType,block_size>
+  batch_normalization_backprop1_kernel<block_size>
     <<<grid_dims, block_dims, 0, stream>>>
     (height, width, channel_size,
-     prev_activations_d, prev_error_signal_d,
+     input_d, input_ldim, gradient_wrt_output_d, gradient_wrt_output_ldim,
      mean_d, var_d, epsilon, scale_d,
      dscale_d, dbias_d, dmean_d, dvar_d);
 
 }
 
-template <typename DataType, int block_size>
+template <int block_size>
 __global__ void batch_normalization_backprop2_kernel(
   int height,
   int local_width,
   int global_width,
   int channel_size,
-  const DataType * __restrict__ global_prev_activations,
-  const DataType * __restrict__ global_prev_error_signal,
+  const DataType * __restrict__ global_input,
+  int input_ldim,
+  const DataType * __restrict__ global_gradient_wrt_output,
+  int gradient_wrt_output_ldim,
   const DataType * __restrict__ global_mean,
   const DataType * __restrict__ global_var,
   DataType epsilon,
   const DataType * __restrict__ global_scale,
   const DataType * __restrict__ global_dmean,
   const DataType * __restrict__ global_dvar,
-        DataType * __restrict__ global_error_signal) {
+        DataType * __restrict__ global_gradient_wrt_input,
+  int gradient_wrt_input_ldim) {
 
   // Indices
   const int gidx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -470,32 +478,34 @@ __global__ void batch_normalization_backprop2_kernel(
   if(gidx < channel_size) {
     const int row = gidx + bidy * channel_size;
     for(int col = 0; col < local_width; ++col) {
-      const DataType x = global_prev_activations[row + col * height];
-      const DataType dy = global_prev_error_signal[row + col * height];
+      const DataType x = global_input[row + col * input_ldim];
+      const DataType dy = global_gradient_wrt_output[row + col * gradient_wrt_output_ldim];
       const DataType dxhat = dy * scale;
       DataType dx = dxhat * inv_stdev;
       dx += dmean_term;
       dx += dvar_term * (x - mean);
-      global_error_signal[row + col * height] = dx;
+      global_gradient_wrt_input[row + col * gradient_wrt_input_ldim] += dx;
     }
   }
 
 }
 
-template <typename DataType>
 void batch_normalization_backprop2(int height,
                                    int local_width,
                                    int global_width,
                                    int num_channels,
-                                   const DataType *prev_activations_d,
-                                   const DataType *prev_error_signal_d,
+                                   const DataType *input_d,
+                                   int input_ldim,
+                                   const DataType *gradient_wrt_output_d,
+                                   int gradient_wrt_output_ldim,
                                    const DataType *mean_d,
                                    const DataType *var_d,
                                    DataType epsilon,
                                    const DataType *scale_d,
                                    const DataType *dmean_d,
                                    const DataType *dvar_d,
-                                         DataType *error_signal_d,
+                                         DataType *gradient_wrt_input_d,
+                                   int gradient_wrt_input_ldim,
                                    cudaStream_t stream) {
   
   // CUDA block size
@@ -510,134 +520,14 @@ void batch_normalization_backprop2(int height,
   block_dims.x = block_size;
   grid_dims.x = (channel_size + block_size - 1) / block_size;
   grid_dims.y = num_channels;
-  batch_normalization_backprop2_kernel<DataType,block_size>
+  batch_normalization_backprop2_kernel<block_size>
     <<<grid_dims, block_dims, 0, stream>>>
     (height, local_width, global_width, channel_size,
-     prev_activations_d, prev_error_signal_d,
+     input_d, input_ldim, gradient_wrt_output_d, gradient_wrt_output_ldim,
      mean_d, var_d, epsilon, scale_d, dmean_d, dvar_d,
-     error_signal_d);
+     gradient_wrt_input_d, gradient_wrt_input_ldim);
 
 }
-
-// Explicit instantiation
-template
-void channel_sums_and_sqsums<float>(int height,
-                                    int width,
-                                    int num_channels,
-                                    const float *data_d,
-                                    float *sums_d,
-                                    float *sqsums_d,
-                                    cudaStream_t stream);
-template
-void sums_to_statistics<float>(int num_entries,
-                               int entries_per_sum,
-                               float decay,
-                               float *mean_d,
-                               float *var_d,
-                               float *running_mean_d,
-                               float *running_var_d,
-                               cudaStream_t stream);
-template
-void batch_normalization<float>(int height,
-                                int width,
-                                int num_channels,
-                                const float *prev_activations_d,
-                                const float *mean_d,
-                                const float *var_d,
-                                float epsilon,
-                                const float *scale_d,
-                                const float *bias_d,
-                                float *activations_d,
-                                cudaStream_t stream);
-template
-void batch_normalization_backprop1<float>(int height,
-                                          int width,
-                                          int num_channels,
-                                          const float *prev_activations_d,
-                                          const float *prev_error_signal_d,
-                                          const float *mean_d,
-                                          const float *var_d,
-                                          float epsilon,
-                                          const float *scale_d,
-                                          float *dscale_d,
-                                          float *dbias_d,
-                                          float *dmean_d,
-                                          float *dvar_d,
-                                          cudaStream_t stream);
-template
-void batch_normalization_backprop2<float>(int height,
-                                          int local_width,
-                                          int global_width,
-                                          int num_channels,
-                                          const float *prev_activations_d,
-                                          const float *prev_error_signal_d,
-                                          const float *mean_d,
-                                          const float *var_d,
-                                          float epsilon,
-                                          const float *scale_d,
-                                          const float *dmean_d,
-                                          const float *dvar_d,
-                                          float *error_signal_d,
-                                          cudaStream_t stream);
-template
-void channel_sums_and_sqsums<double>(int height,
-                                     int width,
-                                     int num_channels,
-                                     const double *data_d,
-                                     double *sums_d,
-                                     double *sqsums_d,
-                                     cudaStream_t stream);
-template
-void sums_to_statistics<double>(int num_entries,
-                                int entries_per_sum,
-                                double decay,
-                                double *mean_d,
-                                double *var_d,
-                                double *running_mean_d,
-                                double *running_var_d,
-                                cudaStream_t stream);
-template
-void batch_normalization<double>(int height,
-                                 int width,
-                                 int num_channels,
-                                 const double *prev_activations_d,
-                                 const double *mean_d,
-                                 const double *var_d,
-                                 double epsilon,
-                                 const double *scale_d,
-                                 const double *bias_d,
-                                 double *activations_d,
-                                 cudaStream_t stream);
-template
-void batch_normalization_backprop1<double>(int height,
-                                           int width,
-                                           int num_channels,
-                                           const double *prev_activations_d,
-                                           const double *prev_error_signal_d,
-                                           const double *mean_d,
-                                           const double *var_d,
-                                           double epsilon,
-                                           const double *scale_d,
-                                           double *dscale_d,
-                                           double *dbias_d,
-                                           double *dmean_d,
-                                           double *dvar_d,
-                                           cudaStream_t stream);
-template
-void batch_normalization_backprop2<double>(int height,
-                                           int local_width,
-                                           int global_width,
-                                           int num_channels,
-                                           const double *prev_activations_d,
-                                           const double *prev_error_signal_d,
-                                           const double *mean_d,
-                                           const double *var_d,
-                                           double epsilon,
-                                           const double *scale_d,
-                                           const double *dmean_d,
-                                           const double *dvar_d,
-                                           double *error_signal_d,
-                                           cudaStream_t stream);
 
 } // namespace batch_normalization
 } // namespace lbann

@@ -10,6 +10,9 @@ set_full_path(THIS_DIR_HEADERS
   sum.hpp
   transform.hpp
   unpooling.hpp
+  constant.hpp
+  dummy.hpp
+  hadamard.hpp
   )
 
 # Propagate the files up the tree

@@ -195,7 +195,7 @@ lbann_callback_imcomm::comm_type get_comm_type(const std::string &s, bool master
     if (master) {
       std::stringstream err;
       err << __FILE__ << " " <<__LINE__
-         << " :: unkown comm_type: " << s
+          << " :: unkown comm_type: " << s
           << " should be one of: none, normal, onebit_quantization, thresh_quantization, adaptive_quantization";
       throw lbann_exception(err.str());
     } else {
@@ -416,17 +416,6 @@ void add_layers(
           cudnn);
       }
 
-#if 0
-      double l2_regularization_factor = ell.l2_regularization_factor();
-      if(l2_regularization_factor != double(0.0)) {
-        ((learning *) d)->set_l2_regularization_factor(l2_regularization_factor);
-      }
-
-      double group_lasso_regularization_factor = ell.group_lasso_regularization_factor();
-      if (group_lasso_regularization_factor != double(0.0)) {
-        ((learning *) d)->set_group_lasso_regularization_factor(group_lasso_regularization_factor);
-      }
-#endif // 0
     }
 
     //////////////////////////////////////////////////////////////////
@@ -494,6 +483,13 @@ void add_layers(
     }
 
     //////////////////////////////////////////////////////////////////
+    // LAYER: split
+    //////////////////////////////////////////////////////////////////
+    else if (layer.has_split()) {
+      d = new split_layer<>(comm, cudnn);
+    }
+
+    //////////////////////////////////////////////////////////////////
     // LAYER: noise
     //////////////////////////////////////////////////////////////////
     else if (layer.has_noise()) {
@@ -502,10 +498,10 @@ void add_layers(
     }
 
     //////////////////////////////////////////////////////////////////
-    // LAYER: split
+    // LAYER: Hadamard
     //////////////////////////////////////////////////////////////////
-    else if (layer.has_split()) {
-      d = new split_layer<>(comm, cudnn);
+    else if (layer.has_hadamard()) {
+      d = new hadamard_layer<>(comm, cudnn);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -538,7 +534,7 @@ void add_layers(
           pool_strides.push_back(i);
         }
         if (layout == data_layout::MODEL_PARALLEL and master) {
-          err << __FILE__ << " " << __LINE__ << " :: local_response_normalization "
+          err << __FILE__ << " " << __LINE__ << " :: pooling_layer "
               << "does not support MODEL_PARALLEL layouts";
           throw lbann_exception(err.str());
         } else {
@@ -554,7 +550,7 @@ void add_layers(
         }
       } else {
         if (layout == data_layout::MODEL_PARALLEL and master) {
-          err << __FILE__ << " " << __LINE__ << " :: local_response_normalization "
+          err << __FILE__ << " " << __LINE__ << " :: pooling_layer "
               << "does not support MODEL_PARALLEL layouts";
           throw lbann_exception(err.str());
         } else {
@@ -731,7 +727,6 @@ void add_layers(
         }
       }
     }
-
     //////////////////////////////////////////////////////////////////
     // LAYER: local_response_normalization
     //////////////////////////////////////////////////////////////////
@@ -895,14 +890,13 @@ void add_layers(
     }
 
     //////////////////////////////////////////////////////////////////
-    // LAYER: id
+    // LAYER: identity
     //////////////////////////////////////////////////////////////////
-    else if (layer.has_id()) {
-      //const lbann_data::ID& ell = layer.id();
+    else if (layer.has_identity()) {
       if (layout == data_layout::MODEL_PARALLEL) {
-        d = new id_layer<data_layout::MODEL_PARALLEL>(comm);
+        d = new identity_layer<data_layout::MODEL_PARALLEL>(comm);
       } else {
-        d = new id_layer<data_layout::DATA_PARALLEL>(comm);
+        d = new identity_layer<data_layout::DATA_PARALLEL>(comm);
       }
     }
 
@@ -1147,11 +1141,9 @@ void init_callbacks(
   const lbann_data::Model& m = p.model();
   if (master) std::cerr << std::endl << "starting init_callbacks; size: " << m.callback_size() << std::endl;
 
-
   //the same summarizer is passed to all call backs that take a summarizer;
   //construct_summarizer returns this summarizer, which may be a nullptr
   lbann_summary *summarizer = construct_summarizer(m, comm);
-
 
   //loop over the callbacks
   int size = m.callback_size();
@@ -1639,6 +1631,7 @@ void init_callbacks(
       lbann_callback_save_model *model_cb = new lbann_callback_save_model(dir, extension);
       model->add_callback(model_cb);
     }
+
   }
 
 }
@@ -1719,7 +1712,8 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
   if (name == "sequential_model") {
     model = new sequential_model(comm, mini_batch_size, obj_fn, default_optimizer);
     if (master) std::cout << "instantiating sequential_model\n";
-  } else if (name == "directed_acyclic_graph_model") {
+  } 
+  else if (name == "directed_acyclic_graph_model") {
     model = new directed_acyclic_graph_model(comm, mini_batch_size, obj_fn, default_optimizer);
     if (master) std::cout << "instantiating directed_acyclic_graph_model\n";
   } else if (name == "recurrent_model") {

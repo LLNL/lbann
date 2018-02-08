@@ -95,9 +95,6 @@ class greedy_layerwise_autoencoder : public sequential_model {
   /** Backward prop step. */
   void backward_prop() override;
 
-  /** Clear error signal tensors. */
-  void clear_error_signals() override;
-
 };
 
 }  // namespace lbann

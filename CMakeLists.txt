@@ -89,9 +89,6 @@ option(${UPPER_PROJECT_NAME}_WITH_NVPROF
 option(${UPPER_PROJECT_NAME}_WITH_TOPO_AWARE
   "Enable topology-aware profiling (HWLOC)" ON)
 
-option(${UPPER_PROJECT_NAME}_WITH_SOFTMAX_CUDA
-  "Enable CUDA-based softmax layer" ON)
-
 option(${UPPER_PROJECT_NAME}_VERBOSE "Enable verbose output" OFF)
 
 option(${UPPER_PROJECT_NAME}_SEQUENTIAL_INITIALIZATION
@@ -121,11 +118,8 @@ if (${UPPER_PROJECT_NAME}_WITH_CUDA)
   set(LBANN_HAS_CUDA ${CUDA_FOUND})
 
   if (LBANN_HAS_CUDA)
-    set(LBANN_SOFTMAX_CUDA ${${UPPER_PROJECT_NAME}_WITH_SOFTMAX_CUDA})
   else ()
     message(FATAL_ERROR "CUDA support not found. Disabling.")
-    set(LBANN_SOFTMAX_CUDA FALSE)
-    set(LBANN_WITH_SOFTMAX_CUDA OFF)
     set(LBANN_WITH_CUDA OFF)
   endif ()
 endif ()

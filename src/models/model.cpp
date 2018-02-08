@@ -599,7 +599,7 @@ bool model::train_mini_batch() {
 
 void model::clear_error_signals() {
   for (const auto& layer : m_layers) {
-    layer->clear_error_signal();
+    layer->clear_error_signals(m_current_mini_batch_size);
   }
 }
 

@@ -645,6 +645,7 @@ message Layer {
    Sum sum = 303;
    Noise noise = 307;
    Unpooling unpooling = 304;
+   Hadamard hadamard = 308;
 
    // learning Layers
    FullyConnected fully_connected = 11;
@@ -664,7 +665,7 @@ message Layer {
    // activation Layers
    Softmax softmax = 200;
    ELU elu = 30;
-   ID id = 31;
+   Identity identity = 31;
    LeakyRelu leaky_relu = 32;
    Relu relu = 33;
    Sigmoid sigmoid = 34;
@@ -693,7 +694,7 @@ message ELU {
   double alpha = 2; //default: 1.0; must be >= 0
 }
 
-message ID {
+message Identity {
 }
 
 message LeakyRelu {
@@ -825,6 +826,10 @@ message Sum {
 message Noise {
   double noise_factor=1;
 }
+
+message Hadamard {
+}
+
 /////////////////////
 // learning Layers //
 /////////////////////

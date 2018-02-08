@@ -36,6 +36,14 @@ namespace cudnn {
 
 namespace {
 
+__global__ void constant_kernel(DataType *data,
+                                DataType val,
+                                El::Int len) {
+  int offset = blockIdx.x * blockDim.x + threadIdx.x;
+  if (offset >= len) return;
+  data[offset] = val;
+}
+
 __global__ void reduce_kernel(DataType *dst, const DataType *src,
                               El::Int len) {
   int offset = blockIdx.x * blockDim.x + threadIdx.x;
@@ -56,6 +64,18 @@ __global__ void scale_kernel(DataType *data,
 #endif // LBANN_HAS_NCCL2
 }
 
+void cudnn_manager::set_on_gpu(int i,
+                               DataType* gpu_data,
+                               DataType val,
+                               int height,
+                               int width) {
+  CHECK_CUDA(cudaSetDevice(m_gpus[i]));
+  const El::Int len = height * width;
+  const int tb_dim = 256;
+  const int grid_dim = len/tb_dim + (len % tb_dim ? 1 : 0);
+  constant_kernel<<<grid_dim, tb_dim>>>(gpu_data, val, len);
+}
+
 void cudnn_manager::allreduce_on_gpus(std::vector<DataType*>& gpu_data,
                                       El::Int height,
                                       El::Int width) {
@@ -63,18 +83,26 @@ void cudnn_manager::allreduce_on_gpus(std::vector<DataType*>& gpu_data,
     return;
   }
 
-  const El::Int buf_len = 1 << 27;
-  const El::Int work_len = buf_len * 2; // double buffering
-  const El::Int work_len_bytes = work_len * sizeof(DataType);
+  // Determine work space size
+  const El::Int work_space_size = get_minimum_work_space_size();
+  const El::Int min_work_space_size = 1024;
+  if (work_space_size < min_work_space_size) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "insufficient GPU work space "
+        << "(requires " << min_work_space_size << " bytes on each GPU, "
+        << "but only have " << work_space_size << " bytes)";
+    throw lbann_exception(err.str());
+  }
 
+  // Setup work buffers
+  const El::Int buf_len = work_space_size / (2 * sizeof(DataType));
   std::vector<DataType*> bufs[2];
   for(int i=0; i<m_num_gpus; ++i) {
-    if (get_work_space_size(i) < work_len_bytes) {
-      set_work_space_size(i, work_len_bytes);
-    }
-    bufs[0].push_back(static_cast<DataType*>(get_work_space(i)));
-    bufs[1].push_back(static_cast<DataType*>(get_work_space(i)) + buf_len);
-  }
+    DataType* work_space = static_cast<DataType*>(get_work_space(i));
+    bufs[0].push_back(work_space);
+    bufs[1].push_back(work_space + buf_len);
+  }  
 
   El::Int total_len = height * width;
   El::Int offset = 0;

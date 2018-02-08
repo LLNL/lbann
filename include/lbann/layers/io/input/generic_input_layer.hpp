@@ -53,7 +53,7 @@ class generic_input_layer : public io_layer {
       m_data_readers(data_readers) {
       //m_data_sets_span_models(data_sets_span_models) {
     // Input layers have no parents
-    m_max_num_parent_layers = 0;
+    m_expected_num_parent_layers = 0;
 
     if(m_data_readers[execution_mode::training] != nullptr) {
       m_training_dataset.total_samples() = m_data_readers[execution_mode::training]->get_num_data();
@@ -163,32 +163,29 @@ class generic_input_layer : public io_layer {
     io_buffer->setup_data(this->m_num_neurons, max_mb_size);
   }
 
-  template<data_layout T_layout> inline void initialize_distributed_matrices() {
-    io_layer::initialize_distributed_matrices<T_layout>();
-  }
-
   /** Define the standard view of the matrix -- and set it for the model
    * Setup the effective (global) mini-batch size so that gradients are properly
    * averaged across models. */
-  void fp_set_std_matrix_view() override {
+  void fp_setup_data(int mini_batch_size) override {
+
     // Use the predetermined size of the mini-batch to set the current
     // batch size for the neural network
-    El::Int cur_mini_batch_size = get_current_mini_batch_size();
-    this->m_model->set_current_mini_batch_size(cur_mini_batch_size);
+    mini_batch_size = get_current_mini_batch_size();
+    this->m_model->set_current_mini_batch_size(mini_batch_size);
 
     // Use the precomputed size of the global mini-batch to set the
     // current effective batch size across all models
     int total_mini_batch_size = get_current_global_mini_batch_size();
     this->m_model->set_effective_mini_batch_size(total_mini_batch_size);
 
-    // Once the current mini-batch size is defined, set the standard view for activations only
-    El::View(*m_activations_v, *m_activations, El::ALL, El::IR(0, cur_mini_batch_size));
-    io_buffer->set_local_matrix_bypass(&this->m_activations_v->Matrix());
-    io_buffer->set_std_matrix_view(cur_mini_batch_size);
-  }
+    // Initialize matrices
+    io_layer::fp_setup_data(mini_batch_size);
 
-  /** No setting the standard view of the matrix -- it defines the standard view */
-  void bp_set_std_matrix_view() override {}
+    // Once the current mini-batch size is defined, set the standard view for activations only
+    io_buffer->set_local_matrix_bypass(&get_local_activations());
+    io_buffer->set_std_matrix_view(mini_batch_size);
+
+  }
 
   void fp_compute() override {
     execution_mode mode = this->m_model->get_execution_mode();
@@ -214,7 +211,7 @@ class generic_input_layer : public io_layer {
       this->m_model->set_current_mini_batch_size(num_samples_in_batch
                                                  + get_current_world_master_mini_batch_adjustment(m_comm->get_model_rank()));
 
-      io_buffer->distribute_from_local_matrix(*this->m_activations, get_data_reader(), mode);
+      io_buffer->distribute_from_local_matrix(get_activations(), get_data_reader(), mode);
 
       if(num_samples_in_batch !=
          (expected_num_samples_in_batch - get_current_world_master_mini_batch_adjustment(m_comm->get_model_rank()))) {
@@ -234,6 +231,8 @@ class generic_input_layer : public io_layer {
       throw lbann_exception(err.str());
     }
   }
+
+  void bp_compute() override {}
 
   /**
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary

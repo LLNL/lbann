@@ -40,6 +40,7 @@ namespace lbann {
 template <typename T_io_buffer, data_layout T_layout = data_layout::DATA_PARALLEL>
 class input_layer : public generic_input_layer {
  public:
+
   /// @todo make the map and vector references
   input_layer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, bool data_set_spans_models = true)
     : generic_input_layer(comm, num_parallel_readers, data_readers, data_set_spans_models) {
@@ -47,8 +48,6 @@ class input_layer : public generic_input_layer {
     initialize_io_buffer(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), data_readers);
     io_buffer->fetch_data_fn = new fetch_data_functor(true, false);
     io_buffer->update_data_reader_fn = new update_data_reader_functor(true);
-    // Setup the data distribution
-    initialize_distributed_matrices();
   }
   input_layer(const input_layer&) = default;
   input_layer& operator=(const input_layer&) = default;
@@ -68,14 +67,8 @@ class input_layer : public generic_input_layer {
     generic_input_layer::initialize_io_buffer<T_io_buffer>(comm, num_parallel_readers, data_readers);
   }
 
-  virtual inline void initialize_distributed_matrices() {
-    generic_input_layer::initialize_distributed_matrices<T_layout>();
-  }
   data_layout get_data_layout() const override { return T_layout; }
 
-  void setup_data() override {
-    generic_input_layer::setup_data();
-  }
 };
 
 template<>
