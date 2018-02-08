@@ -114,12 +114,9 @@ class generic_target_layer : public io_layer {
   void setup_dims() override {
     io_layer::setup_dims();
     if (this->is_for_regression()) {
-      this->m_neuron_dims = get_data_dims();
-      this->m_num_neuron_dims = this->m_neuron_dims.size();
-      this->m_num_neurons = std::accumulate(this->m_neuron_dims.begin(),
-                                            this->m_neuron_dims.end(),
-                                            1,
-                                            std::multiplies<int>());
+      this->m_num_neurons = get_linearized_response_size();
+      this->m_num_neuron_dims = 1;
+      this->m_neuron_dims.assign(1, this->m_num_neurons);
     } else {
       this->m_num_neurons = get_linearized_label_size();
       this->m_num_neuron_dims = 1;

@@ -44,8 +44,8 @@ class generic_input_layer : public io_layer {
   generic_input_layer(lbann_comm *comm,
               int num_parallel_readers,
               std::map<execution_mode, generic_data_reader *> data_readers,
-              bool data_set_spans_models = true)
-    : io_layer(comm, data_set_spans_models),
+              bool data_set_spans_models = true, bool for_regression = false)
+    : io_layer(comm, data_set_spans_models, for_regression),
       io_buffer(nullptr),
       m_training_dataset(),
       m_testing_dataset(),
@@ -560,7 +560,33 @@ class generic_input_layer : public io_layer {
   }
 
   long get_linearized_response_size() const override {
-    return static_cast<long>(1);
+    if (!is_for_regression()) {
+      return static_cast<long>(1);
+    }
+    long linearized_response_size = -1;
+    data_reader_map_t::const_iterator it;
+
+    it = m_data_readers.find(execution_mode::training);
+    if ((it != m_data_readers.end()) && it->second) {
+      linearized_response_size = (it->second)->get_linearized_response_size();
+    }
+    it = m_data_readers.find(execution_mode::validation);
+    if ((it != m_data_readers.end()) && it->second) {
+      long tmp_response_size = (it->second)->get_linearized_response_size();
+      if (linearized_response_size != -1 && linearized_response_size != tmp_response_size) {
+        throw lbann_exception("lbann_io_layer: validation response set size does not "
+                              "match the currently established data set size");
+      }
+    }
+    it = m_data_readers.find(execution_mode::testing);
+    if ((it != m_data_readers.end()) && it->second) {
+      long tmp_response_size = (it->second)->get_linearized_response_size();
+      if (linearized_response_size != -1 && linearized_response_size != tmp_response_size) {
+        throw lbann_exception("lbann_io_layer: testing response set size does not "
+                              "match the currently established data set size");
+      }
+    }
+    return linearized_response_size;
   }
 
   long get_num_samples_trained() const override {
