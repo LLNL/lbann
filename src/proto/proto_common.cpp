@@ -2117,27 +2117,27 @@ void set_data_readers_filenames(std::string which, lbann_data::LbannPB& p)
     if (r->role() == which) {
       std::stringstream s;
       s << "data_filedir_" << which;
-      if (opts->has_string(s.str().c_str())) {
-        r->set_data_filedir(opts->get_string(s.str().c_str()));
+      if (opts->has_string(s.str())) {
+        r->set_data_filedir(opts->get_string(s.str()));
       }else {
         s.clear();
         s.str("");
         s << "data_filedir";
-        if (opts->has_string(s.str().c_str())) {
-          r->set_data_filedir(opts->get_string(s.str().c_str()));
+        if (opts->has_string(s.str())) {
+          r->set_data_filedir(opts->get_string(s.str()));
         }
       }
       s.clear();
       s.str("");
       s << "data_filename_" << which;
-      if (opts->has_string(s.str().c_str())) {
-        r->set_data_filename(opts->get_string(s.str().c_str()));
+      if (opts->has_string(s.str())) {
+        r->set_data_filename(opts->get_string(s.str()));
       }
       s.clear();
       s.str("");
       s << "label_filename_" << which;
-      if (opts->has_string(s.str().c_str())) {
-        r->set_label_filename(opts->get_string(s.str().c_str()));
+      if (opts->has_string(s.str())) {
+        r->set_label_filename(opts->get_string(s.str()));
       }
     }
   }
