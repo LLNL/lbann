@@ -92,12 +92,14 @@ class generic_compound_data_reader : public generic_data_reader {
     }
   }
 
+/*
   void swap_role(std::string role) override {
     generic_data_reader::swap_role(role);
     for (auto&& reader : m_data_readers) {
       reader->swap_role(role);
     }
   }
+*/
 
   void set_master(bool m) override {
     generic_data_reader::set_master(m);

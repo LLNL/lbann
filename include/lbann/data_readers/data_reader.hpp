@@ -189,24 +189,11 @@ class generic_data_reader : public lbann_image_preprocessor {
   void set_absolute_sample_count(size_t s);
 
   /**
-   * Return the absolute number of data samples that will be used for training
-   * or testing.
-   */
-  size_t get_absolute_sample_count() const;
-
-  /**
    * Set the percentage of the data set to use for training and validation or
    * testing.
    * @param s The percentage used, in the range [0, 1].
    */
   void set_use_percent(double s);
-
-  /**
-   * Returns the percent of the dataset to be used for training or testing.
-   * If training, this is the total for training and validation. Throws if
-   * set_use_percent was not called.
-   */
-  double get_use_percent() const;
 
   /**
    * Sets the percentage of the dataset to be used for validation.
@@ -215,33 +202,11 @@ class generic_data_reader : public lbann_image_preprocessor {
   virtual void set_validation_percent(double s);
 
   /**
-   * Return the percent of the dataset to be used for validation.
-   */
-  double get_validation_percent() const;
-
-  /**
    * Set an idenifier for the dataset.
    * The role should be one of "train", "test", or "validate".
    */
   virtual void set_role(std::string role) {
     m_role = role;
-  }
-
-  /**
-   * Switch the role of the data set, and swap the used percentage
-   * with the heldout percentage.
-   * Typically this changes from "train" to "validate".
-   */
-  virtual void swap_role(std::string role) {
-    m_role = role;
-    if(m_validation_percent == -1) {
-      throw lbann_exception(
-        std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-        " :: generic_data_reader: data reader is swapping roles but has an invalid (-1) holdout percentage");
-    }
-    double old_use_percent = m_use_percent;
-    m_use_percent = m_validation_percent;
-    m_validation_percent = old_use_percent;
   }
 
   /**
@@ -556,6 +521,26 @@ class generic_data_reader : public lbann_image_preprocessor {
   const std::vector<std::vector<int> > & get_minibatch_indices() const {
     return m_my_minibatch_indices;
   }
+
+ protected:
+
+  /**
+   * Return the absolute number of data samples that will be used for training
+   * or testing.
+   */
+  size_t get_absolute_sample_count() const;
+
+  /**
+   * Returns the percent of the dataset to be used for training or testing.
+   * If training, this is the total for training and validation. Throws if
+   * set_use_percent was not called.
+   */
+  double get_use_percent() const;
+
+  /**
+   * Return the percent of the dataset to be used for validation.
+   */
+  double get_validation_percent() const;
 
  protected:
 
