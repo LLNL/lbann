@@ -487,7 +487,12 @@ void add_layers(
     // LAYER: sum
     //////////////////////////////////////////////////////////////////
     else if (layer.has_sum()) {
-      d = new sum_layer<>(comm, cudnn);
+      std::vector<DataType> scaling_factors;
+      std::stringstream ss(layer.sum().scaling_factors());
+      for (DataType x; ss >> x;) {
+        scaling_factors.push_back(x);
+      }
+      d = new sum_layer<>(comm, scaling_factors, cudnn);
     }
 
     //////////////////////////////////////////////////////////////////

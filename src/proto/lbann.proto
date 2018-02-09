@@ -822,6 +822,7 @@ message Split {
 }
 
 message Sum {
+  string scaling_factors = 1; //should be a space-separated list of doubles, e.g. "1.0 2.0 -1.0"
 }
 
 message Noise {
