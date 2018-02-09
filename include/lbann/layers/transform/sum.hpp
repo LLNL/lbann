@@ -34,7 +34,10 @@
 namespace lbann {
 
 /** Sum layer.
- *  This layer adds input tensors.
+ *  This layer performs a weighted sum of input tensors, possibly with
+ *  a different scaling factor for each input. If the scaling factors
+ *  are not provided, they are all set to one so that this layer
+ *  performs a simple sum.
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
 class sum_layer : public transform_layer {
@@ -82,7 +85,29 @@ class sum_layer : public transform_layer {
 
  protected:
 
-  void setup_data() {
+  void setup_dims() override {
+    transform_layer::setup_dims();
+    for (const auto& parent : this->m_parent_layers) {
+      const auto& parent_dims = parent->fp_output_dims(this);
+      if (m_neuron_dims != parent_dims) {
+        std::stringstream err;
+        err << __FILE__ << " " << __LINE__ << " :: "
+            << "layer " << get_name() << " expects inputs with "
+            << "dimensions ";
+        for (size_t i = 0; i < m_neuron_dims.size(); ++i) {
+          err << (i > 0 ? "x" : "") << m_neuron_dims[i];
+        }
+        err << ", but layer " << parent->get_name() << " outputs with "
+            << "dimensions ";
+        for (size_t i = 0; i < parent_dims.size(); ++i) {
+          err << (i > 0 ? "x" : "") << parent_dims[i];
+        }
+        throw lbann_exception(err.str());
+      }
+    }
+  }
+
+  void setup_data() override {
     transform_layer::setup_data();
     if (m_scaling_factors.empty()) {
       m_scaling_factors.assign(get_num_parents(), DataType(1));
