@@ -16,6 +16,7 @@
 #cmakedefine LBANN_HAS_TBINF
 #cmakedefine LBANN_HAS_CNPY
 #cmakedefine LBANN_HAS_VTUNE
+#cmakedefine LBANN_HAS_ALUMINUM
 
 #cmakedefine LBANN_SEQUENTIAL_CONSISTENCY
 #cmakedefine LBANN_PROCDET_DROPOUT
