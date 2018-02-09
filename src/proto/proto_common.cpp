@@ -1894,7 +1894,11 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       reader = reader_pilot2_molecular;
     } else if (name == "merge_samples" || name == "merge_features") {
       //TODO: verify how much of wildcard conflict with label file, label file should be loaded separately
-      auto paths = glob(readme.data_file_pattern());
+      auto filedir = readme.data_filedir();
+      if(!endsWith(filedir, "/")) {
+        filedir = filedir + "/";
+      }
+      auto paths = glob(filedir + readme.data_file_pattern());
       std::vector<generic_data_reader*> npy_readers;
       for (const auto path : paths) {
         if(master) { std::cout << "Loading file: " << path << std::endl; }
