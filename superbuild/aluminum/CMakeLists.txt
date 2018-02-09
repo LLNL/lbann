@@ -1,10 +1,11 @@
-set(JPEG-TURBO_URL https://github.com/ndryden/allreduces
+message(FATAL_ERROR "Aluminum not yet available in superbuild.")
+set(ALUMINUM_URL https://github.com/ndryden/allreduces
   CACHE STRING "The URL from which to clone aluminum")
 
 set(ALUMINUM_TAG "master" 
   CACHE STRING "The git tag to checkout for aluminum")
 
-# Where to install LIBJPEG-TURBO
+# Where to install LIBALUMINUM
 set (ALUMINUM_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
   CACHE PATH "The installation location of aluminum.")
 
@@ -13,17 +14,10 @@ set(ALUMINUM_MAKE_JOBS "8"
 
 
 find_program(GNU_MAKE_PROGRAM make)
-#if (GNU_MAKE_PROGRAM)
-#  mark_as_advanced(GNU_MAKE_PROGRAM)
-#else ()
-#  message(FATAL_ERROR "GNU-compatible \'make\' program not found."
-#    "LibJpeg-Turbo requires \'make\'.")
-#endif ()
 
-
-# Handle the install of LIBJPEG-TURBO
+# Handle the install of 
 include(ExternalProject)
-ExternalProject_Add(JPEG-TURBO
+ExternalProject_Add(ALUMINUM
   PREFIX ${CMAKE_CURRENT_BINARY_DIR}
   TMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/tmp
   STAMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/stamp
@@ -31,8 +25,8 @@ ExternalProject_Add(JPEG-TURBO
   GIT_TAG ${ALUMINUM_TAG}
   SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/src
   BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/build
-  INSTALL_DIR ${JPEG-TURBO_CMAKE_INSTALL_PREFIX}
-  BUILD_COMMAND  ${GNU_MAKE_PROGRAM} -j${JPEG-TURBO_MAKE_JOBS} 
+  INSTALL_DIR ${ALUMINUM_CMAKE_INSTALL_PREFIX}
+  BUILD_COMMAND  ${GNU_MAKE_PROGRAM} -j${ALUMINUM_MAKE_JOBS} 
   
   )
 
