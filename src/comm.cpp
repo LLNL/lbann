@@ -57,7 +57,12 @@ lbann_comm::lbann_comm(int ppm, const El::mpi::Comm world) :
   world_comm(world), grid(nullptr), procs_per_model(ppm), num_model_barriers(0),
   num_intermodel_barriers(0), num_global_barriers(0), bytes_sent(0),
   bytes_received(0) {
-
+#ifdef LBANN_HAS_ALUMINUM
+  // Don't have argc/argv here, but MPI should already be init'd.
+  int argc_dummy = 0;
+  char** argv_dummy = nullptr;
+  allreduces::Initialize(argc_dummy, argv_dummy);
+#endif
   // Set up the initial model split
   split_models(procs_per_model);
 
@@ -67,8 +72,7 @@ lbann_comm::lbann_comm(int ppm, const El::mpi::Comm world) :
   rank_in_node = El::mpi::Rank(node_comm);
 
   // Setup threads
-  setup_threads();
-  
+  setup_threads();  
 }
 
 lbann_comm::~lbann_comm() {
@@ -81,6 +85,12 @@ lbann_comm::~lbann_comm() {
       delete[] buf;
     }
   }
+#ifdef LBANN_HAS_ALUMINUM
+  for (auto&& c : al_comms) {
+    delete c.second;
+  }
+  allreduces::Finalize();
+#endif
 }
 
 void lbann_comm::split_models(int ppm) {
@@ -130,6 +140,39 @@ void lbann_comm::intermodel_sum_matrix(Mat& mat) {
 void lbann_comm::intermodel_sum_matrix(AbsDistMat& mat) {
   allreduce(mat, intermodel_comm, El::mpi::SUM);
 }
+
+void lbann_comm::allreduce(AbsDistMat& m, const El::mpi::Comm c,
+                           El::mpi::Op op) {
+  bytes_sent += sizeof(DataType) * m.LocalHeight() * m.LocalWidth();
+#ifdef LBANN_HAS_ALUMINUM
+  if (m.LocalHeight() != m.LDim()) {
+    throw lbann_exception("Aluminum does not support allreduces on"
+                          " non-contiguous matrices");
+  }
+  allreduces::Allreduce<allreduces::MPIBackend>(
+    m.Buffer(), m.LocalHeight()*m.LocalWidth(),
+    mpi_op_to_al_op(op), *get_al_comm(c));
+#else
+  El::AllReduce(m, c, op);
+#endif
+  bytes_received += sizeof(DataType) * m.LocalHeight() * m.LocalWidth() * (El::mpi::Size(c) - 1);
+}
+
+#ifdef LBANN_HAS_ALUMINUM
+void lbann_comm::nb_allreduce(AbsDistMat& m, const El::mpi::Comm c,
+                              allreduces::AllreduceRequest& req,
+                              El::mpi::Op op) {
+  bytes_sent += sizeof(DataType) * m.LocalHeight() * m.LocalWidth();
+  if (m.LocalHeight() != m.LDim()) {
+    throw lbann_exception("Aluminum does not support allreduces on"
+                          " non-contiguous matrices");
+  }
+  allreduces::NonblockingAllreduce<allreduces::MPIBackend>(
+    m.Buffer(), m.LocalHeight()*m.LocalWidth(),
+    mpi_op_to_al_op(op), *get_al_comm(c), req);
+  bytes_received += sizeof(DataType) * m.LocalHeight() * m.LocalWidth() * (El::mpi::Size(c) - 1);
+}
+#endif
 
 void lbann_comm::intermodel_broadcast_matrix(Mat& mat, int root) {
   El::Broadcast(mat, intermodel_comm, root);
@@ -971,5 +1014,29 @@ uint8_t *lbann_comm::get_collective_buffer(size_t size, size_t idx) {
     }
   }
 }
+
+#ifdef LBANN_HAS_ALUMINUM
+allreduces::MPICommunicator* lbann_comm::get_al_comm(El::mpi::Comm c) {
+  if (!al_comms.count(c.comm)) {
+    al_comms[c.comm] = new allreduces::MPICommunicator(c.comm);
+  }
+  return al_comms[c.comm];
+}
+
+allreduces::ReductionOperator lbann_comm::mpi_op_to_al_op(El::mpi::Op op) {
+  switch (op.op) {
+  case MPI_SUM:
+    return allreduces::ReductionOperator::sum;
+  case MPI_PROD:
+    return allreduces::ReductionOperator::prod;
+  case MPI_MIN:
+    return allreduces::ReductionOperator::min;
+  case MPI_MAX:
+    return allreduces::ReductionOperator::max;
+  default:
+    throw lbann_exception("Reduction operator not supported in Aluminum");
+  }
+}
+#endif
 
 }  // namespace lbann
