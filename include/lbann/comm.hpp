@@ -422,6 +422,17 @@ class lbann_comm {
     El::mpi::Wait(req);
   }
 
+#ifdef LBANN_HAS_ALUMINUM
+  /** Wait for a non-blocking request to complete. */
+  void wait(allreduces::AllreduceRequest& req) {
+    allreduces::Wait(req);
+  }
+  /** Test whether a non-blocking request has completed; true if it has. */
+  bool test(allreduces::AllreduceRequest& req) {
+    return allreduces::Test(req);
+  }
+#endif
+
   /** Barrier among the inter-model processes. */
   void intermodel_barrier();
   /** Barrier among processes in this model. */
