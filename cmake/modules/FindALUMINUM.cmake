@@ -8,7 +8,7 @@
 # Find the header
 find_path(ALUMINUM_INCLUDE_DIRS allreduce.hpp
   HINTS ${ALUMINUM_DIR} $ENV{ALUMINUM_DIR}
-  PATH_SUFFIXES include
+  PATH_SUFFIXES include src
   NO_DEFAULT_PATH
   DOC "Directory with ALUMINUM header.")
 find_path(ALUMINUM_INCLUDE_DIRS allreduce.hpp)
