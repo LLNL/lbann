@@ -646,6 +646,7 @@ message Layer {
    Noise noise = 307;
    Unpooling unpooling = 304;
    Hadamard hadamard = 308;
+   Constant constant = 309;
 
    // learning Layers
    FullyConnected fully_connected = 11;
@@ -827,11 +828,16 @@ message Sum {
 
 message Noise {
   double noise_factor=1;
+  string num_neurons=2;
 }
 
 message Hadamard {
 }
 
+message Constant {
+  double value=1;
+  string num_neurons=2;
+}
 /////////////////////
 // learning Layers //
 /////////////////////
