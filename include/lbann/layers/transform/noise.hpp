@@ -41,10 +41,23 @@ class noise_layer : public transform_layer {
 
  public:
   noise_layer(lbann_comm *comm,
-              DataType noise_factor=DataType(0.5),
+              const std::vector<int>& neuron_dims,
+              DataType noise_factor=DataType(1.0),
               cudnn::cudnn_manager *cudnn = nullptr)
     : transform_layer(comm),
-      m_noise_factor(noise_factor) {}
+      m_noise_factor(noise_factor) {
+
+    // Record neuron dimensions
+    this->m_neuron_dims = neuron_dims;
+    this->m_num_neuron_dims = neuron_dims.size();
+    this->m_num_neurons = std::accumulate(neuron_dims.begin(),
+                                          neuron_dims.end(),
+                                          1,
+                                          std::multiplies<int>());
+
+    // Constant layer has no parents
+    m_expected_num_parent_layers = 0;
+  }
   noise_layer* copy() const override { return new noise_layer(*this); }
   std::string get_type() const override { return "noise"; }
   data_layout get_data_layout() const override { return T_layout; }
@@ -58,18 +71,14 @@ class noise_layer : public transform_layer {
   }
 
  protected:
-
   void fp_compute() override {
-    const auto& input = get_prev_activations();
     auto& output = get_activations();
     gaussian_fill(output,
                   output.Height(), output.Width(),
                   DataType(0), m_noise_factor);
-    El::Axpy(DataType(1), input, output);
   }
 
   void bp_compute() override {
-    El::Axpy(DataType(1), get_prev_error_signals(), get_error_signals());
   }
 
 };

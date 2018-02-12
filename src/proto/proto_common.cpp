@@ -507,7 +507,14 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     else if (layer.has_noise()) {
       const lbann_data::Noise& ell = layer.noise();
-      d = new noise_layer<>(comm,ell.noise_factor(), cudnn);
+      std::vector<int> neuron_dims;
+      std::stringstream ss;
+      int i;
+      ss.str(ell.num_neurons());
+      while (ss >> i) {
+        neuron_dims.push_back(i);
+      }
+      d = new noise_layer<>(comm,neuron_dims,ell.noise_factor(), cudnn);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -515,6 +522,22 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     else if (layer.has_hadamard()) {
       d = new hadamard_layer<>(comm, cudnn);
+    }
+
+    //////////////////////////////////////////////////////////////////
+    // LAYER: constant 
+    //////////////////////////////////////////////////////////////////
+    else if (layer.has_constant()) {
+      const lbann_data::Constant& ell = layer.constant();
+      std::vector<int> neuron_dims;
+      std::stringstream ss;
+      int i;
+      ss.str(ell.num_neurons());
+      while (ss >> i) {
+        neuron_dims.push_back(i);
+      }
+
+      d = new constant_layer<>(comm,ell.value(), neuron_dims, cudnn);
     }
 
     //////////////////////////////////////////////////////////////////

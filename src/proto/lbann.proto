@@ -827,11 +827,16 @@ message Sum {
 
 message Noise {
   double noise_factor=1;
+  string num_neurons=2;
 }
 
 message Hadamard {
 }
 
+message Constant {
+  double value=1;
+  string num_neurons=2;
+}
 /////////////////////
 // learning Layers //
 /////////////////////
