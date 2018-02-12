@@ -71,6 +71,18 @@ class noise_layer : public transform_layer {
   }
 
  protected:
+
+  void setup_dims() override {
+    const auto neuron_dims = this->m_neuron_dims;
+    transform_layer::setup_dims();
+    this->m_neuron_dims = neuron_dims;
+    this->m_num_neuron_dims = neuron_dims.size();
+    this->m_num_neurons = std::accumulate(neuron_dims.begin(),
+                                          neuron_dims.end(),
+                                          1,
+                                          std::multiplies<int>());
+  }
+
   void fp_compute() override {
     auto& output = get_activations();
     gaussian_fill(output,

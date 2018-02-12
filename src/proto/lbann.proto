@@ -646,6 +646,7 @@ message Layer {
    Noise noise = 307;
    Unpooling unpooling = 304;
    Hadamard hadamard = 308;
+   Constant constant = 309;
 
    // learning Layers
    FullyConnected fully_connected = 11;

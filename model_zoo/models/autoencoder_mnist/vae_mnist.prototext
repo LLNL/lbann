@@ -1,9 +1,9 @@
 model {
   name: "directed_acyclic_graph_model"
   data_layout: "model_parallel"
-  mini_batch_size: 10
+  mini_batch_size: 100 
   block_size: 256
-  num_epochs: 10
+  num_epochs: 50
   num_parallel_readers: 0
   procs_per_model: 0
   use_cudnn: true
@@ -17,7 +17,10 @@ model {
     mean_squared_error {}
     kl_divergence {
       layer1: "z_mean"
-      layer2: "z_log_sigma" 
+      layer2: "exp_noise" 
+    }
+    l2_weight_regularization {
+      scale_factor: 1e-4
     }
   }
 
@@ -40,9 +43,15 @@ model {
 #    }
 #  }
   callback {
+    dump_activations {
+      basename: "dump_acts/"
+      layer_names: "relu1 sum"
+    }
+  }
+  callback {
     save_images {
       image_dir: "images_"
-      extension: "pgm"
+      extension: "png"
     }
   }
 
@@ -113,10 +122,30 @@ model {
       has_bias: true
     }
   }
+ 
+  #Const const_05
+  layer {
+    name: "const_05"
+    data_layout: "model_parallel"
+    constant {
+      value: 0.5
+      num_neurons: "2"
+    }
+  }
   
+  #Hadamad1 zlogsigma_const05
+  layer {
+    parents: "const_05 z_log_sigma"
+    name: "const05_zlogsigma"
+    children: "exp"
+    data_layout: "model_parallel"
+    hadamard {
+    }
+  }
+
   # Exponent exp
   layer {
-    parents: "z_log_sigma"
+    parents: "const05_zlogsigma"
     name: "exp"
     data_layout: "model_parallel"
     exponential {
@@ -125,16 +154,28 @@ model {
 
   # Noise noise
   layer {
-    parents: "exp"
     name: "noise"
     data_layout: "model_parallel"
     noise {
+      noise_factor: 1.0
+      num_neurons: "2"
+    }
+  }
+  
+ # Hadamad2 exp_noise
+  layer {
+    parents: "exp noise"
+    name: "exp_noise"
+    children: "sum"
+    data_layout: "model_parallel"
+    hadamard {
     }
   }
 
+
   # Sum sum
   layer {
-    parents: "z_mean noise"
+    parents: "z_mean exp_noise"
     name: "sum"
     children: "decode1"
     data_layout: "model_parallel"
