@@ -122,27 +122,17 @@ model {
       has_bias: true
     }
   }
- 
-  #Const const_05
-  layer {
-    name: "const_05"
-    data_layout: "model_parallel"
-    constant {
-      value: 0.5
-      num_neurons: "2"
-    }
-  }
   
-  #Hadamad1 zlogsigma_const05
+  #scale z_log_sigma by 1/2
   layer {
-    parents: "const_05 z_log_sigma"
-    name: "const05_zlogsigma"
-    children: "exp"
-    data_layout: "model_parallel"
-    hadamard {
-    }
-  }
-
+     parents: "z_log_sigma"
+     name: "const05_zlogsigma"
+     data_layout: "model_parallel"
+     sum {
+       scaling_factors: "0.5"
+     }
+   }
+ 
   # Exponent exp
   layer {
     parents: "const05_zlogsigma"
