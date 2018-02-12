@@ -186,7 +186,7 @@ class optimizer {
 
 #ifdef LBANN_NBALLREDUCE_GRADIENT
   /** The request for non-blocking allreduces. */
-  allreduces::AllreduceRequest m_allreduce_req;
+  allreduces::MPIBackend::req_type m_allreduce_req;
   /** Whether a non-blocking allreduce was started. */
   bool m_allreduce_started = false;
 #endif  // LBANN_NBALLREDUCE_GRADIENT

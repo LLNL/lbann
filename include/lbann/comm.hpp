@@ -412,7 +412,7 @@ class lbann_comm {
 #ifdef LBANN_HAS_ALUMINUM
   /** Non-blocking matrix allreduce. */
   void nb_allreduce(AbsDistMat& m, const El::mpi::Comm c,
-                    allreduces::AllreduceRequest& req,
+                    allreduces::MPIBackend::req_type& req,
                     El::mpi::Op op = El::mpi::SUM);
 #endif
 
@@ -424,12 +424,12 @@ class lbann_comm {
 
 #ifdef LBANN_HAS_ALUMINUM
   /** Wait for a non-blocking request to complete. */
-  void wait(allreduces::AllreduceRequest& req) {
-    allreduces::Wait(req);
+  void wait(allreduces::MPIBackend::req_type& req) {
+    allreduces::Wait<allreduces::MPIBackend>(req);
   }
   /** Test whether a non-blocking request has completed; true if it has. */
-  bool test(allreduces::AllreduceRequest& req) {
-    return allreduces::Test(req);
+  bool test(allreduces::MPIBackend::req_type& req) {
+    return allreduces::Test<allreduces::MPIBackend>(req);
   }
 #endif
 

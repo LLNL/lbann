@@ -160,7 +160,7 @@ void lbann_comm::allreduce(AbsDistMat& m, const El::mpi::Comm c,
 
 #ifdef LBANN_HAS_ALUMINUM
 void lbann_comm::nb_allreduce(AbsDistMat& m, const El::mpi::Comm c,
-                              allreduces::AllreduceRequest& req,
+                              allreduces::MPIBackend::req_type& req,
                               El::mpi::Op op) {
   bytes_sent += sizeof(DataType) * m.LocalHeight() * m.LocalWidth();
   if (m.LocalHeight() != m.LDim()) {
