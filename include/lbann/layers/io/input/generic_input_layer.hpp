@@ -622,11 +622,11 @@ class generic_input_layer : public io_layer {
     if(!val_end){
       it = this->m_data_readers.find(execution_mode::training);
       if ((it != this->m_data_readers.end()) && it->second) {
-        (it->second)->saveToCheckpointShared(p, "data_reader_training");
+        (it->second)->save_to_checkpoint_shared(p, "data_reader_training");
       }
       it = this->m_data_readers.find(execution_mode::testing);
       if ((it != this->m_data_readers.end()) && it->second) {
-        (it->second)->saveToCheckpointShared(p, "data_reader_testing");
+        (it->second)->save_to_checkpoint_shared(p, "data_reader_testing");
       }
       if (p.get_rank() == 0) {
         p.write_uint64(persist_type::train, "reader_train_processed",
@@ -649,28 +649,9 @@ class generic_input_layer : public io_layer {
       
       it = this->m_data_readers.find(execution_mode::validation);
       if ((it != this->m_data_readers.end()) && it->second) {
-        (it->second)->saveToCheckpointShared(p, "data_reader_validation");
+        (it->second)->save_to_checkpoint_shared(p, "data_reader_validation");
       }    
     }
-    // save our own state
-    // rank 0 writes the file
-    /*if (p.get_rank() == 0) {
-      p.write_uint64(persist_type::train, "reader_train_processed",
-                     (uint64_t) m_training_dataset.get_num_samples_processed());
-      p.write_uint64(persist_type::train, "reader_train_total",
-                     (uint64_t) m_training_dataset.get_total_samples());
-
-      p.write_uint64(persist_type::train, "reader_test_processed",
-                     (uint64_t) m_testing_dataset.get_num_samples_processed());
-      p.write_uint64(persist_type::train, "reader_test_total",
-                     (uint64_t) m_testing_dataset.get_total_samples());
-
-      p.write_uint64(persist_type::train, "reader_validate_processed",
-                     (uint64_t) m_validation_dataset.get_num_samples_processed());
-      p.write_uint64(persist_type::train, "reader_validate_total",
-                     (uint64_t) m_validation_dataset.get_total_samples());
-    }*/
-    //io_layer::save_to_checkpoint_shared(p);
     return true;  
   }
 
@@ -690,17 +671,11 @@ class generic_input_layer : public io_layer {
 
     it = this->m_data_readers.find(execution_mode::training);
     if ((it != this->m_data_readers.end()) && it->second) {
-      (it->second)->loadFromCheckpointShared(p, "data_reader_training");
+      (it->second)->load_from_checkpoint_shared(p, "data_reader_training");
     }
-
-    //it = this->m_data_readers.find(execution_mode::validation);
-    //if ((it != this->m_data_readers.end()) && it->second) {
-    //  (it->second)->loadFromCheckpointShared(p, "data_reader_validation");
-    //}
-   
     it = this->m_data_readers.find(execution_mode::testing);
     if ((it != this->m_data_readers.end()) && it->second) {
-      (it->second)->loadFromCheckpointShared(p, "data_reader_testing");
+      (it->second)->load_from_checkpoint_shared(p, "data_reader_testing");
     }
 
     // save our own state
@@ -717,13 +692,8 @@ class generic_input_layer : public io_layer {
 
     it = this->m_data_readers.find(execution_mode::validation);
     if ((it != this->m_data_readers.end()) && it->second) {
-      (it->second)->loadFromCheckpointShared(p, "data_reader_validation");
+      (it->second)->load_from_checkpoint_shared(p, "data_reader_validation");
     }
-
-    //it = this->m_data_readers.find(execution_mode::testing);
-    //if ((it != this->m_data_readers.end()) && it->second) {
-    //  (it->second)->loadFromCheckpointShared(p, "data_reader_testing");
-    //}
 
     // TODO: assumes homogeneous hardware
     // broadcast data from rank 0

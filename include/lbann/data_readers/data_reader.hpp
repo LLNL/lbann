@@ -531,10 +531,10 @@ class generic_data_reader : public lbann_image_preprocessor {
   void use_unused_index_set();
 
   /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
-  bool saveToCheckpointShared(persist& p, const char *name);
+  bool save_to_checkpoint_shared(persist& p, const char *name);
 
   /** \brief Given directory to store checkpoint files, read state from file and add to number of bytes read */
-  bool loadFromCheckpointShared(persist& p, const char *name);
+  bool load_from_checkpoint_shared(persist& p, const char *name);
 
   struct packing_header {
     uint64_t mini_batch_size;
@@ -634,13 +634,6 @@ class generic_data_reader : public lbann_image_preprocessor {
 
     snprintf(fieldname, sizeof(fieldname), "%s_model_rank", name);
     p.write_uint64(persist_value, fieldname, (uint64_t) m_model_rank);
-    //std::ofstream rngSeq("RNGSeqtest");
-    //std::ofstream rng("RNGtest");
-    //rngSeq << get_data_seq_generator();
-    //rng << get_generator();
-    std::cout << m_shuffled_indices[0] << "\n";
-    std::cout <<  m_reset_mini_batch_index << "\n";
-    std::cout << m_current_pos << "\n";
     return true;
   }
 
@@ -680,7 +673,7 @@ class generic_data_reader : public lbann_image_preprocessor {
      //read list of indices
     snprintf(fieldname, sizeof(fieldname), "%s_data_indices", name);
     p.read_int32_contig(persist_value, fieldname, &m_shuffled_indices[0], (uint64_t) size);
-    // BEGIN TEST STUFF
+    // BEGIN TEST 
     snprintf(fieldname, sizeof(fieldname), "%s_stride_to_last_mini_batch", name);
     p.read_uint64(persist_value, fieldname, &val);
     m_stride_to_last_mini_batch = (int) val;
@@ -743,14 +736,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     snprintf(fieldname, sizeof(fieldname), "%s_model_rank", name);
     p.read_uint64(persist_value, fieldname, &val);
     m_model_rank = (int) val;
-    //std::ofstream rngload("RNGtest");
-    //std::ofstream rngSeqload("RNGSeqtest");
-    //std::mt19937 rng;
-    //std::mt19937 rngSeq;
-    //rngSeqload << rngSeq;
-    //rngload << rng;
-    //get_data_seq_generator() = rngSeq; 
-    //get_generator() = rng;
+    
     if(header != nullptr){
       header->mini_batch_size = m_mini_batch_size;
       header->current_pos = m_current_pos;
@@ -800,9 +786,6 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_global_last_mini_batch_size = (int) header.global_last_mini_batch_size;
     m_num_parallel_readers = (int) header.num_parallel_readers;
     m_model_rank = (int) header.model_rank;
-    std::cout << m_shuffled_indices[0] << "\n";
-    std::cout <<  m_reset_mini_batch_index << "\n";
-    std::cout << m_current_pos << "\n";
   }
   
   /// returns the data store, which may be a nullptr
