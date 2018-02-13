@@ -32,7 +32,6 @@
 #include "lbann/data_readers/data_reader_imagenet.hpp"
 #include "lbann/data_readers/data_reader_merge_samples.hpp"
 #include <omp.h>
-//#include <iostream>
 namespace lbann {
 
 void generic_data_reader::shuffle_indices() {
