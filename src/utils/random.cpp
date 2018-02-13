@@ -69,6 +69,40 @@ rng_gen& get_data_seq_generator() {
   return ::data_seq_generator;
 }
 
+bool save_rng_to_checkpoint_shared(persist& p){
+  std::string rng_name;
+  rng_name = std::string(p.m_checkpoint_dir) + "/rng_seq_generator";
+  std::ofstream rng_seq(rng_name);
+  rng_seq << ::data_seq_generator;
+  
+  rng_name = std::string(p.m_checkpoint_dir) + "/rng_generator";
+  std::ofstream rng(rng_name);
+  rng << ::generator;
+  
+  rng_name = std::string(p.m_checkpoint_dir) + "/rng_fast_generator";
+  std::ofstream rng_fast(rng_name);
+  rng_fast << ::fast_generator;
+
+  return true;
+}
+
+bool load_rng_from_checkpoint_shared(persist& p){
+  std::string rng_name;
+  rng_name = std::string(p.m_checkpoint_dir) + "/rng_seq_generator";
+  std::ifstream rng_seq(rng_name);
+  rng_seq >> ::data_seq_generator;
+
+  rng_name = std::string(p.m_checkpoint_dir) + "/rng_generator";
+  std::ifstream rng(rng_name);
+  rng >> ::generator;
+ 
+  rng_name = std::string(p.m_checkpoint_dir) + "/rng_fast_generator";
+  std::ifstream rng_fast(rng_name);
+  rng_fast >> ::fast_generator;
+
+  return true;
+}
+
 void init_random(int seed, lbann_comm *comm) {
   if (seed != -1) {
     // Seed every OpenMP thread, if present.

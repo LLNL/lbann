@@ -30,6 +30,7 @@
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/layers/io/input/generic_input_layer.hpp"
+#include "lbann/utils/random.hpp"
 #include <string>
 #include <unistd.h>
 #include <iomanip>
@@ -952,13 +953,11 @@ bool model::save_to_checkpoint_shared(persist& p, bool val_end) {
     p.write_uint32(persist_type::train, "max_mini_batch_size",      (uint32_t) m_max_mini_batch_size);
     p.write_uint32(persist_type::train, "current_mini_batch_size",      (uint32_t) m_current_mini_batch_size);
     p.write_uint32(persist_type::train, "current_phase",      (uint32_t) m_current_phase);
-    /*std::ofstream rngSeq("RNGSeqtest");
-    std::ofstream rng("RNGtest");
-    rngSeq << get_data_seq_generator();
-    rng << get_generator();*/
+    //save_rng_to_checkpoint_shared(p);
   }
   if(val_end){
     p.write_uint64(persist_type::validate, "current_validataion_step",       (uint64_t) m_current_validation_step);
+    save_rng_to_checkpoint_shared(p);
     //for (const auto& m : m_metrics) {
     //  m->save_to_checkpoint_shared(p);
     //}
@@ -980,14 +979,7 @@ bool model::load_from_checkpoint_shared(persist& p) {
     p.read_uint32(persist_type::train, "max_mini_batch_size",      &header.max_mini_batch_size);
     p.read_uint32(persist_type::train, "current_mini_batch_size",      &header.current_mini_batch_size);
     p.read_uint32(persist_type::train, "current_phase",      &header.current_phase);
-    /*std::ofstream rngload("RNGtest");
-    std::ofstream rngSeqload("RNGSeqtest");
-    std::mt19937 rng;
-    std::mt19937 rngSeq;
-    rngSeqload << rngSeq;
-    rngload << rng;
-    get_data_seq_generator() = rngSeq; 
-    get_generator() = rng;*/ 
+    load_rng_from_checkpoint_shared(p);
   }
   
 
