@@ -626,6 +626,7 @@ void cudnn_manager::cudnn_manager::scatter_to_gpus(std::vector<DataType *>& gpu_
     const int width = cpu_data.Width();
 
     // Perform memory transfer on each GPU
+    #pragma omp parallel for
     for(int i=0; i<m_num_gpus; ++i) {
         const int first_pos = std::min(i * width_per_gpu, width);
         const int last_pos = std::min((i+1) * width_per_gpu, width);
@@ -654,6 +655,7 @@ void cudnn_manager::cudnn_manager::gather_from_gpus(Mat& cpu_data,
     }
 
     const int width = cpu_data.Width();
+    #pragma omp parallel for
     for(int i=0; i<m_num_gpus; ++i) {
         const int first_pos = std::min(i * width_per_gpu, width);
         const int last_pos = std::min((i+1) * width_per_gpu, width);
@@ -670,6 +672,7 @@ void cudnn_manager::cudnn_manager::broadcast_to_gpus(std::vector<DataType *>& gp
     if (gpu_data.empty()) {
         throw lbann_exception("cudnn_wrapper: attempted to broadcast to GPUs before allocating GPU memory");
     }
+    #pragma omp parallel for
     for(int i=0; i<m_num_gpus; ++i) {
         copy_to_gpu(i, gpu_data[i], cpu_data, gpu_data_leading_dim);
     }
