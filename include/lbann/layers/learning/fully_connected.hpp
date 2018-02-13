@@ -408,7 +408,7 @@ class fully_connected_layer : public learning_layer {
                      m_bias_gradient_d.get_data(i), 1);
       }
       bias_optimizer->stage_gradient_for_accumulation_gpu(
-        m_bias_gradient_d.get_locked_data(),
+        m_bias_gradient_d,
         m_bias_scaling_factor / this->m_model->get_effective_mini_batch_size());
     }
       
@@ -427,7 +427,7 @@ class fully_connected_layer : public learning_layer {
                      m_linearity_gradient_d.get_data(i), output_size);
       }
       linearity_optimizer->stage_gradient_for_accumulation_gpu(
-        m_linearity_gradient_d.get_locked_data(),
+        m_linearity_gradient_d,
         DataType(1) / this->m_model->get_effective_mini_batch_size());
     }
 

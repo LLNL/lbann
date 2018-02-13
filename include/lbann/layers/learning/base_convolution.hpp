@@ -538,7 +538,7 @@ class base_convolution_layer : public learning_layer {
                                                  m_bias_gradient_d.get_data(i)));
       }
       bias_optimizer->stage_gradient_for_accumulation_gpu(
-        m_bias_gradient_d.get_locked_data(),
+        m_bias_gradient_d,
         m_bias_scaling_factor / effective_mini_batch_size);
     }
 
@@ -606,7 +606,7 @@ class base_convolution_layer : public learning_layer {
 
       // Add gradient contribution
       kernel_optimizer->stage_gradient_for_accumulation_gpu(
-        m_kernel_gradient_d.get_locked_data(),
+        m_kernel_gradient_d,
         one / effective_mini_batch_size);
     }
 

@@ -22,10 +22,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// adam .hpp .cpp .cu - SGD with Adam
-// Reference:
-// Kingma, D. and Ba, J. 2014. Adam: A Method for Stochastic Optimization.
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/optimizers/sgd.hpp"
@@ -65,8 +61,8 @@ __global__ void nesterov_kernel(DataType * __restrict__ values,
 
 }
 
-void sgd::step_compute_gpu(std::vector<DataType*> values_d,
-                           std::vector<DataType*> gradient_d) {
+void sgd::step_compute_gpu(cudnn::matrix& values_d,
+                           const cudnn::matrix& gradient_d) {
 
   // Get matrix dimensions
   const int num_entries = m_weights->get_size();
@@ -79,8 +75,8 @@ void sgd::step_compute_gpu(std::vector<DataType*> values_d,
       CHECK_CUBLAS(cublas::axpy(m_cudnn->get_cublas_handle(i),
                                 num_entries,
                                 -m_learning_rate,
-                                gradient_d[i], 1,
-                                values_d[i], 1));
+                                gradient_d.get_locked_data(i), 1,
+                                values_d.get_data(i), 1));
     }
     return;
   }
@@ -95,12 +91,12 @@ void sgd::step_compute_gpu(std::vector<DataType*> values_d,
     cudaStream_t stream = this->m_cudnn->get_stream(i);
     if (m_nesterov) {
       nesterov_kernel<<<grid_dims, block_dims, 0, stream>>>
-        (values_d[i], gradient_d[i], m_velocity_d[i],
-         num_entries, m_learning_rate, m_momentum);
+        (values_d.get_data(i), gradient_d.get_locked_data(i),
+         m_velocity_d[i], num_entries, m_learning_rate, m_momentum);
     } else {
       momentum_kernel<<<grid_dims, block_dims, 0, stream>>>
-        (values_d[i], gradient_d[i], m_velocity_d[i],
-         num_entries, m_learning_rate, m_momentum);
+        (values_d.get_data(i), gradient_d.get_locked_data(i),
+         m_velocity_d[i], num_entries, m_learning_rate, m_momentum);
     }
   }
 

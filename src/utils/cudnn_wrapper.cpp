@@ -64,8 +64,8 @@ matrix::matrix(const matrix& other)
     m_is_locked(false) {
   if (m_cudnn != nullptr) {
     m_data.assign(m_cudnn->get_num_gpus(), nullptr);
+    copy(other);
   }
-  copy(other);
 }
 
 matrix::matrix(matrix&& other)
@@ -82,7 +82,9 @@ matrix::matrix(matrix&& other)
 matrix& matrix::operator=(const matrix& other) {
   clear();
   m_cudnn = other.m_cudnn;
-  copy(other);
+  if (m_cudnn != nullptr) {
+    copy(other);
+  }
   return *this;
 }
 

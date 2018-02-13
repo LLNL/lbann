@@ -22,8 +22,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_optimizer .hpp .cpp - Abstract optimizer class
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_OPTIMIZER_HPP
@@ -82,7 +80,7 @@ class optimizer {
   /** Get gradient matrix on GPU.
    *  The gradient is accumulated on the GPU.
    */
-  std::vector<DataType*> get_gradient_gpu();
+  cudnn::matrix& get_gradient_gpu();
 #endif // LBANN_HAS_CUDNN
 
   /** Clear gradient matrix. */
@@ -99,14 +97,14 @@ class optimizer {
                                        DataType scale = DataType(1));
 #ifdef LBANN_HAS_CUDNN
   /** Add to the gradient matrix on GPU. */
-  void add_to_gradient_gpu(const std::vector<DataType*>& gradient,
+  void add_to_gradient_gpu(const cudnn::matrix& gradient,
                            DataType scale = DataType(1));
   /**
    *  The input is added to a staging matrix. When the gradient is
    *  needed, an allreduce is applied over the redundant communicator
    *  of the gradient matrix and the result is added to the gradient.
    */
-  void stage_gradient_for_accumulation_gpu(const std::vector<DataType*>& gradient,
+  void stage_gradient_for_accumulation_gpu(const cudnn::matrix& gradient,
                                            DataType scale = DataType(1));
 #endif // LBANN_HAS_CUDNN
 
@@ -125,8 +123,8 @@ class optimizer {
    *  The default implementation is to transfer data to CPU and call
    *  step_compute.
    */
-  virtual void step_compute_gpu(std::vector<DataType*> values_d,
-                                std::vector<DataType*> gradient_d);
+  virtual void step_compute_gpu(cudnn::matrix& values,
+                                const cudnn::matrix& gradient_d);
 #endif // LBANN_HAS_CUDNN
 
   /** Get the time spent in step(). */
@@ -153,7 +151,7 @@ class optimizer {
   AbsDistMat* m_gradient;
 #ifdef LBANN_HAS_CUDNN
   /** GPU memory for gradient matrix. */
-  std::vector<DataType*> m_gradient_d;
+  cudnn::matrix m_gradient_d;
 #endif // LBANN_HAS_CUDNN
 
  private:
@@ -178,7 +176,7 @@ class optimizer {
    *  GPUs and over the redundant communicator of the staging matrix
    *  and the result is added to the gradient matrix.
    */
-  std::vector<DataType*> m_staging_d;
+  cudnn::matrix m_staging_d;
 #endif // LBANN_HAS_CUDNN
 
   /** Running count of the time spent in step(). */

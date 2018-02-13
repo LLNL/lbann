@@ -504,13 +504,13 @@ class batch_normalization : public regularizer_layer {
     optimizer* scale_optimizer = m_weights[0]->get_optimizer();
     if (scale_optimizer != nullptr) {
       scale_optimizer->stage_gradient_for_accumulation_gpu(
-        m_scale_gradient_d.get_locked_data(),
+        m_scale_gradient_d,
         DataType(1) / effective_mini_batch_size);
     }
     optimizer* bias_optimizer = m_weights[1]->get_optimizer();
     if (bias_optimizer != nullptr) {
       bias_optimizer->stage_gradient_for_accumulation_gpu(
-        m_bias_gradient_d.get_locked_data(),
+        m_bias_gradient_d,
         DataType(1) / effective_mini_batch_size);
     }
 

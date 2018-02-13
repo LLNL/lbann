@@ -22,10 +22,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// hypergradient_adam .hpp .cpp - Hypergradient SGD with Adam
-// Reference:
-// Baydin et al. "Online Learning Rate Adaptation with Hypergradient Descent", 2017.
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_OPTIMIZER_HYPERGRADIENT_ADAM_HPP
@@ -35,7 +31,10 @@
 
 namespace lbann {
 
-/** Hypergradient Adam optimizer. */
+/** Hypergradient Adam optimizer.
+ *  Reference:
+ *  Baydin et al. "Online Learning Rate Adaptation with Hypergradient Descent", 2017.
+ */
 class hypergradient_adam : public optimizer {
  public:
 
