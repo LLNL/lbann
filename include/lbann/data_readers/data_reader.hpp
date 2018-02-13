@@ -537,10 +537,13 @@ class generic_data_reader : public lbann_image_preprocessor {
   bool loadFromCheckpointShared(persist& p, const char *name);
 
   struct packing_header {
+    uint64_t mini_batch_size;
     uint64_t current_pos;
     uint64_t current_mini_batch_idx;
     uint64_t data_size;
     std::vector<int> shuffled_indices;
+    uint64_t unused_data_size;
+    std::vector<int> unused_indices;
     uint64_t stride_to_last_mini_batch;
     uint64_t stride_to_next_mini_batch;
     uint64_t base_offset;
@@ -549,6 +552,12 @@ class generic_data_reader : public lbann_image_preprocessor {
     uint64_t iteration_stride;
     uint64_t loaded_mini_batch_idx;
     uint64_t reset_mini_batch_index;
+    uint64_t last_mini_batch_size;
+    uint64_t num_iterations_per_epoch;
+    uint64_t global_mini_batch_size;
+    uint64_t global_last_mini_batch_size;
+    uint64_t num_parallel_readers;
+    uint64_t model_rank;
   };  
   bool pack_scalars(persist& p, const char *name) {
     char fieldname[1024];
@@ -559,6 +568,9 @@ class generic_data_reader : public lbann_image_preprocessor {
     } else {
        persist_value= persist_type::train;
     }
+
+    snprintf(fieldname, sizeof(fieldname), "%s__mini_batch_size", name);
+    p.write_uint64(persist_value, fieldname, (uint64_t) m_mini_batch_size);
 
     snprintf(fieldname, sizeof(fieldname), "%s_current_mini_batch_idx", name);
     p.write_uint64(persist_value, fieldname, (uint64_t) m_current_mini_batch_idx);
@@ -598,12 +610,36 @@ class generic_data_reader : public lbann_image_preprocessor {
     p.write_uint64(persist_value, fieldname, (uint64_t) m_reset_mini_batch_index);
   
 
+    int unused_size = m_unused_indices.size();
+    snprintf(fieldname, sizeof(fieldname), "%s_unused_data_size", name);
+    p.write_uint64(persist_value, fieldname, (uint64_t) unused_size);
+
+    snprintf(fieldname, sizeof(fieldname), "%s_unused_data_indices", name);
+    p.write_int32_contig(persist_value, fieldname, &m_unused_indices[0], (uint64_t) unused_size);
+
+    snprintf(fieldname, sizeof(fieldname), "%s_last_mini_batch_size", name);
+    p.write_uint64(persist_value, fieldname, (uint64_t) m_last_mini_batch_size);
+
+    snprintf(fieldname, sizeof(fieldname), "%s_num_iteration_per_epoch", name);
+    p.write_uint64(persist_value, fieldname, (uint64_t) m_num_iterations_per_epoch);
+
+    snprintf(fieldname, sizeof(fieldname), "%s_global_mini_batch_size", name);
+    p.write_uint64(persist_value, fieldname, (uint64_t) m_global_mini_batch_size);
+
+    snprintf(fieldname, sizeof(fieldname), "%s_global_last_mini_batch_size", name);
+    p.write_uint64(persist_value, fieldname, (uint64_t) m_global_last_mini_batch_size);
+
+    snprintf(fieldname, sizeof(fieldname), "%s_num_parallel_readers", name);
+    p.write_uint64(persist_value, fieldname, (uint64_t) m_num_parallel_readers);
+
+    snprintf(fieldname, sizeof(fieldname), "%s_model_rank", name);
+    p.write_uint64(persist_value, fieldname, (uint64_t) m_model_rank);
     //std::ofstream rngSeq("RNGSeqtest");
     //std::ofstream rng("RNGtest");
     //rngSeq << get_data_seq_generator();
     //rng << get_generator();
     std::cout << m_shuffled_indices[0] << "\n";
-    std::cout << m_current_mini_batch_idx << "\n";
+    std::cout <<  m_reset_mini_batch_index << "\n";
     std::cout << m_current_pos << "\n";
     return true;
   }
@@ -621,6 +657,11 @@ class generic_data_reader : public lbann_image_preprocessor {
 
     // record minibatch index
     uint64_t val;
+    
+    snprintf(fieldname, sizeof(fieldname), "%s_mini_batch_size", name);
+    p.read_uint64(persist_value, fieldname, &val);
+    m_mini_batch_size = (int) val;
+
     snprintf(fieldname, sizeof(fieldname), "%s_current_mini_batch_idx", name);
     p.read_uint64(persist_value, fieldname, &val);
     m_current_mini_batch_idx = (int) val;
@@ -671,6 +712,37 @@ class generic_data_reader : public lbann_image_preprocessor {
     snprintf(fieldname, sizeof(fieldname), "%s_reset_mini_batch_index", name);
     p.read_uint64(persist_value, fieldname, &val);
     m_reset_mini_batch_index = (int) val;
+
+    snprintf(fieldname, sizeof(fieldname), "%s_unused_data_size", name);
+    p.read_uint64(persist_value, fieldname, &val);
+    auto unused_size = (int) val;
+
+    snprintf(fieldname, sizeof(fieldname), "%s_unused_data_indices", name);
+    p.read_int32_contig(persist_value, fieldname, &m_unused_indices[0], (uint64_t) unused_size);
+
+    snprintf(fieldname, sizeof(fieldname), "%s_last_mini_batch_size", name);
+    p.read_uint64(persist_value, fieldname, &val);
+    m_last_mini_batch_size = (int) val;
+
+    snprintf(fieldname, sizeof(fieldname), "%s_num_iterations_per_epoch", name);
+    p.read_uint64(persist_value, fieldname, &val);
+    m_num_iterations_per_epoch = (int) val;
+
+    snprintf(fieldname, sizeof(fieldname), "%s_global_mini_batch_size", name);
+    p.read_uint64(persist_value, fieldname, &val);
+    m_global_mini_batch_size = (int) val;
+
+    snprintf(fieldname, sizeof(fieldname), "%s_global_last_mini_batch_size", name);
+    p.read_uint64(persist_value, fieldname, &val);
+    m_global_last_mini_batch_size = (int) val;
+
+    snprintf(fieldname, sizeof(fieldname), "%s_num_parallel_readers", name);
+    p.read_uint64(persist_value, fieldname, &val);
+    m_num_parallel_readers = (int) val;
+
+    snprintf(fieldname, sizeof(fieldname), "%s_model_rank", name);
+    p.read_uint64(persist_value, fieldname, &val);
+    m_model_rank = (int) val;
     //std::ofstream rngload("RNGtest");
     //std::ofstream rngSeqload("RNGSeqtest");
     //std::mt19937 rng;
@@ -679,7 +751,8 @@ class generic_data_reader : public lbann_image_preprocessor {
     //rngload << rng;
     //get_data_seq_generator() = rngSeq; 
     //get_generator() = rng;
-  if(header != nullptr){
+    if(header != nullptr){
+      header->mini_batch_size = m_mini_batch_size;
       header->current_pos = m_current_pos;
       header->current_mini_batch_idx = m_current_mini_batch_idx;
       header->data_size = size;
@@ -692,12 +765,21 @@ class generic_data_reader : public lbann_image_preprocessor {
       header->iteration_stride = m_iteration_stride;
       header->loaded_mini_batch_idx = m_loaded_mini_batch_idx;
       header->reset_mini_batch_index = m_reset_mini_batch_index;
+      header->unused_data_size = unused_size;
+      header->unused_indices = m_unused_indices;
+      header->last_mini_batch_size = m_last_mini_batch_size;
+      header->num_iterations_per_epoch = m_num_iterations_per_epoch;
+      header->global_mini_batch_size = m_global_mini_batch_size;
+      header->global_last_mini_batch_size = m_global_last_mini_batch_size;
+      header->num_parallel_readers = m_num_parallel_readers;
+      header->model_rank = m_model_rank;    
     }
 
   return true;
   }
 
   void unpack_header(struct packing_header& header){
+    m_mini_batch_size = (int) header.mini_batch_size;
     m_current_pos = (int) header.current_pos;
     m_current_mini_batch_idx = (int) header.current_mini_batch_idx;
     m_shuffled_indices.resize(header.data_size);
@@ -710,10 +792,17 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_iteration_stride = (int) header.iteration_stride;
     m_loaded_mini_batch_idx = (int) header.loaded_mini_batch_idx;
     m_reset_mini_batch_index = (int) header.reset_mini_batch_index;
+    m_unused_indices.resize(header.unused_data_size);
+    m_unused_indices = header.unused_indices;
+    m_last_mini_batch_size = (int) header.last_mini_batch_size;
+    m_num_iterations_per_epoch = (int) header.num_iterations_per_epoch;
+    m_global_mini_batch_size = (int) header.global_mini_batch_size;
+    m_global_last_mini_batch_size = (int) header.global_last_mini_batch_size;
+    m_num_parallel_readers = (int) header.num_parallel_readers;
+    m_model_rank = (int) header.model_rank;
     std::cout << m_shuffled_indices[0] << "\n";
-    std::cout << m_current_mini_batch_idx << "\n";
+    std::cout <<  m_reset_mini_batch_index << "\n";
     std::cout << m_current_pos << "\n";
-    //set_shuffle(false);
   }
   
   /// returns the data store, which may be a nullptr
