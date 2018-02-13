@@ -948,14 +948,12 @@ bool model::save_to_checkpoint_shared(persist& p, bool val_end) {
     p.write_uint32(persist_type::train, "terminate_training", (uint32_t) m_terminate_training);
     p.write_uint64(persist_type::train, "current_epoch",      (uint64_t) m_current_epoch);
     p.write_uint64(persist_type::train, "current_step",       (uint64_t) m_current_step);
-    //p.write_uint64(persist_type::train, "current_validataion_step",       (uint64_t) m_current_validation_step);
     p.write_uint64(persist_type::train, "current_testing_step",       (uint64_t) m_current_testing_step);
     p.write_uint32(persist_type::train, "max_mini_batch_size",      (uint32_t) m_max_mini_batch_size);
     p.write_uint32(persist_type::train, "current_mini_batch_size",      (uint32_t) m_current_mini_batch_size);
     p.write_uint32(persist_type::train, "current_phase",      (uint32_t) m_current_phase);
-    //save_rng_to_checkpoint_shared(p);
   }
-  if(val_end){
+  if(p.get_rank() == 0 && val_end){
     p.write_uint64(persist_type::validate, "current_validataion_step",       (uint64_t) m_current_validation_step);
     save_rng_to_checkpoint_shared(p);
     //for (const auto& m : m_metrics) {

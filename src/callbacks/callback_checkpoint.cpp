@@ -175,10 +175,6 @@ bool lbann_callback_checkpoint::checkpointShared(model *m) {
   //if(m_epoch_end){
 
   m->save_to_checkpoint_shared(p,m_val_end);
-  //}
-  //if(m_val_end){
-  //  m->save_to_checkpoint_shared(p,m_val_end);
-  //}
   // close our checkpoint
   p.close_checkpoint();
   uint64_t bytes_count = p.get_bytes();
