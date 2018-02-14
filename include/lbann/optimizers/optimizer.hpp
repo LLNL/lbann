@@ -41,16 +41,10 @@ namespace lbann {
 class optimizer {
  public:
 
-  /** Constructor. */
   optimizer(lbann_comm* comm, DataType learning_rate = DataType(0));
-
-  /** Copy constructor. */
   optimizer(const optimizer& other);
-  /** Copy assignment operator. */
   optimizer& operator=(const optimizer& other);
-  /** Destructor. */
   virtual ~optimizer();
-  /** Create a copy of the optimizer. */
   virtual optimizer* copy() const = 0;
 
   /** Get the optimizer name. */
@@ -72,41 +66,48 @@ class optimizer {
     m_learning_rate = learning_rate;
   };
 
-  /** Get gradient matrix.
-   *  The gradient is accumulated on the CPU.
-   */
-  AbsDistMat& get_gradient();
+  /** Get gradient matrix. */
+  const AbsDistMat& get_gradient();
 #ifdef LBANN_HAS_CUDNN
-  /** Get gradient matrix on GPU.
-   *  The gradient is accumulated on the GPU.
-   */
-  cudnn::matrix& get_gradient_gpu();
+  /** Get gradient matrix on GPU. */
+  const cudnn::matrix& get_gradient_gpu();
 #endif // LBANN_HAS_CUDNN
 
   /** Clear gradient matrix. */
   void clear_gradient();
-  /** Add to the gradient matrix. */
+  /** Add to the gradient matrix.
+   *  If the optimizer has a cuDNN manager, the data is copied to GPUs
+   *  and added to the GPU gradient matrix.
+   */
   void add_to_gradient(const AbsDistMat& gradient,
                        DataType scale = DataType(1));
-  /**
-   *  The input is added to a staging matrix. When the gradient is
-   *  needed, an allreduce is applied over the redundant communicator
-   *  of the gradient matrix and the result is added to the gradient.
-   */
-  void stage_gradient_for_accumulation(const AbsDistMat& gradient,
-                                       DataType scale = DataType(1));
 #ifdef LBANN_HAS_CUDNN
-  /** Add to the gradient matrix on GPU. */
-  void add_to_gradient_gpu(const cudnn::matrix& gradient,
-                           DataType scale = DataType(1));
-  /**
-   *  The input is added to a staging matrix. When the gradient is
-   *  needed, an allreduce is applied over the redundant communicator
-   *  of the gradient matrix and the result is added to the gradient.
-   */
-  void stage_gradient_for_accumulation_gpu(const cudnn::matrix& gradient,
-                                           DataType scale = DataType(1));
+  /** Add to the GPU gradient matrix. */
+  void add_to_gradient(const cudnn::matrix& gradient,
+                       DataType scale = DataType(1));
 #endif // LBANN_HAS_CUDNN
+
+  /** Add to the gradient staging matrix.
+   *  When the gradient is needed, an allreduce is applied over the
+   *  redundant communicator of the staging matrix and the result is
+   *  added to the gradient. If the optimizer has a cuDNN manager, the
+   *  data is copied to GPUs and added to the GPU staging matrix.
+   */
+  void add_to_gradient_staging(const AbsDistMat& gradient,
+                               DataType scale = DataType(1));
+#ifdef LBANN_HAS_CUDNN
+  /** Add to the GPU gradient staging matrix.
+   *  When the gradient is needed, an allreduce is applied over all
+   *  the GPUs in the redundant communicator of the staging matrix and
+   *  the result is added to the gradient.
+   */
+  void add_to_gradient_staging(const cudnn::matrix& gradient,
+                               DataType scale = DataType(1));
+#endif // LBANN_HAS_CUDNN
+  /** Start allreduce on the gradient staging matrix.
+   *  This may call a non-blocking allreduce.
+   */
+  void start_gradient_staging_allreduce();
 
   /** Setup optimizer. */
   virtual void setup(weights& w);
@@ -117,7 +118,8 @@ class optimizer {
    *  It can be assumed that values and gradient are the same size and
    *  have the same matrix distribution.
    */
-  virtual void step_compute(AbsDistMat& values, const AbsDistMat& gradient) = 0;
+  virtual void step_compute(AbsDistMat& values,
+                            const AbsDistMat& gradient) = 0;
 #ifdef LBANN_HAS_CUDNN
   /** Perform the computation in an optimization step on GPU.
    *  The default implementation is to transfer data to CPU and call
@@ -136,6 +138,7 @@ class optimizer {
 
  protected:
 
+  /** LBANN communicator. */
   lbann_comm *m_comm;
 
   /** cuDNN manager. */
@@ -150,43 +153,40 @@ class optimizer {
   /** Gradient matrix. */
   AbsDistMat* m_gradient;
 #ifdef LBANN_HAS_CUDNN
-  /** GPU memory for gradient matrix. */
+  /** GPU gradient matrix. */
   cudnn::matrix m_gradient_d;
 #endif // LBANN_HAS_CUDNN
 
  private:
 
-  /** Whether the CPU gradient matrix is non-zero. */
-  bool m_cpu_gradient_is_nonzero;
-  /** Whether the CPU staging matrix is non-zero. */
-  bool m_cpu_staging_is_nonzero;
-  /** Allreduce staging matrix.
+  /** Gradient staging matrix.
    *  When the gradient is needed, an allreduce is applied over the
    *  redundant communicator of the staging matrix and the result is
    *  added to the gradient matrix.
    */
-  AbsDistMat* m_staging;
+  AbsDistMat* m_gradient_staging;
 #ifdef LBANN_HAS_CUDNN
-  /** Whether the GPU gradient matrix is non-zero. */
-  bool m_gpu_gradient_is_nonzero;
-  /** Whether the GPU staging matrix is non-zero. */
-  bool m_gpu_staging_is_nonzero;
   /** GPU memory for gradient staging matrix.
    *  When the gradient is needed, an allreduce is applied over the
    *  GPUs and over the redundant communicator of the staging matrix
    *  and the result is added to the gradient matrix.
    */
-  cudnn::matrix m_staging_d;
+  cudnn::matrix m_gradient_staging_d;
 #endif // LBANN_HAS_CUDNN
+
+  /** Whether the gradient staging matrix requires an allreduce. */
+  bool m_gradient_allreduce_needed;
+  /** Whether an allreduce on the gradient staging matrix has started. */
+  bool m_gradient_allreduce_started;
+  /** Whether an allreduce on the gradient staging matrix has been finished. */
+  bool m_gradient_allreduce_finished;
 
   /** Running count of the time spent in step(). */
   double m_step_time = 0.0;
 
 #ifdef LBANN_NBALLREDUCE_GRADIENT
   /** The request for non-blocking allreduces. */
-  El::mpi::Request<DataType> m_allreduce_req;
-  /** Whether a non-blocking allreduce was started. */
-  bool m_allreduce_started = false;
+  El::mpi::Request<DataType> m_gradient_allreduce_req;
 #endif  // LBANN_NBALLREDUCE_GRADIENT
 
 //************************************************************************
