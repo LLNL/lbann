@@ -366,6 +366,13 @@ void optimizer::add_to_gradient_staging(const AbsDistMat& gradient,
       #endif // LBANN_HAS_CUDNN
     }
 
+    #ifdef LBANN_NBALLREDUCE_GRADIENT
+    /// @todo Handle shared weights
+    if (!m_gradient_allreduce_started) {
+      start_gradient_staging_allreduce();
+    }
+    #endif // LBANN_NBALLREDUCE_GRADIENT
+
   }
 }
 #ifdef LBANN_HAS_CUDNN
@@ -405,6 +412,13 @@ void optimizer::add_to_gradient_staging(const cudnn::matrix& gradient_d,
                                 scale, gradient_d.get_locked_data(i), 1,
                                 m_gradient_staging_d.get_data(i), 1));
     }
+
+    #ifdef LBANN_NBALLREDUCE_GRADIENT
+    /// @todo Handle shared weights
+    if (!m_gradient_allreduce_started) {
+      start_gradient_staging_allreduce();
+    }
+    #endif // LBANN_NBALLREDUCE_GRADIENT
 
   }
 }
