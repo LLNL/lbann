@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/callback_checknan.hpp"
+#include "lbann/layers/io/target/target_layer.hpp"
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {

@@ -58,7 +58,7 @@ SEQ_INIT=OFF
 WITH_CUDA=
 WITH_TOPO_AWARE=ON
 INSTRUMENT=
-
+WITH_ALUMINUM=OFF
 # In case that autoconf fails during on-demand buid on surface, try the newer
 # version of autoconf installed under '/p/lscratche/brainusr/autoconf/bin'
 # by putting it at the beginning of the PATH or use the preinstalled library
@@ -111,6 +111,7 @@ Options:
   ${C}--use-nccl${N}              Use NCCL library
   ${C}--disable-cuda${N}          Disable CUDA
   ${C}--disable-topo-aware${N}    Disable topological-aware configuration (no HWLOC)
+  ${C}--with-aluminum${N}              Use Aluminum allreduce library
 EOF
 }
 
@@ -224,6 +225,9 @@ while :; do
             ;;
         --disable-topo-aware)
             WITH_TOPO_AWARE=OFF
+            ;;
+        --with-aluminum)
+            WITH_ALUMINUM=ON
             ;;
         --instrument)
             INSTRUMENT="-finstrument-functions -ldl"
@@ -649,7 +653,9 @@ ${CMAKE_PATH}/cmake \
 -D LBANN_WITH_NVPROF=${WITH_NVPROF} \
 -D LBANN_WITH_VTUNE=${WITH_VTUNE} \
 -D LBANN_WITH_TOPO_AWARE=${WITH_TOPO_AWARE} \
--D LBANN_SEQUENTIAL_INITIALIZATION=${SEQ_INIT}
+-D LBANN_SEQUENTIAL_INITIALIZATION=${SEQ_INIT} \
+-D LBANN_WITH_ALUMINUM=${WITH_ALUMINUM} \ 
+-D LBANN_ALUMINUM_DIR=${ALUMINUM_DIR}
 ${SUPERBUILD_DIR}
 EOF
 )

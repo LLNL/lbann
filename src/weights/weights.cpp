@@ -433,7 +433,7 @@ std::vector<DataType*> weights::get_values_gpu() {
   }
   return m_values_d;
 }
-#endif // LBANN_HAS_CUDNN
+#endif // __LIB_CUDN
 
 std::string weights::get_dims_string(const std::vector<int>& matrix_height_dims,
                                      const std::vector<int>& matrix_width_dims) {
@@ -466,23 +466,35 @@ bool weights::save_to_checkpoint_shared(lbann::persist& p)
 }
 
 void weights::write_proto(lbann_data::Weights* proto) const {
-  proto->Clear();
-  if(!m_proto_dims.empty()){
-    for(const auto& d : m_proto_dims) proto->mutable_shape()->add_dim(d);
-  }else {
-    for (const auto& d : get_dims())  proto->mutable_shape()->add_dim(d);
-  }
 
+  // Set proto properties
+  proto->Clear();
   proto->set_name(m_name);
+  for (const auto& d : get_dims()) {
+    proto->mutable_shape()->add_dim(d);
+  }
   proto->set_height(get_matrix_height());
   proto->set_width(get_matrix_width());
-  //Write weight values; mimic elemental Write/Print
-  //@todo openMP
-  for(auto i = 0; i < m_values->Height(); ++i) {
-    for(auto j = 0; j < m_values->Width(); ++j) {
-      //assume datatype is float
-      //@todo generalize
-      proto->add_data(m_values->Get(i,j));
+
+  // Write weight values to prototext on world master process
+  CircMat values = *m_values; /// @todo What if weights are on GPU?
+  values.SetRoot(0); /// @todo What if world master is not process 0?
+  if (m_comm->am_world_master()) {
+    const auto& local_values = values.LockedMatrix();
+    const El::Int height = local_values.Height();
+    const El::Int width = local_values.Width();
+    /// @todo OpenMP parallelization
+    /** @todo Our matrices are column-major while Numpy expects
+     *  row-major matrices. This row-wise iteration is fine for
+     *  matrices and column vectors, but it can mess up the order of
+     *  the weights if a high-dimensional tensor is represented as a
+     *  matrix. This is what we need for quantization on convolution
+     *  kernel weights.
+     */
+    for (El::Int i = 0; i < height; ++i) {
+      for (El::Int j = 0; j < width; ++j) {
+        proto->add_data(local_values(i,j));
+      }
     }
   }
 

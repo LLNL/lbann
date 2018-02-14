@@ -31,43 +31,32 @@
 
 namespace lbann {
 
-/**
- * Sigmoid activation function.
- * See: https://en.wikipedia.org/wiki/Sigmoid_function
+/** Sigmoid activation function.
+ *  See https://en.wikipedia.org/wiki/Sigmoid_function
  */
 template <data_layout T_layout>
 class sigmoid_layer : public entrywise_activation_layer {
  public:
-
-  sigmoid_layer(lbann_comm *comm) :
-    entrywise_activation_layer(comm) { 
-    initialize_distributed_matrices(); 
-  }
-
+  sigmoid_layer(lbann_comm *comm) : entrywise_activation_layer(comm) {}
   sigmoid_layer* copy() const override { return new sigmoid_layer(*this); }
-
   std::string get_type() const override { return "sigmoid"; }
+  data_layout get_data_layout() const override { return T_layout; }
 
   std::string get_description() const override {
     return std::string{} +
      " sigmoid dataLayout: " + this->get_data_layout_string(get_data_layout());
   }
 
-  inline void initialize_distributed_matrices() override {
-    entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
-  }
-  data_layout get_data_layout() const override { return T_layout; }
-
  protected:
-  DataType activation_function(DataType z) override {
-    return (DataType(1) / (DataType(1) + std::exp(-z)));
+  DataType activation(DataType z) const override {
+    return 1 / (DataType(1) + std::exp(-z));
   }
-  DataType activation_function_gradient(DataType z) override {
-    const DataType sigz = activation_function(z);
+  DataType activation_derivative(DataType z) const override {
+    const auto sigz = activation(z);
     return sigz * (DataType(1) - sigz);
   }
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // SIGMOID_HPP_INCLUDED
+#endif // SIGMOID_HPP_INCLUDED

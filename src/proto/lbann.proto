@@ -645,6 +645,8 @@ message Layer {
    Sum sum = 303;
    Noise noise = 307;
    Unpooling unpooling = 304;
+   Hadamard hadamard = 308;
+   Constant constant = 309;
 
    // learning Layers
    FullyConnected fully_connected = 11;
@@ -664,7 +666,7 @@ message Layer {
    // activation Layers
    Softmax softmax = 200;
    ELU elu = 30;
-   ID id = 31;
+   Identity identity = 31;
    LeakyRelu leaky_relu = 32;
    Relu relu = 33;
    Sigmoid sigmoid = 34;
@@ -693,7 +695,7 @@ message ELU {
   double alpha = 2; //default: 1.0; must be >= 0
 }
 
-message ID {
+message Identity {
 }
 
 message LeakyRelu {
@@ -769,6 +771,7 @@ message Dropout {
 message Input {
   bool data_set_per_model = 1;  //default: false
   string io_buffer = 2;
+  bool for_regression = 3; //default: false
 }
 
 //////////////////////
@@ -820,10 +823,20 @@ message Split {
 }
 
 message Sum {
+  string scaling_factors = 1; //should be a space-separated list of doubles, e.g. "1.0 2.0 -1.0"
 }
 
 message Noise {
   double noise_factor=1;
+  string num_neurons=2;
+}
+
+message Hadamard {
+}
+
+message Constant {
+  double value=1;
+  string num_neurons=2;
 }
 /////////////////////
 // learning Layers //

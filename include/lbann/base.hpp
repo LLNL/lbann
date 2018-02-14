@@ -33,26 +33,30 @@
 #include "lbann/Elemental_extensions.hpp"
 #include "lbann/utils/cyg_profile.hpp"
 
-
 // Defines, among other things, lbann::DataType.
 #include "lbann_config.hpp"
 
-using EGrid = El::Grid;
-using Grid = El::Grid;
-using Mat = El::Matrix<lbann::DataType>;
+// Typedefs for Elemental matrices
+using EGrid      = El::Grid;
+using Grid       = El::Grid;
+using Mat        = El::Matrix<lbann::DataType>;
 using AbsDistMat = El::AbstractDistMatrix<lbann::DataType>;
-using DistMat = El::DistMatrix<lbann::DataType, El::MC, El::MR>;
-using CircMat = El::DistMatrix<lbann::DataType, El::CIRC, El::CIRC>;
-using StarMat = El::DistMatrix<lbann::DataType, El::STAR, El::STAR>;
-/* Summary matrix over columns */
-using ColSumMat = El::DistMatrix<lbann::DataType, El::MR, El::STAR>;
-using RowSumMat = El::DistMatrix<lbann::DataType, El::MC, El::STAR>;
-using StarVCMat = El::DistMatrix<lbann::DataType, El::STAR, El::VC>;
-using StarMRMat = El::DistMatrix<lbann::DataType, El::STAR, El::MR>;
-/* Summary matrix over columns */
-using ColSumStarVCMat = El::DistMatrix<lbann::DataType, El::VC, El::STAR>;
-using BlockMat = El::BlockMatrix<lbann::DataType>;
-using ElMat = El::ElementalMatrix<lbann::DataType>;
+using ElMat      = El::ElementalMatrix<lbann::DataType>;
+using BlockMat   = El::BlockMatrix<lbann::DataType>;
+using MCMRMat    = El::DistMatrix<lbann::DataType, El::MC  , El::MR  >;
+using CircMat    = El::DistMatrix<lbann::DataType, El::CIRC, El::CIRC>;
+using StarMat    = El::DistMatrix<lbann::DataType, El::STAR, El::STAR>;
+using StarVCMat  = El::DistMatrix<lbann::DataType, El::STAR, El::VC  >;
+using VCStarMat  = El::DistMatrix<lbann::DataType, El::VC  , El::STAR>;
+using MCStarMat  = El::DistMatrix<lbann::DataType, El::MC  , El::STAR>;
+using MRStarMat  = El::DistMatrix<lbann::DataType, El::MR  , El::STAR>;
+using StarMRMat  = El::DistMatrix<lbann::DataType, El::STAR, El::MR  >;
+
+// Deprecated typedefs for Elemental matrices
+using DistMat         = MCMRMat;
+using RowSumMat       = MCStarMat;
+using ColSumStarVCMat = VCStarMat;
+using ColSumMat       = MRStarMat;
 
 // Datatype for model evaluation
 // Examples: timing, metrics, objective functions
@@ -128,6 +132,21 @@ class CUtility {
   static void convolveMat(StarMat *Kernels, BlockMat& InputMat, BlockMat& OutputMat,
                           uint InputWidth, uint InputHeight);
 };
+
+/*
+ * endsWith: http://thispointer.com/c-how-to-check-if-a-string-ends-with-an-another-given-string/
+ * Case Sensitive Implementation of endsWith()
+ * It checks if the string 'mainStr' ends with given string
+ * 'toMatch'
+ */
+static bool __attribute__((used)) endsWith(const std::string mainStr, const std::string &toMatch)
+{
+  if(mainStr.size() >= toMatch.size() &&
+     mainStr.compare(mainStr.size() - toMatch.size(), toMatch.size(), toMatch) == 0)
+    return true;
+  else
+    return false;
+}
 
 }  // namespace lbann
 

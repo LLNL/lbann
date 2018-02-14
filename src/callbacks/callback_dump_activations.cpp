@@ -28,6 +28,7 @@
 
 #include <vector>
 #include "lbann/callbacks/callback_dump_activations.hpp"
+#include "lbann/layers/io/target/target_layer.hpp"
 
 namespace lbann {
 

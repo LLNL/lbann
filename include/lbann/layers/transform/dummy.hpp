@@ -22,37 +22,56 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// softmax_cuda.cu - GPU helper routines for softmax layer
 ////////////////////////////////////////////////////////////////////////////////
-#ifndef LBANN_LAYER_SOFTMAX_CUDA_HPP_INCLUDED
-#define LBANN_LAYER_SOFTMAX_CUDA_HPP_INCLUDED
 
-#include "lbann/utils/cudnn_wrapper.hpp"
+#ifndef LBANN_LAYER_DUMMY_HPP_INCLUDED
+#define LBANN_LAYER_DUMMY_HPP_INCLUDED
+
+#include "lbann/layers/transform/transform.hpp"
 
 namespace lbann {
-namespace softmax_cuda {
 
-void fp_cutoff(cudnn::cudnn_manager &cudnn,
-               const std::vector<DataType*> &activations,
-               El::Int h, El::Int w,
-               DataType min_output);
+/** Dummy layer with no output. */
+template <data_layout T_layout = data_layout::DATA_PARALLEL>
+class dummy_layer : public transform_layer {
 
-void bp_cutoff(cudnn::cudnn_manager &cudnn,
-               const std::vector<DataType*> &activations,
-               const std::vector<DataType*> &error_signals,               
-               El::Int h, El::Int w,
-               DataType min_output);
+ public:
 
-void bp_compute_cross_entropy_shortcut(cudnn::cudnn_manager &cudnn,
-                                       const std::vector<DataType*> &activations,
-                                       const std::vector<DataType*> &prev_error_signals,
-                                       const std::vector<DataType*> &error_signals,
-                                       El::Int h, El::Int w,
-                                       DataType min_output);
+  dummy_layer(lbann_comm *comm,
+              cudnn::cudnn_manager *cudnn = nullptr)
+    : transform_layer(comm) {
 
+    // Dummy layer has no children
+    m_expected_num_child_layers = 0;
 
-} // namespace softmax_cuda
+  #ifdef LBANN_HAS_CUDNN
+    // Initialize GPU memory if using GPU
+    if (cudnn) {
+      this->m_using_gpus = true;
+      this->m_cudnn = cudnn;
+    }
+  #endif // LBANN_HAS_CUDNN
+
+  }
+
+  dummy_layer* copy() const override { return new dummy_layer(*this); }
+  std::string get_type() const override { return "dummy"; }
+  data_layout get_data_layout() const override { return T_layout; }
+
+  /** Returns description. */
+  std::string get_description() const override {
+    std::stringstream s;
+     s << "dummy_layer  dataLayout: " << this->get_data_layout_string(get_data_layout());
+     return s.str();
+  }
+
+ protected:
+
+  void fp_compute() override {}
+  void bp_compute() override {}
+
+};
+
 } // namespace lbann
 
-#endif  // LBANN_LAYER_SOFTMAX_CUDA_HPP_INCLUDED
+#endif // LBANN_LAYER_DUMMY_HPP_INCLUDED

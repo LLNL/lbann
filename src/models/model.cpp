@@ -30,6 +30,7 @@
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/layers/io/input/generic_input_layer.hpp"
+#include "lbann/utils/random.hpp"
 #include <string>
 #include <unistd.h>
 #include <iomanip>
@@ -599,7 +600,7 @@ bool model::train_mini_batch() {
 
 void model::clear_error_signals() {
   for (const auto& layer : m_layers) {
-    layer->clear_error_signal();
+    layer->clear_error_signals(m_current_mini_batch_size);
   }
 }
 
@@ -940,22 +941,24 @@ struct lbann_model_header {
   uint32_t current_phase;
 };
 
-bool model::save_to_checkpoint_shared(persist& p) {
+bool model::save_to_checkpoint_shared(persist& p, bool val_end) {
   // write out fields we need to save for model
-  if (p.get_rank() == 0) {
+  if (p.get_rank() == 0 && !val_end) {
     p.write_uint32(persist_type::train, "execution_mode",     (uint32_t) m_execution_mode);
     p.write_uint32(persist_type::train, "terminate_training", (uint32_t) m_terminate_training);
     p.write_uint64(persist_type::train, "current_epoch",      (uint64_t) m_current_epoch);
     p.write_uint64(persist_type::train, "current_step",       (uint64_t) m_current_step);
-    p.write_uint64(persist_type::train, "current_validataion_step",       (uint64_t) m_current_validation_step);
     p.write_uint64(persist_type::train, "current_testing_step",       (uint64_t) m_current_testing_step);
     p.write_uint32(persist_type::train, "max_mini_batch_size",      (uint32_t) m_max_mini_batch_size);
     p.write_uint32(persist_type::train, "current_mini_batch_size",      (uint32_t) m_current_mini_batch_size);
     p.write_uint32(persist_type::train, "current_phase",      (uint32_t) m_current_phase);
   }
-
-  for (const auto& m : m_metrics) {
-    m->save_to_checkpoint_shared(p);
+  if(p.get_rank() == 0 && val_end){
+    p.write_uint64(persist_type::validate, "current_validataion_step",       (uint64_t) m_current_validation_step);
+    save_rng_to_checkpoint_shared(p);
+    //for (const auto& m : m_metrics) {
+    //  m->save_to_checkpoint_shared(p);
+    //}
   }
   return true;
 }
@@ -969,12 +972,14 @@ bool model::load_from_checkpoint_shared(persist& p) {
     p.read_uint32(persist_type::train, "terminate_training", &header.terminate_training);
     p.read_uint64(persist_type::train, "current_epoch",      &header.current_epoch);
     p.read_uint64(persist_type::train, "current_step",       &header.current_step);
-    p.read_uint64(persist_type::train, "current_validation_step",       &header.current_validation_step);
+    p.read_uint64(persist_type::validate, "current_validation_step",       &header.current_validation_step);
     p.read_uint64(persist_type::train, "current_testing_step",       &header.current_testing_step);
     p.read_uint32(persist_type::train, "max_mini_batch_size",      &header.max_mini_batch_size);
     p.read_uint32(persist_type::train, "current_mini_batch_size",      &header.current_mini_batch_size);
     p.read_uint32(persist_type::train, "current_phase",      &header.current_phase);
+    load_rng_from_checkpoint_shared(p);
   }
+  
 
   // TODO: this assumes homogeneous processors
   // broadcast state from rank 0
@@ -990,10 +995,9 @@ bool model::load_from_checkpoint_shared(persist& p) {
   m_max_mini_batch_size = (int)           header.max_mini_batch_size;
   m_current_mini_batch_size = (int)       header.current_mini_batch_size;
   m_current_phase      =                  header.current_phase;
-
-  for (const auto& m : m_metrics) {
-    m->load_from_checkpoint_shared(p);
-  }
+  //for (const auto& m : m_metrics) {
+  //  m->load_from_checkpoint_shared(p);
+  //}
   return true;
 }
 

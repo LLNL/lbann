@@ -22,8 +22,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// safe_inv.hpp - Safe inversion layer
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_LAYER_SAFE_INV_HPP_INCLUDED
@@ -35,49 +33,26 @@
 
 namespace lbann {
 
-/**
- * Safe inversion (reciprocal) of unpooling layer
- * y = (x == DataType(0)) ? (Datatype(0)) : (DataType(1)/x);
- * Reference: https://arxiv.org.abs/1606.06582
- *   
+/** Safe entrywise inversion (reciprocal).
+ *  Output is zero if input is zero. See https://arxiv.org.abs/1606.06582
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
 class safe_inv_layer : public transform_layer {
  private:
+  
+  /** Threshhold for computing inverse. */
+  DataType m_threshhold;
 
  public:
-  /// Constructor
+
   safe_inv_layer(lbann_comm *comm,
-              cudnn::cudnn_manager *cudnn = nullptr)
-    : transform_layer(comm){
+                 DataType threshhold = DataType(0),
+                 cudnn::cudnn_manager *cudnn = nullptr)
+    : transform_layer(comm), m_threshhold(threshhold) {}
 
-    // Setup the data distribution
-    initialize_distributed_matrices();
-
-  #ifdef LBANN_HAS_CUDNN
-    // Initialize GPU if available
-    if(cudnn) {
-      this->m_using_gpus = true;
-      this->m_cudnn = cudnn;
-    }
-  #endif // LBANN_HAS_CUDNN
-
-  }
-
-  safe_inv_layer(const safe_inv_layer& other) :
-    transform_layer(other) { }
-
-  safe_inv_layer& operator=(const safe_inv_layer& other) {
-    transform_layer::operator=(other);
-    return *this;
-  }
-
-  ~safe_inv_layer() override {
-  #ifdef LBANN_HAS_CUDNN
-    // GPU memory for activations is a copy of previous layer's activations
-    this->m_error_signal_d.clear();
-  #endif // LBANN_HAS_CUDNN
-  }
+  safe_inv_layer* copy() const override { return new safe_inv_layer(*this); }
+  std::string get_type() const override { return "safe_inv"; }
+  data_layout get_data_layout() const override { return T_layout; }
 
   /** Returns description of ctor params */
   std::string get_description() const override {
@@ -86,59 +61,40 @@ class safe_inv_layer : public transform_layer {
      return s.str();
   }
 
-  safe_inv_layer* copy() const override { return new safe_inv_layer(*this); }
-
-  std::string get_type() const override { return "safe_inv"; }
-
-  virtual inline void initialize_distributed_matrices() {
-    transform_layer::initialize_distributed_matrices<T_layout>();
-  }
-  data_layout get_data_layout() const override { return T_layout; }
-
-
-  void setup_gpu() override {
-    transform_layer::setup_gpu();
-  #ifndef LBANN_HAS_CUDNN
-    throw lbann_exception("safe_inv_layer: cuDNN not detected");
-  #else
-    m_copy_bp_output_from_gpus = true;
-
-  #endif // #ifndef LBANN_HAS_CUDNN
-  }
-
-  protected:
+ protected:
 
   void fp_compute() override {
-    if(this->m_using_gpus) {
-      fp_compute_cudnn();
-    } else {
-      fp_compute_cpu();
+    const auto& local_input = get_local_prev_activations();
+    auto& local_output = get_local_activations();
+    const int local_height = local_input.Height();
+    const int local_width = local_input.Width();
+    for (int col = 0; col < local_width; ++col) {
+      for (int row = 0; row < local_height; ++row) {
+        const DataType x = local_input(row, col);
+        DataType& y = local_output(row, col);
+        y = std::fabs(x) > m_threshhold ? 1 / x : DataType(0);
+      }
     }
   }
 
   void bp_compute() override {
-    if(this->m_using_gpus) {
-      throw lbann_exception("safe_inv_layer: cuDNN not implemented");
-    } else {
-      El::LockedView(*this->m_error_signal_v, *this->m_prev_error_signal_v);
+    const auto& local_input = get_local_prev_activations();
+    const auto& local_gradient_wrt_output = get_local_prev_error_signals();
+    auto& local_gradient_wrt_input = get_local_error_signals();
+    const int local_height = local_input.Height();
+    const int local_width = local_input.Width();
+    for (int col = 0; col < local_width; ++col) {
+      for (int row = 0; row < local_height; ++row) {
+        const DataType x = local_input(row, col);
+        const DataType dy = local_gradient_wrt_output(row, col);
+        DataType& dx = local_gradient_wrt_input(row, col);
+        dx += std::fabs(x) > m_threshhold ?  - dy / (x * x) : DataType(0);
+      }
     }
-  }
-
-  void fp_compute_cudnn() {
-    throw lbann_exception("safe_inv_layer: cuDNN not implemented");
-  }
-
-  void fp_compute_cpu() {
-    El::Copy(*this->m_prev_activations_v, *this->m_activations_v);
-    
-    auto inv = [&](const DataType& z) { 
-         return (z == DataType(0)) ? (DataType(0)) : (DataType(1)/z);
-    };
-    EntrywiseMap(*this->m_activations_v, El::MakeFunction(inv));
   }
 
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_LAYER_SAFE_INV_HPP_INCLUDED
+#endif // LBANN_LAYER_SAFE_INV_HPP_INCLUDED

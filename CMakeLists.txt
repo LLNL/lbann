@@ -89,8 +89,8 @@ option(${UPPER_PROJECT_NAME}_WITH_NVPROF
 option(${UPPER_PROJECT_NAME}_WITH_TOPO_AWARE
   "Enable topology-aware profiling (HWLOC)" ON)
 
-option(${UPPER_PROJECT_NAME}_WITH_SOFTMAX_CUDA
-  "Enable CUDA-based softmax layer" ON)
+option(${UPPER_PROJECT_NAME}_WITH_ALUNINUM 
+  "Enable Aluminum all-reduce library" OFF)
 
 option(${UPPER_PROJECT_NAME}_VERBOSE "Enable verbose output" OFF)
 
@@ -121,11 +121,8 @@ if (${UPPER_PROJECT_NAME}_WITH_CUDA)
   set(LBANN_HAS_CUDA ${CUDA_FOUND})
 
   if (LBANN_HAS_CUDA)
-    set(LBANN_SOFTMAX_CUDA ${${UPPER_PROJECT_NAME}_WITH_SOFTMAX_CUDA})
   else ()
     message(FATAL_ERROR "CUDA support not found. Disabling.")
-    set(LBANN_SOFTMAX_CUDA FALSE)
-    set(LBANN_WITH_SOFTMAX_CUDA OFF)
     set(LBANN_WITH_CUDA OFF)
   endif ()
 endif ()
@@ -189,10 +186,10 @@ if (LBANN_HAS_CUDA)
     set(LBANN_HAS_NCCL2 ${NCCL_FOUND})
     if (NOT LBANN_HAS_NCCL2)
       message(FATAL_ERROR
-        "Requested LBANN_WITH_CNPY but CNPY not found. "
-        "CNPY is now disabled. "
-        "Try specifying CNPY_DIR as the root of a CNPY install. "
-        "Alternatively, build with LBANN_WITH_CNPY=OFF.")
+        "Requested LBANN_WITH_NCCL but NCCL not found. "
+        "NCCL is now disabled. "
+        "Try specifying NCCL_DIR as the root of a NCCL install. "
+        "Alternatively, build with LBANN_WITH_NCCL=OFF.")
       set(LBANN_WITH_NCCL OFF)
     endif (NOT LBANN_HAS_NCCL2)
   endif (LBANN_WITH_NCCL)
@@ -246,6 +243,19 @@ if (LBANN_TOPO_AWARE)
   endif (NOT HWLOC_FOUND)
 endif (LBANN_TOPO_AWARE)
 
+if (LBANN_WITH_ALUMINUM)
+  find_package(ALUMINUM)
+  set(LBANN_HAS_ALUMINUM ${ALUMINUM_FOUND}) 
+  if (NOT LBANN_HAS_ALUMINUM)
+    message(FATAL_ERROR
+      "Requested LBANN_WITH_ALUMINUM but Aluminum not found. "
+      "Aluminum is now disabled. "
+      "Try specifying ALUMINUM_DIR as the root of an ALUMINUM install. "
+      "Alternatively, build with LBANN_WITH_ALUMINUM=OFF.")
+    set(LBANN_WITH_ALUMINUM OFF)
+  endif(NOT LBANN_HAS_ALUMINUM)      
+endif (LBANN_WITH_ALUMINUM)
+
 # Handle the documentation
 add_subdirectory(doc)
 
@@ -290,6 +300,10 @@ endif ()
 
 if (LBANN_TOPO_AWARE)
   target_link_libraries(lbann PUBLIC HWLOC::hwloc)
+endif ()
+
+if (LBANN_HAS_ALUMINUM)
+  target_link_libraries(lbann PUBLIC ALUMINUM::ALUMINUM)
 endif ()
 
 #== FIXME HERE DOWN ==
@@ -394,3 +408,4 @@ message("  LBANN_HAS_TBINF:      ${LBANN_HAS_TBINF}")
 message("  LBANN_HAS_VTUNE:      ${LBANN_HAS_VTUNE}")
 message("  LBANN_HAS_DOXYGEN:    ${LBANN_HAS_DOXYGEN}")
 message("  LBANN_HAS_LBANN_PROTO:${LBANN_HAS_LBANN_PROTO}")
+message("  LBANN_HAS_ALUMINUM:   ${LBANN_HAS_ALUMINUM}")

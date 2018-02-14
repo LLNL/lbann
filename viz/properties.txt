@@ -21,14 +21,12 @@ learning     convolution             shape=tripleoctagon   color=chartreuse3
 learning     fully_connected 
 learning     deconvolution           shape=octogon
 learning     fully_connected_cuda 
-io           input_distributed_minibatch
-io           input_partitioned_minibatch
-io           target_distributed_minibatch
-io           target_partitioned_minibatch
+io           input
+io           target
 io           reconstruction
 activations  softmax
 activations  elu
-activations  id
+activations  identity
 activations  leaky_relu
 activations  relu
 activations  sigmoid
@@ -48,4 +46,5 @@ transform    split arrow=red
 transform    sum
 transform    noise
 transform    unpooling
+transform    hadamard
 

@@ -22,62 +22,45 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// noise.hpp - Noise layer
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_LAYER_NOISE_HPP_INCLUDED
 #define LBANN_LAYER_NOISE_HPP_INCLUDED
 
 #include "lbann/layers/transform/transform.hpp"
-#include "lbann/utils/exception.hpp"
+#include "lbann/utils/random.hpp"
 
 namespace lbann {
 
-/**
- * Add synthetic (Gaussian) noise to input data (the layer below)
- * @param noise_factor controls the noise level
- */
+/** Layer adds (Gaussian) noise to data. */
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
 class noise_layer : public transform_layer {
  private:
+  /** Noise factor */
+  DataType m_noise_factor;
 
  public:
-  /// Constructor
   noise_layer(lbann_comm *comm,
-              float noise_factor=0.5f,
+              const std::vector<int>& neuron_dims,
+              DataType noise_factor=DataType(1.0),
               cudnn::cudnn_manager *cudnn = nullptr)
-    : transform_layer(comm), m_noise_factor(noise_factor) {
+    : transform_layer(comm),
+      m_noise_factor(noise_factor) {
 
-    // Setup the data distribution
-    initialize_distributed_matrices();
+    // Record neuron dimensions
+    this->m_neuron_dims = neuron_dims;
+    this->m_num_neuron_dims = neuron_dims.size();
+    this->m_num_neurons = std::accumulate(neuron_dims.begin(),
+                                          neuron_dims.end(),
+                                          1,
+                                          std::multiplies<int>());
 
-  #ifdef LBANN_HAS_CUDNN
-    // Initialize GPU if available
-    if(cudnn) {
-      this->m_using_gpus = true;
-      this->m_cudnn = cudnn;
-    }
-  #endif // LBANN_HAS_CUDNN
-
+    // Constant layer has no parents
+    m_expected_num_parent_layers = 0;
   }
-
-  noise_layer(const noise_layer& other) :
-    transform_layer(other),
-    m_noise_factor(other.m_noise_factor) { }
-
-  noise_layer& operator=(const noise_layer& other) {
-    transform_layer::operator=(other);
-    m_noise_factor = other.m_noise_factor;
-    return *this;
-  }
-
-  ~noise_layer() override {
-  #ifdef LBANN_HAS_CUDNN
-    // GPU memory for activations is a copy of previous layer's activations
-    this->m_error_signal_d.clear();
-  #endif // LBANN_HAS_CUDNN
-  }
+  noise_layer* copy() const override { return new noise_layer(*this); }
+  std::string get_type() const override { return "noise"; }
+  data_layout get_data_layout() const override { return T_layout; }
 
   /** Returns description of ctor params */
   std::string get_description() const override {
@@ -87,68 +70,31 @@ class noise_layer : public transform_layer {
      return s.str();
   }
 
-  noise_layer* copy() const override { return new noise_layer(*this); }
+ protected:
 
-  std::string get_type() const override { return "noise"; }
-
-  virtual inline void initialize_distributed_matrices() {
-    transform_layer::initialize_distributed_matrices<T_layout>();
+  void setup_dims() override {
+    const auto neuron_dims = this->m_neuron_dims;
+    transform_layer::setup_dims();
+    this->m_neuron_dims = neuron_dims;
+    this->m_num_neuron_dims = neuron_dims.size();
+    this->m_num_neurons = std::accumulate(neuron_dims.begin(),
+                                          neuron_dims.end(),
+                                          1,
+                                          std::multiplies<int>());
   }
-  data_layout get_data_layout() const override { return T_layout; }
-
-
-  void setup_gpu() override {
-    transform_layer::setup_gpu();
-  #ifndef LBANN_HAS_CUDNN
-    throw lbann_exception("noise_layer: cuDNN not detected");
-  #else
-    m_copy_bp_output_from_gpus = true;
-
-  #endif // #ifndef LBANN_HAS_CUDNN
-  }
-
-  protected:
-  /** noise factor */
-  float m_noise_factor;
 
   void fp_compute() override {
-    if(this->m_using_gpus) {
-      fp_compute_cudnn();
-    } else {
-      fp_compute_cpu();
-    }
+    auto& output = get_activations();
+    gaussian_fill(output,
+                  output.Height(), output.Width(),
+                  DataType(0), m_noise_factor);
   }
 
   void bp_compute() override {
-    if(this->m_using_gpus) {
-      throw lbann_exception("noise_layer: cuDNN not implemented");
-    } else {
-      El::LockedView(*this->m_error_signal_v, *this->m_prev_error_signal_v);
-    }
-  }
-
-  void fp_compute_cudnn() {
-    throw lbann_exception("noise_layer: cuDNN not implemented");
-  }
-
-  void fp_compute_cpu() {
-    El::Copy(*this->m_prev_activations_v, *this->m_activations_v);
-    AbsDistMat* noise_mat = this->m_activations_v->Construct(this->m_activations_v->Grid(),
-                                                             this->m_activations_v->Root());
-    El::Gaussian(*noise_mat, this->m_activations_v->Height(), 
-                 this->m_activations_v->Width(),
-                 DataType(0), DataType(1));
-    El::Axpy(m_noise_factor,*noise_mat,*this->m_activations_v);
-    
-    //@todo - clip to min and max of input entry
-    auto clip = [&](const DataType& z) { 
-         return std::max(DataType(0), std::min(z,DataType(1)));
-    };
-    EntrywiseMap(*this->m_activations_v, El::MakeFunction(clip));
   }
 
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_LAYER_NOISE_HPP_INCLUDED
+#endif // LBANN_LAYER_NOISE_HPP_INCLUDED

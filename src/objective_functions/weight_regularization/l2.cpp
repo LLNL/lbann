@@ -30,6 +30,37 @@
 #include "lbann/utils/cublas_wrapper.hpp"
 #endif // LBANN_HAS_CUDNN
 
+namespace {
+
+  /** Compute the entry-wise sum of squares of a local matrix. */
+  EvalType sum_of_squares(const Mat& mat) {
+    const El::Int height = mat.Height();
+    const El::Int width = mat.Width();
+    const El::Int ldim = mat.LDim();
+    const auto& __restrict__ buf = mat.LockedBuffer();
+    EvalType sqsum = EvalType(0);
+    if (ldim == height) {
+      // Parallelize single loop if data is contiguous
+      const El::Int size = height*width;
+      #pragma omp parallel for reduction(+:sqsum)
+      for (El::Int i = 0; i < size; ++i) {
+        const EvalType val = buf[i];
+        sqsum += val * val;
+      }
+    } else {
+      // Parallelize double loop if data is not contiguous
+      #pragma omp parallel for reduction(+:sqsum) collapse(2)
+      for (El::Int j = 0; j < width; ++j) {
+        for (El::Int i = 0; i < height; ++i) {
+          const EvalType val = buf[i + j*ldim];
+          sqsum += val * val;
+        }
+      }
+    }
+    return sqsum;
+  }
+
+} // namespace
 
 namespace lbann {
 
@@ -55,68 +86,49 @@ void l2_weight_regularization::setup(model& m) {
 
 }
 
-EvalType l2_weight_regularization::local_squared_l2_norm(const Mat& mat) const {
-  const El::Int height = mat.Height();
-  const El::Int width = mat.Width();
-  const El::Int ldim = mat.LDim();
-  const DataType* __restrict__ buf = mat.LockedBuffer();
-  EvalType sqsum = EvalType(0);
-  // Check if data is contiguous.
-  if (ldim == height) {
-    const El::Int size = height*width;
-    #pragma omp parallel for reduction(+:sqsum)
-    for (El::Int i = 0; i < size; ++i) {
-      const EvalType val = buf[i];
-      sqsum += val * val;
-    }
-  } else {
-    #pragma omp parallel for reduction(+:sqsum) collapse(2)
-    for (El::Int j = 0; j < width; ++j) {
-      for (El::Int i = 0; i < height; ++i) {
-        const EvalType val = buf[i + j*ldim];
-        sqsum += val * val;
-      }
-    }
-  }
-  return sqsum;
-}
-
 EvalType l2_weight_regularization::evaluate() {
   if (m_scale_factor == EvalType(0)) { return EvalType(0); }
-  auto value = EvalType(0);
-  for (weights* w : m_weights) {
+  EvalType sqsum = EvalType(0);
+  for (const auto& w : m_weights) {
     cudnn::cudnn_manager* cudnn = w->get_cudnn_manager();
     if (cudnn != nullptr) {
-#ifdef LBANN_HAS_CUDNN
+    #ifndef LBANN_HAS_CUDNN
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: cuDNN not detected";
+      throw lbann_exception(err.str());
+    #else
       CHECK_CUDA(cudaSetDevice(cudnn->get_gpu(0)));
-      EvalType norm = cublas::nrm2(cudnn->get_cublas_handle(0),
-                                   w->get_size(),
-                                   w->get_values_gpu()[0], 1);
-      value += norm * norm;
-#endif // LBANN_HAS_CUDNN
+      const EvalType norm = cublas::nrm2(cudnn->get_cublas_handle(0),
+                                         w->get_size(),
+                                         w->get_values_gpu()[0], 1);
+      sqsum += norm * norm;
+    #endif // LBANN_HAS_CUDNN
     } else {
       // Further optimization: Can batch allreduces on the same communicator.
-      const AbsDistMat& values = w->get_values();
-      EvalType local_norm = local_squared_l2_norm(values.LockedMatrix());
-      value += get_comm().allreduce(local_norm, values.DistComm());
+      const auto& values = w->get_values();
+      const EvalType local_sqsum = sum_of_squares(values.LockedMatrix());
+      sqsum += get_comm().allreduce(local_sqsum, values.DistComm());
     }
   }
-  return m_scale_factor * value;
+  return m_scale_factor * sqsum / 2;
 }
 
 void l2_weight_regularization::compute_weight_regularization() {
   if (m_scale_factor == EvalType(0)) { return; }
-  for (weights* w : m_weights) {
-    optimizer* opt = w->get_optimizer();
+  for (auto&& w : m_weights) {
+    auto&& opt = w->get_optimizer();
     if (w->get_cudnn_manager() != nullptr) {
-#ifdef LBANN_HAS_CUDNN
-      std::vector<DataType*> values_d = w->get_values_gpu();
-      opt->add_to_gradient_gpu(values_d, 2 * m_scale_factor);
-#endif // LBANN_HAS_CUDNN
+    #ifndef LBANN_HAS_CUDNN
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: cuDNN not detected";
+      throw lbann_exception(err.str());
+    #else
+      opt->add_to_gradient_gpu(w->get_values_gpu(), m_scale_factor);
+    #endif // LBANN_HAS_CUDNN
     } else {
-      opt->add_to_gradient(w->get_values(), 2 * m_scale_factor);
+      opt->add_to_gradient(w->get_values(), m_scale_factor);
     }
   }
 }
 
-}  // namespace lbann
+} // namespace lbann

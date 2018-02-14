@@ -22,8 +22,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// deconvolution.hpp - Deconvolution Layer
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_LAYER_DECONVOLUTION_HPP_INCLUDED
@@ -42,7 +40,7 @@ namespace lbann {
 // Forward declaration.
 class lbann_callback_imcomm;
 
-/// Convolution layer
+/// Deconvolution layer
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
 class deconvolution_layer : public base_convolution_layer {
  private:
@@ -51,21 +49,20 @@ class deconvolution_layer : public base_convolution_layer {
 
   public:
 
-
   deconvolution_layer(lbann_comm *comm,
                       int num_data_dims,
                       int num_output_channels,
                       int conv_dim,
-                      int conv_pad,
-                      int conv_stride,
+                      int pad,
+                      int stride,
                       bool has_bias = true,
                       cudnn::cudnn_manager *cudnn = nullptr)
     : deconvolution_layer(comm,
                           num_data_dims,
                           num_output_channels,
                           std::vector<int>(num_data_dims, conv_dim),
-                          std::vector<int>(num_data_dims, conv_pad),
-                          std::vector<int>(num_data_dims, conv_stride),
+                          std::vector<int>(num_data_dims, pad),
+                          std::vector<int>(num_data_dims, stride),
                           has_bias,
                           cudnn) {}
 
@@ -73,23 +70,20 @@ class deconvolution_layer : public base_convolution_layer {
                       int num_data_dims,
                       int num_output_channels,
                       std::vector<int> conv_dims,
-                      std::vector<int> conv_pads,
-                      std::vector<int> conv_strides,
+                      std::vector<int> pads,
+                      std::vector<int> strides,
                       bool has_bias = true,
                       cudnn::cudnn_manager *cudnn = nullptr)
     : base_convolution_layer(comm,
                              num_data_dims,
                              num_output_channels,
                              conv_dims,
-                             conv_pads,
-                             conv_strides,
+                             pads,
+                             strides,
                              has_bias,
                              cudnn) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "convolution only supports DATA_PARALLEL");
-
-    // Setup the data distribution
-    initialize_distributed_matrices();
 
     // Use GPUs if cuDNN manager is available
     if(this->m_cudnn != nullptr) {
@@ -105,13 +99,13 @@ class deconvolution_layer : public base_convolution_layer {
     for (size_t h=0; h<this->m_kernel_dims.size(); h++) {
       s << this->m_kernel_dims[h] << " ";
     }
-    s << " conv_pads: ";
-    for (size_t h=0; h<this->m_conv_pads.size(); h++) {
-      s << this->m_conv_pads[h] << " ";
+    s << " pads: ";
+    for (size_t h=0; h<this->m_pads.size(); h++) {
+      s << this->m_pads[h] << " ";
     }
-    s << " conv_strides: ";
-    for (size_t h=0; h<this->m_conv_strides.size(); h++) {
-      s << this->m_conv_strides[h] << " ";
+    s << " strides: ";
+    for (size_t h=0; h<this->m_strides.size(); h++) {
+      s << this->m_strides[h] << " ";
     }
     s << " num_output_channels: " << this->m_neuron_dims[0]
       << " has_bias: " << this->m_bias_scaling_factor
@@ -119,23 +113,9 @@ class deconvolution_layer : public base_convolution_layer {
     return s.str();
   }
 
-  deconvolution_layer(const deconvolution_layer& other) :
-    base_convolution_layer(other) {}
-
-  deconvolution_layer& operator=(const deconvolution_layer& other) {
-    base_convolution_layer::operator=(other);
-    return *this;
-  }
-
-  ~deconvolution_layer() override {}
-
   deconvolution_layer* copy() const override { return new deconvolution_layer(*this); }
 
   std::string get_type() const override { return "deconvolution"; }
-
-  void initialize_distributed_matrices() {
-    base_convolution_layer::initialize_distributed_matrices<T_layout>();
-  }
 
   data_layout get_data_layout() const override { return T_layout; }
 
@@ -162,8 +142,8 @@ class deconvolution_layer : public base_convolution_layer {
     this->m_neuron_dims[0] = this->m_kernel_dims[1];
     for(int i=0; i<this->m_num_neuron_dims-1; ++i) {
       this->m_neuron_dims[i+1]
-        = ((this->m_prev_neuron_dims[i+1]-1) * this->m_conv_strides[i]
-           + this->m_kernel_dims[i+2] - 2*this->m_conv_pads[i]);
+        = ((this->m_prev_neuron_dims[i+1]-1) * this->m_strides[i]
+           + this->m_kernel_dims[i+2] - 2*this->m_pads[i]);
     }
     this->m_num_neurons = std::accumulate(this->m_neuron_dims.begin(),
                                           this->m_neuron_dims.end(),
@@ -180,10 +160,8 @@ class deconvolution_layer : public base_convolution_layer {
 
   void setup_data() override {
     base_convolution_layer::setup_data();
-    this->m_weights[0]->setup(m_kernel_size / this->m_prev_neuron_dims[0],
-                              this->m_prev_neuron_dims[0],
-                              El::STAR, El::STAR);
-    El::Zeros(*this->m_kernel_weights_gradient,
+    this->m_weights[0]->setup(m_kernel_dims);
+    El::Zeros(this->m_kernel_gradient,
               this->m_weights[0]->get_matrix_height(),
               this->m_weights[0]->get_matrix_width());
   }
@@ -211,6 +189,7 @@ class deconvolution_layer : public base_convolution_layer {
   }
 
 };
-}
+
+} // namespace lbann
 
 #endif // LBANN_LAYER_DECONVOLUTION_HPP_INCLUDED

@@ -43,12 +43,6 @@ model {
   callback { print {} }
   callback { timer {} }
   callback {
-    summary {
-      dir: "."
-      mat_interval: 25
-    }
-  }
-  callback {
     drop_fixed_learning_rate {
       drop_epoch: 20
       drop_epoch: 40
@@ -56,33 +50,6 @@ model {
       amt: 0.1
     }
   }
-  # callback {
-  #   save_images {
-  #     image_dir: "
-  #     extension: "jpg"
-  #   }
-  # }
-  # callback {
-  #   dump_mb_indices {
-  #     basename: "debug_alexnet/"
-  #   }
-  # }
-  # callback {
-  #   debug {
-  #     phase: "train"
-  #   }
-  # }
-  # callback {
-  #   debug_io {
-  #     phase: "train"
-  #     lvl: 1
-  #   }
-  # }
-  # callback {
-  #   gradient_check {
-  #     verbose: false
-  #   }
-  # }
 
   ###################################################
   # start of layers
