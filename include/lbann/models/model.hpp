@@ -321,7 +321,15 @@ class model {
   virtual void forward_prop(execution_mode mode);
   /** Backward propagation step. */
   virtual void backward_prop();
-  /** Clear each layer's error signal tensor. */
+  /** Clear each optimizer's gradient. 
+   *  This must be called before training forward prop since layers
+   *  set an optimizer flag during forward prop.
+   */
+  virtual void clear_gradients();
+  /** Clear each layer's error signal tensor.
+   *  This must be called after the input layer's forward prop since
+   *  it determines the current mini-batch size.
+   */
   virtual void clear_error_signals();
   /** Update weights step. */
   virtual void update_weights();

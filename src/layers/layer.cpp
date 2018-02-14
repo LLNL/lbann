@@ -302,6 +302,14 @@ void Layer::forward_prop() {
   fp_compute();
   m_fp_compute_time += get_time() - fp_compute_start;
 
+  if (m_model->get_execution_mode() == execution_mode::training) {
+    // Add this layer as a gradient source for weight optimizers
+    for (auto&& w : m_weights) {
+      optimizer* opt = w->get_optimizer();
+      if (opt != nullptr) { opt->add_gradient_source(this); }
+    }
+  }
+
 #ifdef LBANN_HAS_CUDNN
   if (m_using_gpus) {
 
@@ -397,6 +405,12 @@ void Layer::back_prop() {
   const auto bp_compute_start = get_time();
   bp_compute();
   m_bp_compute_time += get_time() - bp_compute_start;
+
+  // Remove this layer as a gradient source for weight optimizers
+  for (auto&& w : m_weights) {
+    auto&& opt = w->get_optimizer();
+    if (opt != nullptr) { opt->remove_gradient_source(this); }
+  }
 
 #ifdef LBANN_HAS_CUDNN
   if (m_using_gpus) {

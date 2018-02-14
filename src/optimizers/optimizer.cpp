@@ -285,9 +285,6 @@ void optimizer::clear_gradient() {
   m_gradient_allreduce_started = false;
   m_gradient_allreduce_finished = false;
 
-  // Clear gradient sources
-  m_gradient_sources.clear();
-
 }
 
 void optimizer::add_to_gradient(const AbsDistMat& gradient,

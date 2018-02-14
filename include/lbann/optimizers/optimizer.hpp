@@ -111,6 +111,11 @@ class optimizer {
    */
   void start_gradient_staging_allreduce();
 
+  /** Get number of gradient sources.
+   *  This is the number of objects that contribute to the gradient
+   *  but have not added their contributions yet.
+   */
+  int get_num_gradient_sources() const { return m_gradient_sources.size(); }
   /** Add a gradient source.
    *  Objects that depend on the weights being optimized and which
    *  contribute to the gradient should add themselves as a gradient
