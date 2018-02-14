@@ -198,9 +198,10 @@ lbann::persist::persist() {
   // initialize file descriptors
   m_model_fd = -1;
   m_train_fd = -1;
+  m_validate_fd = -1;
 }
 
-void lbann::persist::open_checkpoint(const char *dir, bool per_rank) {
+void lbann::persist::open_checkpoint(const char *dir, bool per_rank, bool val_end) {
   // create directory for checkpoint
   lbann::makedir(dir);
 
@@ -233,15 +234,22 @@ void lbann::persist::open_checkpoint(const char *dir, bool per_rank) {
 
     // define filename for train state
     sprintf(m_train_filename, "%s/train", dir);
+    sprintf(m_validate_filename, "%s/validate", dir);
+    if(!val_end){
+      m_model_fd = lbann::openwrite(m_model_filename);
+      if (m_model_fd < 0) {
+        // failed to open checkpoint file
+      } 
 
-    m_model_fd = lbann::openwrite(m_model_filename);
-    if (m_model_fd < 0) {
-      // failed to open checkpoint file
-    }
-
-    m_train_fd = lbann::openwrite(m_train_filename);
-    if (m_train_fd < 0) {
-      // failed to open checkpoint file
+      m_train_fd = lbann::openwrite(m_train_filename);
+      if (m_train_fd < 0) {
+        // failed to open checkpoint file
+      }
+    } else if (val_end){
+      m_validate_fd = lbann::openwrite(m_validate_filename);
+      if (m_validate_fd < 0) {
+        // failed to open checkpoint file    
+      }
     }
   }
 }
@@ -257,6 +265,10 @@ void lbann::persist::close_checkpoint() {
   if (m_train_fd >= 0) {
     lbann::closewrite(m_train_fd, m_train_filename);
     m_train_fd = -1;
+  }
+  if (m_validate_fd >= 0) {
+    lbann::closewrite(m_validate_fd, m_validate_filename);
+    m_validate_fd = -1;
   }
 }
 
@@ -293,7 +305,7 @@ void lbann::persist::open_restart(const char *dir, bool per_rank) {
 
     // define filename for train state
     sprintf(m_train_filename, "%s/train", dir);
-    
+    sprintf(m_validate_filename, "%s/validate", dir);  
     m_model_fd = lbann::openread(m_model_filename);
     if (m_model_fd < 0) {
       // restart failed, throw exception
@@ -304,6 +316,11 @@ void lbann::persist::open_restart(const char *dir, bool per_rank) {
     if (m_train_fd < 0) {
       // restart failed, throw exception
       throw lbann_exception(std::string("Failed to read file: ") + m_train_filename);
+    }
+    m_validate_fd = lbann::openread(m_validate_filename);
+    if (m_validate_fd < 0) {
+      // restart failed, throw exception
+      throw lbann_exception(std::string("Failed to read file: ") + m_validate_filename);
     }
   }
 }
@@ -579,6 +596,8 @@ int lbann::persist::get_fd(persist_type type) const {
     fd = m_train_fd;
   } else if (type == persist_type::model) {
     fd = m_model_fd;
+  } else if (type == persist_type::validate) {
+    fd = m_validate_fd;
   }
   return fd;
 }

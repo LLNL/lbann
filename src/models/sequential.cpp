@@ -111,28 +111,35 @@ struct lbann_model_sequential_header {
   uint32_t layers;
 };
 
-bool sequential_model::save_to_checkpoint_shared(persist& p) {
+bool sequential_model::save_to_checkpoint_shared(persist& p, bool val_end) {
   // write parameters from base class first
-  model::save_to_checkpoint_shared(p);
+  model::save_to_checkpoint_shared(p, val_end);
 
   // write a single header describing layers and sizes?
 
   // have rank 0 write the network file
-  if (p.get_rank() == 0) {
+  if (p.get_rank() == 0 && !val_end) {
     uint32_t layers = m_layers.size();
     p.write_uint32(persist_type::model, "layers", (uint32_t) layers);
 
     // TODO: record each layer type and size (to be checked when read back)
   }
   // write out details for each layer
-
-  for (weights *w : m_weights) {
-    w->save_to_checkpoint_shared(p);
+  if(!val_end){
+    for (weights *w : m_weights) {
+      w->save_to_checkpoint_shared(p);
+    }
+      for (size_t l = 0; l < m_layers.size(); l++) {
+      if (! m_layers[l]->save_to_checkpoint_shared(p,val_end)) {
+        return false;
+      }
   }
-
-  for (size_t l = 0; l < m_layers.size(); l++) {
-    if (! m_layers[l]->save_to_checkpoint_shared(p)) {
-      return false;
+  }
+  else if(val_end){
+    for (size_t l = 0; l < m_layers.size(); l++) {
+      if (! m_layers[l]->save_to_checkpoint_shared(p,val_end)) {
+        return false;
+      }
     }
   }
   //m_objective_function->save_to_checkpoint_shared(p);
@@ -170,7 +177,11 @@ bool sequential_model::load_from_checkpoint_shared(persist& p) {
 
   if (header.layers != m_layers.size()) {
     // error!
-    return false;
+     std::stringstream err;
+     err << __FILE__ << " " << __LINE__ << " :: "
+         << "Error occured in model reload: model layers not equal";
+     throw lbann_exception(err.str());
+     return false;
   }
 
   // TODO: check that each layer type matches what we'd expect

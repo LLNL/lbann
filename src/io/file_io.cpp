@@ -119,7 +119,6 @@ int lbann::closeread(int fd, const char *file) {
 int lbann::openwrite(const char *file) {
   // define mode (permissions) for new file
   mode_t mode_file = S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP;
-
   // open the file for writing
   int fd = open(file, O_WRONLY | O_CREAT | O_TRUNC, mode_file);
   if (fd == -1) {
