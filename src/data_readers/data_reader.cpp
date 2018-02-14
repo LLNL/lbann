@@ -399,7 +399,13 @@ bool lbann::generic_data_reader::load_from_checkpoint_shared(persist& p, const c
     unpack_scalars(p,&header,name);
   }
   MPI_Bcast(&header, sizeof(header), MPI_BYTE, 0, MPI_COMM_WORLD);
-  unpack_header(header);  
+  unpack_header(header);
+  if(p.get_rank() ==0){
+    m_shuffled_indices.resize(header.data_size);
+    m_unused_indices.resize(header.unused_data_size);
+  }
+  MPI_Bcast(&m_shuffled_indices[0], header.data_size, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&m_unused_indices[0], header.unused_data_size, MPI_INT, 0, MPI_COMM_WORLD);
   return true;
 }
 

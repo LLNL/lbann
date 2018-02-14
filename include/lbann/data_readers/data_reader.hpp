@@ -541,9 +541,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     uint64_t current_pos;
     uint64_t current_mini_batch_idx;
     uint64_t data_size;
-    std::vector<int> shuffled_indices;
     uint64_t unused_data_size;
-    std::vector<int> unused_indices;
     uint64_t stride_to_last_mini_batch;
     uint64_t stride_to_next_mini_batch;
     uint64_t base_offset;
@@ -558,6 +556,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     uint64_t global_last_mini_batch_size;
     uint64_t num_parallel_readers;
     uint64_t model_rank;
+    uint64_t world_master_mini_batch_adjustment;
   };  
   bool pack_scalars(persist& p, const char *name) {
     char fieldname[1024];
@@ -634,6 +633,9 @@ class generic_data_reader : public lbann_image_preprocessor {
 
     snprintf(fieldname, sizeof(fieldname), "%s_model_rank", name);
     p.write_uint64(persist_value, fieldname, (uint64_t) m_model_rank);
+    
+    snprintf(fieldname, sizeof(fieldname), "%s_world_master_mini_batch_adjustment", name);
+    p.write_uint64(persist_value, fieldname, (uint64_t) m_world_master_mini_batch_adjustment);
     return true;
   }
 
@@ -710,6 +712,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     p.read_uint64(persist_value, fieldname, &val);
     auto unused_size = (int) val;
 
+    m_unused_indices.resize(unused_size);
     snprintf(fieldname, sizeof(fieldname), "%s_unused_data_indices", name);
     p.read_int32_contig(persist_value, fieldname, &m_unused_indices[0], (uint64_t) unused_size);
 
@@ -736,13 +739,19 @@ class generic_data_reader : public lbann_image_preprocessor {
     snprintf(fieldname, sizeof(fieldname), "%s_model_rank", name);
     p.read_uint64(persist_value, fieldname, &val);
     m_model_rank = (int) val;
+
+    snprintf(fieldname, sizeof(fieldname), "%s_world_master_mini_batch_adjustment", name);
+    p.read_uint64(persist_value, fieldname, &val);    
+    m_world_master_mini_batch_adjustment = (int) val;
     
     if(header != nullptr){
+      //shuffled/unused data indices array size, used for resize after broadcast. Not unpacked.
+      header->data_size = size;
+      header->unused_data_size = unused_size;
+      // all else, unpacked and set in unpack header.
       header->mini_batch_size = m_mini_batch_size;
       header->current_pos = m_current_pos;
       header->current_mini_batch_idx = m_current_mini_batch_idx;
-      header->data_size = size;
-      header->shuffled_indices = m_shuffled_indices;
       header->stride_to_last_mini_batch = m_stride_to_last_mini_batch;
       header->stride_to_next_mini_batch = m_stride_to_next_mini_batch;
       header->base_offset = m_base_offset;
@@ -751,14 +760,13 @@ class generic_data_reader : public lbann_image_preprocessor {
       header->iteration_stride = m_iteration_stride;
       header->loaded_mini_batch_idx = m_loaded_mini_batch_idx;
       header->reset_mini_batch_index = m_reset_mini_batch_index;
-      header->unused_data_size = unused_size;
-      header->unused_indices = m_unused_indices;
       header->last_mini_batch_size = m_last_mini_batch_size;
       header->num_iterations_per_epoch = m_num_iterations_per_epoch;
       header->global_mini_batch_size = m_global_mini_batch_size;
       header->global_last_mini_batch_size = m_global_last_mini_batch_size;
       header->num_parallel_readers = m_num_parallel_readers;
-      header->model_rank = m_model_rank;    
+      header->model_rank = m_model_rank;
+      header->world_master_mini_batch_adjustment = m_world_master_mini_batch_adjustment;
     }
 
   return true;
@@ -768,8 +776,6 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_mini_batch_size = (int) header.mini_batch_size;
     m_current_pos = (int) header.current_pos;
     m_current_mini_batch_idx = (int) header.current_mini_batch_idx;
-    m_shuffled_indices.resize(header.data_size);
-    m_shuffled_indices = header.shuffled_indices;
     m_stride_to_last_mini_batch = (int) header.stride_to_last_mini_batch;
     m_stride_to_next_mini_batch = (int) header.stride_to_next_mini_batch;
     m_base_offset = (int) header.base_offset;
@@ -778,14 +784,13 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_iteration_stride = (int) header.iteration_stride;
     m_loaded_mini_batch_idx = (int) header.loaded_mini_batch_idx;
     m_reset_mini_batch_index = (int) header.reset_mini_batch_index;
-    m_unused_indices.resize(header.unused_data_size);
-    m_unused_indices = header.unused_indices;
     m_last_mini_batch_size = (int) header.last_mini_batch_size;
     m_num_iterations_per_epoch = (int) header.num_iterations_per_epoch;
     m_global_mini_batch_size = (int) header.global_mini_batch_size;
     m_global_last_mini_batch_size = (int) header.global_last_mini_batch_size;
     m_num_parallel_readers = (int) header.num_parallel_readers;
     m_model_rank = (int) header.model_rank;
+    m_world_master_mini_batch_adjustment = (int) header.world_master_mini_batch_adjustment;
   }
   
   /// returns the data store, which may be a nullptr
