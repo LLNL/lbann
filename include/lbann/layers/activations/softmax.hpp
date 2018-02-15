@@ -253,7 +253,7 @@ class softmax_layer : public activation_layer {
         local_gradient_wrt_input(row, col) += dx;
       }
     }
-
+  
   }
 
   void fp_compute_cudnn() {

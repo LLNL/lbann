@@ -32,7 +32,6 @@
 #include "lbann/data_readers/data_reader_imagenet.hpp"
 #include "lbann/data_readers/data_reader_merge_samples.hpp"
 #include <omp.h>
-
 namespace lbann {
 
 void generic_data_reader::shuffle_indices() {
@@ -384,161 +383,29 @@ void generic_data_reader::use_unused_index_set() {
 }
 
 /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
-bool generic_data_reader::saveToCheckpointShared(persist& p, const char *name) const {
+bool generic_data_reader::save_to_checkpoint_shared(persist& p, const char *name) {
   // rank 0 writes the training state file
   if (p.get_rank() == 0) {
-    char fieldname[1024];
-
-    // Closest to non checkpoint run only saves m_current_pos
-
-    snprintf(fieldname, sizeof(fieldname), "%s_current_mini_batch_idx", name);
-    p.write_uint64(persist_type::train, fieldname, (uint64_t) m_current_mini_batch_idx);
-    int size = m_shuffled_indices.size();
-
-    // record size of ShuffleIndices
-    snprintf(fieldname, sizeof(fieldname), "%s_data_size", name);
-    p.write_uint64(persist_type::train, fieldname, (uint64_t) size);
-
-    // TODO: each model may have a different position, need to gather and write these
-    // record current position within training data
-    snprintf(fieldname, sizeof(fieldname), "%s_data_position", name);
-    p.write_uint64(persist_type::train, fieldname, (uint64_t) m_current_pos);
-
-    // write list of indices
-    snprintf(fieldname, sizeof(fieldname), "%s_data_indices", name);
-    p.write_int32_contig(persist_type::train, fieldname, &m_shuffled_indices[0], (uint64_t) size);
-
-    snprintf(fieldname, sizeof(fieldname), "%s_stride_to_last_mini_batch", name);
-    p.write_uint64(persist_type::train, fieldname, (uint64_t) m_stride_to_last_mini_batch);
-
-    snprintf(fieldname, sizeof(fieldname), "%s_stride_to_next_mini_batch", name);
-    p.write_uint64(persist_type::train, fieldname, (uint64_t) m_stride_to_next_mini_batch);
-
-    snprintf(fieldname, sizeof(fieldname), "%s_base_offset", name);
-    p.write_uint64(persist_type::train, fieldname, (uint64_t) m_base_offset);
-
-    snprintf(fieldname, sizeof(fieldname), "%s_model_offset", name);
-    p.write_uint64(persist_type::train, fieldname, (uint64_t) m_model_offset);
-
-    snprintf(fieldname, sizeof(fieldname), "%s_sample_stride", name);
-    p.write_uint64(persist_type::train, fieldname, (uint64_t) m_sample_stride);
-
-    snprintf(fieldname, sizeof(fieldname), "%s_iteration_stride", name);
-    p.write_uint64(persist_type::train, fieldname, (uint64_t) m_iteration_stride);
-
-    snprintf(fieldname, sizeof(fieldname), "%s_loaded_mini_batch_idx", name);
-    p.write_uint64(persist_type::train, fieldname, (uint64_t) m_loaded_mini_batch_idx);
-
-    snprintf(fieldname, sizeof(fieldname), "%s_reset_mini_batch_index", name);
-    p.write_uint64(persist_type::train, fieldname, (uint64_t) m_reset_mini_batch_index);
-    //printf("%d\n", m_current_mini_batch_idx);
-    //printf("%d\n", m_shuffled_indices[0]);
-    //printf("%d\n", m_model_offset);
+    pack_scalars(p,name);
   }
   return true;
 }
 
 /** \brief Given directory to store checkpoint files, read state from file and add to number of bytes read */
-bool lbann::generic_data_reader::loadFromCheckpointShared(persist& p, const char *name) {
+bool lbann::generic_data_reader::load_from_checkpoint_shared(persist& p, const char *name) {
   // rank 0 reads the training state file
+  struct packing_header header;
   if (p.get_rank() == 0) {
-    char fieldname[1024];
-
-    // Closest to non checkpoint run only loads m_current_pos
-
-    // record minibatch index
-    uint64_t val;
-    snprintf(fieldname, sizeof(fieldname), "%s_current_mini_batch_idx", name);
-    p.read_uint64(persist_type::train, fieldname, &val);
-    m_current_mini_batch_idx = (int) val;
-
-    snprintf(fieldname, sizeof(fieldname), "%s_data_size", name);
-    p.read_uint64(persist_type::train, fieldname, &val);
-    auto size = (int) val;
-
-    // get current position within data
-    snprintf(fieldname, sizeof(fieldname), "%s_data_position", name);
-    p.read_uint64(persist_type::train, fieldname, &val);
-    m_current_pos = (int) val;
-    //resize shuffled index array to hold values
-    m_shuffled_indices.resize(size);
-
-     //read list of indices
-    snprintf(fieldname, sizeof(fieldname), "%s_data_indices", name);
-    p.read_int32_contig(persist_type::train, fieldname, &m_shuffled_indices[0], (uint64_t) size);
-
-    /* Everything below is things i have tried loading to see if it was needed. No impact as far as I could tell*/
-    snprintf(fieldname, sizeof(fieldname), "%s_stride_to_last_mini_batch", name);
-    p.read_uint64(persist_type::train, fieldname, &val);
-    m_stride_to_last_mini_batch = (int) val;
-
-    snprintf(fieldname, sizeof(fieldname), "%s_stride_to_next_mini_batch", name);
-    p.read_uint64(persist_type::train, fieldname, &val);
-    m_stride_to_next_mini_batch = (int) val;
-
-    snprintf(fieldname, sizeof(fieldname), "%s_base_offset", name);
-    p.read_uint64(persist_type::train, fieldname, &val);
-    m_base_offset = (int) val;
-
-    snprintf(fieldname, sizeof(fieldname), "%s_model_offset", name);
-    p.read_uint64(persist_type::train, fieldname, &val);
-    m_model_offset = (int) val;
-
-    snprintf(fieldname, sizeof(fieldname), "%s_sample_stride", name);
-    p.read_uint64(persist_type::train, fieldname, &val);
-    m_sample_stride= (int) val;
-
-    snprintf(fieldname, sizeof(fieldname), "%s_iteration_stride", name);
-    p.read_uint64(persist_type::train, fieldname, &val);
-    m_iteration_stride= (int) val;
-
-    snprintf(fieldname, sizeof(fieldname), "%s_loaded_mini_batch_idx", name);
-    p.read_uint64(persist_type::train, fieldname, &val);
-    m_loaded_mini_batch_idx = (int) val;
-
-    snprintf(fieldname, sizeof(fieldname), "%s_reset_mini_batch_index", name);
-    p.read_uint64(persist_type::train, fieldname, &val);
-    m_reset_mini_batch_index = (int) val;
-
-    // get size of ShuffleIndices
-    //
-    //printf("%d\n", m_current_mini_batch_idx);
-    //printf("%d\n", m_current_pos);
-    //printf("%d\n", m_shuffled_indices[0]);
+    unpack_scalars(p,&header,name);
   }
-
-  // broadcast minibatch index
-  MPI_Bcast(&m_current_mini_batch_idx, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
-  MPI_Bcast(&m_stride_to_last_mini_batch, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&m_stride_to_next_mini_batch, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&m_base_offset, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
-  MPI_Bcast(&m_model_offset, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
-  MPI_Bcast(&m_sample_stride, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&m_iteration_stride, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&m_loaded_mini_batch_idx, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&m_reset_mini_batch_index, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
-
-  // TODO: with multiple readers, make this a scatter
-  // broadcast current position
-  MPI_Bcast(&m_current_pos, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  //printf("%d\n", m_current_pos);
-  // broadcast values from rank 0
-  int size = m_shuffled_indices.size();
-  MPI_Bcast(&size, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
-
-    // resize shuffled index array to hold values
-  if (p.get_rank() != 0) {
-    m_shuffled_indices.resize(size);
+  MPI_Bcast(&header, sizeof(header), MPI_BYTE, 0, MPI_COMM_WORLD);
+  unpack_header(header);
+  if(p.get_rank() ==0){
+    m_shuffled_indices.resize(header.data_size);
+    m_unused_indices.resize(header.unused_data_size);
   }
-
-  /// broadcast index array
-  MPI_Bcast(&m_shuffled_indices[0], size, MPI_INT, 0, MPI_COMM_WORLD);
-  //set_initial_position();
+  MPI_Bcast(&m_shuffled_indices[0], header.data_size, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&m_unused_indices[0], header.unused_data_size, MPI_INT, 0, MPI_COMM_WORLD);
   return true;
 }
 

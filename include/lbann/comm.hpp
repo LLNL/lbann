@@ -32,6 +32,9 @@
 #include <vector>
 #include <unordered_map>
 #include "base.hpp"
+#ifdef LBANN_HAS_ALUMINUM
+#include <allreduce.hpp>
+#endif
 
 namespace lbann {
 
@@ -375,7 +378,7 @@ class lbann_comm {
   template <typename T>
   T allreduce(T snd, const El::mpi::Comm c, El::mpi::Op op = El::mpi::SUM) {
     bytes_sent += sizeof(T);
-    El::mpi::AllReduce(&snd, 1, op, c);
+    allreduce(&snd, 1, c, op);
     bytes_received += sizeof(T) * (El::mpi::Size(c) - 1);
     return snd;
   }
@@ -383,36 +386,52 @@ class lbann_comm {
   template <typename T>
   void allreduce(T *snd, int count, T *rcv, const El::mpi::Comm c, El::mpi::Op op = El::mpi::SUM) {
     bytes_sent += count * sizeof(T);
+#ifdef LBANN_HAS_ALUMINUM
+    allreduces::Allreduce<allreduces::MPIBackend>(
+      snd, rcv, count, mpi_op_to_al_op(op), *get_al_comm(c));
+#else
     El::mpi::AllReduce(snd, rcv, count, op, c);
+#endif
     bytes_received += count * sizeof(T) * (El::mpi::Size(c) - 1);
   }
   /** In-place scalar-array allreduce. */
   template <typename T>
   void allreduce(T *data, int count, const El::mpi::Comm c, El::mpi::Op op = El::mpi::SUM) {
     bytes_sent += count * sizeof(T);
+#ifdef LBANN_HAS_ALUMINUM
+    allreduces::Allreduce<allreduces::MPIBackend>(
+      data, count, mpi_op_to_al_op(op), *get_al_comm(c));
+#else
     El::mpi::AllReduce(data, count, op, c);
+#endif
     bytes_received += count * sizeof(T) * (El::mpi::Size(c) - 1);
   }
   /** Matrix allreduce. */
-  void allreduce(AbsDistMat& m, const El::mpi::Comm c, El::mpi::Op op = El::mpi::SUM) {
-    bytes_sent += sizeof(DataType) * m.LocalHeight() * m.LocalWidth();
-    El::AllReduce(m, c, op);
-    bytes_received += sizeof(DataType) * m.LocalHeight() * m.LocalWidth() * (El::mpi::Size(c) - 1);
-  }
+  void allreduce(AbsDistMat& m, const El::mpi::Comm c,
+    El::mpi::Op op = El::mpi::SUM);
+#ifdef LBANN_HAS_ALUMINUM
   /** Non-blocking matrix allreduce. */
   void nb_allreduce(AbsDistMat& m, const El::mpi::Comm c,
-                    El::mpi::Request<DataType>& req, El::mpi::Op op = El::mpi::SUM) {
-    bytes_sent += sizeof(DataType) * m.LocalHeight() * m.LocalWidth();
-    MPI_Iallreduce(MPI_IN_PLACE, m.Buffer(), m.LocalHeight()*m.LocalWidth(),
-                   El::mpi::TypeMap<DataType>(), op.op, c.comm, &req.backend);
-    bytes_received += sizeof(DataType) * m.LocalHeight() * m.LocalWidth() * (El::mpi::Size(c) - 1);
-  }
+                    allreduces::MPIBackend::req_type& req,
+                    El::mpi::Op op = El::mpi::SUM);
+#endif
 
   /** Wait for a non-blocking request to complete. */
   template <typename T>
   void wait(El::mpi::Request<T>& req) {
     El::mpi::Wait(req);
   }
+
+#ifdef LBANN_HAS_ALUMINUM
+  /** Wait for a non-blocking request to complete. */
+  void wait(allreduces::MPIBackend::req_type& req) {
+    allreduces::Wait<allreduces::MPIBackend>(req);
+  }
+  /** Test whether a non-blocking request has completed; true if it has. */
+  bool test(allreduces::MPIBackend::req_type& req) {
+    return allreduces::Test<allreduces::MPIBackend>(req);
+  }
+#endif
 
   /** Barrier among the inter-model processes. */
   void intermodel_barrier();
@@ -849,6 +868,24 @@ class lbann_comm {
   /** Current default allreduce algorithm. */
   allreduce_algorithm default_allreduce_algo =
     allreduce_algorithm::DYNAMIC;
+
+#ifdef LBANN_HAS_ALUMINUM
+  /**
+   * Used to convert between Elemental Comm objects and an Aluminum
+   * communicator.
+   */
+  std::unordered_map<MPI_Comm, allreduces::MPICommunicator*> al_comms;
+
+  /**
+   * Get the Aluminum communicator associated with Elemental communicator c.
+   * This will create a new Al communicator if needed.
+   * @todo This currently only supports the Aluminum MPI backend.
+   */
+  allreduces::MPICommunicator* get_al_comm(El::mpi::Comm c);
+
+  /** Convert an MPI_Op to an Aluminum reduction operator. */
+  allreduces::ReductionOperator mpi_op_to_al_op(El::mpi::Op op);
+#endif
 
   // Various statistics counters.
   size_t num_model_barriers;
