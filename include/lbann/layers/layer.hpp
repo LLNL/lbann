@@ -229,15 +229,19 @@ class Layer {
 #ifdef LBANN_HAS_CUDNN
   /** Send forward propagation output to a child layer on GPUs.
    *  On output, fp_output_d is either a GPU matrix view or copy of
-   *  the appropriate activation tensor.
+   *  the appropriate activation tensor. workspace should be a matrix
+   *  in Star,VC format.
    */
   virtual void get_gpu_fp_output(cudnn::matrix& fp_output_d,
+                                 AbsDistMat& workspace,
                                  const Layer* child) const;
   /** Send backward propagation output to a parent layer on GPUs.
    *  On output, bp_output_d is either a GPU matrix view or copy of
-   *  the appropriate error signal tensor.
+   *  the appropriate error signal tensor. workspace should be a
+   *  matrix in Star,VC format.
    */
   virtual void get_gpu_bp_output(cudnn::matrix& bp_output_d,
+                                 AbsDistMat& workspace,
                                  const Layer* parent) const;
 #endif // LBANN_HAS_CUDNN
   /** Get dimensions of forward propagation output to a child layer.

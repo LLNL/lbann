@@ -172,6 +172,8 @@ public:
   DataType* get_data(int i);
   /** Get GPU data pointer on ith GPU (const). */
   const DataType* get_locked_data(int i) const;
+  /** Get pointer to cuDNN manager. */
+  cudnn_manager* get_cudnn_manager() const { return m_cudnn; }
 
 private:
 
