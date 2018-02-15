@@ -35,7 +35,7 @@ pilot2_molecular_reader::pilot2_molecular_reader(
   generic_data_reader(shuffle), m_num_neighbors(num_neighbors), m_max_neighborhood(max_neighborhood) {}
 
 void pilot2_molecular_reader::load() {
-  std::string infile = get_data_filename();
+  std::string infile = get_file_dir() + get_data_filename();
   // Ensure the file exists.
   std::ifstream ifs(infile);
   if (!ifs) {
