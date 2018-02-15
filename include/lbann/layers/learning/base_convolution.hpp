@@ -537,9 +537,9 @@ class base_convolution_layer : public learning_layer {
                                                  m_bias_cudnn_desc,
                                                  m_bias_gradient_d.get_data(i)));
       }
-      bias_optimizer->stage_gradient_for_accumulation_gpu(
-        m_bias_gradient_d.get_locked_data(),
-        m_bias_scaling_factor / effective_mini_batch_size);
+      const DataType bias_scale = m_bias_scaling_factor / effective_mini_batch_size;
+      bias_optimizer->add_to_gradient_staging(m_bias_gradient_d,
+                                              bias_scale);
     }
 
     // Compute kernel gradient
@@ -605,9 +605,9 @@ class base_convolution_layer : public learning_layer {
       }
 
       // Add gradient contribution
-      kernel_optimizer->stage_gradient_for_accumulation_gpu(
-        m_kernel_gradient_d.get_locked_data(),
-        one / effective_mini_batch_size);
+      const DataType kernel_scale = one / effective_mini_batch_size;
+      kernel_optimizer->add_to_gradient_staging(m_kernel_gradient_d,
+                                                kernel_scale);
     }
 
   #endif // LBANN_HAS_CUDNN
@@ -804,9 +804,9 @@ class base_convolution_layer : public learning_layer {
         }
         local_bias_gradient(channel, 0) = m_bias_scaling_factor * sum;
       }
-      bias_optimizer->stage_gradient_for_accumulation(
-        m_bias_gradient,
-        DataType(1) / effective_mini_batch_size);
+      const DataType bias_scale = m_bias_scaling_factor / effective_mini_batch_size;
+      bias_optimizer->add_to_gradient_staging(m_bias_gradient,
+                                              bias_scale);
     }
 
     // Stop early if kernel is not being optimized
@@ -864,9 +864,9 @@ class base_convolution_layer : public learning_layer {
     }
 
     // Scale and accumulate gradients
-    kernel_optimizer->stage_gradient_for_accumulation(
-      m_kernel_gradient,
-      DataType(1) / effective_mini_batch_size);
+    const DataType kernel_scale = DataType(1) / effective_mini_batch_size;
+    kernel_optimizer->add_to_gradient_staging(m_kernel_gradient,
+                                              kernel_scale);
 
   }
 

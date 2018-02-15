@@ -102,7 +102,7 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL>::bp_compute_cpu() {
       && bias_optimizer != nullptr) {
     El::RowSum(local_gradient_wrt_output,
                m_bias_gradient->Matrix());
-    bias_optimizer->stage_gradient_for_accumulation(
+    bias_optimizer->add_to_gradient_staging(
       *m_bias_gradient,
       m_bias_scaling_factor / mini_batch_size);
   }
@@ -115,7 +115,7 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL>::bp_compute_cpu() {
       El::Gemm(El::NORMAL, El::TRANSPOSE,
                DataType(1), local_gradient_wrt_output, local_input,
                DataType(0), m_linearity_gradient->Matrix());
-      linearity_optimizer->stage_gradient_for_accumulation(
+      linearity_optimizer->add_to_gradient_staging(
         *m_linearity_gradient,
         DataType(1) / mini_batch_size);
     } else {
@@ -187,7 +187,7 @@ void fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_cpu() {
       && bias_optimizer != nullptr) {
     El::RowSum(local_gradient_wrt_output,
                m_bias_gradient->Matrix());
-    bias_optimizer->stage_gradient_for_accumulation(
+    bias_optimizer->add_to_gradient_staging(
       *m_bias_gradient,
       m_bias_scaling_factor / mini_batch_size);
   }
@@ -198,7 +198,7 @@ void fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_cpu() {
     El::Gemm(El::NORMAL, El::TRANSPOSE,
              DataType(1), local_gradient_wrt_output, local_input,
              DataType(0), m_linearity_gradient->Matrix());
-    linearity_optimizer->stage_gradient_for_accumulation(
+    linearity_optimizer->add_to_gradient_staging(
       *m_linearity_gradient,
       DataType(1) / mini_batch_size);
   }
