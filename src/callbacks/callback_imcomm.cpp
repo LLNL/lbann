@@ -132,16 +132,20 @@ void lbann_callback_imcomm::on_epoch_end(model *m) {
     optimizer *opt = w->get_optimizer();
     if (ct_does_quantization(params.ct)) {
       comm->intermodel_sum_matrix(params.error);
+      opt->clear_gradient();
+      auto gradient = opt->get_gradient().Copy();
       Mat *local_gradients = nullptr;
       Mat reshaped;
       if (params.reshape_height > 0) {
-        reshape_mat(opt->get_gradient().Matrix(),
+        reshape_mat(gradient->Matrix(),
                     reshaped, params.reshape_height, params.reshape_width);
         local_gradients = &reshaped;
       } else {
-        local_gradients = &(opt->get_gradient().Matrix());
+        local_gradients = &(gradient->Matrix());
       }
       *local_gradients = params.error;
+      opt->add_to_gradient(*gradient);
+      delete gradient;
       // Apply optimizer update with accumulated gradient error.
       opt->step();
       El::Zero(params.error);
@@ -162,14 +166,15 @@ void lbann_callback_imcomm::on_backward_prop_end(model *m) {
       continue;
     }
     optimizer *opt = w->get_optimizer();
+    auto gradient = opt->get_gradient().Copy();
     Mat* local_gradients = nullptr;
     Mat reshaped;
     if (params.reshape_height > 0) {
-      reshape_mat(opt->get_gradient().Matrix(),
+      reshape_mat(gradient->Matrix(),
                   reshaped, params.reshape_height, params.reshape_width);
       local_gradients = &reshaped;
     } else {
-      local_gradients = &(opt->get_gradient().Matrix());
+      local_gradients = &(gradient->Matrix());
     }
     switch (params.ct) {
     case NORMAL:
@@ -191,6 +196,9 @@ void lbann_callback_imcomm::on_backward_prop_end(model *m) {
       throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: "
          + "imcomm: unknown comm type");
     }
+    opt->clear_gradient();
+    opt->add_to_gradient(*gradient);
+    delete gradient;
     EvalType im_time = get_time() - start_time;
     do_summary(m, w, im_time);
   }

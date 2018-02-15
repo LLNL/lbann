@@ -127,7 +127,7 @@ public:
   /** Clear data. */
   void clear();
   /** Resize matrix. */
-  void resize(int height, int width_per_gpu);
+  void resize(int height, int width_per_gpu = 1);
   /** Copy matrix entries.
    *  The matrix is resized if needed.
    */
@@ -146,12 +146,12 @@ public:
   /** Attach matrix to GPU data. */
   void attach(std::vector<DataType*>& data,
               int height,
-              int width_per_gpu,
+              int width_per_gpu = 1,
               int leading_dim = 0);
   /** Attach matrix to GPU data. */
   void locked_attach(const std::vector<DataType*>& data,
                      int height,
-                     int width_per_gpu,
+                     int width_per_gpu = 1,
                      int leading_dim = 0);
 
   /** Get matrix height. */

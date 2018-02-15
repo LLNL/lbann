@@ -22,10 +22,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// adam .hpp .cpp .cu - SGD with Adam
-// Reference:
-// Kingma, D. and Ba, J. 2014. Adam: A Method for Stochastic Optimization.
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/optimizers/adam.hpp"
@@ -55,8 +51,8 @@ __global__ void adam_kernel(DataType * __restrict__ values,
 
 }
 
-void adam::step_compute_gpu(std::vector<DataType*> values_d,
-                            std::vector<DataType*> gradient_d) {
+void adam::step_compute_gpu(cudnn::matrix& values_d,
+                            const cudnn::matrix& gradient_d) {
 
   // Precompute the bias correction and learning rate.
   m_current_beta1 *= m_beta1;
@@ -78,7 +74,8 @@ void adam::step_compute_gpu(std::vector<DataType*> values_d,
     CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
     cudaStream_t stream = this->m_cudnn->get_stream(i);
     adam_kernel<<<grid_dims, block_dims, 0, stream>>>
-      (values_d[i], gradient_d[i], m_moment1_d[i], m_moment2_d[i],
+      (values_d.get_data(i), gradient_d.get_locked_data(i),
+       m_moment1_d[i], m_moment2_d[i],
        num_entries, correction, m_eps, m_beta1, m_beta2);
   }
 
