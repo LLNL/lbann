@@ -139,6 +139,17 @@ const AbsDistMat& optimizer::get_gradient() {
     throw lbann_exception(err.str());
   }
 
+  // Check if all gradient sources have made contributions
+  m_gradient_sources.erase(nullptr);
+  if (!m_gradient_sources.empty()) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "attempted to access gradient before all gradient sources "
+        << "have made contributions "
+        << "(missing " << m_gradient_sources.size() << " sources)";
+    throw lbann_exception(err.str());
+  }
+
   // Perform allreduce on staging matrix if needed
   if (m_gradient_allreduce_needed && !m_gradient_allreduce_started) {
     start_gradient_staging_allreduce();
@@ -190,6 +201,17 @@ const cudnn::matrix& optimizer::get_gradient_gpu() {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
         << "attempted to get GPU gradient, but GPU is not set up";
+    throw lbann_exception(err.str());
+  }
+
+  // Check if all gradient sources have made contributions
+  m_gradient_sources.erase(nullptr);
+  if (!m_gradient_sources.empty()) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "attempted to access gradient before all gradient sources "
+        << "have made contributions "
+        << "(missing " << m_gradient_sources.size() << " sources)";
     throw lbann_exception(err.str());
   }
 
@@ -366,13 +388,6 @@ void optimizer::add_to_gradient_staging(const AbsDistMat& gradient,
       #endif // LBANN_HAS_CUDNN
     }
 
-    #ifdef LBANN_NBALLREDUCE_GRADIENT
-    /// @todo Handle shared weights
-    if (!m_gradient_allreduce_started) {
-      start_gradient_staging_allreduce();
-    }
-    #endif // LBANN_NBALLREDUCE_GRADIENT
-
   }
 }
 #ifdef LBANN_HAS_CUDNN
@@ -413,16 +428,23 @@ void optimizer::add_to_gradient_staging(const cudnn::matrix& gradient_d,
                                 m_gradient_staging_d.get_data(i), 1));
     }
 
-    #ifdef LBANN_NBALLREDUCE_GRADIENT
-    /// @todo Handle shared weights
-    if (!m_gradient_allreduce_started) {
-      start_gradient_staging_allreduce();
-    }
-    #endif // LBANN_NBALLREDUCE_GRADIENT
-
   }
 }
 #endif // LBANN_HAS_CUDNN
+
+void optimizer::add_gradient_source(const void* source) {
+  if (source != nullptr) {
+    m_gradient_sources.insert(source);
+  }
+}
+
+void optimizer::remove_gradient_source(const void* source) {
+  m_gradient_sources.erase(nullptr);
+  m_gradient_sources.erase(source);
+  if (m_gradient_sources.empty()) {
+    start_gradient_staging_allreduce();
+  }
+}
 
 void optimizer::setup(weights& w) {
   if (is_initialized()) {

@@ -575,6 +575,7 @@ bool model::train_mini_batch() {
   do_batch_begin_cbs(execution_mode::training);
 
   // Forward prop step
+  clear_gradients();
   forward_prop(execution_mode::training);
   m_objective_function->evaluate(execution_mode::training,
                                  get_current_mini_batch_size());
@@ -598,6 +599,13 @@ bool model::train_mini_batch() {
   return finished;
 }
 
+void model::clear_gradients() {
+  for (const auto& w : m_weights) {
+    optimizer* opt = w->get_optimizer();
+    if (opt != nullptr) { opt->clear_gradient(); }
+  }
+}
+
 void model::clear_error_signals() {
   for (const auto& layer : m_layers) {
     layer->clear_error_signals(m_current_mini_batch_size);
@@ -617,10 +625,24 @@ void model::forward_prop(execution_mode mode) {
 void model::backward_prop() {
   do_model_backward_prop_begin_cbs();
   for (int l = m_layers.size() - 1; l >= 0; --l) {
+
+    // Perform backward prop step on current layer
     Layer *layer = m_layers[l];
     do_layer_backward_prop_begin_cbs(layer);
     layer->back_prop();
     do_layer_backward_prop_end_cbs(layer);
+
+    // Terminate early if all gradients have been computed
+    bool all_gradients_computed = true;
+    for (auto&& w : m_weights) {
+      auto&& opt = w->get_optimizer();
+      if (opt != nullptr && opt->get_num_gradient_sources() != 0) {
+        all_gradients_computed = false;
+        break;
+      }
+    }
+    if (all_gradients_computed) { break; }
+
   }
   do_model_backward_prop_end_cbs();
 }
