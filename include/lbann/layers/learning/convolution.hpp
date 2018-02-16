@@ -206,11 +206,11 @@ class convolution_layer : public base_convolution_layer {
 
   void bp_compute() override {
     if(this->m_using_gpus) {
-      apply_transposed_convolution_cudnn(false);
       compute_gradients_cudnn(false);
+      apply_transposed_convolution_cudnn(false);
     } else {
-      apply_transposed_convolution_im2col(false);
       compute_gradients_im2col(false);
+      apply_transposed_convolution_im2col(false);
     }
   }
 
