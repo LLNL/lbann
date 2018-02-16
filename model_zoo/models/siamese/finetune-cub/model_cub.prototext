@@ -54,7 +54,7 @@ model {
   ###################################################
 
   layer {
-    name: "data"
+    name: "data_new"
     data_layout: "data_parallel"
     input {
       io_buffer: "partitioned"
@@ -76,13 +76,13 @@ model {
   }
 
   layer {
-    name: "relu1"
+    name: "relu1_new"
     data_layout: "data_parallel"
     relu {}
   }
 
   layer {
-    name: "pool1"
+    name: "pool1_new"
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
@@ -95,7 +95,7 @@ model {
   }
 
   layer {
-    name: "norm1"
+    name: "norm1_new"
     data_layout: "data_parallel"
     local_response_normalization {
       window_width: 5
@@ -120,13 +120,13 @@ model {
   }
 
   layer {
-    name: "relu2"
+    name: "relu2_new"
     data_layout: "data_parallel"
     relu {}
   }
 
   layer {
-    name: "pool2"
+    name: "pool2_new"
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
@@ -139,7 +139,7 @@ model {
   }
 
   layer {
-    name: "norm2"
+    name: "norm2_new"
     data_layout: "data_parallel"
     local_response_normalization {
       window_width: 5
@@ -164,7 +164,7 @@ model {
   }
 
   layer {
-    name: "relu3"
+    name: "relu3_new"
     data_layout: "data_parallel"
     relu {}
   }
@@ -184,7 +184,7 @@ model {
   }
 
   layer {
-    name: "relu4"
+    name: "relu4_new"
     data_layout: "data_parallel"
     relu {}
   }
@@ -204,13 +204,13 @@ model {
   }
 
   layer {
-    name: "relu5"
+    name: "relu5_new"
     data_layout: "data_parallel"
     relu {}
   }
 
   layer {
-    name: "pool5"
+    name: "pool5_new"
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
@@ -227,7 +227,7 @@ model {
   ######################################
 
   layer {
-    name: "conv6"
+    name: "conv6_new"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -241,13 +241,13 @@ model {
   }
 
   layer {
-    name: "relu6"
+    name: "relu6_new"
     data_layout: "data_parallel"
     relu {}
   }
 
   layer {
-    name: "conv6b"
+    name: "conv6b_new"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -261,13 +261,13 @@ model {
   }
 
   layer {
-    name: "relu6b"
+    name: "relu6b_new"
     data_layout: "data_parallel"
     relu {}
   }
 
   layer {
-    name: "pool6"
+    name: "pool6_new"
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
@@ -284,7 +284,7 @@ model {
   ######################################
 
   layer {
-    name: "fc7"
+    name: "fc7_new"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 4096
@@ -293,13 +293,13 @@ model {
   }
 
   layer {
-    name: "relu7"
+    name: "relu7_new"
     data_layout: "model_parallel"
     relu {}
   }
 
   layer {
-    name: "drop7"
+    name: "drop7_new"
     data_layout: "model_parallel"
     dropout {
       keep_prob: 0.5
@@ -307,7 +307,7 @@ model {
   }
 
   layer {
-    name: "fc8"
+    name: "fc8_new"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 200
@@ -316,13 +316,13 @@ model {
   }
 
   layer {
-    name: "prob"
+    name: "prob_new"
     data_layout: "model_parallel"
     softmax {}
   }
 
   layer {
-    name: "target"
+    name: "target_new"
     data_layout: "data_parallel"
     target {
       io_buffer: "partitioned"
