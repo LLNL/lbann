@@ -58,9 +58,6 @@ optimizer::optimizer(const optimizer& other)
     m_gradient_allreduce_started(other.m_gradient_allreduce_started),
     m_gradient_allreduce_finished(other.m_gradient_allreduce_finished),
     m_step_time(other.m_step_time)
-    #ifdef LBANN_NBALLREDUCE_GRADIENT
-    , m_gradient_allreduce_started(other.m_gradient_allreduce_started)
-    #endif  // LBANN_NBALLREDUCE_GRADIENT
 {
   if (m_gradient != nullptr) {
     m_gradient = m_gradient->Copy();
