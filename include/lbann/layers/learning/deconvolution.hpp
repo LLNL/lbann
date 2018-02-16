@@ -180,11 +180,11 @@ class deconvolution_layer : public base_convolution_layer {
 
   void bp_compute() override {
     if(this->m_using_gpus) {
-      apply_convolution_cudnn(false);
       compute_gradients_cudnn(true);
+      apply_convolution_cudnn(false);
     } else {
-      apply_convolution_im2col(false);
       compute_gradients_im2col(true);
+      apply_convolution_im2col(false);
     }
   }
 
