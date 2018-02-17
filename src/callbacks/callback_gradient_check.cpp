@@ -45,6 +45,10 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
 
   // Initialize network for testing
   m->set_execution_mode(execution_mode::testing);
+  for (auto&& w : m->get_weights()) {
+    auto&& opt = w->get_optimizer();
+    if (opt != nullptr) { opt->clear_gradient(); }
+  }
   layers[0]->forward_prop();
 
   // Compute objective function
@@ -70,8 +74,8 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
   expected_error = std::pow(expected_error, 0.9);
 
   // Compute gradients
-  for (auto layer : layers) {
-    layer->clear_error_signals(m->get_current_mini_batch_size());
+  for (auto&& l : layers) {
+    l->clear_error_signals(m->get_current_mini_batch_size());
   }
   m->get_objective_function()->differentiate();
   for (int l = layers.size() - 1; l > 0; --l) {

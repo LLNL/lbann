@@ -34,6 +34,7 @@
 #include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/weights/weights.hpp"
 #include <string>
+#include <unordered_set>
 
 namespace lbann {
 
@@ -105,9 +106,29 @@ class optimizer {
                                DataType scale = DataType(1));
 #endif // LBANN_HAS_CUDNN
   /** Start allreduce on the gradient staging matrix.
-   *  This may call a non-blocking allreduce.
+   *  If an allreduce is not needed or if it has already started, this
+   *  function does nothing. This may call a non-blocking allreduce.
    */
   void start_gradient_staging_allreduce();
+
+  /** Get number of gradient sources.
+   *  This is the number of objects that contribute to the gradient
+   *  but have not added their contributions yet.
+   */
+  int get_num_gradient_sources() const { return m_gradient_sources.size(); }
+  /** Add a gradient source.
+   *  Objects that depend on the weights being optimized and which
+   *  contribute to the gradient should add themselves as a gradient
+   *  source.
+   */
+  void add_gradient_source(const void* source);
+  /** Remove a gradient source.
+   *  Objects that contribute to the gradient should remove themselves
+   *  as gradient sources when they add to the gradient. If there are
+   *  no more gradient sources remaining, an allreduce is started on
+   *  the gradient staging matrix.
+   */
+  void remove_gradient_source(const void* source);
 
   /** Setup optimizer. */
   virtual void setup(weights& w);
@@ -158,6 +179,17 @@ class optimizer {
 #endif // LBANN_HAS_CUDNN
 
  private:
+
+  /** Sources of gradient contributions.
+   *  This set contains pointers to objects (i.e. layers and objective
+   *  function terms) which depend on the weights being optimized and
+   *  which contribute to the gradient. Objects should add themselves
+   *  to the set as they request the weights and they should remove
+   *  themselves as they add their gradient contribution. Once this
+   *  set is empty, it is safe to perform an allreduce on the gradient
+   *  staging matrix.
+   */
+  std::unordered_set<const void*> m_gradient_sources;
 
   /** Gradient staging matrix.
    *  When the gradient is needed, an allreduce is applied over the

@@ -1,0 +1,81 @@
+data_reader {
+  reader {
+    name: "imagenet"
+    role: "train"
+    shuffle: true
+    data_filedir: "/p/lscratche/brainusr/datasets/CUB_200_2011/basic_set_256x256/"
+    data_filename: "/p/lscratche/brainusr/datasets/CUB_200_2011_list/train_list.txt"
+    label_filename: ""
+    validation_percent: 0.01
+    absolute_sample_count: 0
+    percent_of_data_to_use: 1.0
+    num_labels: 200
+
+    image_preprocessor {
+      raw_width: 256
+      raw_height: 256
+
+      subtractor {
+        disable: false
+        image_to_sub: "../../../../tools/compute_mean/sample/imagenet-trainset/mean-256x256x3-6.bin"
+      }
+
+      cropper {
+        disable: false
+        crop_width: 227
+        crop_height: 227
+        crop_randomly: true
+        resized_width: 256
+        resized_height: 256
+      }
+
+      normalizer {
+        disable: true
+        scale: false
+        subtract_mean: false
+        unit_variance: false
+        z_score: true
+      }
+    }
+  }
+
+  reader {
+    name: "imagenet"
+    role: "test"
+    shuffle: true
+    data_filedir: "/p/lscratche/brainusr/datasets/CUB_200_2011/basic_set_256x256/"
+    data_filename: "/p/lscratche/brainusr/datasets/CUB_200_2011_list/test_list.txt"
+    label_filename: ""
+    validation_percent: 1.0
+    absolute_sample_count: 0
+    percent_of_data_to_use: 1.0
+    num_labels: 200
+
+    image_preprocessor {
+      raw_width: 256
+      raw_height: 256
+
+      subtractor {
+        disable: false
+        image_to_sub: "../../../../tools/compute_mean/sample/imagenet-trainset/mean-256x256x3-6.bin"
+      }
+
+      cropper {
+        disable: false
+        crop_width: 227
+        crop_height: 227
+        crop_randomly: false
+        resized_width: 256
+        resized_height: 256
+      }
+
+      normalizer {
+        disable: true
+        scale: false
+        subtract_mean: false
+        unit_variance: false
+        z_score: true
+      }
+    }
+  }
+}
