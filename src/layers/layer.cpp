@@ -257,12 +257,10 @@ void Layer::forward_prop() {
   fp_compute();
   m_fp_compute_time += get_time() - fp_compute_start;
 
-  if (m_model->get_execution_mode() == execution_mode::training) {
-    // Add this layer as a gradient source for weight optimizers
-    for (auto&& w : m_weights) {
-      optimizer* opt = w->get_optimizer();
-      if (opt != nullptr) { opt->add_gradient_source(this); }
-    }
+  // Add this layer as a gradient source for weight optimizers
+  for (auto&& w : m_weights) {
+    optimizer* opt = w->get_optimizer();
+    if (opt != nullptr) { opt->add_gradient_source(this); }
   }
 
   #if defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
