@@ -156,25 +156,36 @@ class concatenation_layer : public transform_layer {
     // Initialize previous neuron tensor dimensions
     transform_layer::setup_dims();
 
+    if (m_concatenation_axis >= (int) m_prev_neuron_dims.size()) {
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "layer " << get_name() << " cannot concatenate along "
+          << "axis " << m_concatenation_axis << " since it only has "
+          << m_prev_neuron_dims.size() << " dimensions";
+      throw lbann_exception(err.str());
+    }
+
     // Get concatenation axis indices corresponding to parent layers
     m_concatenation_points.empty();
     m_concatenation_points.push_back(0);
-    for(int i = 0; i < get_num_parents(); ++i) {
-      const auto& parent_dims = get_prev_neuron_dims(i);
-      
-      // Check that parent layer has valid dimensions
-      const auto& first_parent_dims = get_prev_neuron_dims(0);
-      if (parent_dims.size() != first_parent_dims.size()) {
-        err << __FILE__ << " " << __LINE__ << " :: concatenation_layer: "
-            << "parent layer has invalid number of dimensions";
-        throw lbann_exception(err.str());
+    auto expected_dims = m_prev_neuron_dims;
+    for (const auto& parent : this->m_parent_layers) {
+      const auto& parent_dims = parent->fp_output_dims(this);
+
+      // Check that dimensions are valid
+      if ((int) parent_dims.size() > m_concatenation_axis) {
+        expected_dims[m_concatenation_axis] = parent_dims[m_concatenation_axis];
       }
-      for (size_t d = 0; d < parent_dims.size(); ++d) {
-        if ((int) d != m_concatenation_axis
-            && parent_dims[d] != first_parent_dims[d]) {
-          err << __FILE__ << " " << __LINE__ << " :: concatenation_layer: "
-              << "parent layer has invalid dimensions";
-          throw lbann_exception(err.str());
+      if (parent_dims != expected_dims) {
+        err << __FILE__ << " " << __LINE__ << " :: "
+            << "layer " << get_name() << " expects inputs with "
+            << "dimensions ";
+        for (size_t i = 0; i < expected_dims.size(); ++i) {
+          err << (i > 0 ? "x" : "") << expected_dims[i];
+        }
+        err << ", but layer " << parent->get_name() << " outputs with "
+            << "dimensions ";
+        for (size_t i = 0; i < parent_dims.size(); ++i) {
+          err << (i > 0 ? "x" : "") << parent_dims[i];
         }
       }
 

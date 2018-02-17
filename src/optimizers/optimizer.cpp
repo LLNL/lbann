@@ -136,17 +136,6 @@ const AbsDistMat& optimizer::get_gradient() {
     throw lbann_exception(err.str());
   }
 
-  // Check if all gradient sources have made contributions
-  m_gradient_sources.erase(nullptr);
-  if (!m_gradient_sources.empty()) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to access gradient before all gradient sources "
-        << "have made contributions "
-        << "(missing " << m_gradient_sources.size() << " sources)";
-    throw lbann_exception(err.str());
-  }
-
   // Perform allreduce on staging matrix if needed
   if (m_gradient_allreduce_needed && !m_gradient_allreduce_started) {
     start_gradient_staging_allreduce();
