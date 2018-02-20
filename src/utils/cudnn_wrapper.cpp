@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/utils/cudnn_wrapper.hpp"
+#include "lbann/utils/cublas_wrapper.hpp"
 #include "lbann/utils/exception.hpp"
 
 #include <iostream>
@@ -40,6 +41,206 @@ namespace lbann
 {
 namespace cudnn
 {
+
+matrix::matrix(cudnn_manager *cudnn, int height, int width_per_gpu)
+  : m_cudnn(cudnn),
+    m_height(0),
+    m_width_per_gpu(0),
+    m_leading_dim(0),
+    m_is_view(false),
+    m_is_locked(false) {
+  if (m_cudnn != nullptr) {
+    m_data.assign(m_cudnn->get_num_gpus(), nullptr);
+    resize(height, width_per_gpu);
+  }
+}
+
+matrix::matrix(const matrix& other)
+  : m_cudnn(other.m_cudnn),
+    m_height(0),
+    m_width_per_gpu(0),
+    m_leading_dim(0),
+    m_is_view(false),
+    m_is_locked(false) {
+  if (m_cudnn != nullptr) {
+    m_data.assign(m_cudnn->get_num_gpus(), nullptr);
+    copy(other);
+  }
+}
+
+matrix::matrix(matrix&& other)
+  : m_cudnn(other.m_cudnn),
+    m_data(other.m_data),
+    m_height(other.m_height),
+    m_width_per_gpu(other.m_width_per_gpu),
+    m_leading_dim(other.m_leading_dim),
+    m_is_view(other.m_is_view),
+    m_is_locked(other.m_is_locked) {
+  other.m_is_view = true;
+}
+
+matrix& matrix::operator=(const matrix& other) {
+  clear();
+  m_cudnn = other.m_cudnn;
+  if (m_cudnn != nullptr) {
+    copy(other);
+  }
+  return *this;
+}
+
+matrix& matrix::operator=(matrix&& other) {
+  clear();
+  m_cudnn = other.m_cudnn;
+  m_data = other.m_data;
+  m_height = other.m_height;
+  m_width_per_gpu = other.m_width_per_gpu;
+  m_leading_dim = other.m_leading_dim;
+  m_is_view = other.m_is_view;
+  m_is_locked = other.m_is_locked;
+  other.m_is_view = true;
+  return *this;
+}
+
+matrix::~matrix() {
+  clear();
+}
+
+void matrix::clear() {
+  if (m_cudnn != nullptr && !m_is_view) {
+    m_cudnn->deallocate_on_gpus(m_data);
+  }
+  const int num_gpus = m_cudnn != nullptr ? m_cudnn->get_num_gpus() : 0;
+  m_data.assign(num_gpus, nullptr);
+  m_height = 0;
+  m_width_per_gpu = 0;
+  m_leading_dim = 0;
+  m_is_view = false;
+  m_is_locked = false;
+}
+
+void matrix::resize(int height, int width_per_gpu) {
+  if (m_cudnn == nullptr) {
+    throw lbann::lbann_exception("cudnn::matrix: attempted to resize matrix without cuDNN manager");
+  }
+  if (m_height != height || m_width_per_gpu != width_per_gpu) {
+    clear();
+    if (height > 0 && width_per_gpu > 0) {
+      m_cudnn->allocate_on_gpus(m_data, height, width_per_gpu);
+      m_height = height;
+      m_width_per_gpu = width_per_gpu;
+      m_leading_dim = height;
+      m_is_view = false;
+      m_is_locked = false;
+    }
+  }
+}
+
+void matrix::copy(const matrix& other) {
+  if (m_cudnn == nullptr) {
+    throw lbann::lbann_exception("cudnn::matrix: attempted to copy into matrix without cuDNN manager");
+  } else if (m_is_locked) {
+    throw lbann::lbann_exception("cudnn::matrix: attempted to copy into a locked matrix");
+  }
+  resize(other.m_height, other.m_width_per_gpu);
+  if (m_height > 0 && m_width_per_gpu > 0) {
+    m_cudnn->copy_on_gpus(m_data, other.m_data,
+                          m_height, m_width_per_gpu,
+                          other.m_leading_dim, m_leading_dim);
+  }
+}
+
+void matrix::view(matrix& other) {
+  attach(other.get_data(),
+         other.get_height(),
+         other.get_width_per_gpu(),
+         other.get_leading_dim());
+}
+
+void matrix::locked_view(const matrix& other) {
+  locked_attach(other.get_locked_data(),
+                other.get_height(),
+                other.get_width_per_gpu(),
+                other.get_leading_dim());
+}
+
+void matrix::zero() {
+  if (m_cudnn == nullptr) {
+    throw lbann::lbann_exception("cudnn::matrix: attempted to zero out matrix without cuDNN manager");
+  } else if (m_is_locked) {
+    throw lbann::lbann_exception("cudnn::matrix: attempted to zero out a locked matrix");
+  }
+  if (m_height > 0 && m_width_per_gpu > 0) {
+    m_cudnn->clear_on_gpus(m_data, m_height, m_width_per_gpu, m_leading_dim);
+  }
+}
+
+void matrix::attach(std::vector<DataType*>& data,
+                    int height,
+                    int width_per_gpu,
+                    int leading_dim) {
+  if (m_cudnn == nullptr) {
+    throw lbann::lbann_exception("cudnn::matrix: attempted to attach matrix without cuDNN manager");
+  }
+  clear();
+  m_data = data;
+  m_height = height;
+  m_width_per_gpu = width_per_gpu;
+  m_leading_dim = std::max(leading_dim, height);
+  m_is_view = true;
+  m_is_locked = false;
+}
+
+void matrix::locked_attach(const std::vector<DataType*>& data,
+                           int height,
+                           int width_per_gpu,
+                           int leading_dim) {
+  if (m_cudnn == nullptr) {
+    throw lbann::lbann_exception("cudnn::matrix: attempted to attach matrix without cuDNN manager");
+  }
+  clear();
+  m_data = data;
+  m_height = height;
+  m_width_per_gpu = width_per_gpu;
+  m_leading_dim = std::max(leading_dim, height);
+  m_is_view = true;
+  m_is_locked = true;
+}
+
+std::vector<DataType*>& matrix::get_data() {
+  if (m_cudnn == nullptr) {
+    throw lbann::lbann_exception("cudnn::matrix: attempted access data of matrix without cuDNN manager");
+  } else if (m_is_locked) {
+    throw lbann::lbann_exception("cudnn::matrix: attempted access mutable data of locked matrix");
+  }
+  return m_data;
+}
+
+const std::vector<DataType*>& matrix::get_locked_data() const {
+  if (m_cudnn == nullptr) {
+    throw lbann::lbann_exception("cudnn::matrix: attempted access data of matrix without cuDNN manager");
+  }
+  return m_data;
+}
+
+DataType* matrix::get_data(int i) {
+  if (m_cudnn == nullptr) {
+    throw lbann::lbann_exception("cudnn::matrix: attempted access data of matrix without cuDNN manager");
+  } else if (i < 0 || i >= m_cudnn->get_num_gpus()) {
+    throw lbann::lbann_exception("cudnn::matrix: attempted access data on invalid GPU");
+  } else if (m_is_locked) {
+    throw lbann::lbann_exception("cudnn::matrix: attempted access mutable data of locked matrix");
+  }
+  return m_data[i];
+}
+
+const DataType* matrix::get_locked_data(int i) const {
+  if (m_cudnn == nullptr) {
+    throw lbann::lbann_exception("cudnn::matrix: attempted access data of matrix without cuDNN manager");
+  } else if (i < 0 || i >= m_cudnn->get_num_gpus()) {
+    throw lbann::lbann_exception("cudnn::matrix: attempted access data on invalid GPU");
+  }
+  return m_data[i];
+}
 
 /// It is assumed the number of processes and the number of GPUs on a compute node are equal
 cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus, bool nccl_used)
@@ -175,82 +376,82 @@ cudnn_manager::~cudnn_manager() {
 void cudnn_manager::cudnn_manager::allocate_on_gpus(std::vector<DataType *>& gpu_data,
                                                     int height,
                                                     int width_per_gpu) {
+  
+  // Check that list of pointers is valid
+  if(!gpu_data.empty()) {
+    if((int) gpu_data.size() != m_num_gpus) {
+      throw lbann_exception("cudnn_wrapper: number of GPU memory pointers doesn't match number of GPUs");
+    }
+    for(int i=0; i<m_num_gpus; ++i) {
+      if(gpu_data[i] != nullptr) {
+        throw lbann_exception("cudnn_wrapper: overwriting non-null pointer with newly allocated GPU memory");
+      }
+    }
+  }
+
+  // Allocate GPU memory
+  gpu_data.assign(m_num_gpus, nullptr);
+  if(height > 0 && width_per_gpu > 0) {
 
     // Free work spaces
     free_work_spaces();
 
-    if(!gpu_data.empty()) {
-        // Check that list of pointers has valid number of entries
-        if((int) gpu_data.size() != m_num_gpus) {
-            throw lbann_exception("cudnn_wrapper: number of GPU memory pointers doesn't match number of GPUs");
-        }
-        // Check that list of pointers only contains null pointers
-        for(int i=0; i<m_num_gpus; ++i) {
-            if(gpu_data[i] != nullptr) {
-                throw lbann_exception("cudnn_wrapper: overwriting non-null pointer with newly allocated GPU memory");
-            }
-        }
-    }
-
-    // Allocate GPU memory
-    gpu_data.resize(m_num_gpus, nullptr);
+    // Allocate memory on GPUs
+    const size_t size = height * width_per_gpu * sizeof(DataType);
     for(int i=0; i<m_num_gpus; ++i) {
-        if(height*width_per_gpu > 0) {
-            FORCE_CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-            size_t size = height*width_per_gpu*sizeof(DataType);
-            cudaError_t status = cudaMalloc((void **) &gpu_data[i], size);
+      FORCE_CHECK_CUDA(cudaSetDevice(m_gpus[i]));
+      const cudaError_t status = cudaMalloc((void **) &gpu_data[i], size);
 
-            // Check that allocation is successful
-            if(status == cudaErrorMemoryAllocation) {
-                size_t free_memory, total_memory;
-                CHECK_CUDA(cudaMemGetInfo(&free_memory, &total_memory));
-                std::stringstream err;
-                err << __FILE__ << " " << __LINE__ << " :: "
-                    << "could not allocate GPU memory on GPU " << m_gpus[i] << " "
-                    << "(" << size << " bytes requested, "
-                    << free_memory << " bytes available, "
-                    << total_memory << " bytes total)";
-                throw lbann_exception(err.str());
-            } else {
-                FORCE_CHECK_CUDA(status);
-            }
-
-        }
+      // Check that allocation is successful
+      if(status == cudaErrorMemoryAllocation) {
+        size_t free_memory, total_memory;
+        CHECK_CUDA(cudaMemGetInfo(&free_memory, &total_memory));
+        std::stringstream err;
+        err << __FILE__ << " " << __LINE__ << " :: "
+            << "could not allocate GPU memory on GPU " << m_gpus[i] << " "
+            << "(" << size << " bytes requested, "
+            << free_memory << " bytes available, "
+            << total_memory << " bytes total)";
+        throw lbann_exception(err.str());
+      } else {
+        FORCE_CHECK_CUDA(status);
+      }
 
     }
+  }
 
-    // Set entries to zero
-    clear_on_gpus(gpu_data, height, width_per_gpu);
+  // Set entries to zero
+  clear_on_gpus(gpu_data, height, width_per_gpu);
 
 }
 
 void cudnn_manager::cudnn_manager::deallocate_on_gpus(std::vector<DataType *>& gpu_data) {
 
-    // Free work spaces
-    free_work_spaces();
-
-    // Stop if list of pointers is empty
-    if(gpu_data.empty()) {
-        return;
+  // Stop early if deallocation is not needed
+  bool deallocation_needed = false;
+  if(gpu_data.empty()) {
+    deallocation_needed = true;
+  } else if((int) gpu_data.size() != m_num_gpus) {
+    throw lbann_exception("cudnn_wrapper: number of GPU memory pointers doesn't match number of GPUs");
+  } else {
+    for (const auto& ptr : gpu_data) {
+      if (ptr != nullptr) { deallocation_needed = true; }
     }
-
-#ifdef LBANN_DEBUG
-    // Ensure that gpu_data has right dimensions
-    if((int) gpu_data.size() != m_num_gpus) {
-        throw lbann_exception("cudnn_wrapper: number of GPU memory pointers doesn't match number of GPUs");
-    }
-#endif // #ifdef LBANN_DEBUG
-
-    // Deallocate GPU memory
-    for(int i=0; i<m_num_gpus; ++i) {
-        if(gpu_data[i] != nullptr) {
-            FORCE_CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-            FORCE_CHECK_CUDA(cudaFree(gpu_data[i]));
-        }
-    }
-
-    // Clear list of GPU memory pointers
+  }
+  if (!deallocation_needed) {
     gpu_data.clear();
+    return;
+  }
+
+  // Free work spaces
+  free_work_spaces();
+
+  // Deallocate GPU memory
+  for(int i=0; i<m_num_gpus; ++i) {
+    FORCE_CHECK_CUDA(cudaSetDevice(m_gpus[i]));
+    FORCE_CHECK_CUDA(cudaFree(gpu_data[i]));
+  }
+  gpu_data.clear();
 
 }
 
@@ -259,23 +460,23 @@ void cudnn_manager::cudnn_manager::clear_on_gpu(int i,
                                                 int height,
                                                 int width,
                                                 int leading_dim) {
-    CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-    leading_dim = std::max(leading_dim, height);
-    if (height == 0 || width == 0) { return; }
-    else if (leading_dim == height) {
-        CHECK_CUDA(cudaMemsetAsync(gpu_data,
-                                   0,
-                                   height * width * sizeof(DataType),
-                                   m_streams[i]));
-    }
-    else {
-        CHECK_CUDA(cudaMemset2DAsync(gpu_data,
-                                     leading_dim * sizeof(DataType),
-                                     0,
-                                     height * sizeof(DataType),
-                                     width,
-                                     m_streams[i]));
-    }
+  CHECK_CUDA(cudaSetDevice(m_gpus[i]));
+  leading_dim = std::max(leading_dim, height);
+  if (height <= 0 || width <= 0) { return; }
+  else if (leading_dim == height) {
+    CHECK_CUDA(cudaMemsetAsync(gpu_data,
+                               0,
+                               height * width * sizeof(DataType),
+                               m_streams[i]));
+  }
+  else {
+    CHECK_CUDA(cudaMemset2DAsync(gpu_data,
+                                 leading_dim * sizeof(DataType),
+                                 0,
+                                 height * sizeof(DataType),
+                                 width,
+                                 m_streams[i]));
+  }
 }
 
 void cudnn_manager::cudnn_manager::copy_to_gpu(int i,
@@ -312,30 +513,31 @@ void cudnn_manager::cudnn_manager::copy_from_gpu(int i,
                                                  Mat& cpu_data,
                                                  const DataType* gpu_data,
                                                  int gpu_data_leading_dim) {
-    CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-    const int height = cpu_data.Height();
-    const int width = cpu_data.Width();
-    gpu_data_leading_dim = std::max(gpu_data_leading_dim, height);
-    const int cpu_data_leading_dim = cpu_data.LDim();
-    if (height == 0 || width == 0) { return; }
-    else if (gpu_data_leading_dim == height
-             && cpu_data_leading_dim == height) {
-        CHECK_CUDA(cudaMemcpyAsync(cpu_data.Buffer(),
-                                   gpu_data,
-                                   height * width * sizeof(DataType),
-                                   cudaMemcpyDeviceToHost,
-                                   m_streams[i]));
-    }
-    else {
-        CHECK_CUDA(cudaMemcpy2DAsync(cpu_data.Buffer(),
-                                     cpu_data.LDim() * sizeof(DataType),
-                                     gpu_data,
-                                     gpu_data_leading_dim * sizeof(DataType),
-                                     height * sizeof(DataType),
-                                     width,
-                                     cudaMemcpyDeviceToHost,
-                                     m_streams[i]));
-    }
+
+  CHECK_CUDA(cudaSetDevice(m_gpus[i]));
+  const int height = cpu_data.Height();
+  const int width = cpu_data.Width();
+  gpu_data_leading_dim = std::max(gpu_data_leading_dim, height);
+  const int cpu_data_leading_dim = cpu_data.LDim();
+  if (height <= 0 || width <= 0) { return; }
+  else if (gpu_data_leading_dim == height
+           && cpu_data_leading_dim == height) {
+    CHECK_CUDA(cudaMemcpyAsync(cpu_data.Buffer(),
+                               gpu_data,
+                               height * width * sizeof(DataType),
+                               cudaMemcpyDeviceToHost,
+                               m_streams[i]));
+  }
+  else {
+    CHECK_CUDA(cudaMemcpy2DAsync(cpu_data.Buffer(),
+                                 cpu_data_leading_dim * sizeof(DataType),
+                                 gpu_data,
+                                 gpu_data_leading_dim * sizeof(DataType),
+                                 height * sizeof(DataType),
+                                 width,
+                                 cudaMemcpyDeviceToHost,
+                                 m_streams[i]));
+  }
 }
 
 void cudnn_manager::cudnn_manager::clear_on_gpus(std::vector<DataType *>& gpu_data,
@@ -367,6 +569,17 @@ void cudnn_manager::cudnn_manager::clear_unused_columns_on_gpus(std::vector<Data
                          leading_dim);
         }
     }
+}
+
+void cudnn_manager::cudnn_manager::set_on_gpus(std::vector<DataType *>& gpu_data,
+                                               DataType val,
+                                               int height,
+                                               int width_per_gpu) {
+  if(!gpu_data.empty()) {
+    for(int i=0; i<m_num_gpus; ++i) {
+      set_on_gpu(i, gpu_data[i], height, width_per_gpu);
+    }
+  }
 }
 
 void cudnn_manager::cudnn_manager::copy_on_gpus(std::vector<DataType *>& gpu_dst_data,
@@ -415,11 +628,14 @@ void cudnn_manager::cudnn_manager::scatter_to_gpus(std::vector<DataType *>& gpu_
     const int width = cpu_data.Width();
 
     // Perform memory transfer on each GPU
+    #pragma omp parallel for
     for(int i=0; i<m_num_gpus; ++i) {
         const int first_pos = std::min(i * width_per_gpu, width);
         const int last_pos = std::min((i+1) * width_per_gpu, width);
-        const Mat cpu_data_view = cpu_data(El::ALL, El::IR(first_pos, last_pos));
-        copy_to_gpu(i, gpu_data[i], cpu_data_view, gpu_data_leading_dim);
+        if (first_pos < last_pos) {
+            const auto& cpu_data_view = El::LockedView(cpu_data, El::ALL, El::IR(first_pos, last_pos));
+            copy_to_gpu(i, gpu_data[i], cpu_data_view, gpu_data_leading_dim);
+        }
     }
 
     // Clear unused columns
@@ -436,18 +652,19 @@ void cudnn_manager::cudnn_manager::gather_from_gpus(Mat& cpu_data,
                                                     const std::vector<DataType *>& gpu_data,
                                                     int width_per_gpu,
                                                     int gpu_data_leading_dim) {
-
-    // Check inputs
     if (gpu_data.empty()) {
         throw lbann_exception("cudnn_wrapper: attempted to gather from GPUs before allocating GPU memory");
     }
 
     const int width = cpu_data.Width();
+    #pragma omp parallel for
     for(int i=0; i<m_num_gpus; ++i) {
         const int first_pos = std::min(i * width_per_gpu, width);
         const int last_pos = std::min((i+1) * width_per_gpu, width);
-        Mat cpu_data_view = cpu_data(El::ALL, El::IR(first_pos, last_pos));
-        copy_from_gpu(i, cpu_data_view, gpu_data[i], gpu_data_leading_dim);
+        if (first_pos < last_pos) {
+            auto&& cpu_data_view = El::View(cpu_data, El::ALL, El::IR(first_pos, last_pos));
+            copy_from_gpu(i, cpu_data_view, gpu_data[i], gpu_data_leading_dim);
+        }
     }
 }
 
@@ -457,6 +674,7 @@ void cudnn_manager::cudnn_manager::broadcast_to_gpus(std::vector<DataType *>& gp
     if (gpu_data.empty()) {
         throw lbann_exception("cudnn_wrapper: attempted to broadcast to GPUs before allocating GPU memory");
     }
+    #pragma omp parallel for
     for(int i=0; i<m_num_gpus; ++i) {
         copy_to_gpu(i, gpu_data[i], cpu_data, gpu_data_leading_dim);
     }
@@ -567,84 +785,92 @@ const cublasHandle_t& cudnn_manager::get_cublas_handle(int i) const {
 }
 
 std::vector<void *> cudnn_manager::get_work_spaces() {
-    // Make sure that work spaces are initialized
-    for(int i=0; i<m_num_gpus; ++i) {
-        get_work_space(i);
-    }
-    return m_work_spaces;
+  std::vector<void *> work_spaces;
+  for(int i=0; i<m_num_gpus; ++i) {
+    work_spaces.push_back(get_work_space(i));
+  }
+  return work_spaces;
 }
 
 void *cudnn_manager::get_work_space(int i) {
-    if(i >= m_num_gpus) {
-        throw lbann_exception("cudnn_wrapper: tried to access invalid work space");
-    }
-    m_work_spaces.resize(m_num_gpus, nullptr);
-    if(m_work_spaces[i] == nullptr && m_work_space_sizes[i] > 0) {
-        CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-        FORCE_CHECK_CUDA(cudaMalloc((void **) &m_work_spaces[i],
-                                    m_work_space_sizes[i]));
-    }
-    return m_work_spaces[i];
+  if(i >= m_num_gpus) {
+    throw lbann_exception("cudnn_wrapper: tried to access invalid work space");
+  }
+  m_work_spaces.resize(m_num_gpus, nullptr);
+  get_work_space_size(i); // Reallocate work space if needed
+  return m_work_spaces[i];
 }
 
-const std::vector<size_t> cudnn_manager::get_work_space_sizes() const {
-    return m_work_space_sizes;
+size_t cudnn_manager::get_minimum_work_space_size() {
+  if (m_num_gpus <= 0) { return 0; }
+  size_t size = get_work_space_size(0);
+  for(int i=1; i<m_num_gpus; ++i) {
+    size = std::min(size, get_work_space_size(i));
+  }
+  return size;
+}
+
+std::vector<size_t> cudnn_manager::get_work_space_sizes() {
+  std::vector<size_t> work_space_sizes;
+  for(int i=0; i<m_num_gpus; ++i) {
+    work_space_sizes.push_back(get_work_space_size(i));
+  }
+  return work_space_sizes;
 };
 
-size_t cudnn_manager::get_work_space_size(int i) const {
-    return m_work_space_sizes.empty() ? 0 : m_work_space_sizes[i];
-}
-
-void cudnn_manager::set_work_space_size(int i, size_t size) {
-    if(i >= m_num_gpus) {
-        throw lbann_exception("cudnn_wrapper: tried to access size of invalid work space");
-    }
-    m_work_spaces.resize(m_num_gpus, nullptr);
-    m_work_space_sizes.resize(m_num_gpus, 0);
-    if(m_work_space_sizes[i] != size) {
-        m_work_space_sizes[i] = size;
-        if(m_work_spaces[i] != nullptr) {
-            CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-            CHECK_CUDA(cudaFree(m_work_spaces[i]));
-        }
-        m_work_spaces[i] = nullptr;
-    }
+size_t cudnn_manager::get_work_space_size(int i) {
+  if(i >= m_num_gpus) {
+    throw lbann_exception("cudnn_wrapper: tried to access invalid work space size");
+  }
+  m_work_space_sizes.resize(m_num_gpus, 0);
+  if(m_work_space_sizes[i] <= 0) {
+    set_maximum_work_space_size(i);
+  }
+  return m_work_space_sizes[i];
 }
 
 void cudnn_manager::set_maximum_work_space_size(int i) {
+    CHECK_CUDA(cudaSetDevice(m_gpus[i]));
 
     // Search parameters for work space size
-    const size_t min_work_space_size = 1024;
     const double decay_factor = 0.8;
     size_t free_memory, total_memory;
-    CHECK_CUDA(cudaSetDevice(m_gpus[i]));
+    CHECK_CUDA(cudaSetDevice(m_gpus[i]));  
     CHECK_CUDA(cudaMemGetInfo(&free_memory, &total_memory));
 
     // Clear work space
-    set_work_space_size(i, 0);
+    free_work_space(i);
 
     // Try allocating work spaces until we find a valid size
-    size_t work_space_size = free_memory;
-    void* work_space = nullptr;
-    while(work_space_size > min_work_space_size && work_space == nullptr) {
-        CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-        cudaError_t status = cudaMalloc(&work_space, work_space_size);
+    auto& work_space = m_work_spaces[i];
+    auto& work_space_size = m_work_space_sizes[i];
+    work_space = nullptr;
+    work_space_size = free_memory * decay_factor;
+    while(work_space_size > 0 && work_space == nullptr) {
+        const cudaError_t status = cudaMalloc(&work_space, work_space_size);
         if(status != cudaErrorMemoryAllocation) {
             FORCE_CHECK_CUDA(status);
-            m_work_spaces[i] = work_space;
-            m_work_space_sizes[i] = work_space_size;
-        }
-        else {
+        } else {
             work_space = nullptr;
         }
-        work_space_size = decay_factor * work_space_size;
     }
+}
 
+void cudnn_manager::free_work_space(int i) {
+  if(i < 0 || i >= m_num_gpus) {
+    throw lbann_exception("cudnn_wrapper: tried to access size of invalid work space");
+  }
+  if (m_work_spaces[i] != nullptr) {
+    CHECK_CUDA(cudaSetDevice(m_gpus[i]));
+    CHECK_CUDA(cudaFree(m_work_spaces[i]));
+  }
+  m_work_spaces[i] = nullptr;
+  m_work_space_sizes[i] = 0;
 }
 
 void cudnn_manager::free_work_spaces() {
     for(int i=0; i<m_num_gpus; ++i) {
-        set_work_space_size(i, 0);
+        free_work_space(i);
     }
 }
 
@@ -652,7 +878,6 @@ std::vector<DataType*> cudnn_manager::copy(const std::vector<DataType*>& gpu_dat
                                            int height,
                                            int width_per_gpu,
                                            int leading_dim) {
-    free_work_spaces();
     leading_dim = std::max(leading_dim, height);
     std::vector<DataType*> output_gpu_data;
     if(!gpu_data.empty()) {
@@ -856,27 +1081,29 @@ cudnnDataType_t get_cudnn_data_type() {
 
 void set_tensor_cudnn_desc(cudnnTensorDescriptor_t& desc,
                            int num_samples,
-                           const std::vector<int>& sample_dims) {
+                           const std::vector<int>& sample_dims,
+                           int sample_stride) {
 
     // Create tensor descriptor if needed
-    if(desc == nullptr) {
+    if (desc == nullptr) {
         CHECK_CUDNN(cudnnCreateTensorDescriptor(&desc));
     }
 
     // Determine tensor dimensions
     // Note: cuDNN tensors should have at least 4 dimension
     std::vector<int> dims = sample_dims;
-    dims.insert(dims.begin(), num_samples);
-    while(dims.size() < 4) {
-        dims.push_back(1);
+    while (dims.size() < 3) {
+        dims.insert(dims.begin(), 1);
     }
+    dims.insert(dims.begin(), num_samples);
 
     // Determine tensor strides
     std::vector<int> strides(dims.size());
     strides.back() = 1;
-    for(int i=dims.size()-1; i>0; --i) {
+    for(int i = dims.size() - 1; i > 0; --i) {
         strides[i-1] = strides[i] * dims[i];
     }
+    strides.front() = std::max(strides.front(), sample_stride);
 
     // Set cuDNN tensor descriptor
     CHECK_CUDNN(cudnnSetTensorNdDescriptor(desc,

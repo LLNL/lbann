@@ -31,15 +31,14 @@
 
 namespace lbann {
 
-/**
- * Exponential linear unit.
- * Tries to speed up learning by pushing the mean of activations more towards
- * zero by allowing negative values. Helps avoid the need for batch
- * normalization.
- * See:
- * Djork-Arne Clevert, Thomas Unterthiner, and Sepp Hochreiter
- * "Fast and Accurate Deep Network Learning by Exponential Linear Units (ELUs)"
- * ICLR 2016.
+/** Exponential linear unit.
+
+ *  Tries to speed up learning by pushing the mean of activations more
+ *  towards zero by allowing negative values. Helps avoid the need for
+ *  batch normalization. See:
+ *  Djork-Arne Clevert, Thomas Unterthiner, and Sepp Hochreiter "Fast
+ *  and Accurate Deep Network Learning by Exponential Linear Units
+ *  (ELUs)" ICLR 2016.
  */
 template <data_layout T_layout>
 class elu_layer : public entrywise_activation_layer {
@@ -51,31 +50,23 @@ class elu_layer : public entrywise_activation_layer {
    * Paper uses alpha = 1.0 as a good starting point.
    */
   elu_layer(lbann_comm *comm,
-            DataType alpha = DataType(1.0)) :
-    entrywise_activation_layer(comm),
-    m_alpha(alpha) { 
-    initialize_distributed_matrices(); 
-  }
+            DataType alpha = DataType(1.0))
+    : entrywise_activation_layer(comm), m_alpha(alpha) {}
   elu_layer* copy() const override { return new elu_layer(*this); }
-
   std::string get_type() const override { return "ELU"; }
-
-  inline void initialize_distributed_matrices() override {
-    entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
-  }
   data_layout get_data_layout() const override { return T_layout; }
 
  protected:
-  DataType activation_function(DataType z) override {
-    return (z > DataType(0)) ? z : (m_alpha*std::expm1(z));
+  DataType activation(DataType z) const override {
+    return (z > DataType(0)) ? z : (m_alpha * std::expm1(z));
   }
-  DataType activation_function_gradient(DataType z) override {
-    return (z > DataType(0)) ? DataType(1) : (m_alpha*std::expm1(z) + m_alpha);
+  DataType activation_derivative(DataType z) const override {
+    return (z > DataType(0)) ? DataType(1) : (m_alpha * std::expm1(z) + m_alpha);
   }
  private:
   DataType m_alpha;
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // ELU_HPP_INCLUDED
+#endif // ELU_HPP_INCLUDED

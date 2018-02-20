@@ -24,50 +24,32 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef ID_HPP_INCLUDED
-#define ID_HPP_INCLUDED
+#ifndef IDENTITY_HPP_INCLUDED
+#define IDENTITY_HPP_INCLUDED
 
 #include "lbann/layers/activations/activation.hpp"
 
 namespace lbann {
 
-/** Identity activation function -- does nothing. */
+/** Identity activation function. */
 template <data_layout T_layout>
-class id_layer : public entrywise_activation_layer {
+class identity_layer : public activation_layer {
  public:
-  id_layer(lbann_comm *comm) :
-    entrywise_activation_layer(comm) {
-    initialize_distributed_matrices(); 
-  }
-  id_layer* copy() const override { return new id_layer(*this); }
-
-  std::string get_type() const override { return "id"; }
-
-  DataType activation_function(DataType x) override {
-     throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " this method should never be called; it's in place only to permit id_layer to have the same inheritance hierarchy as the other activation classes");
-    return DataType(0);
-  }
-
-  DataType activation_function_gradient(DataType x) override {
-     throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " this method should never be called; it's in place only to permit id_layer to have the same inheritance hierarchy as the other activation classes");
-    return DataType(0);
-  }
-
-  inline void initialize_distributed_matrices() override {
-    activation_layer::initialize_distributed_matrices<T_layout>();
-  }
+  identity_layer(lbann_comm *comm) : activation_layer(comm) {}
+  identity_layer* copy() const override { return new identity_layer(*this); }
+  std::string get_type() const override { return "identity"; }
   data_layout get_data_layout() const override { return T_layout; }
 
   void fp_compute() override {
-    El::LockedView(*this->m_activations_v, *this->m_prev_activations_v);
+    El::LockedView(get_activations(), get_prev_activations());
   }
 
   void bp_compute() override {
-    El::LockedView(*this->m_error_signal_v, *this->m_prev_error_signal_v);
+    El::Axpy(DataType(1), get_prev_error_signals(), get_error_signals());
   }
 
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // ID_HPP_INCLUDED
+#endif // IDENTITY_HPP_INCLUDED

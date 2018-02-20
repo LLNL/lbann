@@ -54,6 +54,7 @@ class lbann_callback_checkpoint : public lbann_callback {
   void setup(model *m) override;
   void on_epoch_end(model *m) override;
   void on_batch_end(model *m) override;
+  void on_validation_end(model *m) override;
 
   inline void set_checkpoint_dir(std::string dir){
     m_checkpoint_dir= dir;
@@ -87,6 +88,7 @@ class lbann_callback_checkpoint : public lbann_callback {
   bool m_checkpoint_per_rank;
   EvalType m_checkpoint_last;
   bool m_epoch_end;
+  bool m_val_end;
 };
 
 }  // namespace lbann

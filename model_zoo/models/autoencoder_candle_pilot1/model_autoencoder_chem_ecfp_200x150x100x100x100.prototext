@@ -1,0 +1,317 @@
+model {
+  ### Model description and network architecture taken from:
+  ### https://lc.llnl.gov/bitbucket/projects/BIOM/repos/molresp/browse/tf_model.py?at=TensorFlow_chemClass
+  ### This network description is anologous to AutoEncoder_Chem_ECFP 
+  name: "sequential_model"
+  data_layout: "model_parallel"
+  mini_batch_size: 1024
+  block_size: 256
+  num_epochs: 4
+  num_parallel_readers: 1
+  procs_per_model: 0
+  use_cudnn: true
+  num_gpus: -1
+
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    mean_squared_error {}
+  }
+
+  ###################################################
+  # Metrics
+  ###################################################
+
+  metric {
+    pearson_correlation {}
+  }
+
+  ###################################################
+  # Callbacks
+  ###################################################
+  callback {
+    print {
+      interval: 1
+    }
+  }
+  callback {
+    timer {
+    }
+  }
+ # callback {
+ #   summary {
+ #     dir: "."
+ #     batch_interval: 1
+ #     mat_interval: 25
+ #   }
+ # }
+#  callback {
+#    debug {
+#      phase: "train"
+#    }
+#  }
+
+  ###################################################
+  # start of layers
+  ###################################################
+
+  #######
+  # INPUT
+  #######
+  layer {
+    name: "data"
+    data_layout: "model_parallel"
+    input {
+      io_buffer: "distributed"
+    }
+  }
+
+  #################
+  # FULLY_CONNECTED encode1
+  #################
+  layer {
+    name: "encode1"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 200
+      weight_initialization: "glorot_uniform"
+      has_bias: true
+    }
+  }
+
+  ######
+  # RELU relu1
+  ######
+  layer {
+    name: "relu1"
+    data_layout: "model_parallel"
+    relu {
+    }
+  }
+
+  #################
+  # FULLY_CONNECTED encode2
+  #################
+  layer {
+    name: "encode2"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 150
+      weight_initialization: "glorot_uniform"
+      has_bias: true
+    }
+  }
+
+  #######
+  # RELU relu2
+  #######
+  layer {
+    name: "relu2"
+    data_layout: "model_parallel"
+    relu {
+    }
+  }
+
+  #################
+  # FULLY_CONNECTED encode3
+  #################
+  layer {
+    name: "encode3"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 100 
+      weight_initialization: "glorot_uniform"
+      has_bias: true
+    }
+  }
+
+  #######
+  # RELU relu3
+  #######
+  layer {
+    name: "relu3"
+    data_layout: "model_parallel"
+    relu {
+    }
+  }
+
+  #################
+  # FULLY_CONNECTED encode4
+  #################
+  layer {
+    name: "encode4"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 100
+      weight_initialization: "glorot_uniform"
+      has_bias: true
+    }
+  }
+
+  #######
+  # RELU relu4
+  #######
+  layer {
+    name: "relu4"
+    data_layout: "model_parallel"
+    relu {
+    }
+  }
+
+  #################
+  # FULLY_CONNECTED encode5
+  #################
+  layer {
+    name: "encode5"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 100
+      weight_initialization: "glorot_uniform"
+      has_bias: true
+    }
+  }
+
+  #######
+  # RELU relu5
+  #######
+  layer {
+    name: "relu5"
+    data_layout: "model_parallel"
+    relu {
+    }
+  }
+
+  #################
+  # FULLY_CONNECTED decode5
+  #################
+  layer {
+    name: "decode5"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 100
+      weight_initialization: "glorot_uniform"
+      has_bias: true
+    }
+  }
+
+  #######
+  # RELU 6
+  #######
+  layer {
+    name: "relu6"
+    data_layout: "model_parallel"
+    relu {
+    }
+  }
+
+  #################
+  # FULLY_CONNECTED decode4
+  #################
+  layer {
+    name: "decode4"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 100
+      weight_initialization: "glorot_uniform"
+      has_bias: true
+    }
+  }
+
+
+  #######
+  # RELU relu7
+  #######
+  layer {
+    name: "relu7"
+    data_layout: "model_parallel"
+    relu {
+    }
+  }
+
+  #################
+  # FULLY_CONNECTED decode3
+  #################
+  layer {
+    name: "decode3"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 150
+      weight_initialization: "glorot_uniform"
+      has_bias: true
+    }
+  }
+
+  #######
+  # RELU relu8
+  #######
+  layer {
+    name: "relu8"
+    data_layout: "model_parallel"
+    relu {
+    }
+  }
+
+  #################
+  # FULLY_CONNECTED decode2
+  #################
+  layer {
+    name: "decode2"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 200
+      weight_initialization: "glorot_uniform"
+      has_bias: true
+    }
+  }
+
+  #######
+  # RELU relu9
+  #######
+  layer {
+    name: "relu9"
+    data_layout: "model_parallel"
+    relu {
+    }
+  }
+
+  #################
+  # FULLY_CONNECTED decode1
+  #################
+  layer {
+    name: "decode1"
+    data_layout: "model_parallel"
+    num_neurons_from_data_reader: true
+    fully_connected {
+      weight_initialization: "glorot_uniform"
+      has_bias: true
+    }
+  }
+
+  #######
+  # RELU relu10
+  #######
+  layer {
+    name: "relu10"
+    data_layout: "model_parallel"
+    relu {
+    }
+  }
+
+  
+  #################
+  # RECONSTRUCTION
+  #################
+  layer {
+    name: "reconstruction"
+    data_layout: "model_parallel"
+    reconstruction {
+      original_layer: "data"
+    }
+  }
+
+  ###################################################
+  # end of layers
+  ###################################################
+}

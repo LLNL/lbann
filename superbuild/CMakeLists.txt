@@ -69,6 +69,11 @@ if (LBANN_SB_BUILD_JPEG_TURBO)
   list(APPEND _BUILD_PKGS jpeg-turbo)
 endif ()
 
+if (LBANN_SB_BUILD_ALUMINUM)
+  add_subdirectory(aluminum)
+  list(APPEND _BUILD_PKGS aluminum)
+endif ()
+
 if (LBANN_SB_BUILD_OPENCV)
   add_subdirectory(opencv)
   list(APPEND _BUILD_PKGS OpenCV)

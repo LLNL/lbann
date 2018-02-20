@@ -38,30 +38,22 @@ namespace lbann {
 template <data_layout T_layout>
 class smooth_relu_layer : public entrywise_activation_layer {
  public:
-  smooth_relu_layer(lbann_comm *comm) :
-    entrywise_activation_layer(comm) { 
-    initialize_distributed_matrices(); 
-  }
-
+  smooth_relu_layer(lbann_comm *comm)
+    : entrywise_activation_layer(comm) {}
   smooth_relu_layer* copy() const override { return new smooth_relu_layer(*this); }
-
-  std::string get_type() const override { return "smooth relu"; }
-
-  inline void initialize_distributed_matrices() override {
-    entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
-  }
+  std::string get_type() const override { return "smooth ReLU"; }
   data_layout get_data_layout() const override { return T_layout; }
 
  protected:
-  DataType activation_function(DataType z) override {
+  DataType activation(DataType z) const override {
     return z / (DataType(1) + std::exp(-z));
   }
-  DataType activation_function_gradient(DataType z) override {
-    const DataType sigz = DataType(1) / (DataType(1) + std::exp(-z));
-    return sigz + z*sigz - z*sigz*sigz;
+  DataType activation_derivative(DataType z) const override {
+    const DataType sigz = 1 / (DataType(1) + std::exp(-z));
+    return sigz + z * sigz - z * sigz * sigz;
   }
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // SMOOTH_RELU_ACTIVATIONS_HPP_INCLUDED
+#endif // SMOOTH_RELU_ACTIVATIONS_HPP_INCLUDED

@@ -31,7 +31,6 @@
 
 #include "lbann/models/model.hpp"
 #include "lbann/layers/layer.hpp"
-#include "lbann/layers/activations/activation.hpp"
 #include "lbann/data_readers/data_reader.hpp"
 #include "lbann/io/persist.hpp"
 #include <vector>
@@ -65,7 +64,7 @@ class sequential_model : public model {
   /** @todo This is old and likely broken */
   bool load_from_checkpoint(int fd, const char *filename, size_t *bytes);
 
-  bool save_to_checkpoint_shared(persist& p) override;
+  bool save_to_checkpoint_shared(persist& p,bool val_end) override;
   bool load_from_checkpoint_shared(persist& p) override;
 
   /** Write model to proto file */

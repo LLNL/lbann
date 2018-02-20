@@ -136,6 +136,11 @@ void setup_pointers(
 
       // Set input layer
       auto *input = dynamic_cast<generic_input_layer*>(model_layers[name]);
+      if(master and (target->is_for_regression() != input->is_for_regression())) {
+        err << __FILE__ << " " << __LINE__ << " :: "
+            << "target layer and its paired input layer are not consistent regarding regression/classification";
+        throw lbann_exception(err.str());
+      }
       target->set_paired_input_layer(input);
 
     }
@@ -195,7 +200,7 @@ lbann_callback_imcomm::comm_type get_comm_type(const std::string &s, bool master
     if (master) {
       std::stringstream err;
       err << __FILE__ << " " <<__LINE__
-         << " :: unkown comm_type: " << s
+          << " :: unkown comm_type: " << s
           << " should be one of: none, normal, onebit_quantization, thresh_quantization, adaptive_quantization";
       throw lbann_exception(err.str());
     } else {
@@ -366,13 +371,15 @@ void add_layers(
             comm,
             m.num_parallel_readers(),
             data_readers,
-            !ell.data_set_per_model());
+            !ell.data_set_per_model(),
+            ell.for_regression());
         } else {
           d = new input_layer<distributed_io_buffer, data_layout::DATA_PARALLEL>(
             comm,
             m.num_parallel_readers(),
             data_readers,
-            !ell.data_set_per_model());
+            !ell.data_set_per_model(),
+            ell.for_regression());
         }
       }else if(io_buffer == "partitioned") {
         if (layout == data_layout::MODEL_PARALLEL and master) {
@@ -384,7 +391,8 @@ void add_layers(
             comm,
             m.num_parallel_readers(),
             data_readers,
-            !ell.data_set_per_model());
+            !ell.data_set_per_model(),
+            ell.for_regression());
         }
       }
     }
@@ -416,17 +424,6 @@ void add_layers(
           cudnn);
       }
 
-#if 0
-      double l2_regularization_factor = ell.l2_regularization_factor();
-      if(l2_regularization_factor != double(0.0)) {
-        ((learning *) d)->set_l2_regularization_factor(l2_regularization_factor);
-      }
-
-      double group_lasso_regularization_factor = ell.group_lasso_regularization_factor();
-      if (group_lasso_regularization_factor != double(0.0)) {
-        ((learning *) d)->set_group_lasso_regularization_factor(group_lasso_regularization_factor);
-      }
-#endif // 0
     }
 
     //////////////////////////////////////////////////////////////////
@@ -490,15 +487,12 @@ void add_layers(
     // LAYER: sum
     //////////////////////////////////////////////////////////////////
     else if (layer.has_sum()) {
-      d = new sum_layer<>(comm, cudnn);
-    }
-
-    //////////////////////////////////////////////////////////////////
-    // LAYER: noise
-    //////////////////////////////////////////////////////////////////
-    else if (layer.has_noise()) {
-      const lbann_data::Noise& ell = layer.noise();
-      d = new noise_layer<>(comm,ell.noise_factor(), cudnn);
+      std::vector<DataType> scaling_factors;
+      std::stringstream ss(layer.sum().scaling_factors());
+      for (DataType x; ss >> x;) {
+        scaling_factors.push_back(x);
+      }
+      d = new sum_layer<>(comm, scaling_factors, cudnn);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -506,6 +500,44 @@ void add_layers(
     //////////////////////////////////////////////////////////////////
     else if (layer.has_split()) {
       d = new split_layer<>(comm, cudnn);
+    }
+
+    //////////////////////////////////////////////////////////////////
+    // LAYER: noise
+    //////////////////////////////////////////////////////////////////
+    else if (layer.has_noise()) {
+      const lbann_data::Noise& ell = layer.noise();
+      std::vector<int> neuron_dims;
+      std::stringstream ss;
+      int i;
+      ss.str(ell.num_neurons());
+      while (ss >> i) {
+        neuron_dims.push_back(i);
+      }
+      d = new noise_layer<>(comm,neuron_dims,ell.noise_factor(), cudnn);
+    }
+
+    //////////////////////////////////////////////////////////////////
+    // LAYER: Hadamard
+    //////////////////////////////////////////////////////////////////
+    else if (layer.has_hadamard()) {
+      d = new hadamard_layer<>(comm, cudnn);
+    }
+
+    //////////////////////////////////////////////////////////////////
+    // LAYER: constant 
+    //////////////////////////////////////////////////////////////////
+    else if (layer.has_constant()) {
+      const lbann_data::Constant& ell = layer.constant();
+      std::vector<int> neuron_dims;
+      std::stringstream ss;
+      int i;
+      ss.str(ell.num_neurons());
+      while (ss >> i) {
+        neuron_dims.push_back(i);
+      }
+
+      d = new constant_layer<>(comm,ell.value(), neuron_dims, cudnn);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -538,7 +570,7 @@ void add_layers(
           pool_strides.push_back(i);
         }
         if (layout == data_layout::MODEL_PARALLEL and master) {
-          err << __FILE__ << " " << __LINE__ << " :: local_response_normalization "
+          err << __FILE__ << " " << __LINE__ << " :: pooling_layer "
               << "does not support MODEL_PARALLEL layouts";
           throw lbann_exception(err.str());
         } else {
@@ -554,7 +586,7 @@ void add_layers(
         }
       } else {
         if (layout == data_layout::MODEL_PARALLEL and master) {
-          err << __FILE__ << " " << __LINE__ << " :: local_response_normalization "
+          err << __FILE__ << " " << __LINE__ << " :: pooling_layer "
               << "does not support MODEL_PARALLEL layouts";
           throw lbann_exception(err.str());
         } else {
@@ -731,7 +763,6 @@ void add_layers(
         }
       }
     }
-
     //////////////////////////////////////////////////////////////////
     // LAYER: local_response_normalization
     //////////////////////////////////////////////////////////////////
@@ -895,14 +926,13 @@ void add_layers(
     }
 
     //////////////////////////////////////////////////////////////////
-    // LAYER: id
+    // LAYER: identity
     //////////////////////////////////////////////////////////////////
-    else if (layer.has_id()) {
-      //const lbann_data::ID& ell = layer.id();
+    else if (layer.has_identity()) {
       if (layout == data_layout::MODEL_PARALLEL) {
-        d = new id_layer<data_layout::MODEL_PARALLEL>(comm);
+        d = new identity_layer<data_layout::MODEL_PARALLEL>(comm);
       } else {
-        d = new id_layer<data_layout::DATA_PARALLEL>(comm);
+        d = new identity_layer<data_layout::DATA_PARALLEL>(comm);
       }
     }
 
@@ -1147,11 +1177,9 @@ void init_callbacks(
   const lbann_data::Model& m = p.model();
   if (master) std::cerr << std::endl << "starting init_callbacks; size: " << m.callback_size() << std::endl;
 
-
   //the same summarizer is passed to all call backs that take a summarizer;
   //construct_summarizer returns this summarizer, which may be a nullptr
   lbann_summary *summarizer = construct_summarizer(m, comm);
-
 
   //loop over the callbacks
   int size = m.callback_size();
@@ -1228,7 +1256,7 @@ void init_callbacks(
       const lbann_data::CallbackDumpActivations& c = callback.dump_activations();
       if (master) {
         std::cout << "adding dump activations callback with basename: " << c.basename()
-                  << " and interval: " << c.interval() 
+                  << " and interval: " << c.interval()
                   << " and layer names " << c.layer_names() << std::endl;
       }
       std::vector<std::string> layer_names;
@@ -1639,6 +1667,7 @@ void init_callbacks(
       lbann_callback_save_model *model_cb = new lbann_callback_save_model(dir, extension);
       model->add_callback(model_cb);
     }
+
   }
 
 }
@@ -1719,7 +1748,8 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
   if (name == "sequential_model") {
     model = new sequential_model(comm, mini_batch_size, obj_fn, default_optimizer);
     if (master) std::cout << "instantiating sequential_model\n";
-  } else if (name == "directed_acyclic_graph_model") {
+  }
+  else if (name == "directed_acyclic_graph_model") {
     model = new directed_acyclic_graph_model(comm, mini_batch_size, obj_fn, default_optimizer);
     if (master) std::cout << "instantiating directed_acyclic_graph_model\n";
   } else if (name == "recurrent_model") {
@@ -1864,6 +1894,9 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
     } else if (name == "jag") {
       auto* reader_jag = new data_reader_jag(shuffle);
       reader_jag->set_model_mode(static_cast<data_reader_jag::model_mode_t>(readme.modeling_mode()));
+      const lbann_data::ImagePreprocessor& pb_preproc = readme.image_preprocessor();
+      reader_jag->set_image_dims(pb_preproc.raw_width(), pb_preproc.raw_height());
+      reader_jag->set_normalization_mode(pb_preproc.early_normalization());
       reader = reader_jag;
       set_up_generic_preprocessor = false;
     } else if (name == "nci") {
@@ -1889,7 +1922,11 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       reader = reader_pilot2_molecular;
     } else if (name == "merge_samples" || name == "merge_features") {
       //TODO: verify how much of wildcard conflict with label file, label file should be loaded separately
-      auto paths = glob(readme.data_file_pattern());
+      auto filedir = readme.data_filedir();
+      if(!endsWith(filedir, "/")) {
+        filedir = filedir + "/";
+      }
+      auto paths = glob(filedir + readme.data_file_pattern());
       std::vector<generic_data_reader*> npy_readers;
       for (const auto path : paths) {
         if(master) { std::cout << "Loading file: " << path << std::endl; }
@@ -2120,20 +2157,27 @@ void set_data_readers_filenames(std::string which, lbann_data::LbannPB& p)
     if (r->role() == which) {
       std::stringstream s;
       s << "data_filedir_" << which;
-      if (opts->has_string(s.str().c_str())) {
-        r->set_data_filedir(opts->get_string(s.str().c_str()));
+      if (opts->has_string(s.str())) {
+        r->set_data_filedir(opts->get_string(s.str()));
+      }else {
+        s.clear();
+        s.str("");
+        s << "data_filedir";
+        if (opts->has_string(s.str())) {
+          r->set_data_filedir(opts->get_string(s.str()));
+        }
       }
       s.clear();
       s.str("");
       s << "data_filename_" << which;
-      if (opts->has_string(s.str().c_str())) {
-        r->set_data_filename(opts->get_string(s.str().c_str()));
+      if (opts->has_string(s.str())) {
+        r->set_data_filename(opts->get_string(s.str()));
       }
       s.clear();
       s.str("");
       s << "label_filename_" << which;
-      if (opts->has_string(s.str().c_str())) {
-        r->set_label_filename(opts->get_string(s.str().c_str()));
+      if (opts->has_string(s.str())) {
+        r->set_label_filename(opts->get_string(s.str()));
       }
     }
   }
@@ -2190,11 +2234,15 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
     model->set_name("dag_model");
   }
 
-  if (opts->has_string("data_filedir_train") or opts->has_string("data_filename_train")
+  if (opts->has_string("data_filedir")
+      or opts->has_string("data_filedir_train")
+      or opts->has_string("data_filename_train")
       or opts->has_string("label_filename_train")) {
     set_data_readers_filenames("train", p);
   }
-  if (opts->has_string("data_filedir_test") or opts->has_string("data_filename_test")
+  if (opts->has_string("data_filedir")
+      or opts->has_string("data_filedir_test")
+      or opts->has_string("data_filename_test")
       or opts->has_string("label_filename_test")) {
     set_data_readers_filenames("test", p);
   }
@@ -2412,6 +2460,8 @@ void print_help(lbann::lbann_comm *comm)
        "      display information on how OpenMP threads are provisioned\n"
        "\n"
        "DataReaders:\n"
+       "  --data_filedir=<string>\n"
+       "      sets the file directory for train and test data\n"
        "  --data_filedir_train=<string>   --data_filedir_test=<string>\n"
        "  --data_filename_train=<string>  --data_filename_test=<string>\n"
        "  --label_filename_train=<string> --label_filename_test=<string>\n"

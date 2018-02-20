@@ -22,29 +22,22 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// regularizer .hpp - Base class for regularizer layers
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_LAYER_REGULARIZER_HPP_INCLUDED
 #define LBANN_LAYER_REGULARIZER_HPP_INCLUDED
-
 #include "lbann/layers/layer.hpp"
 
 namespace lbann {
 
+/** Abstract base class for regularizer layers.
+ *  Regularizer layers are designed to reduce generalization error.
+ */
 class regularizer_layer : public Layer {
  public:
-  /** Constructor. */
   regularizer_layer(lbann_comm *comm) : Layer(comm) {}
-  /** Copy constructor. */
-  regularizer_layer(const regularizer_layer&) = default;
-  /** Copy assignment operator. */
-  regularizer_layer& operator=(const regularizer_layer&) = default;
-  /** Destructor. */
-  virtual ~regularizer_layer() override = default;
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_LAYER_REGULARIZER_HPP_INCLUDED
+#endif // LBANN_LAYER_REGULARIZER_HPP_INCLUDED

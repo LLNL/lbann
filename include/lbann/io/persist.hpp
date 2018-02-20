@@ -37,6 +37,7 @@ namespace lbann {
 enum class persist_type {
   train, // data should be saved in file with train data
   model, // data should be saved in file with model data
+  validate, 
 };
 
 class persist {
@@ -45,9 +46,10 @@ class persist {
   uint64_t m_bytes;
   int m_model_fd;
   int m_train_fd;
+  int m_validate_fd;
   char m_model_filename[1024];
   char m_train_filename[1024];
-
+  char m_validate_filename[1024];
  public:
   char m_checkpoint_dir[1024];
 
@@ -58,7 +60,7 @@ class persist {
   int get_rank() const {
     return m_rank;
   }
-  void open_checkpoint(const char *dir, bool per_rank);
+  void open_checkpoint(const char *dir, bool per_rank, bool val_end);
   void close_checkpoint();
 
   void open_restart(const char *dir, bool per_rank);
