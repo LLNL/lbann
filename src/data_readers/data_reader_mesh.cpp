@@ -90,7 +90,8 @@ void mesh_reader::load_file(const std::string filename, Mat& mat) {
   if (std::is_same<float, DataType>::value) {
     // Need to transpose from row-major to column-major order.
     Mat tmp_mat(m_data_width, m_data_height, buf, m_data_width);
-    El::Transpose(tmp_mat, mat);
+    Mat mat_reshape(m_data_height, m_data_width, mat.Buffer(), m_data_height);
+    El::Transpose(tmp_mat, mat_reshape);
   } else {
     // Need to transpose and convert from float. Not yet supported.
     throw lbann_exception("mesh_reader: does not support DataType != float");
