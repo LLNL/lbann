@@ -173,8 +173,8 @@ bool metric::save_to_checkpoint_shared(persist& p) {
   // write out fields we need to save for model
   if (p.get_rank() == 0) {
     m_statistics[execution_mode::training].pack_scalars(p);
-    m_statistics[execution_mode::validation].pack_scalars(p);
     m_statistics[execution_mode::testing].pack_scalars(p);
+    m_statistics[execution_mode::validation].pack_scalars(p);
   }
   return true;
 }
@@ -183,8 +183,8 @@ bool metric::load_from_checkpoint_shared(persist& p) {
   struct metric_statistics::packing_header training_header, validation_header, testing_header;
   if (p.get_rank() == 0) {
     m_statistics[execution_mode::training].unpack_scalars(p, &training_header);
-    m_statistics[execution_mode::validation].unpack_scalars(p, &validation_header);
     m_statistics[execution_mode::testing].unpack_scalars(p, &testing_header);
+    m_statistics[execution_mode::validation].unpack_scalars(p, &validation_header);
   }
 
   MPI_Bcast(&training_header, sizeof(training_header), MPI_BYTE, 0, MPI_COMM_WORLD);
@@ -197,5 +197,24 @@ bool metric::load_from_checkpoint_shared(persist& p) {
   return true;
 }
 
+bool metric::save_to_checkpoint_distributed(persist& p) {
+  // write out fields we need to save for model
+  m_statistics[execution_mode::training].pack_scalars(p);
+  m_statistics[execution_mode::testing].pack_scalars(p);
+  m_statistics[execution_mode::validation].pack_scalars(p);
+  return true;
+}
+
+bool metric::load_from_checkpoint_distributed(persist& p) {
+  struct metric_statistics::packing_header training_header, validation_header, testing_header;
+  m_statistics[execution_mode::training].unpack_scalars(p, &training_header);
+  m_statistics[execution_mode::testing].unpack_scalars(p, &testing_header);
+  m_statistics[execution_mode::validation].unpack_scalars(p, &validation_header);
+
+  m_statistics[execution_mode::training].unpack_header(training_header);
+  m_statistics[execution_mode::validation].unpack_header(validation_header);
+  m_statistics[execution_mode::testing].unpack_header(testing_header);
+  return true;
+}
 
 }  // namespace lbann

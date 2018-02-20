@@ -819,35 +819,20 @@ void Layer::deallocate_matrices() {
 
 }
 
-bool Layer::saveToCheckpoint(int fd, const char *filename, size_t *bytes) const {
-  //writeDist(fd, filename, *m_weights, bytes);
-  
-  // Need to catch return value from function
-  // m_optimizer->saveToCheckpoint(fd, filename, bytes);
-  return true;
-}
-
-bool Layer::loadFromCheckpoint(int fd, const char *filename, size_t *bytes) {
-  // TODO: implement reader for other matrix distributions
-  //readDist(fd, filename, (DistMat&) *m_weights, bytes);
-
-  // Need to catch return value from function
-  // m_optimizer->loadFromCheckpoint(fd, filename, bytes);
-  return true;
-}
 
 bool Layer::save_to_checkpoint_shared(persist& p, bool val_end) const {
-  //for (weights *w : m_weights) {
-  //  w->saveToCheckpointShared(p);  
-  //}
   return true;
 }
 
 bool Layer::load_from_checkpoint_shared(persist& p) {
-  //for (weights *w : m_weights) {
-  //  w->loadFromCheckpointShared(p);
-  //}
+  return true;
+}
 
+bool Layer::save_to_checkpoint_distributed(persist& p, bool val_end) const {
+  return true;
+}
+
+bool Layer::load_from_checkpoint_distributed(persist& p) {
   return true;
 }
 

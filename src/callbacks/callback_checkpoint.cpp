@@ -34,14 +34,13 @@ namespace lbann {
 void lbann_callback_checkpoint::setup(model *m) {
   m_epoch_end = false;
   m_val_end = false;
-  restartShared(m);
+  restart(m);
 }
 
 void lbann_callback_checkpoint::on_epoch_end(model *m) {
   m_epoch_end = true;
-  m_val_end = false; 
   if(need_checkpoint(m)){
-    checkpointShared(m);
+    checkpoint(m);
   }
   m_epoch_end = false;
   
@@ -50,15 +49,14 @@ void lbann_callback_checkpoint::on_epoch_end(model *m) {
 void lbann_callback_checkpoint::on_validation_end(model *m) {
   m_val_end = true;
   if(need_checkpoint(m)){
-    checkpointShared(m);
+    checkpoint(m);
   }
-  //m_epoch_end = false;
   m_val_end = false;
 }
 
 void lbann_callback_checkpoint::on_batch_end(model *m) {
   if(need_checkpoint(m)){
-    checkpointShared(m);
+    checkpoint(m);
   }
 }
 bool lbann_callback_checkpoint::need_checkpoint(model *m) {
@@ -67,22 +65,37 @@ bool lbann_callback_checkpoint::need_checkpoint(model *m) {
   // if none of our checkpoint conditions are set, assume we're not checkpointing
   if (m_checkpoint_epochs == 0 &&
       m_checkpoint_steps  == 0 &&
-      m_checkpoint_secs   == 0.0) {
+      m_checkpoint_secs   == 0.0 &&
+      m_ckpt_dist_epochs == 0) {
     return false;
   }
   // assume that we won't checkpoint
   bool checkpoint_now = false;
+  m_checkpoint_shared = false;
+  m_checkpoint_dist = false;
   lbann_comm *comm = m->get_comm();
+  int cur_epoch = m->get_cur_epoch();
   // if at start of epoch and evenly divide
-  if (!checkpoint_now && m_checkpoint_epochs > 0) {
+  if (!checkpoint_now && m_checkpoint_epochs > 0 ) {
     if (m_epoch_end || m_val_end) {
-      checkpoint_now = (m->get_cur_epoch() > 0) && (m->get_cur_epoch() % m_checkpoint_epochs == 0);
+      checkpoint_now = (cur_epoch > 0) && (cur_epoch % m_checkpoint_epochs == 0);
+      m_checkpoint_shared = checkpoint_now;  
     }
+  }
+    
+  if(m_ckpt_dist_epochs > 0 && (m_epoch_end || m_val_end)){
+      if(cur_epoch % m_ckpt_dist_epochs == 0 && m_checkpoint_shared){
+        m_checkpoint_dist = true;
+      } else if (cur_epoch % m_ckpt_dist_epochs == 0){
+        checkpoint_now = true; 
+        m_checkpoint_dist = true; 
+      }
   }
   // if our current step is evenly divisable by checkpoint steps,
   // take a checkpoint
   if (!checkpoint_now && m_checkpoint_steps > 0) {
     checkpoint_now = (m->get_cur_step() > 0) && (m->get_cur_step() % m_checkpoint_steps == 0);
+    m_checkpoint_shared = checkpoint_now;
   }
   // check the clock if time-based checkpoint is enabled
   if (!checkpoint_now && m_checkpoint_secs != 0.0) {
@@ -95,13 +108,13 @@ bool lbann_callback_checkpoint::need_checkpoint(model *m) {
       EvalType next = m_checkpoint_last + m_checkpoint_secs;
       // determine whether it's time for a checkpoint
       checkpoint_now = (current >= next);
+      m_checkpoint_shared = checkpoint_now;
     }
     // get checkpoint_now from rank 0
     int flag = checkpoint_now ? 1 : 0;
     MPI_Bcast(&flag, 1, MPI_INT, 0, MPI_COMM_WORLD);
     checkpoint_now = (bool) flag;
   }
-  //m_epoch_end = false;
   return checkpoint_now;
 }
 
@@ -142,79 +155,103 @@ static bool read_latest(const char *dir, const char *name, int *epochLast, int *
   return true;
 }
 
-bool lbann_callback_checkpoint::checkpointShared(model *m) {
+bool lbann_callback_checkpoint::checkpoint(model *m) {
   // if the checkpoint directory is not defined, bail
-  if (m_checkpoint_dir.length() == 0) {
+  if (m_checkpoint_dir.length() == 0 && m_per_rank_dir.length() == 0) {
     return false;
   }
   // time how long this takes
-  El::Timer timer;
-  lbann_comm *comm = m->get_comm();
-  // get checkpoint directory
-  const char *dir = m_checkpoint_dir.c_str();
   // read current epoch and step counters from model
-  int epoch = m->get_cur_epoch();
-  int step  = m->get_cur_step();
+  El::Timer timer;
+  char epochdir[1024];
+  persist p;
+  char dir[1024];
+  int epoch;
+  int step;
   // let user know we're saving a checkpoint
   MPI_Barrier(MPI_COMM_WORLD);
-  if (comm->am_world_master()) {
+  if (p.get_rank() == 0) {
+    epoch = m->get_cur_epoch();
+    step  = m->get_cur_step();
     timer.Start();
     printf("Checkpoint: epoch %d step %d ...\n", epoch, step);
     fflush(stdout);
   }
-  // create top level directory
-  //const char* dir = trainParams.ParameterDir.c_str();
-  makedir(dir);
-  // create subdirectory for this epoch
-  char epochdir[1024];
-  snprintf(epochdir, sizeof(epochdir), "%s/shared.epoch.%d.step.%d", dir, epoch, step);
-  // start our checkpoint
-  persist p;
-  p.open_checkpoint(epochdir,m_checkpoint_per_rank, m_val_end);
-  // call virtual function to checkpoint model state
-  //if(m_epoch_end){
-
-  m->save_to_checkpoint_shared(p,m_val_end);
-  // close our checkpoint
-  p.close_checkpoint();
-  uint64_t bytes_count = p.get_bytes();
-  // write epoch number to current file, we do this at the end so as to only update
-  // this file when we know we have a new valid checkpoint
-  if (comm->am_world_master()) {
-    write_latest(dir, "last.shared.checkpoint", epoch, step);
-  }
-  // stop timer and report cost
-  MPI_Barrier(MPI_COMM_WORLD);
-  if (comm->am_world_master()) {
-    EvalType secs = timer.Stop();
-    EvalType bw = 0;
-    if (secs > 0.0) {
-      bw = EvalType(bytes_count) / (secs * 1024.0 * 1024.0);
+  MPI_Bcast(&epoch, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&step,  1, MPI_INT, 0, MPI_COMM_WORLD);
+  // if this is a distributed ckpt
+  if(m_checkpoint_dist){
+    //prepend per rank directory with shared checkpoint dir name
+    if(m_per_rank_dir.length() != 0){
+      snprintf(dir, sizeof(dir), "%s/%s", m_per_rank_dir.c_str(), m_checkpoint_dir.c_str());
+    } else {
+      strcpy(dir, m_checkpoint_dir.c_str());
     }
-    printf("Checkpoint complete: Epoch=%d Step=%d (%f secs, %llu bytes, %f MB/sec)\n",
-           epoch, step, secs, (unsigned long long) bytes_count, bw
-          );
+    makedir(dir);
+    // create directories per ranks
+    snprintf(epochdir, sizeof(epochdir), "%s/rank.%d.epoch.%d.step.%d", dir, p.get_rank(), epoch, step);
+    p.open_checkpoint(epochdir,1,m_val_end);
+    m->save_to_checkpoint_distributed(p, m_val_end);
+    m_checkpoint_dist = false;
+    p.close_checkpoint();
+    if (p.get_rank() == 0) {
+      write_latest(dir, "last.distributed.checkpoint", epoch, step);
+    } 
+    m_checkpoint_dist = false;  
+  }
+  // shared checkpoint by default
+  if(m_checkpoint_shared){
+    strcpy(dir, m_checkpoint_dir.c_str());
+     makedir(dir);
+     snprintf(epochdir, sizeof(epochdir), "%s/shared.epoch.%d.step.%d", dir, epoch, step);
+     p.open_checkpoint(epochdir,0, m_val_end);
+     m->save_to_checkpoint_shared(p,m_val_end);
+     // close our checkpoint
+     p.close_checkpoint();
+     if (p.get_rank() == 0) {
+       write_latest(dir, "last.shared.checkpoint", epoch, step);
+     }
+     m_checkpoint_shared = false;
+   }
+   uint64_t bytes_count = p.get_bytes();
+    
+   if(p.get_rank() == 0) {
+     EvalType secs = timer.Stop();
+     EvalType bw = 0;
+     if (secs > 0.0) {
+       bw = EvalType(bytes_count) / (secs * 1024.0 * 1024.0);
+     }
+     printf("Checkpoint complete: Epoch=%d Step=%d (%f secs, %llu bytes, %f MB/sec)\n",
+            epoch, step, secs, (unsigned long long) bytes_count, bw);
     fflush(stdout);
   }
-  // saved a checkpoint, update our last checkpoint time
   m_checkpoint_last = MPI_Wtime();
   return true;
 }
-bool lbann_callback_checkpoint::restartShared(model *m) {
+bool lbann_callback_checkpoint::restart(model *m) {
   // if the checkpoint directory is not defined, bail
-  if (m_checkpoint_dir.length() == 0) {
+  if (m_checkpoint_dir.length() == 0 &&  m_per_rank_dir.length() == 0) {
     return false;
   }
   // get top level directory
-  const char *dir = m_checkpoint_dir.c_str();
+  //const char *dir = m_checkpoint_dir.c_str();
   // read epoch number from current file
+  char dir[1024];
   int epoch, step;
   lbann_comm *comm = m->get_comm();
-  if (comm->am_world_master()) {
+
+  if(m_per_rank_dir.length() && comm->am_world_master()){
+    snprintf(dir, sizeof(dir), "%s/%s", m_per_rank_dir.c_str(), m_checkpoint_dir.c_str());
+   read_latest(dir, "last.distributed.checkpoint", &epoch, &step);
+  } 
+  else if(!m_per_rank_dir.length() && comm->am_world_master()){
+    strcpy(dir, m_checkpoint_dir.c_str());
     read_latest(dir, "last.shared.checkpoint", &epoch, &step);
   }
+
   MPI_Bcast(&epoch, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&step,  1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&dir,  sizeof(dir), MPI_CHAR, 0, MPI_COMM_WORLD);
   // if we couldn't find the latest epoch, just return
   if (epoch < 0) {
     return false;
@@ -228,14 +265,21 @@ bool lbann_callback_checkpoint::restartShared(model *m) {
     printf("Restart: epoch %d ...\n", epoch);
     fflush(stdout);
   }
-  // get subdirectory for this epoch
+  
   char epochdir[1024];
-  sprintf(epochdir, "%s/shared.epoch.%d.step.%d", dir, epoch, step);
-  // open our checkpoint
   persist p;
-  p.open_restart(epochdir,m_checkpoint_per_rank);
-  // call virtual function to restore model from checkpoint
-  m->load_from_checkpoint_shared(p);
+  
+  if(m_per_rank_dir.length() != 0){
+    snprintf(epochdir, sizeof(epochdir), "%s/rank.%d.epoch.%d.step.%d", dir, p.get_rank(), epoch, step);
+    p.open_restart(epochdir,1);
+    m->load_from_checkpoint_distributed(p);
+  }
+  else{
+    sprintf(epochdir, "%s/shared.epoch.%d.step.%d", dir, epoch, step);
+    p.open_restart(epochdir,0);
+    m->load_from_checkpoint_shared(p);
+  }
+  
   // close our checkpoint
   p.close_restart();
   uint64_t bytes_count = p.get_bytes();
@@ -254,5 +298,6 @@ bool lbann_callback_checkpoint::restartShared(model *m) {
   }
   return true;
 }
+
 
 }

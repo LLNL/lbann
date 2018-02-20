@@ -56,7 +56,7 @@ model {
   callback {
     dump_weights {
       basename: "lbann2_ckpt/"  
-  }
+    }
   }
 
   ###################################################

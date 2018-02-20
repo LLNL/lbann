@@ -236,4 +236,28 @@ void sgd::set_states_on_device() {
     return true;
   }
 
+  bool sgd::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
+    optimizer::save_to_checkpoint_distributed(p, name_prefix);
+
+    pack_scalars(p);
+
+    char l_name[512];
+    sprintf(l_name, "%s_optimizer_velocity_%lldx%lld", name_prefix.c_str(), m_velocity->LocalHeight(), m_velocity->LocalWidth());
+    p.write_rank_distmat(persist_type::train, l_name, *m_velocity);
+
+    return true;
+  }
+
+  bool sgd::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
+    optimizer::load_from_checkpoint_distributed(p, name_prefix);
+    struct packing_header header;
+    unpack_scalars(p, &header);
+
+    char l_name[512];
+    sprintf(l_name, "%s_optimizer_velocity_%lldx%lld", name_prefix.c_str(), m_velocity->LocalHeight(), m_velocity->LocalWidth());
+    p.read_rank_distmat(persist_type::train, l_name, (DistMat&)*m_velocity);
+
+    return true;
+  }
+
 }  // namespace lbann

@@ -63,8 +63,19 @@ struct layer_header {
 
 /** \brief Given an open file descriptor, file name, and a matrix, write the matrix
  *         to the file descriptor, return the number of bytes written */
-bool lbann::writeDist(int fd, const char *filename, const DistMat& M, uint64_t *bytes) {
+
+bool lbann::persist::write_rank_distmat(persist_type type, const char *name, const DistMat& M) {
   // TODO: store in network order
+  std::string filename = m_checkpoint_dir;
+  if (type == persist_type::train) {
+    filename += std::string("/train_") + name;
+  } else if (type == persist_type::model) {
+    filename += std::string("/model_") + name;
+  } else {
+    throw lbann_exception("persist: invalid persist_type");
+  }
+  // open the file for writing
+  int fd = openwrite(filename.c_str());
 
   // build our header
   struct layer_header header;
@@ -80,7 +91,7 @@ bool lbann::writeDist(int fd, const char *filename, const DistMat& M, uint64_t *
   if (write_rc != sizeof(header)) {
     // error!
   }
-  *bytes += write_rc;
+  m_bytes += write_rc;
 
   // now write the data for our part of the distributed matrix
   const El::Int localHeight = M.LocalHeight();
@@ -95,7 +106,7 @@ bool lbann::writeDist(int fd, const char *filename, const DistMat& M, uint64_t *
     if (write_rc != bufsize) {
       // error!
     }
-    *bytes += write_rc;
+    m_bytes += write_rc;
   } else {
     // TODO: if this padding is small, may not be a big deal to write it out anyway
     // we've got some padding along the first dimension
@@ -107,77 +118,86 @@ bool lbann::writeDist(int fd, const char *filename, const DistMat& M, uint64_t *
       if (write_rc != bufsize) {
         // error!
       }
-      *bytes += write_rc;
+      m_bytes += write_rc;
     }
   }
-
   return true;
 }
 
 /** \brief Given an open file descriptor, file name, and a matrix, read the matrix
  *         from the file descriptor, return the number of bytes read */
-bool lbann::readDist(int fd, const char *filename, DistMat& M, uint64_t *bytes) {
+bool lbann::persist::read_rank_distmat(persist_type type, const char *name, DistMat& M) {
   // read in the header
+  std::string filename = m_checkpoint_dir;
+  if (type == persist_type::train) {
+    filename += std::string("/train_") + name;
+  } else if (type == persist_type::model) {
+    filename += std::string("/model_") + name;
+  } else {
+    throw lbann_exception("persist: invalid persist_type");
+  }
+  int fd = openread(filename.c_str());
   struct layer_header header;
   ssize_t read_rc = read(fd, &header, sizeof(header));
   if (read_rc != sizeof(header)) {
     // error!
     throw lbann_exception("Failed to read layer header");
   }
-  *bytes += read_rc;
+  m_bytes += read_rc;
 
   // resize our global matrix
   El::Int height = header.height;
   El::Int width  = header.width;
-  M.Resize(height, width);
-
+  El::Int ldim = header.ldim;
+  if(m_rank == 0){
+    M.Resize(height, width, ldim);
+  }
   // TODO: check that header values match up
-
+  const El::Int localheight = header.localheight;
+  const El::Int localwidth = header.localwidth;
   if(M.ColStride() == 1 && M.RowStride() == 1) {
     if(M.Height() == M.LDim()) {
       auto *buf = (void *) M.Buffer();
-      El::Int bufsize = height * width * sizeof(DataType);
+      El::Int bufsize = localheight * localwidth * sizeof(DataType);
       read_rc = read(fd, buf, bufsize);
       if (read_rc != bufsize) {
         // error!
         throw lbann_exception("Failed to read layer data");
       }
-      *bytes += read_rc;
+      m_bytes += read_rc;
     } else {
-      for(El::Int j = 0; j < width; ++j) {
+      for(El::Int j = 0; j < (int) localwidth; ++j) {
         auto *buf = (void *) M.Buffer(0, j);
-        El::Int bufsize = height * sizeof(DataType);
+        El::Int bufsize = localheight * sizeof(DataType);
         read_rc = read(fd, buf, bufsize);
         if (read_rc != bufsize) {
           // error!
           throw lbann_exception("Failed to read layer data");
         }
-        *bytes += read_rc;
+        m_bytes += read_rc;
       }
     }
   } else {
-    const El::Int localHeight = M.LocalHeight();
-    const El::Int localWidth = M.LocalWidth();
     const El::Int lDim = M.LDim();
-    if(localHeight == lDim) {
+    if(localheight == lDim) {
       auto *buf = (void *) M.Buffer();
-      El::Int bufsize = localHeight * localWidth * sizeof(DataType);
+      El::Int bufsize = localheight * localwidth * sizeof(DataType);
       read_rc = read(fd, buf, bufsize);
       if (read_rc != bufsize) {
         // error!
         throw lbann_exception("Failed to read layer data");
       }
-      *bytes += read_rc;
+      m_bytes += read_rc;
     } else {
-      for(El::Int jLoc = 0; jLoc < localWidth; ++jLoc) {
+      for(El::Int jLoc = 0; jLoc < localwidth; ++jLoc) {
         auto *buf = (void *) M.Buffer(0, jLoc);
-        El::Int bufsize = localHeight * sizeof(DataType);
+        El::Int bufsize = localheight * sizeof(DataType);
         read_rc = read(fd, buf, bufsize);
         if (read_rc != bufsize) {
           // error!
           throw lbann_exception("Failed to read layer data");
         }
-        *bytes += read_rc;
+        m_bytes += read_rc;
       }
     }
   }
@@ -210,31 +230,41 @@ void lbann::persist::open_checkpoint(const char *dir, bool per_rank, bool val_en
 
   // define filename for model state
   if(per_rank){
-    sprintf(m_model_filename, "%s/model_%d", dir, m_rank);
-
-    // define filename for train state
-    sprintf(m_train_filename, "%s/train_%d", dir, m_rank);
-    m_model_fd = lbann::openwrite(m_model_filename);
     int all_success;
-    MPI_Allreduce(&m_model_fd, &all_success, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
-    if (!all_success) {
-        // failed to open checkpoint file
-      }
-      
-      m_train_fd = lbann::openwrite(m_train_filename);
-      MPI_Allreduce(&m_train_fd, &all_success, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
+    if(!val_end){
+      sprintf(m_model_filename, "%s/model_%d", dir, m_rank);
+
+      sprintf(m_train_filename, "%s/train_%d", dir, m_rank);
+    
+      m_model_fd = lbann::openwrite(m_model_filename);
+      MPI_Allreduce(&m_model_fd, &all_success, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
       if (!all_success) {
-        // failed to open checkpoint file
+          // failed to open checkpoint file
+       }
+      
+        m_train_fd = lbann::openwrite(m_train_filename);
+        MPI_Allreduce(&m_train_fd, &all_success, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
+        if (!all_success) {
+          // failed to open checkpoint file
+        }
+    }
+   
+    else if(val_end){
+      sprintf(m_validate_filename, "%s/validate_%d", dir, m_rank);
+      m_validate_fd = lbann::openwrite(m_validate_filename);
+      MPI_Allreduce(&m_validate_fd, &all_success, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
+      if (!all_success) {
+          // failed to open checkpoint file
       }
+    }
   }
-  
   // open the file for writing
-  if (!per_rank && m_rank == 0) {
+  else if(!per_rank && m_rank == 0) {
      sprintf(m_model_filename, "%s/model", dir);
 
     // define filename for train state
     sprintf(m_train_filename, "%s/train", dir);
-    sprintf(m_validate_filename, "%s/validate", dir);
+    
     if(!val_end){
       m_model_fd = lbann::openwrite(m_model_filename);
       if (m_model_fd < 0) {
@@ -245,7 +275,9 @@ void lbann::persist::open_checkpoint(const char *dir, bool per_rank, bool val_en
       if (m_train_fd < 0) {
         // failed to open checkpoint file
       }
-    } else if (val_end){
+    } 
+    else if (val_end){
+      sprintf(m_validate_filename, "%s/validate", dir);
       m_validate_fd = lbann::openwrite(m_validate_filename);
       if (m_validate_fd < 0) {
         // failed to open checkpoint file    
@@ -282,21 +314,31 @@ void lbann::persist::open_restart(const char *dir, bool per_rank) {
     // define filename for train state
     sprintf(m_train_filename, "%s/train_%d", dir, m_rank);
 
+    sprintf(m_validate_filename, "%s/validate_%d", dir, m_rank);
+    
     m_model_fd = lbann::openread(m_model_filename);
     int all_success;
     MPI_Allreduce(&m_model_fd, &all_success, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
  
     if (!all_success) {
         // restart failed, throw exception
-        throw lbann_exception(std::string("Failed to read file: ") + m_model_filename);
-      }
+      throw lbann_exception(std::string("Failed to read file: ") + m_model_filename);
+    }
       
-      m_train_fd = lbann::openread(m_train_filename);
-      MPI_Allreduce(&m_train_fd, &all_success, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
-      if (!all_success) {
+    m_train_fd = lbann::openread(m_train_filename);
+    MPI_Allreduce(&m_train_fd, &all_success, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
+    if (!all_success) {
       // restart failed, throw exception
       throw lbann_exception(std::string("Failed to read file: ") + m_train_filename);
     }
+
+    m_validate_fd = lbann::openread(m_validate_filename);
+    MPI_Allreduce(&m_validate_fd, &all_success, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
+    if (!all_success) {
+      // restart failed, throw exception
+      throw lbann_exception(std::string("Failed to read file: ") + m_validate_filename);
+    }
+
   }
   
   // open the file for writing
@@ -337,6 +379,12 @@ void lbann::persist::close_restart() {
     lbann::closeread(m_train_fd, m_train_filename);
     m_train_fd = -1;
   }
+
+  if (m_validate_fd >= 0) {
+    lbann::closeread(m_validate_fd, m_validate_filename);
+    m_validate_fd = -1;
+  }
+
 }
 
 bool lbann::persist::write_distmat(persist_type type, const char *name, DistMat *M) {

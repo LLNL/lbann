@@ -113,6 +113,9 @@ class sgd : public optimizer {
   bool save_to_checkpoint_shared(persist& p, std::string m_name) override;
   bool load_from_checkpoint_shared(persist& p, std::string m_name) override;
 
+  bool save_to_checkpoint_distributed(persist& p, std::string m_name) override;
+  bool load_from_checkpoint_distributed(persist& p, std::string m_name) override;
+
 #ifdef LBANN_HAS_CUDNN
   /** GPU memory for velocity. */
   std::vector<DataType*> m_velocity_d;

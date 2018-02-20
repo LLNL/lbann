@@ -5,7 +5,6 @@ import pytest
 import os, sys
 
 def test_unit_lbann2_reload(cluster, exe, dirname):
-    os.system('mkdir lbann2_ckpt')
     lbann2  = exe + '2'
     model_path = '{../../model_zoo/models/lenet_mnist/model_lenet_mnist.prototext,../../model_zoo/tests/model_lenet_mnist_lbann2ckpt.prototext}'
     command = tools.get_command(
@@ -33,7 +32,7 @@ def test_unit_lbann2_reload(cluster, exe, dirname):
     if return_code_ckpt_1 != 0:
         sys.stderr.write('LeNet (checkpoint) execution failed, exiting with error')
         sys.exit(1)
-    os.system('mkdir lbann2_ckpt')
+    
     command = tools.get_command(
         cluster=cluster, executable=lbann2, num_nodes=1, num_processes=1,
         dir_name=dirname,

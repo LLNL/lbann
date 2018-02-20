@@ -200,6 +200,9 @@ class weights {
   bool save_to_checkpoint_shared(persist& p);
   bool load_from_checkpoint_shared(persist& p);
   bool load_from_save(std::string ckpt_dir, std::vector<std::string> weight_list);
+  bool save_to_checkpoint_distributed(persist& p);
+  bool load_from_checkpoint_distributed(persist& p);
+  
   /** Write weights to proto file */
   virtual void write_proto(lbann_data::WeightsData* proto) const;
  private:

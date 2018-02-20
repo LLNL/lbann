@@ -70,6 +70,9 @@ class persist {
     return m_bytes;
   }
 
+  bool write_rank_distmat(persist_type type, const char *name, const DistMat& M);
+  bool read_rank_distmat(persist_type type, const char *name, DistMat& M);
+
   bool write_distmat(persist_type type, const char *name, DistMat *M);
   bool read_distmat (persist_type type, const char *name, DistMat *M);
 
@@ -100,9 +103,6 @@ class persist {
  private:
   int get_fd(persist_type type) const;
 };
-
-bool writeDist(int fd, const char *filename, const DistMat& M, uint64_t *bytes);
-bool readDist(int fd, const char *filename, DistMat& M, uint64_t *bytes);
 
 bool write_distmat(int fd, const char *name, DistMat *M, uint64_t *bytes);
 bool read_distmat (int fd, const char *name, DistMat *M, uint64_t *bytes);

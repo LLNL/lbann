@@ -318,27 +318,12 @@ class generic_target_layer : public io_layer {
     io_layer::set_layer_pointers(layers);
   }
 
-  //************************************************************************
-  //
-  //************************************************************************
-
-  bool saveToCheckpoint(int fd, const char *filename, size_t *bytes) const override {
-    /// @todo should probably save m_shared_data_reader
-    return Layer::saveToCheckpoint(fd, filename, bytes);
-  }
-
-  bool loadFromCheckpoint(int fd, const char *filename, size_t *bytes) override {
-    /// @todo should probably save m_shared_data_reader
-    return Layer::loadFromCheckpoint(fd, filename, bytes);
-  }
-
   bool save_to_checkpoint_shared(persist& p, bool val_end) const override {
     // rank 0 writes softmax cost to file
     //if (p.get_rank() == 0) {
       // p.write_double(persist_type::train, "aggregate cost", (double) aggregate_cost);
       // p.write_uint64(persist_type::train, "num backprop steps", (uint64_t) num_backprop_steps);
     //}
-
     return Layer::save_to_checkpoint_shared(p,val_end);
   }
 

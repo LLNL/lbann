@@ -53,7 +53,7 @@ int lbann::makedir(const char *dir) {
 
   // have rank 0 create directory
   int mkdir_rc;
-  if (rank == 0) {
+  //if (rank == 0) {
     mkdir_rc = mkdir(dir, mode_dir);
     if (mkdir_rc != 0) {
       if (errno == EEXIST) {
@@ -66,10 +66,10 @@ int lbann::makedir(const char *dir) {
         fflush(stderr);
       }
     }
-  }
+  //}
 
   // bcast whether directory was created or not
-  MPI_Bcast(&mkdir_rc, 1, MPI_INT, 0, comm);
+  //MPI_Bcast(&mkdir_rc, 1, MPI_INT, 0, comm);
 
   // return 1 if dir was created successfully
   int ret = (mkdir_rc == 0);

@@ -408,6 +408,21 @@ bool lbann::generic_data_reader::load_from_checkpoint_shared(persist& p, const c
   return true;
 }
 
+bool generic_data_reader::save_to_checkpoint_distributed(persist& p, const char *name) {
+  // rank 0 writes the training state file
+  pack_scalars(p,name);
+  return true;
+}
+
+/** \brief Given directory to store checkpoint files, read state from file and add to number of bytes read */
+bool lbann::generic_data_reader::load_from_checkpoint_distributed(persist& p, const char *name) {
+  // rank 0 reads the training state file
+  struct packing_header header;
+  unpack_scalars(p,&header,name);
+  //unpack_header(header);
+  return true;
+}
+
 void generic_data_reader::set_file_dir(std::string s) {
   if(endsWith(s, "/")) {
     m_file_dir = s;

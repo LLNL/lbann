@@ -506,6 +506,11 @@ class generic_data_reader : public lbann_image_preprocessor {
   /** \brief Given directory to store checkpoint files, read state from file and add to number of bytes read */
   bool load_from_checkpoint_shared(persist& p, const char *name);
 
+  bool save_to_checkpoint_distributed(persist& p, const char *name);
+
+  /** \brief Given directory to store checkpoint files, read state from file and add to number of bytes read */
+  bool load_from_checkpoint_distributed(persist& p, const char *name);
+
   struct packing_header {
     uint64_t mini_batch_size;
     uint64_t current_pos;
