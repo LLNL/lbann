@@ -66,7 +66,7 @@ class generic_data_store {
     return m_reader;
   }
 
-  virtual void setup();
+  virtual void setup(bool test_dynamic_cast = true, bool run_tests = true);
 
   virtual void exchange_data() {}
 
@@ -80,7 +80,12 @@ class generic_data_store {
   }
 
   /// image data readers call this method
+  /// @todo: do we need tid?
   virtual void get_data_buf(int data_id, std::vector<unsigned char> *&buf, int tid, int multi_idx = 0) {}
+
+  /// multi_images data readers call this method; @todo: make more memory efficient
+  /// @todo: do we need tid?
+  virtual void get_data_buf(int data_id, std::vector<unsigned char> &buf, int tid, int multi_idx) {}
 
  protected :
 
@@ -102,11 +107,11 @@ class generic_data_store {
   /// range [0..m_num_global_indices]
   std::vector<size_t> m_my_datastore_indices;
 
-  ///m_my_shuffled_indices[i] = m_shuffled_indices[ m_my_datastore_indices[i]]
-  /// wrt the initial shuffled index vector
-  std::vector<size_t> m_my_shuffled_indices;
+  ///m_my_global_indices[i] = m_shuffled_indices[ m_my_datastore_indices[i]];
+  /// this is wrt the initial shuffled index vector
+  std::vector<size_t> m_my_global_indices;
 
-  /// fills in m_my_datastore_indices and m_my_shuffled_indices
+  /// fills in m_my_datastore_indices and m_my_global_indices
   virtual void get_my_datastore_indices() = 0;
 
   size_t m_num_readers;
@@ -123,16 +128,14 @@ class generic_data_store {
 
   const std::vector<int> *m_shuffled_indices;
 
-  std::vector<std::vector<unsigned char> > m_buffers;
+  //std::vector<std::vector<unsigned char> > m_buffers;
 
   /// maps global indices (wrt shuffled_indices) to owning processor
   std::unordered_map<size_t, size_t> m_owner_mapping;
 
-  virtual void compute_owner_mapping() = 0;
-
   model *m_model;
 
-  /// base directory for data; default is "."
+  /// base directory for data
   std::string m_dir;
 };
 

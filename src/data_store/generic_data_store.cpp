@@ -42,7 +42,7 @@ generic_data_store::generic_data_store(lbann_comm *comm, generic_data_reader *re
     m_in_memory(true),
     m_comm(comm), m_master(comm->am_world_master()), m_reader(reader),
     m_model(m),
-    m_dir(".")
+    m_dir(m_reader->get_file_dir())
   {
   /*
     if (options::get()->has_bool("ds_in_memory")) {
@@ -51,7 +51,7 @@ generic_data_store::generic_data_store(lbann_comm *comm, generic_data_reader *re
     */
   }
 
-void generic_data_store::setup() {
+void generic_data_store::setup(bool test_dynamic_cast, bool run_tests) {
   set_shuffled_indices( &(m_reader->get_shuffled_indices()) );
   set_num_global_indices(); //virtual override in child classes
   m_num_readers = m_reader->get_num_parallel_readers();
@@ -85,7 +85,12 @@ void generic_data_store::setup() {
 
 
 size_t generic_data_store::get_file_size(std::string dir, std::string fn) {
-  std::string imagepath = dir + fn;
+  std::string imagepath;
+  if (m_dir == "") {
+    imagepath = fn;
+  } else {
+    imagepath = dir + fn;
+  }
   struct stat st;
   if (stat(imagepath.c_str(), &st) != 0) {
     std::stringstream err;

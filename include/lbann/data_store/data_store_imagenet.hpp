@@ -49,21 +49,19 @@ class data_store_imagenet : public data_store_image {
   //! operator=
   data_store_imagenet& operator=(const data_store_imagenet&) = default;
 
-  generic_data_store * copy() const override { return new data_store_imagenet(*this); }
+  data_store_imagenet * copy() const override { return new data_store_imagenet(*this); }
 
   //! dtor
   ~data_store_imagenet() override {};
 
-  void setup() override;
+  void setup(bool test_dynamic_cast = true, bool run_tests = true) override;
 
   /// only used during development and testing
-  void get_data_buf(std::string dir, std::string filename, std::vector<unsigned char> *&buf, int tid);
+  //void get_data_buf(std::string dir, std::string filename, std::vector<unsigned char> *&buf, int tid);
 
  protected :
 
   void get_my_datastore_indices() override;
-
-  void compute_owner_mapping() override;
 
   void compute_num_images() override; 
 
@@ -71,15 +69,15 @@ class data_store_imagenet : public data_store_image {
     m_num_global_indices = m_shuffled_indices->size();
   }
 
-  void compute_my_filenames() override;
-
   void get_file_sizes() override;
 
   /// for use during development and testing
-  void test_data();
+  virtual void test_data();
 
   /// for use during development and testing
   void test_file_sizes();
+
+  void read_files() override;
 };
 
 }  // namespace lbann

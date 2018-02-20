@@ -42,7 +42,7 @@ class data_store_image : public generic_data_store {
   //! ctor
   data_store_image(lbann_comm *comm, generic_data_reader *reader, model *m) :
     generic_data_store(comm, reader, m),
-    m_num_multi(1) {}
+    m_num_img_srcs(1) {}
 
   //! copy ctor
   data_store_image(const data_store_image&) = default;
@@ -51,12 +51,11 @@ class data_store_image : public generic_data_store {
   data_store_image& operator=(const data_store_image&) = default;
 
   generic_data_store * copy() const override = 0;
-  //generic_data_store * copy() const override { return new data_store_image(*this); }
 
   //! dtor
   ~data_store_image() override;
 
-  void setup() override;
+  void setup(bool test_dynamic_cast = true, bool run_tests = true) override;
 
   void exchange_data() override;
 
@@ -69,6 +68,7 @@ class data_store_image : public generic_data_store {
     int global_index;
     int num_bytes;
     size_t offset;
+    int rank;
   };
 
   /// maps a global index (wrt image_list) to number of bytes in the file
@@ -81,6 +81,9 @@ class data_store_image : public generic_data_store {
   /// fills in m_file_sizes
   virtual void get_file_sizes() = 0;
 
+  /// called by get_file_sizes
+  virtual void exchange_file_sizes(std::vector<Triple> &my_file_sizes, int num_global_indices);
+
   /// when running in in-memory mode, this buffer will contain
   /// the concatenated data
   std::vector<unsigned char> m_data;
@@ -90,7 +93,7 @@ class data_store_image : public generic_data_store {
 
   void load_file(const std::string &dir, const std::string &fn, unsigned char *p, size_t sz); 
 
-  void read_files(); 
+  virtual void read_files() = 0; 
 
   /// will contain data to be passed to the data_reader
   std::vector<std::vector<unsigned char> > m_my_minibatch_data;
@@ -106,19 +109,13 @@ class data_store_image : public generic_data_store {
   std::vector<int> m_num_images;
 
   /// fills in m_num_images
-  virtual void compute_num_images() {}
-  //virtual void compute_num_images() = 0;
-
-  /// short filenames for images "owned" by this processor
-  std::vector<std::string> m_my_files;
-
-  /// fills in m_my_files
-  virtual void compute_my_filenames() = 0;
-
-  bool m_run_tests;
+  //virtual void compute_num_images() {}
+  virtual void compute_num_images() = 0;
 
   /// in multi-image scenarios, the number of images in each sample
-  int m_num_multi;
+  unsigned int m_num_img_srcs;
+
+  //std::unordered_map<size_t, std::string> m_filenames;
 
   MPI_Win m_win;
 };

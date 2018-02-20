@@ -61,11 +61,9 @@ class data_store_merge_samples : public generic_data_store {
 
   void get_my_datastore_indices() override {}
 
-  void compute_owner_mapping() {}
+  void setup(bool test_dynamic_cast = true, bool run_tests = true) override;
 
-  void setup() override;
-
-  void exchange_data() override {}
+  //void exchange_data() override {}
 
   /// maps a global index (wrt image_list) to number of bytes in the file
   std::unordered_map<size_t, size_t> m_file_sizes;

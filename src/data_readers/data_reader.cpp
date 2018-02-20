@@ -28,7 +28,9 @@
 
 #include "lbann/data_readers/data_reader.hpp"
 #include "lbann/data_store/data_store_imagenet.hpp"
+#include "lbann/data_store/data_store_multi_images.hpp"
 #include "lbann/data_readers/data_reader_imagenet.hpp"
+#include "lbann/data_readers/data_reader_multi_images.hpp"
 #include <omp.h>
 
 namespace lbann {
@@ -621,7 +623,13 @@ void generic_data_reader::setup_data_store(model *m, lbann_comm *comm) {
   m_data_store = nullptr;
   generic_data_reader *the_reader = nullptr;
 
-  if (dynamic_cast<imagenet_reader*>(this) != nullptr) {
+  //note: ordering is important here; since data_store_multi_images is 
+  //      descended from data_store_imagenet, it must be first
+  if (dynamic_cast<data_reader_multi_images*>(this) != nullptr) {
+    the_reader = dynamic_cast<data_reader_multi_images*>(this);
+    m_data_store = new data_store_multi_images(comm, this, m);
+  }
+  else if (dynamic_cast<imagenet_reader*>(this) != nullptr) {
     the_reader = dynamic_cast<imagenet_reader*>(this);
     m_data_store = new data_store_imagenet(comm, this, m);
   }
