@@ -334,10 +334,10 @@ void csv_reader::setup_ifstreams() {
   m_ifstreams.resize(omp_get_max_threads());
   for (int i = 0; i < omp_get_max_threads(); ++i) {
     m_ifstreams[i] = new std::ifstream(
-      get_data_filename(), std::ios::in | std::ios::binary);
+      get_file_dir() + get_data_filename(), std::ios::in | std::ios::binary);
     if (m_ifstreams[i]->fail()) {
       throw lbann_exception(
-        "csv_reader: failed to open " + get_data_filename());
+        "csv_reader: failed to open " + get_file_dir() + get_data_filename());
     }
   }
 }

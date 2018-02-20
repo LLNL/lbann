@@ -31,40 +31,24 @@
 
 namespace lbann {
 
-/**
- * Exponential activation function.
- * See: https://en.wikipedia.org/wiki/Exponential_function
- */
+/** Exponential activation function. */
 template <data_layout T_layout>
 class exponential_layer : public entrywise_activation_layer {
  public:
-
-  exponential_layer(lbann_comm *comm) :
-    entrywise_activation_layer(comm) { 
-    initialize_distributed_matrices(); 
-  }
-
+  exponential_layer(lbann_comm *comm) : entrywise_activation_layer(comm) {}
   exponential_layer* copy() const override { return new exponential_layer(*this); }
-
   std::string get_type() const override { return "exponential"; }
-
-  inline void initialize_distributed_matrices() override {
-    entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
-  }
   data_layout get_data_layout() const override { return T_layout; }
 
  protected:
-  DataType activation_function(DataType z) override {
-    //return (DataType(1) / (DataType(1) + std::exp(-z)));
+  DataType activation(DataType z) const override {
     return std::exp(z);
   }
-  DataType activation_function_gradient(DataType z) override {
-    //const DataType sigz = activation_function(z);
-    //return sigz * (DataType(1) - sigz);
-    return activation_function(z);
+  DataType activation_derivative(DataType z) const override {
+    return std::exp(z);
   }
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // EXPONENTIAL_HPP_INCLUDED
+#endif // EXPONENTIAL_HPP_INCLUDED

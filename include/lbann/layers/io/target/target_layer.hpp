@@ -45,12 +45,11 @@ class target_layer : public generic_target_layer {
 
     validate_data_layout();
     initialize_io_buffer(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), data_readers);
-    // Setup the data distribution
-    initialize_distributed_matrices();
 
     io_buffer->fetch_data_fn = new fetch_data_functor(false, generic_target_layer::is_for_regression());
     io_buffer->update_data_reader_fn = new update_data_reader_functor(false);
   }
+
   target_layer(const target_layer&) = default;
   target_layer& operator=(const target_layer&) = default;
   target_layer* copy() const override {
@@ -74,10 +73,7 @@ class target_layer : public generic_target_layer {
   inline void initialize_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers) {
     generic_target_layer::initialize_io_buffer<T_io_buffer>(comm, num_parallel_readers, data_readers);
   }
-
-  virtual inline void initialize_distributed_matrices() {
-    generic_target_layer::initialize_distributed_matrices<T_layout>();
-  }
+  
   data_layout get_data_layout() const override { return T_layout; }
 };
 

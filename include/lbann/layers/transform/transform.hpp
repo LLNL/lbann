@@ -22,8 +22,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// transform .hpp - Base class for transform layers
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_LAYER_TRANSFORM_HPP_INCLUDED
@@ -33,18 +31,14 @@
 
 namespace lbann {
 
+/** Abstract base class for transform layers.
+ *  Transform layers manipulate data without learnable parameters.
+ */
 class transform_layer : public Layer {
  public:
-  /** Constructor. */
   transform_layer(lbann_comm *comm) : Layer(comm) {}
-  /** Copy constructor. */
-  transform_layer(const transform_layer&) = default;
-  /** Copy assignment operator. */
-  transform_layer& operator=(const transform_layer&) = default;
-  /** Destructor. */
-  virtual ~transform_layer() override = default;
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_LAYER_TRANSFORM_HPP_INCLUDED
+#endif // LBANN_LAYER_TRANSFORM_HPP_INCLUDED

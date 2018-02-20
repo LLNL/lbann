@@ -28,6 +28,7 @@
 
 #include "lbann/callbacks/callback_ltfb.hpp"
 #include "lbann/metrics/categorical_accuracy.hpp"
+#include "lbann/utils/random.hpp"
 #include <typeinfo>
 #include <typeindex>
 

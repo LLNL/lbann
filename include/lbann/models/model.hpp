@@ -206,7 +206,7 @@ class model {
   void collect_indices(execution_mode mode);
 
   /** Checkpoint model to given file descriptor, return number of bytes written */
-  virtual bool save_to_checkpoint_shared(persist& p);
+  virtual bool save_to_checkpoint_shared(persist& p, bool val_end);
   /** Restore model by reading checkpoint from given file descriptor, return number of bytes read */
   virtual bool load_from_checkpoint_shared(persist& p);
 
@@ -321,7 +321,15 @@ class model {
   virtual void forward_prop(execution_mode mode);
   /** Backward propagation step. */
   virtual void backward_prop();
-  /** Clear each layer's error signal tensor. */
+  /** Clear each optimizer's gradient. 
+   *  This must be called before training forward prop since layers
+   *  set an optimizer flag during forward prop.
+   */
+  virtual void clear_gradients();
+  /** Clear each layer's error signal tensor.
+   *  This must be called after the input layer's forward prop since
+   *  it determines the current mini-batch size.
+   */
   virtual void clear_error_signals();
   /** Update weights step. */
   virtual void update_weights();

@@ -22,43 +22,26 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// fully_connected_cuda.cu - GPU helper routines for fully connected layer
 ////////////////////////////////////////////////////////////////////////////////
-#ifndef LBANN_LAYER_FULLY_CONNECTED_CUDA_HPP_INCLUDED
-#define LBANN_LAYER_FULLY_CONNECTED_CUDA_HPP_INCLUDED
 
-#include "lbann/utils/cudnn_wrapper.hpp"
+#include "lbann/layers/activations/softmax.hpp"
 
 namespace lbann {
-namespace fully_connected_cuda {
 
-/// reduction of rows with the result copied back to CPU 
-void row_sum(cudnn::cudnn_manager &cudnn,
-             std::vector<DataType*> matrices,
-             El::Int h, El::Int w,
-             DataType factor,
-             Mat &dest,
-             const std::vector<DataType*> &work_column);
+template <>
+void softmax_layer<data_layout
+  ::MODEL_PARALLEL>::setup_matrices(const El::Grid& grid) {
+  activation_layer::setup_matrices(grid);
+  if (m_workspace != nullptr) { delete m_workspace; }
+  m_workspace = new StarMRMat(grid);
+}
 
-/// reduction of rows solely on GPUs. 
-void row_sum(cudnn::cudnn_manager &cudnn,
-             std::vector<DataType*> matrices,
-             El::Int h, El::Int w,
-             DataType factor,
-             std::vector<DataType*> &dest);
+template <>
+void softmax_layer<data_layout::DATA_PARALLEL>
+  ::setup_matrices(const El::Grid& grid) {
+  activation_layer::setup_matrices(grid);
+  if (m_workspace != nullptr) { delete m_workspace; }
+  m_workspace = new StarVCMat(grid);
+}
 
-
-/// tensor <= tensor * beta + bias * factor
-void add_tensor(DataType factor,
-                DataType *bias,
-                El::Int bias_h, El::Int bias_w,
-                DataType beta,                
-                DataType *tensor,
-                El::Int tensor_h, El::Int tensor_w);
-
-
-} // namespace fully_connected_cuda
 } // namespace lbann
-
-#endif  // LBANN_LAYER_FULLY_CONNECTED_CUDA_HPP_INCLUDED

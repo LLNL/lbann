@@ -531,11 +531,268 @@ class generic_data_reader : public lbann_image_preprocessor {
   void use_unused_index_set();
 
   /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
-  bool saveToCheckpointShared(persist& p, const char *name) const;
+  bool save_to_checkpoint_shared(persist& p, const char *name);
 
   /** \brief Given directory to store checkpoint files, read state from file and add to number of bytes read */
-  bool loadFromCheckpointShared(persist& p, const char *name);
+  bool load_from_checkpoint_shared(persist& p, const char *name);
 
+  struct packing_header {
+    uint64_t mini_batch_size;
+    uint64_t current_pos;
+    uint64_t current_mini_batch_idx;
+    uint64_t data_size;
+    uint64_t unused_data_size;
+    uint64_t stride_to_last_mini_batch;
+    uint64_t stride_to_next_mini_batch;
+    uint64_t base_offset;
+    uint64_t model_offset;
+    uint64_t sample_stride;
+    uint64_t iteration_stride;
+    uint64_t loaded_mini_batch_idx;
+    uint64_t reset_mini_batch_index;
+    uint64_t last_mini_batch_size;
+    uint64_t num_iterations_per_epoch;
+    uint64_t global_mini_batch_size;
+    uint64_t global_last_mini_batch_size;
+    uint64_t num_parallel_readers;
+    uint64_t model_rank;
+    uint64_t world_master_mini_batch_adjustment;
+  };  
+  bool pack_scalars(persist& p, const char *name) {
+    char fieldname[1024];
+    lbann::persist_type persist_value;
+    std::string s_name(name);
+    if(s_name.compare("data_reader_validation") == 0){
+      persist_value = persist_type::validate;
+    } else {
+       persist_value= persist_type::train;
+    }
+
+    snprintf(fieldname, sizeof(fieldname), "%s__mini_batch_size", name);
+    p.write_uint64(persist_value, fieldname, (uint64_t) m_mini_batch_size);
+
+    snprintf(fieldname, sizeof(fieldname), "%s_current_mini_batch_idx", name);
+    p.write_uint64(persist_value, fieldname, (uint64_t) m_current_mini_batch_idx);
+    
+    int size = m_shuffled_indices.size();
+    snprintf(fieldname, sizeof(fieldname), "%s_data_size", name);
+    p.write_uint64(persist_value, fieldname, (uint64_t) size);
+    
+    snprintf(fieldname, sizeof(fieldname), "%s_data_position", name);
+    p.write_uint64(persist_value, fieldname, (uint64_t) m_current_pos);
+    
+    snprintf(fieldname, sizeof(fieldname), "%s_data_indices", name);
+    p.write_int32_contig(persist_value, fieldname, &m_shuffled_indices[0], (uint64_t) size);
+    
+    snprintf(fieldname, sizeof(fieldname), "%s_stride_to_last_mini_batch", name);
+    p.write_uint64(persist_value, fieldname, (uint64_t) m_stride_to_last_mini_batch);
+
+    snprintf(fieldname, sizeof(fieldname), "%s_stride_to_next_mini_batch", name);
+    p.write_uint64(persist_value, fieldname, (uint64_t) m_stride_to_next_mini_batch);
+
+    snprintf(fieldname, sizeof(fieldname), "%s_base_offset", name);
+    p.write_uint64(persist_value, fieldname, (uint64_t) m_base_offset);
+
+    snprintf(fieldname, sizeof(fieldname), "%s_model_offset", name);
+    p.write_uint64(persist_value, fieldname, (uint64_t) m_model_offset);
+
+    snprintf(fieldname, sizeof(fieldname), "%s_sample_stride", name);
+    p.write_uint64(persist_value, fieldname, (uint64_t) m_sample_stride);
+
+    snprintf(fieldname, sizeof(fieldname), "%s_iteration_stride", name);
+    p.write_uint64(persist_value, fieldname, (uint64_t) m_iteration_stride);
+
+    snprintf(fieldname, sizeof(fieldname), "%s_loaded_mini_batch_idx", name);
+    p.write_uint64(persist_value, fieldname, (uint64_t) m_loaded_mini_batch_idx);
+
+    snprintf(fieldname, sizeof(fieldname), "%s_reset_mini_batch_index", name);
+    p.write_uint64(persist_value, fieldname, (uint64_t) m_reset_mini_batch_index);
+  
+
+    int unused_size = m_unused_indices.size();
+    snprintf(fieldname, sizeof(fieldname), "%s_unused_data_size", name);
+    p.write_uint64(persist_value, fieldname, (uint64_t) unused_size);
+
+    snprintf(fieldname, sizeof(fieldname), "%s_unused_data_indices", name);
+    p.write_int32_contig(persist_value, fieldname, &m_unused_indices[0], (uint64_t) unused_size);
+
+    snprintf(fieldname, sizeof(fieldname), "%s_last_mini_batch_size", name);
+    p.write_uint64(persist_value, fieldname, (uint64_t) m_last_mini_batch_size);
+
+    snprintf(fieldname, sizeof(fieldname), "%s_num_iteration_per_epoch", name);
+    p.write_uint64(persist_value, fieldname, (uint64_t) m_num_iterations_per_epoch);
+
+    snprintf(fieldname, sizeof(fieldname), "%s_global_mini_batch_size", name);
+    p.write_uint64(persist_value, fieldname, (uint64_t) m_global_mini_batch_size);
+
+    snprintf(fieldname, sizeof(fieldname), "%s_global_last_mini_batch_size", name);
+    p.write_uint64(persist_value, fieldname, (uint64_t) m_global_last_mini_batch_size);
+
+    snprintf(fieldname, sizeof(fieldname), "%s_num_parallel_readers", name);
+    p.write_uint64(persist_value, fieldname, (uint64_t) m_num_parallel_readers);
+
+    snprintf(fieldname, sizeof(fieldname), "%s_model_rank", name);
+    p.write_uint64(persist_value, fieldname, (uint64_t) m_model_rank);
+    
+    snprintf(fieldname, sizeof(fieldname), "%s_world_master_mini_batch_adjustment", name);
+    p.write_uint64(persist_value, fieldname, (uint64_t) m_world_master_mini_batch_adjustment);
+    return true;
+  }
+
+  bool unpack_scalars(persist& p, struct packing_header *header, const char *name){
+    char fieldname[1024];
+    lbann::persist_type persist_value;
+    std::string s_name(name);
+    if(s_name.compare("data_reader_validation") == 0){
+      persist_value = persist_type::validate;
+    } else {
+       persist_value= persist_type::train;
+    }
+    // Closest to non checkpoint run only loads m_current_pos
+
+    // record minibatch index
+    uint64_t val;
+    
+    snprintf(fieldname, sizeof(fieldname), "%s_mini_batch_size", name);
+    p.read_uint64(persist_value, fieldname, &val);
+    m_mini_batch_size = (int) val;
+
+    snprintf(fieldname, sizeof(fieldname), "%s_current_mini_batch_idx", name);
+    p.read_uint64(persist_value, fieldname, &val);
+    m_current_mini_batch_idx = (int) val;
+
+    snprintf(fieldname, sizeof(fieldname), "%s_data_size", name);
+    p.read_uint64(persist_value, fieldname, &val);
+    auto size = (int) val;
+
+    // get current position within data
+    snprintf(fieldname, sizeof(fieldname), "%s_data_position", name);
+    p.read_uint64(persist_value, fieldname, &val);
+    m_current_pos = (int) val;
+    //resize shuffled index array to hold values
+    m_shuffled_indices.resize(size);
+
+     //read list of indices
+    snprintf(fieldname, sizeof(fieldname), "%s_data_indices", name);
+    p.read_int32_contig(persist_value, fieldname, &m_shuffled_indices[0], (uint64_t) size);
+    // BEGIN TEST 
+    snprintf(fieldname, sizeof(fieldname), "%s_stride_to_last_mini_batch", name);
+    p.read_uint64(persist_value, fieldname, &val);
+    m_stride_to_last_mini_batch = (int) val;
+
+    snprintf(fieldname, sizeof(fieldname), "%s_stride_to_next_mini_batch", name);
+    p.read_uint64(persist_value, fieldname, &val);
+    m_stride_to_next_mini_batch = (int) val;
+
+    snprintf(fieldname, sizeof(fieldname), "%s_base_offset", name);
+    p.read_uint64(persist_value, fieldname, &val);
+    m_base_offset = (int) val;
+
+    snprintf(fieldname, sizeof(fieldname), "%s_model_offset", name);
+    p.read_uint64(persist_value, fieldname, &val);
+    m_model_offset = (int) val;
+
+    snprintf(fieldname, sizeof(fieldname), "%s_sample_stride", name);
+    p.read_uint64(persist_value, fieldname, &val);
+    m_sample_stride= (int) val;
+
+    snprintf(fieldname, sizeof(fieldname), "%s_iteration_stride", name);
+    p.read_uint64(persist_value, fieldname, &val);
+    m_iteration_stride= (int) val;
+
+    snprintf(fieldname, sizeof(fieldname), "%s_loaded_mini_batch_idx", name);
+    p.read_uint64(persist_value, fieldname, &val);
+    m_loaded_mini_batch_idx = (int) val;
+
+    snprintf(fieldname, sizeof(fieldname), "%s_reset_mini_batch_index", name);
+    p.read_uint64(persist_value, fieldname, &val);
+    m_reset_mini_batch_index = (int) val;
+
+    snprintf(fieldname, sizeof(fieldname), "%s_unused_data_size", name);
+    p.read_uint64(persist_value, fieldname, &val);
+    auto unused_size = (int) val;
+
+    m_unused_indices.resize(unused_size);
+    snprintf(fieldname, sizeof(fieldname), "%s_unused_data_indices", name);
+    p.read_int32_contig(persist_value, fieldname, &m_unused_indices[0], (uint64_t) unused_size);
+
+    snprintf(fieldname, sizeof(fieldname), "%s_last_mini_batch_size", name);
+    p.read_uint64(persist_value, fieldname, &val);
+    m_last_mini_batch_size = (int) val;
+
+    snprintf(fieldname, sizeof(fieldname), "%s_num_iterations_per_epoch", name);
+    p.read_uint64(persist_value, fieldname, &val);
+    m_num_iterations_per_epoch = (int) val;
+
+    snprintf(fieldname, sizeof(fieldname), "%s_global_mini_batch_size", name);
+    p.read_uint64(persist_value, fieldname, &val);
+    m_global_mini_batch_size = (int) val;
+
+    snprintf(fieldname, sizeof(fieldname), "%s_global_last_mini_batch_size", name);
+    p.read_uint64(persist_value, fieldname, &val);
+    m_global_last_mini_batch_size = (int) val;
+
+    snprintf(fieldname, sizeof(fieldname), "%s_num_parallel_readers", name);
+    p.read_uint64(persist_value, fieldname, &val);
+    m_num_parallel_readers = (int) val;
+
+    snprintf(fieldname, sizeof(fieldname), "%s_model_rank", name);
+    p.read_uint64(persist_value, fieldname, &val);
+    m_model_rank = (int) val;
+
+    snprintf(fieldname, sizeof(fieldname), "%s_world_master_mini_batch_adjustment", name);
+    p.read_uint64(persist_value, fieldname, &val);    
+    m_world_master_mini_batch_adjustment = (int) val;
+    
+    if(header != nullptr){
+      //shuffled/unused data indices array size, used for resize after broadcast. Not unpacked.
+      header->data_size = size;
+      header->unused_data_size = unused_size;
+      // all else, unpacked and set in unpack header.
+      header->mini_batch_size = m_mini_batch_size;
+      header->current_pos = m_current_pos;
+      header->current_mini_batch_idx = m_current_mini_batch_idx;
+      header->stride_to_last_mini_batch = m_stride_to_last_mini_batch;
+      header->stride_to_next_mini_batch = m_stride_to_next_mini_batch;
+      header->base_offset = m_base_offset;
+      header->model_offset = m_model_offset;
+      header->sample_stride = m_sample_stride;
+      header->iteration_stride = m_iteration_stride;
+      header->loaded_mini_batch_idx = m_loaded_mini_batch_idx;
+      header->reset_mini_batch_index = m_reset_mini_batch_index;
+      header->last_mini_batch_size = m_last_mini_batch_size;
+      header->num_iterations_per_epoch = m_num_iterations_per_epoch;
+      header->global_mini_batch_size = m_global_mini_batch_size;
+      header->global_last_mini_batch_size = m_global_last_mini_batch_size;
+      header->num_parallel_readers = m_num_parallel_readers;
+      header->model_rank = m_model_rank;
+      header->world_master_mini_batch_adjustment = m_world_master_mini_batch_adjustment;
+    }
+
+  return true;
+  }
+
+  void unpack_header(struct packing_header& header){
+    m_mini_batch_size = (int) header.mini_batch_size;
+    m_current_pos = (int) header.current_pos;
+    m_current_mini_batch_idx = (int) header.current_mini_batch_idx;
+    m_stride_to_last_mini_batch = (int) header.stride_to_last_mini_batch;
+    m_stride_to_next_mini_batch = (int) header.stride_to_next_mini_batch;
+    m_base_offset = (int) header.base_offset;
+    m_model_offset = (int) header.model_offset;
+    m_sample_stride = (int) header.sample_stride;
+    m_iteration_stride = (int) header.iteration_stride;
+    m_loaded_mini_batch_idx = (int) header.loaded_mini_batch_idx;
+    m_reset_mini_batch_index = (int) header.reset_mini_batch_index;
+    m_last_mini_batch_size = (int) header.last_mini_batch_size;
+    m_num_iterations_per_epoch = (int) header.num_iterations_per_epoch;
+    m_global_mini_batch_size = (int) header.global_mini_batch_size;
+    m_global_last_mini_batch_size = (int) header.global_last_mini_batch_size;
+    m_num_parallel_readers = (int) header.num_parallel_readers;
+    m_model_rank = (int) header.model_rank;
+    m_world_master_mini_batch_adjustment = (int) header.world_master_mini_batch_adjustment;
+  }
+  
   /// returns the data store, which may be a nullptr
   generic_data_store * get_data_store() {
     return m_data_store;

@@ -22,8 +22,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// sgd .hpp .cpp - Stochastic gradient descent optimizer
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_OPTIMIZER_SGD_HPP
@@ -67,10 +65,10 @@ class sgd : public optimizer {
   void step_compute(AbsDistMat& values, const AbsDistMat& gradient) override;
 #ifdef LBANN_HAS_CUDNN
   /** Perform the computation in an optimization step on GPU. */
-  void step_compute_gpu(std::vector<DataType*> values_d,
-                        std::vector<DataType*> gradient_d) override;
+  void step_compute_gpu(cudnn::matrix& values_d,
+                        const cudnn::matrix& gradient_d) override;
 #endif // LBANN_HAS_CUDNN
-
+ 
  private:
 
   /** Momentum. */
@@ -79,7 +77,7 @@ class sgd : public optimizer {
   bool m_nesterov;
   /** Velocity term for momentum SGD. */
   AbsDistMat* m_velocity;
-
+  
 
 //************************************************************************
 // Checkpointing
@@ -96,18 +94,18 @@ class sgd : public optimizer {
 
   bool unpack_scalars(persist& p, struct packing_header *header){
     p.read_datatype(persist_type::train, "momentum",  &m_momentum);
-
+    
     if(header != nullptr){
       header->momentum = m_momentum;
     }
-
+   
   return true;
   }
-
+  
   void unpack_header(struct packing_header& header){
     m_momentum = header.momentum;
   }
-
+  
   bool save_to_checkpoint_shared(persist& p, std::string m_name) override;
   bool load_from_checkpoint_shared(persist& p, std::string m_name) override;
 

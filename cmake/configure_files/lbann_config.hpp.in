@@ -16,6 +16,7 @@
 #cmakedefine LBANN_HAS_TBINF
 #cmakedefine LBANN_HAS_CNPY
 #cmakedefine LBANN_HAS_VTUNE
+#cmakedefine LBANN_HAS_ALUMINUM
 
 #cmakedefine LBANN_SEQUENTIAL_CONSISTENCY
 #cmakedefine LBANN_PROCDET_DROPOUT
@@ -24,9 +25,6 @@
 #cmakedefine LBANN_HAS_CUDA
 #cmakedefine LBANN_HAS_CUDNN
 #cmakedefine LBANN_HAS_NCCL2
-
-/* Defined if LBANN uses CUDA-enabled softmax */
-#cmakedefine LBANN_SOFTMAX_CUDA
 
 #cmakedefine LBANN_NVPROF
 

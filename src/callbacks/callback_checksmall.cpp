@@ -28,6 +28,7 @@
 
 #include "lbann/callbacks/callback_checksmall.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/layers/io/target/target_layer.hpp"
 
 namespace lbann {
 

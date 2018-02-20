@@ -67,6 +67,12 @@ class data_reader_jag : public generic_data_reader {
   /// Set the modeling mode: Inverse, AutoI, or AutoS
   void set_model_mode(const model_mode_t mm);
 
+  /// Set normalization mode: 0 = none, 1 = dataset-wise, 2 = image-wise
+  void set_normalization_mode(int mode);
+
+  /// Set the image dimension
+  void set_image_dims(const int width, const int height);
+
   /// Load data and do data reader's chores.
   void load() override;
 
@@ -102,6 +108,8 @@ class data_reader_jag : public generic_data_reader {
   /// Return the input values of the simulation correspoding to the i-th sample
   std::vector<DataType> get_input(const size_t i) const;
 
+  void save_image(Mat& pixels, const std::string filename, bool do_scale = true) override;
+
  protected:
   bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
   bool fetch_response(Mat& Y, int data_id, int mb_idx, int tid) override;
@@ -112,6 +120,17 @@ class data_reader_jag : public generic_data_reader {
    */
   void load(const std::string image_file, const std::string scalar_file,
             const std::string input_file, const size_t first_n = 0u);
+
+  /// Check the dimensions of loaded data
+  bool check_data(size_t& num_samples) const;
+
+  /**
+   * Normalize image data to [0 1] scale once after loading based on the mode
+   *  0 (none): no normalization
+   *  1 (dataset-wise): map the min/max of all the pixels in image data to 0/1
+   *  2 (image-wise): map the min/max of all the pixels in current image to 0/1
+   */
+  void normalize_image();
 
   /// Set the linearized size of an image
   void set_linearized_image_size();
@@ -124,9 +143,6 @@ class data_reader_jag : public generic_data_reader {
   data_t get_image_max() const;
   /// Return the minimum element of all the images
   data_t get_image_min() const;
-
-  /// Check the dimensions of loaded data
-  bool check_data(size_t& num_samples) const;
 
  protected:
   /// The current mode of modeling
@@ -147,6 +163,11 @@ class data_reader_jag : public generic_data_reader {
   /// The linearized size of inputs
   size_t m_linearized_input_size;
 
+  /// image normalization mode
+  int m_image_normalization;
+  int m_image_width; ///< image width
+  int m_image_height; ///< image height
+
   /// List of jag output images
   cnpy::NpyArray m_images;
   /// List of jag scalar outputs
@@ -158,16 +179,6 @@ class data_reader_jag : public generic_data_reader {
   data_t m_img_min;
   /// The largest pixel value in image data (useful for normalization or visualization)
   data_t m_img_max;
-  /**
-   * The scale parameter to map an image into the range of [0 1]
-   * i.e., 1/(m_img_max-m_img_min)
-   */
-  data_t m_alpha;
-  /**
-   * The shift parameter to map an image into the range of [0 1]
-   * i.e., m_img_min/(m_img_min-m_img_max)
-   */
-  data_t m_beta;
 };
 
 template<typename T>

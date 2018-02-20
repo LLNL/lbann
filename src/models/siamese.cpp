@@ -51,15 +51,13 @@ void siamese_model::setup_layer_topology() {
   int heads_start = m_layers.size();
   int heads_end = -1;
   for (size_t i = 0; i < m_layers.size(); ++i) {
-    if (m_layers[i]->get_max_num_child_layers() < 0
-        || m_layers[i]->get_max_num_child_layers() > 1) {
+    if (m_layers[i]->get_expected_num_child_layers() < 0) {
       heads_start = i + 1;
       break;
     }
   }
   for (int i = m_layers.size() - 1; i >= 0; --i) {
-    if (m_layers[i]->get_max_num_parent_layers() < 0
-        || m_layers[i]->get_max_num_parent_layers() > 1) {
+    if (m_layers[i]->get_expected_num_parent_layers() < 0) {
       heads_end = i;
       break;
     }
