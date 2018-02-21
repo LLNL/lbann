@@ -65,7 +65,7 @@ bool mesh_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
   for (size_t i = 0; i < m_channels.size(); ++i) {
     Mat X_view = El::View(
       X, El::IR(i*m_data_height*m_data_width, (i+1)*m_data_height*m_data_width),
-      El::IR(mb_idx, mb_idx + 1));
+      El::IR(mb_idx));
     std::string filename = construct_filename(m_channels[i], data_id);
     load_file(filename, X_view);
   }
@@ -74,7 +74,7 @@ bool mesh_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
 
 bool mesh_reader::fetch_response(Mat& Y, int data_id, int mb_idx, int tid) {
   std::string filename = construct_filename(m_target_name, data_id);
-  Mat Y_view = El::View(Y, El::IR(0, Y.Height()), El::IR(mb_idx, mb_idx + 1));
+  Mat Y_view = El::View(Y, El::ALL, El::IR(mb_idx));
   load_file(filename, Y_view);
   return true;
 }
