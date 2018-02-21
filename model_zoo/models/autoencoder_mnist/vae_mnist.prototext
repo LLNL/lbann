@@ -106,6 +106,13 @@ model {
       has_bias: true
     }
   }
+  # Note: This identity layer is a kludgy solution to a bug in the KL divergence.
+  #   The KL divergence adds to the "prev_error_signal" of z_mean, which is the
+  #   "error_signal" of z_mean's child layer. However, z_mean's child layer is a
+  #   sum layer, which has multiple parents and hence multiple error_signal's.
+  #   Putting this identity layer clears up that ambiguity, but it is not a good
+  #   solution to the problem. The objective function paradigm outlined in 
+  #   issue #193 will be a better long-term solution.
   layer {
     parents: "z_mean"
     name: "z_mean_id"
