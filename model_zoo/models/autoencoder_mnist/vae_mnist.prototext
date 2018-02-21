@@ -14,10 +14,10 @@ model {
   ###################################################
 
   objective_function {
-    mean_squared_error {}
+    binary_cross_entropy {}
     kl_divergence {
       layer1: "z_mean"
-      layer2: "exp_noise" 
+      layer2: "z_log_sigma" 
     }
     l2_weight_regularization {
       scale_factor: 1e-4
@@ -38,10 +38,7 @@ model {
       interval: 1
     }
   }
-#  callback {
-#    timer {
-#    }
-#  }
+  callback { timer {} }
   callback {
     dump_activations {
       basename: "dump_acts/"
@@ -75,7 +72,7 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 256
-      weight_initialization: "glorot_uniform"
+      weight_initialization: "he_normal"
       has_bias: true
     }
   }
@@ -93,7 +90,6 @@ model {
   layer {
     parents: "relu1"
     name: "split"
-    children: "z_mean z_log_sigma"
     data_layout: "model_parallel"
     split {
     }
@@ -106,9 +102,22 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 2
-      weight_initialization: "glorot_uniform"
+      weight_initialization: "glorot_normal"
       has_bias: true
     }
+  }
+  # Note: This identity layer is a kludgy solution to a bug in the KL divergence.
+  #   The KL divergence adds to the "prev_error_signal" of z_mean, which is the
+  #   "error_signal" of z_mean's child layer. However, z_mean's child layer is a
+  #   sum layer, which has multiple parents and hence multiple error_signal's.
+  #   Putting this identity layer clears up that ambiguity, but it is not a good
+  #   solution to the problem. The objective function paradigm outlined in 
+  #   issue #193 will be a better long-term solution.
+  layer {
+    parents: "z_mean"
+    name: "z_mean_id"
+    data_layout: "model_parallel"
+    identity {}
   }
 
   # FULLY_CONNECTED z_log_sigma
@@ -118,7 +127,7 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 2
-      weight_initialization: "glorot_uniform"
+      weight_initialization: "glorot_normal"
       has_bias: true
     }
   }
@@ -156,7 +165,6 @@ model {
   layer {
     parents: "exp noise"
     name: "exp_noise"
-    children: "sum"
     data_layout: "model_parallel"
     hadamard {
     }
@@ -165,9 +173,8 @@ model {
 
   # Sum sum
   layer {
-    parents: "z_mean exp_noise"
+    parents: "z_mean_id exp_noise"
     name: "sum"
-    children: "decode1"
     data_layout: "model_parallel"
     sum {
     }
@@ -180,7 +187,7 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 256
-      weight_initialization: "glorot_uniform"
+      weight_initialization: "he_normal"
       has_bias: true
     }
   }
@@ -201,7 +208,7 @@ model {
     data_layout: "model_parallel"
     num_neurons_from_data_reader: true
     fully_connected {
-      weight_initialization: "glorot_uniform"
+      weight_initialization: "glorot_normal"
       has_bias: true
     }
   }

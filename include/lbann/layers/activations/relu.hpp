@@ -47,8 +47,8 @@ class relu_layer : public entrywise_activation_layer {
 
  public:
   relu_layer(lbann_comm *comm,
-             cudnn::cudnn_manager *cudnn = nullptr) :
-    entrywise_activation_layer(comm) {
+             cudnn::cudnn_manager *cudnn = nullptr)
+    : entrywise_activation_layer(comm) {
   #ifdef LBANN_HAS_CUDNN
     m_activation_cudnn_desc = nullptr;
     this->m_cudnn = cudnn;
@@ -73,6 +73,7 @@ class relu_layer : public entrywise_activation_layer {
     cudnn::copy_activation_cudnn_desc(other.m_activation_cudnn_desc,
                                       m_activation_cudnn_desc);
   #endif // LBANN_HAS_CUDNN
+    return *this;
   }
 
   ~relu_layer() override {
