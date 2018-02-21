@@ -325,9 +325,9 @@ void add_layers(
     else if (layer.has_sigmoid()) {
       //const lbann_data::Sigmoid &ell = layer.sigmoid();
       if (layout == data_layout::MODEL_PARALLEL) {
-        d = new sigmoid_layer<data_layout::MODEL_PARALLEL>(comm);
+        d = new sigmoid_layer<data_layout::MODEL_PARALLEL>(comm, nullptr);
       } else {
-        d = new sigmoid_layer<data_layout::DATA_PARALLEL>(comm);
+        d = new sigmoid_layer<data_layout::DATA_PARALLEL>(comm, cudnn);
       }
     }
 
