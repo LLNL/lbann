@@ -1,7 +1,7 @@
 # Building Autoencoder in LBANN: A CANDLE Example
 (by [Sam Ade Jacobs](https://people.llnl.gov/jacobs32))
 
-CANcer Distributed Learning Enviroment ([CANDLE](http://candle.cels.anl.gov/)) is a collaborative project between US DOE national laboratories and National Cancer Institute (NCI) aims at enabling high-performance deep learning in support of the DOE-NCI Cancer project. As a partner, researchers at [LLNL](www.llnl.gov) are developing open-source HPC deep learning toolkit called [LBANN](https://github.com/LLNL/lbann) to support **CANDLE** and other projects. 
+CANcer Distributed Learning Enviroment ([CANDLE](http://candle.cels.anl.gov/)) is a collaborative project between US DOE national laboratories and National Cancer Institute (NCI) aims at enabling high-performance deep learning in support of the DOE-NCI Cancer project. As a partner, researchers at [LLNL](https://www.llnl.gov) are developing open-source HPC deep learning toolkit called [LBANN](https://github.com/LLNL/lbann) to support **CANDLE** and other projects. 
 
 [Autoencoder](https://en.wikipedia.org/wiki/Autoencoder) is one of deep learning techniques being explored in the **CANDLE** team. In this blog, I will explain how to build autoencoder of interest to **CANDLE** project within LBANN framework. Examples in this blog were taken from Tensorflow version of similar deep learning network architecture provided by the **CANDLE** research team.
 
