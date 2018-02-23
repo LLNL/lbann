@@ -188,8 +188,7 @@ message Model {
   int64 evaluation_frequency = 54;
   int64 num_parallel_readers = 100;
 
-  //use cudnn_manager, if use_cudnn=true AND lbann was compiled with cudnn support
-  bool use_cudnn = 8;
+  bool disable_cuda = 8;
   bool use_nccl = 107;
 
   repeated Layer layer = 10;

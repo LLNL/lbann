@@ -6,7 +6,6 @@ model {
   num_epochs: 4
   num_parallel_readers: 1
   procs_per_model: 0
-  use_cudnn: 0
   num_gpus: -1
 
   ###################################################

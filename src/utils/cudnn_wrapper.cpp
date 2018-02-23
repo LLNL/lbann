@@ -320,6 +320,7 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus, bool nc
         FORCE_CHECK_CUDNN(cudnnCreate(&m_handles.back()));
         FORCE_CHECK_CUDNN(cudnnSetStream(m_handles.back(), m_streams.back()));
         FORCE_CHECK_CUBLAS(cublasCreate(&m_cublas_handles.back()));
+        FORCE_CHECK_CUBLAS(cublasSetStream(m_cublas_handles.back(), m_streams.back()));
     }
 
 

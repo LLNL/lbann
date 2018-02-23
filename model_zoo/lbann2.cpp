@@ -186,7 +186,7 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
     // Check for cudnn, with user feedback
     cudnn::cudnn_manager *cudnn = nullptr;
 #ifdef LBANN_HAS_CUDNN
-    if (pb_model->use_cudnn()) {
+    if (! pb_model->disable_cuda()) {
       if (master) {
         std::cerr << "code was compiled with LBANN_HAS_CUDNN, and we are using cudnn\n";
       }
