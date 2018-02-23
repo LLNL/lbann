@@ -316,10 +316,10 @@ void optimizer::add_to_gradient(const cudnn::matrix& gradient_d,
   if (scale != DataType(0)) {
     for(int i = 0; i < m_cudnn->get_num_gpus(); ++i) {
       CHECK_CUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
-      CHECK_CUBLAS(cublas::axpy(m_cudnn->get_cublas_handle(i),
-                                m_weights->get_size(),
-                                scale, gradient_d.get_locked_data(i), 1,
-                                m_gradient_d.get_data(i), 1));
+      cublas::axpy(m_cudnn->get_cublas_handle(i),
+                   m_weights->get_size(),
+                   scale, gradient_d.get_locked_data(i), 1,
+                   m_gradient_d.get_data(i), 1);
     }
   }
 }
@@ -408,10 +408,10 @@ void optimizer::add_to_gradient_staging(const cudnn::matrix& gradient_d,
     // Add to staging matrix
     for(int i = 0; i < m_cudnn->get_num_gpus(); ++i) {
       CHECK_CUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
-      CHECK_CUBLAS(cublas::axpy(m_cudnn->get_cublas_handle(i),
-                                m_weights->get_size(),
-                                scale, gradient_d.get_locked_data(i), 1,
-                                m_gradient_staging_d.get_data(i), 1));
+      cublas::axpy(m_cudnn->get_cublas_handle(i),
+                   m_weights->get_size(),
+                   scale, gradient_d.get_locked_data(i), 1,
+                   m_gradient_staging_d.get_data(i), 1);
     }
 
   }

@@ -7,8 +7,8 @@ model {
   num_parallel_readers: 1
   #procs_per_model: 12
   procs_per_model: 0
-  use_cudnn: false
   num_gpus: -1
+  disable_cuda: true
 
   ###################################################
   # Objective function

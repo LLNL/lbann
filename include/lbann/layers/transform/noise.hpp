@@ -32,7 +32,9 @@
 
 namespace lbann {
 
-/** Layer adds (Gaussian) noise to data. */
+/** Layer draws outputs from a Gaussian distribution.
+ *  During validation and testing, the layer outputs zeros.
+ */
 template <data_layout T_layout = data_layout::DATA_PARALLEL>
 class noise_layer : public transform_layer {
  private:
@@ -85,9 +87,13 @@ class noise_layer : public transform_layer {
 
   void fp_compute() override {
     auto& output = get_activations();
-    gaussian_fill(output,
-                  output.Height(), output.Width(),
-                  DataType(0), m_noise_factor);
+    if (this->m_model->get_execution_mode() == execution_mode::training) {
+      gaussian_fill(output,
+                    output.Height(), output.Width(),
+                    DataType(0), m_noise_factor);
+    } else {
+      El::Zero(output);
+    }
   }
 
   void bp_compute() override {

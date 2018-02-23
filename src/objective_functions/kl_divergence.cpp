@@ -57,80 +57,77 @@ void kl_divergence::setup(model& m) {
 }
 
 EvalType kl_divergence::evaluate() {
-
-  //Get matrices of input (latent space) layers
-  AbsDistMat& z_mean_acts = m_z_mean_layer->get_activations();
-  AbsDistMat& z_log_sigma_acts = m_z_log_sigma_layer->get_activations();
+  if (m_scale_factor == EvalType(0)) { return EvalType(0); }
   
-  AbsDistMat* z_mean = z_mean_acts.Construct(z_mean_acts.Grid(),
-                                             z_mean_acts.Root());
-  AbsDistMat* z_log1 = z_log_sigma_acts.Construct(z_log_sigma_acts.Grid(),
-                                                     z_log_sigma_acts.Root());
-
-  DataType mean_value = DataType(0); 
-  DataType std_value = DataType(0);
+  // Matrices
+  const auto& global_z_mean = m_z_mean_layer->get_activations();
+  const auto& local_z_mean = global_z_mean.LockedMatrix();
+  const auto& local_z_log_sigma = m_z_log_sigma_layer->get_local_activations();
   
-  auto sq = [&](const DataType& x) {
-    return (x*x);
-  };
-  auto expn  = [&](const DataType& x) {
-    return std::exp(x);
-  };
-  auto addone  = [&](const DataType& x) {
-    return (1+x);
-  };
-  
-  //Local copies
-  El::Copy(z_mean_acts, *z_mean);
-  El::Copy(z_log_sigma_acts, *z_log1);
-  AbsDistMat* z_log2 = z_log1->Copy();
+  // Matrix dimensions
+  const int height = global_z_mean.Height();
+  const int width = global_z_mean.Width();
+  const int local_height = local_z_mean.Height();
+  const int local_width = local_z_mean.Width();
 
-  //Compute entrywise add, square and exponent of the matrices
-  El::EntrywiseMap(*z_log1,El::MakeFunction(addone));
-  El::EntrywiseMap(*z_mean,El::MakeFunction(sq));
-  El::EntrywiseMap(*z_log2,El::MakeFunction(expn));
+  // Compute KL divergence
+  EvalType sum = 0;
+  #pragma omp parallel for reduction(+:sum) collapse(2)
+  for (int col = 0; col < local_width; ++col) {
+    for (int row = 0; row < local_height; ++row) {
+      const auto z_mean = local_z_mean(row, col);
+      const auto z_log_sigma = local_z_log_sigma(row, col);
+      sum += (std::exp(z_log_sigma) + z_mean * z_mean
+              - z_log_sigma - DataType(1)) / (2 * height);
+    }
+  }
+  const EvalType val = get_comm().allreduce(sum / width,
+                                            global_z_mean.DistComm());
+  return m_scale_factor * val;
 
-  //Entrywise substraction of matrices
-  El::Axpy(DataType(-1),*z_mean,*z_log1);
-  El::Axpy(DataType(-1),*z_log2,*z_log1);
-  
-  //Entrywise mean of all the previous computation (stats)
-  entrywise_mean_and_stdev(*z_log1,mean_value,std_value);
- 
-  delete z_mean;
-  delete z_log1;
- 
-  return (-0.5 * mean_value);
 }
 
 void kl_divergence::differentiate() {
-  const AbsDistMat& z_mean_acts = m_z_mean_layer->get_activations();
-  const AbsDistMat& z_log_sigma_acts = m_z_log_sigma_layer->get_activations();
-  auto height= z_mean_acts.Height();
-  
-  AbsDistMat* z_mean_gradient = z_mean_acts.Construct(z_mean_acts.Grid(),
-                                                      z_mean_acts.Root());
-  
-  AbsDistMat* z_log_sigma_gradient = z_log_sigma_acts.Construct(z_log_sigma_acts.Grid(),
-                                                     z_log_sigma_acts.Root());
-  El::Copy(z_mean_acts,*z_mean_gradient); 
-  El::Copy(z_log_sigma_acts,*z_log_sigma_gradient);
+  if (m_scale_factor == EvalType(0)) { return; }
 
-  const DataType scale = DataType(1) / DataType(2)*height;
-  
-  //Compute z_log_sigma_gradient = -(1/2n)(1-exp(Z_logsigma))
-  auto expn  = [&](const DataType& x) {
-    return (1 - std::exp(x));
-  };
-  El::EntrywiseMap(*z_log_sigma_gradient,El::MakeFunction(expn));
+  // Matrices
+  const auto& global_z_mean = m_z_mean_layer->get_activations();
+  const auto& global_z_log_sigma = m_z_log_sigma_layer->get_activations();
+  auto&& global_dz_mean = global_z_mean.Copy();
+  auto&& global_dz_log_sigma = global_z_log_sigma.Copy();
+  const auto& local_z_mean = global_z_mean.LockedMatrix();
+  const auto& local_z_log_sigma = global_z_log_sigma.LockedMatrix();
+  auto& local_dz_mean = global_dz_mean->Matrix();
+  auto& local_dz_log_sigma = global_dz_log_sigma->Matrix();
 
-  //add gradients to respective error signal
-  //z_mean_gradient = (1/2n)z_mean 
-  m_z_mean_layer->add_to_error_signal(*z_mean_gradient, (DataType(1)/height));
-  m_z_log_sigma_layer->add_to_error_signal(*z_log_sigma_gradient,DataType(-scale));
+  // Matrix dimensions
+  const int height = global_z_mean.Height();
+  const int local_height = local_z_mean.Height();
+  const int local_width = local_z_mean.Width();
+
+  // Compute gradient of KL divergence
+  #pragma omp parallel for collapse(2)
+  for (int col = 0; col < local_width; ++col) {
+    for (int row = 0; row < local_height; ++row) {
+      const auto z_mean = local_z_mean(row, col);
+      const auto z_log_sigma = local_z_log_sigma(row, col);
+      local_dz_mean(row, col) = z_mean / height;
+      local_dz_log_sigma(row, col) = (std::exp(z_log_sigma) - DataType(1)) / (2 * height);
+    }
+  }
   
-  delete z_mean_gradient;
-  delete z_log_sigma_gradient;
+  // Add to error signal
+  auto&& z_mean_child_layer = const_cast<Layer*>(m_z_mean_layer->get_child_layers().front());
+  auto&& z_log_sigma_child_layer = const_cast<Layer*>(m_z_log_sigma_layer->get_child_layers().front());
+  z_mean_child_layer->add_to_error_signal(*global_dz_mean,
+                                          DataType(m_scale_factor));
+  z_log_sigma_child_layer->add_to_error_signal(*global_dz_log_sigma,
+                                               DataType(m_scale_factor));
+
+  // Clean up
+  delete global_dz_mean;
+  delete global_dz_log_sigma;
+
 }
 
 }  // namespace lbann
