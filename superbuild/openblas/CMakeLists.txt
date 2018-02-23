@@ -16,7 +16,7 @@ set(OPENBLAS_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
 set(OPENBLAS_URL "https://github.com/xianyi/OpenBLAS.git"
   CACHE STRING "The URL from which to clone OpenBLAS")
 
-set(OPENBLAS_TAG "v0.2.15"
+set(OPENBLAS_TAG "db72ad8"
   CACHE STRING "The git tag or hash to checkout for OpenBLAS")
 
 # Handle the options
