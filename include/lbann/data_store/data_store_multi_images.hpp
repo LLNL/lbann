@@ -25,10 +25,10 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __DATA_STORE_IMAGENET_HPP__
-#define __DATA_STORE_IMAGENET_HPP__
+#ifndef __DATA_STORE_MULTI_IMAGES_HPP__
+#define __DATA_STORE_MULTI_IMAGES_HPP__
 
-#include "lbann/data_store/data_store_image.hpp"
+#include "lbann/data_store/data_store_imagenet.hpp"
 
 namespace lbann {
 
@@ -36,41 +36,29 @@ namespace lbann {
  * todo
  */
 
-class data_store_imagenet : public data_store_image {
+class data_store_multi_images : public data_store_imagenet {
  public:
 
   //! ctor
-  data_store_imagenet(lbann_comm *comm, generic_data_reader *reader, model *m) :
-    data_store_image(comm, reader, m) {}
+  data_store_multi_images(lbann_comm *comm, generic_data_reader *reader, model *m) :
+    data_store_imagenet(comm, reader, m) {}
 
   //! copy ctor
-  data_store_imagenet(const data_store_imagenet&) = default;
+  data_store_multi_images(const data_store_multi_images&) = default;
 
   //! operator=
-  data_store_imagenet& operator=(const data_store_imagenet&) = default;
+  data_store_multi_images& operator=(const data_store_multi_images&) = default;
 
-  data_store_imagenet * copy() const override { return new data_store_imagenet(*this); }
+  data_store_multi_images * copy() const override { return new data_store_multi_images(*this); }
 
   //! dtor
-  ~data_store_imagenet() override {};
+  ~data_store_multi_images() override {};
 
   void setup() override;
 
  protected :
 
-  void get_my_datastore_indices() override;
-
-  void set_num_global_indices() override {
-    m_num_global_indices = m_shuffled_indices->size();
-  }
-
   void get_file_sizes() override;
-
-  /// for use during development and testing
-  virtual void test_data();
-
-  /// for use during development and testing
-  void test_file_sizes();
 
   void read_files() override;
 
@@ -79,4 +67,4 @@ class data_store_imagenet : public data_store_image {
 
 }  // namespace lbann
 
-#endif  // __DATA_STORE_IMAGENET_HPP__
+#endif  // __DATA_STORE_MULTI_IMAGES_HPP__
