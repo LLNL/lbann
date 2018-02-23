@@ -33,9 +33,6 @@
 
 namespace lbann {
 
-std::unordered_map<size_t, std::string> idx_2_name;
-std::unordered_map<std::string, size_t> name_2_size;
-
 void data_store_multi_images::setup() {
   double tm1 = get_time();
   if (m_rank == 0) {
