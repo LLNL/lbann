@@ -55,14 +55,14 @@ class data_store_image : public generic_data_store {
   //! dtor
   ~data_store_image() override;
 
-  void setup(bool test_dynamic_cast = true, bool run_tests = true) override;
-
-  void exchange_data() override;
+  void setup() override;
 
   /// data readers call this method
-  void get_data_buf(int data_id, std::vector<unsigned char> *&buf, int tid, int multi_idx = 0) override;
+  void get_data_buf(int data_id, std::vector<unsigned char> *&buf, int multi_idx = 0) override;
 
  protected :
+
+  void exchange_data() override;
 
   struct Triple {
     int global_index;
@@ -91,8 +91,10 @@ class data_store_image : public generic_data_store {
   /// allocate mem for m_data
   void allocate_memory(); 
 
+  /// loads file from disk into *p; checks that bytes read = sz
   void load_file(const std::string &dir, const std::string &fn, unsigned char *p, size_t sz); 
 
+  /// reads all files assigned to this processor into memory (m_data)
   virtual void read_files() = 0; 
 
   /// will contain data to be passed to the data_reader
@@ -106,16 +108,23 @@ class data_store_image : public generic_data_store {
   std::vector<size_t> m_my_minibatch_indices;
 
   /// m_num_images[j] contains the number of images "owned" by P_j
-  std::vector<int> m_num_images;
+  std::vector<int> m_num_samples;
 
   /// fills in m_num_images
-  //virtual void compute_num_images() {}
-  virtual void compute_num_images() = 0;
+  void compute_num_samples();
 
   /// in multi-image scenarios, the number of images in each sample
   unsigned int m_num_img_srcs;
 
-  //std::unordered_map<size_t, std::string> m_filenames;
+  /// used for extended testing
+  std::unordered_map<size_t, std::string> m_test_filenames;
+  /// used for extended testing
+  std::unordered_map<size_t, size_t> m_test_filesizes;
+
+  /// fills in m_test_filenames and m_test_filesizes; these are
+  /// used by run_extended_testing, which is called durring exchange_data,
+  /// *if* the "extended_testing" cmd line option is present.
+  virtual void setup_extended_testing() {}
 
   MPI_Win m_win;
 };

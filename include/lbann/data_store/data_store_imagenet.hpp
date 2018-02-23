@@ -54,16 +54,11 @@ class data_store_imagenet : public data_store_image {
   //! dtor
   ~data_store_imagenet() override {};
 
-  void setup(bool test_dynamic_cast = true, bool run_tests = true) override;
-
-  /// only used during development and testing
-  //void get_data_buf(std::string dir, std::string filename, std::vector<unsigned char> *&buf, int tid);
+  void setup() override;
 
  protected :
 
   void get_my_datastore_indices() override;
-
-  void compute_num_images() override; 
 
   void set_num_global_indices() override {
     m_num_global_indices = m_shuffled_indices->size();
@@ -78,6 +73,8 @@ class data_store_imagenet : public data_store_image {
   void test_file_sizes();
 
   void read_files() override;
+
+  void setup_extended_testing() override;
 };
 
 }  // namespace lbann

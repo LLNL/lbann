@@ -35,7 +35,7 @@ data_store_image::~data_store_image() {
   MPI_Win_free( &m_win );
 }
 
-void data_store_image::setup(bool test_dynamic_cast, bool run_tests) {
+void data_store_image::setup() {
 
   if (m_master) std::cerr << "starting data_store_image::setup(); calling generic_data_store::setup()\n";
   generic_data_store::setup();
@@ -46,7 +46,6 @@ void data_store_image::setup(bool test_dynamic_cast, bool run_tests) {
     err << __FILE__ << " " << __LINE__ << " :: "
         << "not yet implemented";
     throw lbann_exception(err.str());
-    //m_buffers.resize( omp_get_max_threads() );
   } 
   
   else {
@@ -63,13 +62,13 @@ void data_store_image::setup(bool test_dynamic_cast, bool run_tests) {
       }
     }
     m_my_minibatch_data.resize(m_my_minibatch_indices.size()*m_num_img_srcs);
-    if (m_master) std::cerr << "num minibatch indices: " << m_my_minibatch_indices.size() << "\n";
+    if (m_master) std::cerr << "P_0 num minibatch indices: " << m_my_minibatch_indices.size() << "\n";
 
     if (m_master) std::cerr << "calling get_my_datastore_indices\n";
     get_my_datastore_indices();
 
-    if (m_master) std::cerr << "calling compute_num_images\n";
-    compute_num_images();
+    if (m_master) std::cerr << "calling compute_num_samples\n";
+    compute_num_samples();
 
     if (m_master) std::cerr << "calling get_file_sizes\n";
     get_file_sizes();
@@ -80,13 +79,18 @@ void data_store_image::setup(bool test_dynamic_cast, bool run_tests) {
     if (m_master) std::cerr << "calling read_files\n";
     read_files();
 
+    if (m_extended_testing) {
+      if (m_master) std::cerr << "calling setup_extended_testing\n";
+      setup_extended_testing();
+    }
+
     MPI_Win_create((void*)&m_data[0], m_data.size(), 1, MPI_INFO_NULL, m_comm->get_model_comm().comm, &m_win);
     exchange_data();
   }
 }
 
-//@todo probably don't need tid
-void data_store_image::get_data_buf(int data_id, std::vector<unsigned char> *&buf, int tid, int multi_idx) {
+void data_store_image::get_data_buf(int data_id, std::vector<unsigned char> *&buf, int multi_idx) {
+  static bool first_extended = true;
   int index = data_id * m_num_img_srcs + multi_idx;
   if (m_my_data_hash.find(index) == m_my_data_hash.end()) {
     std::stringstream err;
@@ -95,6 +99,35 @@ void data_store_image::get_data_buf(int data_id, std::vector<unsigned char> *&bu
     throw lbann_exception(err.str());
   }
   int idx = m_my_data_hash[index]; 
+
+  if (m_extended_testing) {
+    if (first_extended && m_master) {
+      std::cerr << "\ndata_store_image::get_data_buf -- running extended_testing\n\n";
+      first_extended = false;
+    }
+    if (m_file_sizes.find(index) == m_file_sizes.end()) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+        << "m_file_sizes has no key for index: " << index;
+      throw lbann_exception(err.str());
+    }
+    if (m_test_filenames.find(index) == m_test_filenames.end()) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+        << "m_test_filenames has no key for index: " << index;
+      throw lbann_exception(err.str());
+    }
+    std::vector<unsigned char> testme(m_file_sizes[index]);
+    std::string dir("");
+    load_file(dir, m_test_filenames[index], &testme[0], testme.size());
+    if (testme != m_my_minibatch_data[idx]) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+        << m_rank << " test failed for idx: " << idx;
+      throw lbann_exception(err.str());
+    }
+  } //end: if (m_extended_testing) {
+
   buf = &m_my_minibatch_data[idx];
 }
 
@@ -120,7 +153,7 @@ void data_store_image::load_file(const std::string &dir, const std::string &fn, 
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
         << "failed to open " << imagepath << " for reading"
-        << "; dir: " << dir;
+        << "; dir: " << dir << "  fn: " << fn;
     throw lbann_exception(err.str());
   }
   in.read((char*)p, sz);
@@ -135,6 +168,7 @@ void data_store_image::load_file(const std::string &dir, const std::string &fn, 
 }
 
 void data_store_image::exchange_data() {
+  std::stringstream err;
   double tm1 = get_time();
   MPI_Win_fence(MPI_MODE_NOSTORE|MPI_MODE_NOPUT, m_win);
   m_my_data_hash.clear();
@@ -146,14 +180,12 @@ void data_store_image::exchange_data() {
       size_t idx = base_index*m_num_img_srcs+i;
 
       if (m_file_sizes.find(idx) == m_file_sizes.end()) {
-        std::stringstream err;
         err << __FILE__ << " :: " << __LINE__ << " :: "
             << idx << " is not a key in m_file_sizes";
         throw lbann_exception(err.str());
       }
 
       if (jj >= m_my_minibatch_data.size()) {
-        std::stringstream err;
         err << __FILE__  << " :: " << __LINE__ << " :: "
           << " jj: " << jj << " is >= m_my_data.size(): "
           << m_my_minibatch_data.size();
@@ -161,14 +193,12 @@ void data_store_image::exchange_data() {
       }
 
       if (m_owner_mapping.find(idx) == m_owner_mapping.end()) {
-        std::stringstream err;
         err << __FILE__  << " :: " << __LINE__ << " :: "
           << " m_owner_mapping.find(idx) failed";
         throw lbann_exception(err.str());
       }
 
       if (m_offsets.find(idx) == m_offsets.end()) {
-        std::stringstream err;
         err << __FILE__  << " :: " << __LINE__ << " :: "
           << " m_offsets.find(idx) failed";
         throw lbann_exception(err.str());
@@ -178,6 +208,12 @@ void data_store_image::exchange_data() {
       m_my_data_hash[idx] = jj;
       int owner = m_owner_mapping[idx];
       int offset = m_offsets[idx];
+
+      if (jj >= m_my_minibatch_data.size()) {
+        err << __FILE__  << " :: " << __LINE__ << " :: "
+            << " jj error!";
+        throw lbann_exception(err.str());
+      }
 
       m_my_minibatch_data[jj].resize(file_len);
       MPI_Get(&m_my_minibatch_data[jj][0], file_len, MPI_BYTE,
@@ -199,17 +235,18 @@ void data_store_image::exchange_file_sizes(std::vector<Triple> &my_file_sizes, i
   std::vector<int> disp(m_num_readers); 
   disp[0] = 0;
   for (int h=1; h<(int)m_num_readers; h++) {
-    disp[h] = disp[h-1] + m_num_images[h-1]*sizeof(Triple)*m_num_img_srcs;
+    disp[h] = disp[h-1] + m_num_samples[h-1]*sizeof(Triple)*m_num_img_srcs;
   }
 
-  for (size_t j=0; j<m_num_images.size(); j++) {
-    m_num_images[j] *= sizeof(Triple)*m_num_img_srcs;
+  for (size_t j=0; j<m_num_samples.size(); j++) {
+    m_num_samples[j] *= sizeof(Triple)*m_num_img_srcs;
   }
 
+  //@todo: couldn't get m_comm->model_gatherv to work
   //m_comm->model_gatherv(&my_file_sizes[0], my_file_sizes.size(), 
    //                     &global_file_sizes[0], &num_images[0], &disp[0]);
   MPI_Allgatherv(&my_file_sizes[0], my_file_sizes.size()*sizeof(Triple), MPI_BYTE,
-                 &global_file_sizes[0], &m_num_images[0], &disp[0], MPI_BYTE,
+                 &global_file_sizes[0], &m_num_samples[0], &disp[0], MPI_BYTE,
                  m_comm->get_model_comm().comm);
 
   size_t j = 0;
@@ -227,5 +264,14 @@ void data_store_image::exchange_file_sizes(std::vector<Triple> &my_file_sizes, i
     ++j;
   }
 }
+
+void data_store_image::compute_num_samples() {
+  m_num_samples.clear();
+  m_num_samples.resize(m_num_readers, 0);
+  for (size_t j=0; j<m_num_global_indices; j++) {
+    m_num_samples[j % m_num_readers] += 1;
+  }
+}
+
 
 }  // namespace lbann

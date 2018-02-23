@@ -27,7 +27,6 @@
 
 #include "lbann/data_store/generic_data_store.hpp"
 #include "lbann/data_readers/data_reader.hpp"
-#include "lbann/data_readers/data_reader_imagenet.hpp"
 #include "lbann/utils/options.hpp"
 #include "lbann/models/model.hpp"
 #include <sys/types.h>
@@ -42,8 +41,12 @@ generic_data_store::generic_data_store(lbann_comm *comm, generic_data_reader *re
     m_in_memory(true),
     m_comm(comm), m_master(comm->am_world_master()), m_reader(reader),
     m_model(m),
-    m_dir(m_reader->get_file_dir())
+    m_dir(m_reader->get_file_dir()),
+    m_extended_testing(false)
   {
+    if (options::get()->has_bool("extended_testing") && options::get()->get_bool("extended_testing")) {
+      m_extended_testing = true;
+    }
   /*
     if (options::get()->has_bool("ds_in_memory")) {
       m_in_memory = options::get()->get_bool("ds_in_memory");
@@ -51,7 +54,7 @@ generic_data_store::generic_data_store(lbann_comm *comm, generic_data_reader *re
     */
   }
 
-void generic_data_store::setup(bool test_dynamic_cast, bool run_tests) {
+void generic_data_store::setup() {
   set_shuffled_indices( &(m_reader->get_shuffled_indices()) );
   set_num_global_indices(); //virtual override in child classes
   m_num_readers = m_reader->get_num_parallel_readers();
@@ -101,5 +104,13 @@ size_t generic_data_store::get_file_size(std::string dir, std::string fn) {
   }
   return st.st_size;   
 }
+
+void generic_data_store::set_shuffled_indices(const std::vector<int> *indices) {
+    m_shuffled_indices = indices;
+    ++m_epoch;
+    if (m_epoch > 1) {
+      exchange_data();
+    }
+  }
 
 }  // namespace lbann

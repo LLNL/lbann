@@ -54,7 +54,7 @@ class data_store_multi_images : public data_store_imagenet {
   //! dtor
   ~data_store_multi_images() override {};
 
-  void setup(bool test_dynamic_cast = true, bool run_tests = true) override;
+  void setup() override;
 
  protected :
 
@@ -62,7 +62,7 @@ class data_store_multi_images : public data_store_imagenet {
 
   void read_files() override;
 
-  void test_data() override;
+  void setup_extended_testing() override;
 };
 
 }  // namespace lbann

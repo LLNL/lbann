@@ -26,20 +26,17 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_store/data_store_multi_images.hpp"
-#include "lbann/data_readers/data_reader_triplet.hpp"
 #include "lbann/data_readers/data_reader_multi_images.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/timer.hpp"
-#include <sys/stat.h>
 
 namespace lbann {
 
-std::unordered_map<std::string, size_t> name_2_idx;
 std::unordered_map<size_t, std::string> idx_2_name;
 std::unordered_map<std::string, size_t> name_2_size;
 
-void data_store_multi_images::setup(bool test_dynamic_cast, bool run_tests) {
+void data_store_multi_images::setup() {
   double tm1 = get_time();
   if (m_rank == 0) {
     std::cerr << "starting data_store_multi_images::setup() for data reader with role: " << m_reader->get_role() << std::endl;
@@ -62,21 +59,13 @@ void data_store_multi_images::setup(bool test_dynamic_cast, bool run_tests) {
     err << __FILE__ << " " << __LINE__ << " :: "
         << "not yet implemented";
     throw lbann_exception(err.str());
-    //m_buffers.resize( omp_get_max_threads() );
   } 
   
   else {
-    data_store_imagenet::setup(false, false);
+    data_store_imagenet::setup();
 
-    if (options::get()->has_bool("test_data_store") && options::get()->get_bool("test_data_store") && run_tests) {
-      options::get()->set_option("exit_after_setup", true);
-      test_data();
-    }
-
-
-    double tm2 = get_time();
     if (m_rank == 0) {
-      std::cerr << "data_store_multi_images setup time: " << tm2 - tm1 << std::endl;
+      std::cerr << "data_store_multi_images setup time: " << get_time() - tm1 << std::endl;
     }
   }
 }
@@ -159,21 +148,22 @@ void data_store_multi_images::read_files() {
   }
 }
 
-void data_store_multi_images::test_data() {
-  std::cerr << m_rank << " :: STARTING data_store_multi_images::test_data()\n";
-  data_reader_multi_images *reader = dynamic_cast<data_reader_multi_images*>(m_reader);
 
-  std::vector<unsigned char> b;
+void data_store_multi_images::setup_extended_testing() {
+  if (m_master) {
+    std::cout << "STARTING data_store_multi_images::setup_extended_testing()\n";
+  }
   std::pair<std::vector<std::string>, int> sample;
-  size_t j = -1;
-  for (auto t : m_my_minibatch_indices) {
-    int idx = (*m_shuffled_indices)[t];
+  data_reader_multi_images *reader = dynamic_cast<data_reader_multi_images*>(m_reader);
+  for (size_t j=0; j<m_shuffled_indices->size(); j++) {
+    size_t idx = (*m_shuffled_indices)[j];
     sample = reader->get_sample(idx);
     for (size_t k=0; k<sample.first.size(); k++) {
-      ++j;
       size_t index = idx*m_num_img_srcs+k;
 
       std::string imagepath = m_dir + sample.first[k];
+      m_test_filenames[index] = imagepath;
+
       std::ifstream in(imagepath.c_str(), std::ios::in | std::ios::binary);
       if (! in.good()) {
         std::stringstream err;
@@ -184,30 +174,10 @@ void data_store_multi_images::test_data() {
 
       in.seekg(0, std::ios::end);
       size_t sz = in.tellg();
-      in.seekg(0, std::ios::beg);
-      b.resize(sz);
-      in.read((char*)&b[0], sz);
       in.close();
-
-      //compare to m_my_data
-      std::vector<unsigned char> *v;
-      get_data_buf(idx, v, 0, (int)k); 
-      if (b != *v) {
-        std::stringstream err;
-        err << ">>>>>>>>>>>>>> "
-            << "data_store_multi_images::test_data; error: b != *v; b.size: " 
-            << b.size() << "  v.size: " << v->size() << "; " << j << " of " 
-            << m_my_minibatch_indices.size() << " file_sizes[index]: " 
-            << m_file_sizes[index] << "\nindex: " << index
-            << "\nfn:           " << sample.first[k] 
-            << "\nindex_2_name: " << idx_2_name[index]
-            << "\nname_2_size:  " << name_2_size[sample.first[k]]
-            << "\n\n";
-        throw lbann_exception(err.str());
-      } 
-    } //for (size_t k=0; k<sample.first.size()
-  } //for (auto t : m_my_minibatch_indices
-  std::cerr << "rank: " << m_rank << " role: " << m_reader->get_role() << " :: data_store_imagenet::test_data: PASSES!\n";
+      m_test_filesizes[index] = sz;
+    }  
+  }
 }
 
 }  // namespace lbann

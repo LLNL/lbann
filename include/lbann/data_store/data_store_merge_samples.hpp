@@ -54,14 +54,14 @@ class data_store_merge_samples : public generic_data_store {
   //! dtor
   ~data_store_merge_samples() override;
 
-  void get_data_buf(int data_id, std::vector<unsigned char> *&buf, int tid) {}
+  void get_data_buf(int data_id, std::vector<unsigned char> *&buf) {}
 
  protected :
   void set_num_global_indices() override {}
 
   void get_my_datastore_indices() override {}
 
-  void setup(bool test_dynamic_cast = true, bool run_tests = true) override;
+  void setup() override;
 
   //void exchange_data() override {}
 

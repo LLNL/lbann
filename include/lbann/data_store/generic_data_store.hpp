@@ -32,7 +32,6 @@
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include <vector>
-#include <ostream>
 
 namespace lbann {
 
@@ -61,35 +60,20 @@ class generic_data_store {
 
   virtual generic_data_store * copy() const = 0;
 
-  //! returns a pointer to the data reader; may not be necessary
-  generic_data_reader * get_data_reader() {
-    return m_reader;
-  }
+  /// called by generic_data_reader::setup_data_store
+  virtual void setup();
 
-  virtual void setup(bool test_dynamic_cast = true, bool run_tests = true);
+  /// called by generic_data_reader::update
+  void set_shuffled_indices(const std::vector<int> *indices);
 
-  virtual void exchange_data() {}
-
-  void set_shuffled_indices(const std::vector<int> *indices) {
-    m_shuffled_indices = indices;
-    ++m_epoch;
-    if (m_epoch > 1) {
-      exchange_data();
-    }
-    //m_cur_idx = 0;
-  }
-
-  /// image data readers call this method
-  /// @todo: do we need tid?
-  virtual void get_data_buf(int data_id, std::vector<unsigned char> *&buf, int tid, int multi_idx = 0) {}
-
-  /// multi_images data readers call this method; @todo: make more memory efficient
-  /// @todo: do we need tid?
-  virtual void get_data_buf(int data_id, std::vector<unsigned char> &buf, int tid, int multi_idx) {}
+  /// called by various image data readers 
+  virtual void get_data_buf(int data_id, std::vector<unsigned char> *&buf, int multi_idx = 0) = 0;
 
  protected :
 
-  /// returns the number of bytes in dir/fn
+  virtual void exchange_data() = 0;
+
+  /// returns the number of bytes in dir/fn; it's OK if dir = ""
   size_t get_file_size(std::string dir, std::string fn);
 
   /// number of indices that m_reader owns (in a global sense);
@@ -123,12 +107,12 @@ class generic_data_store {
   bool m_in_memory;
 
   lbann_comm *m_comm;
+
   bool m_master;
+
   generic_data_reader *m_reader;
 
   const std::vector<int> *m_shuffled_indices;
-
-  //std::vector<std::vector<unsigned char> > m_buffers;
 
   /// maps global indices (wrt shuffled_indices) to owning processor
   std::unordered_map<size_t, size_t> m_owner_mapping;
@@ -137,6 +121,9 @@ class generic_data_store {
 
   /// base directory for data
   std::string m_dir;
+
+  /// conduct extensive testing
+  bool m_extended_testing;
 };
 
 }  // namespace lbann

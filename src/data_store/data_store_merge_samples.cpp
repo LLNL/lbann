@@ -31,15 +31,13 @@
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/timer.hpp"
 
-#include <sys/stat.h>
-
 namespace lbann {
 
 data_store_merge_samples::~data_store_merge_samples() {
   MPI_Win_free( &m_win );
 }
 
-void data_store_merge_samples::setup(bool test_dynamic_cast, bool run_tests) {
+void data_store_merge_samples::setup() {
   if (m_rank == 0) std::cerr << "STARTING data_store_merge_samples::setup()\n"; 
   //double tm1 = get_time();
 
@@ -61,7 +59,6 @@ void data_store_merge_samples::setup(bool test_dynamic_cast, bool run_tests) {
     err << __FILE__ << " " << __LINE__ << " :: "
         << "not yet implemented";
     throw lbann_exception(err.str());
-    //m_buffers.resize( omp_get_max_threads() );
   } 
   
   else {
