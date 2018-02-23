@@ -147,7 +147,7 @@ void cudnn_manager::global_allreduce_on_gpus(std::vector<DataType*>& gpu_data,
                                              El::mpi::Comm comm) {
   if(!is_nccl_used()){
     static Mat cpu_workspace;
-    cpu_workspace.Resize(height, width);
+    cpu_workspace.Resize(height, width, height);
     allreduce_on_gpus(gpu_data, height, width);
     copy_from_gpu(0, cpu_workspace, gpu_data[0]);
     synchronize();

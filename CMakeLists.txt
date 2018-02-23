@@ -89,7 +89,7 @@ option(${UPPER_PROJECT_NAME}_WITH_NVPROF
 option(${UPPER_PROJECT_NAME}_WITH_TOPO_AWARE
   "Enable topology-aware profiling (HWLOC)" ON)
 
-option(${UPPER_PROJECT_NAME}_WITH_ALUNINUM 
+option(${UPPER_PROJECT_NAME}_WITH_ALUMINUM 
   "Enable Aluminum all-reduce library" OFF)
 
 option(${UPPER_PROJECT_NAME}_VERBOSE "Enable verbose output" OFF)
