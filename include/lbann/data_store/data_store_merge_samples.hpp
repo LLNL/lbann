@@ -49,12 +49,12 @@ class data_store_merge_samples : public generic_data_store {
   //! operator=
   data_store_merge_samples& operator=(const data_store_merge_samples&) = default;
 
-  //data_store_merge_samples * copy() const override { return new data_store_merge_samples(*this); }
+  data_store_merge_samples * copy() const override { return new data_store_merge_samples(*this); }
 
   //! dtor
   ~data_store_merge_samples() override;
 
-  void get_data_buf(int data_id, std::vector<unsigned char> *&buf) {}
+  void get_data_buf(int data_id, std::vector<unsigned char> *&buf, int multi_idx = 0) override {}
 
   void setup() override;
 
