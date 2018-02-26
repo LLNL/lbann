@@ -56,12 +56,11 @@ class data_store_merge_samples : public generic_data_store {
 
   void get_data_buf(int data_id, std::vector<unsigned char> *&buf) {}
 
+  void setup() override;
+
  protected :
-  void set_num_global_indices() override {}
 
   void get_my_datastore_indices() override {}
-
-  void setup() override;
 
   //void exchange_data() override {}
 

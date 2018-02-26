@@ -80,7 +80,9 @@ class generic_data_store {
   /// equal to m_shuffled_indices->size()
   size_t m_num_global_indices;
 
-  virtual void set_num_global_indices() = 0;
+  void set_num_global_indices() {
+    m_num_global_indices = m_shuffled_indices->size();
+  }
 
   /// the indices that will be used locally; the inner j-th vector
   /// contains indices referenced during the j-th call to
@@ -96,7 +98,7 @@ class generic_data_store {
   std::vector<size_t> m_my_global_indices;
 
   /// fills in m_my_datastore_indices and m_my_global_indices
-  virtual void get_my_datastore_indices() = 0;
+  void get_my_datastore_indices();
 
   size_t m_num_readers;
 

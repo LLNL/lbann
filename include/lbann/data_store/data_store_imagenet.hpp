@@ -58,12 +58,6 @@ class data_store_imagenet : public data_store_image {
 
  protected :
 
-  void get_my_datastore_indices() override;
-
-  void set_num_global_indices() override {
-    m_num_global_indices = m_shuffled_indices->size();
-  }
-
   void get_file_sizes() override;
 
   /// for use during development and testing

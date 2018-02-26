@@ -43,7 +43,7 @@ generic_data_store::generic_data_store(lbann_comm *comm, generic_data_reader *re
     m_model(m),
     m_dir(m_reader->get_file_dir()),
     m_extended_testing(false)
-  {
+{
     if (options::get()->has_bool("extended_testing") && options::get()->get_bool("extended_testing")) {
       m_extended_testing = true;
     }
@@ -52,7 +52,24 @@ generic_data_store::generic_data_store(lbann_comm *comm, generic_data_reader *re
       m_in_memory = options::get()->get_bool("ds_in_memory");
     }
     */
+}
+
+void generic_data_store::get_my_datastore_indices() {
+  //compute storage
+  size_t n = 0;
+  int stride = m_comm->get_procs_per_model();
+  for (size_t j=m_rank; j<m_num_global_indices; j+=stride) {
+    ++n;
   }
+  //get the indices
+  m_my_datastore_indices.reserve(n); //these are the indices passed to data_reader::fetch_data
+  m_my_global_indices.reserve(n);   //these are the shuffled indices
+
+  for (size_t j=m_rank; j<m_num_global_indices; j+=stride) {
+    m_my_datastore_indices.push_back(j);
+    m_my_global_indices.push_back((*m_shuffled_indices)[j]);
+  }
+}
 
 void generic_data_store::setup() {
   set_shuffled_indices( &(m_reader->get_shuffled_indices()) );

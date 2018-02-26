@@ -33,23 +33,6 @@
 
 namespace lbann {
 
-void data_store_imagenet::get_my_datastore_indices() {
-  //compute storage
-  size_t n = 0;
-  int stride = m_comm->get_procs_per_model();
-  for (size_t j=m_rank; j<m_num_global_indices; j+=stride) {
-    ++n;
-  }
-  //get the indices
-  m_my_datastore_indices.reserve(n); //these are the indices passed to data_reader::fetch_data
-  m_my_global_indices.reserve(n);   //these are the shuffled indices
-
-  for (size_t j=m_rank; j<m_num_global_indices; j+=stride) {
-    m_my_datastore_indices.push_back(j);
-    m_my_global_indices.push_back((*m_shuffled_indices)[j]);
-  }
-}
-
 void data_store_imagenet::setup() {
   double tm1 = get_time();
   if (m_rank == 0) {
