@@ -54,21 +54,16 @@ class data_store_merge_samples : public generic_data_store {
   //! dtor
   ~data_store_merge_samples() override;
 
-  void setup() override;
-
-  void exchange_data() override {}
-
-  /// for use during development and testing
-  void test_data() override {}
-
-  /// for use during development and testing
-  void test_file_sizes() override {}
-
-  void get_data_buf(std::string dir, std::string filename, std::vector<unsigned char> *&buf, int tid) override {}
-
-  void get_data_buf(int data_id, std::vector<unsigned char> *&buf, int tid) override {}
+  void get_data_buf(int data_id, std::vector<unsigned char> *&buf) {}
 
  protected :
+  void set_num_global_indices() override {}
+
+  void get_my_datastore_indices() override {}
+
+  void setup() override;
+
+  //void exchange_data() override {}
 
   /// maps a global index (wrt image_list) to number of bytes in the file
   std::unordered_map<size_t, size_t> m_file_sizes;
