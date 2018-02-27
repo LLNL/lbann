@@ -86,7 +86,9 @@ void mesh_reader::load_file(const std::string filename, Mat& mat) {
   }
   // Load into a local buffer.
   float* buf = m_load_bufs[omp_get_thread_num()].data();
-  f.read((char*) buf, m_data_height * m_data_width * sizeof(float));
+  if (!f.read((char*) buf, m_data_height * m_data_width * sizeof(float))) {
+    throw lbann_exception("mesh_reader: failed to read " + filename);
+  }
   if (std::is_same<float, DataType>::value) {
     // Need to transpose from row-major to column-major order.
     Mat tmp_mat(m_data_width, m_data_height, buf, m_data_width);
