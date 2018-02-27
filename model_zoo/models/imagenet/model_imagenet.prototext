@@ -2,7 +2,6 @@ model {
   name: "sequential_model"
   num_epochs: 20
   data_layout: "data_parallel"
-  use_cudnn: false
 
   ###################################################
   # Objective function

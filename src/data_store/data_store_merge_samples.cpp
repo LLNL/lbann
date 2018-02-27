@@ -31,8 +31,6 @@
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/timer.hpp"
 
-#include <sys/stat.h>
-
 namespace lbann {
 
 data_store_merge_samples::~data_store_merge_samples() {
@@ -61,7 +59,6 @@ void data_store_merge_samples::setup() {
     err << __FILE__ << " " << __LINE__ << " :: "
         << "not yet implemented";
     throw lbann_exception(err.str());
-    m_buffers.resize( omp_get_max_threads() );
   } 
   
   else {
