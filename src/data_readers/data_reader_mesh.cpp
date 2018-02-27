@@ -55,6 +55,10 @@ void mesh_reader::load() {
     throw lbann_exception("mesh_reader: index length too small");
   }
   m_index_format_str = "%0" + std::to_string(m_index_length) + "d";
+  // Set up to record flipping if needed.
+  if (m_random_flips) {
+    m_flip_choices.resize(m_num_samples);
+  }
   // Reset indices.
   m_shuffled_indices.resize(m_num_samples);
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
@@ -62,24 +66,29 @@ void mesh_reader::load() {
 }
 
 bool mesh_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
+  if (m_random_flips) {
+    fast_rng_gen& gen = get_fast_generator();
+    std::uniform_int_distribution<int> dist(0, 1);
+    m_flip_choices[data_id].first = dist(gen);
+    m_flip_choices[data_id].second = dist(gen);
+  }
   for (size_t i = 0; i < m_channels.size(); ++i) {
     Mat X_view = El::View(
       X, El::IR(i*m_data_height*m_data_width, (i+1)*m_data_height*m_data_width),
       El::IR(mb_idx));
-    std::string filename = construct_filename(m_channels[i], data_id);
-    load_file(filename, X_view);
+    load_file(data_id, m_channels[i], X_view);
   }
   return true;
 }
 
 bool mesh_reader::fetch_response(Mat& Y, int data_id, int mb_idx, int tid) {
-  std::string filename = construct_filename(m_target_name, data_id);
   Mat Y_view = El::View(Y, El::ALL, El::IR(mb_idx));
-  load_file(filename, Y_view);
+  load_file(data_id, m_target_name, Y_view);
   return true;
 }
 
-void mesh_reader::load_file(const std::string filename, Mat& mat) {
+void mesh_reader::load_file(int data_id, const std::string channel, Mat& mat) {
+  const std::string filename = construct_filename(channel, data_id);
   std::ifstream f(filename, std::ios::binary);
   if (f.fail()) {
     throw lbann_exception("mesh_reader: failed to open " + filename);
@@ -94,6 +103,15 @@ void mesh_reader::load_file(const std::string filename, Mat& mat) {
     Mat tmp_mat(m_data_width, m_data_height, buf, m_data_width);
     Mat mat_reshape(m_data_height, m_data_width, mat.Buffer(), m_data_height);
     El::Transpose(tmp_mat, mat_reshape);
+    // Flip if needed.
+    if (m_random_flips) {
+      if (m_flip_choices[data_id].first) {
+        horizontal_flip(mat_reshape);
+      }
+      if (m_flip_choices[data_id].second) {
+        vertical_flip(mat_reshape);
+      }
+    }
   } else {
     // Need to transpose and convert from float. Not yet supported.
     throw lbann_exception("mesh_reader: does not support DataType != float");
@@ -105,6 +123,32 @@ std::string mesh_reader::construct_filename(std::string channel, int data_id) {
   char idx[m_index_length + 1];
   std::snprintf(idx, m_index_length + 1, m_index_format_str.c_str(), data_id);
   return filename + std::string(idx) + ".bin";
+}
+
+void mesh_reader::horizontal_flip(Mat& mat) {
+  // TODO: Could probably optimize this for better locality.
+  const El::Int height = mat.Height();
+  const El::Int width = mat.Width();
+  for (El::Int row = 0; row < height; ++row) {
+    for (El::Int col = 0; col < (width / 2); ++col) {
+      DataType tmp = mat(row, col);
+      mat(row, col) = mat(row, width - col - 1);
+      mat(row, width - col - 1) = tmp;
+    }
+  }
+}
+
+void mesh_reader::vertical_flip(Mat& mat) {
+  // TODO: Could probably optimize this for better locality.
+  const El::Int height = mat.Height();
+  const El::Int width = mat.Width();
+  for (El::Int row = 0; row < (height / 2); ++row) {
+    for (El::Int col = 0; col < width; ++col) {
+      DataType tmp = mat(row, col);
+      mat(row, col) = mat(height - row - 1, col);
+      mat(height - row - 1, col) = tmp;
+    }
+  }
 }
 
 }  // namespace lbann

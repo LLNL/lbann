@@ -58,6 +58,8 @@ class mesh_reader : public generic_data_reader {
   void set_index_length(int l) {
     m_index_length = l;
   }
+  /// Set whether to do random horizontal and vertical flips.
+  void set_random_flips(bool b) { m_random_flips = b; }
 
   void load() override;
   int get_linearized_data_size() const override {
@@ -80,9 +82,14 @@ class mesh_reader : public generic_data_reader {
    * This may do datatype conversion if DataType is not float.
    * mat should be of size (m_data_height, m_data_width).
    */
-  void load_file(const std::string filename, Mat& mat);
+  void load_file(int data_id, const std::string channel, Mat& mat);
   /// Return the full path to the data file for datum data_id's channel.
   std::string construct_filename(std::string channel, int data_id);
+
+  /// Flip mat horizontally (i.e. about its vertical axis).
+  void horizontal_flip(Mat& mat);
+  /// Flip mat vertically (i.e. about its horizontal axis).
+  void vertical_flip(Mat& mat);
 
   /// A suffix to append to each channel directory (e.g. "128").
   std::string m_suffix = "128";
@@ -126,6 +133,14 @@ class mesh_reader : public generic_data_reader {
   int m_num_samples = 0;
   /// Buffers for loading data into.
   std::vector<std::vector<float>> m_load_bufs;
+  /// Whether to do random horizontal/vertical flips.
+  bool m_random_flips = false;
+  /**
+   * This records the flip choices made for each sample.
+   * This is needed because both the data and target need the same
+   * transformation applied.
+   */
+  std::vector<std::pair<bool, bool>> m_flip_choices;
 };
 
 }  // namespace lbann
