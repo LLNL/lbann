@@ -76,9 +76,7 @@ optimizer& optimizer::operator=(const optimizer& other) {
   m_gradient_allreduce_needed = other.m_gradient_allreduce_needed;
   m_gradient_allreduce_started = other.m_gradient_allreduce_started;
   m_gradient_allreduce_finished = other.m_gradient_allreduce_finished;
-  #ifdef LBANN_NBALLREDUCE_GRADIENT
   m_gradient_allreduce_started = other.m_gradient_allreduce_started;
-  #endif  // LBANN_NBALLREDUCE_GRADIENT
 
   // Deep copy matrices
   if (m_gradient != nullptr) { delete m_gradient; }
@@ -141,9 +139,7 @@ const AbsDistMat& optimizer::get_gradient() {
     start_gradient_staging_allreduce();
   }
   if (m_gradient_allreduce_started && !m_gradient_allreduce_finished) {
-    #ifdef LBANN_NBALLREDUCE_GRADIENT
     m_comm->wait(m_gradient_allreduce_req);
-    #endif // LBANN_NBALLREDUCE_GRADIENT
     m_gradient_allreduce_finished = true;
   }
   if (m_gradient_allreduce_needed) {
@@ -206,9 +202,7 @@ const cudnn::matrix& optimizer::get_gradient_gpu() {
     start_gradient_staging_allreduce();
   }
   if (m_gradient_allreduce_started && !m_gradient_allreduce_finished) {
-    #ifdef LBANN_NBALLREDUCE_GRADIENT
     m_comm->wait(m_gradient_allreduce_req);
-    #endif // LBANN_NBALLREDUCE_GRADIENT
     m_gradient_allreduce_finished = true;
   }
   if (m_gradient_allreduce_needed) {
@@ -231,16 +225,10 @@ void optimizer::start_gradient_staging_allreduce() {
 
   m_gradient_allreduce_started = true;
   if (m_cudnn == nullptr) {
-    #ifdef LBANN_NBALLREDUCE_GRADIENT
     m_comm->nb_allreduce(*m_gradient_staging,
                          m_gradient_staging->RedundantComm(),
                          m_gradient_allreduce_req);
     m_gradient_allreduce_finished = false;
-    #else
-    m_comm->allreduce(*m_gradient_staging,
-                      m_gradient_staging->RedundantComm());
-    m_gradient_allreduce_finished = true;
-    #endif // LBANN_NBALLREDUCE_GRADIENT
   } else {
     #ifndef LBANN_HAS_CUDNN
     throw lbann_exception("optimizer: cuDNN not detected");
@@ -316,10 +304,10 @@ void optimizer::add_to_gradient(const cudnn::matrix& gradient_d,
   if (scale != DataType(0)) {
     for(int i = 0; i < m_cudnn->get_num_gpus(); ++i) {
       CHECK_CUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
-      CHECK_CUBLAS(cublas::axpy(m_cudnn->get_cublas_handle(i),
-                                m_weights->get_size(),
-                                scale, gradient_d.get_locked_data(i), 1,
-                                m_gradient_d.get_data(i), 1));
+      cublas::axpy(m_cudnn->get_cublas_handle(i),
+                   m_weights->get_size(),
+                   scale, gradient_d.get_locked_data(i), 1,
+                   m_gradient_d.get_data(i), 1);
     }
   }
 }
@@ -408,10 +396,10 @@ void optimizer::add_to_gradient_staging(const cudnn::matrix& gradient_d,
     // Add to staging matrix
     for(int i = 0; i < m_cudnn->get_num_gpus(); ++i) {
       CHECK_CUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
-      CHECK_CUBLAS(cublas::axpy(m_cudnn->get_cublas_handle(i),
-                                m_weights->get_size(),
-                                scale, gradient_d.get_locked_data(i), 1,
-                                m_gradient_staging_d.get_data(i), 1));
+      cublas::axpy(m_cudnn->get_cublas_handle(i),
+                   m_weights->get_size(),
+                   scale, gradient_d.get_locked_data(i), 1,
+                   m_gradient_staging_d.get_data(i), 1);
     }
 
   }

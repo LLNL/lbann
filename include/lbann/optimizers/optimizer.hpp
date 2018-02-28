@@ -216,10 +216,8 @@ class optimizer {
   /** Running count of the time spent in step(). */
   double m_step_time = 0.0;
 
-#ifdef LBANN_NBALLREDUCE_GRADIENT
   /** The request for non-blocking allreduces. */
-  allreduces::MPIBackend::req_type m_gradient_allreduce_req;
-#endif  // LBANN_NBALLREDUCE_GRADIENT
+  Al::req_type m_gradient_allreduce_req;
 
 //************************************************************************
 // Checkpointing

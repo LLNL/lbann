@@ -34,9 +34,17 @@
 #include "base.hpp"
 #ifdef LBANN_HAS_ALUMINUM
 #include <allreduce.hpp>
-#endif
+#endif // LBANN_HAS_ALUMINUM
 
 namespace lbann {
+
+namespace Al {
+#ifdef LBANN_HAS_ALUMINUM
+using req_type = ::allreduces::MPIBackend::req_type;
+#else
+struct req_type {};
+#endif // LBANN_HAS_ALUMINUM
+}
 
 /**
  * Manage communication.
@@ -409,12 +417,13 @@ class lbann_comm {
   /** Matrix allreduce. */
   void allreduce(AbsDistMat& m, const El::mpi::Comm c,
     El::mpi::Op op = El::mpi::SUM);
-#ifdef LBANN_HAS_ALUMINUM
-  /** Non-blocking matrix allreduce. */
+  /** Non-blocking matrix allreduce.
+   *  If LBANN has not been built with Aluminum, then this calls a
+   *  blocking matrix allreduce.
+   */
   void nb_allreduce(AbsDistMat& m, const El::mpi::Comm c,
-                    allreduces::MPIBackend::req_type& req,
+                    Al::req_type& req,
                     El::mpi::Op op = El::mpi::SUM);
-#endif
 
   /** Wait for a non-blocking request to complete. */
   template <typename T>
@@ -422,16 +431,10 @@ class lbann_comm {
     El::mpi::Wait(req);
   }
 
-#ifdef LBANN_HAS_ALUMINUM
   /** Wait for a non-blocking request to complete. */
-  void wait(allreduces::MPIBackend::req_type& req) {
-    allreduces::Wait<allreduces::MPIBackend>(req);
-  }
+  void wait(Al::req_type& req);
   /** Test whether a non-blocking request has completed; true if it has. */
-  bool test(allreduces::MPIBackend::req_type& req) {
-    return allreduces::Test<allreduces::MPIBackend>(req);
-  }
-#endif
+  bool test(Al::req_type& req);
 
   /** Barrier among the inter-model processes. */
   void intermodel_barrier();

@@ -158,10 +158,10 @@ void lbann_comm::allreduce(AbsDistMat& m, const El::mpi::Comm c,
   bytes_received += sizeof(DataType) * m.LocalHeight() * m.LocalWidth() * (El::mpi::Size(c) - 1);
 }
 
-#ifdef LBANN_HAS_ALUMINUM
 void lbann_comm::nb_allreduce(AbsDistMat& m, const El::mpi::Comm c,
-                              allreduces::MPIBackend::req_type& req,
+                              Al::req_type& req,
                               El::mpi::Op op) {
+#ifdef LBANN_HAS_ALUMINUM
   bytes_sent += sizeof(DataType) * m.LocalHeight() * m.LocalWidth();
   if (m.LocalHeight() != m.LDim()) {
     throw lbann_exception("Aluminum does not support allreduces on"
@@ -171,8 +171,24 @@ void lbann_comm::nb_allreduce(AbsDistMat& m, const El::mpi::Comm c,
     m.Buffer(), m.LocalHeight()*m.LocalWidth(),
     mpi_op_to_al_op(op), *get_al_comm(c), req);
   bytes_received += sizeof(DataType) * m.LocalHeight() * m.LocalWidth() * (El::mpi::Size(c) - 1);
+#else
+  allreduce(m, c, op);
+#endif // LBANN_HAS_ALUMINUM
 }
+
+void lbann_comm::wait(Al::req_type& req) {
+#ifdef LBANN_HAS_ALUMINUM
+  allreduces::Wait<allreduces::MPIBackend>(req);
 #endif
+}
+
+bool lbann_comm::test(Al::req_type& req) {
+#ifdef LBANN_HAS_ALUMINUM
+  return allreduces::Test<allreduces::MPIBackend>(req);
+#else
+  return true;
+#endif
+}
 
 void lbann_comm::intermodel_broadcast_matrix(Mat& mat, int root) {
   El::Broadcast(mat, intermodel_comm, root);
