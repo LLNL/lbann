@@ -1,11 +1,16 @@
+#Example taken from: https://lc.llnl.gov/bitbucket/users/jjayaram/repos/deep-latent-spaces/browse/codes/dev/VAE-FCN/vae_fcn.py and 
+#https://lc.llnl.gov/bitbucket/users/jjayaram/repos/deep-latent-spaces/browse/codes/dev/VAE-FCN/run_vae.py
+#Timestamp 02/26/2018 8:45AM
 model {
   name: "directed_acyclic_graph_model"
   data_layout: "model_parallel"
-  mini_batch_size: 100 
+  #mini_batch_size: 128 
+  mini_batch_size: 100 #more last minibatch images to save 
   block_size: 256
-  num_epochs: 50
+  num_epochs: 40
   num_parallel_readers: 0
   procs_per_model: 0
+  use_cudnn: true
   num_gpus: -1
 
   ###################################################
@@ -14,6 +19,7 @@ model {
 
   objective_function {
     binary_cross_entropy {}
+    #mean_squared_error {} 
     kl_divergence {
       layer1: "z_mean"
       layer2: "z_log_sigma" 
@@ -39,15 +45,15 @@ model {
   }
   callback { timer {} }
   callback {
-    dump_activations {
+      dump_activations{
       basename: "dump_acts/"
-      layer_names: "relu1 sum"
+      layer_names: "data sigmoid"
     }
   }
   callback {
     save_images {
-      image_dir: "images_"
-      extension: "png"
+      image_dir: "vae_fcn_images_"
+      extension: "jpg"
     }
   }
 
@@ -64,6 +70,8 @@ model {
     }
   }
 
+  #ENCODER
+  ############################
   # FULLY_CONNECTED encode1
   layer {
     parents: "data"
@@ -76,31 +84,106 @@ model {
     }
   }
 
-  # RELU relu1
+  # ELU encode1_elu
   layer {
     parents: "encode1"
-    name: "relu1"
+    name: "encode1_elu"
     data_layout: "model_parallel"
-    relu {
+    elu {
     }
   }
 
+  #DROPOUT encode1_dropout 
+  layer {
+    parents: "encode1_elu"
+    name: "encode1_dropout"
+    data_layout: "model_parallel"
+    dropout {
+      keep_prob: 0.95
+    }
+  }
+
+  # FULLY_CONNECTED encode2
+  layer {
+    parents: "encode1_dropout"
+    name: "encode2"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 256
+      weight_initialization: "he_normal"
+      has_bias: true
+    }
+  }
+
+  # TANH encode2_tanh
+  layer {
+    parents: "encode2"
+    name: "encode2_tanh"
+    data_layout: "model_parallel"
+    tanh {
+    }
+  }
+
+  #DROPOUT encode2_dropout 
+  layer {
+    parents: "encode2_tanh"
+    name: "encode2_dropout"
+    data_layout: "model_parallel"
+    dropout {
+      keep_prob: 0.95
+    }
+  }
+
+  # FULLY_CONNECTED encode3
+  layer {
+    parents: "encode2_dropout"
+    name: "encode3"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 256
+      weight_initialization: "he_normal"
+      has_bias: true
+    }
+  }
+
+  # TANH encode3_tanh
+  layer {
+    parents: "encode3"
+    name: "encode3_tanh"
+    data_layout: "model_parallel"
+    tanh {
+    }
+  }
+
+  #DROPOUT encode3_dropout 
+  layer {
+    parents: "encode3_tanh"
+    name: "encode3_dropout"
+    data_layout: "model_parallel"
+    dropout {
+      keep_prob: 0.95
+    }
+  }
+
+
   #split
   layer {
-    parents: "relu1"
+    parents: "encode3_dropout"
     name: "split"
     data_layout: "model_parallel"
     split {
     }
   }
-  
+
+  ###############LATENT SPACE
+
   # FULLY_CONNECTED z_mean
   layer {
     parents: "split"
     name: "z_mean"
     data_layout: "model_parallel"
     fully_connected {
-      num_neurons: 2
+      num_neurons:5 
       weight_initialization: "glorot_normal"
       has_bias: true
     }
@@ -125,7 +208,7 @@ model {
     name: "z_log_sigma"
     data_layout: "model_parallel"
     fully_connected {
-      num_neurons: 2
+      num_neurons:5 
       weight_initialization: "glorot_normal"
       has_bias: true
     }
@@ -156,7 +239,7 @@ model {
     data_layout: "model_parallel"
     noise {
       noise_factor: 1.0
-      num_neurons: "2"
+      num_neurons: "5"
     }
   }
   
@@ -179,9 +262,74 @@ model {
     }
   }
 
-  # FULLY_CONNECTED decode1
+###DECODER
+
+
+  # FULLY_CONNECTED decode3
   layer {
     parents: "sum"
+    name: "decode3"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 256
+      weight_initialization: "he_normal"
+      has_bias: true
+    }
+  }
+
+  # TANH decode3_tanh
+  layer {
+    parents: "decode3"
+    name: "decode3_tanh"
+    data_layout: "model_parallel"
+    tanh {
+    }
+  }
+
+  #DROPOUT decode3_dropout 
+  layer {
+    parents: "decode3_tanh"
+    name: "decode3_dropout"
+    data_layout: "model_parallel"
+    dropout {
+      keep_prob: 0.95
+    }
+  }
+
+  # FULLY_CONNECTED decode2
+  layer {
+    parents: "decode3_dropout"
+    name: "decode2"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 256
+      weight_initialization: "he_normal"
+      has_bias: true
+    }
+  }
+
+  # TANH decode2_tanh
+  layer {
+    parents: "decode2"
+    name: "decode2_tanh"
+    data_layout: "model_parallel"
+    tanh {
+    }
+  }
+
+  #DROPOUT decode2_dropout 
+  layer {
+    parents: "decode2_tanh"
+    name: "decode2_dropout"
+    data_layout: "model_parallel"
+    dropout {
+      keep_prob: 0.95
+    }
+   }
+
+  # FULLY_CONNECTED decode1
+  layer {
+    parents: "decode2_dropout"
     name: "decode1"
     data_layout: "model_parallel"
     fully_connected {
@@ -191,18 +339,28 @@ model {
     }
   }
 
-  # RELU relu2
+  # ELU decode1_elu
   layer {
     parents: "decode1"
-    name: "relu2"
+    name: "decode1_elu"
     data_layout: "model_parallel"
-    relu {
+    elu {
     }
   }
+  
+  #DROPOUT decode1_dropout 
+  layer {
+    parents: "decode1_elu"
+    name: "decode1_dropout"
+    data_layout: "model_parallel"
+    dropout {
+      keep_prob: 0.95
+    }
+   }
 
   # FULLY_CONNECTED decode0
   layer {
-    parents: "relu2"
+    parents: "decode1_dropout"
     name: "decode0"
     data_layout: "model_parallel"
     num_neurons_from_data_reader: true

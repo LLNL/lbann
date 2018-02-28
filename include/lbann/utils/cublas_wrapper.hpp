@@ -30,6 +30,7 @@
 #include "lbann/base.hpp"
 
 #ifdef LBANN_HAS_CUDA
+#include <cuda_runtime.h>
 #include <cublas_v2.h>
 
 // Error checking macro

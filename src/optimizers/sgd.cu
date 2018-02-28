@@ -72,11 +72,11 @@ void sgd::step_compute_gpu(cudnn::matrix& values_d,
   if (m_momentum == DataType(0)) {
     for (int i = 0; i < m_cudnn->get_num_gpus(); ++i) {
       CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-      CHECK_CUBLAS(cublas::axpy(m_cudnn->get_cublas_handle(i),
-                                num_entries,
-                                -m_learning_rate,
-                                gradient_d.get_locked_data(i), 1,
-                                values_d.get_data(i), 1));
+      cublas::axpy(m_cudnn->get_cublas_handle(i),
+                   num_entries,
+                   -m_learning_rate,
+                   gradient_d.get_locked_data(i), 1,
+                   values_d.get_data(i), 1);
     }
     return;
   }

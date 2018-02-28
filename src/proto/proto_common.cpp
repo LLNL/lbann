@@ -1976,6 +1976,8 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       reader = new data_reader_synthetic(readme.num_samples(), readme.num_features(), shuffle);
     } else if (name == "ascii") {
       reader = new ascii_reader(p.model().recurrent().unroll_depth(), shuffle);
+    } else if (name == "mesh") {
+      reader = new mesh_reader(shuffle);
     } else {
       if (master) {
         err << __FILE__ << " " << __LINE__ << " :: unknown name for data reader: "
@@ -2068,9 +2070,12 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       } else if (name == "ascii") {
         reader_validation = new ascii_reader(p.model().recurrent().unroll_depth(), shuffle);
         (*(ascii_reader *)reader_validation) = (*(ascii_reader *)reader);
+      } else if (name == "mesh") {
+        reader_validation = new mesh_reader(shuffle);
+        (*(mesh_reader *)reader_validation) = (*(mesh_reader *)reader);
       }
 
-      reader_validation->swap_role("validate");
+      reader_validation->set_role("validate");
       reader_validation->use_unused_index_set();
 
       if (master) {
@@ -2288,8 +2293,8 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
   if (opts->has_int("num_parallel_readers")) {
     model->set_num_parallel_readers(opts->get_int("num_parallel_readers"));
   }
-  if (opts->has_bool("use_cudnn")) {
-    model->set_use_cudnn(opts->get_int("use_cudnn"));
+  if (opts->has_bool("disable_cuda")) {
+    model->set_disable_cuda(opts->get_bool("disable_cuda"));
   }
   if (opts->has_int("random_seed")) {
     model->set_random_seed(opts->get_int("random_seed"));
@@ -2374,7 +2379,7 @@ void print_parameters(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
             << "  procs_per_model:      " << m.procs_per_model()  << std::endl
             << "  num_gpus:             " << m.num_gpus()  << std::endl
             << "  num_parallel_readers: " << m.num_parallel_readers()  << std::endl
-            << "  use_cudnn:            " << m.use_cudnn()  << std::endl
+            << "  disable_cuda:         " << m.disable_cuda()  << std::endl
             << "  random_seed:          " << m.random_seed() << std::endl
             << "  data_layout:          " << m.data_layout()  << std::endl
             << "     (only used for metrics)\n"
@@ -2438,7 +2443,7 @@ void print_help(lbann::lbann_comm *comm)
        "\n"
        "Some prototext values can be over-riden on the command line;\n"
        "(notes: use '1' or '0' for bool; if no value is given for a flag,\n"
-       "        e.g: --use_cudnn, then a value of '1' is assigned)\n"
+       "        e.g: --disable_cuda, then a value of '1' is assigned)\n"
        "\n"
        "General:\n"
        "  --dag_model\n"
@@ -2447,7 +2452,7 @@ void print_help(lbann::lbann_comm *comm)
        "  --block_size=<int>\n"
        "  --procs_per_model=<int>\n"
        "  --num_gpus=<int>\n"
-       "  --use_cudnn=<bool>\n"
+       "  --disable_cuda=<bool>\n"
        "     has no effect unless lbann was compiled with: LBANN_HAS_CUDNN\n"
        "  --random_seed=<int>\n"
        "  --objective_function<string>\n"

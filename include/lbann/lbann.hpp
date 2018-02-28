@@ -107,11 +107,12 @@
 #include "lbann/data_readers/data_reader_merge_features.hpp"
 #include "lbann/data_readers/data_reader_ascii.hpp"
 #include "lbann/data_readers/data_reader_pilot2_molecular.hpp"
+#include "lbann/data_readers/data_reader_mesh.hpp"
 
 /// Data Store
 #include "lbann/data_store/generic_data_store.hpp"
 #include "lbann/data_store/data_store_imagenet.hpp"
-#include "lbann/data_store/data_store_merge_samples.hpp"
+//#include "lbann/data_store/data_store_merge_samples.hpp"
 
 /// Callbacks
 #include "lbann/callbacks/callback_check_init.hpp"

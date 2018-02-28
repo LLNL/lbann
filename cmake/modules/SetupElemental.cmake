@@ -22,7 +22,7 @@ else ()
 
   if (Elemental_FOUND)
     set(HYDROGEN_LIBRARIES "${Elemental_LIBRARIES}")
-    message(STATUS "Found Elemental: {Elemental_DIR}")
+    message(STATUS "Found Elemental: ${Elemental_DIR}")
 
     if (TARGET El)
       set_property(TARGET El PROPERTY
