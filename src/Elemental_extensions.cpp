@@ -60,13 +60,29 @@ void ColumnSum( const Matrix<F>& X, Matrix<F>& sums ) {
 }
 
 template<typename F>
+void ColumnSum( const AbstractMatrix<F>& X, AbstractMatrix<F>& sums ) {
+    if (X.GetDevice() != sums.GetDevice())
+        LogicError("ColumnSum requires matching device types.");
+
+    if ((X.GetDevice() == Device::CPU)) {
+      ColumnSum(static_cast<Matrix<T,Device::CPU>&>(X),
+                static_cast<Matrix<T,Device::CPU>&>(sums));
+    }else if ((X.GetDevice() == Device::GPU)) {
+      ColumnSum(static_cast<Matrix<T,Device::GPU>&>(X),
+                static_cast<Matrix<T,Device::GPU>&>(sums));
+    }else {
+      LogicError("Unsupported device type.");
+    }
+}
+
+template<typename F>
 void ColumnSum
 ( const AbstractDistMatrix<F>& A, AbstractDistMatrix<F>& sums ) {
 //    DEBUG_ONLY(CSE cse("ColumnSum"))
 
     // Check that distributed matrix formats are valid
     if( A.DistData().rowDist != sums.DistData().rowDist
-        || sums.DistData().colDist != STAR 
+        || sums.DistData().colDist != STAR
         || A.DistData().blockHeight != sums.DistData().blockHeight
         || A.DistData().blockWidth != sums.DistData().blockWidth)
     {
@@ -111,12 +127,28 @@ void RowSum(const Matrix<F>& X, Matrix<F>& sums) {
 
 }
 
+template<typename F>
+void RowSum(const AbstractMatrix<F>& X, AbstractMatrix<F>& sums) {
+    if (X.GetDevice() != sums.GetDevice())
+        LogicError("RowSum requires matching device types.");
+
+    if ((X.GetDevice() == Device::CPU)) {
+      RowSum(static_cast<Matrix<T,Device::CPU>&>(X),
+             static_cast<Matrix<T,Device::CPU>&>(sums));
+    }else if ((X.GetDevice() == Device::GPU)) {
+      RowSum(static_cast<Matrix<T,Device::GPU>&>(X),
+             static_cast<Matrix<T,Device::GPU>&>(sums));
+    }else {
+      LogicError("Unsupported device type.");
+    }
+}
+
 template <typename F>
 void RowSum(const AbstractDistMatrix<F>& A, AbstractDistMatrix<F>& sums) {
-  
+
   // Check that distributed matrix formats are valid
   if( A.DistData().colDist != sums.DistData().colDist
-      || sums.DistData().rowDist != STAR 
+      || sums.DistData().rowDist != STAR
       || A.DistData().blockHeight != sums.DistData().blockHeight
       || A.DistData().blockWidth != sums.DistData().blockWidth)
   {
