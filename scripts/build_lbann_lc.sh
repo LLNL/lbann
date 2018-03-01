@@ -398,7 +398,7 @@ fi
 
 # Add flag for libldl: may be needed some compilers
 CXX_FLAGS="${CXX_FLAGS} -ldl"
-C_FLAGS="${CXX_FLAGS} -ldl"
+C_FLAGS="${CXX_FLAGS}"
 
 
 # Set environment variables
@@ -415,7 +415,7 @@ ROOT_DIR=$(git rev-parse --show-toplevel)
 
 # Initialize build directory
 if [ -z "${BUILD_DIR}" ]; then
-    BUILD_DIR=${ROOT_DIR}/build/${COMPILER}.${CLUSTER}.llnl.gov
+    BUILD_DIR=${ROOT_DIR}/build/${COMPILER}.${BUILD_TYPE}.${CLUSTER}.llnl.gov
 fi
 if [ -n "${BUILD_SUFFIX}" ]; then
     BUILD_DIR=${BUILD_DIR}.${BUILD_SUFFIX}
@@ -537,7 +537,7 @@ if [ "${CLUSTER}" == "surface" ] || [ "${CLUSTER}" == "ray" ]; then
         CUDATOOLKIT_VERSION=8.0
         . /usr/share/[mM]odules/init/bash
         module load cudatoolkit/${CUDATOOLKIT_VERSION}
-        
+
         export CUDA_TOOLKIT_ROOT_DIR=/opt/cudatoolkit-${CUDATOOLKIT_VERSION}
     fi
 else
@@ -654,7 +654,7 @@ ${CMAKE_PATH}/cmake \
 -D LBANN_WITH_VTUNE=${WITH_VTUNE} \
 -D LBANN_WITH_TOPO_AWARE=${WITH_TOPO_AWARE} \
 -D LBANN_SEQUENTIAL_INITIALIZATION=${SEQ_INIT} \
--D LBANN_WITH_ALUMINUM=${WITH_ALUMINUM} \ 
+-D LBANN_WITH_ALUMINUM=${WITH_ALUMINUM} \
 -D LBANN_ALUMINUM_DIR=${ALUMINUM_DIR}
 ${SUPERBUILD_DIR}
 EOF
