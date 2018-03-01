@@ -50,11 +50,11 @@ set(Hydrogen_CMAKE_GENERATOR "${CMAKE_GENERATOR}"
   CACHE STRING "The generator used by CMake for Hydrogen.")
 
 # Handle the clone mechanism. First URL
-set(Hydrogen_URL "https://github.com/llnl/elemental.git"
+set(Hydrogen_URL "https://github.com/bvanessen/Elemental.git"
   CACHE STRING "The URL from which to clone Hydrogen")
 
 # ... then the tag.
-set(Hydrogen_TAG "hydrogen"
+set(Hydrogen_TAG "gpu-dev"
   CACHE STRING "The git tag or hash to checkout for Hydrogen")
 
 
