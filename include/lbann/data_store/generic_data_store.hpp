@@ -32,6 +32,7 @@
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include <vector>
+#include <unordered_map>
 
 namespace lbann {
 

@@ -217,7 +217,7 @@ class optimizer {
   double m_step_time = 0.0;
 
   /** The request for non-blocking allreduces. */
-  Al::req_type m_gradient_allreduce_req;
+  Al::request m_gradient_allreduce_req;
 
 //************************************************************************
 // Checkpointing

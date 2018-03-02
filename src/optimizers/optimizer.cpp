@@ -203,9 +203,6 @@ const cudnn::matrix& optimizer::get_gradient_gpu() {
   }
   if (m_gradient_allreduce_started && !m_gradient_allreduce_finished) {
     m_comm->wait(m_gradient_allreduce_req);
-    #if defined(LBANN_HAS_CUDNN) && defined(LBANN_HAS_ALUMINUM) && defined(LBANN_HAS_NCCL2)
-    if (m_cudnn != nullptr) { m_cudnn->synchronize_all(); }
-    #endif // defined(LBANN_HAS_CUDNN) && defined(LBANN_HAS_ALUMINUM) && defined(LBANN_HAS_NCCL2)
     m_gradient_allreduce_finished = true;
   }
   if (m_gradient_allreduce_needed) {
@@ -257,7 +254,6 @@ void optimizer::start_gradient_staging_allreduce() {
                               m_gradient_staging_d.get_data(0),
                               m_gradient_staging_d.get_leading_dim(),
                               m_gradient_staging->Root());
-    m_cudnn->synchronize_all();
     m_comm->nb_allreduce(gradient_staging_d,
                          gradient_staging_d.RedundantComm(),
                          m_gradient_allreduce_req,

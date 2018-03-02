@@ -86,9 +86,7 @@ lbann_comm::~lbann_comm() {
     }
   }
 #ifdef LBANN_HAS_ALUMINUM
-  for (auto&& c : al_comms) {
-    delete c.second;
-  }
+  m_al_comms.clear();
   allreduces::Finalize();
 #endif
 }
@@ -178,7 +176,7 @@ void lbann_comm::allreduce(AbsDistMat& m,
 
 void lbann_comm::nb_allreduce(AbsDistMat& m,
                               const El::mpi::Comm c,
-                              Al::req_type& req,
+                              Al::request& req,
                               El::mpi::Op op,
                               std::type_index t) {
 #ifdef LBANN_HAS_ALUMINUM
@@ -188,24 +186,27 @@ void lbann_comm::nb_allreduce(AbsDistMat& m,
     throw lbann_exception("Aluminum does not support allreduces on"
                           " non-contiguous matrices");
   }
+  req = Al::request(); // Reset request
   auto&& comm = get_al_comm(c, t);
   if (t == std::type_index(typeid(allreduces::MPIBackend))) {
+    req.mpi_req.reset(new Al::mpi_backend::req_type);
     allreduces::NonblockingAllreduce<allreduces::MPIBackend>(
       m.Buffer(),
       local_size,
       mpi_op_to_al_op(op),
       *comm,
-      req.mpi_req);
+      *req.mpi_req);
   }
   /// @todo MPI-CUDA backend
 #ifdef LBANN_HAS_NCCL2
   if (t == std::type_index(typeid(allreduces::NCCLBackend))) {
+    req.nccl_req.reset(new Al::nccl_backend::req_type);
     allreduces::NonblockingAllreduce<allreduces::NCCLBackend>(
       m.Buffer(),
       local_size,
       mpi_op_to_al_op(op),
       *static_cast<allreduces::NCCLCommunicator*>(comm),
-      req.nccl_req);
+      *req.nccl_req);
   }
 #endif // LBANN_HAS_NCCL2
   bytes_received += sizeof(DataType) * local_size * (El::mpi::Size(c) - 1);
@@ -214,26 +215,35 @@ void lbann_comm::nb_allreduce(AbsDistMat& m,
 #endif // LBANN_HAS_ALUMINUM
 }
 
-void lbann_comm::wait(Al::req_type& req) {
+void lbann_comm::wait(Al::request& req) {
 #ifdef LBANN_HAS_ALUMINUM
-  allreduces::Wait<allreduces::MPIBackend>(req.mpi_req);
+  if (req.mpi_req.get() != nullptr) {
+    allreduces::Wait<allreduces::MPIBackend>(*req.mpi_req);
+  }
   /// @todo MPI-CUDA backend
 #ifdef LBANN_HAS_NCCL2
-  allreduces::Wait<allreduces::NCCLBackend>(req.nccl_req);
+  if (req.nccl_req.get() != nullptr) {
+    allreduces::Wait<allreduces::NCCLBackend>(*req.nccl_req);
+  }
 #endif // LBANN_HAS_NCCL2
 #endif // LBANN_HAS_ALUMINUM
+  req = Al::request(); // Reset request
 }
 
-bool lbann_comm::test(Al::req_type& req) {
+bool lbann_comm::test(Al::request& req) {
   bool req_test = true;
 #ifdef LBANN_HAS_ALUMINUM
-  req_test = req_test && allreduces::Test<allreduces::MPIBackend>(req.mpi_req);
+  if (req.mpi_req.get() != nullptr) {
+    req_test = req_test && allreduces::Test<allreduces::MPIBackend>(*req.mpi_req);
+  }
   /// @todo MPI-CUDA backend
 #ifdef LBANN_HAS_NCCL2
-  req_test = req_test && allreduces::Test<allreduces::NCCLBackend>(req.nccl_req);
+  if (req.nccl_req.get() != nullptr) {
+    req_test = req_test && allreduces::Test<allreduces::NCCLBackend>(*req.nccl_req);
+  }
 #endif // LBANN_HAS_NCCL2
 #endif // LBANN_HAS_ALUMINUM
-  return true;
+  return req_test;
 }
 
 void lbann_comm::intermodel_broadcast_matrix(Mat& mat, int root) {
@@ -1082,26 +1092,28 @@ allreduces::MPICommunicator* lbann_comm::get_al_comm(El::mpi::Comm c,
                                                      std::type_index t) {
 
   // Construct Aluminum communicator if needed
-  const al_comm_key key(c.comm, t);
-  if (al_comms.count(key) == 0) {
+  const al_comms_key_type key(c.comm, t);
+  if (m_al_comms.count(key) == 0) {
     if (t == std::type_index(typeid(allreduces::MPIBackend))) {
-      al_comms[key] = new allreduces::MPICommunicator(c.comm);
+      m_al_comms[key] = al_comms_val_type(new allreduces::MPICommunicator(c.comm));
     }
     /// @todo MPI-CUDA backend
     #ifdef LBANN_HAS_NCCL2
     if (t == std::type_index(typeid(allreduces::NCCLBackend))) {
-      al_comms[key] = new allreduces::NCCLCommunicator(c.comm);
+      auto&& val = new allreduces::NCCLCommunicator(c.comm,
+                                                    get_gpus(),
+                                                    get_cuda_streams());
+      m_al_comms[key] = al_comms_val_type(val);
     }    
     #endif // LBANN_HAS_NCCL2
   }
 
   // Return Aluminum communicator
-  auto&& comm = al_comms[key];
+  auto&& comm = m_al_comms[key].get();
   if (comm == nullptr) {
     throw lbann_exception("Could not get Aluminum communicator");
-  } else {
-    return comm;
   }
+  return comm;
 
 }
 

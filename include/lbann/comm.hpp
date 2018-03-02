@@ -33,6 +33,9 @@
 #include <map>
 #include <typeindex>
 #include "base.hpp"
+#ifdef LBANN_HAS_CUDA
+#include <cuda_runtime.h>
+#endif // LBANN_HAS_CUDA
 #ifdef LBANN_HAS_ALUMINUM
 #ifdef LBANN_HAS_NCCL2
 #define ALUMINUM_HAS_NCCL
@@ -44,27 +47,31 @@ namespace lbann {
 
 namespace Al {
 
-// Define aliases for Aluminum backends
-#ifdef LBANN_HAS_ALUMINUM
-using mpi_backend = ::allreduces::MPIBackend;
-#ifdef LBANN_HAS_NCCL2
-using nccl_backend = ::allreduces::NCCLBackend;
-#endif // LBANN_HAS_NCCL2
-#else
+// Dummy Aluminum backend
 class dummy_backend {
 public:
   using req_type = int;
 };
+
+// Define aliases for Aluminum backends
+#ifdef LBANN_HAS_ALUMINUM
+using mpi_backend = ::allreduces::MPIBackend;
+#else
 using mpi_backend = lbann::Al::dummy_backend;
-using nccl_backend = lbann::Al::dummy_backend;
 #endif // LBANN_HAS_ALUMINUM
+/// @todo MPI-CUDA backend
+#if defined(LBANN_HAS_ALUMINUM) && defined(LBANN_HAS_NCCL2)
+using nccl_backend = ::allreduces::NCCLBackend;
+#else
+using nccl_backend = lbann::Al::dummy_backend;
+#endif // defined(LBANN_HAS_ALUMINUM) && defined(LBANN_HAS_NCCL2)
 
 // Wrapper for Aluminum non-blocking routine requests
-struct req_type {
-  mpi_backend::req_type mpi_req;
+struct request {
+  std::unique_ptr<mpi_backend::req_type> mpi_req;
   /// @todo MPI-CUDA backend
 #ifdef LBANN_HAS_NCCL2
-  nccl_backend::req_type nccl_req;
+  std::unique_ptr<nccl_backend::req_type> nccl_req;
 #endif // LBANN_HAS_NCCL2
 };
 
@@ -449,7 +456,7 @@ class lbann_comm {
    */
   void nb_allreduce(AbsDistMat& m,
                     const El::mpi::Comm c,
-                    Al::req_type& req,
+                    Al::request& req,
                     El::mpi::Op op = El::mpi::SUM,
                     std::type_index t = std::type_index(typeid(Al::mpi_backend)));
 
@@ -460,9 +467,9 @@ class lbann_comm {
   }
 
   /** Wait for a non-blocking request to complete. */
-  void wait(Al::req_type& req);
+  void wait(Al::request& req);
   /** Test whether a non-blocking request has completed; true if it has. */
-  bool test(Al::req_type& req);
+  bool test(Al::request& req);
 
   /** Barrier among the inter-model processes. */
   void intermodel_barrier();
@@ -863,6 +870,27 @@ class lbann_comm {
     return is_world_rank_on_node(world_rank);
   }
 
+  #ifdef LBANN_HAS_CUDA
+  /** Get list of GPUs.
+   *  @todo This is a kludge. A better solution would be to refactor
+   *  the cuDNN manager and make the LBANN communicator responsible
+   *  for GPU management.
+   */
+  std::vector<int>& get_gpus() {
+    static std::vector<int> gpus;
+    return gpus;
+  }
+  /** Get list of CUDA streams.
+   *  @todo This is a kludge. A better solution would be to refactor
+   *  the cuDNN manager and make the LBANN communicator responsible
+   *  for GPU management.
+   */
+  std::vector<cudaStream_t>& get_cuda_streams() {
+    static std::vector<cudaStream_t> streams;
+    return streams;
+  }
+  #endif // LBANN_HAS_CUDA
+
  private:
   /** World communicator. */
   const El::mpi::Comm world_comm;
@@ -901,11 +929,9 @@ class lbann_comm {
     allreduce_algorithm::DYNAMIC;
 
 #ifdef LBANN_HAS_ALUMINUM
-  using al_comm_key = std::pair<MPI_Comm, std::type_index>;
-  /** Aluminum communicators.
-   *  The map keys are MPI communicators and backend type indices.
-   */
-  std::map<al_comm_key, allreduces::MPICommunicator*> al_comms;
+  using al_comms_key_type = std::pair<MPI_Comm, std::type_index>;
+  using al_comms_val_type = std::unique_ptr<allreduces::MPICommunicator>;
+  std::map<al_comms_key_type, al_comms_val_type> m_al_comms;
 
   /** Get an Aluminum communicator.
    *  The communicator will have the same process configuration as the
