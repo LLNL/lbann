@@ -159,7 +159,7 @@ int lbann::distributed_io_buffer::compute_max_num_parallel_readers(long data_set
 void lbann::distributed_io_buffer::calculate_num_iterations_per_epoch(int num_models, int model_rank, int max_mini_batch_size, generic_data_reader *data_reader) {
   if(data_reader == nullptr) { return; }
   // If the data reader does not have any data bail out (e.g. unused validation reader)
-  if(data_reader->get_num_data() == 0) { return; }
+  if(data_reader->get_use_percent() == double(0.0)) { return; }
 
   if(max_mini_batch_size > data_reader->get_num_data()) {
     max_mini_batch_size = data_reader->get_num_data();

@@ -2075,7 +2075,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
         (*(mesh_reader *)reader_validation) = (*(mesh_reader *)reader);
       }
 
-      reader_validation->set_role("validate");
+      reader_validation->swap_role("validate");
       reader_validation->use_unused_index_set();
 
       if (master) {
