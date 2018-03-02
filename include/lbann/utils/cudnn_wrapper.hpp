@@ -422,7 +422,27 @@ class cudnn_manager {
   // One GPU per single thread of one MPI rank is assumed
   std::vector<ncclComm_t> m_nccl_comm;
   ncclDataType_t nccl_datatype();
-#endif // #ifdef LBANN_HAS_NCCL2
+#endif // LBANN_HAS_NCCL2
+
+#ifdef LBANN_HAS_ALUMINUM
+#ifdef LBANN_HAS_NCCL2
+  
+  /**
+   * Used to convert between Elemental Comm objects and an Aluminum
+   * communicator.
+   */
+  std::unordered_map<MPI_Comm, allreduces::MPICommunicator*> al_comms;
+
+  /**
+   * Get the Aluminum communicator associated with Elemental communicator c.
+   * This will create a new Al communicator if needed.
+   * @todo This currently only supports the NCCL backend.
+   */
+  allreduces::MPICommunicator* get_al_comm(El::mpi::Comm c);
+
+#endif // LBANN_HAS_NCCL2
+#endif // LBANN_HAS_ALUMINUM
+
 
 #endif // #ifdef LBANN_HAS_CUDNN
 };
