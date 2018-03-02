@@ -203,6 +203,9 @@ const cudnn::matrix& optimizer::get_gradient_gpu() {
   }
   if (m_gradient_allreduce_started && !m_gradient_allreduce_finished) {
     m_comm->wait(m_gradient_allreduce_req);
+    #if defined(LBANN_HAS_CUDNN) && defined(LBANN_HAS_ALUMINUM) && defined(LBANN_HAS_NCCL2)
+    if (m_cudnn != nullptr) { m_cudnn->synchronize_all(); }
+    #endif // defined(LBANN_HAS_CUDNN) && defined(LBANN_HAS_ALUMINUM) && defined(LBANN_HAS_NCCL2)
     m_gradient_allreduce_finished = true;
   }
   if (m_gradient_allreduce_needed) {
@@ -227,17 +230,48 @@ void optimizer::start_gradient_staging_allreduce() {
   if (m_cudnn == nullptr) {
     m_comm->nb_allreduce(*m_gradient_staging,
                          m_gradient_staging->RedundantComm(),
-                         m_gradient_allreduce_req);
+                         m_gradient_allreduce_req,
+                         El::mpi::SUM,
+                         std::type_index(typeid(Al::mpi_backend)));
     m_gradient_allreduce_finished = false;
   } else {
     #ifndef LBANN_HAS_CUDNN
     throw lbann_exception("optimizer: cuDNN not detected");
     #else
+    #if defined(LBANN_HAS_ALUMINUM) && defined(LBANN_HAS_NCCL2)
+    // Non-blocking GPU allreduce with NCCL
+    // Note: We assume each process has one GPU and that the gradient
+    // is in STAR,STAR distribution.
+    if (m_cudnn->get_num_gpus() != 1) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "non-blocking GPU allreduce with NCCL assumes one GPU per process";
+      throw lbann_exception(err.str());
+    }
+    StarMat gradient_staging_d;
+    gradient_staging_d.Attach(m_gradient_staging_d.get_height(),
+                              m_gradient_staging_d.get_width_per_gpu(),
+                              m_gradient_staging->Grid(),
+                              m_gradient_staging->ColAlign(),
+                              m_gradient_staging->RowAlign(),
+                              m_gradient_staging_d.get_data(0),
+                              m_gradient_staging_d.get_leading_dim(),
+                              m_gradient_staging->Root());
+    m_cudnn->synchronize_all();
+    m_comm->nb_allreduce(gradient_staging_d,
+                         gradient_staging_d.RedundantComm(),
+                         m_gradient_allreduce_req,
+                         El::mpi::SUM,
+                         std::type_index(typeid(Al::nccl_backend)));
+    m_gradient_allreduce_finished = false;
+    #else
+    // Naive GPU allreduce
     m_cudnn->global_allreduce_on_gpus(m_gradient_staging_d.get_data(),
                                       m_gradient_staging_d.get_height(),
                                       m_gradient_staging_d.get_width_per_gpu(),
                                       m_gradient->RedundantComm());
     m_gradient_allreduce_finished = true;
+    #endif // defined(LBANN_HAS_ALUMINUM) && defined(LBANN_HAS_NCCL2)
     #endif // LBANN_HAS_CUDNN
   }
 
