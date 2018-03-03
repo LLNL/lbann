@@ -1100,9 +1100,7 @@ allreduces::MPICommunicator* lbann_comm::get_al_comm(El::mpi::Comm c,
     /// @todo MPI-CUDA backend
     #ifdef LBANN_HAS_NCCL2
     if (t == std::type_index(typeid(allreduces::NCCLBackend))) {
-      auto&& val = new allreduces::NCCLCommunicator(c.comm,
-                                                    get_gpus(),
-                                                    get_cuda_streams());
+      auto&& val = new allreduces::NCCLCommunicator(c.comm, get_gpus());
       m_al_comms[key] = al_comms_val_type(val);
     }    
     #endif // LBANN_HAS_NCCL2

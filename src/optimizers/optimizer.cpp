@@ -254,6 +254,7 @@ void optimizer::start_gradient_staging_allreduce() {
                               m_gradient_staging_d.get_data(0),
                               m_gradient_staging_d.get_leading_dim(),
                               m_gradient_staging->Root());
+    m_cudnn->synchronize();
     m_comm->nb_allreduce(gradient_staging_d,
                          gradient_staging_d.RedundantComm(),
                          m_gradient_allreduce_req,
