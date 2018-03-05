@@ -67,7 +67,7 @@ class generic_data_store {
   void set_shuffled_indices(const std::vector<int> *indices);
 
   /// called by various image data readers 
-  virtual void get_data_buf(int data_id, int tid, std::vector<unsigned char> *&buf, int multi_idx = 0) {}
+  virtual void get_data_buf(int data_id, std::vector<unsigned char> *&buf, int multi_idx = 0) {}
   virtual void get_data_buf(int data_id, int tid, std::vector<double> *&buf) {}
 
  protected :

@@ -89,7 +89,7 @@ void data_store_image::setup() {
   }
 }
 
-void data_store_image::get_data_buf(int data_id, int tid, std::vector<unsigned char> *&buf, int multi_idx) {
+void data_store_image::get_data_buf(int data_id, std::vector<unsigned char> *&buf, int multi_idx) {
   static bool first_extended = true;
   int index = data_id * m_num_img_srcs + multi_idx;
   if (m_my_data_hash.find(index) == m_my_data_hash.end()) {

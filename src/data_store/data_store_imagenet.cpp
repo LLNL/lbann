@@ -106,7 +106,7 @@ void data_store_imagenet::test_data() {
     in.close();
 
     //get from datastore
-    get_data_buf(idx, 0, datastore_buf, 0);
+    get_data_buf(idx, datastore_buf, 0);
     if (b != *datastore_buf) {
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
