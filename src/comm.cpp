@@ -1116,16 +1116,15 @@ allreduces::MPICommunicator* lbann_comm::get_al_comm(El::mpi::Comm c,
 }
 
 allreduces::ReductionOperator lbann_comm::mpi_op_to_al_op(El::mpi::Op op) {
-  switch (op.op) {
-  case MPI_SUM:
+  if (op == El::mpi::SUM) {
     return allreduces::ReductionOperator::sum;
-  case MPI_PROD:
+  } else if (op == El::mpi::PROD) {
     return allreduces::ReductionOperator::prod;
-  case MPI_MIN:
+  } else if (op == El::mpi::MIN) {
     return allreduces::ReductionOperator::min;
-  case MPI_MAX:
+  } else if (op == El::mpi::MAX) {
     return allreduces::ReductionOperator::max;
-  default:
+  } else {
     throw lbann_exception("Reduction operator not supported in Aluminum");
   }
 }
