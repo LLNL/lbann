@@ -299,6 +299,9 @@ class fully_connected_layer : public learning_layer {
     const int input_ldim = input_d.get_leading_dim();
     const int output_ldim = output_d.get_leading_dim();
 
+    // Stop early if possible
+    if (mini_batch_size == 0) { return; }
+
     // Apply linearity
     for (int i=0; i<num_gpus; ++i) {
       CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
@@ -432,16 +435,18 @@ class fully_connected_layer : public learning_layer {
     }
 
     // Compute gradient w.r.t. input
-    for (int i = 0; i < num_gpus; ++i) {
-      CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-      cublas::gemm(this->m_cudnn->get_cublas_handle(i),
-                   CUBLAS_OP_T, CUBLAS_OP_N,
-                   input_size, mini_batch_size, output_size,
-                   DataType(1),
-                   linearity_d[i], output_size,
-                   gradient_wrt_output_d.get_locked_data(i), gradient_wrt_output_ldim,
-                   DataType(1),
-                   gradient_wrt_input_d.get_data(i), gradient_wrt_input_ldim);
+    if (mini_batch_size != 0) {
+      for (int i = 0; i < num_gpus; ++i) {
+        CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
+        cublas::gemm(this->m_cudnn->get_cublas_handle(i),
+                     CUBLAS_OP_T, CUBLAS_OP_N,
+                     input_size, mini_batch_size, output_size,
+                     DataType(1),
+                     linearity_d[i], output_size,
+                     gradient_wrt_output_d.get_locked_data(i), gradient_wrt_output_ldim,
+                     DataType(1),
+                     gradient_wrt_input_d.get_data(i), gradient_wrt_input_ldim);
+      }
     }
 
 #endif // LBANN_HAS_CUDNN
