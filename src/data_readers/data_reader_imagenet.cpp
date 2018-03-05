@@ -134,8 +134,7 @@ bool imagenet_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
 
   bool ret;
   if (m_data_store != nullptr) {
-    m_data_store->get_data_buf(data_id, image_buf, tid);
-    //m_data_store->get_data_buf(get_file_dir(), m_image_list[data_id].first, image_buf, tid);
+    m_data_store->get_data_buf(data_id, tid,image_buf, tid);
     ret = lbann::image_utils::load_image(*image_buf, width, height, img_type, *(m_pps[tid]), X_v);
   } else {
     ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v);

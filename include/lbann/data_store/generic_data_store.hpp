@@ -67,7 +67,8 @@ class generic_data_store {
   void set_shuffled_indices(const std::vector<int> *indices);
 
   /// called by various image data readers 
-  virtual void get_data_buf(int data_id, std::vector<unsigned char> *&buf, int multi_idx = 0) = 0;
+  virtual void get_data_buf(int data_id, int tid, std::vector<unsigned char> *&buf, int multi_idx = 0) {}
+  virtual void get_data_buf(int data_id, int tid, std::vector<double> *&buf) {}
 
  protected :
 
@@ -102,7 +103,11 @@ class generic_data_store {
 
   size_t m_num_readers;
 
-  size_t m_rank;
+  /// this processor's rank
+  int  m_rank;
+
+  /// number of procs in the model
+  int  m_np;
 
   size_t m_epoch;
 
@@ -126,6 +131,9 @@ class generic_data_store {
 
   /// conduct extensive testing
   bool m_extended_testing;
+
+  bool m_collect_minibatch_indices;
+
 };
 
 }  // namespace lbann

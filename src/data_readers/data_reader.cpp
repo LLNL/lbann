@@ -26,13 +26,15 @@
 // lbann_data_reader .hpp .cpp - Input data base class for training, testing
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_readers/data_reader.hpp"
 #include "lbann/data_readers/data_reader_imagenet.hpp"
 #include "lbann/data_readers/data_reader_multi_images.hpp"
 #include "lbann/data_readers/data_reader_merge_samples.hpp"
+#include "lbann/data_readers/data_reader_pilot2_molecular.hpp"
+
 #include "lbann/data_store/data_store_imagenet.hpp"
 #include "lbann/data_store/data_store_multi_images.hpp"
 #include "lbann/data_store/data_store_merge_samples.hpp"
+#include "lbann/data_store/data_store_pilot2_molecular.hpp"
 #include <omp.h>
 namespace lbann {
 
@@ -502,14 +504,20 @@ void generic_data_reader::setup_data_store(model *m, lbann_comm *comm) {
     the_reader = dynamic_cast<data_reader_multi_images*>(this);
     m_data_store = new data_store_multi_images(comm, this, m);
   }
+  else if (dynamic_cast<pilot2_molecular_reader*>(this) != nullptr) {
+    the_reader = dynamic_cast<pilot2_molecular_reader*>(this);
+    m_data_store = new data_store_pilot2_molecular(comm, this, m);
+  }
   else if (dynamic_cast<imagenet_reader*>(this) != nullptr) {
     the_reader = dynamic_cast<imagenet_reader*>(this);
     m_data_store = new data_store_imagenet(comm, this, m);
   }
+  /*
   else if (dynamic_cast<data_reader_merge_samples*>(this) != nullptr) {
     the_reader = dynamic_cast<data_reader_merge_samples*>(this);
     m_data_store = new data_store_merge_samples(comm, this, m);
   }
+  */
 
   //note: this is not an error, since data readers for a single model
   //      may be of different types (e.g, pilot2 has merge_samples and
@@ -517,9 +525,12 @@ void generic_data_reader::setup_data_store(model *m, lbann_comm *comm) {
   //      data store for one of these (possibly because the code
   //      has not been written. @todo revisit in future: should this
   //      be considered an error condition with thrown exception?
-  if (the_reader == nullptr && m_master) {
-    std::cerr << "WARNING: " << __FILE__ << " " << __LINE__
-              << " dynamic_cast<imagenet_reader*> failed; NOT using data_store\n";
+  if (the_reader == nullptr) {
+    if (m_master) {
+      std::cerr << "WARNING: " << __FILE__ << " " << __LINE__
+                << " dynamic_cast<...> failed; NOT using data_store for role: " 
+                << get_role() << "\n";
+    }
     return;
   }
 
