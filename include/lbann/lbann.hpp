@@ -108,6 +108,7 @@
 #include "lbann/data_readers/data_reader_ascii.hpp"
 #include "lbann/data_readers/data_reader_pilot2_molecular.hpp"
 #include "lbann/data_readers/data_reader_mesh.hpp"
+#include "lbann/data_readers/data_reader_external/data_reader_external.hpp"
 
 /// Data Store
 #include "lbann/data_store/generic_data_store.hpp"

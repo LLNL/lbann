@@ -284,6 +284,7 @@ target_include_directories(lbann PUBLIC
 
 # Use the IMPORTED targets when possible.
 target_link_libraries(lbann PUBLIC LbannProto)
+target_link_libraries(lbann PUBLIC LbannCommunicationProto)
 target_link_libraries(lbann PUBLIC OpenMP::OpenMP_CXX)
 target_link_libraries(lbann PUBLIC MPI::MPI_CXX)
 target_link_libraries(lbann PUBLIC protobuf::libprotobuf)

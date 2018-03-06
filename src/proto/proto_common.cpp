@@ -1917,6 +1917,9 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       reader_numpy->set_has_labels(!readme.disable_labels());
       reader_numpy->set_has_responses(!readme.disable_responses());
       reader = reader_numpy;
+    } else if (name == "external") {
+      auto* reader_external = new external_reader(shuffle);
+      reader = reader_external;
     } else if (name == "pilot2_molecular_reader") {
       pilot2_molecular_reader* reader_pilot2_molecular = new pilot2_molecular_reader(readme.num_neighbors(), readme.max_neighborhood(), shuffle);
       reader = reader_pilot2_molecular;
