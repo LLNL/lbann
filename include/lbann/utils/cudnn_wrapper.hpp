@@ -154,6 +154,11 @@ public:
                      int width_per_gpu = 1,
                      int leading_dim = 0);
 
+  /** Attach matrix to GPU workspace. */
+  void attach_to_work_spaces(int height,
+                             int width_per_gpu = 1,
+                             int leading_dim = 0);
+
   /** Get matrix height. */
   inline int get_height() const { return m_height; }
   /** Get matrix width per GPU. */
