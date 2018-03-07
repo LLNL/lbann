@@ -468,6 +468,17 @@ void model::setup_weights() {
 
 }
 
+int model::get_num_iterations_per_epoch(execution_mode mode) const {
+  if (m_layers.size() == 0u) {
+    return 0;
+  }
+  const auto* layer = dynamic_cast<generic_input_layer*>(m_layers[0]);
+  if (layer == nullptr) {
+    return 0;
+  }
+  return layer->get_num_iterations_per_epoch(mode);
+}
+
 ////////////////////////////////////////////////////////////
 // Evaluation and training
 ////////////////////////////////////////////////////////////
