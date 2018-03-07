@@ -12,7 +12,7 @@ void expand_motifs(lbann::lbann_comm *comm, lbann_data::LbannPB& pb);
 
 /// instantiates one or more generic_data_readers and inserts them in &data_readers
 void init_data_readers(
-  bool master,
+  lbann::lbann_comm *comm,
   const lbann_data::LbannPB& p,
   std::map<execution_mode, lbann::generic_data_reader *>& data_readers);
 

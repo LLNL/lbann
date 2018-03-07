@@ -84,7 +84,8 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_shuffle(shuffle), m_absolute_sample_count(0), m_validation_percent(0.0),
     m_use_percent(1.0),
     m_master(false),
-    m_save_minibatch_indices(false)
+    m_save_minibatch_indices(false),
+    m_compound_rank(0)
   {}
   generic_data_reader(const generic_data_reader&) = default;
   generic_data_reader& operator=(const generic_data_reader&) = default;
@@ -95,6 +96,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// set the comm object
   void set_comm(lbann_comm *comm) {
     m_comm = comm;
+    set_master(comm->am_world_master());
   }
 
   /// returns a (possibly nullptr) to comm
@@ -775,8 +777,19 @@ class generic_data_reader : public lbann_image_preprocessor {
       m_save_minibatch_indices = b;
   }
 
+  /// support of data store functionality
   const std::vector<std::vector<int> > & get_minibatch_indices() const {
     return m_my_minibatch_indices;
+  }
+
+  /// support of data store functionality
+  int get_compound_rank() {
+    return m_compound_rank;
+  }
+
+  /// support of data store functionality
+  void set_compound_rank(int r) {
+    m_compound_rank = r;
   }
 
  protected:
@@ -908,13 +921,15 @@ class generic_data_reader : public lbann_image_preprocessor {
   friend class data_reader_merge_features;
   friend class data_reader_merge_samples;
 
- private :
+ protected :
    /// added to support data store functionality
    bool m_save_minibatch_indices;
 
    /// added to support data store functionality
    std::vector<std::vector<int> > m_my_minibatch_indices;
 
+   /// added to support data store functionality
+   int m_compound_rank;
 };
 
 }  // namespace lbann

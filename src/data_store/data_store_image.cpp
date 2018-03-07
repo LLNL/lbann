@@ -218,6 +218,7 @@ void data_store_image::exchange_data() {
       m_my_minibatch_data[jj].resize(file_len);
       MPI_Get(&m_my_minibatch_data[jj][0], file_len, MPI_BYTE,
               owner, offset, file_len, MPI_BYTE, m_win);
+
       ++jj;
     }
   }
