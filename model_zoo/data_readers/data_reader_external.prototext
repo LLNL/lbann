@@ -1,64 +1,32 @@
 data_reader {
   reader {
     name: "external"
+    format: "pilot2_molecular_reader"
     role: "train"
     shuffle: true
-    data_filedir: "/p/lscratchf/brainusr/datasets/MNIST"
-    data_filename: "train-images-idx3-ubyte"
-    label_filename: "train-labels-idx1-ubyte"
+    data_filedir: "/p/gscratchr/brainusr/datasets/cancer/pilot2/"
+    #data_file_pattern: "3k_run16_10us.35fs-DPPC.20-DIPC.60-CHOL.20.dir/3k_run16_10us.35fs-DPPC.20-DIPC.60-CHOL.20_chunk_*_outof_29.npz"
+    data_filename: "3k_run16_10us.35fs-DPPC.20-DIPC.60-CHOL.20.dir/3k_run16_10us.35fs-DPPC.20-DIPC.60-CHOL.20_chunk_01_outof_29.npz"
     validation_percent: 0.1
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
-    image_preprocessor {
-      normalizer {
-        scale: true
-        subtract_mean: false
-        unit_variance: false
-        z_score: false
-      }
-      augmenter {
-        horizontal_flip: false
-        vertical_flip: false
-        rotation: 0
-        horizontal_shift: 0
-        vertical_shift: 0
-        shear_range: 0
-      }
-      noiser {
-        disable: true
-        factor: 0.0
-      }
-    }
+    disable_labels: true
+    disable_responses: true
+    num_neighbors: 10
+    max_neighborhood: 50
   }
   reader {
     name: "external"
     role: "test"
     shuffle: true
-    data_filedir: "/p/lscratchf/brainusr/datasets/MNIST"
-    data_filename: "t10k-images-idx3-ubyte"
-    label_filename: "t10k-labels-idx1-ubyte"
+    data_filedir: "/p/gscratchr/brainusr/datasets/cancer/pilot2/"
+    data_filename: "3k_run16_10us.35fs-DPPC.20-DIPC.60-CHOL.20.dir/3k_run16_10us.35fs-DPPC.20-DIPC.60-CHOL.20_chunk_01_outof_29.npz"
     validation_percent: 1.0
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
-    image_preprocessor {
-      normalizer {
-        scale: true
-        subtract_mean: false
-        unit_variance: false
-        z_score: false
-      }
-      augmenter {
-        horizontal_flip: false
-        vertical_flip: false
-        rotation: 0
-        horizontal_shift: 0
-        vertical_shift: 0
-        shear_range: 0
-      }
-      noiser {
-        disable: true
-        factor: 0.0
-      }
-    }
+    disable_labels: true
+    disable_responses: true
+    num_neighbors: 10
+    max_neighborhood: 50
   }
 }
