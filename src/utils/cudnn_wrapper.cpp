@@ -206,6 +206,36 @@ void matrix::locked_attach(const std::vector<DataType*>& data,
   m_is_locked = true;
 }
 
+void matrix::attach_to_work_spaces(int height,
+                                   int width_per_gpu,
+                                   int leading_dim) {
+  if (m_cudnn == nullptr) {
+    throw lbann::lbann_exception("cudnn::matrix: attempted to attach matrix without cuDNN manager");
+  }
+  clear();
+
+  // Check if work space size is valid
+  leading_dim = std::max(leading_dim, height);
+  const size_t required_size = leading_dim * width_per_gpu * sizeof(DataType);
+  const size_t work_space_size = m_cudnn->get_minimum_work_space_size();
+  if (work_space_size < required_size) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "insufficient GPU work space "
+        << "(requires " << required_size << " bytes on each GPU, "
+        << "but only have " << work_space_size << " bytes)";
+    throw lbann_exception(err.str());
+  }
+
+  // Attach matrix to work spaces
+  std::vector<DataType*> work_spaces;
+  for (auto&& ptr : m_cudnn->get_work_spaces()) {
+    work_spaces.push_back(static_cast<DataType*>(ptr));
+  }
+  attach(work_spaces, height, width_per_gpu, leading_dim);
+
+}
+
 std::vector<DataType*>& matrix::get_data() {
   if (m_cudnn == nullptr) {
     throw lbann::lbann_exception("cudnn::matrix: attempted access data of matrix without cuDNN manager");

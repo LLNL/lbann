@@ -288,9 +288,9 @@ void optimizer::add_to_gradient(const AbsDistMat& gradient,
       #ifndef LBANN_HAS_CUDNN
       throw lbann_exception("optimizer: cuDNN not detected");
       #else
-      cudnn::matrix gradient_d(m_cudnn,
-                               gradient.LocalHeight(),
-                               gradient.LocalWidth());
+      cudnn::matrix gradient_d(m_cudnn);
+      gradient_d.attach_to_work_spaces(gradient.LocalHeight(),
+                                       gradient.LocalWidth());
       m_cudnn->broadcast_to_gpus(gradient_d.get_data(),
                                  gradient.LockedMatrix());
       add_to_gradient(gradient_d, scale);
