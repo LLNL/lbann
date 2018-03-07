@@ -230,6 +230,42 @@ class lbann_callback_linear_growth_learning_rate :
 };
 
 /**
+ * Decrease the learning rate by polynomial policy
+ * base_lr*(1 - i_cur/i_max)^p, where
+ * base_lr is the initial learning rate, i_cur is the current iteration,
+ * i_max is the maximum iteration, and p is a parameter.
+ */
+class lbann_callback_poly_learning_rate : public lbann_callback_learning_rate {
+ public:
+  lbann_callback_poly_learning_rate(double p, uint64_t n_epochs, uint64_t max_iter);
+  lbann_callback_poly_learning_rate(double p, uint64_t n_epochs, uint64_t max_iter,
+    std::unordered_set<weights *> weights_list);
+  lbann_callback_poly_learning_rate(
+    const lbann_callback_poly_learning_rate&) = default;
+  lbann_callback_poly_learning_rate& operator=(
+    const lbann_callback_poly_learning_rate&) = default;
+  lbann_callback_poly_learning_rate* copy() const override {
+    return new lbann_callback_poly_learning_rate(*this);
+  }
+  void setup(model *m) override;
+  std::string name() const override { return "poly learning rate"; }
+ protected:
+  float global_schedule(model *m) override;
+  float optimizer_schedule(model *m, optimizer &opt) override;
+ private:
+  /// The exponent to compute new learning rate in poly policy
+  double m_p;
+  /// The number of epochs for training
+  uint64_t m_num_epochs;
+  /// The maximum number of iterations until which the learning rate changes
+  uint64_t m_max_iter;
+  /// The current rate to scale the base learning rate
+  float m_lr;
+  /// The learning rate scale used at the end of the last epoch
+  float m_last_epoch_lr;
+};
+
+/**
  * This implements an adaptive scheme for adjust each optimizer's
  * learning rate based on the ratio of the norms of its weights and
  * its gradients.
