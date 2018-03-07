@@ -69,11 +69,10 @@ class external_reader : public generic_data_reader {
     bool m_has_labels = false;
     bool m_has_responses = false;
     
-    // not set on init, mutable for delayed load
-    mutable int m_label_count = -1;
-    mutable int m_data_size = -1;
-    mutable int m_label_size = -1;
-    mutable std::vector<int> m_dims;
+    int m_label_count = -1;
+    int m_data_size = -1;
+    int m_label_size = -1;
+    std::vector<int> m_dims;
     
     int m_lbann_to_external_fd = -1;
     int m_external_to_lbann_fd = -1;
@@ -94,7 +93,7 @@ class external_reader : public generic_data_reader {
     void connect();
     void disconnect();
     
-    void get_config() const;
+    void get_config();
 
     Response message_read() const;
     bool message_write(Request request) const;

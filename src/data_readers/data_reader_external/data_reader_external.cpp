@@ -130,10 +130,12 @@ void external_reader::load() {
   std::string infile = get_data_filename();
 
   Request request;
-  InitRequest init_request = request.init_request();
-  init_request.set_filename(infile);
+  InitRequest* init_request = request.mutable_init_request();
+  
+  init_request->set_filename(infile);
   
   message_write(request);
+  
   
   Response response = message_read();
   if (!response.has_init_response()) {
@@ -141,6 +143,7 @@ void external_reader::load() {
   }
   
   InitResponse init_response = response.init_response();
+
   m_num_samples = init_response.num_samples();
   m_num_features = init_response.num_features();
   m_num_labels = init_response.num_labels();
@@ -148,16 +151,22 @@ void external_reader::load() {
   m_has_labels = init_response.has_labels();
   m_has_responses = init_response.has_responses();
 
+  printf("%d %d %d\n", m_num_samples, m_num_features, m_num_labels);
+  
   // Reset indices.
   m_shuffled_indices.clear();
   m_shuffled_indices.resize(m_num_samples);
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
   select_subset_of_data();
+  
+  get_config();
+//  volatile bool attached = false;
+//  while (!attached);
 }
 
 std::string external_reader::get_type() const {
   Request request;
-  request.type_request();
+  request.mutable_type_request();
   message_write(request);
   Response response = message_read();
   if (!response.has_type_response()) {
@@ -171,9 +180,9 @@ external_reader* external_reader::copy() const {
   return new external_reader(*this);
 }
 
-void external_reader::get_config() const {
+void external_reader::get_config() {
   Request request;
-  request.config_request();
+  request.mutable_config_request();
   message_write(request);
   Response response = message_read();
   if (!response.has_config_response()) {
@@ -189,34 +198,23 @@ void external_reader::get_config() const {
 }
 
 int external_reader::get_num_labels() const {
-  if (m_label_count == -1) {
-    get_config();
-  }
   return m_label_count;
 }
 
 int external_reader::get_linearized_data_size() const {
-  if (m_data_size == -1) {
-    get_config();
-  }
   return m_data_size;
 }
 
 int external_reader::get_linearized_label_size() const {
-  if (m_label_size == -1) {
-    get_config();
-  }
   return m_label_size;
 }
 
 const std::vector<int> external_reader::get_data_dims() const {
-  if (m_dims.size() == 0) {
-    get_config();
-  }
   return m_dims;
 }
 
 Response external_reader::message_read() const {
+  printf("message_read\n");
   size_t response_size = 0;
   uint8_t size_bytes[4];
   read(m_external_to_lbann_fd, size_bytes, 4);
@@ -233,10 +231,22 @@ Response external_reader::message_read() const {
     
   Response response;
   response.ParseFromArray(m_read_buffer, response_size);
+  
+  std::cout << "config " << response.has_config_response() << std::endl;
+  std::cout << "datum " <<  response.has_fetch_datum_response() << std::endl;
+  std::cout << "init " <<  response.has_init_response() << std::endl;
+  std::cout << "type " << response.has_type_response() << std::endl;
+  
   return response;
 }
 
 bool external_reader::message_write(Request request) const {
+  printf("message_write\n");
+  std::cout << "config " << request.has_config_request() << std::endl;
+  std::cout << "datum " <<  request.has_fetch_datum_request() << std::endl;
+  std::cout << "init " <<  request.has_init_request() << std::endl;
+  std::cout << "type " << request.has_type_request() << std::endl;
+
   size_t request_size = request.ByteSizeLong();
   if (request_size > m_write_buffer_size) {
     m_write_buffer = static_cast<uint8_t*>(realloc(m_write_buffer, request_size));
@@ -258,10 +268,10 @@ bool external_reader::message_write(Request request) const {
 
 bool external_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
   Request request;
-  FetchDatumRequest fetch_datum_request = request.fetch_datum_request();
-  fetch_datum_request.set_data_id(data_id);
-  fetch_datum_request.set_mb_idx(mb_idx);
-  fetch_datum_request.set_tid(tid);
+  FetchDatumRequest* fetch_datum_request = request.mutable_fetch_datum_request();
+  fetch_datum_request->set_data_id(data_id);
+  fetch_datum_request->set_mb_idx(mb_idx);
+  fetch_datum_request->set_tid(tid);
   
   message_write(request);
   

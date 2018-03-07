@@ -2059,6 +2059,9 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
       } else if (name == "numpy") {
         reader_validation = new numpy_reader(shuffle);
         (*(numpy_reader *)reader_validation) = (*(numpy_reader *)reader);
+      } else if (name == "external") {
+        reader_validation = new external_reader(shuffle);
+        //throw lbann_exception("external_reader does not support separate validation readers");
       } else if (name == "merge_samples") {
         reader_validation = new data_reader_merge_samples(*(data_reader_merge_samples *)reader);
       } else if (name == "merge_features") {
