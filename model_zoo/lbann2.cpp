@@ -227,7 +227,7 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
     // Initialize data readers
     //@todo: code not in place for correctly handling image preprocessing
     std::map<execution_mode, generic_data_reader *> data_readers;
-    init_data_readers(master, pb, data_readers);
+    init_data_readers(comm, pb, data_readers);
 
     // Construct optimizer
     optimizer *default_optimizer = init_default_optimizer(comm, cudnn, pb);

@@ -1891,8 +1891,9 @@ optimizer *init_default_optimizer(lbann_comm *comm,
 }
 
 
-void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execution_mode, generic_data_reader *>& data_readers)
+void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, std::map<execution_mode, generic_data_reader *>& data_readers)
 {
+  bool master = comm->am_world_master();
   std::stringstream err;
 
   const lbann_data::DataReader & d_reader = p.data_reader();
@@ -2043,6 +2044,7 @@ void init_data_readers(bool master, const lbann_data::LbannPB& p, std::map<execu
 
     reader->set_master(master);
 
+    reader->set_comm(comm);
     reader->load();
 
     if (readme.role() == "train") {
