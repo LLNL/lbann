@@ -30,6 +30,8 @@
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/layers/io/input/generic_input_layer.hpp"
+#include "lbann/layers/transform/dummy.hpp"
+#include "lbann/layers/transform/split.hpp"
 #include "lbann/utils/random.hpp"
 #include <string>
 #include <unistd.h>
@@ -383,33 +385,10 @@ void model::setup() {
 
 void model::setup_layer_topology() {
 
-  // Perform breadth-first searches to find connected components
-  std::queue<const Layer *> layer_queue;
-  std::unordered_set<const Layer *> layer_set;
-  for (const auto& layer : m_layers) {
-    layer_queue.push(layer);
-    layer_set.insert(layer);
-  }
-  while (!layer_queue.empty()) {
-    const Layer *layer = layer_queue.front();
-    layer_queue.pop();
-    std::vector<const Layer *> relatives;
-    for (const auto& parent : layer->get_parent_layers()) {
-      relatives.push_back(parent);
-    }
-    for (const auto& child : layer->get_child_layers()) {
-      relatives.push_back(child);
-    }
-    for (const auto& relative : relatives) {
-      if (layer_set.count(relative) == 0) {
-        m_layers.push_back(const_cast<Layer *>(relative));
-        layer_queue.push(relative);
-        layer_set.insert(relative);
-      }
-    }
-  }
+  // Search layer graph and add all connected layers
+  add_connected_layers();
 
-  // Make sure parent and child relationships are reciprocated
+  // Make sure parent/child relationships are reciprocated
   for (const auto& layer : m_layers) {
     for (const auto& parent : layer->get_parent_layers()) {
       const_cast<Layer *>(parent)->add_child_layer(layer);
@@ -418,6 +397,10 @@ void model::setup_layer_topology() {
       const_cast<Layer *>(child)->add_parent_layer(layer);
     }
   }
+
+  // Add utility layers if needed
+  add_dummy_layers();
+  add_split_layers();
 
 }
 
@@ -466,6 +449,126 @@ void model::setup_weights() {
                     m_weights.end());
   }
 
+}
+
+void model::add_connected_layers() {
+
+  // Initialize breadth-first search queue with layer list
+  std::queue<const Layer *> layer_queue;
+  std::unordered_set<const Layer *> layer_set;
+  for (const auto& layer : m_layers) {
+    layer_queue.push(layer);
+    layer_set.insert(layer);
+  }
+
+  // Visit nodes in search queue until it is exhausted
+  while (!layer_queue.empty()) {
+    const Layer *layer = layer_queue.front();
+    layer_queue.pop();
+
+    // Find neighbors of current node
+    std::vector<const Layer *> relatives;
+    for (const auto& parent : layer->get_parent_layers()) {
+      relatives.push_back(parent);
+    }
+    for (const auto& child : layer->get_child_layers()) {
+      relatives.push_back(child);
+    }
+
+    // Add neighbors to search queue if they aren't in the layer list
+    for (const auto& relative : relatives) {
+      if (layer_set.count(relative) == 0) {
+        m_layers.push_back(const_cast<Layer *>(relative));
+        layer_queue.push(relative);
+        layer_set.insert(relative);
+      }
+    }
+
+  }
+  
+}
+
+void model::add_dummy_layers() {
+  for (size_t i = 0; i < m_layers.size(); ++i) {
+    auto layer = m_layers[i];
+
+    // Create dummy layers until current layer has enough children
+    std::vector<Layer*> dummy_layers;
+    while (layer->get_num_children() < layer->get_expected_num_child_layers()) {
+      Layer *dummy = nullptr;
+      auto&& cudnn = layer->get_cudnn_manager();
+      switch (layer->get_data_layout()) {
+      case data_layout::DATA_PARALLEL:
+        dummy = new dummy_layer<data_layout::DATA_PARALLEL>(m_comm, cudnn);
+        break;
+      case data_layout::MODEL_PARALLEL:
+        dummy = new dummy_layer<data_layout::MODEL_PARALLEL>(m_comm, cudnn);
+        break;
+      default:
+        std::stringstream err;
+        err << __FILE__ << " " << __LINE__ << " :: " << "invalid data layout";
+      }
+      dummy->set_name(layer->get_name()
+                      + "_dummy"
+                      + std::to_string(dummy_layers.size()));
+      layer->add_child_layer(dummy);
+      dummy->add_parent_layer(layer);
+      dummy_layers.push_back(dummy);
+    }
+
+    // Add dummy layers to layer list
+    m_layers.insert(m_layers.begin() + i + 1,
+                    dummy_layers.begin(),
+                    dummy_layers.end());
+
+  }
+}
+
+void model::add_split_layers() {
+  for (size_t i = 0; i < m_layers.size(); ++i) {
+    auto layer = m_layers[i];
+
+    // Add split layer if layer expects one child but has multiple
+    auto& children = layer->get_child_layers();
+    if (layer->get_expected_num_child_layers() == 1
+        && children.size() != 1) {
+
+      // Create split layer
+      Layer *split;
+      auto&& cudnn = layer->get_cudnn_manager();
+      switch (layer->get_data_layout()) {
+      case data_layout::DATA_PARALLEL:
+        split = new split_layer<data_layout::DATA_PARALLEL>(m_comm, cudnn);
+        break;
+      case data_layout::MODEL_PARALLEL:
+        split = new split_layer<data_layout::MODEL_PARALLEL>(m_comm, cudnn);
+        break;
+      default:
+        std::stringstream err;
+        err << __FILE__ << " " << __LINE__ << " :: " << "invalid data layout";
+      }
+      split->set_name(layer->get_name() + "_split");
+
+      // Setup relationships between split layer and child layers
+      for (auto&& const_child : children) {
+        Layer *child = const_cast<Layer*>(const_child);
+        split->add_child_layer(child);
+        auto& child_parents = child->get_parent_layers();
+        std::replace(child_parents.begin(), child_parents.end(),
+                     layer, split);
+      }
+
+      // Setup relationship between current layer and split layer
+      children.clear();
+      layer->add_child_layer(split);
+      split->add_parent_layer(layer);
+
+      // Add split layer to layer list
+      m_layers.insert(m_layers.begin() + i + 1, split);
+
+    }
+
+  }
 }
 
 ////////////////////////////////////////////////////////////

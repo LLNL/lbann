@@ -381,6 +381,21 @@ class model {
   /** Execute callbacks at the end of weight optimization. */
   virtual void do_weight_optimize_end_cbs(weights *w);
 
+ private:
+  /** Search layer graph and add all connected layers. */
+  void add_connected_layers();
+  /** Insert dummy layers after layers with too few children.
+   *  If a layer expects more child layers than it has, add dummy
+   *  layers until it has enough children.
+   */
+  void add_dummy_layers();
+  /** Insert split layers after layers with too many children.
+   *  If a layer expects one child layer but has multiple, add a split
+   *  layer. The split layer will be the original layer's child and
+   *  the split layer's children will be the original children.
+   */
+  void add_split_layers();
+
 };
 
 }  // namespace lbann
