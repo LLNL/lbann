@@ -29,7 +29,7 @@
 #include "lbann/callbacks/callback_learning_rate.hpp"
 #include <limits>
 #include <utility>
-#include <cmath> // pow
+#include <cmath> // std::pow
 
 namespace lbann {
 
@@ -213,6 +213,12 @@ float lbann_callback_linear_growth_learning_rate::global_schedule(model *m) {
   }
 }
 
+/**
+ * This constructor takes the policy specific parameters, the exponent (p)
+ * and the maximum number of iterations (max_iter).
+ * In case that max_iter is set to 0, it is calculated from the number of
+ * epochs (n_epochs). n_epochs is not used otherwise.
+ */
 lbann_callback_poly_learning_rate::lbann_callback_poly_learning_rate(
   double p, uint64_t n_epochs, uint64_t max_iter)
   : lbann_callback_learning_rate(std::unordered_set<weights *>()),
@@ -240,9 +246,9 @@ void lbann_callback_poly_learning_rate::setup(model *m) {
  * Keep the record of the learning rate at the end of the current epoch.
  */
 float lbann_callback_poly_learning_rate::global_schedule(model *m) {
-  const float amt = m_lr / m_last_epoch_lr;
+  const float scale = m_lr / m_last_epoch_lr;
   m_last_epoch_lr = m_lr;
-  return m_cur_global_lr * amt;
+  return m_cur_global_lr * scale;
 }
 
 /**
@@ -251,10 +257,10 @@ float lbann_callback_poly_learning_rate::global_schedule(model *m) {
 float lbann_callback_poly_learning_rate::optimizer_schedule(model *m, optimizer &opt) {
   const uint64_t cur_iter = static_cast<uint64_t>(m->get_cur_step());
   if (m_max_iter > cur_iter) {
-    m_lr = static_cast<float>(pow(1.0 - static_cast<double>(cur_iter)/m_max_iter, m_p));
+    m_lr = static_cast<float>(std::pow(static_cast<double>(m_max_iter - cur_iter)/m_max_iter, m_p));
   }
-  const float amt = m_lr / m_last_epoch_lr;
-  return m_cur_global_lr * amt;
+  const float scale = m_lr / m_last_epoch_lr;
+  return m_cur_global_lr * scale;
 }
 
 lbann_callback_optimizerwise_adaptive_learning_rate::lbann_callback_optimizerwise_adaptive_learning_rate(
