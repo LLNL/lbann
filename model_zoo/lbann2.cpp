@@ -29,7 +29,7 @@
 #include "lbann/lbann.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/protobuf_utils.hpp"
-
+#include <dirent.h>
 using namespace lbann;
 
 const int lbann_default_random_seed = 42;
@@ -66,10 +66,53 @@ int main(int argc, char *argv[]) {
     if (pbs.size() > 1) {
       model_2 = build_model_from_prototext(argc, argv, *(pbs[1]));
     }
+    // Begin experimental weight load
+    if(opts->has_string("ckpt_dir")){
 
+      std::string ckpt_dir = opts->get_string("ckpt_dir");
+      std::vector<std::string> weight_list = std::vector<std::string>();
+      int epochLast = -1;
+      int stepLast = -1;
+      // define filename
+      char latest[1024];
+      sprintf(latest, "%s/last.shared.checkpoint", ckpt_dir.c_str());
+      // open the file for reading
+      int fd = openread(latest);
+      if (fd != -1) {
+        // read epoch from file
+        char field[256];
+        read_string(fd, "shared.last", field, sizeof(field));
+        int ret = sscanf(field, "epoch=%d step=%d\n", &epochLast, &stepLast);
+        // close our file
+        closeread(fd, latest);
+        if(ret != 2) { return false; }
+      // shared.epoch.1.step.844
+        sprintf(latest, "%s/shared.epoch.%d.step.%d/", ckpt_dir.c_str() ,epochLast, stepLast);
+      }
+      DIR *weight_dir;
+      struct dirent *weight_file;
+      if((weight_dir = opendir(latest)) == NULL)
+      {
+        std::cout << "error opening " << latest << "\n";
+        return false;
+      }
+      while ((weight_file = readdir(weight_dir)) != NULL){
+        if(!strncmp(weight_file->d_name,"model_weights_",14))
+       
+          weight_list.push_back(std::string(weight_file->d_name));
+      }
+      closedir(weight_dir);
+      //const auto weights = model_1->get_weights(); 
+      for(weights *w : model_1->get_weights()) {
+        w->load_from_save(latest,weight_list);
+      }
+
+    }
     // Train model
     if (master)  std::cerr << "\nSTARTING train - model 1\n\n";
     const lbann_data::Model pb_model = pbs[0]->model();
+    
+
     model_1->train( pb_model.num_epochs() );
     model_1->evaluate(execution_mode::testing);
 

@@ -114,10 +114,11 @@ struct lbann_model_sequential_header {
   uint32_t layers;
 };
 
-bool sequential_model::save_to_checkpoint_shared(persist& p, bool val_end) {
-  // write parameters from base class first
-  model::save_to_checkpoint_shared(p, val_end);
+//bool sequential_model::save_to_checkpoint_shared(persist& p, bool val_end) {
 
+  // write parameters from base class first
+  //model::save_to_checkpoint_shared(p, val_end);
+/*
   // write a single header describing layers and sizes?
 
   // have rank 0 write the network file
@@ -145,9 +146,9 @@ bool sequential_model::save_to_checkpoint_shared(persist& p, bool val_end) {
       }
     }
   }
-  //m_objective_function->save_to_checkpoint_shared(p);
-  return true;
-}
+  //m_objective_function->save_to_checkpoint_shared(p);*/
+//  return true;
+//}
 
 void sequential_model::write_proto(lbann_data::Model* proto) {
 
@@ -162,10 +163,10 @@ void sequential_model::write_proto(lbann_data::Model* proto) {
   }
 }
 
-bool sequential_model::load_from_checkpoint_shared(persist& p) {
+//bool sequential_model::load_from_checkpoint_shared(persist& p) {
   // read parameters from base class first
-  model::load_from_checkpoint_shared(p);
-
+  //model::load_from_checkpoint_shared(p);
+  /*
   // have rank 0 read the network file
   struct lbann_model_sequential_header header;
   if (p.get_rank() == 0) {
@@ -197,8 +198,8 @@ bool sequential_model::load_from_checkpoint_shared(persist& p) {
       return false;
     }
   }
-  //m_objective_function->load_from_checkpoint_shared(p);
-  return true;
-}
+  //m_objective_function->load_from_checkpoint_shared(p);*/
+//  return true;
+//}
 
 }  // namespace lbann

@@ -1150,19 +1150,41 @@ struct lbann_model_header {
 
 bool model::save_to_checkpoint_shared(persist& p, bool val_end) {
   // write out fields we need to save for model
-  if (p.get_rank() == 0 && !val_end) {
-    p.write_uint32(persist_type::train, "execution_mode",     (uint32_t) m_execution_mode);
-    p.write_uint32(persist_type::train, "terminate_training", (uint32_t) m_terminate_training);
-    p.write_uint64(persist_type::train, "current_epoch",      (uint64_t) m_current_epoch);
-    p.write_uint64(persist_type::train, "current_step",       (uint64_t) m_current_step);
-    p.write_uint64(persist_type::train, "current_testing_step",       (uint64_t) m_current_testing_step);
-    p.write_uint32(persist_type::train, "max_mini_batch_size",      (uint32_t) m_max_mini_batch_size);
-    p.write_uint32(persist_type::train, "current_mini_batch_size",      (uint32_t) m_current_mini_batch_size);
-    p.write_uint32(persist_type::train, "current_phase",      (uint32_t) m_current_phase);
+  if (!val_end) {
+    if(p.get_rank() == 0){  
+
+      p.write_uint32(persist_type::train, "execution_mode",     (uint32_t) m_execution_mode);
+      p.write_uint32(persist_type::train, "terminate_training", (uint32_t) m_terminate_training);
+      p.write_uint64(persist_type::train, "current_epoch",      (uint64_t) m_current_epoch);
+      p.write_uint64(persist_type::train, "current_step",       (uint64_t) m_current_step);
+      p.write_uint64(persist_type::train, "current_testing_step",       (uint64_t) m_current_testing_step);
+      p.write_uint32(persist_type::train, "max_mini_batch_size",      (uint32_t) m_max_mini_batch_size);
+      p.write_uint32(persist_type::train, "current_mini_batch_size",      (uint32_t) m_current_mini_batch_size);
+      p.write_uint32(persist_type::train, "current_phase",      (uint32_t) m_current_phase);
+  
+      //uint32_t layers = m_layers.size();
+      //p.write_uint32(persist_type::model, "layers", (uint32_t) layers);
+    }
+    
+    for (weights *w : m_weights) {
+      w->save_to_checkpoint_shared(p);
+    }
+    for (size_t l = 0; l < m_layers.size(); l++) {
+      if (! m_layers[l]->save_to_checkpoint_shared(p,val_end)) {
+        return false;
+      }
+    }
   }
-  if(p.get_rank() == 0 && val_end){
-    p.write_uint64(persist_type::validate, "current_validataion_step",       (uint64_t) m_current_validation_step);
-    save_rng_to_checkpoint_shared(p);
+  if(val_end){
+    if(p.get_rank() == 0){
+      p.write_uint64(persist_type::validate, "current_validataion_step",       (uint64_t) m_current_validation_step);
+      save_rng_to_checkpoint_shared(p);
+    }
+    for (size_t l = 0; l < m_layers.size(); l++) {
+      if (! m_layers[l]->save_to_checkpoint_shared(p,val_end)) {
+        return false; 
+      } 
+    }
     //for (const auto& m : m_metrics) {
     //  m->save_to_checkpoint_shared(p);
     //}
@@ -1205,6 +1227,15 @@ bool model::load_from_checkpoint_shared(persist& p) {
   //for (const auto& m : m_metrics) {
   //  m->load_from_checkpoint_shared(p);
   //}
+  for (weights *w : m_weights) {
+    w->load_from_checkpoint_shared(p);
+  }
+  // read in each layer
+  for (size_t l = 0; l < m_layers.size(); l++) {
+    if (! m_layers[l]->load_from_checkpoint_shared(p)) {
+      return false;
+    }
+  }
   return true;
 }
 
