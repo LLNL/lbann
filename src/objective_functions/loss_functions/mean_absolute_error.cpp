@@ -49,7 +49,7 @@ EvalType mean_absolute_error_loss::evaluate_compute(const AbsDistMat& prediction
       const EvalType true_val = ground_truth_local(row, col);
       const EvalType pred_val = predictions_local(row, col);
       const EvalType error = true_val - pred_val;
-      sum += abs(error);
+      sum += std::abs(error);
     }
   }
 
