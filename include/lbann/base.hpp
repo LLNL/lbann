@@ -103,7 +103,7 @@ static const char *__attribute__((used)) _to_string(execution_mode m) {
 }
 
 /** Pooling layer mode */
-enum class pool_mode {max, average, average_no_pad};
+enum class pool_mode {invalid, max, average, average_no_pad};
 
 /** returns a string representation of the pool_mode */
 std::string get_pool_mode_name(pool_mode m);
