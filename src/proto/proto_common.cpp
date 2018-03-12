@@ -1556,6 +1556,32 @@ void init_callbacks(
     }
 
     //////////////////////////////////////////////////////////////////
+    // CALLBACK: poly_learning_rate
+    //////////////////////////////////////////////////////////////////
+    if (callback.has_poly_learning_rate()) {
+      const lbann_data::CallbackPolyLearningRate &c = callback.poly_learning_rate();
+      std::stringstream s(c.weights());
+      std::unordered_set<weights*> weights_list;
+      std::string name;
+      while (s >> name) {
+        if (master && !weights_are_in_model(name)) {
+          err << __FILE__ << " " << __LINE__
+              << " :: callback poly_learning_rate: could not find " << name;
+          throw lbann_exception(err.str());
+        }
+        weights_list.insert(model_weights[name]);
+      }
+      const uint64_t max_iter = c.max_iter();
+      const uint64_t num_epochs = static_cast<uint64_t>(m.num_epochs());
+      lbann_callback_poly_learning_rate *learn
+        = new lbann_callback_poly_learning_rate(c.power(), num_epochs, max_iter, weights_list);
+      if (master) {
+        std::cout << "adding poly learning rate callback" << std::endl;
+      }
+      model->add_callback(learn);
+    }
+
+    //////////////////////////////////////////////////////////////////
     // CALLBACK: profiler
     //////////////////////////////////////////////////////////////////
     if (callback.has_profiler()) {
