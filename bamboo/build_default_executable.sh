@@ -1,5 +1,5 @@
 CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
-if [ "$(CLUSTER)" != 'surface']; then
+if [ "${CLUSTER}" != 'surface' ]; then
     source /usr/share/lmod/lmod/init/bash
     source /etc/profile.d/00-modulepath.sh
 fi
