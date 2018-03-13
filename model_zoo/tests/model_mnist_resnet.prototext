@@ -81,7 +81,7 @@ model {
   }
   layer {
     parents: "res1_sigmoid"
-    name: "res1_pool"
+    name: "res1"
     pooling {
       num_dims: 2
       pool_dims_i: 3
@@ -89,12 +89,6 @@ model {
       pool_strides_i: 2
       pool_mode: "average"
     }
-    data_layout: "data_parallel"
-  }
-  layer {
-    parents: "res1_pool"
-    name: "res1"
-    split {}
     data_layout: "data_parallel"
   }
 
@@ -223,14 +217,8 @@ model {
   }
   layer {
     parents: "res2_sum"
-    name: "res2_sigmoid"
-    sigmoid {}
-    data_layout: "data_parallel"
-  }
-  layer {
-    parents: "res2_sigmoid"
     name: "res2"
-    split {}
+    sigmoid {}
     data_layout: "data_parallel"
   }
 
