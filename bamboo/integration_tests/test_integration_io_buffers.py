@@ -38,16 +38,37 @@ def test_integration_partitioned_and_distributed_io_mnist(cluster, dirname, exes
             partitioned_num_models = len(accuracies[partitioned].keys())
             distributed_num_models = len(accuracies[distributed].keys())
             assert partitioned_num_models == distributed_num_models
-            
+
+            min_partitioned_accuracy = float('inf')
+            min_distributed_accuracy = float('inf')
             for model_num in sorted(accuracies[partitioned].keys()):
                 partitioned_accuracy = accuracies[partitioned][model_num]['overall']
                 distributed_accuracy = accuracies[distributed][model_num]['overall']
+                if partitioned_accuracy < min_partitioned_accuracy:
+                    min_partitioned_accuracy = partitioned_accuracy
+                if distributed_accuracy < min_distributed_accuracy:
+                    min_distributed_accuracy = distributed_accuracy
                 tolerance = 0.05
                 # Are we within tolerance * expected_value?
                 if abs(partitioned_accuracy - distributed_accuracy) > abs(tolerance * min(partitioned_accuracy, distributed_accuracy)):
                     errors.append('partitioned = %f != %f = distributed; model_num=%s mini_batch_size=%d procs_per_model=%d' % (partitioned_accuracy, distributed_accuracy, model_num, mini_batch_size, procs_per_model))
                 all_values.append('partitioned = %f, %f = distributed; model_num=%s mini_batch_size=%d procs_per_model=%d' % (partitioned_accuracy, distributed_accuracy, model_num, mini_batch_size, procs_per_model))
-    
+
+    if os.environ['LOGNAME'] == 'lbannusr':
+        key = 'bamboo_planKey'
+        if key in os.environ:
+            plan = os.environ[key]
+            if plan in ['LBANN-NIGHTD', 'LBANN-WD', 'LBANN-FOR']:
+                archive_file = '/usr/workspace/wsb/lbannusr/archives/%s/%s/default/io_buffers.txt' % (plan, cluster)
+                with open(archive_file, 'a') as archive:
+                    archive.write('%s, %f, %f\n' % (os.environ['bamboo_buildNumber'], min_partitioned_accuracy, min_distributed_accuracy))
+            else:
+                print('The plan %s does not have archiving activated' % plan)
+        else:
+            print('%s is not in os.environ' % key)
+    else:
+        print('os.environ["LOGNAME"]=%s' % os.environ['LOGNAME'])
+                
     print('Errors for: partitioned_and_distributed (%d)' % len(errors))
     for error in errors:
         print(error)

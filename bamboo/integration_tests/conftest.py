@@ -3,7 +3,6 @@ import pytest, os, re, subprocess
 def pytest_addoption(parser):
     cluster = re.sub('[0-9]+', '', subprocess.check_output('hostname'.split()).strip())
     default_dirname = subprocess.check_output('git rev-parse --show-toplevel'.split()).strip()
-    key = 'bamboo_planKey'
     default_exes = {}
     default_exes['default'] = '%s/build/gnu.%s.llnl.gov/lbann/build/model_zoo/lbann' % (default_dirname, cluster)
     if cluster in ['catalyst', 'ray']:
