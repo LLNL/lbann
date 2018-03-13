@@ -398,6 +398,7 @@ message Callback {
    CallbackOptimizerwiseAdaptiveLearningRate optimizerwise_adaptive_learning_rate = 27;
    CallbackCheckpoint checkpoint = 28;
    CallbackSaveModel save_model = 29;
+   CallbackPolyLearningRate poly_learning_rate = 30;
 }
 
 message CallbackLTFB {
@@ -505,6 +506,12 @@ message CallbackLinearGrowthLearningRate {
   double target = 2;
   int64 num_epochs = 3;
   int64 delay = 4;
+}
+
+message CallbackPolyLearningRate {
+  string weights = 1;
+  double power = 2;
+  uint64 max_iter = 3;
 }
 
 message CallbackStepMinibatch {

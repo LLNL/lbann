@@ -169,6 +169,7 @@ class model {
   inline void set_effective_mini_batch_size(int mini_batch_size) {
     m_effective_mini_batch_size = mini_batch_size;
   }
+  int get_num_iterations_per_epoch(execution_mode mode) const;
 
   /** Get the current phase (multiple epochs) in layer-wise model training. */
   inline int get_current_phase() const {
