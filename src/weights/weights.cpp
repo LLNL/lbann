@@ -454,6 +454,57 @@ std::string weights::get_dims_string(const std::vector<int>& matrix_height_dims,
   return ss.str();
 }
 
+/**
+ * Copies states from GPU to host only if the data is on GPU, which is done
+ * asynchronously. Thus, needs synchronization before accessing the states.
+ */
+void weights::set_states_on_host() {
+  get_values();
+  if (m_optimizer != nullptr) {
+    m_optimizer->set_states_on_host();
+  }
+}
+
+/**
+ * Copies states from host to GPU if the data has to be on GPU. This is done
+ * asynchronously. Thus, needs synchronization before accessing the states.
+ */
+void weights::set_states_on_device() {
+  // Check if states have been setup
+  if (m_values == nullptr) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "attempted to access states before they are setup";
+    throw lbann_exception(err.str());
+  }
+
+  #ifdef LBANN_HAS_CUDNN
+  // Copy weights matrix to GPU if needed
+  if (m_cudnn != nullptr) {
+    if (m_values_d.empty() || m_values_d[0] == nullptr) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "attempted to set state on device before they are setup";
+      throw lbann_exception(err.str());
+    }
+    m_cudnn->broadcast_to_gpus(m_values_d, m_values->Matrix());
+  }
+  #endif // LBANN_HAS_CUDNN
+
+  if (m_optimizer != nullptr) {
+    m_optimizer->set_states_on_device();
+  }
+}
+
+/// Synchronize with device streams
+void weights::synchronize() {
+  #ifdef LBANN_HAS_CUDNN
+  if (m_cudnn != nullptr) {
+    m_cudnn->synchronize(); // make sure if state copying is done
+  }
+  #endif // LBANN_HAS_CUDNN
+}
+
 bool weights::save_to_checkpoint_shared(lbann::persist& p)
 {
   // define name to store our parameters
