@@ -99,7 +99,7 @@ Note: User must include the -B singularity command, to bind any necessary files 
    2. Run a test experiment for the MNIST data set; from the main lbann directory run the following command:
  ```
   srun -n12 build/gnu.catalyst.llnl.gov/install/bin/lbann \
---model=model_zoo/tests/model_mnist_distributed_io.prototext \
+--model=model_zoo/models/lenet_mnist/model_lenet_mnist.prototext \
 --reader=model_zoo/data_readers/data_reader_mnist.prototext \
 --optimizer=model_zoo/optimizers/opt_adagrad.prototext \
 --num_epochs=5
