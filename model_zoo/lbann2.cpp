@@ -35,7 +35,7 @@ using namespace lbann;
 const int lbann_default_random_seed = 42;
 
 model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &pb);
-          
+bool load_model_weights(std::string ckpt_dir, model * m);          
 
 int main(int argc, char *argv[]) {
   int random_seed = lbann_default_random_seed;
@@ -68,45 +68,7 @@ int main(int argc, char *argv[]) {
     }
     // Begin experimental weight load
     if(opts->has_string("ckpt_dir")){
-
-      std::string ckpt_dir = opts->get_string("ckpt_dir");
-      std::vector<std::string> weight_list = std::vector<std::string>();
-      int epochLast = -1;
-      int stepLast = -1;
-      // define filename
-      char latest[1024];
-      sprintf(latest, "%s/last.shared.checkpoint", ckpt_dir.c_str());
-      // open the file for reading
-      int fd = openread(latest);
-      if (fd != -1) {
-        // read epoch from file
-        char field[256];
-        read_string(fd, "shared.last", field, sizeof(field));
-        int ret = sscanf(field, "epoch=%d step=%d\n", &epochLast, &stepLast);
-        // close our file
-        closeread(fd, latest);
-        if(ret != 2) { return false; }
-      // shared.epoch.1.step.844
-        sprintf(latest, "%s/shared.epoch.%d.step.%d/", ckpt_dir.c_str() ,epochLast, stepLast);
-      }
-      DIR *weight_dir;
-      struct dirent *weight_file;
-      if((weight_dir = opendir(latest)) == NULL)
-      {
-        std::cout << "error opening " << latest << "\n";
-        return false;
-      }
-      while ((weight_file = readdir(weight_dir)) != NULL){
-        if(!strncmp(weight_file->d_name,"model_weights_",14))
-       
-          weight_list.push_back(std::string(weight_file->d_name));
-      }
-      closedir(weight_dir);
-      //const auto weights = model_1->get_weights(); 
-      for(weights *w : model_1->get_weights()) {
-        w->load_from_save(latest,weight_list);
-      }
-
+      load_model_weights(opts->get_string("ckpt_dir"), model_1);
     }
     // Train model
     if (master)  std::cerr << "\nSTARTING train - model 1\n\n";
@@ -322,3 +284,46 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
 
   return model;
 }
+
+bool load_model_weights(std::string ckpt_dir, model * m){
+    //std::string ckpt_dir = opts->get_string("ckpt_dir");
+  std::vector<std::string> weight_list = std::vector<std::string>();
+  int epochLast = -1;
+  int stepLast = -1;
+  // define filename
+  char latest[1024];
+  sprintf(latest, "%s/last.shared.checkpoint", ckpt_dir.c_str());
+  // open the file for reading
+  int fd = openread(latest);
+  if (fd != -1) {
+    // read epoch from file
+    char field[256];
+    read_string(fd, "shared.last", field, sizeof(field));
+    int ret = sscanf(field, "epoch=%d step=%d\n", &epochLast, &stepLast);
+    if(ret != 2) { return false; } 
+     // close our file
+    closeread(fd, latest);
+  // shared.epoch.1.step.844
+      sprintf(latest, "%s/shared.epoch.%d.step.%d/", ckpt_dir.c_str() ,epochLast, stepLast);
+  }
+    
+  DIR *weight_dir;
+  struct dirent *weight_file;
+  if((weight_dir = opendir(latest)) == NULL)
+  {
+    std::cout << "error opening " << latest << "\n";
+    return false;
+  }
+  while ((weight_file = readdir(weight_dir)) != NULL){
+    if(!strncmp(weight_file->d_name,"model_weights_",14))
+      weight_list.push_back(std::string(weight_file->d_name));
+  }
+  closedir(weight_dir);
+  //const auto weights = model_1->get_weights(); 
+  for(weights *w : m->get_weights()) {
+    w->load_from_save(latest,weight_list);
+  }
+  return true; 
+}
+
+
