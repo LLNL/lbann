@@ -69,6 +69,14 @@ Layer* construct_layer(lbann_comm* comm,
                        cudnn::cudnn_manager* cudnn,
                        const lbann_data::Layer& proto_layer);
 
+/** Construct a callback specified with prototext. */
+lbann_callback* construct_callback(lbann_comm* comm,
+                                   const lbann_data::Callback& proto_cb,
+                                   std::map<execution_mode, generic_data_reader*>& data_readers,
+                                   std::vector<Layer*> layer_list,
+                                   std::vector<weights*> weights_list,
+                                   lbann_summary* summarizer);
+
 } // namespace proto
 } // namespace lbann
 

@@ -1,7 +1,8 @@
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
-  layer_graph_factory.cpp
+  callback_factory.cpp
   layer_factory.cpp
+  layer_graph_factory.cpp
 )
 
 # Propagate the files up the tree
