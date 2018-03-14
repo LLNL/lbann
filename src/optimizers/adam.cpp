@@ -213,6 +213,28 @@ void adam::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
 // Checkpointing
 ////////////////////////////////////////////////////////////
 
+/**
+ * Copies states from GPU to host only if the data is on GPU, which is done
+ * asynchronously. Thus, needs synchronization before accessing the states.
+ */
+void adam::set_states_on_host() {
+  #ifdef LBANN_HAS_CUDNN
+  set_mat_state_on_host(m_moment1, m_moment1_d);
+  set_mat_state_on_host(m_moment2, m_moment2_d);
+  #endif // LBANN_HAS_CUDNN
+}
+
+/**
+ * Copies states from host to GPU if the data has to be on GPU. This is done
+ * asynchronously. Thus, needs synchronization before accessing the states.
+ */
+void adam::set_states_on_device() {
+  #ifdef LBANN_HAS_CUDNN
+  set_mat_state_on_device(m_moment1, m_moment1_d);
+  set_mat_state_on_device(m_moment2, m_moment2_d);
+  #endif // LBANN_HAS_CUDNN
+}
+
 bool adam::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
   optimizer::save_to_checkpoint_shared(p, name_prefix);
 // m_learning_rate;

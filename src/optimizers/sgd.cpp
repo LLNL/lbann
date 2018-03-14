@@ -183,6 +183,23 @@ void sgd::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
 // Checkpointing
 ////////////////////////////////////////////////////////////
 
+/**
+ * Copies states from GPU to host only if the data is on GPU, which is done
+ * asynchronously. Thus, needs synchronization before accessing the states.
+ */
+void sgd::set_states_on_host() {
+std::cout << "m_cudnn->copy_from_gpu in optimizer::set_states_on_host()" << std::endl;
+  set_mat_state_on_host(m_velocity, m_velocity_d);
+}
+
+/**
+ * Copies states from host to GPU if the data has to be on GPU. This is done
+ * asynchronously. Thus, needs synchronization before accessing the states.
+ */
+void sgd::set_states_on_device() {
+  set_mat_state_on_device(m_velocity, m_velocity_d);
+}
+
   bool sgd::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
     optimizer::save_to_checkpoint_shared(p, name_prefix);
     

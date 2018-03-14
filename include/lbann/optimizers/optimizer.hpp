@@ -157,6 +157,15 @@ class optimizer {
     m_step_time = 0.0;
   }
 
+  // For checkpointing
+  virtual void set_states_on_host() {}
+  virtual void set_states_on_device() {}
+
+ protected:
+  // For checkpointing
+  void set_mat_state_on_host(AbsDistMat* state, const std::vector<DataType*>& state_d);
+  void set_mat_state_on_device(AbsDistMat* state, std::vector<DataType*>& state_d);
+
  protected:
 
   /** LBANN communicator. */
