@@ -515,7 +515,9 @@ bool weights::save_to_checkpoint_shared(lbann::persist& p)
   p.write_distmat(persist_type::model, l_name, (DistMat*)m_values);
   //
   // if saving training state, also write out state of optimizer
-  m_optimizer->save_to_checkpoint_shared(p, l_name);
+  if (m_optimizer != nullptr) {
+    m_optimizer->save_to_checkpoint_shared(p, l_name);
+  }
 
   return true;
 }
@@ -566,7 +568,9 @@ bool weights::load_from_checkpoint_shared(lbann::persist& p)
   p.read_distmat(persist_type::model, f_name, (DistMat*)m_values);
 
   // if loading training state, read in state of optimizer
-  m_optimizer->load_from_checkpoint_shared(p, l_name);
+  if (m_optimizer != nullptr) {
+    m_optimizer->load_from_checkpoint_shared(p, l_name);
+  }
 
   return true;
 }
