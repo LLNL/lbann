@@ -188,8 +188,10 @@ void sgd::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
  * asynchronously. Thus, needs synchronization before accessing the states.
  */
 void sgd::set_states_on_host() {
+#ifdef LBANN_HAS_CUDNN
 std::cout << "m_cudnn->copy_from_gpu in optimizer::set_states_on_host()" << std::endl;
   set_mat_state_on_host(m_velocity, m_velocity_d);
+#endif
 }
 
 /**
@@ -197,7 +199,9 @@ std::cout << "m_cudnn->copy_from_gpu in optimizer::set_states_on_host()" << std:
  * asynchronously. Thus, needs synchronization before accessing the states.
  */
 void sgd::set_states_on_device() {
+#ifdef LBANN_HAS_CUDNN
   set_mat_state_on_device(m_velocity, m_velocity_d);
+#endif
 }
 
   bool sgd::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
