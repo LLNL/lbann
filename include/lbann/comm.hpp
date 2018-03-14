@@ -30,13 +30,52 @@
 #define LBANN_COMM_HPP_INCLUDED
 
 #include <vector>
-#include <unordered_map>
+#include <map>
+#include <typeindex>
 #include "base.hpp"
+#ifdef LBANN_HAS_CUDA
+#include <cuda_runtime.h>
+#endif // LBANN_HAS_CUDA
 #ifdef LBANN_HAS_ALUMINUM
+#ifdef LBANN_HAS_NCCL2
+#define ALUMINUM_HAS_NCCL
+#endif // LBANN_HAS_ALUMINUM
 #include <allreduce.hpp>
-#endif
+#endif // LBANN_HAS_ALUMINUM
 
 namespace lbann {
+
+namespace Al {
+
+// Dummy Aluminum backend
+class dummy_backend {
+public:
+  using req_type = int;
+};
+
+// Define aliases for Aluminum backends
+#ifdef LBANN_HAS_ALUMINUM
+using mpi_backend = ::allreduces::MPIBackend;
+#else
+using mpi_backend = lbann::Al::dummy_backend;
+#endif // LBANN_HAS_ALUMINUM
+/// @todo MPI-CUDA backend
+#if defined(LBANN_HAS_ALUMINUM) && defined(LBANN_HAS_NCCL2)
+using nccl_backend = ::allreduces::NCCLBackend;
+#else
+using nccl_backend = lbann::Al::dummy_backend;
+#endif // defined(LBANN_HAS_ALUMINUM) && defined(LBANN_HAS_NCCL2)
+
+// Wrapper for Aluminum non-blocking routine requests
+struct request {
+  std::unique_ptr<mpi_backend::req_type> mpi_req;
+  /// @todo MPI-CUDA backend
+#ifdef LBANN_HAS_NCCL2
+  std::unique_ptr<nccl_backend::req_type> nccl_req;
+#endif // LBANN_HAS_NCCL2
+};
+
+} // namespace Al
 
 /**
  * Manage communication.
@@ -407,14 +446,19 @@ class lbann_comm {
     bytes_received += count * sizeof(T) * (El::mpi::Size(c) - 1);
   }
   /** Matrix allreduce. */
-  void allreduce(AbsDistMat& m, const El::mpi::Comm c,
-    El::mpi::Op op = El::mpi::SUM);
-#ifdef LBANN_HAS_ALUMINUM
-  /** Non-blocking matrix allreduce. */
-  void nb_allreduce(AbsDistMat& m, const El::mpi::Comm c,
-                    allreduces::MPIBackend::req_type& req,
-                    El::mpi::Op op = El::mpi::SUM);
-#endif
+  void allreduce(AbsDistMat& m,
+                 const El::mpi::Comm c,
+                 El::mpi::Op op = El::mpi::SUM,
+                 std::type_index t = std::type_index(typeid(Al::mpi_backend)));
+  /** Non-blocking matrix allreduce.
+   *  If LBANN has not been built with Aluminum, then this calls a
+   *  blocking matrix allreduce.
+   */
+  void nb_allreduce(AbsDistMat& m,
+                    const El::mpi::Comm c,
+                    Al::request& req,
+                    El::mpi::Op op = El::mpi::SUM,
+                    std::type_index t = std::type_index(typeid(Al::mpi_backend)));
 
   /** Wait for a non-blocking request to complete. */
   template <typename T>
@@ -422,16 +466,10 @@ class lbann_comm {
     El::mpi::Wait(req);
   }
 
-#ifdef LBANN_HAS_ALUMINUM
   /** Wait for a non-blocking request to complete. */
-  void wait(allreduces::MPIBackend::req_type& req) {
-    allreduces::Wait<allreduces::MPIBackend>(req);
-  }
+  void wait(Al::request& req);
   /** Test whether a non-blocking request has completed; true if it has. */
-  bool test(allreduces::MPIBackend::req_type& req) {
-    return allreduces::Test<allreduces::MPIBackend>(req);
-  }
-#endif
+  bool test(Al::request& req);
 
   /** Barrier among the inter-model processes. */
   void intermodel_barrier();
@@ -832,6 +870,27 @@ class lbann_comm {
     return is_world_rank_on_node(world_rank);
   }
 
+  #ifdef LBANN_HAS_CUDA
+  /** Get list of GPUs.
+   *  @todo This is a kludge. A better solution would be to refactor
+   *  the cuDNN manager and make the LBANN communicator responsible
+   *  for GPU management.
+   */
+  std::vector<int>& get_gpus() {
+    static std::vector<int> gpus;
+    return gpus;
+  }
+  /** Get list of CUDA streams.
+   *  @todo This is a kludge. A better solution would be to refactor
+   *  the cuDNN manager and make the LBANN communicator responsible
+   *  for GPU management.
+   */
+  std::vector<cudaStream_t>& get_cuda_streams() {
+    static std::vector<cudaStream_t> streams;
+    return streams;
+  }
+  #endif // LBANN_HAS_CUDA
+
  private:
   /** World communicator. */
   const El::mpi::Comm world_comm;
@@ -864,24 +923,24 @@ class lbann_comm {
    */
   int threads_per_proc;
   /** Pre-allocated buffers for collectives. */
-  std::unordered_map<size_t, std::vector<uint8_t *>> collective_bufs;
+  std::map<size_t, std::vector<uint8_t *>> collective_bufs;
   /** Current default allreduce algorithm. */
   allreduce_algorithm default_allreduce_algo =
     allreduce_algorithm::DYNAMIC;
 
 #ifdef LBANN_HAS_ALUMINUM
-  /**
-   * Used to convert between Elemental Comm objects and an Aluminum
-   * communicator.
-   */
-  std::unordered_map<MPI_Comm, allreduces::MPICommunicator*> al_comms;
+  using al_comms_key_type = std::pair<MPI_Comm, std::type_index>;
+  using al_comms_val_type = std::unique_ptr<allreduces::MPICommunicator>;
+  std::map<al_comms_key_type, al_comms_val_type> m_al_comms;
 
-  /**
-   * Get the Aluminum communicator associated with Elemental communicator c.
-   * This will create a new Al communicator if needed.
-   * @todo This currently only supports the Aluminum MPI backend.
+  /** Get an Aluminum communicator.
+   *  The communicator will have the same process configuration as the
+   *  Elemental communicator c and use the backend corresponding to
+   *  type index t. An Aluminum communicator will be created if
+   *  needed.
    */
-  allreduces::MPICommunicator* get_al_comm(El::mpi::Comm c);
+  allreduces::MPICommunicator* get_al_comm(
+    El::mpi::Comm c, std::type_index t = std::type_index(typeid(Al::mpi_backend)));
 
   /** Convert an MPI_Op to an Aluminum reduction operator. */
   allreduces::ReductionOperator mpi_op_to_al_op(El::mpi::Op op);

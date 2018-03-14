@@ -31,6 +31,7 @@
 
 #include "data_reader.hpp"
 #include "image_preprocessor.hpp"
+#include <unordered_map>
 
 namespace lbann {
 
