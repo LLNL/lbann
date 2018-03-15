@@ -29,43 +29,18 @@
 namespace lbann {
 namespace proto {
 
-void setup_layer_pointers(lbann_comm* comm,
-                          std::vector<Layer*>& layers, 
-                          const lbann_data::Model& proto_model) {
+namespace {
+
+/** Setup parent/child relationships between layers. */
+void setup_parents_and_children(lbann_comm* comm,
+                                std::vector<Layer*>& layers,
+                                std::unordered_map<std::string, Layer*>& names_to_layers,
+                                const lbann_data::Model& proto_model) {
   std::stringstream err;
-
-  // Check that layer list is valid
-  if (proto_model.layer_size() != (int) layers.size()) {
-    LBANN_ERROR(comm, "layer list size does not match number of layers in prototext");
-  }
   for (int i=0; i<proto_model.layer_size(); ++i) {
     const auto& proto_layer = proto_model.layer(i);
-    const auto& l = layers[i];
-    const auto& name = proto_layer.name();
-    if (l == nullptr) {
-      err << "entry "  << i << " in the layer list is a null pointer";
-      LBANN_ERROR(comm, err.str());
-    }
-    if (!name.empty() && name != l->get_name()) {
-      err << "entry "  << i << " in the layer list has "
-          << "the name " << l->get_name() << ", "
-          << "but the prototext specifies the name " << name;
-      LBANN_ERROR(comm, err.str());
-    }
-  }
-
-  // Construct map from layer names to pointers
-  std::unordered_map<std::string, Layer*> names_to_layers;
-  for (int i=0; i<proto_model.layer_size(); ++i) {
-    auto&& l = layers[i];
-    names_to_layers[l->get_name()] = l;
-  }
-
-  // Setup parent/child relationships
-  for (int i=0; i<proto_model.layer_size(); ++i) {
-    const auto& proto_layer = proto_model.layer(i);
-    const auto& parents = parse_list<>(proto_layer.parents());
-    const auto& children = parse_list<>(proto_layer.children());
+    const auto& parents = parse_list<std::string>(proto_layer.parents());
+    const auto& children = parse_list<std::string>(proto_layer.children());
     for (const auto& parent : parents) {
       if (names_to_layers.count(parent) == 0) {
         err << "could not find parent layer " << parent << " " 
@@ -83,8 +58,14 @@ void setup_layer_pointers(lbann_comm* comm,
       layers[i]->add_child_layer(names_to_layers[child]);
     }
   }
+}
 
-  // Set paired input layers for target layers
+/** Setup paired input layers for target layers. */
+void setup_target_pointers(lbann_comm* comm,
+                           std::vector<Layer*>& layers,
+                           std::unordered_map<std::string, Layer*>& names_to_layers,
+                           const lbann_data::Model& proto_model) {
+  std::stringstream err;
   for (int i=0; i<proto_model.layer_size(); ++i) {
     generic_target_layer* target = dynamic_cast<generic_target_layer*>(layers[i]);
     if (target != nullptr) {
@@ -112,8 +93,14 @@ void setup_layer_pointers(lbann_comm* comm,
       target->set_paired_input_layer(input);
     }
   }
+}
 
-  // Set original layers for reconstruction layers
+/** Setup original layers for reconstruction layers. */
+void setup_reconstruction_pointers(lbann_comm* comm,
+                                   std::vector<Layer*>& layers,
+                                   std::unordered_map<std::string, Layer*>& names_to_layers,
+                                   const lbann_data::Model& proto_model) {
+  std::stringstream err;
   for (int i=0; i<proto_model.layer_size(); ++i) {
     const auto& proto_layer = proto_model.layer(i);
     Layer* l = layers[i];
@@ -139,8 +126,14 @@ void setup_layer_pointers(lbann_comm* comm,
       if (recon_mp != nullptr) { recon_mp->set_original_layer(original); }
     }
   }  
+}
 
-  // Set paired pooling layers for unpooling layers
+/** Setup paired pooling layers for unpooling layers. */
+void setup_unpooling_pointers(lbann_comm* comm,
+                              std::vector<Layer*>& layers,
+                              std::unordered_map<std::string, Layer*>& names_to_layers,
+                              const lbann_data::Model& proto_model) {
+  std::stringstream err;
   for (int i=0; i<proto_model.layer_size(); ++i) {
     unpooling_layer<data_layout::DATA_PARALLEL>* unpool
       = dynamic_cast<unpooling_layer<data_layout::DATA_PARALLEL>*>(layers[i]);
@@ -156,8 +149,9 @@ void setup_layer_pointers(lbann_comm* comm,
       unpool->set_pooling_layer(pool);
     }
   }
-  
 }
+
+} // namespace
 
 std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
                                           std::map<execution_mode, generic_data_reader *>& data_readers,
@@ -167,9 +161,9 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
 
   // List of layers
   std::vector<Layer*> layers;
-  
-  // Set of layer names
-  std::unordered_set<std::string> names;
+
+  // Map from names to layer pointers
+  std::unordered_map<std::string, Layer*> names_to_layers;
 
   // Create each layer in prototext
   for (int i=0; i<proto_model.layer_size(); ++i) {
@@ -177,12 +171,12 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
 
     // Check that layer name is valid
     std::string name = proto_layer.name();
-    if (parse_list<>(name).size() > 1) {
+    if (parse_list<std::string>(name).size() > 1) {
       err << "layer name \"" << name << "\" is invalid since it "
           << "contains whitespace";
       LBANN_ERROR(comm, err.str());
     }
-    if (!name.empty() && names.count(name) != 0) {
+    if (!name.empty() && names_to_layers.count(name) != 0) {
       err << "layer name " << name << " is not unique";
       LBANN_ERROR(comm, err.str());
     }
@@ -234,19 +228,22 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
       l->set_name(name);
     }
     name = l->get_name();
-    if (names.count(name) != 0) {
-      err << "layer name " << name << " is not unique";
+    if (names_to_layers.count(name) != 0) {
+      err << "layer name \"" << name << "\" is not unique";
       LBANN_ERROR(comm, err.str());
     }
-    names.insert(name);
+    names_to_layers[name] = l;
 
     // Add layer to list
     layers.push_back(l);
 
   }
 
-  // Setup layer pointers, e.g. layer graph edges
-  setup_layer_pointers(comm, layers, proto_model);
+  // Setup pointers between layers
+  setup_parents_and_children(comm, layers, names_to_layers, proto_model);
+  setup_target_pointers(comm, layers, names_to_layers, proto_model);
+  setup_reconstruction_pointers(comm, layers, names_to_layers, proto_model);
+  setup_unpooling_pointers(comm, layers, names_to_layers, proto_model);
 
   // Return layer list
   return layers;

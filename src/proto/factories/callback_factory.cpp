@@ -26,6 +26,9 @@
 
 #include "lbann/proto/factories.hpp"
 
+namespace lbann {
+namespace proto {
+
 namespace {
 
 /** Select entries from a list based on names.
@@ -36,7 +39,7 @@ template <typename T>
 std::unordered_set<T*> select_from_list(std::string names,
                                         std::vector<T*> list) {
   std::unordered_set<T*> selected;
-  for (const auto& name : lbann::proto::parse_list<>(names)) {
+  for (const auto& name : parse_list<std::string>(names)) {
     for (auto&& t : list) {
       if (name == t->get_name()) {
         selected.insert(t);
@@ -47,9 +50,6 @@ std::unordered_set<T*> select_from_list(std::string names,
 }
 
 } // namespace
-
-namespace lbann {
-namespace proto {
 
 lbann_callback* construct_callback(lbann_comm* comm,
                                    const lbann_data::Callback& proto_cb,
