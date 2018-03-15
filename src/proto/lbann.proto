@@ -302,6 +302,7 @@ message Metric {
   MeanAbsoluteDeviation mean_absolute_deviation = 4;
   MeanAbsoluteError mean_absolute_error = 6;
   PearsonCorrelation pearson_correlation = 5;
+  R2 r2 = 7;
 }
 
 message CategoricalAccuracy {
@@ -315,6 +316,9 @@ message TopKCategoricalAccuracy {
 }
 
 message PearsonCorrelation {
+}
+
+message R2 {
 }
 
 //========================================================================

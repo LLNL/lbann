@@ -1832,6 +1832,9 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
     if (metric.has_pearson_correlation()) {
       model->add_metric(new pearson_correlation_metric(comm));
     }
+    if (metric.has_r2()) {
+      model->add_metric(new r2_metric(comm));
+    }
   }
 
   //set checkpoint values
