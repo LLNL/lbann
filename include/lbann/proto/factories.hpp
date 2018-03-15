@@ -81,6 +81,9 @@ lbann_callback* construct_callback(lbann_comm* comm,
 optimizer* construct_optimizer(lbann_comm* comm,
                                const lbann_data::Optimizer& proto_opt);
 
+/** Construct an objective function specified with prototext. */
+objective_function* construct_objective_function(const lbann_data::ObjectiveFunction& proto_obj);
+
 } // namespace proto
 } // namespace lbann
 
