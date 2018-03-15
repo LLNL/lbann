@@ -211,23 +211,7 @@ model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_da
 
   //add the metrics
   for (int j=0; j<m.metric_size(); j++) {
-    const lbann_data::Metric &metric = m.metric(j);
-    if (metric.has_categorical_accuracy()) {
-      model->add_metric(new categorical_accuracy_metric(comm));
-    }
-    if (metric.has_top_k_categorical_accuracy()) {
-      const lbann_data::TopKCategoricalAccuracy &a = metric.top_k_categorical_accuracy();
-      model->add_metric(new top_k_categorical_accuracy_metric(a.top_k(), comm));
-    }
-    if (metric.has_mean_squared_error()) {
-      model->add_metric(new mean_squared_error_metric(comm));
-    }
-    if (metric.has_mean_absolute_deviation()) {
-      model->add_metric(new mean_absolute_deviation_metric(comm));
-    }
-    if (metric.has_pearson_correlation()) {
-      model->add_metric(new pearson_correlation_metric(comm));
-    }
+    model->add_metric(proto::construct_metric(comm, m.metric(j)));
   }
 
   //set checkpoint values

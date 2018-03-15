@@ -77,6 +77,10 @@ lbann_callback* construct_callback(lbann_comm* comm,
                                    std::vector<weights*> weights_list,
                                    lbann_summary* summarizer);
 
+/** Construct a metric specified with prototext. */
+metric* construct_metric(lbann_comm* comm,
+                         const lbann_data::Metric& proto_metric);
+
 /** Construct an optimizer specified with prototext. */
 optimizer* construct_optimizer(lbann_comm* comm,
                                const lbann_data::Optimizer& proto_opt);
