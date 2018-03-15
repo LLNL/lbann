@@ -77,6 +77,10 @@ lbann_callback* construct_callback(lbann_comm* comm,
                                    std::vector<weights*> weights_list,
                                    lbann_summary* summarizer);
 
+/** Construct an optimizer specified with prototext. */
+optimizer* construct_optimizer(lbann_comm* comm,
+                               const lbann_data::Optimizer& proto_opt);
+
 } // namespace proto
 } // namespace lbann
 

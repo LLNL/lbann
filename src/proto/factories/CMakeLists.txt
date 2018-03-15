@@ -3,6 +3,7 @@ set_full_path(THIS_DIR_SOURCES
   callback_factory.cpp
   layer_factory.cpp
   layer_graph_factory.cpp
+  optimizer_factory.cpp
 )
 
 # Propagate the files up the tree
