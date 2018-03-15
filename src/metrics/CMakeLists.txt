@@ -6,6 +6,7 @@ set_full_path(THIS_DIR_SOURCES
   metric.cpp
   pearson_correlation.cpp
   top_k_categorical_accuracy.cpp
+  r2.cpp
   )
 
 # Propagate the files up the tree
