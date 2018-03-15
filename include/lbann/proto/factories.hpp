@@ -44,16 +44,10 @@
 namespace lbann {
 namespace proto {
 
-/** Parse a space-separated list. */
-template <typename T = std::string>
-std::vector<T> parse_list(std::string str) {
-  std::vector<T> list;
-  std::stringstream ss(str);
-  for (T entry; ss >> entry;) {
-    list.push_back(entry);
-  }
-  return list;
-}
+/** Construct a model specified with a prototext. */
+model* construct_model(lbann_comm* comm,
+                       const lbann_data::Optimizer& proto_opt,
+                       const lbann_data::Model& proto_model);
 
 /** Construct a layer graph specified with a prototext. */
 std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
@@ -87,6 +81,17 @@ optimizer* construct_optimizer(lbann_comm* comm,
 
 /** Construct an objective function specified with prototext. */
 objective_function* construct_objective_function(const lbann_data::ObjectiveFunction& proto_obj);
+
+/** Parse a space-separated list. */
+template <typename T = std::string>
+std::vector<T> parse_list(std::string str) {
+  std::vector<T> list;
+  std::stringstream ss(str);
+  for (T entry; ss >> entry;) {
+    list.push_back(entry);
+  }
+  return list;
+}
 
 } // namespace proto
 } // namespace lbann

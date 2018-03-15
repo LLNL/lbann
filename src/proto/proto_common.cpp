@@ -153,74 +153,7 @@ objective_function *init_objective_function(lbann_data::ObjectiveFunction obj_fn
 
 model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_data::LbannPB& p)
 {
-  std::stringstream err;
-  bool master = comm->am_world_master();
-
-  //sequential_model *model = 0;
-  model *model = nullptr;
-
-  const lbann_data::Model& m = p.model();
-  const std::string name = m.name();
-  uint mini_batch_size = m.mini_batch_size();
-
-  //instantiate the objective function
-  objective_function *obj_fn = init_objective_function(m.objective_function());
-
-  //instantiate the network; layers will be added in a separate function call
-  if (name == "sequential_model") {
-    model = new sequential_model(comm, mini_batch_size, obj_fn, default_optimizer);
-    if (master) std::cout << "instantiating sequential_model\n";
-  }
-  else if (name == "directed_acyclic_graph_model") {
-    model = new directed_acyclic_graph_model(comm, mini_batch_size, obj_fn, default_optimizer);
-    if (master) std::cout << "instantiating directed_acyclic_graph_model\n";
-  } else if (name == "recurrent_model") {
-    const lbann_data::Model::Recurrent& recurrent = m.recurrent();
-    model = new recurrent_model(comm, mini_batch_size, obj_fn, default_optimizer, recurrent.unroll_depth());
-    if (master) std::cout << "instantiating recurrent_model\n";
-  } else if(name == "siamese_model") {
-    if (m.has_siamese()) {
-      const lbann_data::Model::Siamese& siamese = m.siamese();
-      model = new siamese_model(comm, mini_batch_size, obj_fn, default_optimizer, siamese.num_heads());
-    } else {
-      err << __FILE__ << " " << __LINE__
-          << " :: init_model() - " << name << " needs definition" << std::endl;
-      throw lbann_exception(err.str());
-    }
-    if (master) std::cout << "instantiating siamese_model\n";
-  } else if (name == "greedy_layerwise_autoencoder") {
-    model = new greedy_layerwise_autoencoder(comm, mini_batch_size, obj_fn, default_optimizer);
-    if (master) std::cout << "instantiating greedy_layerwise_autoencoder\n";
-  }
-  else {
-    if (master) {
-      err << __FILE__ << " " << __LINE__
-          << " :: init_model() - unknown model name: " << name << std::endl
-          << "; should be one of: sequential_model, dag_model, greedy_layerwise_autoencoder";
-      throw lbann_exception(err.str());
-    }
-  }
-
-  //get data layout
-  const data_layout layout = get_data_layout(m.data_layout());
-  if (master and layout == data_layout::invalid) {
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "model has invalid data layout " << m.data_layout();
-    throw lbann_exception(err.str());
-  }
-
-  //add the metrics
-  for (int j=0; j<m.metric_size(); j++) {
-    model->add_metric(proto::construct_metric(comm, m.metric(j)));
-  }
-
-  //set checkpoint values
-  //model->set_checkpoint_dir(m.checkpoint_dir());
-  //model->set_checkpoint_epochs(m.checkpoint_epochs());
-  //model->set_checkpoint_steps(m.checkpoint_steps());
-  //model->set_checkpoint_secs(m.checkpoint_secs());
-
-  return model;
+  return proto::construct_model(comm, p.optimizer(), p.model());
 }
 
 optimizer *init_default_optimizer(lbann_comm *comm,

@@ -4,6 +4,7 @@ set_full_path(THIS_DIR_SOURCES
   layer_factory.cpp
   layer_graph_factory.cpp
   metric_factory.cpp
+  model_factory.cpp
   objective_function_factory.cpp
   optimizer_factory.cpp
 )
