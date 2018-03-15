@@ -427,7 +427,7 @@ class cudnn_manager {
   // One GPU per single thread of one MPI rank is assumed
   std::vector<ncclComm_t> m_nccl_comm;
   ncclDataType_t nccl_datatype();
-#endif // #ifdef LBANN_HAS_NCCL2
+#endif // LBANN_HAS_NCCL2
 
 #endif // #ifdef LBANN_HAS_CUDNN
 };

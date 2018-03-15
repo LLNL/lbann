@@ -353,9 +353,16 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus, bool nc
         FORCE_CHECK_CUBLAS(cublasSetStream(m_cublas_handles.back(), m_streams.back()));
     }
 
-
     // Get number of GPUs for current MPI rank
     m_num_gpus = m_gpus.size();
+
+    // Make sure LBANN communicator knows GPUs and CUDA streams
+    /**  @todo This is a kludge. A better solution would be to
+     *   refactor the cuDNN manager and make the LBANN communicator
+     *   responsible for GPU management.
+     */
+    comm->get_gpus() = m_gpus;
+    comm->get_cuda_streams() = m_streams;
 
     // Initialize work spaces
     m_work_spaces = std::vector<void *>(m_num_gpus, nullptr);

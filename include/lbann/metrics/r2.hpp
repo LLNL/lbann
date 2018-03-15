@@ -24,39 +24,48 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/proto/factories.hpp"
+#ifndef LBANN_METRIC_R2_HPP
+#define LBANN_METRIC_R2_HPP
+
+#include "lbann/metrics/metric.hpp"
 
 namespace lbann {
-namespace proto {
 
-metric* construct_metric(lbann_comm* comm,
-                         const lbann_data::Metric& proto_metric) {
+/** R^2 (coefficient of determination) regression metric.
+ */
+class r2_metric : public metric {
 
-  // Construct metric
-  if (proto_metric.has_categorical_accuracy()) {
-    return new categorical_accuracy_metric(comm);
-  }
-  if (proto_metric.has_top_k_categorical_accuracy()) {
-    const auto& params = proto_metric.top_k_categorical_accuracy();
-    return new top_k_categorical_accuracy_metric(params.top_k(), comm);
-  }
-  if (proto_metric.has_mean_squared_error()) {
-    return new mean_squared_error_metric(comm);
-  }
-  if (proto_metric.has_mean_absolute_deviation()) {
-    return new mean_absolute_deviation_metric(comm);
-  }
-  if (proto_metric.has_pearson_correlation()) {
-    return new pearson_correlation_metric(comm);
-  }
-  if (proto_metric.has_r2()) {
-    return new r2_metric(comm);
+ public:
+
+  /** Constructor. */
+  r2_metric(lbann_comm *comm) : metric(comm) {}
+
+  /** Copy constructor. */
+  r2_metric(const r2_metric& other) = default;
+  /** Copy assignment operator. */
+  r2_metric& operator=(const r2_metric& other) = default;
+  /** Destructor. */
+  virtual ~r2_metric() = default;
+  /** Copy function. */
+  r2_metric* copy() const override {
+    return new r2_metric(*this);
   }
 
-  // Return null pointer if no optimizer is specified
-  return nullptr;
+  /** Return a string name for this metric. */
+  std::string name() const override { return "r2"; }
 
-}
+ protected:
 
-} // namespace proto
-} // namespace lbann
+  /** Computation to evaluate the metric function.
+   *  numerator = Sum(Square(ground_truth - prediction)
+   *  denominator = Sum(Square(ground_truth - Mean(ground_truth)))
+   *  return (1 - numerator/(denominator + epsilon))
+   */
+  EvalType evaluate_compute(const AbsDistMat& prediction,
+                            const AbsDistMat& ground_truth) override;
+
+};
+
+}  // namespace lbann
+
+#endif  // LBANN_METRIC_R2_HPP

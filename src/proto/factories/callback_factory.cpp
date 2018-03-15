@@ -160,6 +160,15 @@ lbann_callback* construct_callback(lbann_comm* comm,
     return new lbann_callback_optimizerwise_adaptive_learning_rate(params.scale(),
                                                                    selected_weights);
   }
+  if (proto_cb.has_poly_learning_rate()) {
+    const auto& params = proto_cb.poly_learning_rate();
+    auto&& selected_weights = select_from_list<weights>(params.weights(),
+                                                        weights_list);
+    return new lbann_callback_poly_learning_rate(params.power(),
+                                                 params.num_epochs(),
+                                                 params.max_iter(),
+                                                 selected_weights);
+  }
 
   //////////////////////////////////////////////////////////////////
   // Mini-batch schedules
