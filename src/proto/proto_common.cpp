@@ -15,24 +15,6 @@
 
 using namespace lbann;
 
-/** Map from layer names to layers. */
-std::map<std::string, Layer*> model_layers;
-
-/** Map from weights names to weights. */
-std::map<std::string, weights*> model_weights;
-/** List of weights names. */
-std::vector<std::string> model_weights_names;
-
-/** Whether a layer is already in the model. */
-inline bool layer_is_in_model(std::string name) {
-  return model_layers.find(name) != model_layers.end();
-}
-
-/** Whether a set of weights are already in the model. */
-inline bool weights_are_in_model(std::string name) {
-  return model_weights.find(name) != model_weights.end();
-}
-
 bool has_motifs(lbann_comm *comm, const lbann_data::LbannPB& p) {
   bool master = comm->am_world_master();
   if (master) std::cout << "starting has_motifs\n";
@@ -55,114 +37,6 @@ void expand_motifs(lbann_comm *comm, lbann_data::LbannPB& pb) {
   for (int j=0; j<num_motifs; j++) {
   }
 }
-
-inline data_layout get_data_layout(const std::string& s)
-{
-  if (s == "model_parallel") {
-    return data_layout::MODEL_PARALLEL;
-  } else if (s == "data_parallel") {
-    return data_layout::DATA_PARALLEL;
-  } else {
-    return data_layout::invalid;
-  }
-}
-
-void add_layers(
-  lbann::model *model,
-  std::map<execution_mode, generic_data_reader *>& data_readers,
-  cudnn::cudnn_manager *cudnn,
-  const lbann_data::LbannPB& p)
-{
-  lbann_comm *comm = model->get_comm();
-  const bool master = comm->am_world_master();
-  if (master) {
-    std::cout << "starting add_layers\n";
-  }
-
-  // Construct layer graph
-  auto&& layers = proto::construct_layer_graph(comm, data_readers, cudnn, p.model());
-
-  // Add layers to model
-  model_layers.clear();
-  for (auto&& l : layers) {
-    model->add_layer(l);
-    model_layers[l->get_name()] = l;
-  }
-
-}
-
-lbann_summary * construct_summarizer(const lbann_data::Model &m, lbann_comm *comm) {
-  lbann_summary *summary = nullptr;
-  bool master = comm->am_world_master();
-  int size = m.callback_size();
-  for (int j=0; j<size; j++) {
-    const lbann_data::Callback& callback = m.callback(j);
-    if (callback.has_summary()) {
-      const lbann_data::CallbackSummary& c = callback.summary();
-      if (master) {
-        std::cout << "constructing summarizer with dir: " << c.dir() << std::endl;
-      }
-
-      //check to see if directory exists
-      struct stat sb;
-      if (! ( stat(c.dir().c_str(), &sb) == 0 && S_ISDIR(sb.st_mode) )) {
-        if (master) {
-          throw lbann_exception(
-            std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
-            "summary directory " + c.dir() + " does not exist");
-        }
-      }
-      summary = new lbann_summary(c.dir(), comm);
-    }
-  }
-  return summary;
-}
-
-void init_callbacks(
-  lbann_comm *comm,
-  lbann::model *model,
-  std::map<execution_mode, lbann::generic_data_reader *>& data_readers,
-  const lbann_data::LbannPB& p)
-{
-  std::stringstream err;
-  bool master = comm->am_world_master();
-
-  const lbann_data::Model& m = p.model();
-  if (master) std::cerr << std::endl << "starting init_callbacks; size: " << m.callback_size() << std::endl;
-
-  //the same summarizer is passed to all call backs that take a summarizer;
-  //construct_summarizer returns this summarizer, which may be a nullptr
-  lbann_summary *summarizer = construct_summarizer(m, comm);
-
-  // Add callbacks to model
-  for (int j=0; j<m.callback_size(); j++) {
-    auto&& cb = proto::construct_callback(comm,
-                                          m.callback(j),
-                                          data_readers,
-                                          model->get_layers(),
-                                          model->get_weights(),
-                                          summarizer);
-    model->add_callback(cb);
-  }
-
-}
-
-objective_function *init_objective_function(lbann_data::ObjectiveFunction obj_fn_params) {
-  return proto::construct_objective_function(obj_fn_params);
-}
-
-model *init_model(lbann_comm *comm, optimizer *default_optimizer, const lbann_data::LbannPB& p)
-{
-  return proto::construct_model(comm, p.optimizer(), p.model());
-}
-
-optimizer *init_default_optimizer(lbann_comm *comm,
-                                  cudnn::cudnn_manager *cudnn,
-                                  const lbann_data::LbannPB& params)
-{
-  return proto::construct_optimizer(comm, params.optimizer());
-}
-
 
 void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, std::map<execution_mode, generic_data_reader *>& data_readers)
 {

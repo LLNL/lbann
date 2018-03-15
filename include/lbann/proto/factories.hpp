@@ -46,6 +46,8 @@ namespace proto {
 
 /** Construct a model specified with a prototext. */
 model* construct_model(lbann_comm* comm,
+                       cudnn::cudnn_manager* cudnn,
+                       std::map<execution_mode, generic_data_reader*>& data_readers,
                        const lbann_data::Optimizer& proto_opt,
                        const lbann_data::Model& proto_model);
 
@@ -70,6 +72,13 @@ lbann_callback* construct_callback(lbann_comm* comm,
                                    std::vector<Layer*> layer_list,
                                    std::vector<weights*> weights_list,
                                    lbann_summary* summarizer);
+
+/** Construct a summarizer specified with prototext.
+ *  The summarizer is only constructed if the summarizer callback is
+ *  enabled.
+ */
+lbann_summary* construct_summarizer(lbann_comm* comm,
+                                    const lbann_data::Model& m);
 
 /** Construct a metric specified with prototext. */
 metric* construct_metric(lbann_comm* comm,

@@ -302,5 +302,33 @@ lbann_callback* construct_callback(lbann_comm* comm,
 
 }
 
+lbann_summary* construct_summarizer(lbann_comm* comm,
+                                    const lbann_data::Model& m) {
+  lbann_summary *summary = nullptr;
+  bool master = comm->am_world_master();
+  int size = m.callback_size();
+  for (int j=0; j<size; j++) {
+    const lbann_data::Callback& callback = m.callback(j);
+    if (callback.has_summary()) {
+      const lbann_data::CallbackSummary& c = callback.summary();
+      if (master) {
+        std::cout << "constructing summarizer with dir: " << c.dir() << std::endl;
+      }
+
+      //check to see if directory exists
+      struct stat sb;
+      if (! ( stat(c.dir().c_str(), &sb) == 0 && S_ISDIR(sb.st_mode) )) {
+        if (master) {
+          throw lbann_exception(
+            std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
+            "summary directory " + c.dir() + " does not exist");
+        }
+      }
+      summary = new lbann_summary(c.dir(), comm);
+    }
+  }
+  return summary;
+}
+
 } // namespace proto
 } // namespace lbann

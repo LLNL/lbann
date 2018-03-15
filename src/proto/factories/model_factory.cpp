@@ -74,6 +74,8 @@ model* instantiate_model(lbann_comm* comm,
 } // namespace
 
 model* construct_model(lbann_comm* comm,
+                       cudnn::cudnn_manager* cudnn,
+                       std::map<execution_mode, generic_data_reader*>& data_readers,
                        const lbann_data::Optimizer& proto_opt,
                        const lbann_data::Model& proto_model) {
 
@@ -86,9 +88,29 @@ model* construct_model(lbann_comm* comm,
   // Instantiate model
   auto&& m = instantiate_model(comm, obj, opt, proto_model);
 
+  // Add layers
+  auto&& layer_list = construct_layer_graph(comm, data_readers, cudnn, proto_model);
+  for (auto&& l : layer_list) { m->add_layer(l); }
+
+  // Add weights
+  /// @todo Prototext interface
+  std::vector<weights*> weights_list;
+  for (auto&& w : weights_list) { m->add_weights(w); }
+
   // Add metrics
   for (int i=0; i<proto_model.metric_size(); ++i) {
     m->add_metric(construct_metric(comm, proto_model.metric(i)));
+  }
+
+  // Add callbacks
+  auto&& summarizer = construct_summarizer(comm, proto_model);
+  for (int i=0; i<proto_model.callback_size(); i++) {
+    m->add_callback(construct_callback(comm,
+                                       proto_model.callback(i),
+                                       data_readers,
+                                       layer_list,
+                                       weights_list,
+                                       summarizer));
   }
 
   // Return model

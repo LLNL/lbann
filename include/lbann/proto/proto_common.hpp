@@ -32,30 +32,6 @@ void print_help(lbann::lbann_comm *comm);
 /// prints prototext file, cmd line, etc to file
 void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::LbannPB& p);
 
-///returns a model that is on of: dnn, stacked_autoencoder, greedy_layerwise_autoencoder
-lbann::model *init_model(
-  lbann::lbann_comm *comm,
-  lbann::optimizer *default_optimizer,
-  const lbann_data::LbannPB& p);
-
-void add_layers(
-  lbann::model *model,
-  std::map<execution_mode, lbann::generic_data_reader *>& data_readers,
-  lbann::cudnn::cudnn_manager *cudnn,
-  const lbann_data::LbannPB& p);
-
-/// returns a optimizer factory that is one of: adagrad, rmsprop, adam, sgd
-lbann::optimizer *init_default_optimizer(
-  lbann::lbann_comm *comm,
-  lbann::cudnn::cudnn_manager *cudnn,
-  const lbann_data::LbannPB& p);
-
-void init_callbacks(
-  lbann::lbann_comm *comm,
-  lbann::model *model,
-  std::map<execution_mode, lbann::generic_data_reader *>& data_readers,
-  const lbann_data::LbannPB& p);
-
 ///
 void read_prototext_file(
   std::string fn,
