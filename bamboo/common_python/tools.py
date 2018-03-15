@@ -29,7 +29,7 @@ def get_command(cluster, executable, num_nodes=None, partition=None,
                optimizer_path, output_file_name]
     invalid_character_errors = check_list(blacklist, strings)
     if invalid_character_errors != []:
-        raise Exception('Invalid character(s): %s' % ' '.join(invalid_character_errors))
+        raise Exception('Invalid character(s): %s' % ' , '.join(invalid_character_errors))
 
     # Determine scheduler
     if cluster in ['catalyst', 'surface']:
@@ -37,7 +37,7 @@ def get_command(cluster, executable, num_nodes=None, partition=None,
     elif cluster == 'ray':
         scheduler = 'lsf'
     else:
-        raise Exception('Unsupported Cluster %s' % cluster)
+        raise Exception('Unsupported Cluster: %s' % cluster)
 
     # Description of command line options are from the appropriate command's
     # man pages
@@ -69,7 +69,9 @@ def get_command(cluster, executable, num_nodes=None, partition=None,
                 # allocation.
                 # Time limit in minutes
                 option_time_limit = ' --time=%d' % time_limit
-            command_allocate = '%s%s%s%s' % (command_allocate, option_num_nodes, option_partition, option_time_limit)
+            command_allocate = '%s%s%s%s' % (
+                command_allocate, option_num_nodes, option_partition,
+                option_time_limit)
             
         # Create run command
         if command_allocate == '':
@@ -156,6 +158,7 @@ def get_command(cluster, executable, num_nodes=None, partition=None,
     option_num_epochs = ''
     option_optimizer = ''
     option_processes_per_model = ''
+    lbann_errors = []
     if model_path != None:
         # If model_folder and/or model_name are set, an exception will be
         # raised later.
@@ -168,55 +171,54 @@ def get_command(cluster, executable, num_nodes=None, partition=None,
         option_optimizer_name = ' --optimizer=%s' % optimizer_path
     if dir_name != None:
         if model_path != None:
-            if (model_folder != None) and (model_name != None):
-                raise Exception('Invalid usage: model_path is set but so are model folder and model_name')
-            elif model_folder != None:
-                raise Exception(
-                    'Invalid usage: model_path is set but so is model folder')
-            elif model_name != None:
-                raise Exception(
-                    'Invalid usage: model_path is set but so is model_name')
+            if (model_folder != None) or (model_name != None):
+                lbann_errors.append(
+                    'model_path is set but so is at least one of model folder and model_name')
         else:
             if (model_folder != None) and (model_name != None):
                 option_model = ' --model=%s/model_zoo/%s/model_%s.prototext' % (dir_name, model_folder, model_name)
             elif model_folder != None:
-                raise Exception(
-                    'Invalid usage: model_folder set but not model_name.')
+                lbann_errors.append('model_folder set but not model_name.')
             elif model_name != None:
-                raise Exception(
-                    'Invalid usage: model_name set but not model_folder.')
+                lbann_errors.append('model_name set but not model_folder.')
         if data_reader_name != None:
             if data_reader_path != None:
-                raise Exception(
-                    'Invalid usage: data_reader_path is set but so is data_reader_name')
+                lbann_errors.append('data_reader_path is set but so is data_reader_name')
             else:
                 option_data_reader = ' --reader=%s/model_zoo/data_readers/data_reader_%s.prototext' % (dir_name, data_reader_name)
-            if (cluster == 'ray'):
-                ray_parameters = [data_filedir_train_ray,
-                                  data_filename_train_ray,
-                                  data_filedir_test_ray,
-                                  data_filename_test_ray]
-                if data_filedir_ray != None:
-                    if ray_parameters == [None, None, None, None]:
-                        option_data_filedir = ' --data_filedir=%s' % data_filedir_ray
-                    else:
-                        raise Exception('Invalid usage: data_fildir set but so is at least one of [data_filedir_train_ray, data_filename_train_ray, data_filedir_test_ray, data_filename_test_ray]')
-                elif None not in ray_parameters:
-                    option_data_filedir_train = ' --data_filedir_train=%s' % data_filedir_train_ray
-                    option_data_filename_train = ' --data_filename_train=%s' % data_filename_train_ray
-                    option_data_filedir_test = ' --data_filedir_test=%s' % data_filedir_test_ray
-                    option_data_filename_test = ' --data_filename_test=%s' % data_filename_test_ray
-                else:
-                    raise Exception('Invalid usage: data_reader_name set but not data_filedir_ray. If a data reader is provided, an alternative filedir must be available for Ray. Alternatively, all of [data_filedir_train_ray, data_filename_train_ray, data_filedir_test_ray, data_filename_test_ray] can be set.')
-        elif data_filedir_ray != None:
-            raise Exception('Invalid usage: data_filedir_ray set but not data_reader_name.')    
         if optimizer_name != None:
             if optimizer_path != None:
-                raise Exception('Invalid usage: optimizer_path is set but so is optimizer_name')
+                lbann_errors.append('optimizer_path is set but so is optimizer_name')
             else:
                 option_optimizer = ' --optimizer=%s/model_zoo/optimizers/opt_%s.prototext' % (dir_name, optimizer_name)
         if (model_folder == None) and (model_name == None) and (data_reader_name == None) and (optimizer_name == None):
-            raise Exception('Invalid usage: dir_name set but none of model_folder, model_name, data_reader_name, optimizer_name are.')
+            lbann_errors.append('dir_name set but none of model_folder, model_name, data_reader_name, optimizer_name are.')
+    elif (model_folder != None) or (model_name != None) or (data_reader_name != None) or (optimizer_name != None):
+        lbann_errors.append(
+            'dir_name is not set but at least one of model_folder, model_name, data_reader_name, optimizer_name is.')
+    ray_parameters = [data_filedir_train_ray,
+                      data_filename_train_ray,
+                      data_filedir_test_ray,
+                      data_filename_test_ray]
+    if (data_reader_name != None) or (data_reader_path != None):
+        if (cluster == 'ray'):
+            if data_filedir_ray != None:
+                if ray_parameters == [None, None, None, None]:
+                    option_data_filedir = ' --data_filedir=%s' % data_filedir_ray
+                else:
+                    lbann_errors.append('data_fildir_ray set but so is at least one of [data_filedir_train_ray, data_filename_train_ray, data_filedir_test_ray, data_filename_test_ray]')
+            elif None not in ray_parameters:
+                option_data_filedir_train = ' --data_filedir_train=%s' % data_filedir_train_ray
+                option_data_filename_train = ' --data_filename_train=%s' % data_filename_train_ray
+                option_data_filedir_test = ' --data_filedir_test=%s' % data_filedir_test_ray
+                option_data_filename_test = ' --data_filename_test=%s' % data_filename_test_ray
+            else:
+                lbann_errors.append('data_reader_name or data_reader_path is set but not data_filedir_ray. If a data reader is provided, an alternative filedir must be available for Ray. Alternatively, all of [data_filedir_train_ray, data_filename_train_ray, data_filedir_test_ray, data_filename_test_ray] can be set.')
+    elif data_filedir_ray != None:
+        lbann_errors.append(
+            'data_filedir_ray set but neither data_reader_name or data_reader_path are.')
+    elif filter(lambda x: x != None, ray_parameters) != []:
+        lbann_errors.append('At least one of [data_filedir_train_ray, data_filename_train_ray, data_filedir_test_ray, data_filename_test_ray] is set, but neither data_reader_name or data_reader_path are.')
     if data_reader_percent != None:
         option_data_reader_percent = ' --data_reader_percent=%f' % data_reader_percent
     if exit_after_setup:
@@ -227,6 +229,8 @@ def get_command(cluster, executable, num_nodes=None, partition=None,
         option_num_epochs = ' --num_epochs=%d' % num_epochs
     if processes_per_model != None:
         option_processes_per_model = ' --procs_per_model=%d' % processes_per_model
+    if lbann_errors != []:
+        raise Exception('Invalid Usage: ' + ' , '.join(lbann_errors))
     command_lbann = '%s%s%s%s%s%s%s%s%s%s%s%s%s%s' % (
         executable, option_data_filedir, option_data_filedir_train,
         option_data_filename_train, option_data_filedir_test,
