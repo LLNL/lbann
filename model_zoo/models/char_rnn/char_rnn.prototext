@@ -9,7 +9,7 @@ model {
   num_gpus: -1
   recurrent {
     unroll_depth : 5
-   }
+  }
 
   ###################################################
   # Objective function
@@ -41,19 +41,11 @@ model {
 
   # Data
   layer {
-    name: "data_concat"
+    name: "data"
     input {
       io_buffer: "partitioned"
     }
     data_layout: "data_parallel"
-  }
-  layer {
-    parents: "data_concat"
-    name: "data"
-    slice {
-      slice_points: "0 128 256 384 512 640"
-    }
-    data_layout: "model_parallel"
   }
 
   # rnn1
@@ -88,9 +80,13 @@ model {
     data_layout: "model_parallel"
   }
   layer {
+    # This reshape layer is a hack to get around ambiguous neuron dimensions
     parents: "rnn1_act"
     name: "rnn1"
-    split {}
+    reshape {
+      num_dims: 1
+      dims: "256"
+    }
     data_layout: "model_parallel"
   }
 
@@ -110,16 +106,8 @@ model {
     softmax {}
     data_layout: "model_parallel"
   }
-
-  # Evaluate
   layer {
     parents: "prob"
-    name: "prob_concat"
-    concatenation {}
-    data_layout: "model_parallel"
-  }
-  layer {
-    parents: "prob_concat"
     name: "eval"
     target {
       io_buffer: "partitioned"

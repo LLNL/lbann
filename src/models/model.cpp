@@ -507,6 +507,7 @@ void model::add_dummy_layers() {
       default:
         std::stringstream err;
         err << __FILE__ << " " << __LINE__ << " :: " << "invalid data layout";
+        throw lbann_exception(err.str());
       }
       dummy->set_name(layer->get_name()
                       + "_dummy"
@@ -546,6 +547,7 @@ void model::add_split_layers() {
       default:
         std::stringstream err;
         err << __FILE__ << " " << __LINE__ << " :: " << "invalid data layout";
+        throw lbann_exception(err.str());
       }
       split->set_name(layer->get_name() + "_split");
 

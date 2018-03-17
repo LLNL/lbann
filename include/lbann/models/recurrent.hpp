@@ -29,7 +29,7 @@
 #ifndef LBANN_MODEL_RECURRENT_HPP
 #define LBANN_MODEL_RECURRENT_HPP
 
-#include "lbann/models/model.hpp"
+#include "lbann/models/directed_acyclic_graph.hpp"
 
 namespace lbann {
 
@@ -37,7 +37,7 @@ namespace lbann {
  *  Training is performed with back propagation through time, i.e. by
  *  unrolling the recurrent network into a DAG.
  */
-class recurrent_model : public model {
+class recurrent_model : public directed_acyclic_graph_model {
  public:
 
   /** Constructor. */
@@ -63,7 +63,6 @@ class recurrent_model : public model {
  protected:
 
   void setup_layer_topology() override;
-  void setup_layer_execution_order() override;
   void setup_layers() override;
 
  private:
@@ -71,16 +70,16 @@ class recurrent_model : public model {
   /** The number of times to unroll the recurrent network. */
   int m_unroll_depth;
 
-  /** Map to corresponding layer in previous roll.
-   *  Layers in the first roll map to null pointers. The input and
+  /** Map to corresponding layer in previous step.
+   *  Layers in the first step map to null pointers. The input and
    *  target layers map to themselves.
    */
-  std::unordered_map<Layer *, Layer *> m_previous_roll_layer;
-  /** Map to corresponding layer in next roll.
-   *  Layers in the last roll map to null pointers. The input and
+  std::unordered_map<const Layer*, Layer*> m_previous_step_layer;
+  /** Map to corresponding layer in next step.
+   *  Layers in the last step map to null pointers. The input and
    *  target layers map to themselves.
    */
-  std::unordered_map<Layer *, Layer *> m_next_roll_layer;
+  std::unordered_map<const Layer*, Layer*> m_next_step_layer;
 
 };
 
