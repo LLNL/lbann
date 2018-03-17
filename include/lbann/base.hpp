@@ -150,6 +150,17 @@ static bool __attribute__((used)) endsWith(const std::string mainStr, const std:
 
 }  // namespace lbann
 
+// Macro to throw an LBANN exception
+#define LBANN_ERROR(message)                                            \
+  do {                                                                  \
+    std::stringstream ss_LBANN_ERROR;                                   \
+    ss_LBANN_ERROR << "LBANN error"                                     \
+                   << " (" << __FILE__ << ":" << __LINE__ << ")"        \
+                   << ": " << message;                                  \
+    throw lbann::lbann_exception(ss_LBANN_ERROR.str());                 \
+  } while(0)
+
+
 /// Print the dimensions and name of a Elemental matrix
 static void __attribute__((used)) _display_matrix(ElMat *m, const char *name) {
   std::cout << "DISPLAY MATRIX: " << name << " = " << m->Height() << " x " << m->Width() << std::endl;

@@ -330,7 +330,7 @@ Layer* construct_layer(lbann_comm* comm,
 
   // Throw exception if layer has not been constructed
   err << "could not construct layer " << proto_layer.name();
-  LBANN_ERROR(comm, err.str());
+  LBANN_ERROR(err.str());
   return nullptr;
 
 }

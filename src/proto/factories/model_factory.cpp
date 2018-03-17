@@ -66,7 +66,7 @@ model* instantiate_model(lbann_comm* comm,
 
   // Throw error if model type is not supported
   err << "unknown model type (" << type << ")";
-  LBANN_ERROR(comm, err.str());
+  LBANN_ERROR(err.str());
   return nullptr;
   
 }

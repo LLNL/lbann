@@ -27,18 +27,6 @@
 #ifndef LBANN_PROTO_FACTORIES_HPP
 #define LBANN_PROTO_FACTORIES_HPP
 
-// Macro to throw an exception
-#define LBANN_ERROR(comm, message)                              \
-  do {                                                          \
-    if (comm->am_world_master()) {                              \
-      std::stringstream ss_LBANN_ERROR;                         \
-      ss_LBANN_ERROR << "Error at "                             \
-                     << __FILE__ << ":" << __LINE__ << ": "     \
-                     << message;                                \
-      throw lbann::lbann_exception(ss_LBANN_ERROR.str());       \
-    }                                                           \
-  } while(0)
-
 #include "lbann/proto/proto_common.hpp"
 
 namespace lbann {

@@ -107,7 +107,7 @@ lbann_callback* construct_callback(lbann_comm* comm,
       type = lbann_callback_imcomm::comm_type::ADAPTIVE_QUANTIZATION;
     } else {
       err << "invalid inter-model communication type (" << type_str << ")";
-      LBANN_ERROR(comm, err.str());
+      LBANN_ERROR(err.str());
     }
     std::unordered_set<weights*> selected_weights; /// @todo Initialize weights
     return new lbann_callback_imcomm(type, selected_weights, summarizer);

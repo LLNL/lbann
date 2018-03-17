@@ -45,7 +45,7 @@ void setup_parents_and_children(lbann_comm* comm,
       if (names_to_layers.count(parent) == 0) {
         err << "could not find parent layer " << parent << " " 
             << "for layer " << layers[i]->get_name();
-        LBANN_ERROR(comm, err.str());
+        LBANN_ERROR(err.str());
       }
       layers[i]->add_parent_layer(names_to_layers[parent]);
     }
@@ -53,7 +53,7 @@ void setup_parents_and_children(lbann_comm* comm,
       if (names_to_layers.count(child) == 0) {
         err << "could not find child layer " << child << " " 
             << "for layer " << layers[i]->get_name();
-        LBANN_ERROR(comm, err.str());
+        LBANN_ERROR(err.str());
       }
       layers[i]->add_child_layer(names_to_layers[child]);
     }
@@ -82,13 +82,13 @@ void setup_target_pointers(lbann_comm* comm,
       if (input == nullptr) {
         err << "could not find input layer " << input_name << " "
             << "to pair with target layer " << target->get_name();
-        LBANN_ERROR(comm, err.str());
+        LBANN_ERROR(err.str());
       }
       if (input->is_for_regression() != target->is_for_regression()) {
         err << "target layer " << target->get_name() << " "
             << "and its paired input layer " << input->get_name()
             << "are not consistent regarding regression/classification";
-        LBANN_ERROR(comm, err.str());
+        LBANN_ERROR(err.str());
       }
       target->set_paired_input_layer(input);
     }
@@ -118,7 +118,7 @@ void setup_reconstruction_pointers(lbann_comm* comm,
       if (original == nullptr) {
         err << "could not find original layer " << original_name << " "
             << "for reconstruction layer " << l->get_name();
-        LBANN_ERROR(comm, err.str());
+        LBANN_ERROR(err.str());
       }
       auto&& recon_dp = dynamic_cast<reconstruction_layer<data_layout::DATA_PARALLEL>*>(l);
       auto&& recon_mp = dynamic_cast<reconstruction_layer<data_layout::MODEL_PARALLEL>*>(l);
@@ -144,7 +144,7 @@ void setup_unpooling_pointers(lbann_comm* comm,
       if (pool == nullptr) {
         err << "could not find pooling layer " << pool_name << " "
             << "to pair with unpooling layer " << unpool->get_name();
-        LBANN_ERROR(comm, err.str());
+        LBANN_ERROR(err.str());
       }
       unpool->set_pooling_layer(pool);
     }
@@ -174,11 +174,11 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
     if (parse_list<std::string>(name).size() > 1) {
       err << "layer name \"" << name << "\" is invalid since it "
           << "contains whitespace";
-      LBANN_ERROR(comm, err.str());
+      LBANN_ERROR(err.str());
     }
     if (!name.empty() && names_to_layers.count(name) != 0) {
       err << "layer name " << name << " is not unique";
-      LBANN_ERROR(comm, err.str());
+      LBANN_ERROR(err.str());
     }
     
     // Get parameters from prototext
@@ -214,13 +214,13 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
     default:
       err << "layer " << name << " has an invalid data layout "
           << "(" << layout_str << ")";
-      LBANN_ERROR(comm, err.str());
+      LBANN_ERROR(err.str());
     }
 
     // Check that layer has been constructed
     if (l == nullptr) {
       err << "could not construct layer " << name;
-      LBANN_ERROR(comm, err.str());
+      LBANN_ERROR(err.str());
     }
 
     // Initialize layer name and check it is unique
@@ -230,7 +230,7 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
     name = l->get_name();
     if (names_to_layers.count(name) != 0) {
       err << "layer name \"" << name << "\" is not unique";
-      LBANN_ERROR(comm, err.str());
+      LBANN_ERROR(err.str());
     }
     names_to_layers[name] = l;
 
