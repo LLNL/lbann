@@ -48,7 +48,7 @@ class data_reader_jag : public generic_data_reader {
    * Mode of modeling.
    * - Inverse: image to input param
    * - AutoI: image to image
-   * - AutoS: scalar to scalar  
+   * - AutoS: scalar to scalar
    */
   enum model_mode_t {Inverse, AutoI, AutoS};
 
@@ -111,8 +111,8 @@ class data_reader_jag : public generic_data_reader {
   void save_image(Mat& pixels, const std::string filename, bool do_scale = true) override;
 
  protected:
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
-  bool fetch_response(Mat& Y, int data_id, int mb_idx, int tid) override;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) override;
 
   /**
    * Load the data in the numpy format file.
@@ -148,11 +148,11 @@ class data_reader_jag : public generic_data_reader {
   /// The current mode of modeling
   model_mode_t m_model_mode;
   /// Whether image output data have been loaded
-  bool m_image_loaded; 
+  bool m_image_loaded;
   /// Whether scalar output data have been loaded
-  bool m_scalar_loaded; 
+  bool m_scalar_loaded;
   /// Whether simulation input data have been loaded
-  bool m_input_loaded; 
+  bool m_input_loaded;
 
   /// The number of samples
   size_t m_num_samples;
@@ -172,7 +172,7 @@ class data_reader_jag : public generic_data_reader {
   cnpy::NpyArray m_images;
   /// List of jag scalar outputs
   cnpy::NpyArray m_scalars;
-  /// List of jag input 
+  /// List of jag input
   cnpy::NpyArray m_inputs;
 
   /// The smallest pixel value in image data (useful for normalization or visualization)

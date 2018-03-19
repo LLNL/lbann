@@ -46,7 +46,7 @@ data_reader_jag::data_reader_jag(bool shuffle)
     m_linearized_input_size(0u),
     m_image_normalization(0u),
     m_image_width(0u), m_image_height(0u),
-    m_img_min(std::numeric_limits<data_t>::max()), 
+    m_img_min(std::numeric_limits<data_t>::max()),
     m_img_max(std::numeric_limits<data_t>::min()) {
 }
 
@@ -241,7 +241,7 @@ void data_reader_jag::load(const std::string image_file,
     throw lbann_exception("data_reader_jag: failed to load " + input_file);
   }
 
-  
+
   m_num_samples = 0u;
 
   // read in only those that will be used
@@ -269,7 +269,7 @@ void data_reader_jag::load(const std::string image_file,
     m_input_loaded = true;
     set_linearized_input_size();
   }
-  
+
   size_t num_samples = 0u;
   bool ok = check_data(num_samples);
 
@@ -408,7 +408,7 @@ data_reader_jag::data_t* data_reader_jag::get_image_ptr(const size_t i) const {
 
 cv::Mat data_reader_jag::get_image(const size_t i) const {
   using InputBuf_T = cv_image_type<data_t>;
-  
+
   data_t* const ptr = get_image_ptr(i);
   if (ptr == nullptr) {
     return cv::Mat();
@@ -477,7 +477,7 @@ std::vector<DataType> data_reader_jag::get_input(const size_t i) const {
 }
 
 
-bool data_reader_jag::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
+bool data_reader_jag::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
   switch (m_model_mode) {
     case Inverse: {
       const data_t* ptr = get_image_ptr(data_id);
@@ -501,7 +501,7 @@ bool data_reader_jag::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
   return true;
 }
 
-bool data_reader_jag::fetch_response(Mat& Y, int data_id, int mb_idx, int tid) {
+bool data_reader_jag::fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) {
   switch (m_model_mode) {
     case Inverse: {
       const input_t* ptr = get_input_ptr(data_id);

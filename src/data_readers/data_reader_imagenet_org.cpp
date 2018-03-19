@@ -60,7 +60,7 @@ void imagenet_reader_org::allocate_pixel_bufs() {
   }
 }
 
-bool imagenet_reader_org::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
+bool imagenet_reader_org::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
   const std::string imagepath = get_file_dir() + m_image_list[data_id].first;
 
   int width, height;

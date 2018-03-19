@@ -60,7 +60,7 @@ void pilot2_molecular_reader::load() {
         " pilot2_molecular::load() - can't open file : " + infile);
     }
     ifs.close();
-  
+
     // Load the dictionary.
     cnpy::npz_t dict = cnpy::npz_load(infile);
     // Verify we have features and neighbors.
@@ -101,7 +101,7 @@ void pilot2_molecular_reader::load() {
         std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
         " pilot2_molecular::load() - neighbor fortran order not supported");
     }
-  
+
     // Assume we collapse samples from every frame into one set.
     m_num_samples = m_features.shape[0] * m_features.shape[1];
     m_num_samples_per_frame = m_features.shape[1];
@@ -145,7 +145,7 @@ void pilot2_molecular_reader::load() {
     m_word_size = tmp[6];
     m_neighbors_data_size = tmp[7];
   }
-  
+
   // Reset indices.
   m_shuffled_indices.clear();
   m_shuffled_indices.resize(m_num_samples);
@@ -154,7 +154,7 @@ void pilot2_molecular_reader::load() {
 }
 
 bool pilot2_molecular_reader::fetch_datum(
-  Mat& X, int data_id, int mb_idx, int tid) {
+  CPUMat& X, int data_id, int mb_idx, int tid) {
 
   if (m_data_store != nullptr) {
     std::vector<double> *buf;
@@ -204,7 +204,7 @@ bool pilot2_molecular_reader::fetch_datum(
   return true;
 }
 
-void pilot2_molecular_reader::fetch_molecule(Mat& X, int data_id, int idx,
+void pilot2_molecular_reader::fetch_molecule(CPUMat& X, int data_id, int idx,
                                              int mb_idx) {
   const int frame = get_frame(data_id);
   // Compute the offset in features for this frame.

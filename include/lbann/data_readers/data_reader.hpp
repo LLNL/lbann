@@ -238,11 +238,11 @@ class generic_data_reader : public lbann_image_preprocessor {
   virtual std::string get_type() const = 0;
 
   /// Fetch this mini-batch's samples into X.
-  virtual int fetch_data(Mat& X);
+  virtual int fetch_data(CPUMat& X);
   /// Fetch this mini-batch's labels into Y.
-  virtual int fetch_labels(Mat& Y);
+  virtual int fetch_labels(CPUMat& Y);
   /// Fetch this mini-batch's responses into Y.
-  virtual int fetch_responses(Mat& Y);
+  virtual int fetch_responses(CPUMat& Y);
 
   /**
    * Save pixels to an image. The implementing data reader is responsible for
@@ -524,7 +524,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     uint64_t num_parallel_readers;
     uint64_t model_rank;
     uint64_t world_master_mini_batch_adjustment;
-  };  
+  };
   bool pack_scalars(persist& p, const char *name) {
     char fieldname[1024];
     lbann::persist_type persist_value;
@@ -540,17 +540,17 @@ class generic_data_reader : public lbann_image_preprocessor {
 
     snprintf(fieldname, sizeof(fieldname), "%s_current_mini_batch_idx", name);
     p.write_uint64(persist_value, fieldname, (uint64_t) m_current_mini_batch_idx);
-    
+
     int size = m_shuffled_indices.size();
     snprintf(fieldname, sizeof(fieldname), "%s_data_size", name);
     p.write_uint64(persist_value, fieldname, (uint64_t) size);
-    
+
     snprintf(fieldname, sizeof(fieldname), "%s_data_position", name);
     p.write_uint64(persist_value, fieldname, (uint64_t) m_current_pos);
-    
+
     snprintf(fieldname, sizeof(fieldname), "%s_data_indices", name);
     p.write_int32_contig(persist_value, fieldname, &m_shuffled_indices[0], (uint64_t) size);
-    
+
     snprintf(fieldname, sizeof(fieldname), "%s_stride_to_last_mini_batch", name);
     p.write_uint64(persist_value, fieldname, (uint64_t) m_stride_to_last_mini_batch);
 
@@ -574,7 +574,7 @@ class generic_data_reader : public lbann_image_preprocessor {
 
     snprintf(fieldname, sizeof(fieldname), "%s_reset_mini_batch_index", name);
     p.write_uint64(persist_value, fieldname, (uint64_t) m_reset_mini_batch_index);
-  
+
 
     int unused_size = m_unused_indices.size();
     snprintf(fieldname, sizeof(fieldname), "%s_unused_data_size", name);
@@ -600,7 +600,7 @@ class generic_data_reader : public lbann_image_preprocessor {
 
     snprintf(fieldname, sizeof(fieldname), "%s_model_rank", name);
     p.write_uint64(persist_value, fieldname, (uint64_t) m_model_rank);
-    
+
     snprintf(fieldname, sizeof(fieldname), "%s_world_master_mini_batch_adjustment", name);
     p.write_uint64(persist_value, fieldname, (uint64_t) m_world_master_mini_batch_adjustment);
     return true;
@@ -619,7 +619,7 @@ class generic_data_reader : public lbann_image_preprocessor {
 
     // record minibatch index
     uint64_t val;
-    
+
     snprintf(fieldname, sizeof(fieldname), "%s_mini_batch_size", name);
     p.read_uint64(persist_value, fieldname, &val);
     m_mini_batch_size = (int) val;
@@ -642,7 +642,7 @@ class generic_data_reader : public lbann_image_preprocessor {
      //read list of indices
     snprintf(fieldname, sizeof(fieldname), "%s_data_indices", name);
     p.read_int32_contig(persist_value, fieldname, &m_shuffled_indices[0], (uint64_t) size);
-    // BEGIN TEST 
+    // BEGIN TEST
     snprintf(fieldname, sizeof(fieldname), "%s_stride_to_last_mini_batch", name);
     p.read_uint64(persist_value, fieldname, &val);
     m_stride_to_last_mini_batch = (int) val;
@@ -708,9 +708,9 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_model_rank = (int) val;
 
     snprintf(fieldname, sizeof(fieldname), "%s_world_master_mini_batch_adjustment", name);
-    p.read_uint64(persist_value, fieldname, &val);    
+    p.read_uint64(persist_value, fieldname, &val);
     m_world_master_mini_batch_adjustment = (int) val;
-    
+
     if(header != nullptr){
       //shuffled/unused data indices array size, used for resize after broadcast. Not unpacked.
       header->data_size = size;
@@ -759,7 +759,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_model_rank = (int) header.model_rank;
     m_world_master_mini_batch_adjustment = (int) header.world_master_mini_batch_adjustment;
   }
-  
+
   /// returns the data store, which may be a nullptr
   generic_data_store * get_data_store() {
     return m_data_store;
@@ -826,7 +826,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * @param data_id The index of the datum to fetch.
    * @param mb_idx The index within the mini-batch.
    */
-  virtual bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
+  virtual bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
     NOT_IMPLEMENTED("fetch_dataum");
     return false;
   }
@@ -837,7 +837,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * @param data_id The index of the datum to fetch.
    * @param mb_idx The index within the mini-batch.
    */
-  virtual bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
+  virtual bool fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) {
     NOT_IMPLEMENTED("fetch_label");
     return false;
   }
@@ -848,7 +848,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * @param data_id The index of the datum to fetch.
    * @param mb_idx The index within the mini-batch.
    */
-  virtual bool fetch_response(Mat& Y, int data_id, int mb_idx, int tid) {
+  virtual bool fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) {
     NOT_IMPLEMENTED("fetch_response");
     return false;
   }

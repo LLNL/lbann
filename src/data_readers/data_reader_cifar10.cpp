@@ -91,7 +91,7 @@ void cifar10_reader::load() {
   select_subset_of_data();
 }
 
-bool cifar10_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
+bool cifar10_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
   for (size_t p = 1; p<m_data[data_id].size(); p++) {
     X.Set(p-1, mb_idx, m_data[data_id][p]);
   }
@@ -103,7 +103,7 @@ bool cifar10_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
   return true;
 }
 
-bool cifar10_reader::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
+bool cifar10_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) {
   auto label = (int)m_data[data_id][0];
   Y.Set(label, mb_idx, 1);
   return true;

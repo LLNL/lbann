@@ -67,9 +67,9 @@ class data_reader_merge_samples : public generic_compound_data_reader {
   }
 
  protected:
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
-  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;
-  bool fetch_response(Mat& Y, int data_id, int mb_idx, int tid) override;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) override;
+  bool fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) override;
 
   /// Partial sums of the number of samples in each reader.
   std::vector<int> m_num_samples_psum;

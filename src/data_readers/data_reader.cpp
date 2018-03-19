@@ -66,7 +66,7 @@ void generic_data_reader::setup() {
   shuffle_indices();
 }
 
-int lbann::generic_data_reader::fetch_data(Mat& X) {
+int lbann::generic_data_reader::fetch_data(CPUMat& X) {
   int nthreads = omp_get_max_threads();
   if(!position_valid()) {
     throw lbann_exception(
@@ -137,7 +137,7 @@ int lbann::generic_data_reader::fetch_data(Mat& X) {
   return mb_size;
 }
 
-int lbann::generic_data_reader::fetch_labels(Mat& Y) {
+int lbann::generic_data_reader::fetch_labels(CPUMat& Y) {
   if(!position_valid()) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
@@ -182,7 +182,7 @@ int lbann::generic_data_reader::fetch_labels(Mat& Y) {
   return mb_size;
 }
 
-int lbann::generic_data_reader::fetch_responses(Mat& Y) {
+int lbann::generic_data_reader::fetch_responses(CPUMat& Y) {
   if(!position_valid()) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
@@ -498,7 +498,7 @@ void generic_data_reader::setup_data_store(model *m, lbann_comm *comm) {
   m_data_store = nullptr;
   generic_data_reader *the_reader = nullptr;
 
-  //note: ordering is important here; since data_store_multi_images is 
+  //note: ordering is important here; since data_store_multi_images is
   //      descended from data_store_imagenet, it must be first
   if (dynamic_cast<data_reader_multi_images*>(this) != nullptr) {
     the_reader = dynamic_cast<data_reader_multi_images*>(this);
