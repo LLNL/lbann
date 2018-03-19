@@ -52,6 +52,7 @@ data_reader_merge_samples::~data_reader_merge_samples() {}
 void data_reader_merge_samples::load() {
   // Load each subsidiary data reader.
   for (auto&& reader : m_data_readers) {
+    reader->set_comm(m_comm);
     reader->load();
   }
   // Compute the total number of samples and do some sanity checks.

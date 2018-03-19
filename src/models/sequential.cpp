@@ -38,7 +38,6 @@ sequential_model::sequential_model(lbann_comm *comm,
   : model(comm, mini_batch_size, obj_fn, default_optimizer) {}
 
 void sequential_model::setup_layer_topology() {
-  model::setup_layer_topology();
 
   // Set up parent/child relationships between adjacent layers
   for (size_t i = 1; i < m_layers.size(); ++i) {
@@ -47,6 +46,9 @@ void sequential_model::setup_layer_topology() {
   for (size_t i = 0; i < m_layers.size() - 1; ++i) {
     m_layers[i]->add_child_layer(m_layers[i+1]);
   }
+
+  // Setup layer graph
+  model::setup_layer_topology();
 
   // Make sure that execution order is valid
   std::set<int> nodes;
