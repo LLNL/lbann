@@ -30,6 +30,7 @@
 #include <vector>
 #include "lbann/layers/transform/transform.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/cublas_wrapper.hpp"
 
 namespace lbann {
 

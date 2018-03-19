@@ -1,0 +1,384 @@
+#Example taken from:https://github.com/ECP-CANDLE/Benchmarks/tree/frameworks/Pilot1/Combo 
+#Timestamp 03/07/2018 8:30PM
+model {
+  name: "directed_acyclic_graph_model"
+  data_layout: "model_parallel"
+  mini_batch_size: 256 
+  block_size: 256
+  num_epochs: 20 
+  num_parallel_readers: 0
+  procs_per_model: 0
+  num_gpus: -1
+
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    mean_squared_error {} 
+  }
+
+  ###################################################
+  # Metrics
+  ###################################################
+
+  metric { 
+    mean_squared_error {}
+  }
+
+  ###################################################
+  # Callbacks
+  ###################################################
+  callback {
+    print {
+      interval: 1
+    }
+  }
+  callback { timer {} }
+
+  ###################################################
+  # start of layers
+  ###################################################
+
+  # INPUT (Merged Features)
+  layer {
+    name: "data"
+    data_layout: "model_parallel"
+    input {
+      io_buffer: "distributed"
+      for_regression: true
+    }
+  }
+
+  # SLICE
+  layer {
+    parents: "data"
+    name: "slice_data"
+    children: "gene_fc1 drug_fc1"
+    slice {
+      #for shared DD weights
+      #slice_points: "0 921 4760 8579"
+      slice_points: "0 921 8579"
+    }
+    data_layout: "model_parallel"
+  }
+
+  #Gene Track
+  #FULLY_CONNECTED gene_fc1
+  layer {
+    parents: "slice_data"
+    name: "gene_fc1"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 1000
+      weight_initialization: "he_normal"
+      has_bias: true
+    }
+  }
+
+  # RELU gene_relu1
+  layer {
+    parents: "gene_fc1"
+    name: "gene_relu1"
+    data_layout: "model_parallel"
+    relu {
+    }
+  }
+
+  #DROPOUT gene_dropout1 
+  layer {
+    parents: "gene_relu1"
+    name: "gene_dropout1"
+    data_layout: "model_parallel"
+    dropout {
+      keep_prob: 0.95
+    }
+  }
+
+  #FULLY_CONNECTED gene_fc2
+  layer {
+    parents: "gene_dropout1"
+    name: "gene_fc2"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 1000
+      weight_initialization: "he_normal"
+      has_bias: true
+    }
+  }
+
+  # RELU gene_relu2
+  layer {
+    parents: "gene_fc2"
+    name: "gene_relu2"
+    data_layout: "model_parallel"
+    relu {
+    }
+  }
+
+  #DROPOUT gene_dropout2 
+  layer {
+    parents: "gene_relu2"
+    name: "gene_dropout2"
+    data_layout: "model_parallel"
+    dropout {
+      keep_prob: 0.95
+    }
+  }
+  
+  #FULLY_CONNECTED gene_fc3
+  layer {
+    parents: "gene_dropout2"
+    name: "gene_fc3"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 1000
+      weight_initialization: "he_normal"
+      has_bias: true
+    }
+  }
+
+  # RELU gene_relu3
+  layer {
+    parents: "gene_fc3"
+    name: "gene_relu3"
+    data_layout: "model_parallel"
+    relu {
+    }
+  }
+
+  #DROPOUT gene_dropout3 
+  layer {
+    parents: "gene_relu3"
+    name: "gene_dropout3"
+    data_layout: "model_parallel"
+    dropout {
+      keep_prob: 0.95
+    }
+  }
+
+#Drug Track
+  #FULLY_CONNECTED drug_fc1
+  layer {
+    parents: "slice_data"
+    name: "drug_fc1"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 1000
+      weight_initialization: "he_normal"
+      has_bias: true
+    }
+  }
+
+  # RELU drug_relu1
+  layer {
+    parents: "drug_fc1"
+    name: "drug_relu1"
+    data_layout: "model_parallel"
+    relu {
+    }
+  }
+
+  #DROPOUT drug_dropout1 
+  layer {
+    parents: "drug_relu1"
+    name: "drug_dropout1"
+    data_layout: "model_parallel"
+    dropout {
+      keep_prob: 0.95
+    }
+  }
+
+  #FULLY_CONNECTED drug_fc2
+  layer {
+    parents: "drug_dropout1"
+    name: "drug_fc2"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 1000
+      weight_initialization: "he_normal"
+      has_bias: true
+    }
+  }
+
+  # RELU drug_relu2
+  layer {
+    parents: "drug_fc2"
+    name: "drug_relu2"
+    data_layout: "model_parallel"
+    relu {
+    }
+  }
+
+  #DROPOUT drug_dropout2 
+  layer {
+    parents: "drug_relu2"
+    name: "drug_dropout2"
+    data_layout: "model_parallel"
+    dropout {
+      keep_prob: 0.95
+    }
+  }
+  
+  #FULLY_CONNECTED drug_fc3
+  layer {
+    parents: "drug_dropout2"
+    name: "drug_fc3"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 1000
+      weight_initialization: "he_normal"
+      has_bias: true
+    }
+  }
+
+  # RELU drug_relu3
+  layer {
+    parents: "drug_fc3"
+    name: "drug_relu3"
+    data_layout: "model_parallel"
+    relu {
+    }
+  }
+
+  #DROPOUT drug_dropout3 
+  layer {
+    parents: "drug_relu3"
+    name: "drug_dropout3"
+    data_layout: "model_parallel"
+    dropout {
+      keep_prob: 0.95
+    }
+  }
+
+#CONCAT
+#
+  layer {
+    parents: "gene_dropout3 drug_dropout3"
+    name: "concat"
+    concatenation {}
+    data_layout: "model_parallel"
+  }
+  
+#Combined Track
+  #FULLY_CONNECTED combined_fc1
+  layer {
+    parents: "concat"
+    name: "combined_fc1"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 1000
+      weight_initialization: "he_normal"
+      has_bias: true
+    }
+  }
+
+  # RELU combined_relu1
+  layer {
+    parents: "combined_fc1"
+    name: "combined_relu1"
+    data_layout: "model_parallel"
+    relu {
+    }
+  }
+
+  #DROPOUT combined_dropout1 
+  layer {
+    parents: "combined_relu1"
+    name: "combined_dropout1"
+    data_layout: "model_parallel"
+    dropout {
+      keep_prob: 0.95
+    }
+  }
+
+  #FULLY_CONNECTED combined_fc2
+  layer {
+    parents: "combined_dropout1"
+    name: "combined_fc2"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 1000
+      weight_initialization: "he_normal"
+      has_bias: true
+    }
+  }
+
+  # RELU combined_relu2
+  layer {
+    parents: "combined_fc2"
+    name: "combined_relu2"
+    data_layout: "model_parallel"
+    relu {
+    }
+  }
+
+  #DROPOUT combined_dropout2 
+  layer {
+    parents: "combined_relu2"
+    name: "combined_dropout2"
+    data_layout: "model_parallel"
+    dropout {
+      keep_prob: 0.95
+    }
+  }
+  
+  #FULLY_CONNECTED combined_fc3
+  layer {
+    parents: "combined_dropout2"
+    name: "combined_fc3"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 1000
+      weight_initialization: "he_normal"
+      has_bias: true
+    }
+  }
+
+  # RELU combined_relu3
+  layer {
+    parents: "combined_fc3"
+    name: "combined_relu3"
+    data_layout: "model_parallel"
+    relu {
+    }
+  }
+
+  #DROPOUT combined_dropout3 
+  layer {
+    parents: "combined_relu3"
+    name: "combined_dropout3"
+    data_layout: "model_parallel"
+    dropout {
+      keep_prob: 0.95
+    }
+  }
+
+ # FULLY_CONNECTED fc
+  layer {
+    parents: "combined_dropout3"
+    name: "fc"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 1
+      weight_initialization: "he_normal"
+      has_bias: true
+    }
+  }
+
+  #TARGET
+  layer {
+    parents: "fc"
+    name: "target"
+    target {
+      io_buffer: "distributed"
+      shared_data_reader: true
+      for_regression: true
+    }
+    data_layout: "model_parallel"
+  }
+
+  ###################################################
+  # end of layers
+  ###################################################
+}

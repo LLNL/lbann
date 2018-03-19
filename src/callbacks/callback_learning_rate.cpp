@@ -29,6 +29,7 @@
 #include "lbann/callbacks/callback_learning_rate.hpp"
 #include <limits>
 #include <utility>
+#include <cmath> // std::pow
 
 namespace lbann {
 
@@ -210,6 +211,56 @@ float lbann_callback_linear_growth_learning_rate::global_schedule(model *m) {
   } else {
     return m_cur_global_lr;
   }
+}
+
+/**
+ * This constructor takes the policy specific parameters, the exponent (p)
+ * and the maximum number of iterations (max_iter).
+ * In case that max_iter is set to 0, it is calculated from the number of
+ * epochs (n_epochs). n_epochs is not used otherwise.
+ */
+lbann_callback_poly_learning_rate::lbann_callback_poly_learning_rate(
+  double p, uint64_t n_epochs, uint64_t max_iter)
+  : lbann_callback_learning_rate(std::unordered_set<weights *>()),
+    m_p(p), m_num_epochs(n_epochs), m_max_iter(max_iter),
+    m_lr(1.0f), m_last_epoch_lr(1.0f) {}
+
+lbann_callback_poly_learning_rate::lbann_callback_poly_learning_rate(
+  double p, uint64_t n_epochs, uint64_t max_iter, std::unordered_set<weights *> weights_list)
+  : lbann_callback_learning_rate(weights_list),
+    m_p(p), m_num_epochs(n_epochs), m_max_iter(max_iter),
+    m_lr(1.0f), m_last_epoch_lr(1.0f) {}
+
+/**
+ * Check if the maximum number of iterations is set. If not, compute it by the
+ * number of epochs and the number of iterations per epoch.
+ */
+void lbann_callback_poly_learning_rate::setup(model *m) {
+  lbann_callback_learning_rate::setup(m);
+  if (m_max_iter == 0ull) {
+    m_max_iter = m_num_epochs * m->get_num_iterations_per_epoch(execution_mode::training);
+  }
+}
+
+/**
+ * Keep the record of the learning rate at the end of the current epoch.
+ */
+float lbann_callback_poly_learning_rate::global_schedule(model *m) {
+  const float scale = m_lr / m_last_epoch_lr;
+  m_last_epoch_lr = m_lr;
+  return m_cur_global_lr * scale;
+}
+
+/**
+ * Compute the learning rate for the next iteration.
+ */
+float lbann_callback_poly_learning_rate::optimizer_schedule(model *m, optimizer &opt) {
+  const uint64_t cur_iter = static_cast<uint64_t>(m->get_cur_step());
+  if (m_max_iter > cur_iter) {
+    m_lr = static_cast<float>(std::pow(static_cast<double>(m_max_iter - cur_iter)/m_max_iter, m_p));
+  }
+  const float scale = m_lr / m_last_epoch_lr;
+  return m_cur_global_lr * scale;
 }
 
 lbann_callback_optimizerwise_adaptive_learning_rate::lbann_callback_optimizerwise_adaptive_learning_rate(

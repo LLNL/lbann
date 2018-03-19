@@ -154,6 +154,11 @@ public:
                      int width_per_gpu = 1,
                      int leading_dim = 0);
 
+  /** Attach matrix to GPU workspace. */
+  void attach_to_work_spaces(int height,
+                             int width_per_gpu = 1,
+                             int leading_dim = 0);
+
   /** Get matrix height. */
   inline int get_height() const { return m_height; }
   /** Get matrix width per GPU. */
@@ -422,7 +427,7 @@ class cudnn_manager {
   // One GPU per single thread of one MPI rank is assumed
   std::vector<ncclComm_t> m_nccl_comm;
   ncclDataType_t nccl_datatype();
-#endif // #ifdef LBANN_HAS_NCCL2
+#endif // LBANN_HAS_NCCL2
 
 #endif // #ifdef LBANN_HAS_CUDNN
 };
