@@ -174,7 +174,7 @@ class lbann_comm {
                      rank) != world_ranks_on_node.end();
   }
 
-  /** Get default number of threads per process. 
+  /** Get default number of threads per process.
    *  This is the number of OpenMP threads to use for parallel
    *  regions, provided omp_set_num_threads has not been called or the
    *  num_threads directive has not been provided.
@@ -187,10 +187,10 @@ class lbann_comm {
   void reset_threads();
 
   /** Perform a sum reduction of mat over the inter-model communicator. */
-  void intermodel_sum_matrix(Mat& mat);
+  void intermodel_sum_matrix(AbsMat& mat);
   void intermodel_sum_matrix(AbsDistMat& mat);
   /** Broadcast mat over the inter-model communicator starting from root. */
-  void intermodel_broadcast_matrix(Mat& mat, int root);
+  void intermodel_broadcast_matrix(AbsMat& mat, int root);
   void intermodel_broadcast_matrix(AbsDistMat& mat, int root);
   /**
    * Inter-model broadcast, returns the broadcast value.
@@ -489,9 +489,9 @@ class lbann_comm {
   template <typename T> void send(const T *data, int count, int model) {
     send(data, count, model, rank_in_model);
   }
-  void send(const Mat& mat, int model, int rank);
+  void send(const AbsMat& mat, int model, int rank);
   void send(const DistMat& mat, int model, int rank);
-  void send(const Mat& mat, int model) {
+  void send(const AbsMat& mat, int model) {
     send(mat, model, rank_in_model);
   }
   void send(const DistMat& mat, int model) {
@@ -509,11 +509,11 @@ class lbann_comm {
                                      El::mpi::Request<T>& req) {
     nb_send(data, count, model, rank_in_model, req);
   }
-  void nb_send(const Mat& mat, int model, int rank,
+  void nb_send(const AbsMat& mat, int model, int rank,
                El::mpi::Request<DataType>& req);
   void nb_send(const DistMat& mat, int model, int rank,
                El::mpi::Request<DataType>& req);
-  void nb_send(const Mat& mat, int model, El::mpi::Request<DataType>& req) {
+  void nb_send(const AbsMat& mat, int model, El::mpi::Request<DataType>& req) {
     nb_send(mat, model, rank_in_model, req);
   }
   void nb_send(const DistMat& mat, int model, El::mpi::Request<DataType>& req) {
@@ -528,9 +528,9 @@ class lbann_comm {
   template <typename T> void recv(T *data, int count, int model) {
     recv(data, count, model, rank_in_model);
   }
-  void recv(Mat& mat, int model, int rank);
+  void recv(AbsMat& mat, int model, int rank);
   void recv(DistMat& mat, int model, int rank);
-  void recv(Mat& mat, int model) {
+  void recv(AbsMat& mat, int model) {
     recv(mat, model, rank_in_model);
   }
   void recv(DistMat& mat, int model) {
@@ -541,7 +541,7 @@ class lbann_comm {
     El::mpi::Recv(data, count, El::mpi::ANY_SOURCE, get_world_comm());
     bytes_received += sizeof(T) * count;
   }
-  void recv(Mat& mat);
+  void recv(AbsMat& mat);
   void recv(DistMat& mat);
 
   /** Corresponding non-blocking receives. */
@@ -555,9 +555,9 @@ class lbann_comm {
                                      El::mpi::Request<T>& req) {
     nb_recv(data, count, model, rank_in_model, req);
   }
-  void nb_recv(Mat& mat, int model, int rank, El::mpi::Request<DataType>& req);
+  void nb_recv(AbsMat& mat, int model, int rank, El::mpi::Request<DataType>& req);
   void nb_recv(DistMat& mat, int model, int rank, El::mpi::Request<DataType>& req);
-  void nb_recv(Mat& mat, int model, El::mpi::Request<DataType>& req) {
+  void nb_recv(AbsMat& mat, int model, El::mpi::Request<DataType>& req) {
     nb_recv(mat, model, rank_in_model, req);
   }
   void nb_recv(DistMat& mat, int model, El::mpi::Request<DataType>& req) {
@@ -567,7 +567,7 @@ class lbann_comm {
     El::mpi::IRecv(data, count, El::mpi::ANY_SOURCE, get_world_comm(), req);
     bytes_received += sizeof(T) * count;
   }
-  void nb_recv(Mat& mat, El::mpi::Request<DataType>& req);
+  void nb_recv(AbsMat& mat, El::mpi::Request<DataType>& req);
   void nb_recv(DistMat& mat, El::mpi::Request<DataType>& req);
 
   /** Send/recv to/from ranks. */
@@ -718,7 +718,7 @@ class lbann_comm {
   }
 
   /** Return true if mat can be transmitted. */
-  static inline bool is_sendable(const Mat& mat) {
+  static inline bool is_sendable(const AbsMat& mat) {
     // This assumes we do not transmit mat with a datatype smaller than
     // DataType.
     // MPI uses "int" as its count type; do calculations with larger ints.
@@ -798,10 +798,10 @@ class lbann_comm {
    * @param options Various allreduce options.
    */
   void intermodel_allreduce(
-    Mat& mat, int max_recv_count,
-    std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)> send_transform,
-    std::function<int(uint8_t *, Mat&)> recv_transform,
-    std::function<int(uint8_t *, Mat&, bool)> recv_apply_transform,
+    AbsMat& mat, int max_recv_count,
+    std::function<uint8_t *(AbsMat&, El::IR, El::IR, int&, bool, int)> send_transform,
+    std::function<int(uint8_t *, AbsMat&)> recv_transform,
+    std::function<int(uint8_t *, AbsMat&, bool)> recv_apply_transform,
     const allreduce_options opts);
 
   /**
@@ -809,9 +809,9 @@ class lbann_comm {
    * This implementation only works for a power-of-2 number of processes.
    */
   void recursive_doubling_allreduce_pow2(
-    const El::mpi::Comm comm, Mat& mat, int max_recv_count,
-    std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)> send_transform,
-    std::function<int(uint8_t *, Mat&, bool)> recv_apply_transform,
+    const El::mpi::Comm comm, AbsMat& mat, int max_recv_count,
+    std::function<uint8_t *(AbsMat&, El::IR, El::IR, int&, bool, int)> send_transform,
+    std::function<int(uint8_t *, AbsMat&, bool)> recv_apply_transform,
     const allreduce_options opts);
 
   /**
@@ -820,32 +820,35 @@ class lbann_comm {
    * @param num_reduces If >1, performs up to num_reduces reduces concurrently
    * in the reduce-scatter phase.
    */
+  template <El::Device D>
   void pe_ring_allreduce(
-    const El::mpi::Comm comm, Mat& mat, int max_recv_count,
-    std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)> send_transform,
-    std::function<int(uint8_t *, Mat&)> recv_transform,
-    std::function<int(uint8_t *, Mat&, bool)> recv_apply_transform,
+                         const El::mpi::Comm comm, DMat<D>& mat, int max_recv_count,
+    std::function<uint8_t *(AbsMat&, El::IR, El::IR, int&, bool, int)> send_transform,
+    std::function<int(uint8_t *, AbsMat&)> recv_transform,
+    std::function<int(uint8_t *, AbsMat&, bool)> recv_apply_transform,
     const allreduce_options opts);
 
   /**
    * An allreduce using ring-based reduce-scatter and allgather.
    */
+  template <El::Device D>
   void ring_allreduce(
-    const El::mpi::Comm comm, Mat& mat, int max_recv_count,
-    std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)> send_transform,
-    std::function<int(uint8_t *, Mat&)> recv_transform,
-    std::function<int(uint8_t *, Mat&, bool)> recv_apply_transform,
+    const El::mpi::Comm comm, DMat<D>& mat, int max_recv_count,
+    std::function<uint8_t *(AbsMat&, El::IR, El::IR, int&, bool, int)> send_transform,
+    std::function<int(uint8_t *, AbsMat&)> recv_transform,
+    std::function<int(uint8_t *, AbsMat&, bool)> recv_apply_transform,
     const allreduce_options opts);
 
   /**
    * An allreduce using a recursive-halving reduce-scatter followed by a
    * recursive-doubling allgather.
    */
+  template <El::Device D>
   void rabenseifner_allreduce(
-    const El::mpi::Comm comm, Mat& mat, int max_recv_count,
-    std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)> send_transform,
-    std::function<int(uint8_t *, Mat&)> recv_transform,
-    std::function<int(uint8_t *, Mat&, bool)> recv_apply_transform,
+    const El::mpi::Comm comm, DMat<D>& mat, int max_recv_count,
+    std::function<uint8_t *(AbsMat&, El::IR, El::IR, int&, bool, int)> send_transform,
+    std::function<int(uint8_t *, AbsMat&)> recv_transform,
+    std::function<int(uint8_t *, AbsMat&, bool)> recv_apply_transform,
     const allreduce_options opts);
 
   /** Return the intermodel communicator. */
@@ -916,7 +919,7 @@ class lbann_comm {
   int rank_in_node;
   /** The list of world ranks that are on this compute node. */
   std::vector<int> world_ranks_on_node;
-  /** Default number of threads per process. 
+  /** Default number of threads per process.
    *  This is the number of OpenMP threads to use for parallel
    *  regions, provided omp_set_num_threads has not been called or the
    *  num_threads directive has not been provided.

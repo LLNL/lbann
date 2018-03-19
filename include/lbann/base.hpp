@@ -39,7 +39,12 @@
 // Typedefs for Elemental matrices
 using EGrid      = El::Grid;
 using Grid       = El::Grid;
-using Mat        = El::Matrix<lbann::DataType>;
+using AbsMat     = El::AbstractMatrix<lbann::DataType>;
+using Mat        = El::Matrix<lbann::DataType, El::Device::CPU>; // Temporarily define as CPUMat
+template <El::Device D>
+using DMat       = El::Matrix<lbann::DataType, D>;
+using CPUMat     = DMat<El::Device::CPU>;
+using GPUMat     = DMat<El::Device::GPU>;
 using AbsDistMat = El::AbstractDistMatrix<lbann::DataType>;
 using ElMat      = El::ElementalMatrix<lbann::DataType>;
 using BlockMat   = El::BlockMatrix<lbann::DataType>;
