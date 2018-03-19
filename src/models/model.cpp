@@ -485,7 +485,7 @@ void model::add_connected_layers() {
     }
 
   }
-  
+
 }
 
 void model::add_dummy_layers() {
@@ -534,7 +534,7 @@ void model::add_split_layers() {
         && children.size() != 1) {
 
       // Create split layer
-      Layer *split;
+      Layer *split = nullptr;
       auto&& cudnn = layer->get_cudnn_manager();
       switch (layer->get_data_layout()) {
       case data_layout::DATA_PARALLEL:
@@ -546,6 +546,7 @@ void model::add_split_layers() {
       default:
         std::stringstream err;
         err << __FILE__ << " " << __LINE__ << " :: " << "invalid data layout";
+        throw lbann_exception(err.str());
       }
       split->set_name(layer->get_name() + "_split");
 
@@ -1115,7 +1116,7 @@ bool model::load_from_checkpoint_shared(persist& p) {
     p.read_uint32(persist_type::train, "current_phase",      &header.current_phase);
     load_rng_from_checkpoint_shared(p);
   }
-  
+
 
   // TODO: this assumes homogeneous processors
   // broadcast state from rank 0
@@ -1139,7 +1140,7 @@ bool model::load_from_checkpoint_shared(persist& p) {
 
 void model::write_proto(lbann_data::Model* proto) {
   proto->Clear();
-  if (m_comm->am_world_master()) 
+  if (m_comm->am_world_master())
     proto->set_mini_batch_size(m_max_mini_batch_size);
 }
 
