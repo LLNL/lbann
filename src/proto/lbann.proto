@@ -515,7 +515,8 @@ message CallbackLinearGrowthLearningRate {
 message CallbackPolyLearningRate {
   string weights = 1;
   double power = 2;
-  uint64 max_iter = 3;
+  uint64 num_epochs = 3;
+  uint64 max_iter = 4;
 }
 
 message CallbackStepMinibatch {

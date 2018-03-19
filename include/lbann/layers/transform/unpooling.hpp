@@ -46,25 +46,29 @@ class unpooling_layer : public transform_layer {
  public:
 
   unpooling_layer(lbann_comm *comm,
-                  pooling_layer<T_layout>* pool)
+                  pooling_layer<T_layout>* pool = nullptr)
     : transform_layer(comm),
       m_pooling_layer(pool) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "unpooling only supports DATA_PARALLEL");
+  }
 
+  unpooling_layer* copy() const override { return new unpooling_layer(*this); }
+  std::string get_type() const override { return "unpooling"; }
+  data_layout get_data_layout() const override { return T_layout; }
+
+  void setup_pointers() override {
     // Check that pooling layer is valid
+    if(m_pooling_layer == nullptr) {
+      throw lbann_exception("unpooling_layer: no paired pooling layer");
+    }
     if(m_pooling_layer->m_pool_mode != pool_mode::max) {
       throw lbann_exception("unpooling_layer: currently only max unpooling layer is implemented");
     }
     if(m_pooling_layer->using_gpus()) {
       throw lbann_exception("unpooling_layer: GPU version not yet implemented");
     }
-
   }
-
-  unpooling_layer* copy() const override { return new unpooling_layer(*this); }
-  std::string get_type() const override { return "unpooling"; }
-  data_layout get_data_layout() const override { return T_layout; }
 
   void setup_dims() override {
 
@@ -83,6 +87,28 @@ class unpooling_layer : public transform_layer {
     this->m_num_neuron_dims = m_pooling_layer->m_num_prev_neuron_dims;
     this->m_neuron_dims = m_pooling_layer->m_prev_neuron_dims;
 
+  }
+
+  void set_pooling_layer(pooling_layer<T_layout>* pool) {
+    m_pooling_layer = pool;
+  }
+
+  std::vector<Layer*> get_layer_pointers() override {
+    std::vector<Layer*> layers = transform_layer::get_layer_pointers();
+    layers.push_back((Layer*) m_pooling_layer);
+    return layers;
+  }
+
+  void set_layer_pointers(std::vector<Layer*> layers) override {
+    m_pooling_layer = dynamic_cast<pooling_layer<T_layout>*>(layers.back());
+    if (m_pooling_layer == nullptr) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ 
+          << " :: unpooling_layer: invalid layer pointer used to set paired pooling layer";
+      throw lbann_exception(err.str());
+    }
+    layers.pop_back();
+    transform_layer::set_layer_pointers(layers);
   }
 
   protected:
@@ -208,24 +234,6 @@ class unpooling_layer : public transform_layer {
 
     }
 
-  }
-
-  std::vector<Layer*> get_layer_pointers() override {
-    std::vector<Layer*> layers = transform_layer::get_layer_pointers();
-    layers.push_back((Layer*) m_pooling_layer);
-    return layers;
-  }
-
-  void set_layer_pointers(std::vector<Layer*> layers) override {
-    m_pooling_layer = dynamic_cast<pooling_layer<T_layout>*>(layers.back());
-    if (m_pooling_layer == nullptr) {
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ 
-          << " :: unpooling_layer: invalid layer pointer used to set paired pooling layer";
-      throw lbann_exception(err.str());
-    }
-    layers.pop_back();
-    transform_layer::set_layer_pointers(layers);
   }
 
 };
