@@ -832,7 +832,7 @@ void Layer::write_proto(lbann_data::Layer* proto) const {
   proto->set_top(get_name());
   //Add weights
   for (weights *w : m_weights) {
-    auto weight_proto = proto->add_weights();
+    auto weight_proto = proto->add_weights_data();
     w->write_proto(weight_proto);
   }
 }
