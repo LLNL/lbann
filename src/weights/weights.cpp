@@ -480,7 +480,7 @@ void weights::write_proto(lbann_data::Weights* proto) const {
   proto->set_width(get_matrix_width());
 
   // Write weight values to prototext on world master process
-  CircMat values = *m_values; /// @todo What if weights are on GPU?
+  CircMat<El::Device::CPU> values = *m_values; /// @todo What if weights are on GPU?
   values.SetRoot(0); /// @todo What if world master is not process 0?
   if (m_comm->am_world_master()) {
     const auto& local_values = values.LockedMatrix();

@@ -41,23 +41,69 @@ AbsDistMat* weights_initializer::construct_matrix(int height,
   AbsDistMat* weights_matrix = nullptr;
   const El::Grid& grid = m_comm->get_model_grid();
   if (col_dist == El::MC && row_dist == El::MR) {
-    weights_matrix = new DistMat(grid);
+    switch (dev) {
+    case El::Device::CPU:
+      weights_matrix = new MCMRMat<El::Device::CPU>(grid); break;
+    case El::Device::GPU:
+      weights_matrix = new MCMRMat<El::Device::GPU>(grid); break;
+    default:
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "invalid matrix data allocation";
+      throw lbann_exception(err.str());
+    }
   }
   if (col_dist == El::STAR && row_dist == El::STAR) {
-    if (dev == El::Device::CPU) {
-      weights_matrix = new StarMat<El::Device::CPU>(grid);
-    }else if (dev == El::Device::GPU) {
-      weights_matrix = new StarMat<El::Device::GPU>(grid);
+    switch (dev) {
+    case El::Device::CPU:
+      weights_matrix = new StarMat<El::Device::CPU>(grid); break;
+    case El::Device::GPU:
+      weights_matrix = new StarMat<El::Device::GPU>(grid); break;
+    default:
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "invalid matrix data allocation";
+      throw lbann_exception(err.str());
     }
   }
   if (col_dist == El::CIRC && row_dist == El::CIRC) {
-    weights_matrix = new CircMat(grid);
+    switch (dev) {
+    case El::Device::CPU:
+      weights_matrix = new CircMat<El::Device::CPU>(grid); break;
+    case El::Device::GPU:
+      weights_matrix = new CircMat<El::Device::CPU>(grid); break;
+    default:
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "invalid matrix data allocation";
+      throw lbann_exception(err.str());
+    }
   }
   if (col_dist == El::MR && row_dist == El::STAR) {
-    weights_matrix = new ColSumMat(grid);
+    switch (dev) {
+    case El::Device::CPU:
+      weights_matrix = new MRStarMat<El::Device::CPU>(grid);
+    case El::Device::GPU:
+      weights_matrix = new MRStarMat<El::Device::GPU>(grid);
+    default:
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "invalid matrix data allocation";
+      throw lbann_exception(err.str());
+    }
   }
   if (col_dist == El::MC && row_dist == El::STAR) {
-    weights_matrix = new RowSumMat(grid);
+    switch (dev) {
+    case El::Device::CPU:
+      weights_matrix = new MCStarMat<El::Device::CPU>(grid);
+    case El::Device::GPU:
+      weights_matrix = new MCStarMat<El::Device::GPU>(grid);
+    default:
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "invalid matrix data allocation";
+      throw lbann_exception(err.str());
+    }
   }
 
   // Check that weights has been constructed

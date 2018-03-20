@@ -34,7 +34,7 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
   learning_layer::setup_matrices(grid);
   deallocate_matrices();
   m_linearity_gradient = new MCMRMat<El::Device::CPU>(grid);
-  m_bias_gradient = new MCStarMat(grid);
+  m_bias_gradient = new MCStarMat<El::Device::CPU>(grid);
 }
 
 template <>
@@ -52,7 +52,7 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
   learning_layer::setup_matrices(grid);
   deallocate_matrices();
   m_linearity_gradient = new MCMRMat<El::Device::GPU>(grid);
-  m_bias_gradient = new MCStarMat(grid);
+  m_bias_gradient = new MCStarMat<El::Device::GPU>(grid);
 }
 
 template <>

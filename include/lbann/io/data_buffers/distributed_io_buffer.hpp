@@ -43,9 +43,9 @@ class data_buffer {
   /** Number of samples in the current mini-batch */
   int m_num_data_per_epoch;
 
-  Mat M_local; /** Local matrix that holds data from data reader */
-  Mat M_local_v; /** View of local matrix that holds data from data reader */
-  CircMat Ms; /** Distributed matrix used to stage local data to layer output */
+  CPUMat M_local; /** Local matrix that holds data from data reader */
+  CPUMat M_local_v; /** View of local matrix that holds data from data reader */
+  CircMat<El::Device::CPU> Ms; /** Distributed matrix used to stage local data to layer output */
 
   data_buffer(lbann_comm *comm) :
     m_root(0),
