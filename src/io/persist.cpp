@@ -398,10 +398,10 @@ bool lbann::persist::write_distmat(persist_type type, const char *name, DistMat 
     throw lbann_exception("persist: invalid persist_type");
   }
 
-  Write(*M, filename, El::BINARY, "");
+  El::Write(*M, filename, El::BINARY, "");
   //Write_MPI(M, filename, BINARY, "");
 
-  uint64_t bytes = 2 * sizeof(int) + M->Height() * M->Width() * sizeof(DataType);
+  uint64_t bytes = 2 * sizeof(El::Int) + M->Height() * M->Width() * sizeof(DataType);
   m_bytes += bytes;
 
   return true;
@@ -425,10 +425,10 @@ bool lbann::persist::read_distmat(persist_type type, const char *name, DistMat *
     return false;
   }
 
-  Read(*M, filename, El::BINARY, true);
+  El::Read(*M, filename, El::BINARY, true);
   //Read_MPI(M, filename, BINARY, 1);
 
-  uint64_t bytes = 2 * sizeof(int) + M->Height() * M->Width() * sizeof(DataType);
+  uint64_t bytes = 2 * sizeof(El::Int) + M->Height() * M->Width() * sizeof(DataType);
   m_bytes += bytes;
 
   return true;
@@ -655,10 +655,10 @@ int lbann::persist::get_fd(persist_type type) const {
  ****************************************************/
 
 bool lbann::write_distmat(int fd, const char *name, DistMat *M, uint64_t *bytes) {
-  Write(*M, name, El::BINARY, "");
+  El::Write(*M, name, El::BINARY, "");
   //Write_MPI(M, name, BINARY, "");
 
-  uint64_t bytes_written = 2 * sizeof(int) + M->Height() * M->Width() * sizeof(DataType);
+  uint64_t bytes_written = 2 * sizeof(El::Int) + M->Height() * M->Width() * sizeof(DataType);
   *bytes += bytes_written;
 
   return true;
@@ -672,10 +672,10 @@ bool lbann::read_distmat(int fd, const char *name, DistMat *M, uint64_t *bytes) 
     return false;
   }
 
-  Read(*M, name, El::BINARY, true);
+  El::Read(*M, name, El::BINARY, true);
   //Read_MPI(M, name, BINARY, 1);
 
-  uint64_t bytes_read = 2 * sizeof(int) + M->Height() * M->Width() * sizeof(DataType);
+  uint64_t bytes_read = 2 * sizeof(El::Int) + M->Height() * M->Width() * sizeof(DataType);
   *bytes += bytes_read;
 
   return true;
