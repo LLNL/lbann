@@ -496,15 +496,6 @@ void weights::set_states_on_device() {
   }
 }
 
-/// Synchronize with device streams
-void weights::synchronize() {
-  #ifdef LBANN_HAS_CUDNN
-  if (m_cudnn != nullptr) {
-    m_cudnn->synchronize(); // make sure if state copying is done
-  }
-  #endif // LBANN_HAS_CUDNN
-}
-
 bool weights::save_to_checkpoint_shared(lbann::persist& p)
 {
   // define name to store our parameters

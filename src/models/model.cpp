@@ -1169,9 +1169,7 @@ bool model::save_to_checkpoint_shared(persist& p, bool val_end) {
     for (weights *w : m_weights) {
       w->set_states_on_host();
     }
-    if (!m_weights.empty()) {
-      m_weights.at(0)->synchronize();
-    }
+    synchronize();
 
     for (weights *w : m_weights) {
       w->save_to_checkpoint_shared(p);
@@ -1249,9 +1247,7 @@ bool model::load_from_checkpoint_shared(persist& p) {
     m->load_from_checkpoint_shared(p);
   }
 
-  if (!m_weights.empty()) {
-    m_weights.at(0)->synchronize();
-  }
+  synchronize();
 
   return true;
 }
@@ -1338,6 +1334,16 @@ void model::write_proto(lbann_data::Model* proto) {
   proto->Clear();
   if (m_comm->am_world_master()) 
     proto->set_mini_batch_size(m_max_mini_batch_size);
+}
+
+void model::synchronize() const {
+  for(const auto l : m_layers) {
+    if (l->using_gpus()) {
+      // find the layer using GPUs and synchronize via cudnn manager
+      l->synchronize();
+      break;
+    }
+  }
 }
 
 }  // namespace lbann

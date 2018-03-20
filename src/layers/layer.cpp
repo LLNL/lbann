@@ -321,6 +321,14 @@ void Layer::reset_counters() {
   m_update_time     = EvalType(0);
 }
 
+void Layer::synchronize() const {
+  #ifdef LBANN_HAS_CUDNN
+  if (this->m_cudnn != nullptr) {
+    this->m_cudnn->synchronize();
+  }
+  #endif // LBANN_HAS_CUDNN
+}
+
 void Layer::summarize_stats(lbann_summary& summarizer, int step) {
   std::string prefix = m_name + "/";
   summarizer.reduce_scalar(prefix + "fp_time", m_fp_time, step);

@@ -188,6 +188,9 @@ class Layer {
   /** Whether the layer is using a GPU implementation. */
   inline bool using_gpus() const { return m_using_gpus; }
 
+  /** To make sure copying between host and devices is complete */
+  void synchronize() const;
+
   /** Get expected number of parent layers.
    *  A negative value indicates no limit.
    */

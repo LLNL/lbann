@@ -217,6 +217,8 @@ class model {
   /** Write model to proto file */
   virtual void write_proto(lbann_data::Model* proto);
 
+  /** To make sure copying between host and deivces is complete */
+  void synchronize() const;
 
  protected:
 
