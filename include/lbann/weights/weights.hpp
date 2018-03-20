@@ -193,7 +193,7 @@ class weights {
   bool load_from_checkpoint_shared(persist& p);
   
   /** Write weights to proto file */
-  virtual void write_proto(lbann_data::Weights* proto) const;
+  virtual void write_proto(lbann_data::WeightsData* proto) const;
  private:
 
   /** Weights name.

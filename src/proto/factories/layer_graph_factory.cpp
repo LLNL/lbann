@@ -170,15 +170,18 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
     const auto& proto_layer = proto_model.layer(i);
 
     // Check that layer name is valid
-    std::string name = proto_layer.name();
-    if (parse_list<std::string>(name).size() > 1) {
-      err << "layer name \"" << name << "\" is invalid since it "
-          << "contains whitespace";
-      LBANN_ERROR(err.str());
-    }
-    if (!name.empty() && names_to_layers.count(name) != 0) {
-      err << "layer name " << name << " is not unique";
-      LBANN_ERROR(err.str());
+    auto name = proto_layer.name();
+    const auto& parsed_name = parse_list<std::string>(name);
+    if (!name.empty()) {
+      if (parsed_name.empty() || parsed_name.front() != name) {
+        err << "weights name \"" << name << "\" is invalid since it "
+            << "contains whitespace";
+        LBANN_ERROR(err.str());
+      }
+      if (names_to_layers.count(name) != 0) {
+        err << "layer name \"" << name << "\" is not unique";
+        LBANN_ERROR(err.str());
+      }
     }
     
     // Get parameters from prototext

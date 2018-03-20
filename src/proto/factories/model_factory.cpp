@@ -68,7 +68,41 @@ model* instantiate_model(lbann_comm* comm,
   err << "unknown model type (" << type << ")";
   LBANN_ERROR(err.str());
   return nullptr;
-  
+
+}
+
+/** Setup pointers from layers to weights. */
+void assign_weights_to_layers(std::vector<Layer*>& layer_list,
+                              std::vector<weights*>& weights_list,
+                              const lbann_data::Model& proto_model) {
+  std::stringstream err;
+
+  // Construct map from weights names to weights
+  std::unordered_map<std::string, weights*> names_to_weights;
+  for (auto&& w : weights_list) {
+    const auto& name = w->get_name();
+    if (names_to_weights.count(name) > 0) {
+      err << "weights name \"" << name << "\" is not unique";
+      LBANN_ERROR(err.str());
+    }
+    names_to_weights[name] = w;
+  }
+
+  // Find weights assigned to each layer
+  for (int i=0; i<proto_model.layer_size(); ++i) {
+    const auto& proto_layer = proto_model.layer(i);
+    auto& layer_weights = layer_list[i]->get_weights();
+    for (auto&& name : parse_list<std::string>(proto_layer.weights())) {
+      auto&& w = names_to_weights[name];
+      if (w == nullptr) {
+        err << "could not find weights named \"" << name << "\", "
+            << "which are expected by layer " << layer_list[i]->get_name();
+        LBANN_ERROR(err.str());
+      }
+      layer_weights.push_back(w);
+    }
+  }  
+
 }
 
 } // namespace
@@ -88,14 +122,22 @@ model* construct_model(lbann_comm* comm,
   // Instantiate model
   auto&& m = instantiate_model(comm, obj, opt, proto_model);
 
-  // Add layers
-  auto&& layer_list = construct_layer_graph(comm, data_readers, cudnn, proto_model);
+  // Add layer graph
+  auto&& layer_list = construct_layer_graph(comm,
+                                            data_readers,
+                                            cudnn,
+                                            proto_model);
   for (auto&& l : layer_list) { m->add_layer(l); }
 
-  // Add weights
-  /// @todo Prototext interface
-  std::vector<weights*> weights_list;
-  for (auto&& w : weights_list) { m->add_weights(w); }
+  // Add weights and assign to layers
+  for (int i=0; i<proto_model.weights_size(); i++) {
+    m->add_weights(construct_weights(comm,
+                                     cudnn,
+                                     proto_opt,
+                                     proto_model.weights(i)));
+  }
+  auto weights_list = m->get_weights();
+  assign_weights_to_layers(layer_list, weights_list, proto_model);
 
   // Add metrics
   for (int i=0; i<proto_model.metric_size(); ++i) {
@@ -113,7 +155,6 @@ model* construct_model(lbann_comm* comm,
                                        summarizer));
   }
 
-  // Return model
   return m;
 
 }
