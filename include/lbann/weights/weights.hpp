@@ -84,12 +84,12 @@ class weights {
    *  The weight matrix is setup as a (size x 1) matrix in STAR,STAR
    *  format.
    */
-  virtual void setup(int size);
+  virtual void setup(int size, El::Device dev);
   /** Setup weights as a tensor.
    *  The weight matrix is setup as a (prod(dims) x 1) matrix in
    *  STAR,STAR format.
    */
-  virtual void setup(std::vector<int> dims);
+  virtual void setup(std::vector<int> dims, El::Device dev);
   /** Setup weights as a matrix.
    *  The weight matrix is setup as a (matrix_height x matrix_width)
    *  matrix in col_dist,row_dist format.
@@ -97,7 +97,8 @@ class weights {
   virtual void setup(int matrix_height,
                      int matrix_width,
                      El::Distribution col_dist,
-                     El::Distribution row_dist);
+                     El::Distribution row_dist,
+                     El::Device dev);
   /** Setup weights as a matrix with tensor dimensions.
    *  The weight matrix is setup as a (prod(matrix_height_dims) x
    *  prod(matrix_width_dims)) matrix in col_dist,row_dist format.
@@ -105,7 +106,8 @@ class weights {
   virtual void setup(std::vector<int> matrix_height_dims,
                      std::vector<int> matrix_width_dims,
                      El::Distribution col_dist,
-                     El::Distribution row_dist);
+                     El::Distribution row_dist,
+                     El::Device dev);
 
   /** Get weight tensor dimensions.
    *  The dimensions are sorted in decreasing order of the data
@@ -191,7 +193,7 @@ class weights {
 
   bool save_to_checkpoint_shared(persist& p);
   bool load_from_checkpoint_shared(persist& p);
-  
+
   /** Write weights to proto file */
   virtual void write_proto(lbann_data::Weights* proto) const;
  private:

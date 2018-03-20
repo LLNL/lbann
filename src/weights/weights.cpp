@@ -113,27 +113,29 @@ weights::~weights() {
   if (m_optimizer != nullptr)   { delete m_optimizer; }
 }
 
-void weights::setup(int size) {
-  setup(std::vector<int>(1, size), std::vector<int>(), El::STAR, El::STAR);
+  void weights::setup(int size, El::Device dev) {
+  setup(std::vector<int>(1, size), std::vector<int>(), El::STAR, El::STAR, dev);
 }
 
-void weights::setup(std::vector<int> tensor_dims) {
-  setup(tensor_dims, std::vector<int>(), El::STAR, El::STAR);
+  void weights::setup(std::vector<int> tensor_dims, El::Device dev) {
+  setup(tensor_dims, std::vector<int>(), El::STAR, El::STAR, dev);
 }
 
 void weights::setup(int matrix_height,
                     int matrix_width,
                     El::Distribution col_dist,
-                    El::Distribution row_dist) {
+                    El::Distribution row_dist,
+                    El::Device dev) {
   setup(std::vector<int>(1, matrix_height),
         std::vector<int>(1, matrix_width),
-        col_dist, row_dist);
+        col_dist, row_dist, dev);
 }
 
 void weights::setup(std::vector<int> matrix_height_dims,
                     std::vector<int> matrix_width_dims,
                     El::Distribution col_dist,
-                    El::Distribution row_dist) {
+                    El::Distribution row_dist,
+                    El::Device dev) {
 
   if (m_values != nullptr) {
     // Check that dimensions are unchanged if weights are already
@@ -184,7 +186,8 @@ void weights::setup(std::vector<int> matrix_height_dims,
   m_values = m_initializer->construct_matrix(get_matrix_height(),
                                              get_matrix_width(),
                                              col_dist,
-                                             row_dist);
+                                             row_dist,
+                                             dev);
 
   // Setup GPU objects
   if (m_cudnn != nullptr) {

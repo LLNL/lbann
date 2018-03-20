@@ -34,7 +34,8 @@ namespace lbann {
 AbsDistMat* weights_initializer::construct_matrix(int height,
                                                   int width,
                                                   El::Distribution col_dist,
-                                                  El::Distribution row_dist) const {
+                                                  El::Distribution row_dist,
+                                                  El::Device dev) const {
 
   // Construct distributed matrix with desired matrix distribution
   AbsDistMat* weights_matrix = nullptr;
@@ -43,7 +44,11 @@ AbsDistMat* weights_initializer::construct_matrix(int height,
     weights_matrix = new DistMat(grid);
   }
   if (col_dist == El::STAR && row_dist == El::STAR) {
-    weights_matrix = new StarMat(grid);
+    if (dev == El::Device::CPU) {
+      weights_matrix = new StarMat<El::Device::CPU>(grid);
+    }else if (dev == El::Device::GPU) {
+      weights_matrix = new StarMat<El::Device::GPU>(grid);
+    }
   }
   if (col_dist == El::CIRC && row_dist == El::CIRC) {
     weights_matrix = new CircMat(grid);

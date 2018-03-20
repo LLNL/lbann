@@ -46,7 +46,7 @@ namespace lbann {
  *  time. See:
  *    https://cthorey.github.io/backpropagation/
  */
-template <data_layout T_layout>
+template <data_layout T_layout, El::Device Dev>
 class batch_normalization : public regularizer_layer {
 
  private:
@@ -215,12 +215,12 @@ class batch_normalization : public regularizer_layer {
   void setup_matrices(const El::Grid& grid) override {
     regularizer_layer::setup_matrices(grid);
     deallocate_matrices();
-    m_mean = new StarMat(grid);
-    m_var = new StarMat(grid);
-    m_mean_gradient = new StarMat(grid);
-    m_var_gradient = new StarMat(grid);
-    m_scale_gradient = new StarMat(grid);
-    m_bias_gradient = new StarMat(grid);
+    m_mean = new StarMat<Dev>(grid);
+    m_var = new StarMat<Dev>(grid);
+    m_mean_gradient = new StarMat<Dev>(grid);
+    m_var_gradient = new StarMat<Dev>(grid);
+    m_scale_gradient = new StarMat<Dev>(grid);
+    m_bias_gradient = new StarMat<Dev>(grid);
   }
 
   data_layout get_data_layout() const override { return T_layout; }
@@ -264,10 +264,10 @@ class batch_normalization : public regularizer_layer {
     }
 
     // Setup weights
-    this->m_weights[0]->setup(this->m_neuron_dims[0]);
-    this->m_weights[1]->setup(this->m_neuron_dims[0]);
-    this->m_weights[2]->setup(this->m_neuron_dims[0]);
-    this->m_weights[3]->setup(this->m_neuron_dims[0]);
+    this->m_weights[0]->setup(this->m_neuron_dims[0], Dev);
+    this->m_weights[1]->setup(this->m_neuron_dims[0], Dev);
+    this->m_weights[2]->setup(this->m_neuron_dims[0], Dev);
+    this->m_weights[3]->setup(this->m_neuron_dims[0], Dev);
 
     // Initialize matrices
     El::Zeros(*m_mean, this->m_neuron_dims[0], 1);
@@ -629,7 +629,7 @@ class batch_normalization : public regularizer_layer {
     const auto& local_var = (is_training ?
                              m_var->LockedMatrix() :
                              this->m_weights[3]->get_values().LockedMatrix());
- 
+
     // Iterate through channels
     #pragma omp parallel for
     for (int channel = 0; channel < num_channels; ++channel) {
@@ -678,7 +678,7 @@ class batch_normalization : public regularizer_layer {
     auto& local_var_gradient = m_var_gradient->Matrix();
     auto& local_scale_gradient = m_scale_gradient->Matrix();
     auto& local_bias_gradient = m_bias_gradient->Matrix();
-    
+
     // Matrix parameters
     const int effective_mini_batch_size = this->m_model->get_effective_mini_batch_size();
     const int width = input.Width();
