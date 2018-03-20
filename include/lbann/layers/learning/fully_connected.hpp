@@ -225,11 +225,11 @@ class fully_connected_layer : public learning_layer {
     }
     this->m_weights[0]->setup(this->m_num_neurons,
                               this->m_num_prev_neurons,
-                              col_dist, row_dist);
+                              col_dist, row_dist, Dev);
     this->m_weights[1]->setup(this->m_num_neurons,
                               1,
                               get_activations().DistData().colDist,
-                              El::STAR);
+                              El::STAR, Dev);
 
     // Setup weight gradients
     El::Zeros(*this->m_linearity_gradient,

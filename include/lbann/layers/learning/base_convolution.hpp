@@ -250,7 +250,7 @@ class base_convolution_layer : public learning_layer {
     }
 
     // Initialize bias
-    this->m_weights[1]->setup(this->m_neuron_dims[0]);
+    this->m_weights[1]->setup(this->m_neuron_dims[0], Dev);
     El::Zeros(m_bias_gradient,
               this->m_weights[1]->get_matrix_height(),
               this->m_weights[1]->get_matrix_width());
