@@ -65,11 +65,11 @@ void ColumnSum( const AbstractMatrix<F>& X, AbstractMatrix<F>& sums ) {
         LogicError("ColumnSum requires matching device types.");
 
     if ((X.GetDevice() == Device::CPU)) {
-      ColumnSum(static_cast<Matrix<T,Device::CPU>&>(X),
-                static_cast<Matrix<T,Device::CPU>&>(sums));
+      ColumnSum(static_cast<const Matrix<F,Device::CPU>&>(X),
+                static_cast<Matrix<F,Device::CPU>&>(sums));
     }else if ((X.GetDevice() == Device::GPU)) {
-      ColumnSum(static_cast<Matrix<T,Device::GPU>&>(X),
-                static_cast<Matrix<T,Device::GPU>&>(sums));
+      ColumnSum(static_cast<const Matrix<F,Device::GPU>&>(X),
+                static_cast<Matrix<F,Device::GPU>&>(sums));
     }else {
       LogicError("Unsupported device type.");
     }
@@ -133,11 +133,11 @@ void RowSum(const AbstractMatrix<F>& X, AbstractMatrix<F>& sums) {
         LogicError("RowSum requires matching device types.");
 
     if ((X.GetDevice() == Device::CPU)) {
-      RowSum(static_cast<Matrix<T,Device::CPU>&>(X),
-             static_cast<Matrix<T,Device::CPU>&>(sums));
+      RowSum(static_cast<const Matrix<F,Device::CPU>&>(X),
+             static_cast<Matrix<F,Device::CPU>&>(sums));
     }else if ((X.GetDevice() == Device::GPU)) {
-      RowSum(static_cast<Matrix<T,Device::GPU>&>(X),
-             static_cast<Matrix<T,Device::GPU>&>(sums));
+      RowSum(static_cast<const Matrix<F,Device::GPU>&>(X),
+             static_cast<Matrix<F,Device::GPU>&>(sums));
     }else {
       LogicError("Unsupported device type.");
     }
