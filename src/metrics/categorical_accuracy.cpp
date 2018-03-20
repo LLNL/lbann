@@ -59,12 +59,33 @@ categorical_accuracy_metric::~categorical_accuracy_metric() {
 void categorical_accuracy_metric::setup(model& m) {
   metric::setup(m);
   const El::DistData dist_data(get_target_layer().get_prediction());
+  const El::Device dev = get_target_layer().get_prediction().GetLocalDevice();
   if (dist_data.colDist == El::MC
       && dist_data.rowDist == El::MR) {
-    m_prediction_values = new StarMRMat(*dist_data.grid, dist_data.root);
+    switch(dev) {
+    case El::Device::CPU:
+      m_prediction_values = new StarMRMat<El::Device::CPU>(*dist_data.grid, dist_data.root); break;
+    case El::Device::GPU:
+      m_prediction_values = new StarMRMat<El::Device::GPU>(*dist_data.grid, dist_data.root); break;
+    default:
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "invalid matrix data allocation";
+      throw lbann_exception(err.str());
+    }
   } else if (dist_data.colDist == El::STAR
              && dist_data.rowDist == El::VC) {
-    m_prediction_values = new StarVCMat(*dist_data.grid, dist_data.root);
+    switch(dev) {
+    case El::Device::CPU:
+      m_prediction_values = new StarVCMat<El::Device::CPU>(*dist_data.grid, dist_data.root); break;
+    case El::Device::GPU:
+      m_prediction_values = new StarVCMat<El::Device::GPU>(*dist_data.grid, dist_data.root); break;
+    default:
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "invalid matrix data allocation";
+      throw lbann_exception(err.str());
+    }
   } else {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
@@ -92,7 +113,7 @@ EvalType categorical_accuracy_metric::evaluate_compute(const AbsDistMat& predict
 
   // Initialize workspace matrices
   m_prediction_values->Resize(1, width);
-  Mat& prediction_values_local = m_prediction_values->Matrix();
+  CPUMat& prediction_values_local = m_prediction_values->Matrix();
   m_prediction_indices.resize(local_width);
 
   // Find largest value in each column of prediction matrix

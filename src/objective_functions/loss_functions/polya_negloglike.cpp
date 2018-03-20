@@ -51,7 +51,7 @@ polya_negloglike::polya_negloglike(EvalType scale_factor)
     m_lgamma_alpha_sums(nullptr),
     m_lgamma_alpha_level_count_sums(nullptr) {}
 
-polya_negloglike::polya_negloglike(const polya_negloglike& other) 
+polya_negloglike::polya_negloglike(const polya_negloglike& other)
   : loss_function(other),
     m_counts(other.m_counts),
     m_alpha_sums(other.m_alpha_sums),
@@ -107,16 +107,47 @@ void polya_negloglike::setup(model& m) {
   loss_function::setup(m);
 
   const El::DistData dist(*m_gradient);
+  const El::Device dev = m_gradient->GetLocalDevice();
   if (dist.colDist == El::MC && dist.rowDist == El::MR) {
-    m_counts = new StarMRMat(*dist.grid);
-    m_alpha_sums = new StarMRMat(*dist.grid);
-    m_lgamma_alpha_sums = new StarMRMat(*dist.grid);
-    m_lgamma_alpha_level_count_sums = new StarMRMat(*dist.grid);
+    switch(dev) {
+    case El::Device::CPU:
+      m_counts                        = new StarMRMat<El::Device::CPU>(*dist.grid);
+      m_alpha_sums                    = new StarMRMat<El::Device::CPU>(*dist.grid);
+      m_lgamma_alpha_sums             = new StarMRMat<El::Device::CPU>(*dist.grid);
+      m_lgamma_alpha_level_count_sums = new StarMRMat<El::Device::CPU>(*dist.grid);
+      break;
+    case El::Device::GPU:
+      m_counts                        = new StarMRMat<El::Device::GPU>(*dist.grid);
+      m_alpha_sums                    = new StarMRMat<El::Device::GPU>(*dist.grid);
+      m_lgamma_alpha_sums             = new StarMRMat<El::Device::GPU>(*dist.grid);
+      m_lgamma_alpha_level_count_sums = new StarMRMat<El::Device::GPU>(*dist.grid);
+      break;
+    default:
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "invalid matrix data allocation";
+      throw lbann_exception(err.str());
+    }
   } else if (dist.colDist == El::STAR && dist.rowDist == El::VC) {
-    m_counts = new StarVCMat(*dist.grid);
-    m_alpha_sums = new StarVCMat(*dist.grid);
-    m_lgamma_alpha_sums = new StarVCMat(*dist.grid);
-    m_lgamma_alpha_level_count_sums = new StarVCMat(*dist.grid);
+    switch(dev) {
+    case El::Device::CPU:
+      m_counts                        = new StarVCMat<El::Device::CPU>(*dist.grid);
+      m_alpha_sums                    = new StarVCMat<El::Device::CPU>(*dist.grid);
+      m_lgamma_alpha_sums             = new StarVCMat<El::Device::CPU>(*dist.grid);
+      m_lgamma_alpha_level_count_sums = new StarVCMat<El::Device::CPU>(*dist.grid);
+      break;
+    case El::Device::GPU:
+      m_counts                        = new StarVCMat<El::Device::GPU>(*dist.grid);
+      m_alpha_sums                    = new StarVCMat<El::Device::GPU>(*dist.grid);
+      m_lgamma_alpha_sums             = new StarVCMat<El::Device::GPU>(*dist.grid);
+      m_lgamma_alpha_level_count_sums = new StarVCMat<El::Device::GPU>(*dist.grid);
+      break;
+    default:
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "invalid matrix data allocation";
+      throw lbann_exception(err.str());
+    }
   } else {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
@@ -142,7 +173,7 @@ EvalType polya_negloglike::evaluate_compute(const AbsDistMat& predictions,
   // Local matrices
   const Mat& predictions_local = predictions.LockedMatrix();
   const Mat& ground_truth_local = ground_truth.LockedMatrix();
-  
+
   // Matrix parameters
   const int width = predictions.Width();
   const int local_height = predictions_local.Height();
