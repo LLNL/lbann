@@ -29,8 +29,8 @@
 
 namespace lbann {
 
-void im2col(const Mat& im,
-            Mat& col,
+void im2col(const AbsMat& im,
+            AbsMat& col,
             const int num_channels,
             const int im_num_dims,
             const int * im_dims,
@@ -86,14 +86,14 @@ void im2col(const Mat& im,
        << "found " << col_height << " x " << col_width << ")";
     throw lbann_exception(ss.str());
   }
-  #endif // LBANN_DEBUG  
+  #endif // LBANN_DEBUG
 
   // Call optimized routine for 1x1 im2col
   std::vector<int> zeros(im_num_dims, 0), ones(im_num_dims, 1);
   if(std::equal(im_pads, im_pads + im_num_dims, zeros.begin())
      && std::equal(window_dims, window_dims + im_num_dims, ones.begin())
      && std::equal(window_strides, window_strides + im_num_dims, ones.begin())) {
-    im2col_1x1(im_buffer, col_buffer, num_channels, im_num_dims, im_dims);
+    im2col_1x1<El::Device::CPU>(im_buffer, col_buffer, num_channels, im_num_dims, im_dims);
     return;
   }
 
@@ -152,8 +152,8 @@ void im2col(const Mat& im,
 
 }
 
-void col2im(const Mat& col,
-            Mat& im,
+void col2im(const AbsMat& col,
+            AbsMat& im,
             const int num_channels,
             const int im_num_dims,
             const int * im_dims,
@@ -209,14 +209,14 @@ void col2im(const Mat& col,
        << "found " << col_height << " x " << col_width << ")";
     throw lbann_exception(ss.str());
   }
-  #endif // LBANN_DEBUG  
+  #endif // LBANN_DEBUG
 
   // Call optimized routine for 1x1 col2im
   std::vector<int> zeros(im_num_dims, 0), ones(im_num_dims, 1);
   if(std::equal(im_pads, im_pads + im_num_dims, zeros.begin())
      && std::equal(window_dims, window_dims + im_num_dims, ones.begin())
      && std::equal(window_strides, window_strides + im_num_dims, ones.begin())) {
-    col2im_1x1(col_buffer, im_buffer, num_channels, im_num_dims, im_dims);
+    col2im_1x1<El::Device::CPU>(col_buffer, im_buffer, num_channels, im_num_dims, im_dims);
     return;
   }
 
@@ -236,8 +236,8 @@ void col2im(const Mat& col,
 
 }
 
-void col2im(const Mat& col,
-            Mat& im,
+void col2im(const AbsMat& col,
+            AbsMat& im,
             const int num_channels,
             const int im_num_dims,
             const int * im_dims,
@@ -269,7 +269,7 @@ void col2im(const Mat& col,
   if(std::equal(im_pads, im_pads + im_num_dims, zeros.begin())
      && std::equal(window_dims, window_dims + im_num_dims, ones.begin())
      && std::equal(window_strides, window_strides + im_num_dims, ones.begin())) {
-    col2im_1x1(col_buffer, im_buffer, num_channels, im_num_dims, im_dims);
+    col2im_1x1<El::Device::CPU>(col_buffer, im_buffer, num_channels, im_num_dims, im_dims);
     return;
   }
 
@@ -337,7 +337,7 @@ void col2im(const Mat& col,
         }
       }
       offsets_finished = offset[0] > last_offset[0];
-      
+
     }
 
     // Update output entry
@@ -347,6 +347,7 @@ void col2im(const Mat& col,
 
 }
 
+template<El::Device Dev>
 void im2col_1x1(const DataType * input_buffer,
                 DataType * output_buffer,
                 const int num_channels,
@@ -356,8 +357,8 @@ void im2col_1x1(const DataType * input_buffer,
                                            input_dims + num_input_dims,
                                            1,
                                            std::multiplies<int>());
-  const Mat input_matrix(spatial_size, num_channels, input_buffer, spatial_size);
-  Mat output_matrix(num_channels, spatial_size, output_buffer, num_channels);
+  const DMat<Dev> input_matrix(spatial_size, num_channels, input_buffer, spatial_size);
+  DMat<Dev> output_matrix(num_channels, spatial_size, output_buffer, num_channels);
   El::Transpose(input_matrix, output_matrix);
 }
 
@@ -426,6 +427,7 @@ void im2col_2d(const DataType *__restrict__ input_buffer,
 
 }
 
+template<El::Device Dev>
 void col2im_1x1(const DataType * input_buffer,
                 DataType * output_buffer,
                 const int num_channels,
@@ -435,8 +437,8 @@ void col2im_1x1(const DataType * input_buffer,
                                            output_dims + num_output_dims,
                                            1,
                                            std::multiplies<int>());
-  const Mat input_matrix(num_channels, spatial_size, input_buffer, num_channels);
-  Mat output_matrix(spatial_size, num_channels, output_buffer, spatial_size);
+  const DMat<Dev> input_matrix(num_channels, spatial_size, input_buffer, num_channels);
+  DMat<Dev> output_matrix(spatial_size, num_channels, output_buffer, spatial_size);
   El::Transpose(input_matrix, output_matrix);
 }
 

@@ -113,6 +113,7 @@ void col2im(const Mat& col,
  *  one. im2col will automatically call this routine if it detects a
  *  1x1 im2col.
  */
+template<El::Device Dev>
 void im2col_1x1(const DataType * input_buffer,
                 DataType * output_buffer,
                 int num_channels,
@@ -141,6 +142,7 @@ void im2col_2d(const DataType *__restrict__ input_buffer,
  *  one. col2im will automatically call this routine if it detects a
  *  1x1 col2im.
  */
+template<El::Device Dev>
 void col2im_1x1(const DataType * input_buffer,
                 DataType * output_buffer,
                 const int num_channels,
