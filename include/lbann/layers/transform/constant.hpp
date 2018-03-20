@@ -32,7 +32,7 @@
 namespace lbann {
 
 /** Layer with constant output. */
-template <data_layout T_layout = data_layout::DATA_PARALLEL>
+template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class constant_layer : public transform_layer {
 
  public:
@@ -67,6 +67,7 @@ class constant_layer : public transform_layer {
   constant_layer* copy() const override { return new constant_layer(*this); }
   std::string get_type() const override { return "constant"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
   /** Returns description. */
   std::string get_description() const override {

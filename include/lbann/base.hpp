@@ -48,18 +48,21 @@ using GPUMat     = DMat<El::Device::GPU>;
 using AbsDistMat = El::AbstractDistMatrix<lbann::DataType>;
 using ElMat      = El::ElementalMatrix<lbann::DataType>;
 using BlockMat   = El::BlockMatrix<lbann::DataType>;
-using MCMRMat    = El::DistMatrix<lbann::DataType, El::MC  , El::MR  >;
+template <El::Device D>
+using MCMRMat    = El::DistMatrix<lbann::DataType, El::MC  , El::MR  , El::ELEMENT, D>;
 using CircMat    = El::DistMatrix<lbann::DataType, El::CIRC, El::CIRC>;
 template <El::Device D>
 using StarMat    = El::DistMatrix<lbann::DataType, El::STAR, El::STAR, El::ELEMENT, D>;
-using StarVCMat  = El::DistMatrix<lbann::DataType, El::STAR, El::VC  >;
+template <El::Device D>
+using StarVCMat  = El::DistMatrix<lbann::DataType, El::STAR, El::VC  , El::ELEMENT, D>;
 using VCStarMat  = El::DistMatrix<lbann::DataType, El::VC  , El::STAR>;
 using MCStarMat  = El::DistMatrix<lbann::DataType, El::MC  , El::STAR>;
 using MRStarMat  = El::DistMatrix<lbann::DataType, El::MR  , El::STAR>;
-using StarMRMat  = El::DistMatrix<lbann::DataType, El::STAR, El::MR  >;
+template <El::Device D>
+using StarMRMat  = El::DistMatrix<lbann::DataType, El::STAR, El::MR  , El::ELEMENT, D>;
 
 // Deprecated typedefs for Elemental matrices
-using DistMat         = MCMRMat;
+using DistMat         = MCMRMat<El::Device::CPU>;
 using RowSumMat       = MCStarMat;
 using ColSumStarVCMat = VCStarMat;
 using ColSumMat       = MRStarMat;

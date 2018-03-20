@@ -35,7 +35,7 @@
 namespace lbann {
 
 /** Local Response Normalization layer. */
-template <data_layout T_layout = data_layout::DATA_PARALLEL>
+template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class local_response_normalization_layer : public regularizer_layer {
  private:
 
@@ -123,6 +123,7 @@ class local_response_normalization_layer : public regularizer_layer {
   }
 
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
   /// Initialize GPU objects
   void setup_gpu() override {

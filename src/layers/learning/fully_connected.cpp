@@ -33,7 +33,7 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
   ::setup_matrices(const El::Grid& grid) {
   learning_layer::setup_matrices(grid);
   deallocate_matrices();
-  m_linearity_gradient = new MCMRMat(grid);
+  m_linearity_gradient = new MCMRMat<El::Device::CPU>(grid);
   m_bias_gradient = new MCStarMat(grid);
 }
 
@@ -44,6 +44,24 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
   deallocate_matrices();
   m_linearity_gradient = new StarMat<El::Device::CPU>(grid);
   m_bias_gradient = new StarMat<El::Device::CPU>(grid);
+}
+
+template <>
+void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
+  ::setup_matrices(const El::Grid& grid) {
+  learning_layer::setup_matrices(grid);
+  deallocate_matrices();
+  m_linearity_gradient = new MCMRMat<El::Device::GPU>(grid);
+  m_bias_gradient = new MCStarMat(grid);
+}
+
+template <>
+void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
+  ::setup_matrices(const El::Grid& grid) {
+  learning_layer::setup_matrices(grid);
+  deallocate_matrices();
+  m_linearity_gradient = new StarMat<El::Device::GPU>(grid);
+  m_bias_gradient = new StarMat<El::Device::GPU>(grid);
 }
 
 template <>

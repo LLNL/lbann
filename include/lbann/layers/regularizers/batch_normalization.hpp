@@ -225,6 +225,8 @@ class batch_normalization : public regularizer_layer {
 
   data_layout get_data_layout() const override { return T_layout; }
 
+  El::Device get_device_allocation() const override { return Dev; }
+
   void setup_data() override {
     regularizer_layer::setup_data();
 

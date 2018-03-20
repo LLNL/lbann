@@ -54,14 +54,14 @@ void fp_cutoff(cudnn::cudnn_manager& cudnn,
 /** Error signal correction if activations have minimum cutoff. */
 void bp_cutoff(cudnn::cudnn_manager& cudnn,
                const std::vector<DataType*>& activations,
-               std::vector<DataType*>& error_signals,               
+               std::vector<DataType*>& error_signals,
                El::Int h, El::Int w,
                DataType min_output);
 } // namespace softmax
 #endif // LBANN_HAS_CUDNN
 
 /** Softmax layer. */
-template <data_layout T_layout>
+template <data_layout T_layout, El::Device Dev>
 class softmax_layer : public activation_layer {
 
  private:
@@ -133,6 +133,8 @@ class softmax_layer : public activation_layer {
 
   data_layout get_data_layout() const override { return T_layout; }
 
+  El::Device get_device_allocation() const override { return Dev; }
+
   void setup_matrices(const El::Grid& grid) override;
 
   void setup_data() override {
@@ -161,14 +163,14 @@ class softmax_layer : public activation_layer {
       bp_compute_cpu();
     }
   }
-  
+
   virtual void fp_compute_cpu() {
 
     // Local matrices
     const auto& local_input = get_local_prev_activations();
     auto& local_output = get_local_activations();
     auto& local_workspace = m_workspace->Matrix();
-    
+
     // Matrix parameters
     const El::Int local_height = local_input.Height();
     const El::Int local_width = local_input.Width();
@@ -222,11 +224,11 @@ class softmax_layer : public activation_layer {
   virtual void bp_compute_cpu() {
 
     // Local matrices
-    const auto& local_output = get_local_activations();
-    const auto& local_gradient_wrt_output = get_local_prev_error_signals();
-    auto& local_gradient_wrt_input = get_local_error_signals();
-    auto& local_workspace = m_workspace->Matrix();
-    
+    const DMat<Dev>& local_output = get_local_activations();
+    const DMat<Dev>& local_gradient_wrt_output = get_local_prev_error_signals();
+    DMat<Dev>& local_gradient_wrt_input = get_local_error_signals();
+    DMat<Dev>& local_workspace = m_workspace->Matrix();
+
     // Matrix parameters
     const El::Int local_height = local_output.Height();
     const El::Int local_width = local_output.Width();
@@ -253,14 +255,14 @@ class softmax_layer : public activation_layer {
         local_gradient_wrt_input(row, col) += dx;
       }
     }
-  
+
   }
 
   void fp_compute_cudnn() {
   #ifndef LBANN_HAS_CUDNN
     throw lbann_exception("softmax_layer: cuDNN not detected");
   #else
-    
+
     // Useful constants
     const DataType one = 1;
     const DataType zero = 0;
@@ -294,7 +296,7 @@ class softmax_layer : public activation_layer {
                             this->m_mini_batch_size_per_gpu,
                             m_min_output);
   #endif // LBANN_ENABLE_SOFTMAX_CUTOFF
-    
+
   #endif // LBANN_HAS_CUDNN
   }
 
@@ -302,7 +304,7 @@ class softmax_layer : public activation_layer {
   #ifndef LBANN_HAS_CUDNN
     throw lbann_exception("softmax_layer: cuDNN not detected");
   #else
-    
+
     // Useful constants
     const DataType one = 1;
 
@@ -339,7 +341,7 @@ class softmax_layer : public activation_layer {
                             this->m_mini_batch_size_per_gpu,
                             this->m_min_output);
   #endif // LBANN_ENABLE_SOFTMAX_CUTOFF
-    
+
   #endif // LBANN_HAS_CUDNN
   }
 

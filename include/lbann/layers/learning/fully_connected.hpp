@@ -164,6 +164,8 @@ class fully_connected_layer : public learning_layer {
 
   data_layout get_data_layout() const override { return T_layout; }
 
+  El::Device get_device_allocation() const override { return Dev; }
+
   void setup_matrices(const El::Grid& grid) override;
 
   void setup_dims() override {

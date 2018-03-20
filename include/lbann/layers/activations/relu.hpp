@@ -35,7 +35,7 @@ namespace lbann {
 /** Rectified linear unit activation function.
  *  See https://en.wikipedia.org/wiki/Rectifier_(neural_networks)
  */
-template <data_layout T_layout>
+template <data_layout T_layout, El::Device Dev>
 class relu_layer : public entrywise_activation_layer {
 
  private:
@@ -94,6 +94,7 @@ class relu_layer : public entrywise_activation_layer {
   }
 
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
   void setup_gpu() override {
     entrywise_activation_layer::setup_gpu();

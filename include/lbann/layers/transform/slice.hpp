@@ -35,7 +35,7 @@ namespace lbann {
 /** Slice layer.
  *  This layer slices an input tensor along a specified axis.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL>
+template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class slice_layer : public transform_layer {
  private:
 
@@ -116,6 +116,7 @@ class slice_layer : public transform_layer {
   slice_layer* copy() const override { return new slice_layer(*this); }
   std::string get_type() const override { return "slice"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
   /** Returns description of ctor params */
   std::string get_description() const override {
@@ -218,7 +219,7 @@ class slice_layer : public transform_layer {
     // Get stride between contiguous regions in input tensor slices
     const int input_slice_dim = input_dims[m_slice_axis];
     const int input_region_stride = input_slice_dim * unit_region_size;
-    
+
     // Populate output tensors with slices of input tensor
     for (int i = 0; i < get_num_children(); ++i) {
       auto& output = get_activations(i);
@@ -276,7 +277,7 @@ class slice_layer : public transform_layer {
     // Get stride between contiguous regions in input tensor slices
     const int input_slice_dim = input_dims[m_slice_axis];
     const int input_region_stride = input_slice_dim * unit_region_size;
-    
+
     // Populate gradient w.r.t. input with slices of gradient w.r.t. output
     for (int i = 0; i < get_num_children(); ++i) {
       const auto& gradient_wrt_output = get_prev_error_signals(i);
@@ -332,7 +333,7 @@ class slice_layer : public transform_layer {
     // Get stride between contiguous regions in input tensor slices
     const int input_slice_dim = input_dims[m_slice_axis];
     const int input_region_stride = input_slice_dim * unit_region_size;
-    
+
     // Populate output tensors with slices of input tensor
     cudnn::matrix input_region_d(m_cudnn), output_region_d(m_cudnn);
     for (int i = 0; i < get_num_children(); ++i) {
@@ -403,7 +404,7 @@ class slice_layer : public transform_layer {
     // Get stride between contiguous regions in input tensor slices
     const int input_slice_dim = input_dims[m_slice_axis];
     const int input_region_stride = input_slice_dim * unit_region_size;
-    
+
     // Populate gradient w.r.t. input with slices of gradient w.r.t. output
     cudnn::matrix gradient_wrt_input_region_d(m_cudnn);
     cudnn::matrix gradient_wrt_output_region_d(m_cudnn);

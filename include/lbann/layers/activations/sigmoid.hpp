@@ -60,7 +60,7 @@ namespace sigmoid_cuda {
 /** Sigmoid activation function.
  *  See https://en.wikipedia.org/wiki/Sigmoid_function
  */
-template <data_layout T_layout>
+template <data_layout T_layout, El::Device Dev>
 class sigmoid_layer : public entrywise_activation_layer {
 
  private:
@@ -93,6 +93,7 @@ class sigmoid_layer : public entrywise_activation_layer {
   sigmoid_layer* copy() const override { return new sigmoid_layer(*this); }
   std::string get_type() const override { return "sigmoid"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
   std::string get_description() const override {
     return std::string{} +

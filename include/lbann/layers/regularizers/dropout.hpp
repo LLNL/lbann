@@ -41,7 +41,7 @@ namespace lbann {
  *  of 0.5 for fully-connected layers and 0.8 for input layers are
  *  good starting points.
  */
-template <data_layout T_layout>
+template <data_layout T_layout, El::Device Dev>
 class dropout : public regularizer_layer {
  public:
   /** Keep units with probabiliy keep_prob. */
@@ -75,16 +75,17 @@ class dropout : public regularizer_layer {
   std::string get_type() const override { return "dropout"; }
 
   std::string get_description() const override {
-    return " dropout keep_prob: " + std::to_string(m_keep_prob) 
+    return " dropout keep_prob: " + std::to_string(m_keep_prob)
            + " dataLayout: " + get_data_layout_string(get_data_layout());
   }
 
   void setup_matrices(const El::Grid& grid) override {
     regularizer_layer::setup_matrices(grid);
     if (m_mask != nullptr) { delete m_mask; }
-    m_mask = get_activations().Copy();    
+    m_mask = get_activations().Copy();
   }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
  protected:
   /** Drop out units in forward propagation. */

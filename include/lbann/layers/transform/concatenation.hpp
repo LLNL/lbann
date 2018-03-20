@@ -35,7 +35,7 @@ namespace lbann {
 /** Concatenation layer.
  *  This layer concatenates input tensors along a specified axis.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL>
+template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class concatenation_layer : public transform_layer {
  private:
 
@@ -114,6 +114,7 @@ class concatenation_layer : public transform_layer {
   concatenation_layer* copy() const override { return new concatenation_layer(*this); }
   std::string get_type() const override { return "concatenation"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
   /** Returns description of ctor params */
   std::string get_description() const override {
@@ -193,7 +194,7 @@ class concatenation_layer : public transform_layer {
       m_concatenation_points.push_back(m_concatenation_points.back()
                                        + parent_dims[m_concatenation_axis]);
 
-    }    
+    }
 
     // Update neuron dimensions
     this->m_neuron_dims[m_concatenation_axis] = m_concatenation_points.back();
@@ -241,7 +242,7 @@ class concatenation_layer : public transform_layer {
     // Get stride between contiguous regions in output tensor slices
     const int output_slice_dim = output_dims[m_concatenation_axis];
     const int output_region_stride = output_slice_dim * unit_region_size;
-    
+
     // Populate output with slices of inputs
     for (int i = 0; i < get_num_parents(); ++i) {
       const auto& input = get_prev_activations(i);
@@ -292,7 +293,7 @@ class concatenation_layer : public transform_layer {
     // Get stride between contiguous regions in input tensor slice
     const int output_slice_dim = output_dims[m_concatenation_axis];
     const int output_region_stride = output_slice_dim * unit_region_size;
-    
+
     // Populate output tensors with concatenations of input tensor
     for (int i = 0; i < get_num_parents(); ++i) {
       auto& gradient_wrt_input = get_error_signals(i);
@@ -347,7 +348,7 @@ class concatenation_layer : public transform_layer {
     // Get stride between contiguous regions in output tensor slices
     const int output_slice_dim = output_dims[m_concatenation_axis];
     const int output_region_stride = output_slice_dim * unit_region_size;
-    
+
     // Populate output with slices of inputs
     cudnn::matrix input_region_d(m_cudnn), output_region_d(m_cudnn);
     for (int i = 0; i < get_num_parents(); ++i) {
@@ -410,7 +411,7 @@ class concatenation_layer : public transform_layer {
     // Get stride between contiguous regions in input tensor slice
     const int output_slice_dim = output_dims[m_concatenation_axis];
     const int output_region_stride = output_slice_dim * unit_region_size;
-    
+
     // Populate output tensors with concatenations of input tensor
     cudnn::matrix gradient_wrt_input_region_d(m_cudnn);
     cudnn::matrix gradient_wrt_output_region_d(m_cudnn);

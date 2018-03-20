@@ -36,10 +36,10 @@ namespace lbann {
 /** Safe entrywise inversion (reciprocal).
  *  Output is zero if input is zero. See https://arxiv.org.abs/1606.06582
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL>
+template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class safe_inv_layer : public transform_layer {
  private:
-  
+
   /** Threshhold for computing inverse. */
   DataType m_threshhold;
 
@@ -53,6 +53,7 @@ class safe_inv_layer : public transform_layer {
   safe_inv_layer* copy() const override { return new safe_inv_layer(*this); }
   std::string get_type() const override { return "safe_inv"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
   /** Returns description of ctor params */
   std::string get_description() const override {

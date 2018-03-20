@@ -35,7 +35,7 @@ namespace lbann {
 /** Layer draws outputs from a Gaussian distribution.
  *  During validation and testing, the layer outputs zeros.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL>
+template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class noise_layer : public transform_layer {
  private:
   /** Noise factor */
@@ -63,6 +63,7 @@ class noise_layer : public transform_layer {
   noise_layer* copy() const override { return new noise_layer(*this); }
   std::string get_type() const override { return "noise"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
   /** Returns description of ctor params */
   std::string get_description() const override {

@@ -32,7 +32,7 @@
 namespace lbann {
 
 /** Reshape layer */
-template <data_layout T_layout>
+template <data_layout T_layout, El::Device Dev>
 class reshape_layer : public transform_layer {
  public:
   reshape_layer(lbann_comm *comm,
@@ -45,6 +45,7 @@ class reshape_layer : public transform_layer {
   reshape_layer* copy() const override { return new reshape_layer(*this); }
   std::string get_type() const override { return "reshape"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
   void setup_dims() override {
     // Store neuron tensor dimensions

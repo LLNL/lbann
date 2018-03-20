@@ -37,7 +37,7 @@
 
 namespace lbann {
 
-template <typename T_io_buffer, data_layout T_layout = data_layout::DATA_PARALLEL>
+template <typename T_io_buffer, data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class input_layer : public generic_input_layer {
  public:
 
@@ -69,22 +69,37 @@ class input_layer : public generic_input_layer {
   }
 
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
 };
 
 template<>
-inline void input_layer<partitioned_io_buffer, data_layout::MODEL_PARALLEL>::validate_data_layout() {
+inline void input_layer<partitioned_io_buffer, data_layout::MODEL_PARALLEL, El::Device::CPU>::validate_data_layout() {
   static_assert(true, "input_layer with partitioned_io_buffer does not supports MODEL_PARALLEL data layout");
 }
 
 template<>
-inline void input_layer<partitioned_io_buffer, data_layout::DATA_PARALLEL>::validate_data_layout() {}
+inline void input_layer<partitioned_io_buffer, data_layout::DATA_PARALLEL, El::Device::CPU>::validate_data_layout() {}
 
 template<>
-inline void input_layer<distributed_io_buffer, data_layout::MODEL_PARALLEL>::validate_data_layout() {}
+inline void input_layer<distributed_io_buffer, data_layout::MODEL_PARALLEL, El::Device::CPU>::validate_data_layout() {}
 
 template<>
-inline void input_layer<distributed_io_buffer, data_layout::DATA_PARALLEL>::validate_data_layout() {}
+inline void input_layer<distributed_io_buffer, data_layout::DATA_PARALLEL, El::Device::CPU>::validate_data_layout() {}
+
+template<>
+inline void input_layer<partitioned_io_buffer, data_layout::MODEL_PARALLEL, El::Device::GPU>::validate_data_layout() {
+  static_assert(true, "input_layer with partitioned_io_buffer does not supports MODEL_PARALLEL data layout");
+}
+
+template<>
+inline void input_layer<partitioned_io_buffer, data_layout::DATA_PARALLEL, El::Device::GPU>::validate_data_layout() {}
+
+template<>
+inline void input_layer<distributed_io_buffer, data_layout::MODEL_PARALLEL, El::Device::GPU>::validate_data_layout() {}
+
+template<>
+inline void input_layer<distributed_io_buffer, data_layout::DATA_PARALLEL, El::Device::GPU>::validate_data_layout() {}
 
 }
 

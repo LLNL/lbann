@@ -119,6 +119,8 @@ class deconvolution_layer : public base_convolution_layer<Dev> {
 
   data_layout get_data_layout() const override { return T_layout; }
 
+  El::Device get_device_allocation() const override { return Dev; }
+
   void setup_dims() override {
 
     // Initialize previous neuron tensor dimensions

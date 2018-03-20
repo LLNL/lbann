@@ -37,7 +37,7 @@ namespace lbann {
 /** Split layer.
  *  This layer can accommodate an arbitrary number of outputs.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL>
+  template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class split_layer : public transform_layer {
  private:
 
@@ -63,6 +63,7 @@ class split_layer : public transform_layer {
   split_layer* copy() const override { return new split_layer(*this); }
   std::string get_type() const override { return "split"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
   /** Returns description of ctor params */
   std::string get_description() const override {

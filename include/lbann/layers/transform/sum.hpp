@@ -39,7 +39,7 @@ namespace lbann {
  *  are not provided, they are all set to one so that this layer
  *  performs a simple sum.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL>
+template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class sum_layer : public transform_layer {
  private:
 
@@ -71,6 +71,7 @@ class sum_layer : public transform_layer {
   sum_layer* copy() const override { return new sum_layer(*this); }
   std::string get_type() const override { return "sum"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
   /** Returns description of ctor params */
   std::string get_description() const override {

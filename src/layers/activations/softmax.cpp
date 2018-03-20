@@ -29,19 +29,35 @@
 namespace lbann {
 
 template <>
-void softmax_layer<data_layout
-  ::MODEL_PARALLEL>::setup_matrices(const El::Grid& grid) {
-  activation_layer::setup_matrices(grid);
-  if (m_workspace != nullptr) { delete m_workspace; }
-  m_workspace = new StarMRMat(grid);
-}
-
-template <>
-void softmax_layer<data_layout::DATA_PARALLEL>
+void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
   ::setup_matrices(const El::Grid& grid) {
   activation_layer::setup_matrices(grid);
   if (m_workspace != nullptr) { delete m_workspace; }
-  m_workspace = new StarVCMat(grid);
+  m_workspace = new StarMRMat<El::Device::CPU>(grid);
+}
+
+template <>
+void softmax_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
+  ::setup_matrices(const El::Grid& grid) {
+  activation_layer::setup_matrices(grid);
+  if (m_workspace != nullptr) { delete m_workspace; }
+  m_workspace = new StarVCMat<El::Device::CPU>(grid);
+}
+
+template <>
+void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
+  ::setup_matrices(const El::Grid& grid) {
+  activation_layer::setup_matrices(grid);
+  if (m_workspace != nullptr) { delete m_workspace; }
+  m_workspace = new StarMRMat<El::Device::GPU>(grid);
+}
+
+template <>
+void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
+  ::setup_matrices(const El::Grid& grid) {
+  activation_layer::setup_matrices(grid);
+  if (m_workspace != nullptr) { delete m_workspace; }
+  m_workspace = new StarVCMat<El::Device::GPU>(grid);
 }
 
 } // namespace lbann

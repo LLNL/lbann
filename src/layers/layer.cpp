@@ -526,27 +526,57 @@ void Layer::setup_dims() {
 
 }
 
+///************************************************************************
+/// Instantiate CPU Matrices
+///************************************************************************
 template <>
-void Layer::instantiate_matrices<data_layout::MODEL_PARALLEL>(const El::Grid& grid) {
+void Layer::instantiate_matrices<data_layout::MODEL_PARALLEL, El::Device::CPU>(const El::Grid& grid) {
   for (int i = 0; i < get_num_parents(); ++i) {
-    m_prev_activations.push_back(new MCMRMat(grid));
-    m_error_signals.push_back(new MCMRMat(grid));
+    m_prev_activations.push_back(new MCMRMat<El::Device::CPU>(grid));
+    m_error_signals.push_back(new MCMRMat<El::Device::CPU>(grid));
   }
   for (int i = 0; i < get_num_children(); ++i) {
-    m_activations.push_back(new MCMRMat(grid));
-    m_prev_error_signals.push_back(new MCMRMat(grid));
+    m_activations.push_back(new MCMRMat<El::Device::CPU>(grid));
+    m_prev_error_signals.push_back(new MCMRMat<El::Device::CPU>(grid));
   }
 }
 
 template <>
-void Layer::instantiate_matrices<data_layout::DATA_PARALLEL>(const El::Grid& grid) {
+void Layer::instantiate_matrices<data_layout::DATA_PARALLEL, El::Device::CPU>(const El::Grid& grid) {
   for (int i = 0; i < get_num_parents(); ++i) {
-    m_prev_activations.push_back(new StarVCMat(grid));
-    m_error_signals.push_back(new StarVCMat(grid));
+    m_prev_activations.push_back(new StarVCMat<El::Device::CPU>(grid));
+    m_error_signals.push_back(new StarVCMat<El::Device::CPU>(grid));
   }
   for (int i = 0; i < get_num_children(); ++i) {
-    m_activations.push_back(new StarVCMat(grid));
-    m_prev_error_signals.push_back(new StarVCMat(grid));
+    m_activations.push_back(new StarVCMat<El::Device::CPU>(grid));
+    m_prev_error_signals.push_back(new StarVCMat<El::Device::CPU>(grid));
+  }
+}
+
+///************************************************************************
+/// Instantiate GPU Matrices
+///************************************************************************
+template <>
+void Layer::instantiate_matrices<data_layout::MODEL_PARALLEL, El::Device::GPU>(const El::Grid& grid) {
+  for (int i = 0; i < get_num_parents(); ++i) {
+    m_prev_activations.push_back(new MCMRMat<El::Device::GPU>(grid));
+    m_error_signals.push_back(new MCMRMat<El::Device::GPU>(grid));
+  }
+  for (int i = 0; i < get_num_children(); ++i) {
+    m_activations.push_back(new MCMRMat<El::Device::GPU>(grid));
+    m_prev_error_signals.push_back(new MCMRMat<El::Device::GPU>(grid));
+  }
+}
+
+template <>
+void Layer::instantiate_matrices<data_layout::DATA_PARALLEL, El::Device::GPU>(const El::Grid& grid) {
+  for (int i = 0; i < get_num_parents(); ++i) {
+    m_prev_activations.push_back(new StarVCMat<El::Device::GPU>(grid));
+    m_error_signals.push_back(new StarVCMat<El::Device::GPU>(grid));
+  }
+  for (int i = 0; i < get_num_children(); ++i) {
+    m_activations.push_back(new StarVCMat<El::Device::GPU>(grid));
+    m_prev_error_signals.push_back(new StarVCMat<El::Device::GPU>(grid));
   }
 }
 
@@ -558,9 +588,29 @@ void Layer::setup_matrices(const El::Grid& grid) {
   // Allocate input and output matrices for forward an back prop
   switch (get_data_layout()) {
   case data_layout::MODEL_PARALLEL:
-    instantiate_matrices<data_layout::MODEL_PARALLEL>(grid); break;
+    switch (get_device_allocation()) {
+    case El::Device::CPU:
+      instantiate_matrices<data_layout::MODEL_PARALLEL, El::Device::CPU>(grid); break;
+    case El::Device::GPU:
+      instantiate_matrices<data_layout::MODEL_PARALLEL, El::Device::GPU>(grid); break;
+    default:
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "invalid matrix data allocation";
+      throw lbann_exception(err.str());
+    }
   case data_layout::DATA_PARALLEL:
-    instantiate_matrices<data_layout::DATA_PARALLEL>(grid); break;
+    switch (get_device_allocation()) {
+    case El::Device::CPU:
+      instantiate_matrices<data_layout::DATA_PARALLEL, El::Device::CPU>(grid); break;
+    case El::Device::GPU:
+      instantiate_matrices<data_layout::DATA_PARALLEL, El::Device::GPU>(grid); break;
+    default:
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "invalid matrix data allocation";
+      throw lbann_exception(err.str());
+    }
   default:
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "

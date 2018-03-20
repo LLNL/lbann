@@ -36,7 +36,7 @@ namespace lbann {
 /** Hadamard layer.
  *  This layer computes the entrywise product of the input tensors.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL>
+template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class hadamard_layer : public transform_layer {
  public:
 
@@ -52,6 +52,7 @@ class hadamard_layer : public transform_layer {
   hadamard_layer* copy() const override { return new hadamard_layer(*this); }
   std::string get_type() const override { return "Hadamard"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
   /** Returns description of ctor params */
   std::string get_description() const override {
@@ -86,7 +87,7 @@ class hadamard_layer : public transform_layer {
     } else {
 
       // Get local matrices
-      std::vector<const Mat*> local_inputs;
+      std::vector<const AbsMat*> local_inputs;
       for (const auto& input : this->m_prev_activations) {
         local_inputs.push_back(&input->LockedMatrix());
       }
@@ -119,12 +120,12 @@ class hadamard_layer : public transform_layer {
     } else {
 
       // Get local matrices
-      std::vector<const Mat*> local_inputs;
+      std::vector<const AbsMat*> local_inputs;
       for (const auto& input : this->m_prev_activations) {
         local_inputs.push_back(&input->LockedMatrix());
       }
       auto& local_gradient_wrt_output = get_local_prev_error_signals();
-      std::vector<Mat*> local_gradient_wrt_inputs;
+      std::vector<AbsMat*> local_gradient_wrt_inputs;
       for (auto& gradient_wrt_input : this->m_error_signals) {
         local_gradient_wrt_inputs.push_back(&gradient_wrt_input->Matrix());
       }
