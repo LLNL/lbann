@@ -303,6 +303,9 @@ message Metric {
   MeanAbsoluteError mean_absolute_error = 6;
   PearsonCorrelation pearson_correlation = 5;
   R2 r2 = 7;
+  BooleanAccuracy boolean_accuracy = 8;
+  BooleanFalsePositives boolean_false_positives = 9;
+  BooleanFalseNegatives boolean_false_negatives = 10;
 }
 
 message CategoricalAccuracy {
@@ -319,6 +322,15 @@ message PearsonCorrelation {
 }
 
 message R2 {
+}
+
+message BooleanAccuracy {
+}
+
+message BooleanFalsePositives {
+}
+
+message BooleanFalseNegatives {
 }
 
 //========================================================================
