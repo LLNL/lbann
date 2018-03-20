@@ -455,7 +455,7 @@ message CallbackDumpActivations {
   string basename = 1;
   int64 interval = 2;
   string layer_names = 3; //layer(s) at which to dump activations e.g., "relu1 relu4 relu12"
-  
+
 }
 
 message CallbackDumpGradients {
@@ -621,6 +621,7 @@ message Layer {
    string parents = 151;
    string children = 152;
    string data_layout = 52;
+   string device_allocation = 54;
    bool num_neurons_from_data_reader = 53;
 
 

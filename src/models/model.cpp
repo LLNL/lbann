@@ -538,10 +538,34 @@ void model::add_split_layers() {
       auto&& cudnn = layer->get_cudnn_manager();
       switch (layer->get_data_layout()) {
       case data_layout::DATA_PARALLEL:
-        split = new split_layer<data_layout::DATA_PARALLEL>(m_comm, cudnn);
+        switch(layer->get_device_allocation()) {
+        case El::Device::CPU:
+          split = new split_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(m_comm, cudnn);
+          break;
+        case El::Device::GPU:
+          split = new split_layer<data_layout::DATA_PARALLEL, El::Device::GPU>(m_comm, cudnn);
+          break;
+        default:
+          std::stringstream err;
+          err << __FILE__ << " " << __LINE__ << " :: "
+              << "invalid matrix data allocation";
+          throw lbann_exception(err.str());
+        }
         break;
       case data_layout::MODEL_PARALLEL:
-        split = new split_layer<data_layout::MODEL_PARALLEL>(m_comm, cudnn);
+        switch(layer->get_device_allocation()) {
+        case El::Device::CPU:
+          split = new split_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>(m_comm, cudnn);
+          break;
+        case El::Device::GPU:
+          split = new split_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>(m_comm, cudnn);
+          break;
+        default:
+          std::stringstream err;
+          err << __FILE__ << " " << __LINE__ << " :: "
+              << "invalid matrix data allocation";
+          throw lbann_exception(err.str());
+        }
         break;
       default:
         std::stringstream err;
