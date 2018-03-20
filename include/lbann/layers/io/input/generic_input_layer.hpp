@@ -182,7 +182,7 @@ class generic_input_layer : public io_layer {
     io_layer::fp_setup_data(mini_batch_size);
 
     // Once the current mini-batch size is defined, set the standard view for activations only
-    io_buffer->set_local_matrix_bypass(&get_local_activations());
+    io_buffer->set_local_matrix_bypass(static_cast<CPUMat*>(&get_local_activations()));
     io_buffer->set_std_matrix_view(mini_batch_size);
 
   }
@@ -646,13 +646,13 @@ class generic_input_layer : public io_layer {
                      (uint64_t) m_validation_dataset.get_num_samples_processed());
       p.write_uint64(persist_type::validate, "reader_validate_total",
                      (uint64_t) m_validation_dataset.get_total_samples());
-      
+
       it = this->m_data_readers.find(execution_mode::validation);
       if ((it != this->m_data_readers.end()) && it->second) {
         (it->second)->save_to_checkpoint_shared(p, "data_reader_validation");
-      }    
+      }
     }
-    return true;  
+    return true;
   }
 
   struct dataset_header {
