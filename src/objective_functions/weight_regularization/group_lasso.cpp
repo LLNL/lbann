@@ -54,7 +54,7 @@ void group_lasso_weight_regularization::setup(model& m) {
 EvalType group_lasso_weight_regularization::evaluate() {
   if (m_scale_factor == EvalType(0)) { return EvalType(0); }
   EvalType value = EvalType(0);
-  Mat sqsums;
+  CPUMat sqsums;
   for (weights* w : m_weights) {
 
     // Get matrices
@@ -90,7 +90,7 @@ EvalType group_lasso_weight_regularization::evaluate() {
 
 void group_lasso_weight_regularization::compute_weight_regularization() {
   if (m_scale_factor == EvalType(0)) { return; }
-  Mat sqsums;
+  CPUMat sqsums;
   AbsDistMat* gradient;
   for (weights* w : m_weights) {
 

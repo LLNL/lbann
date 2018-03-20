@@ -73,18 +73,18 @@ void lbann_callback_save_images::save_image(model& m,
   AbsDistMat* input_col = input.Construct(input.Grid(),
                                           input.Root());
   El::View(*input_col, input, El::ALL, El::IR(0));
-  CircMat input_circ = *input_col;
+  CircMat<El::Device::CPU> input_circ = *input_col;
   delete input_col;
   if(m.get_comm()->am_world_master()) {
     m_reader->save_image(input_circ.Matrix(), m_image_dir+"input_"+tag+"."+m_extension);
   }
-  
+
   // Save output image if it is a reconstruction
   if(output.Height() == input.Height()) {
     AbsDistMat* output_col = output.Construct(output.Grid(),
                                               output.Root());
     El::View(*output_col, output, El::ALL, El::IR(0));
-    CircMat output_circ = *output_col;
+    CircMat<El::Device::CPU> output_circ = *output_col;
     delete output_col;
     if(m.get_comm()->am_world_master()) {
       m_reader->save_image(output_circ.Matrix(), m_image_dir+"output_"+tag+"."+m_extension);
