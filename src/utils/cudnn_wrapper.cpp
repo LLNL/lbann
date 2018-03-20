@@ -466,17 +466,12 @@ void cudnn_manager::cudnn_manager::allocate_on_gpus(std::vector<DataType *>& gpu
 void cudnn_manager::cudnn_manager::deallocate_on_gpus(std::vector<DataType *>& gpu_data) {
 
   // Stop early if deallocation is not needed
-  bool deallocation_needed = false;
-  if(gpu_data.empty()) {
-    deallocation_needed = true;
-  } else if((int) gpu_data.size() != m_num_gpus) {
+  if (gpu_data.empty()) { return; }
+  if ((int) gpu_data.size() != m_num_gpus) {
     throw lbann_exception("cudnn_wrapper: number of GPU memory pointers doesn't match number of GPUs");
-  } else {
-    for (const auto& ptr : gpu_data) {
-      if (ptr != nullptr) { deallocation_needed = true; }
-    }
   }
-  if (!deallocation_needed) {
+  if (std::count(gpu_data.begin(), gpu_data.end(), nullptr)
+      == m_num_gpus) {
     gpu_data.clear();
     return;
   }
