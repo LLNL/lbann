@@ -44,6 +44,7 @@ namespace lbann {
 /** Base convolution layer.
  *  Parent class for convolution and deconvolution layers.
  */
+template <El::Device Dev>
 class base_convolution_layer : public learning_layer {
 
  protected:
@@ -67,12 +68,12 @@ class base_convolution_layer : public learning_layer {
    *  This is this layer's contribution to the objective function
    *  gradient w.r.t. the convolutional kernel weights.
    */
-  StarMat m_kernel_gradient;
+  StarMat<Dev> m_kernel_gradient;
   /** Bias gradient.
    *  This is this layer's contribution to the objective function
    *  gradient w.r.t. the bias weights.
    */
-  StarMat m_bias_gradient;
+  StarMat<Dev> m_bias_gradient;
 
 #ifdef LBANN_HAS_CUDNN
 
@@ -645,9 +646,9 @@ class base_convolution_layer : public learning_layer {
     const int m = output_size / output_dims[0];
     const int n = output_dims[0];
     const int k = m_kernel_size / output_dims[0];
-    Mat input_col, output_col;
-    Mat im2col_matrix(k, m);
-    const Mat kernel_matrix(k, n, local_kernel.LockedBuffer(), k);
+    DMat<Dev> input_col, output_col;
+    DMat<Dev> im2col_matrix(k, m);
+    const DMat<Dev> kernel_matrix(k, n, local_kernel.LockedBuffer(), k);
 
     // Iterate through input columns
     for (El::Int col = 0; col < local_width; ++col) {
@@ -681,9 +682,9 @@ class base_convolution_layer : public learning_layer {
     const auto& local_input = (during_forward_prop ?
                                get_local_prev_activations() :
                                get_local_prev_error_signals());
-    auto& local_output = (during_forward_prop ?
-                          get_local_activations() :
-                          get_local_error_signals());
+    DMat<Dev>& local_output = (during_forward_prop ?
+                               get_local_activations() :
+                               get_local_error_signals());
 
     // Matrix parameters
     const int input_size = local_input.Height();
@@ -703,9 +704,9 @@ class base_convolution_layer : public learning_layer {
     const int m = m_kernel_size / input_dims[0];
     const int n = input_size / input_dims[0];
     const int k = input_dims[0];
-    Mat input_col, output_col;
-    Mat im2col_matrix(m, n);
-    const Mat kernel_matrix(m, k, local_kernel.LockedBuffer(), m);
+    DMat<Dev> input_col, output_col;
+    DMat<Dev> im2col_matrix(m, n);
+    const DMat<Dev> kernel_matrix(m, k, local_kernel.LockedBuffer(), m);
 
     // Iterate through input columns
     for (El::Int col = 0; col < local_width; ++col) {
@@ -771,11 +772,11 @@ class base_convolution_layer : public learning_layer {
   void compute_gradients_im2col(bool using_transposed_convolution) {
 
     // Local matrices
-    const auto& local_input = get_local_prev_activations();
-    const auto& local_gradient_wrt_output = get_local_prev_error_signals();
+    const DMat<Dev>& local_input = get_local_prev_activations();
+    const DMat<Dev>& local_gradient_wrt_output = get_local_prev_error_signals();
     auto& local_kernel_gradient = m_kernel_gradient.Matrix();
     auto& local_bias_gradient = m_bias_gradient.Matrix();
-    
+
     // Get convolution parameters
     const El::Int local_width = local_input.Width();
     const int num_input_channels = this->m_prev_neuron_dims[0];
@@ -823,16 +824,16 @@ class base_convolution_layer : public learning_layer {
     const int k = (using_transposed_convolution ?
                    this->m_num_prev_neurons / num_input_channels :
                    this->m_num_neurons / num_output_channels);
-    Mat im2col_matrix(m, k);
-    Mat kernel_gradient_matrix(m, n, local_kernel_gradient.Buffer(), m);
+    DMat<Dev> im2col_matrix(m, k);
+    DMat<Dev> kernel_gradient_matrix(m, n, local_kernel_gradient.Buffer(), m);
     El::Zero(kernel_gradient_matrix);
 
     // Compute kernel gradient contributions from each data sample
     for (El::Int col = 0; col < local_width; ++col) {
       if (using_transposed_convolution) {
-        const Mat input_col(k, n, local_input.LockedBuffer(0,col), k);
-        const Mat gradient_wrt_output_col
-          = El::LockedView(local_gradient_wrt_output, El::ALL, El::IR(col));
+        const DMat<Dev> input_col(k, n, local_input.LockedBuffer(0,col), k);
+        const DMat<Dev> gradient_wrt_output_col =
+          El::LockedView(local_gradient_wrt_output, El::ALL, El::IR(col));
         im2col(gradient_wrt_output_col,
                im2col_matrix,
                num_output_channels,
@@ -846,9 +847,9 @@ class base_convolution_layer : public learning_layer {
                  DataType(1), kernel_gradient_matrix);
       }
       else {
-        const Mat input_col
+        const DMat<Dev> input_col
           = El::LockedView(local_input, El::ALL, El::IR(col));
-        const Mat gradient_wrt_output_col(k, n, local_gradient_wrt_output.LockedBuffer(0,col), k);
+        const DMat<Dev> gradient_wrt_output_col(k, n, local_gradient_wrt_output.LockedBuffer(0,col), k);
         im2col(input_col,
                im2col_matrix,
                num_input_channels,

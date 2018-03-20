@@ -29,7 +29,7 @@
 namespace lbann {
 
 template <>
-void fully_connected_layer<data_layout::MODEL_PARALLEL>
+void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
   ::setup_matrices(const El::Grid& grid) {
   learning_layer::setup_matrices(grid);
   deallocate_matrices();
@@ -38,16 +38,16 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL>
 }
 
 template <>
-void fully_connected_layer<data_layout::DATA_PARALLEL>
+void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
   ::setup_matrices(const El::Grid& grid) {
   learning_layer::setup_matrices(grid);
   deallocate_matrices();
-  m_linearity_gradient = new StarMat(grid);
-  m_bias_gradient = new StarMat(grid);
+  m_linearity_gradient = new StarMat<El::Device::CPU>(grid);
+  m_bias_gradient = new StarMat<El::Device::CPU>(grid);
 }
 
 template <>
-void fully_connected_layer<data_layout::MODEL_PARALLEL>::fp_compute_cpu() {
+void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::fp_compute_cpu() {
 
   // Matrices
   const auto& input = get_prev_activations();
@@ -81,7 +81,7 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL>::fp_compute_cpu() {
 }
 
 template <>
-void fully_connected_layer<data_layout::MODEL_PARALLEL>::bp_compute_cpu() {
+void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_compute_cpu() {
 
   // Effective mini-batch size
   const int mini_batch_size = this->m_model->get_effective_mini_batch_size();
@@ -143,7 +143,7 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL>::bp_compute_cpu() {
 }
 
 template <>
-void fully_connected_layer<data_layout::DATA_PARALLEL>::fp_compute_cpu() {
+void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_compute_cpu() {
 
   // Matrices
   const auto& local_input = get_local_prev_activations();
@@ -170,7 +170,7 @@ void fully_connected_layer<data_layout::DATA_PARALLEL>::fp_compute_cpu() {
 
 
 template <>
-void fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_cpu() {
+void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_compute_cpu() {
 
   // Effective mini-batch size
   const int mini_batch_size = this->m_model->get_effective_mini_batch_size();

@@ -45,7 +45,7 @@ enum class device {CPU, CUDA};
 /** Fully-connected layer.
  *  This layer applies an affine transformation.
  */
-template <data_layout T_layout>
+template <data_layout T_layout, El::Device Dev>
 class fully_connected_layer : public learning_layer {
  private:
 
@@ -111,7 +111,7 @@ class fully_connected_layer : public learning_layer {
   fully_connected_layer(const fully_connected_layer& other) :
     learning_layer(other),
     m_bias_scaling_factor(other.m_bias_scaling_factor) {
-    
+
     // Deep matrix copies
     m_linearity_gradient = other.m_linearity_gradient;
     m_bias_gradient = other.m_bias_gradient;
@@ -290,7 +290,7 @@ class fully_connected_layer : public learning_layer {
     const auto& linearity_d = m_weights[0]->get_values_gpu();
     const auto& input_d = this->m_prev_activations_d[0];
     auto& output_d = this->m_activations_d[0];
-    
+
     // Matrix parameters
     const int input_size = get_num_prev_neurons();
     const int output_size = get_num_neurons();
@@ -318,7 +318,7 @@ class fully_connected_layer : public learning_layer {
     // Apply bias if needed
     if(m_bias_scaling_factor != DataType(0)) {
       const auto& bias_d = m_weights[1]->get_values_gpu();
-      
+
       // Initialize work space with ones
       cudnn::matrix ones_d(this->m_cudnn);
       ones_d.attach_to_work_spaces(mini_batch_size);
@@ -352,7 +352,7 @@ class fully_connected_layer : public learning_layer {
     const auto& input_d = this->m_prev_activations_d[0];
     const auto& gradient_wrt_output_d = this->m_prev_error_signals_d[0];
     auto& gradient_wrt_input_d = this->m_error_signals_d[0];
-    
+
     // Matrix parameters
     const int input_size = get_num_prev_neurons();
     const int output_size = get_num_neurons();
@@ -376,7 +376,7 @@ class fully_connected_layer : public learning_layer {
       for (int i = 0; i < num_gpus; ++i) {
         CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
         cublas::gemv(this->m_cudnn->get_cublas_handle(i),
-                     CUBLAS_OP_N, 
+                     CUBLAS_OP_N,
                      output_size, mini_batch_size,
                      DataType(1),
                      gradient_wrt_output_d.get_locked_data(i), gradient_wrt_output_ldim,
@@ -388,7 +388,7 @@ class fully_connected_layer : public learning_layer {
         m_bias_gradient_d,
         m_bias_scaling_factor / this->m_model->get_effective_mini_batch_size());
     }
-      
+
     // Compute gradient w.r.t. linearity if needed
     optimizer* linearity_optimizer = this->m_weights[0]->get_optimizer();
     if (linearity_optimizer != nullptr) {

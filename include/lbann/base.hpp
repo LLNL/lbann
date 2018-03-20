@@ -50,7 +50,8 @@ using ElMat      = El::ElementalMatrix<lbann::DataType>;
 using BlockMat   = El::BlockMatrix<lbann::DataType>;
 using MCMRMat    = El::DistMatrix<lbann::DataType, El::MC  , El::MR  >;
 using CircMat    = El::DistMatrix<lbann::DataType, El::CIRC, El::CIRC>;
-using StarMat    = El::DistMatrix<lbann::DataType, El::STAR, El::STAR>;
+template <El::Device D>
+using StarMat    = El::DistMatrix<lbann::DataType, El::STAR, El::STAR, El::ELEMENT, D>;
 using StarVCMat  = El::DistMatrix<lbann::DataType, El::STAR, El::VC  >;
 using VCStarMat  = El::DistMatrix<lbann::DataType, El::VC  , El::STAR>;
 using MCStarMat  = El::DistMatrix<lbann::DataType, El::MC  , El::STAR>;
@@ -131,12 +132,6 @@ lbann_comm* initialize(int& argc, char**& argv, int seed = -1);
  * Perform finalization.
  */
 void finalize(lbann_comm* comm = nullptr);
-
-class CUtility {
- public:
-  static void convolveMat(StarMat *Kernels, BlockMat& InputMat, BlockMat& OutputMat,
-                          uint InputWidth, uint InputHeight);
-};
 
 /*
  * endsWith: http://thispointer.com/c-how-to-check-if-a-string-ends-with-an-another-given-string/

@@ -41,8 +41,8 @@ namespace lbann {
 class lbann_callback_imcomm;
 
 /// Deconvolution layer
-template <data_layout T_layout = data_layout::DATA_PARALLEL>
-class deconvolution_layer : public base_convolution_layer {
+template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::GPU>
+class deconvolution_layer : public base_convolution_layer<Dev> {
  private:
 
   friend class lbann_callback_imcomm;
@@ -74,7 +74,7 @@ class deconvolution_layer : public base_convolution_layer {
                       std::vector<int> strides,
                       bool has_bias = true,
                       cudnn::cudnn_manager *cudnn = nullptr)
-    : base_convolution_layer(comm,
+    : base_convolution_layer<Dev>(comm,
                              num_data_dims,
                              num_output_channels,
                              conv_dims,
@@ -122,7 +122,7 @@ class deconvolution_layer : public base_convolution_layer {
   void setup_dims() override {
 
     // Initialize previous neuron tensor dimensions
-    base_convolution_layer::setup_dims();
+    base_convolution_layer<Dev>::setup_dims();
 
     // Initialize deconvolution kernel dimensions
     // Note that unlike the convolutional kernel, the previous layer's
@@ -151,16 +151,16 @@ class deconvolution_layer : public base_convolution_layer {
                                           std::multiplies<int>());
 
     // Get size of convolutional kernel
-    this->m_kernel_size = std::accumulate(m_kernel_dims.begin(),
-                                          m_kernel_dims.end(),
+    this->m_kernel_size = std::accumulate(this->m_kernel_dims.begin(),
+                                          this->m_kernel_dims.end(),
                                           1,
                                           std::multiplies<int>());
 
   }
 
   void setup_data() override {
-    base_convolution_layer::setup_data();
-    this->m_weights[0]->setup(m_kernel_dims);
+    base_convolution_layer<Dev>::setup_data();
+    this->m_weights[0]->setup(this->m_kernel_dims);
     El::Zeros(this->m_kernel_gradient,
               this->m_weights[0]->get_matrix_height(),
               this->m_weights[0]->get_matrix_width());
@@ -170,21 +170,21 @@ class deconvolution_layer : public base_convolution_layer {
 
   void fp_compute() override {
     if(this->m_using_gpus) {
-      apply_transposed_convolution_cudnn(true);
-      apply_bias_cudnn();
+      base_convolution_layer<Dev>::apply_transposed_convolution_cudnn(true);
+      base_convolution_layer<Dev>::apply_bias_cudnn();
     } else {
-      apply_transposed_convolution_im2col(true);
-      apply_bias_cpu();
+      base_convolution_layer<Dev>::apply_transposed_convolution_im2col(true);
+      base_convolution_layer<Dev>::apply_bias_cpu();
     }
   }
 
   void bp_compute() override {
     if(this->m_using_gpus) {
-      compute_gradients_cudnn(true);
-      apply_convolution_cudnn(false);
+      base_convolution_layer<Dev>::compute_gradients_cudnn(true);
+      base_convolution_layer<Dev>::apply_convolution_cudnn(false);
     } else {
-      compute_gradients_im2col(true);
-      apply_convolution_im2col(false);
+      base_convolution_layer<Dev>::compute_gradients_im2col(true);
+      base_convolution_layer<Dev>::apply_convolution_im2col(false);
     }
   }
 

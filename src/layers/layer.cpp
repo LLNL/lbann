@@ -128,7 +128,7 @@ Layer::Layer(const Layer& other) :
 }
 
 Layer& Layer::operator=(const Layer& other) {
-  
+
   // Shallow copies
   m_comm = other.m_comm;
   m_neuron_dims = other.m_neuron_dims;
@@ -426,28 +426,28 @@ const AbsDistMat& Layer::get_error_signals(int parent_index) const {
   }
   return *m_error_signals[parent_index];
 }
-Mat& Layer::get_local_prev_activations(int parent_index) {
+AbsMat& Layer::get_local_prev_activations(int parent_index) {
   return get_prev_activations(parent_index).Matrix();
 }
-Mat& Layer::get_local_activations(int child_index) {
+AbsMat& Layer::get_local_activations(int child_index) {
   return get_activations(child_index).Matrix();
 }
-Mat& Layer::get_local_prev_error_signals(int child_index) {
+AbsMat& Layer::get_local_prev_error_signals(int child_index) {
   return get_prev_error_signals(child_index).Matrix();
 }
-Mat& Layer::get_local_error_signals(int parent_index) {
+AbsMat& Layer::get_local_error_signals(int parent_index) {
   return get_error_signals(parent_index).Matrix();
 }
-const Mat& Layer::get_local_prev_activations(int parent_index) const {
+const AbsMat& Layer::get_local_prev_activations(int parent_index) const {
   return get_prev_activations(parent_index).LockedMatrix();
 }
-const Mat& Layer::get_local_activations(int child_index) const {
+const AbsMat& Layer::get_local_activations(int child_index) const {
   return get_activations(child_index).LockedMatrix();
 }
-const Mat& Layer::get_local_prev_error_signals(int child_index) const {
+const AbsMat& Layer::get_local_prev_error_signals(int child_index) const {
   return get_prev_error_signals(child_index).LockedMatrix();
 }
-const Mat& Layer::get_local_error_signals(int parent_index) const {
+const AbsMat& Layer::get_local_error_signals(int parent_index) const {
   return get_error_signals(parent_index).LockedMatrix();
 }
 
@@ -518,12 +518,12 @@ void Layer::setup_dims() {
                                        m_prev_neuron_dims.end(),
                                        1,
                                        std::multiplies<int>());
-  
+
   // Set neuron tensor dimensions equal to previous neuron tensor
   m_num_neurons = m_num_prev_neurons;
   m_num_neuron_dims = m_num_prev_neuron_dims;
   m_neuron_dims = m_prev_neuron_dims;
-  
+
 }
 
 template <>
@@ -621,7 +621,7 @@ void Layer::setup_gpu() {
       std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
       "Layer: GPUs are currently only supported for data parallel layers");
   }
-  
+
   // Split mini-batch amongst GPUs
   const int num_gpus = m_cudnn->get_num_gpus();
   const int num_processes = m_comm->get_procs_per_model();
@@ -739,7 +739,7 @@ void Layer::replace_weights(Layer* other_layer) {
   if (other_layer == nullptr) {
     throw lbann_exception("Layer::replace_weights: Attempted to add null pointer as a replacement layer.");
   }
-  
+
   const std::vector<weights *> other_layer_weights = other_layer->get_weights();
   for (size_t i = 0; i < m_weights.size(); ++i) {
     m_weights[i]->set_values(other_layer_weights[i]->get_values());
@@ -794,7 +794,7 @@ void Layer::deallocate_matrices() {
 
 bool Layer::saveToCheckpoint(int fd, const char *filename, size_t *bytes) const {
   //writeDist(fd, filename, *m_weights, bytes);
-  
+
   // Need to catch return value from function
   // m_optimizer->saveToCheckpoint(fd, filename, bytes);
   return true;
@@ -811,7 +811,7 @@ bool Layer::loadFromCheckpoint(int fd, const char *filename, size_t *bytes) {
 
 bool Layer::save_to_checkpoint_shared(persist& p, bool val_end) const {
   //for (weights *w : m_weights) {
-  //  w->saveToCheckpointShared(p);  
+  //  w->saveToCheckpointShared(p);
   //}
   return true;
 }
@@ -1121,7 +1121,7 @@ void Layer::get_gpu_fp_output(cudnn::matrix& output_d,
                            mini_batch_size_per_gpu,
                            output_d.get_leading_dim());
 
-  }  
+  }
 
 }
 
