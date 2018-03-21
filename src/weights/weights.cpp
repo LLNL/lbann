@@ -465,7 +465,7 @@ bool weights::save_to_checkpoint_shared(lbann::persist& p)
   return true;
 }
 
-void weights::write_proto(lbann_data::Weights* proto) const {
+void weights::write_proto(lbann_data::WeightsData* proto) const {
 
   // Set proto properties
   proto->Clear();

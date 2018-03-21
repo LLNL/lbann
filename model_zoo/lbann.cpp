@@ -190,17 +190,15 @@ int main(int argc, char *argv[]) {
     std::map<execution_mode, generic_data_reader *> data_readers;
     init_data_readers(comm, pb, data_readers);
 
-    // Construct optimizer
-    optimizer *default_optimizer = init_default_optimizer(comm, cudnn, pb);
-
     // User feedback
     print_parameters(comm, pb);
 
     // Initalize model
-    // @todo: not all callbacks code is in place
-    model *model = init_model(comm, default_optimizer, pb);
-    add_layers(model, data_readers, cudnn, pb);
-    init_callbacks(comm, model, data_readers, pb);
+    auto&& model = proto::construct_model(comm,
+                                          cudnn,
+                                          data_readers,
+                                          pb.optimizer(),
+                                          pb.model());
     model->setup();
 
     //under development; experimental
@@ -218,12 +216,6 @@ int main(int argc, char *argv[]) {
 
     if (comm->am_world_master()) {
       std::cout << std::endl;
-      if (default_optimizer != nullptr) {
-        std::cout << "Default optimizer: " << default_optimizer->get_description();
-      } else {
-        std::cout << "No optimizer";
-      }
-      std::cout << std::endl << std::endl;
       std::cout << "Callbacks:" << std::endl;
       for (lbann_callback *cb : model->get_callbacks()) {
         std::cout << cb->name() << std::endl;

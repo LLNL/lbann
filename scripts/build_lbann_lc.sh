@@ -59,6 +59,7 @@ WITH_CUDA=
 WITH_TOPO_AWARE=ON
 INSTRUMENT=
 WITH_ALUMINUM=OFF
+RECONFIGURE=0
 # In case that autoconf fails during on-demand buid on surface, try the newer
 # version of autoconf installed under '/p/lscratche/brainusr/autoconf/bin'
 # by putting it at the beginning of the PATH or use the preinstalled library
@@ -101,6 +102,7 @@ Options:
   ${C}--tbinf${N}                 Build with Tensorboard interface.
   ${C}--vtune${N}                 Build with VTune profiling libraries.
   ${C}--nvprof${N}                Build with region annotations for NVPROF.
+  ${C}--reconfigure${N}           Reconfigure build. Used when build parameters are changed (e.g current build is release and --debug is desired). Clean build overrides
   ${C}--clean-build${N}           Clean build directory before building.
   ${C}--make-processes${N} <val>  Number of parallel processes for make.
   ${C}--doc${N}                   Generate documentation.
@@ -231,6 +233,9 @@ while :; do
             ;;
         --instrument)
             INSTRUMENT="-finstrument-functions -ldl"
+            ;;
+        --reconfigure)
+            RECONFIGURE=1
             ;;
         -?*)
             # Unknown option
@@ -625,6 +630,16 @@ if [ ${CLEAN_BUILD} -ne 0 ]; then
     eval ${CLEAN_COMMAND}
 fi
 
+if [ -f ${BUILD_DIR}/lbann/build/Makefile ] && [ ${RECONFIGURE} != 1 ]; then
+    echo "Building previously configured LBANN"
+    cd ${BUILD_DIR}/lbann/build/
+    make -j${MAKE_NUM_PROCESSES} all
+    make install -j${MAKE_NUM_PROCESSES} all
+    exit $?
+fi
+
+
+
 # ATM: goes after Elemental_DIR
 #-D OpenCV_DIR=${OpenCV_DIR} \
 
@@ -671,6 +686,7 @@ if [ $? -ne 0 ]; then
     echo "--------------------"
     exit 1
 fi
+
 # Build LBANN with make
 # Note: Ensure Elemental to be built before LBANN. Dependency violation appears to occur only when using cuda_add_library.
 BUILD_COMMAND="make -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}"

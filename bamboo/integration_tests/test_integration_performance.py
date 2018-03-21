@@ -4,6 +4,14 @@ import common_code
 
 def error_if(f, f_symbol, data_field, actual_values, expected_values, model_name, errors, all_values):
   d = actual_values[data_field]
+  if f_symbol == '<':
+    # Every time a value is smaller, update archive_value
+    archive_value = float('inf')
+  elif f_symbol == '>':
+    # Every time a value is greater, update archive_value
+    archive_value = float('-inf')
+  else:
+    raise Exception('Invalid Function Symbol %s' % f_symbol)
   for model_id in sorted(d.keys()):
     for epoch_id in sorted(d[model_id].keys()):
       actual_value = d[model_id][epoch_id]
@@ -18,18 +26,37 @@ def error_if(f, f_symbol, data_field, actual_values, expected_values, model_name
         errors.append('%f %s %f %s Model %s Epoch %s %s' % (actual_value, f_symbol, expected_value, model_name, model_id, epoch_id, data_field))
       all_values.append('%f %s Model %s Epoch %s %s' % (actual_value, model_name, model_id, epoch_id, data_field))
 
+      if f(actual_value, archive_value):
+        archive_value = actual_value
+  return archive_value
+
 def run_tests(actual_performance, model_name, dir_name, should_log, compiler_name, cluster):
   expected_performance = common_code.csv_to_dict('%s/bamboo/integration_tests/expected_values/expected_performance_%s_%s.csv' % (dir_name, compiler_name, cluster))
   errors = []
   all_values = []
   greater_than = lambda x,y: x > y
   less_than = lambda x,y: x < y
-  error_if(greater_than, '>', 'training_run_time', actual_performance, expected_performance, model_name, errors, all_values)
-  error_if(greater_than, '>', 'training_mean', actual_performance, expected_performance, model_name, errors, all_values)
-  error_if(greater_than, '>', 'training_max', actual_performance, expected_performance, model_name, errors, all_values)
-  error_if(greater_than, '>', 'training_min', actual_performance, expected_performance, model_name, errors, all_values)
-  error_if(greater_than, '>', 'training_stdev', actual_performance, expected_performance, model_name, errors, all_values)
-  error_if(less_than, '<', 'test_accuracy', actual_performance, expected_performance, model_name, errors, all_values)
+  max_run_time = error_if(greater_than, '>', 'training_run_time', actual_performance, expected_performance, model_name, errors, all_values)
+  max_mean = error_if(greater_than, '>', 'training_mean', actual_performance, expected_performance, model_name, errors, all_values)
+  max_max = error_if(greater_than, '>', 'training_max', actual_performance, expected_performance, model_name, errors, all_values)
+  max_min = error_if(greater_than, '>', 'training_min', actual_performance, expected_performance, model_name, errors, all_values)
+  max_stdev = error_if(greater_than, '>', 'training_stdev', actual_performance, expected_performance, model_name, errors, all_values)
+  min_accuracy = error_if(less_than, '<', 'test_accuracy', actual_performance, expected_performance, model_name, errors, all_values)
+
+  if os.environ['LOGNAME'] == 'lbannusr':
+    key = 'bamboo_planKey'
+    if key in os.environ:
+      plan = os.environ[key]
+      if plan in ['LBANN-NIGHTD', 'LBANN-WD', 'LBANN-FOR']:
+        archive_file = '/usr/workspace/wsb/lbannusr/archives/%s/%s/%s/performance_%s.txt' % (plan, cluster, compiler_name, model_name)
+        with open(archive_file, 'a') as archive:
+          archive.write('%s, %f, %f, %f, %f, %f, %f\n' % (os.environ['bamboo_buildNumber'], max_run_time, max_mean, max_max, max_min, max_stdev, min_accuracy))
+      else:
+        print('The plan %s does not have archiving activated' % plan)
+    else:
+      print('%s is not in os.environ' % key)
+  else:
+    print('os.environ["LOGNAME"]=%s' % os.environ['LOGNAME'])
 
   print('Errors for: %s (%d)' % (model_name, len(errors)))
   for error in errors:
