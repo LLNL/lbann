@@ -35,6 +35,7 @@ EvalType r2_metric::evaluate_compute(const AbsDistMat& prediction,
   // Get matrix dimensions
   const int local_height = prediction.LocalHeight();
   const int local_width = prediction.LocalWidth();
+  const int width = prediction.Width();
   
   // Get local matrices
   const Mat& prediction_local = prediction.LockedMatrix();
@@ -49,7 +50,7 @@ EvalType r2_metric::evaluate_compute(const AbsDistMat& prediction,
   // and sum of squares ss_tot as sum(square(ground_truth - mean(ground_truth)))
   EvalType ss_res = 0;
   EvalType ss_tot = 0;
-  #pragma omp parallel for reduction(+:ss_res) collapse(2)
+  #pragma omp parallel for reduction(+:ss_res,ss_tot) collapse(2)
   for(El::Int col = 0; col < local_width; ++col) {
     for(El::Int row = 0; row < local_height; ++row) {
       const EvalType true_val = ground_truth_local(row, col);
@@ -66,7 +67,8 @@ EvalType r2_metric::evaluate_compute(const AbsDistMat& prediction,
   //Keras and TF add epsilon (1e-07) to denominator to avoid inf score
   //We might actually need to do this here and other places too
   EvalType ss_tot_eps = res_tot[1] + 0.0000001;
-  return (1-(res_tot[0]/ss_tot_eps)); 
+  //Multiply by width because base class divide by mini-batch size
+  return ((1-(res_tot[0]/ss_tot_eps))*width); 
 }
 
 }  // namespace lbann

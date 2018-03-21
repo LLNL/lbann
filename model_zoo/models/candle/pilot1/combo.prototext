@@ -25,6 +25,9 @@ model {
   metric { 
     mean_squared_error {}
   }
+  metric {
+    r2{}
+  }
 
   ###################################################
   # Callbacks
