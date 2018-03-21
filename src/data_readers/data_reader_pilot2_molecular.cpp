@@ -120,7 +120,7 @@ void pilot2_molecular_reader::load() {
 
   // when using data store, need to bcast some variable to all procs
   if (options::get()->get_bool("use_data_store")) {
-    std::vector<int> tmp(7);
+    std::vector<int> tmp(8);
     if (rank == get_compound_rank()) {
       //@todo: fix if we have floats!
       m_neighbors_data_size = m_neighbors.data_holder->size() / 8;
