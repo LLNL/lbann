@@ -59,6 +59,7 @@ WITH_CUDA=
 WITH_TOPO_AWARE=ON
 INSTRUMENT=
 WITH_ALUMINUM=OFF
+WITH_TBINF=OFF
 RECONFIGURE=0
 # In case that autoconf fails during on-demand buid on surface, try the newer
 # version of autoconf installed under '/p/lscratche/brainusr/autoconf/bin'
@@ -667,6 +668,7 @@ ${CMAKE_PATH}/cmake \
 -D LBANN_WITH_CUDA=${WITH_CUDA} \
 -D LBANN_WITH_NVPROF=${WITH_NVPROF} \
 -D LBANN_WITH_VTUNE=${WITH_VTUNE} \
+-D LBANN_WITH_TBINF=${WITH_TBINF} \ 
 -D LBANN_WITH_TOPO_AWARE=${WITH_TOPO_AWARE} \
 -D LBANN_SEQUENTIAL_INITIALIZATION=${SEQ_INIT} \
 -D LBANN_WITH_ALUMINUM=${WITH_ALUMINUM} \ 
