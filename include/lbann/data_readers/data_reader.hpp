@@ -761,13 +761,13 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   
   /// returns the data store, which may be a nullptr
-  generic_data_store * get_data_store() {
+  generic_data_store * get_data_store() const {
     return m_data_store;
   }
 
   /// sets up a data_store. @todo: must modify this method
   /// anytime you derive a class from generic_data_store
-  void setup_data_store(model *m, lbann_comm *comm);
+  virtual void setup_data_store(model *m, lbann_comm *comm);
 
   /** This call changes the functionality of fetch_data(); when set,
     * indices are added to m_my_minibatch_indices, but fetch_datum()

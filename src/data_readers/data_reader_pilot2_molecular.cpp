@@ -225,4 +225,14 @@ void pilot2_molecular_reader::fetch_molecule(Mat& X, int data_id, int idx,
   }
 }
 
+void pilot2_molecular_reader::setup_data_store(model *m, lbann_comm *comm) {
+  if (m_data_store != nullptr) {
+    delete m_data_store;
+  }
+  m_data_store = new data_store_pilot2_molecular(comm, this, m);
+  if (m_data_store != nullptr) {
+    m_data_store->setup();
+  }
+}
+
 }  // namespace lbann
