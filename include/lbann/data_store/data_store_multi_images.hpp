@@ -63,6 +63,8 @@ class data_store_multi_images : public data_store_imagenet {
   void read_files() override;
 
   void setup_extended_testing() override;
+
+  virtual std::vector<std::string> get_sample(size_t idx) const;
 };
 
 }  // namespace lbann
