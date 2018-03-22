@@ -75,10 +75,6 @@ class objective_function_term {
    */
   virtual void compute_weight_regularization() = 0;
 
-  virtual bool save_to_checkpoint_shared(lbann::persist& p);
-  virtual bool load_from_checkpoint_shared(lbann::persist& p);
-
-
   /** Get list of pointers to layers. */
   std::vector<Layer*> get_layer_pointers() const { return m_layers; }
   /** Set list of pointers to layers. */

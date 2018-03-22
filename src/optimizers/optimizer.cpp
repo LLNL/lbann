@@ -542,8 +542,6 @@ void optimizer::set_mat_state_on_device(AbsDistMat* state, std::vector<DataType*
 
 bool optimizer::save_to_checkpoint_shared(persist& p, std::string m_name) {
   //  m_learning_rate;
-  /** Running count of the time spent in step(). */
-  //  double m_step_time = 0.0;
   p.write_datatype(persist_type::train, "learning_rate", m_learning_rate);
   return true;
 }

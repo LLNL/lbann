@@ -212,7 +212,7 @@ void sgd::set_states_on_device() {
 
     char l_name[512];
     sprintf(l_name, "%s_optimizer_velocity_%lldx%lld", name_prefix.c_str(), m_velocity->Height(), m_velocity->Width());
-    p.write_distmat(persist_type::train, l_name, (DistMat *)m_velocity);
+    p.write_distmat(persist_type::train, l_name, m_velocity);
     
     return true;
   }
@@ -228,10 +228,17 @@ void sgd::set_states_on_device() {
 
     unpack_header(header);
     char l_name[512];
-    
     sprintf(l_name, "%s_optimizer_velocity_%lldx%lld.bin", name_prefix.c_str(), m_velocity->Height(), m_velocity->Width());
-    p.read_distmat(persist_type::train, l_name, (DistMat *)m_velocity);
     
+    // Ensure opt state is copied to other ranks. 
+    // Elemental write does not copy when this conditional passes and we get incorrect results.
+    if(m_velocity->ColStride() == 1 && m_velocity->RowStride() == 1){
+      CircMat temp = *m_velocity; 
+      p.read_distmat(persist_type::train, l_name, &temp);
+      El::Copy(temp,*m_velocity);
+    } else {
+      p.read_distmat(persist_type::train, l_name, m_velocity); 
+    }
     return true;
   }
 
@@ -254,8 +261,8 @@ void sgd::set_states_on_device() {
 
     char l_name[512];
     sprintf(l_name, "%s_optimizer_velocity_%lldx%lld", name_prefix.c_str(), m_velocity->LocalHeight(), m_velocity->LocalWidth());
-    p.read_rank_distmat(persist_type::train, l_name, (DistMat&)*m_velocity);
-
+    p.read_rank_distmat(persist_type::train, l_name, *m_velocity);
+    
     return true;
   }
 

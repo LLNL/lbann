@@ -64,7 +64,7 @@ struct layer_header {
 /** \brief Given an open file descriptor, file name, and a matrix, write the matrix
  *         to the file descriptor, return the number of bytes written */
 
-bool lbann::persist::write_rank_distmat(persist_type type, const char *name, const DistMat& M) {
+bool lbann::persist::write_rank_distmat(persist_type type, const char *name, const AbsDistMat& M) {
   // TODO: store in network order
   std::string filename = m_checkpoint_dir;
   if (type == persist_type::train) {
@@ -74,7 +74,13 @@ bool lbann::persist::write_rank_distmat(persist_type type, const char *name, con
   } else {
     throw lbann_exception("persist: invalid persist_type");
   }
-  // open the file for writing
+  // skip all of this if matrix is not held on rank
+  const El::Int localHeight = M.LocalHeight();
+  const El::Int localWidth = M.LocalWidth();
+  // If this is the case we will try to grab the matrix from model rank 0 on reload
+  if(localHeight * localWidth == 0) { return true; }
+     
+
   int fd = openwrite(filename.c_str());
 
   // build our header
@@ -94,8 +100,6 @@ bool lbann::persist::write_rank_distmat(persist_type type, const char *name, con
   m_bytes += write_rc;
 
   // now write the data for our part of the distributed matrix
-  const El::Int localHeight = M.LocalHeight();
-  const El::Int localWidth = M.LocalWidth();
   const El::Int lDim = M.LDim();
   if(localHeight == lDim) {
     // the local dimension in memory matches the local height,
@@ -126,7 +130,7 @@ bool lbann::persist::write_rank_distmat(persist_type type, const char *name, con
 
 /** \brief Given an open file descriptor, file name, and a matrix, read the matrix
  *         from the file descriptor, return the number of bytes read */
-bool lbann::persist::read_rank_distmat(persist_type type, const char *name, DistMat& M) {
+bool lbann::persist::read_rank_distmat(persist_type type, const char *name, AbsDistMat& M) {
   // read in the header
   std::string filename = m_checkpoint_dir;
   if (type == persist_type::train) {
@@ -137,6 +141,9 @@ bool lbann::persist::read_rank_distmat(persist_type type, const char *name, Dist
     throw lbann_exception("persist: invalid persist_type");
   }
   int fd = openread(filename.c_str());
+  // file does not exist. we will try to grab matrix from rank 0
+   if( fd == -1 ) {return false;}
+ 
   struct layer_header header;
   ssize_t read_rc = read(fd, &header, sizeof(header));
   if (read_rc != sizeof(header)) {
@@ -148,10 +155,7 @@ bool lbann::persist::read_rank_distmat(persist_type type, const char *name, Dist
   // resize our global matrix
   El::Int height = header.height;
   El::Int width  = header.width;
-  El::Int ldim = header.ldim;
-  if(m_rank == 0){
-    M.Resize(height, width, ldim);
-  }
+  M.Resize(height, width);
   // TODO: check that header values match up
   const El::Int localheight = header.localheight;
   const El::Int localwidth = header.localwidth;
@@ -387,7 +391,7 @@ void lbann::persist::close_restart() {
 
 }
 
-bool lbann::persist::write_distmat(persist_type type, const char *name, DistMat *M) {
+bool lbann::persist::write_distmat(persist_type type, const char *name, AbsDistMat *M) {
   // define full path to file to store matrix
   std::string filename = m_checkpoint_dir;
   if (type == persist_type::train) {
@@ -407,7 +411,7 @@ bool lbann::persist::write_distmat(persist_type type, const char *name, DistMat 
   return true;
 }
 
-bool lbann::persist::read_distmat(persist_type type, const char *name, DistMat *M) {
+bool lbann::persist::read_distmat(persist_type type, const char *name, AbsDistMat *M) {
   // define full path to file to store matrix
   std::string filename = m_checkpoint_dir;
   if (type == persist_type::train) {
@@ -424,7 +428,6 @@ bool lbann::persist::read_distmat(persist_type type, const char *name, DistMat *
     throw lbann_exception(std::string("Failed to read distmat: ") + filename);
     return false;
   }
-
   El::Read(*M, filename, El::BINARY, true);
   //Read_MPI(M, filename, BINARY, 1);
 

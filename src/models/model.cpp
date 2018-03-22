@@ -1161,9 +1161,6 @@ bool model::save_to_checkpoint_shared(persist& p, bool val_end) {
       p.write_uint32(persist_type::train, "max_mini_batch_size",      (uint32_t) m_max_mini_batch_size);
       p.write_uint32(persist_type::train, "current_mini_batch_size",      (uint32_t) m_current_mini_batch_size);
       p.write_uint32(persist_type::train, "current_phase",      (uint32_t) m_current_phase);
-  
-      //uint32_t layers = m_layers.size();
-      //p.write_uint32(persist_type::model, "layers", (uint32_t) layers);
     }
     
     for (weights *w : m_weights) {
@@ -1213,7 +1210,6 @@ bool model::load_from_checkpoint_shared(persist& p) {
     p.read_uint32(persist_type::train, "current_phase",      &header.current_phase);
     load_rng_from_checkpoint_shared(p);
   }
-  
 
   // TODO: this assumes homogeneous processors
   // broadcast state from rank 0
@@ -1229,13 +1225,13 @@ bool model::load_from_checkpoint_shared(persist& p) {
   m_max_mini_batch_size = (int)           header.max_mini_batch_size;
   m_current_mini_batch_size = (int)       header.current_mini_batch_size;
   m_current_phase      =                  header.current_phase;
-  //for (const auto& m : m_metrics) {
-  //  m->load_from_checkpoint_shared(p);
-  //}
+  
   for (weights *w : m_weights) {
     w->load_from_checkpoint_shared(p);
     w->set_states_on_device(); // only if needed
   }
+ 
+
   // read in each layer
   for (size_t l = 0; l < m_layers.size(); l++) {
     if (! m_layers[l]->load_from_checkpoint_shared(p)) {
@@ -1263,7 +1259,6 @@ bool model::save_to_checkpoint_distributed(persist& p, bool val_end){
     p.write_uint32(persist_type::train, "max_mini_batch_size",      (uint32_t) m_max_mini_batch_size);
     p.write_uint32(persist_type::train, "current_mini_batch_size",      (uint32_t) m_current_mini_batch_size);
     p.write_uint32(persist_type::train, "current_phase",      (uint32_t) m_current_phase);
-    
     for (weights *w : m_weights) {
       w->save_to_checkpoint_distributed(p);
     }
@@ -1274,7 +1269,7 @@ bool model::save_to_checkpoint_distributed(persist& p, bool val_end){
       }   
     }
   }
-  else{
+  else {
     p.write_uint64(persist_type::validate, "current_validataion_step",       (uint64_t) m_current_validation_step);
     save_rng_to_checkpoint_shared(p);
     
@@ -1307,7 +1302,7 @@ bool model::load_from_checkpoint_distributed(persist& p){
   for (weights *w : m_weights) {
     w->load_from_checkpoint_distributed(p);
   }
-  
+
   for (size_t l = 0; l < m_layers.size(); l++) {
     if (! m_layers[l]->load_from_checkpoint_distributed(p)) {
       return false;

@@ -406,11 +406,11 @@ bool lbann::generic_data_reader::load_from_checkpoint_shared(persist& p, const c
   if (header.unused_data_size > 0ull) {
     MPI_Bcast(&m_unused_indices[0], header.unused_data_size, MPI_INT, 0, MPI_COMM_WORLD);
   }
+  m_current_pos += p.get_rank();
   return true;
 }
 
 bool generic_data_reader::save_to_checkpoint_distributed(persist& p, const char *name) {
-  // rank 0 writes the training state file
   pack_scalars(p,name);
   return true;
 }
