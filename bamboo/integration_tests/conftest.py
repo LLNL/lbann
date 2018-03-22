@@ -18,7 +18,7 @@ def pytest_addoption(parser):
     parser.addoption('--dirname', action='store', default=default_dirname,
                      help='--dirname=<path_to_dir> to specify the top-level directory. Default directory of build_lbann_lc executable')
     parser.addoption('--exes', action='store', default=default_exes,
-                     help='--exe=<path_to_lbann> to specify Lbann path. Default build_lbann_lc executable')
+                     help='--exes={compiler_name: path}')
     parser.addoption('--log', action='store', default=0,
                      help='--log=1 to keep trimmed accuracy files. Default (--log=0) removes files')
     parser.addoption('--weekly', action='store_true', default=False,
@@ -35,10 +35,6 @@ def dirname(request):
 @pytest.fixture
 def exes(request):
     return request.config.getoption('--exes')
-
-@pytest.fixture
-def log(request):
-    return request.config.getoption('--log')
 
 @pytest.fixture
 def weekly(request):
