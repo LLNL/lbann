@@ -5,17 +5,20 @@ import csv, os, pprint, re, time
 
 # Set up the command ##########################################################
 def get_command(cluster, dir_name, model_folder, model_name, executable,
-                output_file_name, compiler_name):
+                output_file_name, compiler_name, weekly=False):
     if model_name in ['alexnet', 'conv_autoencoder_imagenet']:
+        data_reader_percent = 0.01
+        if weekly:
+            data_reader_percent = 0.10
         command = tools.get_command(
             cluster=cluster, executable=executable, num_nodes=16,
             partition='pbatch', time_limit=600, num_processes=32,
             dir_name=dir_name,
-            data_filedir_train='/p/gscratchr/brainusr/datasets/ILSVRC2012/original/train/',
-            data_filename_train='/p/gscratchr/brainusr/datasets/ILSVRC2012/labels/train.txt',
-            data_filedir_test='/p/lscratche/brainusr/datasets/ILSVRC2012/original/val/',
-            data_filename_test='/p/lscratche/brainusr/datasets/ILSVRC2012/original/labels/val.txt',
-            data_reader_name='imagenet', data_reader_percent=0.10,
+            data_filedir_train_ray='/p/gscratchr/brainusr/datasets/ILSVRC2012/original/train/',
+            data_filename_train_ray='/p/gscratchr/brainusr/datasets/ILSVRC2012/labels/train.txt',
+            data_filedir_test_ray='/p/lscratche/brainusr/datasets/ILSVRC2012/original/val/',
+            data_filename_test_ray='/p/lscratche/brainusr/datasets/ILSVRC2012/original/labels/val.txt',
+            data_reader_name='imagenet', data_reader_percent=data_reader_percent,
             model_folder=model_folder, model_name=model_name, num_epochs=20,
             optimizer_name='adagrad', output_file_name=output_file_name)
     elif model_name in ['conv_autoencoder_mnist', 'lenet_mnist']:
@@ -138,12 +141,12 @@ def extract_data(output_file_name, data_fields, should_log):
 
 # Skeleton ####################################################################
 
-def skeleton(cluster, dir_name, executable, model_folder, model_name, data_fields, should_log, compiler_name=None):
+def skeleton(cluster, dir_name, executable, model_folder, model_name, data_fields, should_log, compiler_name=None, weekly=False):
     if compiler_name == None:
         output_file_name = '%s/bamboo/integration_tests/output/%s_output.txt' % (dir_name, model_name)
     else:
         output_file_name = '%s/bamboo/integration_tests/output/%s_%s_output.txt' %(dir_name, model_name, compiler_name)
-    command = get_command(cluster, dir_name, model_folder, model_name, executable, output_file_name, compiler_name)
+    command = get_command(cluster, dir_name, model_folder, model_name, executable, output_file_name, compiler_name, weekly=weekly)
     run_lbann(command, model_name, output_file_name, should_log)
     return extract_data(output_file_name, data_fields, should_log)
 
