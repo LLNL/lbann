@@ -762,7 +762,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   
   /// returns the data store
-  generic_data_store * get_data_store() {
+  generic_data_store * get_data_store() const {
     if (m_data_store == nullptr) {
       std::stringstream err;
       err << __FILE__  << " :: " << __LINE__ << " :: "
@@ -771,9 +771,8 @@ class generic_data_reader : public lbann_image_preprocessor {
     return m_data_store;
   }
 
-  /// sets up a data_store. @todo: must modify this method
-  /// anytime you derive a class from generic_data_store
-  void setup_data_store(model *m, lbann_comm *comm);
+  /// sets up a data_store.
+  virtual void setup_data_store(model *m);
 
   /** This call changes the functionality of fetch_data(); when set,
     * indices are added to m_my_minibatch_indices, but fetch_datum()

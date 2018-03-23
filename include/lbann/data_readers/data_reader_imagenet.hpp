@@ -53,6 +53,9 @@ class imagenet_reader : public image_data_reader {
   virtual ::Mat create_datum_view(::Mat& X, const int mb_idx) const;
   bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
 
+  /// sets up a data_store.
+  void setup_data_store(model *m) override;
+
  protected:
   /// preprocessor duplicated for each omp thread
   std::vector<std::unique_ptr<cv_process> > m_pps;

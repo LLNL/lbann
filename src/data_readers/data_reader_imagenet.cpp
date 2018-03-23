@@ -154,4 +154,14 @@ bool imagenet_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
   return true;
 }
 
+void imagenet_reader::setup_data_store(model *m) {
+  if (m_data_store != nullptr) {
+    delete m_data_store;
+  }
+  m_data_store = new data_store_imagenet(this, m);
+  if (m_data_store != nullptr) {
+    m_data_store->setup();
+  }
+}
+
 }  // namespace lbann
