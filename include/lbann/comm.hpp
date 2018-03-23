@@ -596,8 +596,8 @@ class lbann_comm {
     bytes_sent += sizeof(T) * send_count;
     bytes_received += sizeof(T) * recv_count;
     El::mpi::SendRecv(snd, send_count, get_world_rank(send_model, send_rank),
-                  rcv, recv_count, get_world_rank(recv_model, recv_rank),
-                  get_world_comm());
+                      rcv, recv_count, get_world_rank(recv_model, recv_rank),
+                      get_world_comm());
   }
   template <typename T>
   void sendrecv(const T *snd, int send_count, int send_model,
