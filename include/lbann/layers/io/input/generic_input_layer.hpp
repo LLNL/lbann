@@ -172,11 +172,13 @@ class generic_input_layer : public io_layer {
     // Determine model mini-batch size and effective mini-batch size
     // Note: If inter-model communication is activated, the effective
     // mini-batch is equal to the global mini-batch size.
+    /// @todo This functionality should probably be moved elsewhere
     mini_batch_size = get_current_mini_batch_size();
     int effective_mini_batch_size = mini_batch_size;
     for (auto&& cb : this->m_model->get_callbacks()) {
       if (dynamic_cast<lbann_callback_imcomm*>(cb) != nullptr) {
         effective_mini_batch_size = get_current_global_mini_batch_size();
+        break;
       }
     }
 
