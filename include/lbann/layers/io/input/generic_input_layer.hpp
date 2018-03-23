@@ -33,6 +33,7 @@
 #include "lbann/io/data_buffers/partitioned_io_buffer.hpp"
 #include "lbann/io/data_buffers/distributed_io_buffer.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/callbacks/callback_imcomm.hpp"
 
 namespace lbann {
 class generic_input_layer : public io_layer {
@@ -168,15 +169,20 @@ class generic_input_layer : public io_layer {
    * averaged across models. */
   void fp_setup_data(int mini_batch_size) override {
 
-    // Use the predetermined size of the mini-batch to set the current
-    // batch size for the neural network
+    // Determine model mini-batch size and effective mini-batch size
+    // Note: If inter-model communication is activated, the effective
+    // mini-batch is equal to the global mini-batch size.
     mini_batch_size = get_current_mini_batch_size();
-    this->m_model->set_current_mini_batch_size(mini_batch_size);
+    int effective_mini_batch_size = mini_batch_size;
+    for (auto&& cb : this->m_model->get_callbacks()) {
+      if (dynamic_cast<lbann_callback_imcomm*>(cb) != nullptr) {
+        effective_mini_batch_size = get_current_global_mini_batch_size();
+      }
+    }
 
-    // Use the precomputed size of the global mini-batch to set the
-    // current effective batch size across all models
-    int total_mini_batch_size = get_current_global_mini_batch_size();
-    this->m_model->set_effective_mini_batch_size(total_mini_batch_size);
+    // Set mini-batch size in model
+    this->m_model->set_current_mini_batch_size(mini_batch_size);
+    this->m_model->set_effective_mini_batch_size(effective_mini_batch_size);
 
     // Initialize matrices
     io_layer::fp_setup_data(mini_batch_size);

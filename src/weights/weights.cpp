@@ -279,6 +279,7 @@ const AbsDistMat& weights::get_values() {
   // Copy weights matrix from GPU if needed
   if (m_cudnn != nullptr) {
     m_cudnn->copy_from_gpu(0, m_values->Matrix(), m_values_d[0]);
+    m_cudnn->synchronize();
   }
   #endif // LBANN_HAS_CUDNN
 
@@ -301,7 +302,8 @@ void weights::set_values(const AbsDistMat& values) {
   #ifdef LBANN_HAS_CUDNN
   // Copy weights matrix to GPU if needed
   if (m_cudnn != nullptr) {
-    m_cudnn->broadcast_to_gpus(m_values_d, m_values->Matrix());
+    m_cudnn->broadcast_to_gpus(m_values_d, m_values->LockedMatrix());
+    m_cudnn->synchronize();
   }
   #endif // LBANN_HAS_CUDNN
 

@@ -96,12 +96,16 @@ model::model(const model& other) :
   }
   std::unordered_map<Layer *,Layer *> layer_map;
   for (auto& l : m_layers) {
-    l = layer_map[l] = l->copy();
-    l->set_model(this);
+    auto&& l_copy = l->copy();
+    layer_map[l] = l_copy;
+    l_copy->set_model(this);
+    l = l_copy;
   }
   std::unordered_map<weights *,weights *> weights_map;
   for (auto& w : m_weights) {
-    w = weights_map[w] = w->copy();
+    auto&& w_copy = w->copy();
+    weights_map[w] = w_copy;
+    w = w_copy;
   }
   remap_pointers(layer_map, weights_map);
 
@@ -664,6 +668,7 @@ void model::reset_epoch_statistics(execution_mode mode) {
 }
 
 bool model::evaluate_mini_batch(execution_mode mode) {
+  reset_mode_and_model(mode);
   do_batch_begin_cbs(mode);
   forward_prop(mode);
   m_objective_function->evaluate(mode, get_current_mini_batch_size());
@@ -686,6 +691,7 @@ bool model::evaluate_mini_batch(execution_mode mode) {
 }
 
 bool model::train_mini_batch() {
+  reset_mode_and_model(execution_mode::training);
   do_batch_begin_cbs(execution_mode::training);
 
   // Forward prop step
