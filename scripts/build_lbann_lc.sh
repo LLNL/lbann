@@ -29,14 +29,11 @@ else
     export VTUNE_DIR=/usr/local/tools/vtune
 fi
 if [ "${ARCH}" == "x86_64" ]; then
-    export CUDNN_DIR=/usr/gapps/brain/installs/cudnn/v5
     if [ "${CLUSTER}" == "quartz" ]; then
         IPPROOT=/p/lscratchh/brainusr/ippicv_lnx
     else
         IPPROOT=/p/lscratchf/brainusr/ippicv_lnx
     fi
-elif [ "${ARCH}" == "ppc64le" ]; then
-    export CUDNN_DIR=/usr/gapps/brain/cuda/targets/ppc64le-linux
 fi
 
 ELEMENTAL_MATH_LIBS=
@@ -546,6 +543,7 @@ if [ "${CLUSTER}" == "surface" ] || [ "${CLUSTER}" == "ray" ]; then
         
         export CUDA_TOOLKIT_ROOT_DIR=/opt/cudatoolkit-${CUDATOOLKIT_VERSION}
     fi
+	export CUDNN_DIR=/usr/gapps/brain/cudnn/cudnn-7.1.1/cuda-${CUDATOOLKIT_VERSION}_${ARCH}	
 else
     HAS_GPU=0
     WITH_CUDA=${WITH_CUDA:-OFF}
