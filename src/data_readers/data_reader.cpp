@@ -29,13 +29,21 @@
 #include "lbann/data_readers/data_reader_imagenet.hpp"
 #include "lbann/data_readers/data_reader_multi_images.hpp"
 #include "lbann/data_readers/data_reader_merge_samples.hpp"
+#include "lbann/data_readers/data_reader_merge_features.hpp"
 #include "lbann/data_readers/data_reader_pilot2_molecular.hpp"
+#include "lbann/data_readers/data_reader_triplet.hpp"
+#include "lbann/data_readers/data_reader_csv.hpp"
 
 #include "lbann/data_store/data_store_imagenet.hpp"
 #include "lbann/data_store/data_store_multi_images.hpp"
+#include "lbann/data_store/data_store_triplet.hpp"
 #include "lbann/data_store/data_store_merge_samples.hpp"
+#include "lbann/data_store/data_store_merge_features.hpp"
 #include "lbann/data_store/data_store_pilot2_molecular.hpp"
+#include "lbann/data_store/data_store_csv.hpp"
+
 #include <omp.h>
+
 namespace lbann {
 
 void generic_data_reader::shuffle_indices() {
@@ -332,6 +340,7 @@ int generic_data_reader::get_next_position() const {
 }
 
 void generic_data_reader::select_subset_of_data() {
+  m_num_global_indices = m_shuffled_indices.size();
   shuffle_indices();
 
   size_t count = get_absolute_sample_count();
@@ -500,31 +509,44 @@ void generic_data_reader::setup_data_store(model *m, lbann_comm *comm) {
 
   //note: ordering is important here; since data_store_multi_images is 
   //      descended from data_store_imagenet, it must be first
-  if (dynamic_cast<data_reader_multi_images*>(this) != nullptr) {
+  if (dynamic_cast<data_reader_triplet*>(this) != nullptr) {
+    the_reader = dynamic_cast<data_reader_triplet*>(this);
+    m_data_store = new data_store_triplet(this, m);
+  }
+  else if (dynamic_cast<data_reader_multi_images*>(this) != nullptr) {
     the_reader = dynamic_cast<data_reader_multi_images*>(this);
-    m_data_store = new data_store_multi_images(comm, this, m);
+    m_data_store = new data_store_multi_images(this, m);
   }
   else if (dynamic_cast<pilot2_molecular_reader*>(this) != nullptr) {
     the_reader = dynamic_cast<pilot2_molecular_reader*>(this);
-    m_data_store = new data_store_pilot2_molecular(comm, this, m);
+    m_data_store = new data_store_pilot2_molecular(this, m);
   }
   else if (dynamic_cast<imagenet_reader*>(this) != nullptr) {
     the_reader = dynamic_cast<imagenet_reader*>(this);
-    m_data_store = new data_store_imagenet(comm, this, m);
+    m_data_store = new data_store_imagenet(this, m);
+  }
+  else if (dynamic_cast<data_reader_merge_features*>(this) != nullptr) {
+    the_reader = dynamic_cast<data_reader_merge_features*>(this);
+    m_data_store = new data_store_merge_features(this, m);
   }
   /*
   else if (dynamic_cast<data_reader_merge_samples*>(this) != nullptr) {
     the_reader = dynamic_cast<data_reader_merge_samples*>(this);
-    m_data_store = new data_store_merge_samples(comm, this, m);
+    m_data_store = new data_store_merge_samples(this, m);
   }
   */
+  else if (dynamic_cast<csv_reader*>(this) != nullptr) {
+    the_reader = dynamic_cast<csv_reader*>(this);
+    m_data_store = new data_store_csv(this, m);
+  }
 
   //note: this is not an error, since data readers for a single model
   //      may be of different types (e.g, pilot2 has merge_samples and
   //      pilot2 readers), and it's possible that we don't want to use
   //      data store for one of these (possibly because the code
   //      has not been written. @todo revisit in future: should this
-  //      be considered an error condition with thrown exception?
+  //      be considered an error condition with thrown exception
+  //      once all code is in place?
   if (the_reader == nullptr) {
     if (m_master) {
       std::cerr << "WARNING: " << __FILE__ << " " << __LINE__

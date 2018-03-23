@@ -85,7 +85,8 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_use_percent(1.0),
     m_master(false),
     m_save_minibatch_indices(false),
-    m_compound_rank(0)
+    m_compound_rank(0),
+    m_num_global_indices(0)
   {}
   generic_data_reader(const generic_data_reader&) = default;
   generic_data_reader& operator=(const generic_data_reader&) = default;
@@ -760,8 +761,13 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_world_master_mini_batch_adjustment = (int) header.world_master_mini_batch_adjustment;
   }
   
-  /// returns the data store, which may be a nullptr
+  /// returns the data store
   generic_data_store * get_data_store() {
+    if (m_data_store == nullptr) {
+      std::stringstream err;
+      err << __FILE__  << " :: " << __LINE__ << " :: "
+          << " m_data_store is nullptr";
+    }
     return m_data_store;
   }
 
@@ -812,6 +818,13 @@ class generic_data_reader : public lbann_image_preprocessor {
    */
   double get_validation_percent() const;
 
+  /**
+   * Returns the number of global indices. For train and validation,
+   * this is the sum of their numbers
+   */
+  size_t get_num_global_indices() {
+    return m_num_global_indices;
+  }
  protected:
 
    int m_rank;
@@ -930,6 +943,9 @@ class generic_data_reader : public lbann_image_preprocessor {
 
    /// added to support data store functionality
    int m_compound_rank;
+
+   /// added to support data store functionality
+   size_t m_num_global_indices;
 };
 
 }  // namespace lbann

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2016, Lawrence Livermore National Semy_num_readersity, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_merge_samples.hpp"
+#include "lbann/utils/options.hpp"
 
 namespace lbann {
 
@@ -49,25 +50,55 @@ data_reader_merge_samples& data_reader_merge_samples::operator=(
 
 data_reader_merge_samples::~data_reader_merge_samples() {}
 
-void data_reader_merge_samples::load() {
-  // Load each subsidiary data reader.
-  for (auto&& reader : m_data_readers) {
-    reader->set_comm(m_comm);
-    reader->load();
+
+void data_reader_merge_samples::load_using_data_store() {
+  // load the subsidiary data readers
+  int global_num_readers = m_data_readers.size();
+  int np = m_comm->get_procs_per_model();
+  for (int j=0; j<global_num_readers; j++) {
+    int owner = j % np;
+    m_data_readers[j]->set_compound_rank(owner);
+    m_data_readers[j]->set_comm(m_comm);
+    //only the processor whose rank == owner loads the NpyArray
+    m_data_readers[j]->load(); 
   }
-  // Compute the total number of samples and do some sanity checks.
-  int num_samples = 0;
-  int num_labels = m_data_readers[0]->get_num_labels();
-  int data_size = m_data_readers[0]->get_linearized_data_size();
-  int label_size = m_data_readers[0]->get_linearized_label_size();
+
+  // do some sanity checks.
+  int num_labels, data_size, label_size;
+  num_labels = m_data_readers[0]->get_num_labels();
+  data_size = m_data_readers[0]->get_linearized_data_size();
+  label_size = m_data_readers[0]->get_linearized_label_size();
   const std::vector<int> data_dims = m_data_readers[0]->get_data_dims();
+  /*
+  MPI_Comm comm = m_comm->get_model_comm().comm;
+  std::vector<int> data_dims_2 = data_dims;
+  MPI_Bcast(&num_labels, 1, MPI_INT, 0, comm);
+  MPI_Bcast(&data_size, 1, MPI_INT, 0, comm);
+  MPI_Bcast(&label_size, 1, MPI_INT, 0, comm);
+  MPI_Bcast(&data_dims_2[0], data_dims_2.size(), MPI_INT, 0, comm);
+  */
+  sanity_check_for_consistency(num_labels, data_size, label_size, data_dims);
+
+  size_t global_num_samples = compute_num_samples_psum();
+  setup_indices(global_num_samples);
+}
+
+size_t data_reader_merge_samples::compute_num_samples_psum() {
+  size_t global_num_samples = 0;
   // Prepend a 0 to make things easier.
   m_num_samples_psum.push_back(0);
   for (auto&& reader : m_data_readers) {
     m_num_samples_psum.push_back(reader->get_num_data());
-    num_samples += reader->get_num_data();
-    // TODO: It would be good to relax this.
-    // Large data sets may not have every label in every file.
+    global_num_samples += reader->get_num_data();
+  }
+  std::partial_sum(m_num_samples_psum.begin(), m_num_samples_psum.end(),
+                   m_num_samples_psum.begin());
+  return global_num_samples;
+}
+
+void data_reader_merge_samples::sanity_check_for_consistency(
+  int num_labels, int data_size, int label_size, const std::vector<int> &data_dims) {
+  for (auto&& reader : m_data_readers) {
     if (num_labels != reader->get_num_labels()) {
       throw lbann_exception(
         "data_reader_merge_samples: data readers do not have the same number of labels");
@@ -85,14 +116,37 @@ void data_reader_merge_samples::load() {
         "data_reader_merge_samples: data readers do not have the same data dims");
     }
   }
-  std::partial_sum(m_num_samples_psum.begin(), m_num_samples_psum.end(),
-                   m_num_samples_psum.begin());
+}
+
+void data_reader_merge_samples::setup_indices(int num_samples) {
   // Set up our indices.
   // Note each subsidiary data reader presumably shuffled its indices as well.
   // That's not strictly necessary, but does not impact anything.
   m_shuffled_indices.resize(num_samples);
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
   select_subset_of_data();
+}
+
+void data_reader_merge_samples::load() {
+  if (options::get()->has_bool("use_data_store") && options::get()->get_bool("use_data_store")) {
+    data_reader_merge_samples::load_using_data_store();
+    return;
+  }
+
+  // Load each subsidiary data reader.
+  for (auto&& reader : m_data_readers) {
+    reader->set_comm(m_comm);
+    reader->load();
+  }
+  // Compute the total number of samples and do some sanity checks.
+  int num_labels = m_data_readers[0]->get_num_labels();
+  int data_size = m_data_readers[0]->get_linearized_data_size();
+  int label_size = m_data_readers[0]->get_linearized_label_size();
+  const std::vector<int> data_dims = m_data_readers[0]->get_data_dims();
+  sanity_check_for_consistency(num_labels, data_size, label_size, data_dims);
+
+  size_t global_num_samples = compute_num_samples_psum();
+  setup_indices(global_num_samples);
 }
 
 bool data_reader_merge_samples::fetch_datum(Mat& X, int data_id, int mb_idx,

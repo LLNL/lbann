@@ -33,6 +33,7 @@
 namespace lbann {
 
 class pilot2_molecular_reader;
+class data_store_merge_samples;
 
 /**
  * todo
@@ -42,7 +43,7 @@ class data_store_pilot2_molecular : public generic_data_store {
  public:
 
   //! ctor
-  data_store_pilot2_molecular(lbann_comm *comm, generic_data_reader *reader, model *m);
+  data_store_pilot2_molecular(generic_data_reader *reader, model *m);
 
   //! copy ctor
   data_store_pilot2_molecular(const data_store_pilot2_molecular&) = default;
@@ -59,7 +60,24 @@ class data_store_pilot2_molecular : public generic_data_store {
 
   void setup() override;
 
+  /// needed to support data_reader_merge_samples (compound reader)
+  void clear_minibatch_indices() {
+    m_my_minibatch_indices_v.clear();
+  }
+
+  /// needed to support data_reader_merge_samples (compound reader)
+  void add_minibatch_index(int idx) {
+    m_my_minibatch_indices_v.push_back(idx);
+  }
+
+  /// needed to support data_reader_merge_samples (compound reader)
+  void set_no_shuffle() {
+    m_shuffle = false;
+  }
+
  protected :
+
+   friend data_store_merge_samples;
 
    pilot2_molecular_reader *m_pilot2_reader;
 
@@ -87,8 +105,8 @@ class data_store_pilot2_molecular : public generic_data_store {
   /// fills in m_my_ids
   void build_nabor_map();
 
-  /// fills in m_my_minibatch_indices via one-sided MPI calls
-  void exchange_data() override; 
+  /// fills in m_my_molecules via one-sided MPI calls
+  void exchange_data() override;
 
   /// contains the data of all molecules required by this processor
   /// to execute one epoch
@@ -100,16 +118,15 @@ class data_store_pilot2_molecular : public generic_data_store {
   /// the buffers that will be passed to data_readers::fetch_datum
   std::vector<std::vector<double> > m_data_buffer;
 
-  /// this contains a concatenation of the indices in m_minibatch_indices
-  /// (see: generic_data_reader.hpp)
-  std::vector<size_t> m_my_minibatch_indices;
-
   /// the process that "owns" the data, i.e, this is the only process
   /// whose m_reader will load data from disk
   int m_owner_rank;
 
   /// true if this processor "owns" the data
   bool m_owner;
+
+  /// support for data_store_merge_samples
+  bool m_shuffle;
 
   MPI_Win m_win;
 };

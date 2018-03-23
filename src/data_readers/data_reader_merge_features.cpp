@@ -61,6 +61,7 @@ data_reader_merge_features::~data_reader_merge_features() {
 void data_reader_merge_features::load() {
   // Load each data reader separately.
   for (auto&& reader : m_data_readers) {
+    reader->set_comm(m_comm);
     reader->load();
     m_data_size += reader->get_linearized_data_size();
   }

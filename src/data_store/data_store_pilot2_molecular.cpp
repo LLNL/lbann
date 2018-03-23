@@ -35,8 +35,10 @@
 namespace lbann {
 
 data_store_pilot2_molecular::data_store_pilot2_molecular(
-  lbann_comm *comm, generic_data_reader *reader, model *m) :
-  generic_data_store(comm, reader, m) { }
+  generic_data_reader *reader, model *m) :
+  generic_data_store(reader, m) {
+  set_name("data_store_pilot2_molecular");
+}
 
 data_store_pilot2_molecular::~data_store_pilot2_molecular() {
   MPI_Win_free( &m_win );
@@ -70,16 +72,7 @@ void data_store_pilot2_molecular::setup() {
     m_pilot2_reader = reader;
 
     // get list of indices used in calls to generic_data_reader::fetch_data
-    size_t s2 = 0;
-    for (auto t1 : (*m_minibatch_indices)) {
-      s2 += t1.size();
-    }
-    m_my_minibatch_indices.reserve(s2);
-    for (auto t1 : (*m_minibatch_indices)) {
-      for (auto t2 : t1) {
-        m_my_minibatch_indices.push_back(t2);
-      }
-    }
+    get_minibatch_index_vector();
 
     // allocate storage for the data that will be passed to the data reader's
     // fetch_datum method. 
@@ -101,14 +94,7 @@ void data_store_pilot2_molecular::setup() {
     if (m_owner) std::cerr << "calling build_nabor_map()\n";
     build_nabor_map();
 
-#if 0
-    if (m_extended_testing) {
-      if (m_owner) std::cerr << "calling setup_extended_testing\n";
-      setup_extended_testing();
-    }
-#endif
-
-    MPI_Win_create(m_data.data(), m_data.size(), sizeof(double), MPI_INFO_NULL, m_comm->get_model_comm().comm, &m_win);
+    MPI_Win_create(m_data.data(), m_data.size()*sizeof(double), sizeof(double), MPI_INFO_NULL, m_comm->get_model_comm().comm, &m_win);
 
     if (m_owner) std::cerr << "calling exchange_data()\n";
     exchange_data();
@@ -187,7 +173,7 @@ void data_store_pilot2_molecular::exchange_data() {
 
   //get set of molecules required for the next epoch
   std::unordered_set<int> required_molecules;
-  for (auto t : m_my_minibatch_indices) {
+  for (auto t : m_my_minibatch_indices_v) {
     int data_id = (*m_shuffled_indices)[t];
     required_molecules.insert(data_id);
     if (m_neighbors.find(data_id) == m_neighbors.end()) {

@@ -40,8 +40,8 @@ class data_store_imagenet : public data_store_image {
  public:
 
   //! ctor
-  data_store_imagenet(lbann_comm *comm, generic_data_reader *reader, model *m) :
-    data_store_image(comm, reader, m) {}
+  data_store_imagenet(generic_data_reader *reader, model *m) :
+    data_store_image(reader, m) {}
 
   //! copy ctor
   data_store_imagenet(const data_store_imagenet&) = default;
@@ -67,8 +67,6 @@ class data_store_imagenet : public data_store_image {
   void test_file_sizes();
 
   void read_files() override;
-
-  void setup_extended_testing() override;
 };
 
 }  // namespace lbann

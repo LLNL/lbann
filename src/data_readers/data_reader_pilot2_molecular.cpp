@@ -44,7 +44,8 @@ void pilot2_molecular_reader::load() {
   // note: when support for merge_samples is in place, the condition
   //       "get_role() == "test" will go away. For now we need it, else
   //       merge_samples will break
-  if (options::get()->get_bool("use_data_store") && get_role() == "test") {
+  options *opts = options::get();
+  if (opts->has_bool("use_data_store") && opts->get_bool("use_data_store") && get_role() == "test") {
     if (rank != get_compound_rank()) {
       is_mine = false;
     }
