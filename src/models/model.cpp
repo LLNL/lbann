@@ -666,7 +666,8 @@ void model::reset_epoch_statistics(execution_mode mode) {
 bool model::evaluate_mini_batch(execution_mode mode) {
   do_batch_begin_cbs(mode);
   forward_prop(mode);
-  m_objective_function->evaluate(mode, get_current_mini_batch_size());
+  m_objective_function->start_evaluation(mode, get_current_mini_batch_size());
+  m_objective_function->finish_evaluation(mode, get_current_mini_batch_size());
   for (const auto& m : m_metrics) {
     m->evaluate(mode, get_current_mini_batch_size());
   }
@@ -691,8 +692,9 @@ bool model::train_mini_batch() {
   // Forward prop step
   clear_gradients();
   forward_prop(execution_mode::training);
-  m_objective_function->evaluate(execution_mode::training,
-                                 get_current_mini_batch_size());
+  // Result is not needed until the end of the mini-batch.
+  m_objective_function->start_evaluation(execution_mode::training,
+                                         get_current_mini_batch_size());
   for (const auto& m : m_metrics) {
     m->evaluate(execution_mode::training,
                 get_current_mini_batch_size());
@@ -703,6 +705,10 @@ bool model::train_mini_batch() {
   m_objective_function->differentiate();
   backward_prop();
   m_objective_function->compute_weight_regularization();
+
+  // Finish evaluation.
+  m_objective_function->finish_evaluation(execution_mode::training,
+                                          get_current_mini_batch_size());
 
   // Update step
   update_weights();

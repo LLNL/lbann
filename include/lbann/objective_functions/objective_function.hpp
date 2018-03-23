@@ -59,14 +59,19 @@ class objective_function {
   /** Setup objective function. */
   void setup(model& m);
 
-  /** Evaluate the objective function.
+  /** Start evaluating the objective function.
    *  This function takes the model's current mini-batch size. If
    *  multiple models are being trained, the current mini-batch size
-   *  may be different from the effective mini-batch size. The result
-   *  is stored in history.
+   *  may be different from the effective mini-batch size.
+   *  The result is not guaranteed to be available until finish_evaluation is
+   *  called.
    */
-  EvalType evaluate(execution_mode mode,
-                    int mini_batch_size);
+  void start_evaluation(execution_mode mode, int mini_batch_size);
+
+  /** Complete evaluation of the objective function.
+   *  The result is stored in history.
+   */
+  EvalType finish_evaluation(execution_mode mode, int mini_batch_size);
 
   /** Compute the objective function gradient.
    *  The gradient is with respect to the objective function inputs

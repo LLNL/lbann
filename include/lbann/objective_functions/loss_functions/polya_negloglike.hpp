@@ -65,8 +65,11 @@ class polya_negloglike : public loss_function {
    *  the predictions and ground truth matrices should have
    *  non-negative entries.
    */
-  EvalType evaluate_compute(const AbsDistMat& prediction,
-                            const AbsDistMat& ground_truth) override;
+  void start_evaluate_compute(const AbsDistMat& prediction,
+                              const AbsDistMat& ground_truth) override {}
+
+  EvalType finish_evaluate_compute(const AbsDistMat& prediction,
+                                   const AbsDistMat& ground_truth) override;
 
   /** Compute the gradient of the Polya negative log-likelihood objective function.
    *  Given the parameters \f$(\alpha_1,\dots,\alpha_K)\f$ of the predicted Polya distribution, the ground 

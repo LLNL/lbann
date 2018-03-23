@@ -28,8 +28,8 @@
 
 namespace lbann {
 
-EvalType poisson_negloglike::evaluate_compute(const AbsDistMat& predictions,
-                                              const AbsDistMat& ground_truth) {
+EvalType poisson_negloglike::finish_evaluate_compute(
+  const AbsDistMat& predictions, const AbsDistMat& ground_truth) {
 
   // Local matrices
   const Mat& predictions_local = predictions.LockedMatrix();
