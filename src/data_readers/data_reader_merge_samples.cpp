@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_merge_samples.hpp"
+#include "lbann/data_store/data_store_merge_samples.hpp"
 #include "lbann/utils/options.hpp"
 
 namespace lbann {
@@ -189,6 +190,19 @@ bool data_reader_merge_samples::fetch_response(Mat& Y, int data_id, int mb_idx,
   throw lbann_exception(
     "data_reader_merge_samples: do not have data ID " +
     std::to_string(data_id));
+}
+
+void data_reader_merge_samples::setup_data_store(model *m) {
+  if (m_data_store != nullptr) {
+    delete m_data_store;
+  }
+  m_data_store = nullptr;
+/*
+  m_data_store = new data_store_merge_samples(this, m);
+  if (m_data_store != nullptr) {
+    m_data_store->setup();
+  }
+*/
 }
 
 }  // namespace lbann

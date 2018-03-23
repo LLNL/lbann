@@ -352,4 +352,14 @@ void csv_reader::setup_ifstreams() {
   }
 }
 
+void csv_reader::setup_data_store(model *m) {
+  if (m_data_store != nullptr) {
+    delete m_data_store;
+  }
+  m_data_store = new data_store_csv(this, m);
+  if (m_data_store != nullptr) {
+    m_data_store->setup();
+  }
+}
+
 }  // namespace lbann

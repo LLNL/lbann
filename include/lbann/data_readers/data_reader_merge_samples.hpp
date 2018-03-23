@@ -71,6 +71,9 @@ class data_reader_merge_samples : public generic_compound_data_reader {
     return m_num_samples_psum;
   }
 
+  /// sets up a data_store.
+  void setup_data_store(model *m) override;
+
  protected:
   bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
   bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;

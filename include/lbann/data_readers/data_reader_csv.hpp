@@ -129,6 +129,9 @@ class csv_reader : public generic_data_reader {
    */
   std::vector<DataType> fetch_line_label_response(int data_id);
 
+  /// sets up a data_store.
+  void setup_data_store(model *m) override;
+
  protected:
   /**
    * Fetch the data associated with data_id.
