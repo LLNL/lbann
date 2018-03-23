@@ -42,6 +42,9 @@
 
 #cmakedefine LBANN_SYS_SENDFILE_OK
 
+/* Defined if LBANN has Distconv */
+#cmakedefine LBANN_HAS_DISTCONV
+
 // Define the LBANN datatype
 namespace lbann
 {

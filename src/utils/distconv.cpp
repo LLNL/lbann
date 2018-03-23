@@ -24,22 +24,44 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYER_LEARNING_HPP_INCLUDED
-#define LBANN_LAYER_LEARNING_HPP_INCLUDED
-
-#include "lbann/layers/layer.hpp"
 #include "lbann/utils/distconv.hpp"
+#include "lbann/utils/cudnn.hpp"
+#include <memory>
+
+#ifdef LBANN_HAS_DISTCONV
 
 namespace lbann {
+namespace dc {
 
-/** @todo Remove. Layers should inherit directly from the base layer
- *  class.
- */
-class learning_layer : public Layer {
- public:
-  learning_layer(lbann_comm *comm) : Layer(comm) {}
-};
+////////////////////////////////////////////////////////////
+// Global Distconv objects
+////////////////////////////////////////////////////////////
 
+namespace {
+
+/** Global instance of cuDNN handle. */
+std::unique_ptr<Backend> backend_instance;
+
+void initialize() {
+  auto &cudnn_h = lbann::cudnn::get_handle();
+  cudaStream_t s;
+  CHECK_CUDNN(cudnnGetStream(cudnn_h, &s));
+  backend_instance.reset(
+      new Backend(cudnn_h, s));
+}
+
+void destroy() {
+  backend_instance.reset();
+}
+
+} // namespace
+
+Backend &get_backend() {
+  if (!backend_instance) { initialize(); }
+  return *backend_instance;
+}
+
+} // namespace dc
 } // namespace lbann
 
-#endif // LBANN_LAYER_LEARNING_HPP_INCLUDED
+#endif // LBANN_HAS_DISTCONV

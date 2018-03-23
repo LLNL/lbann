@@ -735,6 +735,7 @@ message ParallelStrategy {
   int64 filter_groups = 5;
   // For fully-connected layers.
   int64 replications = 6;
+  int64 procs_per_replica = 7;
 }
 
 //========================================================================

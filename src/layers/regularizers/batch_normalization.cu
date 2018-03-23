@@ -292,9 +292,118 @@ __global__ void backprop2_kernel(
 }
 
 } // namespace
-  
+
+
+#ifdef LBANN_HAS_DISTCONV
+
+template <>
+void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute_distconv() {
+  dc::MPIPrintStreamDebug() << get_name() << ": " << __FUNCTION__ << "\n";
+  assert_always(distconv_enabled());
+
+  const bool is_training =
+      this->m_model->get_execution_mode() == execution_mode::training;
+
+  if (keep_original_input()) {
+    assert_always(this->m_model->get_current_mini_batch_size() ==
+                  get_prev_activations().Width());
+  }
+
+  assert0(dc::tensor::View(
+      m_scale_t, get_weights()[0]->get_values().LockedBuffer()));
+  assert0(dc::tensor::View(
+      m_bias_t, get_weights()[1]->get_values().LockedBuffer()));
+  assert0(dc::tensor::View(
+      m_running_mean_t, get_weights()[2]->get_values().Buffer()));
+  assert0(dc::tensor::View(
+      m_running_var_t, get_weights()[3]->get_values().Buffer()));
+
+  m_bn->forward(m_prev_activations_t,
+                m_mean_t,
+                m_var_t,
+                m_running_mean_t,
+                m_running_var_t,
+                m_scale_t,
+                m_bias_t,
+                m_activations_t,
+                is_training);
+
+  copy_out_activations();
+}
+
+template <>
+void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute_distconv() {
+  dc::MPIPrintStreamDebug() << get_name() << ": " << __FUNCTION__ << "\n";
+  assert_always(distconv_enabled());
+
+  // Check execution mode
+  const bool is_training = this->m_model->get_execution_mode() == execution_mode::training;
+
+  //assert_always(is_training && m_use_global_stats);
+  assert_always(is_training);
+
+  assert0(dc::tensor::View(
+      m_scale_t, get_weights()[0]->get_values().LockedBuffer()));
+
+  m_bn->backward_stage1(m_prev_activations_t,
+                        m_prev_error_signals_t,
+                        m_mean_t, m_var_t, m_scale_t,
+                        m_scale_gradient_t, m_bias_gradient_t,
+                        m_mean_gradient_t, m_var_gradient_t,
+                        false);
+
+  // Verbatim copy from bp_compute_gpu
+  // Accumulate gradients
+  if (is_training) {
+    if (m_use_global_stats) {
+      m_comm->allreduce(*m_mean_gradient,
+                        m_mean_gradient->RedundantComm(),
+                        El::mpi::SUM);
+      m_comm->allreduce(*m_var_gradient,
+                        m_var_gradient->RedundantComm(),
+                        El::mpi::SUM);
+    }
+  } else {
+    Zero(*m_mean_gradient);
+    Zero(*m_var_gradient);
+  }
+
+  const int effective_mini_batch_size = this->m_model->get_effective_mini_batch_size();
+
+  optimizer* scale_optimizer = m_weights[0]->get_optimizer();
+  if (scale_optimizer != nullptr) {
+    scale_optimizer->add_to_gradient_staging(
+        *m_scale_gradient,
+        DataType(1) / effective_mini_batch_size);
+  }
+  optimizer* bias_optimizer = m_weights[1]->get_optimizer();
+  if (bias_optimizer != nullptr) {
+    bias_optimizer->add_to_gradient_staging(
+        *m_bias_gradient,
+        DataType(1) / effective_mini_batch_size);
+  }
+
+  m_bn->backward_stage2(m_prev_activations_t,
+                        m_prev_error_signals_t,
+                        m_mean_t, m_var_t, m_scale_t,
+                        m_mean_gradient_t, m_var_gradient_t,
+                        m_error_signals_t);
+
+  copy_out_error_signals();
+}
+
+#endif
+
 template <>
 void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
+#ifdef LBANN_HAS_DISTCONV
+  if (distconv_enabled()) {
+    fp_compute_distconv();
+    if (!early_terminate_last_iteration()) {
+      return;
+    }
+  }
+#endif // LBANN_HAS_DISTCONV
   constexpr DataType one = 1;
   const bool is_training = this->m_model->get_execution_mode() == execution_mode::training;
 
@@ -401,11 +510,25 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_
         local_scale.LockedBuffer(), local_bias.LockedBuffer(),
         local_output.Buffer(), local_output.LDim());
   }
-  
+#ifdef LBANN_HAS_DISTCONV
+  dump_reference_activations();
+#endif // LBANN_HAS_DISTCONV
 }
 
 template <>
 void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
+#ifdef LBANN_HAS_DISTCONV
+  if (distconv_enabled()) {
+    bp_compute_distconv();
+    if (!early_terminate_last_iteration()) {
+      return;
+    }
+    assert0(dc::tensor::View(
+        m_error_signals_copyout,
+        get_error_signals().Buffer()));
+    m_error_signals_copyout.zero();
+  }
+#endif // LBANN_HAS_DISTCONV
   constexpr DataType one = 1;
   const bool is_training = this->m_model->get_execution_mode() == execution_mode::training;
 
@@ -526,7 +649,9 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_
         local_mean_gradient.LockedBuffer(), local_var_gradient.LockedBuffer(),
         local_gradient_wrt_input.Buffer(), local_gradient_wrt_input.LDim());
   }
-  
+#ifdef LBANN_HAS_DISTCONV
+  dump_reference_error_signals();
+#endif // LBANN_HAS_DISTCONV
 }
-  
+
 } // namespace lbann

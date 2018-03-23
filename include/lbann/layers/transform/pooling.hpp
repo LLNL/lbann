@@ -33,6 +33,8 @@
 #include "lbann/utils/cudnn.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/im2col.hpp"
+#include "lbann_config.hpp"
+#include "lbann/utils/distconv.hpp"
 
 namespace lbann {
 
@@ -233,6 +235,12 @@ protected:
     cudnnPoolingMode_t cudnn_pool_mode;
     switch(m_pool_mode) {
     case pool_mode::max:
+      // This does not seem to be necessary. It's not clear what the
+      // difference of the two algorithms is.
+      if (getenv("DISTCONV_DETERMINISTIC")) {
+        cudnn_pool_mode = CUDNN_POOLING_MAX_DETERMINISTIC;
+        break;
+      }
     #ifndef LBANN_DETERMINISTIC
       cudnn_pool_mode = CUDNN_POOLING_MAX; break;
     #else
@@ -262,7 +270,19 @@ protected:
 
   void fp_compute() override {
     if(this->using_gpus()) {
+#ifdef LBANN_HAS_DISTCONV
+      if (distconv_enabled()) {
+        fp_compute_distconv();
+        if (early_terminate_last_iteration()) {
+          fp_compute_cudnn();
+          dump_reference_activations();
+        }
+      } else {
+        fp_compute_cudnn();
+      }
+#else      
       fp_compute_cudnn();
+#endif      
     } else {
       fp_compute_im2col();
     }
@@ -270,7 +290,19 @@ protected:
 
   void bp_compute() override {
     if(this->using_gpus()) {
+#ifdef LBANN_HAS_DISTCONV
+      if (distconv_enabled()) {
+        bp_compute_distconv();
+        if (early_terminate_last_iteration()) {
+          bp_compute_cudnn();
+          dump_reference_error_signals();
+        }
+      } else {
+        bp_compute_cudnn();        
+      }
+#else
       bp_compute_cudnn();
+#endif      
     } else {
       bp_compute_im2col();
     }
@@ -502,6 +534,194 @@ private:
     }
 
   }
+  
+  
+  void fp_compute_distconv() {
+#ifndef LBANN_HAS_DISTCONV
+    throw lbann_exception("pooling_layer: DISTCONV not detected");
+#else
+    dc::MPIPrintStreamDebug() << get_name() << ": " << __FUNCTION__ << "\n";
+    assert_always(distconv_enabled());
+
+    m_pooling->forward(DataType(1.0), m_prev_activations_t,
+                       DataType(0.0), m_activations_t);
+
+    copy_out_activations();
+#endif
+  }
+
+  void bp_compute_distconv() {
+#ifndef LBANN_HAS_DISTCONV
+    throw lbann_exception("pooling_layer: DISTCONV not detected");
+#else
+    dc::MPIPrintStreamDebug() << get_name() << ": " << __FUNCTION__ << "\n";
+    assert_always(distconv_enabled());
+
+#ifdef DISTCONV_ZERO_OUT_ERROR_SIGNALS    
+    m_error_signals_t.zero();
+    m_pooling->backward(DataType(1.0), m_activations_t, m_prev_error_signals_t,
+                        m_prev_activations_t, DataType(1.0), m_error_signals_t);
+#else
+    m_pooling->backward(DataType(1.0), m_activations_t, m_prev_error_signals_t,
+                        m_prev_activations_t, DataType(0.0), m_error_signals_t);
+#endif
+
+    copy_out_error_signals();
+#endif    
+  }  
+  
+#ifdef LBANN_HAS_DISTCONV
+ public:
+
+  void setup_tensor_distribution_init(
+      std::map<const Layer*, std::array<dc::Dist, 4>> &dists,      
+      std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
+      std::set<dc::Dist*> &updated,
+      std::set<dc::Dist*> &fixed) override {
+    Layer::setup_tensor_distribution_init(
+        dists, invariants, updated, fixed);
+    if (distconv_enabled()) {
+      int stencil_h = (m_pool_dims[0] - 1) / 2;
+      int stencil_w = (m_pool_dims[1] - 1) / 2;
+      dc::Array4 overlap(0);
+      if (get_parallel_strategy().width_groups > 1) {
+        overlap[0] = stencil_w;
+      }
+      if (get_parallel_strategy().height_groups > 1) {
+        overlap[1] = stencil_h;
+      }
+      auto &prev_activations_dist = dists[this][0];
+      auto &activations_dist = dists[this][1];
+      auto &error_signals_dist = dists[this][2];            
+      auto &prev_error_signals_dist = dists[this][3];
+      prev_activations_dist.set_overlap(overlap);
+      updated.insert(&prev_activations_dist);
+      fixed.insert(&prev_activations_dist);
+      // cudnnPoolingBackward requires activations and
+      // prev_error_signals must have the same stride
+      invariants[&activations_dist].insert(
+          &prev_error_signals_dist);
+      invariants[&prev_error_signals_dist].insert(
+          &activations_dist);
+      // cudnnPoolingBackward requires prev_activations and
+      // error_signals must have the same stride
+      invariants[&error_signals_dist].insert(
+          &prev_activations_dist);
+      invariants[&prev_activations_dist].insert(
+          &error_signals_dist);
+    }
+  }
+  dc::Array4 get_strides() const override {
+    return dc::Array4({m_strides[1], m_strides[0], 1, 1});
+  }
+
+  dc::Array4 get_activations_tensor_local_shape() const override {
+    const int filter_dims[2] = {m_pool_dims[1], m_pool_dims[0]};
+    const int strides[2] = {m_strides[1], m_strides[0]};
+    dc::Array4 output_spatial_local_shape =
+        ::distconv::get_pooling_output_local_tensor_shape(
+            m_prev_activations_t,
+            filter_dims, strides, false);
+    return output_spatial_local_shape;
+  }
+  
+  void setup_tensors_fwd(const std::array<dc::Dist, 4> &dists) override {
+    Layer::setup_tensors_fwd(dists);
+    if (!distconv_enabled()) return;    
+    
+    dc::MPIPrintStreamDebug()
+        << "pooling: setup_tensors."
+        << " pads: " << m_pads[0] << "x" << m_pads[1]
+        << ", pool_dims: " << m_pool_dims[0] << "x" << m_pool_dims[1]
+        << ", m_strides: " << m_strides[0] << "x" << m_strides[1]
+        << "\n";
+
+    setup_prev_activations_tensor(dists);    
+    setup_activations_tensor(dists);
+    setup_activations_copyout_tensor(dists);    
+
+  }
+
+  void setup_tensors_bwd(const std::array<dc::Dist, 4> &dists) override {
+    Layer::setup_tensors_bwd(dists);
+    if (!distconv_enabled()) return;    
+
+    setup_prev_error_signals_tensor(dists);
+    setup_error_signals_tensor(dists);
+    setup_error_signals_copyout_tensor(dists);
+
+    // Init the dc::Pooling layer
+    m_pooling = new dc::Pooling(dc::get_backend());
+
+    std::string mode;
+    switch(m_pool_mode) {
+      case pool_mode::max:
+        mode = "MAX"; break;
+      case pool_mode::average:
+        mode = "AVERAGE"; break;
+      case pool_mode::average_no_pad:
+        mode = "AVERAGE_NO_PAD"; break;
+    default:
+      throw lbann_exception("pooling_layer: no DISTCONV implementation for pooling mode");
+    }
+    
+    dc::MPIPrintStreamDebug()
+        << "Pooling (" << get_name() << "): "
+        << "prev_activations_const_view: " << m_prev_activations_const_view
+        << ", prev_activations_t: " << m_prev_activations_t
+        << ", activations_copyout: " << m_activations_copyout
+        << ", activations_t: " << m_activations_t
+        << ", prev_error_signals_const_view: " << m_prev_error_signals_const_view
+        << ", prev_error_signals_t: " << m_prev_error_signals_t
+        << ", error_signals_copyout: " << m_error_signals_copyout
+        << ", error_signals_t: " << m_error_signals_t
+        << "\n";
+    m_pooling->setup(m_prev_activations_t,
+                     m_activations_t,
+                     m_error_signals_t,
+                     m_prev_error_signals_t,
+                     m_pool_dims[0], m_pool_dims[1],
+                     m_pads[0], m_pads[1],
+                     m_strides[0], m_strides[1],
+                     mode);
+
+  }
+
+ protected:
+  dc::Pooling *m_pooling;
+  
+  bool using_distconv() const override {
+    if (!(m_pads[0] == 0 && m_pads[1] == 0)) {
+      dc::MPIPrintStreamDebug() << "pooling: unsupported due to padding\n";
+      return false;
+    }
+    
+    if (!(m_pool_dims[0] % 2 != 0 && m_pool_dims[1] % 2 != 0)) {
+      dc::MPIPrintStreamDebug() << "pooling: unsupported due to window shape\n";
+      return false;
+    }
+    
+    int stencil_h = (m_pool_dims[0] - 1) / 2;
+    int stencil_w = (m_pool_dims[1] - 1) / 2;
+
+    if (!((m_strides[0] == 1 && m_strides[1] == 1) ||
+         (m_strides[0] == stencil_h + 1 &&
+          m_strides[1] == stencil_w + 1))) {
+      dc::MPIPrintStreamDebug() << "pooling: unsupported due to strides\n";
+      return false;
+    }
+    char *env = getenv("DISTCONV_DISABLE");
+    if (env) {
+      std::string s(env);
+      if (s.find(get_name()) != std::string::npos) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+  
+#endif
 
 #ifdef LBANN_HAS_CUDNN
   /** Copy pooling cuDNN descriptor. */

@@ -38,6 +38,7 @@
 #include "lbann/utils/random.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/im2col.hpp"
+#include "lbann_config.hpp"
 
 namespace lbann {
 
@@ -473,6 +474,12 @@ protected:
                                                     workspace_size,
                                                     &convolution_cudnn_algorithm));
 
+#ifdef LBANN_HAS_DISTCONV
+      if (getenv("DISTCONV_DETERMINISTIC")) {
+        convolution_cudnn_algorithm = 
+            CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
+      }
+#endif
     // Apply convolution
     CHECK_CUDNN(cudnnConvolutionForward(cudnn::get_handle(),
                                         &one,
@@ -559,6 +566,13 @@ protected:
     cudnnConvolutionBwdDataAlgo_t transposed_convolution_cudnn_algorithm
       = CUDNN_CONVOLUTION_BWD_DATA_ALGO_1;
     #endif
+#ifdef LBANN_HAS_DISTCONV
+      if (getenv("DISTCONV_DETERMINISTIC")) {
+        // Use deterministic algorithm
+        transposed_convolution_cudnn_algorithm
+            = CUDNN_CONVOLUTION_BWD_DATA_ALGO_1;
+      }
+#endif
     // Perform transposed convolution
     CHECK_CUDNN(cudnnConvolutionBackwardData(cudnn::get_handle(),
                                              &one,
@@ -574,7 +588,7 @@ protected:
                                              output_desc,
                                              output.Buffer()));
 
-
+    
   #endif // LBANN_HAS_CUDNN
   }
 

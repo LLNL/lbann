@@ -70,6 +70,7 @@ WITH_ALUMINUM=
 ALUMINUM_WITH_MPI_CUDA=OFF
 ALUMINUM_WITH_NCCL=
 WITH_CONDUIT=OFF
+WITH_DISTCONV=OFF
 WITH_TBINF=OFF
 RECONFIGURE=0
 USE_NINJA=0
@@ -268,6 +269,9 @@ while :; do
         --with-conduit)
             WITH_CONDUIT=ON
             ;;
+		--with-distconv)
+			WITH_DISTCONV=ON
+			;;
         --instrument)
             INSTRUMENT="-finstrument-functions -ldl"
             ;;
@@ -658,7 +662,6 @@ fi
 ################################################################
 # Setup Ninja, if using
 ################################################################
-
 if [ ${USE_NINJA} -ne 0 ]; then
     if ! which ninja ; then
         if [ "${ARCH}" == "x86_64" ]; then
@@ -671,6 +674,11 @@ if [ ${USE_NINJA} -ne 0 ]; then
         USE_NINJA=0
     fi
 fi
+
+# Temporary Distconv stuff
+################################################################
+DISTCONV_DIR=$HOME/lbann/install/$CLUSTER/$COMPILER/$BUILD_TYPE/distconv
+
 ################################################################
 # Display parameters
 ################################################################
@@ -778,6 +786,7 @@ CONFIGURE_COMMAND=$(cat << EOF
 -D CMAKE_INSTALL_MESSAGE=${CMAKE_INSTALL_MESSAGE} \
 -D CMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
 -D LBANN_SB_BUILD_CEREAL=ON \
+-D CMAKE_CUDA_FLAGS_DEBUG="-G" \
 -D LBANN_SB_BUILD_CNPY=ON \
 -D LBANN_SB_BUILD_HYDROGEN=ON \
 -D LBANN_SB_FWD_HYDROGEN_Hydrogen_ENABLE_CUDA=${WITH_CUDA} \
@@ -810,6 +819,8 @@ CONFIGURE_COMMAND=$(cat << EOF
 -D LBANN_CONDUIT_DIR=${CONDUIT_DIR} \
 -D LBANN_BUILT_WITH_SPECTRUM=${WITH_SPECTRUM} \
 -D OPENBLAS_ARCH_COMMAND=${OPENBLAS_ARCH} \
+-D LBANN_WITH_DISTCONV=${WITH_DISTCONV} \
+-D LBANN_SB_FWD_LBANN_DISTCONV_DIR=${DISTCONV_DIR} \
 ${SUPERBUILD_DIR}
 EOF
 )

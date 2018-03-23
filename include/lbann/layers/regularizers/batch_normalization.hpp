@@ -27,8 +27,13 @@
 #ifndef LBANN_LAYER_REGULARIZER_BATCH_NORMALIZATION_HPP_INCLUDED
 #define LBANN_LAYER_REGULARIZER_BATCH_NORMALIZATION_HPP_INCLUDED
 
+#include "lbann_config.hpp"
 #include "lbann/layers/regularizers/regularizer.hpp"
 #include "lbann/models/model.hpp"
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/utils/cuda.hpp"
+#include "lbann/utils/distconv.hpp"
+#endif // LBANN_HAS_DISTCONV
 
 namespace lbann {
 
@@ -315,6 +320,103 @@ protected:
 
   void fp_compute() override;
   void bp_compute() override;
+
+#ifdef LBANN_HAS_DISTCONV
+ protected:
+  void fp_compute_distconv();
+  void bp_compute_distconv();
+
+  dc::BatchNormalization *m_bn;
+  dc::TensorDev m_mean_t;
+  dc::TensorDev m_var_t;
+  dc::TensorDev m_scale_t;
+  dc::TensorDev m_bias_t;
+  dc::TensorDev m_running_mean_t;
+  dc::TensorDev m_running_var_t;
+  dc::TensorDev m_mean_gradient_t;
+  dc::TensorDev m_var_gradient_t;
+  dc::TensorDev m_scale_gradient_t;
+  dc::TensorDev m_bias_gradient_t;
+
+  bool using_distconv() const override {
+    char *env = getenv("DISTCONV_DISABLE");
+    if (env) {
+      std::string s(env);
+      if (s.find(get_name()) != std::string::npos) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  void setup_tensors_fwd(const std::array<dc::Dist, 4> &dists) override {
+    Layer::setup_tensors_fwd(dists);
+    if (!distconv_enabled()) return;
+
+    setup_prev_activations_tensor(dists);
+    setup_activations_tensor(dists);
+    setup_activations_copyout_tensor(dists);
+
+    dc::MPIPrintStreamDebug()
+        << "BN prev_activations: " << m_prev_activations_t
+        << ", activations: " << m_activations_t << "\n";
+
+    const int num_channels = this->get_output_dims()[0];
+    dc::Array4 per_channel_stat_shape = {1, 1, num_channels, 1};
+    const auto shared_dist = dc::Dist();
+    const dc::LocaleMPI loc(m_comm->get_model_comm().comm, false);
+    // mean
+    m_mean_t = dc::TensorDev(per_channel_stat_shape, loc, shared_dist);
+    assert0(dc::tensor::View(m_mean_t, this->m_mean->Buffer()));
+    // var
+    m_var_t = dc::TensorDev(per_channel_stat_shape, loc, shared_dist);
+    assert0(dc::tensor::View(m_var_t, this->m_var->Buffer()));
+    // scale: view to weights[0]
+    m_scale_t = dc::TensorDev(per_channel_stat_shape, loc, shared_dist);
+    // bias: view to weights[1]
+    m_bias_t = dc::TensorDev(per_channel_stat_shape, loc, shared_dist);
+    // running_mean: view to weights[2]
+    m_running_mean_t = dc::TensorDev(per_channel_stat_shape, loc, shared_dist);
+    // running_var: view to weights[3]
+    m_running_var_t = dc::TensorDev(per_channel_stat_shape, loc, shared_dist);
+    // scale_gradient
+    m_scale_gradient_t = dc::TensorDev(per_channel_stat_shape, loc, shared_dist);
+    assert0(dc::tensor::View(
+        m_scale_gradient_t, this->m_scale_gradient->Buffer()));
+    // bias_gradient
+    m_bias_gradient_t = dc::TensorDev(per_channel_stat_shape, loc, shared_dist);
+    assert0(dc::tensor::View(
+        m_bias_gradient_t, this->m_bias_gradient->Buffer()));
+    // mean_gradient
+    m_mean_gradient_t = dc::TensorDev(per_channel_stat_shape, loc, shared_dist);
+    assert0(dc::tensor::View(
+        m_mean_gradient_t, this->m_mean_gradient->Buffer()));
+    // var_gradient
+    m_var_gradient_t = dc::TensorDev(per_channel_stat_shape, loc, shared_dist);
+    assert0(dc::tensor::View(
+        m_var_gradient_t, this->m_var_gradient->Buffer()));
+
+    // spatial decomposition requires global communication
+    // m_use_global_stats = true;
+  }
+
+  void setup_tensors_bwd(const std::array<dc::Dist, 4> &dists) override {
+    Layer::setup_tensors_bwd(dists);
+    if (!distconv_enabled()) return;
+
+    setup_prev_error_signals_tensor(dists);
+    setup_error_signals_tensor(dists);
+    setup_error_signals_copyout_tensor(dists);
+
+    m_bn = new dc::BatchNormalization(
+        dc::get_backend(), m_decay, m_epsilon,
+        m_use_global_stats);
+
+    dc::MPIPrintStreamDebug()
+        << "BN prev_error_signals: " << m_prev_error_signals_t
+        << ", error_signals: " << m_error_signals_t << "\n";
+  }
+#endif
 
 };
 
