@@ -47,6 +47,11 @@ class imagenet_reader : public image_data_reader {
     return "imagenet_reader";
   }
 
+  /** sets up a data_store. @todo: must modify this method
+   *  anytime you derive a class from generic_data_store
+   */
+  void setup_data_store(model *m, lbann_comm *comm) override;
+
  protected:
   void set_defaults() override;
   virtual bool replicate_processor(const cv_process& pp);

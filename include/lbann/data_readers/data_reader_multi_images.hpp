@@ -96,6 +96,11 @@ class data_reader_multi_images : public imagenet_reader {
     return m_num_img_srcs;
   }
 
+  /** sets up a data_store. @todo: must modify this method
+   *  anytime you derive a class from generic_data_store
+   */
+  void setup_data_store(model *m, lbann_comm *comm) override;
+
  protected:
   void set_defaults() override;
   virtual std::vector<::Mat> create_datum_views(::Mat& X, const int mb_idx) const;

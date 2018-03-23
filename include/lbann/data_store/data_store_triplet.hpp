@@ -25,10 +25,10 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __DATA_STORE_MULTI_IMAGES_HPP__
-#define __DATA_STORE_MULTI_IMAGES_HPP__
+#ifndef __DATA_STORE_TRIPLET_HPP__
+#define __DATA_STORE_TRIPLET_HPP__
 
-#include "lbann/data_store/data_store_imagenet.hpp"
+#include "lbann/data_store/data_store_multi_images.hpp"
 
 namespace lbann {
 
@@ -36,37 +36,31 @@ namespace lbann {
  * todo
  */
 
-class data_store_multi_images : public data_store_imagenet {
+class data_store_triplet : public data_store_multi_images {
  public:
 
   //! ctor
-  data_store_multi_images(lbann_comm *comm, generic_data_reader *reader, model *m) :
-    data_store_imagenet(comm, reader, m) {}
+  data_store_triplet(lbann_comm *comm, generic_data_reader *reader, model *m) :
+    data_store_multi_images(comm, reader, m) {}
 
   //! copy ctor
-  data_store_multi_images(const data_store_multi_images&) = default;
+  data_store_triplet(const data_store_triplet&) = default;
 
   //! operator=
-  data_store_multi_images& operator=(const data_store_multi_images&) = default;
+  data_store_triplet& operator=(const data_store_triplet&) = default;
 
-  data_store_multi_images * copy() const override { return new data_store_multi_images(*this); }
+  data_store_triplet * copy() const override { return new data_store_triplet(*this); }
 
   //! dtor
-  ~data_store_multi_images() override {};
+  ~data_store_triplet() override {};
 
   void setup() override;
 
  protected :
 
-  void get_file_sizes() override;
-
-  void read_files() override;
-
-  void setup_extended_testing() override;
-
-  virtual std::vector<std::string> get_sample(size_t idx) const;
+  std::vector<std::string> get_sample(size_t idx) const override;
 };
 
 }  // namespace lbann
 
-#endif  // __DATA_STORE_MULTI_IMAGES_HPP__
+#endif  // __DATA_STORE_TRIPLET_HPP__

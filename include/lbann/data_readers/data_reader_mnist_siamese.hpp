@@ -81,6 +81,11 @@ class data_reader_mnist_siamese : public data_reader_multi_images {
   /// Fetch this mini-batch's labels into Y by calling the new overloaded fetch_label()
   int fetch_labels(Mat& Y) override;
   
+  /** sets up a data_store. @todo: must modify this method
+   *  anytime you derive a class from generic_data_store
+   */
+  void setup_data_store(model *m, lbann_comm *comm) override;
+
  protected:
   /**
    * Set the default configuration such as the width, height, and number of

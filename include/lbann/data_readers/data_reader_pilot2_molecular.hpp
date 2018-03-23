@@ -132,6 +132,11 @@ class pilot2_molecular_reader : public generic_data_reader {
     return m_neighbors_data_size;
   }
 
+  /** sets up a data_store. @todo: must modify this method
+   *  anytime you derive a class from generic_data_store
+   */
+  void setup_data_store(model *m, lbann_comm *comm) override;
+
  protected:
   /// Fetch a molecule and its neighbors.
   bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
