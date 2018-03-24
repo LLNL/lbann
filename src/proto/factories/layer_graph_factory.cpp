@@ -212,9 +212,9 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
 
     const auto& device_allocation_str = proto_layer.device_allocation();
     El::Device device_allocation = El::Device::CPU;
-    if (layout_str.empty())  { device_allocation = El::Device::CPU; }
-    if (layout_str == "cpu") { device_allocation = El::Device::CPU; }
-    if (layout_str == "gpu") { device_allocation = El::Device::GPU; }
+    if (device_allocation_str.empty())  { device_allocation = El::Device::CPU; }
+    if (device_allocation_str == "cpu") { device_allocation = El::Device::CPU; }
+    if (device_allocation_str == "gpu") { device_allocation = El::Device::GPU; }
 
     // Construct layer
     Layer* l = nullptr;

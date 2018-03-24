@@ -292,7 +292,9 @@ std::string model::print_layer_description(const Layer* layer) const {
   std::stringstream os;
   //std::string description = layer->get_description();
   os << std::setw(12) << layer->get_name() << ":[" << std::setw(18)
-     << layer->get_type() <<  "] Set up a layer with input " << std::setw(7)
+     << layer->get_type()
+     << "(" << layer->get_device_allocation_string_short(layer->get_device_allocation()) << ")"
+     <<  "] Set up a layer with input " << std::setw(7)
      << layer->get_num_prev_neurons() << " and " << std::setw(7)
      << layer->get_num_neurons() << " neurons.";
   std::string s = layer->get_topo_description();

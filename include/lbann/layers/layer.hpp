@@ -163,6 +163,10 @@ class Layer {
   virtual El::Device get_device_allocation() const = 0;
   /** Get a human-readable description of the data_layout */
   std::string get_data_layout_string(data_layout d) const;
+  /** Get a human-readable description of the device allocation */
+  std::string get_device_allocation_string(El::Device dev) const;
+  /** Get a short human-readable description of the device allocation */
+  std::string get_device_allocation_string_short(El::Device dev) const;
 
   /** Get the dimensions of a previous activations tensor. */
   virtual std::vector<int> get_prev_neuron_dims(int parent_index = 0) const {

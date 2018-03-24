@@ -105,7 +105,8 @@ class fully_connected_layer : public learning_layer {
      " fully_connected; num_neurons: "
      + std::to_string(this->m_num_neurons)
      + " has_bias: " + std::to_string(this->m_bias_scaling_factor)
-     + " dataLayout: " + this->get_data_layout_string(get_data_layout());
+     + " dataLayout: " + this->get_data_layout_string(get_data_layout())
+     + " device alloc: " + this->get_device_allocation_string(get_device_allocation());
   }
 
   fully_connected_layer(const fully_connected_layer& other) :

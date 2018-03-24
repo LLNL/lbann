@@ -1240,6 +1240,32 @@ std::string Layer::get_data_layout_string(data_layout d) const {
   }
 }
 
+std::string Layer::get_device_allocation_string(El::Device dev) const {
+  switch(dev) {
+  case El::Device::CPU:
+    return "cpu";
+  case El::Device::GPU:
+    return "gpu";
+  default:
+    throw lbann_exception(
+      std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
+      "Layer: invalid device allocation");
+  }
+}
+
+std::string Layer::get_device_allocation_string_short(El::Device dev) const {
+  switch(dev) {
+  case El::Device::CPU:
+    return "C";
+  case El::Device::GPU:
+    return "G";
+  default:
+    throw lbann_exception(
+      std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
+      "Layer: invalid device allocation");
+  }
+}
+
 std::string Layer::get_layer_names(const std::vector<const Layer*>& list) {
   std::string layer_names = ((list.size()==0u || !list[0])? "" : list[0]->get_name());
 
