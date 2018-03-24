@@ -213,15 +213,13 @@ void weights::setup_gpu() {
         << "before initializing CPU weights matrix";
     throw lbann_exception(err.str());
   }
+
+  // Disable GPU if weights matrix is not STAR,STAR
+  /// @todo GPU support for other data layouts
   const El::DistData dist_data(*m_values);
   if (dist_data.colDist != El::STAR || dist_data.rowDist != El::STAR) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to setup weights as a matrix with "
-        << "col_dist=" << dist_data.colDist << ", "
-        << "row_dist=" << dist_data.rowDist << ", "
-        << "but weights matrix with GPU support must have STAR,STAR format";
-    throw lbann_exception(err.str());
+    m_cudnn = nullptr;
+    return;
   }
 
   // Copy weights matrix to GPU
