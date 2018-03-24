@@ -29,8 +29,8 @@
 
 namespace lbann {
 
-void im2col(const AbsMat& im,
-            AbsMat& col,
+void im2col(const CPUMat& im,
+            CPUMat& col,
             const int num_channels,
             const int im_num_dims,
             const int * im_dims,
@@ -93,7 +93,7 @@ void im2col(const AbsMat& im,
   if(std::equal(im_pads, im_pads + im_num_dims, zeros.begin())
      && std::equal(window_dims, window_dims + im_num_dims, ones.begin())
      && std::equal(window_strides, window_strides + im_num_dims, ones.begin())) {
-    im2col_1x1<El::Device::CPU>(im_buffer, col_buffer, num_channels, im_num_dims, im_dims);
+    im2col_1x1(im_buffer, col_buffer, num_channels, im_num_dims, im_dims);
     return;
   }
 
@@ -152,8 +152,8 @@ void im2col(const AbsMat& im,
 
 }
 
-void col2im(const AbsMat& col,
-            AbsMat& im,
+void col2im(const CPUMat& col,
+            CPUMat& im,
             const int num_channels,
             const int im_num_dims,
             const int * im_dims,
@@ -216,7 +216,7 @@ void col2im(const AbsMat& col,
   if(std::equal(im_pads, im_pads + im_num_dims, zeros.begin())
      && std::equal(window_dims, window_dims + im_num_dims, ones.begin())
      && std::equal(window_strides, window_strides + im_num_dims, ones.begin())) {
-    col2im_1x1<El::Device::CPU>(col_buffer, im_buffer, num_channels, im_num_dims, im_dims);
+    col2im_1x1(col_buffer, im_buffer, num_channels, im_num_dims, im_dims);
     return;
   }
 
@@ -236,8 +236,8 @@ void col2im(const AbsMat& col,
 
 }
 
-void col2im(const AbsMat& col,
-            AbsMat& im,
+void col2im(const CPUMat& col,
+            CPUMat& im,
             const int num_channels,
             const int im_num_dims,
             const int * im_dims,
@@ -269,7 +269,7 @@ void col2im(const AbsMat& col,
   if(std::equal(im_pads, im_pads + im_num_dims, zeros.begin())
      && std::equal(window_dims, window_dims + im_num_dims, ones.begin())
      && std::equal(window_strides, window_strides + im_num_dims, ones.begin())) {
-    col2im_1x1<El::Device::CPU>(col_buffer, im_buffer, num_channels, im_num_dims, im_dims);
+    col2im_1x1(col_buffer, im_buffer, num_channels, im_num_dims, im_dims);
     return;
   }
 
@@ -347,7 +347,6 @@ void col2im(const AbsMat& col,
 
 }
 
-template<El::Device Dev>
 void im2col_1x1(const DataType * input_buffer,
                 DataType * output_buffer,
                 const int num_channels,
@@ -357,8 +356,8 @@ void im2col_1x1(const DataType * input_buffer,
                                            input_dims + num_input_dims,
                                            1,
                                            std::multiplies<int>());
-  const DMat<Dev> input_matrix(spatial_size, num_channels, input_buffer, spatial_size);
-  DMat<Dev> output_matrix(num_channels, spatial_size, output_buffer, num_channels);
+  const CPUMat input_matrix(spatial_size, num_channels, input_buffer, spatial_size);
+  CPUMat output_matrix(num_channels, spatial_size, output_buffer, num_channels);
   El::Transpose(input_matrix, output_matrix);
 }
 
@@ -427,7 +426,6 @@ void im2col_2d(const DataType *__restrict__ input_buffer,
 
 }
 
-template<El::Device Dev>
 void col2im_1x1(const DataType * input_buffer,
                 DataType * output_buffer,
                 const int num_channels,
@@ -437,8 +435,8 @@ void col2im_1x1(const DataType * input_buffer,
                                            output_dims + num_output_dims,
                                            1,
                                            std::multiplies<int>());
-  const DMat<Dev> input_matrix(num_channels, spatial_size, input_buffer, num_channels);
-  DMat<Dev> output_matrix(spatial_size, num_channels, output_buffer, spatial_size);
+  const CPUMat input_matrix(num_channels, spatial_size, input_buffer, num_channels);
+  CPUMat output_matrix(spatial_size, num_channels, output_buffer, spatial_size);
   El::Transpose(input_matrix, output_matrix);
 }
 

@@ -414,7 +414,7 @@ cudnn_manager::~cudnn_manager() {
 void cudnn_manager::cudnn_manager::allocate_on_gpus(std::vector<DataType *>& gpu_data,
                                                     int height,
                                                     int width_per_gpu) {
-  
+
   // Check that list of pointers is valid
   if(!gpu_data.empty()) {
     if((int) gpu_data.size() != m_num_gpus) {
@@ -873,7 +873,7 @@ void cudnn_manager::set_maximum_work_space_size(int i) {
     // Search parameters for work space size
     const double decay_factor = 0.8;
     size_t free_memory, total_memory;
-    CHECK_CUDA(cudaSetDevice(m_gpus[i]));  
+    CHECK_CUDA(cudaSetDevice(m_gpus[i]));
     CHECK_CUDA(cudaMemGetInfo(&free_memory, &total_memory));
 
     // Clear work space
@@ -1009,7 +1009,7 @@ void cudnn_manager::unpin_matrix(AbsDistMat& mat) {
     }
 
     // Copy data to unpinned memory
-    const Mat mat_local_copy(mat.LockedMatrix());
+    const GPUMat mat_local_copy(static_cast<const GPUMat&>(mat.LockedMatrix()));
 
     // Allocate new memory owned by matrix
     mat.Empty();

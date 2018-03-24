@@ -46,8 +46,8 @@ namespace lbann {
  *  @param window_dims      Dimensions of window.
  *  @param window_strides   Window shift strides.
  */
-void im2col(const Mat& im,
-            Mat& col,
+void im2col(const CPUMat& im,
+            CPUMat& col,
             int num_channels,
             int im_num_dims,
             const int * im_dims,
@@ -71,8 +71,8 @@ void im2col(const Mat& im,
  *  @param window_dims      Dimensions of window.
  *  @param window_strides   Window shift strides.
  */
-void col2im(const Mat& col,
-            Mat& im,
+void col2im(const CPUMat& col,
+            CPUMat& im,
             int num_channels,
             int im_num_dims,
             const int * im_dims,
@@ -97,8 +97,8 @@ void col2im(const Mat& col,
  *  @param window_strides   Window shift strides.
  *  @param reduction_op     Reduction operation.
  */
-void col2im(const Mat& col,
-            Mat& im,
+void col2im(const CPUMat& col,
+            CPUMat& im,
             int num_channels,
             int im_num_dims,
             const int * im_dims,
@@ -113,7 +113,6 @@ void col2im(const Mat& col,
  *  one. im2col will automatically call this routine if it detects a
  *  1x1 im2col.
  */
-template<El::Device Dev>
 void im2col_1x1(const DataType * input_buffer,
                 DataType * output_buffer,
                 int num_channels,
@@ -142,7 +141,6 @@ void im2col_2d(const DataType *__restrict__ input_buffer,
  *  one. col2im will automatically call this routine if it detects a
  *  1x1 col2im.
  */
-template<El::Device Dev>
 void col2im_1x1(const DataType * input_buffer,
                 DataType * output_buffer,
                 const int num_channels,
