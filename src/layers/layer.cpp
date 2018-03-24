@@ -599,6 +599,7 @@ void Layer::setup_matrices(const El::Grid& grid) {
           << "invalid matrix data allocation";
       throw lbann_exception(err.str());
     }
+    break;
   case data_layout::DATA_PARALLEL:
     switch (get_device_allocation()) {
     case El::Device::CPU:
@@ -611,6 +612,7 @@ void Layer::setup_matrices(const El::Grid& grid) {
           << "invalid matrix data allocation";
       throw lbann_exception(err.str());
     }
+    break;
   default:
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "

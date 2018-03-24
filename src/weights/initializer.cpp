@@ -82,9 +82,9 @@ AbsDistMat* weights_initializer::construct_matrix(int height,
   if (col_dist == El::MR && row_dist == El::STAR) {
     switch (dev) {
     case El::Device::CPU:
-      weights_matrix = new MRStarMat<El::Device::CPU>(grid);
+      weights_matrix = new MRStarMat<El::Device::CPU>(grid); break;
     case El::Device::GPU:
-      weights_matrix = new MRStarMat<El::Device::GPU>(grid);
+      weights_matrix = new MRStarMat<El::Device::GPU>(grid); break;
     default:
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
@@ -95,9 +95,9 @@ AbsDistMat* weights_initializer::construct_matrix(int height,
   if (col_dist == El::MC && row_dist == El::STAR) {
     switch (dev) {
     case El::Device::CPU:
-      weights_matrix = new MCStarMat<El::Device::CPU>(grid);
+      weights_matrix = new MCStarMat<El::Device::CPU>(grid); break;
     case El::Device::GPU:
-      weights_matrix = new MCStarMat<El::Device::GPU>(grid);
+      weights_matrix = new MCStarMat<El::Device::GPU>(grid); break;
     default:
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
