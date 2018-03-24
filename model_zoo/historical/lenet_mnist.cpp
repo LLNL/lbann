@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
     const std::string test_image_file = El::Input("--test-image-file",
                                                   "MNIST test set image file",
                                                   std::string("t10k-images-idx3-ubyte"));
-    
+
     // Hardware parameters
     const int procs_per_model = El::Input("--procs-per-model",
                                           "MPI processes per LBANN model",
@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
       const auto& grid = comm->get_model_grid();
       std::cout << "Number of models: " << comm->get_num_models()
                 << std::endl
-                << "MPI process grid per model: " 
+                << "MPI process grid per model: "
                 << grid.Height() << " x " << grid.Width() << std::endl;
     }
 
@@ -170,7 +170,7 @@ int main(int argc, char *argv[]) {
     ///////////////////////////////////////////////////////////////////
     // Add model layers
     ///////////////////////////////////////////////////////////////////
-    
+
     // Add layers
     lbann::generic_input_layer* input;
     {
@@ -182,48 +182,48 @@ int main(int argc, char *argv[]) {
       input = l;
     }
     {
-      auto* l = new lbann::convolution_layer<data_layout::DATA_PARALLEL>(
+      auto* l = new lbann::convolution_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(
                   comm, 2, 20, 5, 0, 1, true, cudnn);
       l->set_name("conv1");
       m->add_layer(l);
     }
     {
-      auto* l = new lbann::pooling_layer<data_layout::DATA_PARALLEL>(
+      auto* l = new lbann::pooling_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(
                   comm, 2, 2, 0, 2, pool_mode::max, cudnn);
       l->set_name("pool1");
       m->add_layer(l);
     }
     {
-      auto* l = new lbann::convolution_layer<data_layout::DATA_PARALLEL>(
+      auto* l = new lbann::convolution_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(
                   comm, 2, 50, 5, 0, 1, true, cudnn);
       l->set_name("conv2");
       m->add_layer(l);
     }
     {
-      auto* l = new lbann::pooling_layer<data_layout::DATA_PARALLEL>(
+      auto* l = new lbann::pooling_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(
                   comm, 2, 2, 0, 2, pool_mode::max, cudnn);
       l->set_name("pool2");
       m->add_layer(l);
     }
     {
-      auto* l = new lbann::fully_connected_layer<data_layout::DATA_PARALLEL>(
+      auto* l = new lbann::fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(
                   comm, 500, nullptr, true, cudnn);
       l->set_name("ip1");
       m->add_layer(l);
     }
     {
-      auto* l = new lbann::relu_layer<data_layout::DATA_PARALLEL>(comm, cudnn);
+      auto* l = new lbann::relu_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(comm, cudnn);
       l->set_name("relu1");
       m->add_layer(l);
     }
     {
-      auto* l = new lbann::fully_connected_layer<data_layout::DATA_PARALLEL>(
+      auto* l = new lbann::fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(
                   comm, 10, nullptr, true, cudnn);
       l->set_name("ip2");
       m->add_layer(l);
     }
     {
-      auto* l = new lbann::softmax_layer<data_layout::DATA_PARALLEL>(comm, cudnn);
+      auto* l = new lbann::softmax_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(comm, cudnn);
       l->set_name("prob");
       m->add_layer(l);
     }
