@@ -31,6 +31,10 @@
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/timer.hpp"
 
+
+
+#undef DEBUG
+
 namespace lbann {
 using namespace std;
 
@@ -110,10 +114,21 @@ void data_store_multi_images::get_file_sizes() {
     }
   }
 
+  std::cerr << m_rank << " of " << m_np << " :: calling exchange_file_sizes\n";
   exchange_file_sizes(my_file_sizes, m_num_global_indices*m_num_img_srcs);
 }
 
 void data_store_multi_images::read_files() {
+
+  #ifdef DEBUG
+  // each processor opens a file and writes base_index, index, offset, and file_lenght
+  // for each of its datastore indices. This was written as an aid to debugging errors
+  // in one-sided communication
+  char b[40];
+  sprintf(b, "read_files_%d", m_rank);
+  std::ofstream out(b);
+  #endif 
+
   std::stringstream err;
   for (auto base_index : m_my_datastore_indices) {
     const std::vector<std::string> sample(get_sample(base_index));
@@ -134,6 +149,11 @@ void data_store_multi_images::read_files() {
       }
       size_t file_len = m_file_sizes[index];
 
+      #ifdef DEBUG
+      out << "base: " << base_index << " index: " << index << " offset: " 
+          << offset << " file_len: " << file_len << "\n";;
+      #endif
+
       if (offset + file_len > m_data.size()) {
         err << __FILE__ << " " << __LINE__ << " :: " 
           << " of " << m_my_datastore_indices.size() << " offset: " << offset
@@ -143,43 +163,49 @@ void data_store_multi_images::read_files() {
         throw lbann_exception(err.str());
       }  
 
-      load_file(m_dir, sample[k], &m_data[offset], file_len);
+      load_file(m_dir, sample[k], m_data.data()+offset, file_len);
     }
   }
+  #ifdef DEBUG
+  out.close();
+  #endif
 }
 
 
-#if 0
-void data_store_multi_images::setup_extended_testing() {
-  if (m_master) {
-    std::cout << "STARTING data_store_multi_images::setup_extended_testing()\n";
-  }
-  std::pair<std::vector<std::string>, int> sample;
-  data_reader_multi_images *reader = dynamic_cast<data_reader_multi_images*>(m_reader);
-  for (size_t j=0; j<m_shuffled_indices->size(); j++) {
-    size_t idx = (*m_shuffled_indices)[j];
-    sample = reader->get_sample(idx);
-    for (size_t k=0; k<sample.first.size(); k++) {
-      size_t index = idx*m_num_img_srcs+k;
+void data_store_multi_images::extended_testing() {
+  if (m_master) std::cerr << "STARTING data_store_multi_images::extended_testing()\n";
+  std::stringstream err;
+  std::vector<unsigned char> v;
+  for (auto idx : m_my_minibatch_indices_v) {
+    int base_index = (*m_shuffled_indices)[idx];
+    const std::vector<std::string> sample(get_sample(base_index));
+    for (size_t k=0; k<sample.size(); k++) {
+      size_t index = base_index*m_num_img_srcs + k; 
 
-      std::string imagepath = m_dir + sample.first[k];
-      m_test_filenames[index] = imagepath;
-
-      std::ifstream in(imagepath.c_str(), std::ios::in | std::ios::binary);
-      if (! in.good()) {
-        std::stringstream err;
-        err << __FILE__ << " " << __LINE__ << " :: "
-            << "failed to open " << imagepath << " for reading";
+      if (m_file_sizes.find(index) == m_file_sizes.end()) {
+        err << __FILE__ << " " << __LINE__ << " :: " 
+            << " file length not found: " << index;
         throw lbann_exception(err.str());
       }
+      size_t file_len = m_file_sizes[index];
 
-      in.seekg(0, std::ios::end);
-      size_t sz = in.tellg();
-      in.close();
-      m_test_filesizes[index] = sz;
-    }  
+      v.resize(file_len);
+      load_file(m_dir, sample[k], v.data(), file_len);
+
+      if (m_my_minibatch_data.find(index) == m_my_minibatch_data.end()) {
+        err << __FILE__ << " " << __LINE__ << " :: " 
+            << " m_my_minibatch_data.find(" << index << ") failed.";
+        throw lbann_exception(err.str());
+      }
+      if (m_my_minibatch_data[index] != v) {
+        err << __FILE__ << " " << __LINE__ << " :: " 
+            << " data_store_multi_images::extended_testing: "
+            << " rank: " << m_rank << " index: " << index << " FAILED!\n";
+        throw lbann_exception(err.str());
+      }
+    }
   }
+  std::cerr << "rank: " << m_rank << " data_store_multi_images::extended_testing, PASSED!\n";
 }
-#endif
 
 }  // namespace lbann

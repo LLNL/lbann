@@ -63,6 +63,7 @@ class data_store_image : public generic_data_store {
  protected :
 
   void exchange_data() override;
+  void exchange_data_two_sided();
 
   struct Triple {
     int global_index;
@@ -77,7 +78,6 @@ class data_store_image : public generic_data_store {
   /// maps a global index (wrt image_list) to the file's data location 
   /// wrt m_data
   std::map<size_t, size_t> m_offsets;
-
   /// fills in m_file_sizes
   virtual void get_file_sizes() = 0;
 
@@ -103,9 +103,6 @@ class data_store_image : public generic_data_store {
   //std::unordered_map<size_t, std::string> m_test_filenames;
   /// used for extended testing
   //std::unordered_map<size_t, size_t> m_test_filesizes;
-
-  /// for use during development and testing
-  void extended_testing();
 
   std::vector<unsigned char> m_data;
 

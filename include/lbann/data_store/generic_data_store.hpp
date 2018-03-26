@@ -120,7 +120,8 @@ protected :
   void exchange_mb_counts();
 
   /// m_all_minibatch_indices[j] will contain all indices that
-  /// will be passed to data_reader::fetch_data in one epoch
+  /// will be passed to data_reader::fetch_data in one epoch,
+  /// for all processors
   std::vector<std::vector<int>> m_all_minibatch_indices;
   /// fills in m_all_minibatch_indices
   void  exchange_mb_indices();
@@ -133,13 +134,12 @@ protected :
   void compute_send_and_receive_lists();
 
   /// buffers and requests for data exchange using two way comms
-  std::vector<std::vector<DataType>> m_sends;
-  std::vector<std::vector<DataType>> m_recvs;
+  std::vector<std::vector<DataType>> m_sends; //@todo: move to cvs?
+  std::vector<std::vector<DataType>> m_recvs; //@todo: move to cvs?
   std::vector<MPI_Request> m_sends_req;
   std::vector<MPI_Request> m_recv_req;
   /// fill in m_sends and m_recvs;
   virtual void start_sends_and_recvs() {}
-
 
   /// m_num_samples[j] contains the number of samples (datastore indices)
   /// that are owned by P_j
@@ -149,9 +149,6 @@ protected :
   std::unordered_set<int> m_my_datastore_indices;
   /// fills in m_my_datastore_indices and m_num_samples
   void get_my_datastore_indices();
-
-  /// maps indices wrt shuffled indices to indices in m_my_minibatch_data
-  //std::unordered_map<size_t, size_t> m_my_data_hash;
 
   size_t m_num_readers;
 
@@ -186,6 +183,8 @@ protected :
   int get_index_owner(int idx) {
     return idx % m_np;
   }
+
+  virtual void extended_testing() {}
 
   MPI_Comm m_mpi_comm;
 };
