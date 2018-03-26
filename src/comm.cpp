@@ -188,7 +188,6 @@ void lbann_comm::nb_allreduce(AbsDistMat& m,
   }
   auto&& comm = get_al_comm(c, t);
   if (t == std::type_index(typeid(allreduces::MPIBackend))) {
-    req.mpi_req = Al::mpi_backend::null_req;
     allreduces::NonblockingAllreduce<allreduces::MPIBackend>(
       m.Buffer(),
       local_size,
@@ -199,7 +198,6 @@ void lbann_comm::nb_allreduce(AbsDistMat& m,
   /// @todo MPI-CUDA backend
 #ifdef LBANN_HAS_NCCL2
   if (t == std::type_index(typeid(allreduces::NCCLBackend))) {
-    req.nccl_req = Al::nccl_backend::null_req;
     allreduces::NonblockingAllreduce<allreduces::NCCLBackend>(
       m.Buffer(),
       local_size,
@@ -218,13 +216,11 @@ void lbann_comm::wait(Al::request& req) {
 #ifdef LBANN_HAS_ALUMINUM
   if (req.mpi_req != Al::mpi_backend::null_req) {
     allreduces::Wait<allreduces::MPIBackend>(req.mpi_req);
-    req.mpi_req = Al::mpi_backend::null_req;  // Reset.
   }
   /// @todo MPI-CUDA backend
 #ifdef LBANN_HAS_NCCL2
   if (req.nccl_req != Al::nccl_backend::null_req) {
     allreduces::Wait<allreduces::NCCLBackend>(req.nccl_req);
-    req.nccl_req = Al::nccl_backend::null_req;  // Reset.
   }
 #endif // LBANN_HAS_NCCL2
 #endif // LBANN_HAS_ALUMINUM
