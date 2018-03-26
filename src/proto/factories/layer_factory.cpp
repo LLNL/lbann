@@ -251,7 +251,7 @@ Layer* construct_layer(lbann_comm* comm,
   }
   if (proto_layer.has_dropout()) {
     const auto& params = proto_layer.dropout();
-    return new dropout<layout>(comm, params.keep_prob());
+    return new dropout<layout>(comm, params.keep_prob(), cudnn);
   }
   if (proto_layer.has_local_response_normalization()) {
     const auto& params = proto_layer.local_response_normalization();
