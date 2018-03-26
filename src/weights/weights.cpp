@@ -213,15 +213,13 @@ void weights::setup_gpu() {
         << "before initializing CPU weights matrix";
     throw lbann_exception(err.str());
   }
+
+  // Disable GPU if weights matrix is not STAR,STAR
+  /// @todo GPU support for other data layouts
   const El::DistData dist_data(*m_values);
   if (dist_data.colDist != El::STAR || dist_data.rowDist != El::STAR) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to setup weights as a matrix with "
-        << "col_dist=" << dist_data.colDist << ", "
-        << "row_dist=" << dist_data.rowDist << ", "
-        << "but weights matrix with GPU support must have STAR,STAR format";
-    throw lbann_exception(err.str());
+    m_cudnn = nullptr;
+    return;
   }
 
   // Copy weights matrix to GPU
@@ -279,6 +277,7 @@ const AbsDistMat& weights::get_values() {
   // Copy weights matrix from GPU if needed
   if (m_cudnn != nullptr) {
     m_cudnn->copy_from_gpu(0, m_values->Matrix(), m_values_d[0]);
+    m_cudnn->synchronize();
   }
   #endif // LBANN_HAS_CUDNN
 
@@ -301,7 +300,8 @@ void weights::set_values(const AbsDistMat& values) {
   #ifdef LBANN_HAS_CUDNN
   // Copy weights matrix to GPU if needed
   if (m_cudnn != nullptr) {
-    m_cudnn->broadcast_to_gpus(m_values_d, m_values->Matrix());
+    m_cudnn->broadcast_to_gpus(m_values_d, m_values->LockedMatrix());
+    m_cudnn->synchronize();
   }
   #endif // LBANN_HAS_CUDNN
 
