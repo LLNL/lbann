@@ -73,7 +73,7 @@ message FetchLabelRequest {
 }
 
 message FetchLabelResponse {
-  repeated double label = 1; 
+  double label = 1; 
 }
 
 /* fetch response */
@@ -84,7 +84,7 @@ message FetchResponseRequest {
 }
 
 message FetchResponseResponse {
-  repeated double response = 1; 
+  double response = 1; 
 }
 
 message ExitRequest {}
