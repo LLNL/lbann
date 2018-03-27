@@ -50,8 +50,10 @@ class loss_function : public objective_function_term {
   /** Setup objective function term. */
   virtual void setup(model& m) override;
 
-  /** Evaluate the objective function term. */
-  EvalType evaluate() override;
+  /** Start evaluation of the objective function term. */
+  void start_evaluation() override;
+  /** Finish evaluation of the objective function term. */
+  EvalType finish_evaluation() override;
 
   /** Compute the gradient of the objective function term.
    *  The gradient is computed w.r.t. the objective function term
@@ -64,11 +66,17 @@ class loss_function : public objective_function_term {
    */
   void compute_weight_regularization() override {};
 
-  /** Evaluate the loss function.
+  /** Start evaluation the loss function.
    *  This should not include the scale factor.
    */
-  virtual double evaluate_compute(const AbsDistMat& prediction,
-                                  const AbsDistMat& ground_truth) = 0;
+  virtual void start_evaluate_compute(const AbsDistMat& prediction,
+                                      const AbsDistMat& ground_truth) = 0;
+
+  /** Finish evaluation of the loss function.
+   *  This should not include the scale factor.
+   */
+  virtual EvalType finish_evaluate_compute(const AbsDistMat& prediction,
+                                           const AbsDistMat& ground_truth) = 0;
 
   /** Compute the loss function gradient.
    *  The gradient should be w.r.t. the prediction vector. This should

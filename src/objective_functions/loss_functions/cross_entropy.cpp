@@ -28,9 +28,8 @@
 
 namespace lbann {
 
-EvalType cross_entropy::evaluate_compute(const AbsDistMat& predictions,
-                                         const AbsDistMat& ground_truth) {
-
+void cross_entropy::start_evaluate_compute(const AbsDistMat& predictions,
+                                           const AbsDistMat& ground_truth) {
   // Local matrices
   const Mat& predictions_local = predictions.LockedMatrix();
   const Mat& ground_truth_local = ground_truth.LockedMatrix();
@@ -41,7 +40,7 @@ EvalType cross_entropy::evaluate_compute(const AbsDistMat& predictions,
   const int local_width = predictions_local.Width();
 
   // Compute sum of cross entropy terms
-  EvalType sum = 0;
+  EvalType sum = EvalType(0);
   #pragma omp parallel for reduction(+:sum) collapse(2)
   for (int col = 0; col < local_width; ++col) {
     for (int row = 0; row < local_height; ++row) {
@@ -51,10 +50,15 @@ EvalType cross_entropy::evaluate_compute(const AbsDistMat& predictions,
               EvalType(0));
     }
   }
-
   // Compute mean objective function value across mini-batch
-  return get_comm().allreduce(sum / width, predictions.DistComm());
+  m_sum = sum / width;  // Can't reduce on class members.
+  get_comm().nb_allreduce(&m_sum, 1, predictions.DistComm(), m_allreduce_req);
+}
 
+EvalType cross_entropy::finish_evaluate_compute(
+  const AbsDistMat& predictions, const AbsDistMat& ground_truth) {
+  get_comm().wait(m_allreduce_req);
+  return m_sum;
 }
 
 void cross_entropy::differentiate_compute(const AbsDistMat& predictions,

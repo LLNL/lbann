@@ -28,8 +28,8 @@
 
 namespace lbann {
 
-EvalType mean_absolute_deviation_loss::evaluate_compute(const AbsDistMat& predictions,
-                                                        const AbsDistMat& ground_truth) {
+EvalType mean_absolute_deviation_loss::finish_evaluate_compute(
+  const AbsDistMat& predictions, const AbsDistMat& ground_truth) {
 
   // Local matrices
   const Mat& predictions_local = predictions.LockedMatrix();

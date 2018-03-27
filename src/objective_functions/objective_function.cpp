@@ -72,12 +72,21 @@ void objective_function::setup(model& m) {
   }
 }
 
-EvalType objective_function::evaluate(execution_mode mode,
-                                      int mini_batch_size) {
+void objective_function::start_evaluation(execution_mode mode,
+                                          int mini_batch_size) {
+  const auto start_time = get_time();
+  for (const auto& term : m_terms) {
+    term->start_evaluation();
+  }
+  m_evaluation_time += get_time() - start_time;
+}
+
+EvalType objective_function::finish_evaluation(execution_mode mode,
+                                               int mini_batch_size) {
   const auto start_time = get_time();
   EvalType value = EvalType(0);
   for (const auto& term : m_terms) {
-    value += term->evaluate();
+    value += term->finish_evaluation();
   }
   m_statistics[mode].add_value(mini_batch_size * value,
                                mini_batch_size);

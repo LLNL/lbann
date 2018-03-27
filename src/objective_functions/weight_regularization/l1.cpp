@@ -51,7 +51,11 @@ void l1_weight_regularization::setup(model& m) {
 
 }
 
-EvalType l1_weight_regularization::evaluate() {
+void l1_weight_regularization::start_evaluation() {
+
+}
+
+EvalType l1_weight_regularization::finish_evaluation() {
   if (m_scale_factor == EvalType(0)) { return EvalType(0); }
   EvalType value = EvalType(0);
   for (weights* w : m_weights) {

@@ -83,13 +83,22 @@ void l2_weight_regularization::setup(model& m) {
       }
     }
   }
-
+  m_sqsums.resize(m_weights.size(), EvalType(0));
+  m_allreduce_started.resize(m_weights.size(), false);
+  for (size_t i = 0; i < m_weights.size(); ++i) {
+    m_allreduce_reqs.push_back(std::move(Al::request()));
+  }
 }
 
-EvalType l2_weight_regularization::evaluate() {
-  if (m_scale_factor == EvalType(0)) { return EvalType(0); }
-  EvalType sqsum = EvalType(0);
-  for (const auto& w : m_weights) {
+void l2_weight_regularization::start_evaluation() {
+  if (m_scale_factor == EvalType(0)) {
+    return;
+  }
+  // Reset arrays.
+  std::fill(m_sqsums.begin(), m_sqsums.end(), EvalType(0));
+  std::fill(m_allreduce_started.begin(), m_allreduce_started.end(), false);
+  for (size_t i = 0; i < m_weights.size(); ++i) {
+    const auto& w = m_weights[i];
     cudnn::cudnn_manager* cudnn = w->get_cudnn_manager();
     if (cudnn != nullptr) {
     #ifndef LBANN_HAS_CUDNN
@@ -101,14 +110,28 @@ EvalType l2_weight_regularization::evaluate() {
       const EvalType norm = cublas::nrm2(cudnn->get_cublas_handle(0),
                                          w->get_size(),
                                          w->get_values_gpu()[0], 1);
-      sqsum += norm * norm;
+      m_sqsums[i] = norm * norm;
     #endif // LBANN_HAS_CUDNN
     } else {
-      // Further optimization: Can batch allreduces on the same communicator.
       const auto& values = w->get_values();
-      const EvalType local_sqsum = sum_of_squares(values.LockedMatrix());
-      sqsum += get_comm().allreduce(local_sqsum, values.DistComm());
+      m_sqsums[i] = sum_of_squares(values.LockedMatrix());
+      get_comm().nb_allreduce(&(m_sqsums[i]), 1, values.DistComm(),
+                              m_allreduce_reqs[i], El::mpi::SUM);
+      m_allreduce_started[i] = true;
     }
+  }
+}
+
+EvalType l2_weight_regularization::finish_evaluation() {
+  if (m_scale_factor == EvalType(0)) {
+    return EvalType(0);
+  }
+  EvalType sqsum = EvalType(0);
+  for (size_t i = 0; i < m_weights.size(); ++i) {
+    if (m_allreduce_started[i]) {
+      get_comm().wait(m_allreduce_reqs[i]);
+    }
+    sqsum += m_sqsums[i];
   }
   return m_scale_factor * sqsum / 2;
 }
