@@ -28,9 +28,9 @@
 
 namespace lbann {
 
-EvalType mean_squared_error_loss::evaluate_compute(const AbsDistMat& predictions,
-                                                   const AbsDistMat& ground_truth) {
-
+void mean_squared_error_loss::start_evaluate_compute(
+  const AbsDistMat& predictions,
+  const AbsDistMat& ground_truth) {
   // Local matrices
   const Mat& predictions_local = predictions.LockedMatrix();
   const Mat& ground_truth_local = ground_truth.LockedMatrix();
@@ -42,7 +42,7 @@ EvalType mean_squared_error_loss::evaluate_compute(const AbsDistMat& predictions
   const El::Int local_width = predictions_local.Width();
 
   // Compute sum of squared errors
-  EvalType sum = 0;
+  EvalType sum = EvalType(0);
   #pragma omp parallel for reduction(+:sum) collapse(2)
   for(El::Int col = 0; col < local_width; ++col) {
     for(El::Int row = 0; row < local_height; ++row) {
@@ -52,11 +52,15 @@ EvalType mean_squared_error_loss::evaluate_compute(const AbsDistMat& predictions
       sum += error * error;
     }
   }
-  
-  // Compute mean objective function value across mini-batch
-  return get_comm().allreduce(sum / (height * width),
-                              predictions.DistComm());
+  m_sum = sum / (height * width);  // Can't reduce on class members.
+  get_comm().nb_allreduce(&m_sum, 1, predictions.DistComm(), m_allreduce_req);
+}
 
+EvalType mean_squared_error_loss::finish_evaluate_compute(
+  const AbsDistMat& predictions,
+  const AbsDistMat& ground_truth) {
+  get_comm().wait(m_allreduce_req);
+  return m_sum;
 }
 
 void mean_squared_error_loss::differentiate_compute(const AbsDistMat& predictions,

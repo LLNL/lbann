@@ -186,27 +186,24 @@ void lbann_comm::nb_allreduce(AbsDistMat& m,
     throw lbann_exception("Aluminum does not support allreduces on"
                           " non-contiguous matrices");
   }
-  req = Al::request(); // Reset request
   auto&& comm = get_al_comm(c, t);
   if (t == std::type_index(typeid(allreduces::MPIBackend))) {
-    req.mpi_req.reset(new Al::mpi_backend::req_type);
     allreduces::NonblockingAllreduce<allreduces::MPIBackend>(
       m.Buffer(),
       local_size,
       mpi_op_to_al_op(op),
       *comm,
-      *req.mpi_req);
+      req.mpi_req);
   }
   /// @todo MPI-CUDA backend
 #ifdef LBANN_HAS_NCCL2
   if (t == std::type_index(typeid(allreduces::NCCLBackend))) {
-    req.nccl_req.reset(new Al::nccl_backend::req_type);
     allreduces::NonblockingAllreduce<allreduces::NCCLBackend>(
       m.Buffer(),
       local_size,
       mpi_op_to_al_op(op),
       *static_cast<allreduces::NCCLCommunicator*>(comm),
-      *req.nccl_req);
+      req.nccl_req);
   }
 #endif // LBANN_HAS_NCCL2
   bytes_received += sizeof(DataType) * local_size * (El::mpi::Size(c) - 1);
@@ -217,29 +214,28 @@ void lbann_comm::nb_allreduce(AbsDistMat& m,
 
 void lbann_comm::wait(Al::request& req) {
 #ifdef LBANN_HAS_ALUMINUM
-  if (req.mpi_req.get() != nullptr) {
-    allreduces::Wait<allreduces::MPIBackend>(*req.mpi_req);
+  if (req.mpi_req != Al::mpi_backend::null_req) {
+    allreduces::Wait<allreduces::MPIBackend>(req.mpi_req);
   }
   /// @todo MPI-CUDA backend
 #ifdef LBANN_HAS_NCCL2
-  if (req.nccl_req.get() != nullptr) {
-    allreduces::Wait<allreduces::NCCLBackend>(*req.nccl_req);
+  if (req.nccl_req != Al::nccl_backend::null_req) {
+    allreduces::Wait<allreduces::NCCLBackend>(req.nccl_req);
   }
 #endif // LBANN_HAS_NCCL2
 #endif // LBANN_HAS_ALUMINUM
-  req = Al::request(); // Reset request
 }
 
 bool lbann_comm::test(Al::request& req) {
   bool req_test = true;
 #ifdef LBANN_HAS_ALUMINUM
-  if (req.mpi_req.get() != nullptr) {
-    req_test = req_test && allreduces::Test<allreduces::MPIBackend>(*req.mpi_req);
+  if (req.mpi_req != Al::mpi_backend::null_req) {
+    req_test = req_test && allreduces::Test<allreduces::MPIBackend>(req.mpi_req);
   }
   /// @todo MPI-CUDA backend
 #ifdef LBANN_HAS_NCCL2
-  if (req.nccl_req.get() != nullptr) {
-    req_test = req_test && allreduces::Test<allreduces::NCCLBackend>(*req.nccl_req);
+  if (req.nccl_req != Al::nccl_backend::null_req) {
+    req_test = req_test && allreduces::Test<allreduces::NCCLBackend>(req.nccl_req);
   }
 #endif // LBANN_HAS_NCCL2
 #endif // LBANN_HAS_ALUMINUM

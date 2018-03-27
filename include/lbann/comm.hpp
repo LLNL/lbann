@@ -51,6 +51,7 @@ namespace Al {
 class dummy_backend {
 public:
   using req_type = int;
+  static constexpr req_type null_req = 0;
 };
 
 // Define aliases for Aluminum backends
@@ -68,10 +69,10 @@ using nccl_backend = lbann::Al::dummy_backend;
 
 // Wrapper for Aluminum non-blocking routine requests
 struct request {
-  std::unique_ptr<mpi_backend::req_type> mpi_req;
+  mpi_backend::req_type mpi_req = mpi_backend::null_req;
   /// @todo MPI-CUDA backend
 #ifdef LBANN_HAS_NCCL2
-  std::unique_ptr<nccl_backend::req_type> nccl_req;
+  nccl_backend::req_type nccl_req = nccl_backend::null_req;
 #endif // LBANN_HAS_NCCL2
 };
 
@@ -426,8 +427,13 @@ class lbann_comm {
   void allreduce(T *snd, int count, T *rcv, const El::mpi::Comm c, El::mpi::Op op = El::mpi::SUM) {
     bytes_sent += count * sizeof(T);
 #ifdef LBANN_HAS_ALUMINUM
+#ifdef LBANN_ALUMINUM_MPI_PASSTHROUGH
+    allreduces::AllreduceAlgorithm algo = allreduces::AllreduceAlgorithm::mpi_passthrough;
+#else
+    allreduces::AllreduceAlgorithm algo = allreduces::AllreduceAlgorithm::automatic;
+#endif
     allreduces::Allreduce<allreduces::MPIBackend>(
-      snd, rcv, count, mpi_op_to_al_op(op), *get_al_comm(c));
+      snd, rcv, count, mpi_op_to_al_op(op), *get_al_comm(c), algo);
 #else
     El::mpi::AllReduce(snd, rcv, count, op, c);
 #endif
@@ -438,8 +444,13 @@ class lbann_comm {
   void allreduce(T *data, int count, const El::mpi::Comm c, El::mpi::Op op = El::mpi::SUM) {
     bytes_sent += count * sizeof(T);
 #ifdef LBANN_HAS_ALUMINUM
+#ifdef LBANN_ALUMINUM_MPI_PASSTHROUGH
+    allreduces::AllreduceAlgorithm algo = allreduces::AllreduceAlgorithm::mpi_passthrough;
+#else
+    allreduces::AllreduceAlgorithm algo = allreduces::AllreduceAlgorithm::automatic;
+#endif
     allreduces::Allreduce<allreduces::MPIBackend>(
-      data, count, mpi_op_to_al_op(op), *get_al_comm(c));
+      data, count, mpi_op_to_al_op(op), *get_al_comm(c), algo);
 #else
     El::mpi::AllReduce(data, count, op, c);
 #endif
@@ -459,6 +470,24 @@ class lbann_comm {
                     Al::request& req,
                     El::mpi::Op op = El::mpi::SUM,
                     std::type_index t = std::type_index(typeid(Al::mpi_backend)));
+  /** Non-blocking in-place scalar-array allreduce.
+   *  If LBANN has not been built with Aluminum, then this calls a blocking
+   *  allreduce.
+   *  This currently only supports host pointers (i.e. the MPI backend).
+   */
+  template <typename T>
+  void nb_allreduce(T *data, int count, const El::mpi::Comm c, Al::request& req,
+                    El::mpi::Op op = El::mpi::SUM) {
+#ifdef LBANN_HAS_ALUMINUM
+    bytes_sent += count * sizeof(T);
+    req.mpi_req = Al::mpi_backend::null_req;
+    allreduces::NonblockingAllreduce<allreduces::MPIBackend>(
+      data, count, mpi_op_to_al_op(op), *get_al_comm(c), req.mpi_req);
+    bytes_received += count * sizeof(T) * (El::mpi::Size(c) - 1);
+#else
+    allreduce(data, count, c, op);
+#endif  // LBANN_HAS_ALUMINUM
+  }
 
   /** Wait for a non-blocking request to complete. */
   template <typename T>
