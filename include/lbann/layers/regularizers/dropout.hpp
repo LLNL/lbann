@@ -165,13 +165,15 @@ class dropout : public regularizer_layer {
 
   void fp_setup_data(int mini_batch_size) override {
   #ifdef LBANN_HAS_CUDNN
-    // Make sure GPU output is not a view during training
-    const auto& mode = this->m_model->get_execution_mode();
-    auto& output_d = m_activations_d[0];
-    if (mode == execution_mode::training && output_d.is_view()) {
-      const auto& input_d = m_prev_activations_d[0];
-      output_d.clear();
-      output_d.resize(input_d.get_height(), input_d.get_width_per_gpu());
+    if (this->m_using_gpus) {
+      // Make sure GPU output is not a view during training
+      const auto& mode = this->m_model->get_execution_mode();
+      auto& output_d = m_activations_d[0];
+      if (mode == execution_mode::training && output_d.is_view()) {
+        const auto& input_d = m_prev_activations_d[0];
+        output_d.clear();
+        output_d.resize(input_d.get_height(), input_d.get_width_per_gpu());
+      }
     }
   #endif // LBANN_HAS_CUDNN
     regularizer_layer::fp_setup_data(mini_batch_size);
