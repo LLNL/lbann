@@ -56,7 +56,11 @@ void kl_divergence::setup(model& m) {
   }
 }
 
-EvalType kl_divergence::evaluate() {
+void kl_divergence::start_evaluation() {
+
+}
+
+EvalType kl_divergence::finish_evaluation() {
   if (m_scale_factor == EvalType(0)) { return EvalType(0); }
   
   // Matrices

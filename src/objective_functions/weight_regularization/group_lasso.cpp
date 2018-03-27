@@ -51,7 +51,11 @@ void group_lasso_weight_regularization::setup(model& m) {
 
 }
 
-EvalType group_lasso_weight_regularization::evaluate() {
+void group_lasso_weight_regularization::start_evaluation() {
+
+}
+
+EvalType group_lasso_weight_regularization::finish_evaluation() {
   if (m_scale_factor == EvalType(0)) { return EvalType(0); }
   EvalType value = EvalType(0);
   Mat sqsums;

@@ -34,6 +34,7 @@ activations  smooth_relu
 activations  softplus
 activations  selu
 activations  tanh
+activations  exponential
 regularizers batch_normalization
 regularizers local_response_normalization
 regularizers dropout

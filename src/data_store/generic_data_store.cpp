@@ -37,13 +37,15 @@ namespace lbann {
 
 generic_data_store::generic_data_store(lbann_comm *comm, generic_data_reader *reader, model *m) :
     m_rank(comm->get_rank_in_model()),
+    m_np(comm->get_procs_per_model()),
     m_epoch(0),
     m_in_memory(true),
     m_comm(comm), m_master(comm->am_world_master()), m_reader(reader),
     m_model(m),
     m_dir(m_reader->get_file_dir()),
-    m_extended_testing(false)
-  {
+    m_extended_testing(false),
+    m_collect_minibatch_indices(true)
+{
     if (options::get()->has_bool("extended_testing") && options::get()->get_bool("extended_testing")) {
       m_extended_testing = true;
     }
@@ -52,7 +54,24 @@ generic_data_store::generic_data_store(lbann_comm *comm, generic_data_reader *re
       m_in_memory = options::get()->get_bool("ds_in_memory");
     }
     */
+}
+
+void generic_data_store::get_my_datastore_indices() {
+  //compute storage
+  size_t n = 0;
+  int stride = m_comm->get_procs_per_model();
+  for (size_t j=m_rank; j<m_num_global_indices; j+=stride) {
+    ++n;
   }
+  //get the indices
+  m_my_datastore_indices.reserve(n); //these are the indices passed to data_reader::fetch_data
+  m_my_global_indices.reserve(n);   //these are the shuffled indices
+
+  for (size_t j=m_rank; j<m_num_global_indices; j+=stride) {
+    m_my_datastore_indices.push_back(j);
+    m_my_global_indices.push_back((*m_shuffled_indices)[j]);
+  }
+}
 
 void generic_data_store::setup() {
   set_shuffled_indices( &(m_reader->get_shuffled_indices()) );
@@ -63,26 +82,25 @@ void generic_data_store::setup() {
   // generic_data_reader::fetch_data(). Note that these are
   // "original' indices, not shuffled indices, i.e, these indices
   // remain constant through all epochs
-  if (m_master) { std::cerr << "calling m_model->collect_indices\n"; }
-  m_reader->set_save_minibatch_entries(true);
-  if (m_reader->get_role() == "train") {
-    m_model->collect_indices(execution_mode::training);
-  } else if (m_reader->get_role() == "validate") {
-    m_model->collect_indices(execution_mode::validation);
-  } else if (m_reader->get_role() == "test") {
-    m_model->collect_indices(execution_mode::testing);
-  } else {
-    std::stringstream s2;
-    s2 << __FILE__ << " " << __LINE__ << " :: "
-       << " bad role; should be train, test, or validate;"
-       << " we got: " << m_reader->get_role();
-      throw lbann_exception(s2.str());
+  if (m_collect_minibatch_indices) {
+    if (m_master) { std::cerr << "calling m_model->collect_indices\n"; }
+    m_reader->set_save_minibatch_entries(true);
+    if (m_reader->get_role() == "train") {
+      m_model->collect_indices(execution_mode::training);
+    } else if (m_reader->get_role() == "validate") {
+      m_model->collect_indices(execution_mode::validation);
+    } else if (m_reader->get_role() == "test") {
+      m_model->collect_indices(execution_mode::testing);
+    } else {
+      std::stringstream s2;
+      s2 << __FILE__ << " " << __LINE__ << " :: "
+         << " bad role; should be train, test, or validate;"
+         << " we got: " << m_reader->get_role();
+        throw lbann_exception(s2.str());
+    }
+    m_reader->set_save_minibatch_entries(false);
   }
-  m_reader->set_save_minibatch_entries(false);
 
-  //@todo: when we get to not-in-memory mode, probably need to keep
-  //       the vector<vector<>> representation. But for all-in-memory,
-  //       only need the single m_my_minibatch_indices list.
   m_minibatch_indices = &(m_reader->get_minibatch_indices());
 }
 

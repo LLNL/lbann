@@ -22,11 +22,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_callback_ltfb .hpp .cpp - Manage LTFB training for a model
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/callback_ltfb.hpp"
+#include "lbann/callbacks/callback_imcomm.hpp"
 #include "lbann/metrics/categorical_accuracy.hpp"
 #include "lbann/utils/random.hpp"
 #include <typeinfo>
@@ -34,125 +33,68 @@
 
 namespace lbann {
 
-lbann_callback_ltfb::lbann_callback_ltfb(
-  uint round_size, lbann_summary *summarizer) :
-  lbann_callback(1, summarizer), m_round_size(round_size) {}
+namespace {
 
-lbann_callback_ltfb::lbann_callback_ltfb(const lbann_callback_ltfb& other) :
-  lbann_callback(other),
-  m_comm(other.m_comm),
-  m_round_size(other.m_round_size) {
-  if (other.m_remote_model) {
-    m_remote_model = other.m_remote_model->copy();
-  }
-}
-
-lbann_callback_ltfb& lbann_callback_ltfb::operator=(
-  const lbann_callback_ltfb& other) {
-  m_comm = other.m_comm;
-  m_round_size = other.m_round_size;
-  if (m_remote_model) {
-    delete m_remote_model;
-    m_remote_model = nullptr;
-  }
-  if (other.m_remote_model) {
-    m_remote_model = other.m_remote_model->copy();
-  }
-  return *this;
-}
-
-lbann_callback_ltfb::~lbann_callback_ltfb() {
-
-}
-
-void lbann_callback_ltfb::setup(model *m) {
-  m_comm = m->get_comm();
-  // TODO: Validate that the round size divides the number of minibatches.
-  // Duplicate the model so we have a replica for storing the remote model in.
-  m_remote_model = m->copy();
-}
-
-void lbann_callback_ltfb::on_batch_begin(model *m) {
-  if (m->get_cur_step() % m_round_size != 0 ||
-      m->get_cur_step() == 0) {
-    return;  // Not the end of a round.
-  }
-
-  int partner = select_partner();
-  if (partner == m_comm->get_model_rank()) {
-    // No partner this round, skip.
-    return;
-  }
-  // Transfer data to secondary model.
-  exchange(m, partner);
-  // Evaluate on tournament data.
-  // Have to cast, assumes deep_neural_network.
-  EvalType local_acc = evaluate(m);
-  EvalType remote_acc = evaluate(m_remote_model);
-  // If the remote is better, keep it.
-  if (remote_acc > local_acc) {
-    if (m_comm->am_model_master()) {
-      std::cout << m_comm->get_model_rank() << ": (step " << m->get_cur_step() << ") Replacing local model (" << local_acc << ") with " <<
-                "model " << partner << " (" << remote_acc << ")" << std::endl;
+/** Assign partners for current tournament.
+ *  This function pairs models up and returns the partner model
+ *  corresponding to the current process. If there is an odd number of
+ *  models, one of them is partnered with itself.
+ */
+int assign_partners(lbann_comm* comm) {
+  if (comm->am_world_master()) {
+    // Generate partner assignments on master process
+    std::cout << "LTFB tournament partners:";
+    const auto& num_models = comm->get_num_models();
+    const auto& procs_per_model = comm->get_procs_per_model();
+    std::vector<int> models(num_models);
+    std::iota(models.begin(), models.end(), 0);
+    std::shuffle(models.begin(), models.end(), get_fast_generator());
+    std::vector<int> partners(num_models * procs_per_model);
+    for (int i = 0; i < num_models; i += 2) {
+      const auto& model1 = models[i];
+      const auto& model2 = (i+1 < num_models) ? models[i+1] : model1;
+      std::cout << (i > 0 ? "," : "") << " {" << model1;
+      if (model1 != model2) { std::cout << "," << model2; }
+      std::cout << "}";
+      std::fill_n(partners.begin() + model1 * procs_per_model,
+                  procs_per_model, model2);
+      std::fill_n(partners.begin() + model2 * procs_per_model,
+                  procs_per_model, model1);
     }
-    replace_with_remote(m);
-  }
-}
-
-int lbann_callback_ltfb::select_partner() {
-  int my_partner = 0;
-  // Master generates partners for everyone.
-  if (m_comm->am_world_master()) {
-    std::vector<int> ranks(m_comm->get_num_models());
-    std::iota(ranks.begin(), ranks.end(), 0);
-    std::shuffle(ranks.begin(), ranks.end(), get_fast_generator());
-    // Adjacent pairs become partners.
-    // Dilate so that we can do one scatter to every process.
-    std::vector<int> partners(
-      m_comm->get_num_models() * m_comm->get_procs_per_model());
-    for (size_t i = 0; i < (ranks.size() & ~1); i += 2) {
-      int rank1 = ranks[i];
-      int rank2 = ranks[i+1];
-      std::fill_n(partners.begin() + rank1*m_comm->get_procs_per_model(),
-                  m_comm->get_procs_per_model(), rank2);
-      std::fill_n(partners.begin() + rank2*m_comm->get_procs_per_model(),
-                  m_comm->get_procs_per_model(), rank1);
-    }
-    // Handle the last rank if needed.
-    if (partners.size() % 2 != 0) {
-      int last_rank = ranks[ranks.size() - 1];
-      std::fill_n(partners.begin() + last_rank*m_comm->get_procs_per_model(),
-                  m_comm->get_procs_per_model(), last_rank);
-    }
-    my_partner = m_comm->scatter(partners.data(), m_comm->get_world_comm());
+    std::cout << std::endl;
+    return comm->scatter(partners.data(), comm->get_world_comm());
   } else {
-    my_partner = m_comm->scatter<int>(0, m_comm->get_world_comm());
+    return comm->scatter<int>(0, comm->get_world_comm());
   }
-  return my_partner;
 }
 
-void lbann_callback_ltfb::exchange(model *m, int partner) {
-  const std::vector<weights *> local_weights = m->get_weights();
-  const std::vector<weights *> remote_weights = m_remote_model->get_weights();
-  for (size_t i = 0; i < local_weights.size(); ++i) {
-    // TODO: Support sending optimizer state
-    const AbsDistMat& local_matrix = local_weights[i]->get_values();
-    AbsDistMat *remote_matrix = local_matrix.Copy();
-    if (local_matrix.Height() > 0) {
-      m_comm->sendrecv(local_matrix.LockedBuffer(),
-                       local_matrix.LocalHeight()*local_matrix.LocalWidth(),
-                       partner,
-                       remote_matrix->Buffer(),
-                       local_matrix.LocalHeight()*local_matrix.LocalWidth(),
-                       partner);
-      remote_weights[i]->set_values(*remote_matrix);
+/** Exchange weights with remote model.
+ *  Weights from the local model are copied into local_weights and
+ *  weights from the remote model are copied into model_weights.
+ */
+void exchange_weights(lbann_comm* comm,
+                      std::vector<weights*>& model_weights,
+                      std::vector<weights*>& local_weights,
+                      int partner) {
+  for (size_t i = 0; i < model_weights.size(); ++i) {
+    *local_weights[i] = *model_weights[i];
+    const auto& local_matrix = local_weights[i]->get_values();
+    auto&& remote_matrix = local_matrix.Copy();
+    const auto& size = local_matrix.LocalHeight() * local_matrix.LocalWidth();
+    if (size > 0) {
+      comm->sendrecv(local_matrix.LockedBuffer(), size, partner,
+                     remote_matrix->Buffer(), size, partner);
+      model_weights[i]->set_values(*remote_matrix);
     }
     delete remote_matrix;
   }
 }
 
-EvalType lbann_callback_ltfb::evaluate(model *m) {
+/** Evaluate a model on tournament data and return its accuracy. */
+EvalType evaluate(model *m) {
+  const auto& mode = m->get_execution_mode();
   m->evaluate(execution_mode::validation);
+  m->set_execution_mode(mode);
   for (const auto& met : m->get_metrics()) {
     if (dynamic_cast<categorical_accuracy_metric*>(met) != nullptr) {
       return met->get_mean_value(execution_mode::validation);
@@ -161,13 +103,102 @@ EvalType lbann_callback_ltfb::evaluate(model *m) {
   return EvalType(0);
 }
 
-void lbann_callback_ltfb::replace_with_remote(model *m) {
-  const std::vector<weights *> local_weights = m->get_weights();
-  const std::vector<weights *> remote_weights = m_remote_model->get_weights();
-  for (size_t i = 0; i < local_weights.size(); ++i) {
-    // TODO: Update optimizers.
-    local_weights[i]->set_values(remote_weights[i]->get_values());
+} // namespace
+
+lbann_callback_ltfb::lbann_callback_ltfb(int round_size,
+                                         lbann_summary *summarizer)
+  : lbann_callback(1, summarizer), m_round_size(round_size) {}
+
+lbann_callback_ltfb::lbann_callback_ltfb(const lbann_callback_ltfb& other) :
+  lbann_callback(other),
+  m_comm(other.m_comm),
+  m_round_size(other.m_round_size),
+  m_local_weights(other.m_local_weights) {
+  for (auto& w : m_local_weights) { w = w->copy(); }
+}
+
+lbann_callback_ltfb& lbann_callback_ltfb::operator=(const lbann_callback_ltfb& other) {
+
+  // Shallow copies
+  m_comm = other.m_comm;
+  m_round_size = other.m_round_size;
+
+  // Deep copy
+  for (auto& w : m_local_weights) { delete w; }
+  m_local_weights = other.m_local_weights;
+  for (auto& w : m_local_weights) { w = w->copy(); }
+
+  return *this;
+}
+
+lbann_callback_ltfb::~lbann_callback_ltfb() {
+  for (auto& w : m_local_weights) { delete w; }
+}
+
+void lbann_callback_ltfb::setup(model *m) {
+  m_comm = m->get_comm();
+
+  // Create copy of model weights
+  /// @todo Support LTFB with different models
+  for (auto& w : m_local_weights) { delete w; }
+  m_local_weights = m->get_weights();
+  for (auto& w : m_local_weights) { w = w->copy(); }
+
+  // Make sure model does not have inter-model communication callback
+  for (auto&& cb : m->get_callbacks()) {
+    if (dynamic_cast<lbann_callback_imcomm*>(cb) != nullptr) {
+      LBANN_ERROR("Detected both LTFB and imcomm callbacks. ");
+    }
   }
+
+}
+
+void lbann_callback_ltfb::on_batch_begin(model *m) {
+
+  // Check whether to start LTFB round
+  const auto& mode = m->get_execution_mode();
+  const auto& step = m->get_cur_step();
+  if (mode != execution_mode::training) { return; }
+  if (step % m_round_size != 0 || step == 0) { return; }
+  if (m_comm->am_world_master()) {
+    std::cout << "---- LTFB round (step " << step << ") ----" << std::endl;
+  }
+
+  // Determine partner model for tournament
+  const auto& local_model = m_comm->get_model_rank();
+  const auto& remote_model = assign_partners(m_comm);
+  if (remote_model == local_model) { return; }
+
+  // Evaluate local model on tournament data
+  if (m_comm->am_world_master()) {
+    std::cout << "LTFB: evaluating local model..." << std::endl;
+  }
+  const auto& local_score = evaluate(m);
+
+  // Evaluate remote model on tournament data
+  // Note: Weights from remote model are copied into local model
+  if (m_comm->am_world_master()) {
+    std::cout << "LTFB: evaluating remote model..." << std::endl;
+  }
+  auto model_weights = m->get_weights();
+  exchange_weights(m_comm, model_weights, m_local_weights, remote_model);
+  const auto& remote_score = evaluate(m);
+
+  // Restore local weights if they achieve a better score
+  if (remote_score <= local_score) {
+    for (size_t i = 0; i < model_weights.size(); ++i) {
+      *model_weights[i] = *m_local_weights[i];
+    }
+  } else {
+    if (m_comm->am_model_master()) {
+      std::cout << "LTFB: replacing model " << local_model << " "
+                << "(" << local_score << "% categorical accuracy) "
+                << "with model " << remote_model << " "
+                << "(" << remote_score << "% categorical accuracy)"
+                << std::endl;
+    }
+  }
+
 }
 
 }  // namespace lbann

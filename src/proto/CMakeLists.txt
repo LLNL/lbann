@@ -30,5 +30,8 @@ set_full_path(THIS_DIR_SOURCES
   proto_common.cpp
   )
 
+# Add the subdirectories
+add_subdirectory(factories)
+
 # Propagate the files up the tree
 set(SOURCES "${SOURCES}" "${THIS_DIR_SOURCES}" PARENT_SCOPE)

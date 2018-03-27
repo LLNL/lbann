@@ -29,14 +29,11 @@ else
     export VTUNE_DIR=/usr/local/tools/vtune
 fi
 if [ "${ARCH}" == "x86_64" ]; then
-    export CUDNN_DIR=/usr/gapps/brain/installs/cudnn/v5
     if [ "${CLUSTER}" == "quartz" ]; then
         IPPROOT=/p/lscratchh/brainusr/ippicv_lnx
     else
         IPPROOT=/p/lscratchf/brainusr/ippicv_lnx
     fi
-elif [ "${ARCH}" == "ppc64le" ]; then
-    export CUDNN_DIR=/usr/gapps/brain/cuda/targets/ppc64le-linux
 fi
 
 ELEMENTAL_MATH_LIBS=
@@ -59,6 +56,8 @@ WITH_CUDA=
 WITH_TOPO_AWARE=ON
 INSTRUMENT=
 WITH_ALUMINUM=OFF
+WITH_TBINF=OFF
+RECONFIGURE=0
 # In case that autoconf fails during on-demand buid on surface, try the newer
 # version of autoconf installed under '/p/lscratche/brainusr/autoconf/bin'
 # by putting it at the beginning of the PATH or use the preinstalled library
@@ -101,6 +100,7 @@ Options:
   ${C}--tbinf${N}                 Build with Tensorboard interface.
   ${C}--vtune${N}                 Build with VTune profiling libraries.
   ${C}--nvprof${N}                Build with region annotations for NVPROF.
+  ${C}--reconfigure${N}           Reconfigure build. Used when build parameters are changed (e.g current build is release and --debug is desired). Clean build overrides
   ${C}--clean-build${N}           Clean build directory before building.
   ${C}--make-processes${N} <val>  Number of parallel processes for make.
   ${C}--doc${N}                   Generate documentation.
@@ -231,6 +231,9 @@ while :; do
             ;;
         --instrument)
             INSTRUMENT="-finstrument-functions -ldl"
+            ;;
+        --reconfigure)
+            RECONFIGURE=1
             ;;
         -?*)
             # Unknown option
@@ -503,6 +506,9 @@ export CMAKE_PREFIX_PATH=${MPI_HOME}:${CMAKE_PREFIX_PATH}
 export MPI_C_COMPILER=${MPI_DIR}/bin/mpicc
 export MPI_CXX_COMPILER=${MPI_DIR}/bin/mpicxx
 export MPI_Fortran_COMPILER=${MPI_DIR}/bin/mpifort
+if [ "${MPI}" == "spectrum-mpi" ]; then
+    WITH_SPECTRUM=ON
+fi
 
 ################################################################
 # Initialize GPU libraries
@@ -540,6 +546,7 @@ if [ "${CLUSTER}" == "surface" ] || [ "${CLUSTER}" == "ray" ]; then
         
         export CUDA_TOOLKIT_ROOT_DIR=/opt/cudatoolkit-${CUDATOOLKIT_VERSION}
     fi
+	export CUDNN_DIR=/usr/gapps/brain/cudnn/cudnn-7.1.1/cuda-${CUDATOOLKIT_VERSION}_${ARCH}	
 else
     HAS_GPU=0
     WITH_CUDA=${WITH_CUDA:-OFF}
@@ -625,6 +632,16 @@ if [ ${CLEAN_BUILD} -ne 0 ]; then
     eval ${CLEAN_COMMAND}
 fi
 
+if [ -f ${BUILD_DIR}/lbann/build/Makefile ] && [ ${RECONFIGURE} != 1 ]; then
+    echo "Building previously configured LBANN"
+    cd ${BUILD_DIR}/lbann/build/
+    make -j${MAKE_NUM_PROCESSES} all
+    make install -j${MAKE_NUM_PROCESSES} all
+    exit $?
+fi
+
+
+
 # ATM: goes after Elemental_DIR
 #-D OpenCV_DIR=${OpenCV_DIR} \
 
@@ -652,10 +669,12 @@ ${CMAKE_PATH}/cmake \
 -D LBANN_WITH_CUDA=${WITH_CUDA} \
 -D LBANN_WITH_NVPROF=${WITH_NVPROF} \
 -D LBANN_WITH_VTUNE=${WITH_VTUNE} \
+-D LBANN_WITH_TBINF=${WITH_TBINF} \ 
 -D LBANN_WITH_TOPO_AWARE=${WITH_TOPO_AWARE} \
 -D LBANN_SEQUENTIAL_INITIALIZATION=${SEQ_INIT} \
 -D LBANN_WITH_ALUMINUM=${WITH_ALUMINUM} \ 
--D LBANN_ALUMINUM_DIR=${ALUMINUM_DIR}
+-D LBANN_ALUMINUM_DIR=${ALUMINUM_DIR} \
+-D LBANN_BUILT_WITH_SPECTRUM=${WITH_SPECTRUM} \
 ${SUPERBUILD_DIR}
 EOF
 )
@@ -671,6 +690,7 @@ if [ $? -ne 0 ]; then
     echo "--------------------"
     exit 1
 fi
+
 # Build LBANN with make
 # Note: Ensure Elemental to be built before LBANN. Dependency violation appears to occur only when using cuda_add_library.
 BUILD_COMMAND="make -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}"

@@ -299,6 +299,9 @@ class fully_connected_layer : public learning_layer {
     const int input_ldim = input_d.get_leading_dim();
     const int output_ldim = output_d.get_leading_dim();
 
+    // Stop early if possible
+    if (mini_batch_size == 0) { return; }
+
     // Apply linearity
     for (int i=0; i<num_gpus; ++i) {
       CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
@@ -317,22 +320,9 @@ class fully_connected_layer : public learning_layer {
       const auto& bias_d = m_weights[1]->get_values_gpu();
       
       // Initialize work space with ones
-      std::vector<DataType*> ones_d;
-      for (const auto& work_space : this->m_cudnn->get_work_spaces()) {
-        ones_d.push_back((DataType*) work_space);
-      }
-      const size_t min_size = mini_batch_size * sizeof(DataType);
-      for (const auto& size : this->m_cudnn->get_work_space_sizes()) {
-        if (size < min_size) {
-          std::stringstream err;
-          err << __FILE__ << " " << __LINE__ << " :: "
-              << "insufficient GPU work space "
-              << "(requires " << min_size << " bytes on each GPU, "
-              << "but only found " << size << " bytes)";
-          throw lbann_exception(err.str());
-        }
-      }
-      m_cudnn->set_on_gpus(ones_d, DataType(1), mini_batch_size);
+      cudnn::matrix ones_d(this->m_cudnn);
+      ones_d.attach_to_work_spaces(mini_batch_size);
+      m_cudnn->set_on_gpus(ones_d.get_data(), DataType(1), mini_batch_size);
 
       // Apply bias with outer product
       for (int i = 0; i < num_gpus; ++i) {
@@ -342,7 +332,7 @@ class fully_connected_layer : public learning_layer {
                      output_size, mini_batch_size, 1,
                      DataType(1),
                      bias_d[i], output_size,
-                     ones_d[i], mini_batch_size,
+                     ones_d.get_data(i), mini_batch_size,
                      DataType(1),
                      output_d.get_data(i), output_ldim);
       }
@@ -378,22 +368,9 @@ class fully_connected_layer : public learning_layer {
         && bias_optimizer != nullptr) {
 
       // Initialize work space with ones
-      std::vector<DataType*> ones_d;
-      for (const auto& work_space : this->m_cudnn->get_work_spaces()) {
-        ones_d.push_back((DataType*) work_space);
-      }
-      const size_t min_size = mini_batch_size * sizeof(DataType);
-      for (const auto& size : this->m_cudnn->get_work_space_sizes()) {
-        if (size < min_size) {
-          std::stringstream err;
-          err << __FILE__ << " " << __LINE__ << " :: "
-              << "insufficient GPU work space "
-              << "(requires " << min_size << " bytes on each GPU, "
-              << "but only have " << size << " bytes)";
-          throw lbann_exception(err.str());
-        }
-      }
-      m_cudnn->set_on_gpus(ones_d, DataType(1), mini_batch_size);
+      cudnn::matrix ones_d(this->m_cudnn);
+      ones_d.attach_to_work_spaces(mini_batch_size);
+      m_cudnn->set_on_gpus(ones_d.get_data(), DataType(1), mini_batch_size);
 
       // Obtain gradient with a sum over rows
       for (int i = 0; i < num_gpus; ++i) {
@@ -403,7 +380,7 @@ class fully_connected_layer : public learning_layer {
                      output_size, mini_batch_size,
                      DataType(1),
                      gradient_wrt_output_d.get_locked_data(i), gradient_wrt_output_ldim,
-                     ones_d[i], 1,
+                     ones_d.get_data(i), 1,
                      DataType(0),
                      m_bias_gradient_d.get_data(i), 1);
       }
@@ -432,16 +409,18 @@ class fully_connected_layer : public learning_layer {
     }
 
     // Compute gradient w.r.t. input
-    for (int i = 0; i < num_gpus; ++i) {
-      CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-      cublas::gemm(this->m_cudnn->get_cublas_handle(i),
-                   CUBLAS_OP_T, CUBLAS_OP_N,
-                   input_size, mini_batch_size, output_size,
-                   DataType(1),
-                   linearity_d[i], output_size,
-                   gradient_wrt_output_d.get_locked_data(i), gradient_wrt_output_ldim,
-                   DataType(1),
-                   gradient_wrt_input_d.get_data(i), gradient_wrt_input_ldim);
+    if (mini_batch_size != 0) {
+      for (int i = 0; i < num_gpus; ++i) {
+        CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
+        cublas::gemm(this->m_cudnn->get_cublas_handle(i),
+                     CUBLAS_OP_T, CUBLAS_OP_N,
+                     input_size, mini_batch_size, output_size,
+                     DataType(1),
+                     linearity_d[i], output_size,
+                     gradient_wrt_output_d.get_locked_data(i), gradient_wrt_output_ldim,
+                     DataType(1),
+                     gradient_wrt_input_d.get_data(i), gradient_wrt_input_ldim);
+      }
     }
 
 #endif // LBANN_HAS_CUDNN

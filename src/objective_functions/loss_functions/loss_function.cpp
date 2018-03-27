@@ -111,12 +111,19 @@ void loss_function::setup(model& m) {
 
 }
 
-EvalType loss_function::evaluate() {
+void loss_function::start_evaluation() {
+  auto *target = (generic_target_layer*) m_layers[0];
+  const AbsDistMat& prediction = target->get_prediction();
+  const AbsDistMat& ground_truth = target->get_ground_truth();
+  start_evaluate_compute(prediction, ground_truth);
+}
+
+EvalType loss_function::finish_evaluation() {
   if (m_scale_factor == EvalType(0)) { return EvalType(0); }
   auto *target = (generic_target_layer*) m_layers[0];
   const AbsDistMat& prediction = target->get_prediction();
   const AbsDistMat& ground_truth = target->get_ground_truth();
-  return m_scale_factor * evaluate_compute(prediction, ground_truth);
+  return m_scale_factor * finish_evaluate_compute(prediction, ground_truth);
 }
 
 void loss_function::differentiate() {
