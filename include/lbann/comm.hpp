@@ -427,8 +427,13 @@ class lbann_comm {
   void allreduce(T *snd, int count, T *rcv, const El::mpi::Comm c, El::mpi::Op op = El::mpi::SUM) {
     bytes_sent += count * sizeof(T);
 #ifdef LBANN_HAS_ALUMINUM
+#ifdef LBANN_ALUMINUM_MPI_PASSTHROUGH
+    allreduces::AllreduceAlgorithm algo = allreduces::AllreduceAlgorithm::mpi_passthrough;
+#else
+    allreduces::AllreduceAlgorithm algo = allreduces::AllreduceAlgorithm::automatic;
+#endif
     allreduces::Allreduce<allreduces::MPIBackend>(
-      snd, rcv, count, mpi_op_to_al_op(op), *get_al_comm(c));
+      snd, rcv, count, mpi_op_to_al_op(op), *get_al_comm(c), algo);
 #else
     El::mpi::AllReduce(snd, rcv, count, op, c);
 #endif
@@ -439,8 +444,13 @@ class lbann_comm {
   void allreduce(T *data, int count, const El::mpi::Comm c, El::mpi::Op op = El::mpi::SUM) {
     bytes_sent += count * sizeof(T);
 #ifdef LBANN_HAS_ALUMINUM
+#ifdef LBANN_ALUMINUM_MPI_PASSTHROUGH
+    allreduces::AllreduceAlgorithm algo = allreduces::AllreduceAlgorithm::mpi_passthrough;
+#else
+    allreduces::AllreduceAlgorithm algo = allreduces::AllreduceAlgorithm::automatic;
+#endif
     allreduces::Allreduce<allreduces::MPIBackend>(
-      data, count, mpi_op_to_al_op(op), *get_al_comm(c));
+      data, count, mpi_op_to_al_op(op), *get_al_comm(c), algo);
 #else
     El::mpi::AllReduce(data, count, op, c);
 #endif
