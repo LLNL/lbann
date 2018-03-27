@@ -506,6 +506,9 @@ export CMAKE_PREFIX_PATH=${MPI_HOME}:${CMAKE_PREFIX_PATH}
 export MPI_C_COMPILER=${MPI_DIR}/bin/mpicc
 export MPI_CXX_COMPILER=${MPI_DIR}/bin/mpicxx
 export MPI_Fortran_COMPILER=${MPI_DIR}/bin/mpifort
+if [ "${MPI}" == "spectrum-mpi" ]; then
+    WITH_SPECTRUM=ON
+fi
 
 ################################################################
 # Initialize GPU libraries
@@ -670,7 +673,8 @@ ${CMAKE_PATH}/cmake \
 -D LBANN_WITH_TOPO_AWARE=${WITH_TOPO_AWARE} \
 -D LBANN_SEQUENTIAL_INITIALIZATION=${SEQ_INIT} \
 -D LBANN_WITH_ALUMINUM=${WITH_ALUMINUM} \ 
--D LBANN_ALUMINUM_DIR=${ALUMINUM_DIR}
+-D LBANN_ALUMINUM_DIR=${ALUMINUM_DIR} \
+-D LBANN_BUILT_WITH_SPECTRUM=${WITH_SPECTRUM} \
 ${SUPERBUILD_DIR}
 EOF
 )
