@@ -81,8 +81,10 @@ class DataReader():
     def _disconnect(self):
         'Disconnect from the named pipes'
         # TODO decide how to clean up /tmp/lbann_comm
-        os.close(self.pipe_from_lbann)
-        os.close(self.pipe_to_lbann)
+        if self.pipe_from_lbann != -1:
+            os.close(self.pipe_from_lbann)
+        if self.pipe_to_lbann != -1:
+            os.close(self.pipe_to_lbann)
 
     def _read(self):
         'Read a length-prefixed protobuf message'
@@ -99,7 +101,7 @@ class DataReader():
 
     def _write(self, message):
         'Write a length-prefixed protobuf message'
-        print('[DataReader] ' + message.WhichOneof('response'))
+        #print('[DataReader] ' + message.WhichOneof('response'))
         message_bytes = message.SerializeToString()
         length_bytes = struct.pack("!I", len(message_bytes))
         os.write(self.pipe_to_lbann, length_bytes)
@@ -121,7 +123,7 @@ class DataReader():
         while not self.exit:
             message = self._read()
             message_type = message.WhichOneof('request')
-            print('[DataReader] ' + message_type)
+            #print('[DataReader] ' + message_type)
             directory[message_type](message)
 
     def handle_exit_request(self, message):
@@ -166,25 +168,103 @@ class DataReader():
         'Get one response'
         raise NotImplementedError()
 
+# copied originally from p2b1_mol_AE.py:Candle_Molecular_Train
+# modifications:
+#  * removed train_ac(), format_data()
+#  * removed class members not required for datagen
+#  * removed internal randomization
+#  * removed debug print()s
+#  * removed all customization except molecular_nbrs
+#  * TODO make this able to take directory information
+
+class Candle_Molecular_Datagen():
+    def __init__(self):
+        import helper
+        self.numpylist, _ = helper.get_local_files('3k_run16')
+        self.molecular_nbrs = 10
+
+    def datagen(self):
+        import numpy as np
+        import helper
+        X_all = np.array([])
+        nbrs_all = np.array([])
+        resnums_all = np.array([])
+        files = self.numpylist
+        # Training only on few files
+        order = [0]
+        # Randomize files after first training epoch
+
+        for f_ind in order:
+            (X, nbrs, resnums) = helper.get_data_arrays(files[f_ind])
+
+            # normalizing the location coordinates and bond lengths and scale type encoding
+            # Changed the xyz normalization from 255 to 350
+            Xnorm = np.concatenate([X[:, :, :, 0:3]/320., X[:, :, :, 3:8], X[:, :, :, 8:]/10.], axis=3)
+
+            num_frames = X.shape[0]
+            input_feature_dim = np.prod(Xnorm.shape[2:])
+
+            xt_all = np.array([])
+            yt_all = np.array([])
+
+            for i in range(num_frames):
+
+                xt = Xnorm[i]
+                xt = helper.get_neighborhood_features(xt, nbrs[i], self.molecular_nbrs)
+
+                yt = xt.copy()
+                #xt = xt.reshape(xt.shape[0], 1, xt.shape[1], 1)
+
+                if not len(xt_all):
+                    xt_all = np.expand_dims(xt, axis=0)
+                    yt_all = np.expand_dims(yt, axis=0)
+                else:
+                    xt_all = np.append(xt_all, np.expand_dims(xt, axis=0), axis=0)
+                    yt_all = np.append(yt_all, np.expand_dims(yt, axis=0), axis=0)
+
+            yield files[f_ind], xt_all, yt_all
+
+        return
+
 
 class Pilot2DataReader(DataReader):
     def configure(self):
-        self.num_samples = 304000
-        self.num_features = 240
-        self.data_size = 2640
-        self.dims = [11, 12, 20]
+        cmd = Candle_Molecular_Datagen()
+        
+        print('[DataReader] Loading data into memory, this should take 4 minutes')
+        for files, xt_all, yt_all in cmd.datagen():
+            self.data = xt_all
+
+            # TODO support multiple files
+            break
+        print('[DataReader] Finished loading data into memory')
+
+        self.num_samples = self.data.shape[0]*self.data.shape[1]
+        self.data_size = self.data.shape[2]
+        self.num_features = self.data_size
+        self.dims = [
+            cmd.molecular_nbrs+1,
+            12, # always 12 beads
+            19]
         self.type = 'Pilot2 DataReader'
+        print('num_samples: ', self.num_samples)
+        print('data_size: ', self.data_size)
+        print('num_features: ', self.num_features)
+        print('dims: ', self.dims)
+        print('data shape: ', self.data.shape)
 
     def handle_fetch_datum_request(self, message):
-        data_id = message.fetch_datum_request.data_id
-        mb_idx = message.fetch_datum_request.mb_idx
-        tid = message.fetch_datum_request.tid
-        print('[DataReader] fetch_datum({}, {}, {})'.format(data_id, mb_idx, tid))
+        data_id = message.fetch_datum_request.data_id # in range [0, self.num_samples-1]
+        mb_idx = message.fetch_datum_request.mb_idx # ignored
+        tid = message.fetch_datum_request.tid # ignored
+        #print('[DataReader] fetch_datum({}, {}, {})'.format(data_id, mb_idx, tid))
         response = Response()
-        for i in range(240):
-            response.fetch_datum_response.datum.append(0)
-        self._write(response)
+        
+        frame_idx, particle_idx = divmod(data_id, self.data.shape[1])
+        
+        response.fetch_datum_response.datum.extend(self.data[frame_idx, particle_idx, :])
 
+        self._write(response)
 
 def usage():
     'Print the proper usage of this program'
