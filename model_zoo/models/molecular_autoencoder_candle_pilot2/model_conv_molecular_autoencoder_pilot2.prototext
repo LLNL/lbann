@@ -7,6 +7,7 @@ model {
   num_parallel_readers: 1
   procs_per_model: 0
   num_gpus: -1
+  disable_cuda: true
 
   ###################################################
   # Objective function
@@ -77,9 +78,9 @@ model {
     convolution {
       num_dims: 1
       num_output_channels: 1024
-      conv_dims: "240"
+      conv_dims: "228"
       conv_pads: "0"
-      conv_strides: "240"
+      conv_strides: "228"
       weight_initialization: "he_normal"
       has_bias: true
       has_vectors: true
@@ -196,9 +197,9 @@ model {
     deconvolution {
       num_dims: 1
       num_output_channels: 1
-      conv_dims: "240"
+      conv_dims: "228"
       conv_pads: "0"
-      conv_strides: "240"
+      conv_strides: "228"
       has_bias: true
       has_vectors: true
     }
