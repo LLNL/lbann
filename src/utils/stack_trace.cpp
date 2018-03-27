@@ -139,7 +139,7 @@ void print_lbann_exception_stack_trace(std::string m) {
   
   std::stringstream s;
   s << "\n**************************************************************************\n"
-    << " This lbann_exception is about to be thrown:" << m << "\n\n"
+    << " This lbann_exception is about to be thrown: " << m << "\n\n"
     << " Am now attempting to print the stack trace ...\n"
     << "**************************************************************************\n";
   if (to_file.is_open()) {
