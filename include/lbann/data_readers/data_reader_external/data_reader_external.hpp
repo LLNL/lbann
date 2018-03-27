@@ -48,21 +48,21 @@ class external_reader : public generic_data_reader {
 
     std::string get_type() const override;
 
-//    void set_has_labels(bool);
-//    void set_has_responses(bool);
+    void set_has_labels(bool);
+    void set_has_responses(bool);
 
     void load() override;
 
-//    int get_num_labels() const override;
+    int get_num_labels() const override;
     int get_linearized_data_size() const override;
-//    int get_linearized_label_size() const override;
+    int get_linearized_label_size() const override;
 
     const std::vector<int> get_data_dims() const override;
 
   protected:
     bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
-//    bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;
-//    bool fetch_response(Mat& Y, int data_id, int mb_idx, int tid) override;
+    bool fetch_response(Mat& Y, int data_id, int mb_idx, int tid) override;
+    bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;
 
     int m_num_samples = -1;
     int m_num_features = -1;
@@ -81,6 +81,7 @@ class external_reader : public generic_data_reader {
 
     void get_config();
 
+    Response message_transaction(const Request& request) const;
     Response message_read() const;
     bool message_write(Request request) const;
 

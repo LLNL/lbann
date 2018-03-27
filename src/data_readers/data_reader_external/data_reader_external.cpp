@@ -190,12 +190,7 @@ void external_reader::load() {
 
   init_request->set_filename(infile);
 
-  Response response;
-  {
-    std::lock_guard<std::mutex> lock{m_read_write_completion};
-    message_write(request);
-    response = message_read();
-  }
+  Response response = message_transaction(request);
 
   if (!response.has_init_response()) {
     throw lbann_exception(
@@ -225,12 +220,9 @@ void external_reader::load() {
 std::string external_reader::get_type() const {
   Request request;
   request.mutable_type_request();
-  Response response;
-  {
-    std::lock_guard<std::mutex> lock{m_read_write_completion};
-    message_write(request);
-    response = message_read();
-  }
+
+  Response response = message_transaction(request);
+
   if (!response.has_type_response()) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
@@ -242,12 +234,9 @@ std::string external_reader::get_type() const {
 void external_reader::get_config() {
   Request request;
   request.mutable_config_request();
-  Response response;
-  {
-    std::lock_guard<std::mutex> lock{m_read_write_completion};
-    message_write(request);
-    response = message_read();
-  }
+
+  Response response = message_transaction(request);
+
   if (!response.has_config_response()) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
@@ -270,8 +259,7 @@ const std::vector<int> external_reader::get_data_dims() const {
   return m_dims;
 }
 
-// TODO test with something that has labels/responses
-/*
+// TODO test something that has labels/responses
 int external_reader::get_num_labels() const {
   return m_label_count;
 }
@@ -279,7 +267,25 @@ int external_reader::get_num_labels() const {
 int external_reader::get_linearized_label_size() const {
   return m_label_size;
 }
-*/
+
+Response external_reader::message_transaction(const Request& request) const {
+  Response response;
+  {
+    // TODO do we need this mutex
+    bool locked = m_read_write_completion.try_lock();
+    if (!locked) {
+        std::cout << "SOMEONE'S BEEN EATING MY LOCKS" << std::endl;
+    } else {
+        m_read_write_completion.unlock();
+    }
+    
+    std::lock_guard<std::mutex> lock{m_read_write_completion};
+    message_write(request);
+    response = message_read();
+  }
+  return response;
+}
+
 
 Response external_reader::message_read() const {
   // Read a message from the open named pipe
@@ -333,12 +339,8 @@ bool external_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
   fetch_datum_request->set_mb_idx(mb_idx);
   fetch_datum_request->set_tid(tid);
 
-  Response response;
-  {
-    std::lock_guard<std::mutex> lock{m_read_write_completion};
-    message_write(request);
-    response = message_read();
-  }
+  Response response = message_transaction(request);
+
   if (!response.has_fetch_datum_response()) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
@@ -350,7 +352,9 @@ bool external_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
   if (fetch_datum_response.datum_size() != m_num_features) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " external_reader::fetch_datum() - incorrect dimensionality for received data");
+      " external_reader::fetch_datum() - incorrect dimensionality for received data" +
+      " expected: " + std::to_string(m_num_features) +
+      " got: " + std::to_string(fetch_datum_response.datum_size()));
   }
 
   for (int i = 0; i < fetch_datum_response.datum_size(); i++) {
@@ -359,26 +363,53 @@ bool external_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
   return true;
 }
 
-// TODO finish these
-/*
+bool external_reader::fetch_response(Mat& Y, int data_id, int mb_idx, int tid) {
+  if (!m_has_responses) {
+    throw lbann_exception("external_reader: do not have responses");
+  }
+  Request request;
+  FetchResponseRequest* fetch_response_request = request.mutable_fetch_response_request();
+  fetch_response_request->set_data_id(data_id);
+  fetch_response_request->set_mb_idx(mb_idx);
+  fetch_response_request->set_tid(tid);
+
+  Response response = message_transaction(request);
+
+  if (!response.has_fetch_response_response()) {
+    throw lbann_exception(
+      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+      " external_reader::fetch_response() - incorrect message type received, expected fetch_response");
+  }
+
+  FetchResponseResponse fetch_response_response = response.fetch_response_response();
+
+  Y(0, mb_idx) = fetch_response_response.response();
+  return true;
+}
+
 bool external_reader::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
   if (!m_has_labels) {
     throw lbann_exception("external_reader: do not have labels");
   }
 
-  throw lbann_exception("external reader does not support label fetch yet");
+  Request request;
+  FetchLabelRequest* fetch_label_request = request.mutable_fetch_label_request();
+  fetch_label_request->set_data_id(data_id);
+  fetch_label_request->set_mb_idx(mb_idx);
+  fetch_label_request->set_tid(tid);
 
-  return true;
-}
+  Response response = message_transaction(request);
 
-bool external_reader::fetch_response(Mat& Y, int data_id, int mb_idx, int tid) {
-  if (!m_has_responses) {
-    throw lbann_exception("external_reader: do not have responses");
+  if (!response.has_fetch_label_response()) {
+    throw lbann_exception(
+      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+      " external_reader::fetch_label() - incorrect message type received, expected fetch_label");
   }
 
-  throw lbann_exception("external reader does not support response fetch yet");
+  FetchLabelResponse fetch_label_response = response.fetch_label_response();
 
+  Y(fetch_label_response.label(), mb_idx) = 1;
   return true;
 }
-*/
+
 }  // namespace lbann
