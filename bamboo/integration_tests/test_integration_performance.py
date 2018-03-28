@@ -77,48 +77,44 @@ DATA_FIELDS = [
 ]
 
 def skeleton_performance_lenet_mnist(cluster, dir_name, executables, compiler_name):
-  if compiler_name in executables:
-    executable = executables[compiler_name]
-    model_name = 'lenet_mnist'
-    model_folder = 'models/' + model_name
-    should_log = False
-    actual_performance = common_code.skeleton(cluster, dir_name, executable, model_folder, model_name, DATA_FIELDS, should_log, compiler_name)
-    run_tests(actual_performance, model_name, dir_name, should_log, compiler_name, cluster)
-  else:
+  if compiler_name not in executables:
     pytest.skip('default_exes[%s] does not exist' % compiler_name)
+  executable = executables[compiler_name]
+  model_name = 'lenet_mnist'
+  model_folder = 'models/' + model_name
+  should_log = False
+  actual_performance = common_code.skeleton(cluster, dir_name, executable, model_folder, model_name, DATA_FIELDS, should_log, compiler_name=compiler_name)
+  run_tests(actual_performance, model_name, dir_name, should_log, compiler_name, cluster)
 
 def skeleton_performance_alexnet(cluster, dir_name, executables, compiler_name, weekly):
+  if compiler_name not in executables:
+    pytest.skip('default_exes[%s] does not exist' % compiler_name)
+  executable = executables[compiler_name]
+  model_name = 'alexnet'
+  model_folder = 'models/' + model_name
+  should_log = False
+  actual_performance = common_code.skeleton(cluster, dir_name, executable, model_folder, model_name, DATA_FIELDS, should_log, compiler_name=compiler_name, weekly=weekly)
+  frequency_str = '_nightly'
   if weekly:
-    if compiler_name in executables:
-      executable = executables[compiler_name]
-      model_name = 'alexnet'
-      model_folder = 'models/' + model_name
-      should_log = False
-      actual_performance = common_code.skeleton(cluster, dir_name, executable, model_folder, model_name, DATA_FIELDS, should_log)
-      run_tests(actual_performance, model_name, dir_name, should_log, compiler_name, cluster)
-    else:
-      pytest.skip('default_exes[%s] does not exist' % compiler_name)
-  else:
-    pytest.skip('Not doing weekly testing')
+    frequency_str = '_weekly'
+  run_tests(actual_performance, model_name + frequency_str, dir_name, should_log, compiler_name, cluster)
 
 def skeleton_performance_cache_alexnet(cluster, dir_name, executables, weekly, compiler_name):
-  if weekly:
-    if compiler_name in executables:
-      executable = executables[compiler_name]
-      model_name = 'cache_alexnet'
-      should_log = False
-      output_file_name = 'output/%s_output.txt' % model_name
-      if (cluster in ['catalyst', 'surface']):
-        command = 'salloc %s/bamboo/integration_tests/%s.sh > %s' % (dir_name, model_name, output_file_name)
-      else:
-        raise Exception("Unsupported Cluster %s" % cluster)
-      common_code.run_lbann(command, model_name, output_file_name, should_log)
-      actual_performance = common_code.extract_data(output_file_name, DATA_FIELDS, should_log)
-      run_tests(actual_performance, model_name, dirname, should_log, compiler_name, cluster)
-    else:
-      pytest.skip('default_exes[%s] does not exist' % compiler_name)
-  else:
+  if not weekly:
     pytest.skip('Not doing weekly testing')
+  if compiler_name not in executables:
+    pytest.skip('default_exes[%s] does not exist' % compiler_name)
+  executable = executables[compiler_name]
+  model_name = 'cache_alexnet'
+  should_log = False
+  output_file_name= '%s/bamboo/integration_tests/output/%s_%s_output.txt' %(dir_name, model_name, compiler_name)
+  if (cluster in ['catalyst', 'surface']):
+    command = 'salloc %s/bamboo/integration_tests/%s.sh > %s' % (dir_name, model_name, output_file_name)
+  else:
+    raise Exception("Unsupported Cluster %s" % cluster)
+  common_code.run_lbann(command, model_name, output_file_name, should_log)
+  actual_performance = common_code.extract_data(output_file_name, DATA_FIELDS, should_log)
+  run_tests(actual_performance, model_name, dirname, should_log, compiler_name, cluster)
 
 def test_integration_performance_lenet_mnist_clang4(cluster, dirname, exes):
     skeleton_performance_lenet_mnist(cluster, dirname, exes, 'clang4')
