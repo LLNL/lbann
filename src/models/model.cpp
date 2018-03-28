@@ -1064,6 +1064,15 @@ void model::summarize_stats(lbann_summary& summarizer) {
     m_objective_function->get_differentiation_time(),
     get_cur_step());
   m_objective_function->reset_counters();
+  double total_metric_time = 0.0;
+  for (auto&& m : m_metrics) {
+    total_metric_time += m->get_evaluate_time();
+    m->reset_counters();
+  }
+  summarizer.reduce_scalar(
+    "metric_evaluation_time",
+    total_metric_time,
+    get_cur_step());
 }
 
 void model::summarize_matrices(lbann_summary& summarizer) {
