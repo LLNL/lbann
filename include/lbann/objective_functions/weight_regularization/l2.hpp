@@ -64,12 +64,17 @@ class l2_weight_regularization : public objective_function_term {
   void compute_weight_regularization() override;
 
  private:
+
+  /** Reference to cuDNN manager. */
+  cudnn::cudnn_manager* m_cudnn = nullptr;
+
   /** Holds intermediate terms for each weights. */
   std::vector<EvalType> m_sqsums;
   /** Holds an allreduce request for each weights. */
   std::vector<Al::request> m_allreduce_reqs;
   /** Whether an allreduce is needed for each weights. */
   std::vector<bool> m_allreduce_started;
+
 };
 
 } // namespace lbann

@@ -69,10 +69,7 @@ void l2_weight_regularization::setup(model& m) {
 
   // Check that term has no layer pointers
   if (!m_layers.empty()) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to setup L2 weight regularization with layer pointers";
-    throw lbann_exception(err.str());
+    LBANN_ERROR("attempted to setup L2 weight regularization with layer pointers");
   }
 
   // Add all weights in model if no weights pointers are provided
@@ -88,31 +85,63 @@ void l2_weight_regularization::setup(model& m) {
   for (size_t i = 0; i < m_weights.size(); ++i) {
     m_allreduce_reqs.push_back(std::move(Al::request()));
   }
+
+  // Get cuDNN manager
+  m_cudnn = nullptr;
+  for (auto&& w : m_weights) {
+    m_cudnn = w->get_cudnn_manager();
+    if (m_cudnn != nullptr) { break; }
+  }
+
 }
 
 void l2_weight_regularization::start_evaluation() {
-  if (m_scale_factor == EvalType(0)) {
-    return;
-  }
-  // Reset arrays.
+  if (m_scale_factor == EvalType(0)) { return; }
+
+  // Reset arrays
   std::fill(m_sqsums.begin(), m_sqsums.end(), EvalType(0));
   std::fill(m_allreduce_started.begin(), m_allreduce_started.end(), false);
+
+#ifdef LBANN_HAS_CUDNN
+  // Compute L2 regularization term for GPU weights
+  if (m_cudnn != nullptr) {
+    const auto& num_gpus = m_cudnn->get_num_gpus();
+    for (int i = 0; i < num_gpus; ++i) {
+      CHECK_CUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
+      CHECK_CUDA(cublasSetPointerMode(m_cudnn->get_cublas_handle(i),
+                                      CUBLAS_POINTER_MODE_DEVICE));
+    }
+    int gpu = 0;
+    for (size_t i = 0; i < m_weights.size(); ++i) {
+      const auto& w = m_weights[i];
+      if (w->get_cudnn_manager() != nullptr) {
+        CHECK_CUDA(cudaSetDevice(m_cudnn->get_gpu(gpu)));
+        cublas::dot(m_cudnn->get_cublas_handle(gpu),
+                    w->get_size(),
+                    w->get_values_gpu()[gpu], 1,
+                    w->get_values_gpu()[gpu], 1,
+                    reinterpret_cast<DataType*>(m_cudnn->get_work_space(gpu)));
+        CHECK_CUDA(cudaMemcpyAsync(&m_sqsums[i],
+                                   m_cudnn->get_work_space(gpu),
+                                   sizeof(DataType),
+                                   cudaMemcpyDeviceToHost,
+                                   m_cudnn->get_stream(gpu)));
+        gpu = (gpu + 1) % num_gpus;
+      }
+    }
+    for (int i = 0; i < num_gpus; ++i) {
+      CHECK_CUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
+      CHECK_CUDA(cublasSetPointerMode(m_cudnn->get_cublas_handle(i),
+                                      CUBLAS_POINTER_MODE_HOST));
+      CHECK_CUDA(cudaStreamSynchronize(m_cudnn->get_stream(i)));
+    }
+  }
+#endif // LBANN_HAS_CUDNN
+
+  // Compute L2 regularization term for CPU weights
   for (size_t i = 0; i < m_weights.size(); ++i) {
     const auto& w = m_weights[i];
-    cudnn::cudnn_manager* cudnn = w->get_cudnn_manager();
-    if (cudnn != nullptr) {
-    #ifndef LBANN_HAS_CUDNN
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: cuDNN not detected";
-      throw lbann_exception(err.str());
-    #else
-      CHECK_CUDA(cudaSetDevice(cudnn->get_gpu(0)));
-      const EvalType norm = cublas::nrm2(cudnn->get_cublas_handle(0),
-                                         w->get_size(),
-                                         w->get_values_gpu()[0], 1);
-      m_sqsums[i] = norm * norm;
-    #endif // LBANN_HAS_CUDNN
-    } else {
+    if (w->get_cudnn_manager() == nullptr) {
       const auto& values = w->get_values();
       m_sqsums[i] = sum_of_squares(values.LockedMatrix());
       get_comm().nb_allreduce(&(m_sqsums[i]), 1, values.DistComm(),
@@ -120,19 +149,19 @@ void l2_weight_regularization::start_evaluation() {
       m_allreduce_started[i] = true;
     }
   }
+
 }
 
 EvalType l2_weight_regularization::finish_evaluation() {
-  if (m_scale_factor == EvalType(0)) {
-    return EvalType(0);
-  }
-  EvalType sqsum = EvalType(0);
+  if (m_scale_factor == EvalType(0)) { return EvalType(0); }
   for (size_t i = 0; i < m_weights.size(); ++i) {
     if (m_allreduce_started[i]) {
       get_comm().wait(m_allreduce_reqs[i]);
     }
-    sqsum += m_sqsums[i];
   }
+  const auto& sqsum = std::accumulate(m_sqsums.begin(),
+                                      m_sqsums.end(),
+                                      EvalType(0));
   return m_scale_factor * sqsum / 2;
 }
 
@@ -142,9 +171,7 @@ void l2_weight_regularization::compute_weight_regularization() {
     auto&& opt = w->get_optimizer();
     if (w->get_cudnn_manager() != nullptr) {
     #ifndef LBANN_HAS_CUDNN
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: cuDNN not detected";
-      throw lbann_exception(err.str());
+      LBANN_ERROR("cuDNN not detected");
     #else
       cudnn::matrix values_d(w->get_cudnn_manager());
       auto&& values_ptrs = w->get_values_gpu();
