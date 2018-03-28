@@ -146,6 +146,13 @@ class metric {
   /** Set list of pointers to layers. */
   void set_layer_pointers(std::vector<Layer*> layers);
 
+  /** Get the time spent in evaluation for this metric. */
+  double get_evaluate_time() const { return m_evaluate_time; }
+  /** Reset timing counters. */
+  void reset_counters() {
+    m_evaluate_time = 0.0;
+  }
+
   /** Save metric state to checkpoint. */
   virtual bool save_to_checkpoint_shared(persist& p);
   /** Load metric state from checkpoint. */
@@ -173,6 +180,9 @@ class metric {
 
   /** Metric statistics. */
   std::map<execution_mode,metric_statistics> m_statistics;
+
+  /** Runtime for the metric evaluation. */
+  double m_evaluate_time = 0.0;
 
 };
 
