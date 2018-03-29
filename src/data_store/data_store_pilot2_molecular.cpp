@@ -204,7 +204,7 @@ void data_store_pilot2_molecular::exchange_data() {
             << " m_offsets.find(" << idx << ") failed";
         throw lbann_exception(err.str());
       }
-      int offset = m_offsets[idx];
+      size_t offset = m_offsets[idx];
       m_molecule_hash[idx] = jj;
       if (jj >= m_my_molecules.size()) throw lbann_exception("ERROR 1");
 
@@ -215,7 +215,7 @@ void data_store_pilot2_molecular::exchange_data() {
   }
   MPI_Win_fence(MPI_MODE_NOSTORE|MPI_MODE_NOPUT, m_win);
   if (m_owner) {
-    std::cout << "data_store_pilot2_molecular::exchange_data() time: " << get_time() - tm1 << std::endl;
+    std::cout << "role: " << m_reader->get_role() << " data_store_pilot2_molecular::exchange_data() time: " << get_time() - tm1 << std::endl;
   }
 }
 

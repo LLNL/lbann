@@ -333,7 +333,7 @@ void data_store_csv::exchange_data() {
 
     m_my_data_hash[idx] = jj;
     int owner = get_index_owner(idx);
-    int offset = m_offset_mapping[idx];
+    size_t offset = m_offset_mapping[idx];
 
 /*
 out << "calling mpi_get; jj: " << jj << " of " << m_my_minibatch_indices_v.size() << "  data_id: " << idx << " owner: " << owner << " offset: " << offset << "  sz: " << m_vector_size*sizeof(DataType) << " m_data: " << m_data.size()

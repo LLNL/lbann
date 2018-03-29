@@ -61,13 +61,17 @@ void data_store_image::setup() {
     get_my_datastore_indices();
 
     if (m_master) std::cerr << "calling get_file_sizes\n";
+    double tma = get_time();
     get_file_sizes();
+    if (m_master) std::cerr << "get_file_sizes time: " << get_time() - tma << "\n";
 
     if (m_master) std::cerr << "calling allocate_memory\n";
     allocate_memory();
 
     if (m_master) std::cerr << "calling read_files\n";
+    tma = get_time();
     read_files();
+    if (m_master) std::cerr << "read_files time: " << get_time() - tma << "\n";
 
     MPI_Win_create((void*)m_data.data(), m_data.size(), 1, MPI_INFO_NULL, m_mpi_comm, &m_win);
 
@@ -273,7 +277,7 @@ void data_store_image::exchange_data() {
   
         int file_len = m_file_sizes[index];
         int owner = get_index_owner(base_index);
-        int offset = m_offsets[index];
+        size_t offset = m_offsets[index];
         int end = data_sizes[owner] - (offset+file_len);
         out << "base: " << base_index << " index: " << index << " offset: " 
             << offset << " file_len: " << file_len << " owner: " << owner 
@@ -284,6 +288,7 @@ void data_store_image::exchange_data() {
   }
   #endif //debug
 
+  // Start of code block for one-sided communication
   double tm1 = get_time();
   MPI_Win_fence(MPI_MODE_NOSTORE|MPI_MODE_NOPUT, m_win);
   m_my_minibatch_data.clear();
@@ -317,23 +322,12 @@ void data_store_image::exchange_data() {
   MPI_Win_fence(MPI_MODE_NOSTORE|MPI_MODE_NOPUT, m_win);
   double tm2 = get_time();
   if (m_rank == 0) {
-    std::cerr << "data_store_image::exchange_data() time: " << tm2 - tm1 << std::endl;
+    std::cerr << "role: " << m_reader->get_role() << " data_store_image::exchange_data() time: " << tm2 - tm1 << std::endl;
   }
 }
 
 void data_store_image::exchange_file_sizes(std::vector<Triple> &my_file_sizes, int num_global_indices) {
-  //exchange files sizes
   std::vector<Triple> global_file_sizes(num_global_indices);
-
-//debug block
-for (size_t j=0; j<global_file_sizes.size(); j++) {
-  global_file_sizes[j].global_index = -1;
-  global_file_sizes[j].num_bytes = -1;
-  global_file_sizes[j].offset = 100000;
-  global_file_sizes[j].rank = -1;
-}
-
-  //exchange the number of files each processor owns
   std::vector<int> d(m_np);
   std::iota(d.begin(), d.end(), 0);
   std::vector<int> d2(m_np, 1);
@@ -349,20 +343,16 @@ for (size_t j=0; j<global_file_sizes.size(); j++) {
     disp[h] = disp[h-1] + num_bytes[h-1];
   }
 
-/*
-  for (size_t j=0; j<m_num_samples.size(); j++) {
-    m_num_samples[j] *= sizeof(Triple)*m_num_img_srcs;
+  #ifdef DEBUG
+  if (m_master) {
+    std::cerr << "\nnum samples: ";
+    for (auto t : num_bytes) std::cerr << t << " ";
+    std::cerr << "\ndispl: ";
+    for (auto t : disp) std::cerr << t << " ";
+    std::cerr << "\n\n";
+    std::cerr << "sizeof(Triple): " << sizeof(Triple) << "\n\n";
   }
-*/
-
-if (m_master) {
-  std::cerr << "\nnum samples: ";
-  for (auto t : num_bytes) std::cerr << t << " ";
-  std::cerr << "\ndispl: ";
-  for (auto t : disp) std::cerr << t << " ";
-  std::cerr << "\n\n";
-  std::cerr << "sizeof(Triple): " << sizeof(Triple) << "\n\n";
-}
+  #endif
 
   //@todo: couldn't get m_comm->model_gatherv to work
   //m_comm->model_gatherv(&my_file_sizes[0], my_file_sizes.size(), 
@@ -370,15 +360,6 @@ if (m_master) {
   MPI_Allgatherv(my_file_sizes.data(), my_file_sizes.size()*sizeof(Triple), MPI_BYTE,
                  global_file_sizes.data(), num_bytes.data(), disp.data(), MPI_BYTE,
                  m_mpi_comm);
-
-
-for (size_t j=0; j<global_file_sizes.size(); j++) {
-  if (global_file_sizes[j].global_index == -1 ||
-  global_file_sizes[j].num_bytes == -1 ||
-  global_file_sizes[j].offset == 1000000  ||
-  global_file_sizes[j].rank == -1)
-  throw lbann_exception("BBBBBBBBBBBBBBAAAAAAAAAAAAADDDDDDDD");
-}
 
   size_t j = 0;
   for (auto t : global_file_sizes) {

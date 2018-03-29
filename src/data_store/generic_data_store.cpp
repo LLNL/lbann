@@ -125,7 +125,6 @@ void generic_data_store::setup() {
         throw lbann_exception(s2.str());
     }
     m_reader->set_save_minibatch_entries(false);
-    if (m_master) { std::cerr << "DONE! calling m_model->collect_indices\n"; }
   }
   m_my_minibatch_indices = &(m_reader->get_minibatch_indices());
 }
