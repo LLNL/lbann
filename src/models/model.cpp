@@ -899,6 +899,16 @@ void model::add_split_layers(std::unordered_set<std::string>& layer_names) {
       split->set_name(name);
       layer_names.insert(name);
 
+      // Copy parallel strategy from parent.
+      ParallelStrategy& ps = split->get_parallel_strategy();
+      ParallelStrategy& orig_ps = layer->get_parallel_strategy();
+      ps.sample_groups = orig_ps.sample_groups;
+      ps.height_groups = orig_ps.height_groups;
+      ps.width_groups = orig_ps.width_groups;
+      ps.channel_groups = orig_ps.channel_groups;
+      ps.filter_groups = orig_ps.filter_groups;
+      ps.replications = orig_ps.replications;
+
       // Setup relationships between split layer and child layers
       for (auto&& const_child : children) {
         auto* child = const_cast<Layer*>(const_child);

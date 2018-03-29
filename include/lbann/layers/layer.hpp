@@ -46,6 +46,22 @@ class model;
 class weights;
 class lbann_callback_sync_layers;
 
+/** Represents a parallel strategy for a layer. */
+struct ParallelStrategy {
+  /** Number of groups the sample dimension is split over. */
+  int sample_groups = 0;
+  /** Number of groups the height dimension is split over. */
+  int height_groups = 0;
+  /** Number of groups the width dimension is split over. */
+  int width_groups = 0;
+  /** Number of groups the channel dimension is split over. */
+  int channel_groups = 0;
+  /** Number of groups the filter dimension is split over. */
+  int filter_groups = 0;
+  /** Number of times the layer is replicated (for FC layers right now). */
+  int replications = 0;
+};
+
 /**
  * @brief Neural network tensor operation.
  *
@@ -320,6 +336,9 @@ public:
   void unfreeze();
   bool is_frozen() const;
 
+  /** Get the parallel strategy for the layer. */
+  ParallelStrategy& get_parallel_strategy() { return m_parallel_strategy; }
+
 protected:
 
   // ===========================================================
@@ -462,6 +481,9 @@ protected:
    *  human-readable, name.
    */
   std::string m_name;
+
+  /** Parallel strategy for the layer. */
+  ParallelStrategy m_parallel_strategy;
 
 private:
 
