@@ -77,7 +77,7 @@ model {
   layer {
     parents: "slice"
     name: "conv1"
-    children: "relu1"
+    children: "bn_conv1"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -92,6 +92,20 @@ model {
 
   layer {
     parents: "conv1"
+    name: "bn_conv1"
+    children: "relu1"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+      global_stats: true
+    }
+  }
+
+  layer {
+    parents: "bn_conv1"
     name: "relu1"
     children: "pool1"
     data_layout: "data_parallel"
@@ -101,7 +115,7 @@ model {
   layer {
     parents: "relu1"
     name: "pool1"
-    children: "norm1"
+    children: "conv2"
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
@@ -115,21 +129,8 @@ model {
 
   layer {
     parents: "pool1"
-    name: "norm1"
-    children: "conv2"
-    data_layout: "data_parallel"
-    local_response_normalization {
-      window_width: 5
-      lrn_alpha: 0.0001
-      lrn_beta: 0.75
-      lrn_k: 2
-    }
-  }
-
-  layer {
-    parents: "norm1"
     name: "conv2"
-    children: "relu2"
+    children: "bn_conv2"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -144,6 +145,20 @@ model {
 
   layer {
     parents: "conv2"
+    name: "bn_conv2"
+    children: "relu2"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+      global_stats: true
+    }
+  }
+
+  layer {
+    parents: "bn_conv2"
     name: "relu2"
     children: "pool2"
     data_layout: "data_parallel"
@@ -153,7 +168,7 @@ model {
   layer {
     parents: "relu2"
     name: "pool2"
-    children: "norm2"
+    children: "conv3"
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
@@ -167,21 +182,8 @@ model {
 
   layer {
     parents: "pool2"
-    name: "norm2"
-    children: "conv3"
-    data_layout: "data_parallel"
-    local_response_normalization {
-      window_width: 5
-      lrn_alpha: 0.0001
-      lrn_beta: 0.75
-      lrn_k: 2
-    }
-  }
-
-  layer {
-    parents: "norm2"
     name: "conv3"
-    children: "relu3"
+    children: "bn_conv3"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -196,6 +198,20 @@ model {
 
   layer {
     parents: "conv3"
+    name: "bn_conv3"
+    children: "relu3"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+      global_stats: true
+    }
+  }
+
+  layer {
+    parents: "bn_conv3"
     name: "relu3"
     children: "conv4"
     data_layout: "data_parallel"
@@ -205,7 +221,7 @@ model {
   layer {
     parents: "relu3"
     name: "conv4"
-    children: "relu4"
+    children: "bn_conv4"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -220,6 +236,20 @@ model {
 
   layer {
     parents: "conv4"
+    name: "bn_conv4"
+    children: "relu4"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+      global_stats: true
+    }
+  }
+
+  layer {
+    parents: "bn_conv4"
     name: "relu4"
     children: "conv5"
     data_layout: "data_parallel"
@@ -229,7 +259,7 @@ model {
   layer {
     parents: "relu4"
     name: "conv5"
-    children: "relu5"
+    children: "bn_conv5"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -244,6 +274,20 @@ model {
 
   layer {
     parents: "conv5"
+    name: "bn_conv5"
+    children: "relu5"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+      global_stats: true
+    }
+  }
+
+  layer {
+    parents: "bn_conv5"
     name: "relu5"
     children: "pool3"
     data_layout: "data_parallel"
@@ -268,8 +312,8 @@ model {
   layer {
     parents: "pool3"
     name: "fc6"
-    children: "relu6"
-    data_layout: "model_parallel"
+    children: "bn_fc6"
+    data_layout: "data_parallel"
     fully_connected {
       num_neurons: 4096
       has_bias: true
@@ -278,9 +322,23 @@ model {
 
   layer {
     parents: "fc6"
+    name: "bn_fc6"
+    children: "relu6"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+      global_stats: true
+    }
+  }
+
+  layer {
+    parents: "bn_fc6"
     name: "relu6"
     children: "drop6"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     relu {}
   }
 
@@ -288,9 +346,9 @@ model {
     parents: "relu6"
     name: "drop6"
     children: "concatenation"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     dropout {
-      keep_prob: 0.5
+      keep_prob: 0.9
     }
   }
 
@@ -298,15 +356,15 @@ model {
     parents: "drop6"
     name: "concatenation"
     children: "fc7"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     concatenation {}
   }
 
   layer {
     parents: "concatenation"
     name: "fc7"
-    children: "relu7"
-    data_layout: "model_parallel"
+    children: "bn_fc7"
+    data_layout: "data_parallel"
     fully_connected {
       num_neurons: 4096
       has_bias: true
@@ -315,9 +373,23 @@ model {
 
   layer {
     parents: "fc7"
+    name: "bn_fc7"
+    children: "relu7"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+      global_stats: true
+    }
+  }
+
+  layer {
+    parents: "bn_fc7"
     name: "relu7"
     children: "drop7"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     relu {}
   }
 
@@ -325,17 +397,17 @@ model {
     parents: "relu7"
     name: "drop7"
     children: "fc8"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     dropout {
-      keep_prob: 0.5
+      keep_prob: 0.9
     }
   }
 
   layer {
     parents: "drop7"
     name: "fc8"
-    children: "relu8"
-    data_layout: "model_parallel"
+    children: "bn_fc8"
+    data_layout: "data_parallel"
     fully_connected {
       num_neurons: 4096
       has_bias: true
@@ -344,9 +416,23 @@ model {
 
   layer {
     parents: "fc8"
+    name: "bn_fc8"
+    children: "relu8"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+      global_stats: true
+    }
+  }
+
+  layer {
+    parents: "bn_fc8"
     name: "relu8"
     children: "fc9"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     relu {}
   }
 
@@ -354,7 +440,7 @@ model {
     parents: "relu8"
     name: "fc9"
     children: "prob"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     fully_connected {
       num_neurons: 20
       has_bias: false
@@ -365,7 +451,7 @@ model {
     parents: "fc9"
     name: "prob"
     children: "target"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     softmax {}
   }
 
