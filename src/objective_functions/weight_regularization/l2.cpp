@@ -112,7 +112,6 @@ void l2_weight_regularization::start_evaluation() {
     cudnn::matrix sqsums_d(m_cudnn);
     sqsums_d.attach_to_work_spaces(1, weights_per_gpu);
     sqsums_d.zero();
-    #pragma omp parallel for
     for (int gpu = 0; gpu < num_gpus; ++gpu) {
       CHECK_CUDA(cudaSetDevice(m_cudnn->get_gpu(gpu)));
       auto&& handle = m_cudnn->get_cublas_handle(gpu);

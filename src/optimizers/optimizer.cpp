@@ -308,7 +308,6 @@ void optimizer::add_to_gradient(const cudnn::matrix& gradient_d,
     LBANN_ERROR("attempted to add to GPU gradient, but GPU is not set up");
   }
   if (scale != DataType(0)) {
-    #pragma omp parallel for
     for(int i = 0; i < m_cudnn->get_num_gpus(); ++i) {
       CHECK_CUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
       cublas::axpy(m_cudnn->get_cublas_handle(i),
@@ -386,7 +385,6 @@ void optimizer::add_to_gradient_staging(const cudnn::matrix& gradient_d,
     m_gradient_allreduce_needed = true;
 
     // Add to staging matrix
-    #pragma omp parallel for
     for(int i = 0; i < m_cudnn->get_num_gpus(); ++i) {
       CHECK_CUDA(cudaSetDevice(m_cudnn->get_gpu(i)));
       cublas::axpy(m_cudnn->get_cublas_handle(i),
