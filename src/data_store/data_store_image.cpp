@@ -198,8 +198,8 @@ void data_store_image::exchange_data_two_sided() {
     int owner = t.first;
     size_t jj = 0;
     const std::unordered_set<int> &s = t.second;
-    recv_req[owner].resize(s.size());
-    recv_status[owner].resize(s.size());
+    recv_req[owner].resize(s.size()*m_num_img_srcs);
+    recv_status[owner].resize(s.size()*m_num_img_srcs);
     for (auto idx : s) {
       for (size_t k=0; k<m_num_img_srcs; k++) {
         size_t index = idx*m_num_img_srcs+k;
@@ -217,13 +217,13 @@ void data_store_image::exchange_data_two_sided() {
   }
 
   //wait for sends to finish
-  for (int p=0; p<m_np; p++) {
-    MPI_Waitall(send_req[p].size(), send_req[p].data(), send_status[p].data());
+  for (size_t i=0; i<send_req.size(); i++) {
+    MPI_Waitall(send_req[i].size(), send_req[i].data(), send_status[i].data());
   }
 
   //wait for recvs to finish
-  for (int p=0; p<m_np; p++) {
-    MPI_Waitall(recv_req[p].size(), recv_req[p].data(), recv_status[p].data());
+  for (size_t i=0; i<recv_req.size(); i++) {
+    MPI_Waitall(recv_req[i].size(), recv_req[i].data(), recv_status[i].data());
   }
 }
 

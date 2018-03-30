@@ -80,8 +80,8 @@ void data_store_multi_images::setup() {
 }
 
 void data_store_multi_images::get_file_sizes() {
-  if (m_master) std::cerr << "STARTING data_store_multi_images::get_file_sizes\n\n";
   std::vector<Triple> my_file_sizes(m_my_datastore_indices.size()*m_num_img_srcs);
+  if (m_master) std::cerr << "STARTING data_store_multi_images::get_file_sizes for " << my_file_sizes.size() << " files\n";
 
   size_t cur_offset = 0;
   std::unordered_map<std::string, size_t> names;
@@ -114,7 +114,6 @@ void data_store_multi_images::get_file_sizes() {
     }
   }
 
-  std::cerr << m_rank << " of " << m_np << " :: calling exchange_file_sizes\n";
   exchange_file_sizes(my_file_sizes, m_num_global_indices*m_num_img_srcs);
 }
 
