@@ -303,6 +303,9 @@ std::string model::print_layer_description(const Layer* layer) const {
   if(s != "") {
     os << " (" << s << ")";
   }
+  if (layer->is_frozen()) {
+    os << " frozen";
+  }
   return os.str();
 }
 
@@ -761,6 +764,9 @@ void model::backward_prop() {
     // Terminate early if all gradients have been computed
     bool all_gradients_computed = true;
     for (auto&& w : m_weights) {
+      if (w->is_frozen()) {
+        continue;
+      }
       auto&& opt = w->get_optimizer();
       if (opt != nullptr && opt->get_num_gradient_sources() != 0) {
         all_gradients_computed = false;
@@ -776,6 +782,9 @@ void model::backward_prop() {
 void model::update_weights() {
   do_model_optimize_begin_cbs();
   for (const auto& w : m_weights) {
+    if (w->is_frozen()) {
+      continue;
+    }
     optimizer* opt = w->get_optimizer();
     if (opt != nullptr) {
       do_weight_optimize_begin_cbs(w);
