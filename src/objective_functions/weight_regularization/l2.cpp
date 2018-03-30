@@ -139,7 +139,7 @@ void l2_weight_regularization::start_evaluation() {
 
   // Compute terms for CPU weights
   std::fill(m_allreduce_started.begin(), m_allreduce_started.end(), false);
-  for (size_t i = 0; i < m_weights.size(); ++i) {
+  for (int i = 0; i < num_weights; ++i) {
     const auto& w = m_weights[i];
     if (w->get_cudnn_manager() == nullptr) {
       const auto& values = w->get_values();
