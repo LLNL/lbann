@@ -361,6 +361,24 @@ void model::remap_pointers(const std::unordered_map<Layer *,Layer *>& layer_map,
 
 }
 
+void model::freeze_layers_under_frozen_surface() {
+  bool freezing = false;
+  for (size_t i = m_layers.size(); i-- > 0u; ) {
+    auto& l = m_layers[i];
+    if (dynamic_cast<io_layer*>(l) != nullptr) {
+      if (l->is_frozen()) {
+        throw lbann_exception("Frozen io_layer!");
+      }
+      continue;
+    }
+    if (!freezing) {
+      freezing = l->is_frozen();
+    } else {
+      l->freeze();
+    }
+  }
+}
+
 ////////////////////////////////////////////////////////////
 // Setup
 ////////////////////////////////////////////////////////////
