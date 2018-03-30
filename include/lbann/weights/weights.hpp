@@ -157,9 +157,9 @@ class weights {
   void set_initializer(weights_initializer* initializer);
 
   /** Get weights optimizer. */
-  optimizer* get_optimizer() { return m_optimizer; }
+  optimizer* get_optimizer() { return (m_frozen? nullptr : m_optimizer); }
   /** Get weights optimizer (const). */
-  const optimizer* get_optimizer() const { return m_optimizer; }
+  const optimizer* get_optimizer() const { return (m_frozen? nullptr : m_optimizer); }
   /** Set weights optimizer.
    *  This takes ownership of the optimizer and deallocates it during
    *  destruction.
