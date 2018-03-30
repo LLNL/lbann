@@ -65,14 +65,10 @@ class dropout : public regularizer_layer {
   dropout(const dropout& other) :
     regularizer_layer(other),
     m_keep_prob(other.m_keep_prob),
-    m_mask(other.m_mask->Copy()) {
+    m_mask(!other.m_mask? nullptr : other.m_mask->Copy()) {
   #ifdef LBANN_HAS_CUDNN
     m_states_d = other.m_states_d;
     m_reserve_space_d = other.m_reserve_space_d;
-    for (auto&& desc : m_dropout_cudnn_desc) {
-      CHECK_CUDNN(cudnnDestroyDropoutDescriptor(desc));
-    }
-    m_dropout_cudnn_desc.clear();
     if (!other.m_dropout_cudnn_desc.empty()) {
       setup_dropout_cudnn_desc();
     }
@@ -82,7 +78,9 @@ class dropout : public regularizer_layer {
   dropout& operator=(const dropout& other) {
     regularizer_layer::operator=(other);
     m_keep_prob = other.m_keep_prob;
-    m_mask = std::unique_ptr<AbsDistMat>(other.m_mask->Copy());
+    if (!!other.m_mask) {
+      m_mask = std::unique_ptr<AbsDistMat>(other.m_mask->Copy());
+    }
   #ifdef LBANN_HAS_CUDNN
     m_states_d = other.m_states_d;
     m_reserve_space_d = other.m_reserve_space_d;
