@@ -189,6 +189,10 @@ class weights {
   std::vector<DataType*> get_values_gpu();
 #endif // LBANN_HAS_CUDNN
 
+  void freeze() { m_frozen = true; }
+  void unfreeze() { m_frozen = false; }
+  bool is_frozen() const { return m_frozen; }
+
   bool save_to_checkpoint_shared(persist& p);
   bool load_from_checkpoint_shared(persist& p);
   
@@ -231,6 +235,9 @@ class weights {
   /** GPU memory for weights matrix. */
   std::vector<DataType*> m_values_d;
 #endif // LBANN_HAS_CUDNN
+
+  /** Avoid weight update if frozen */
+  bool m_frozen;
 
   /** Setup GPU objects for weights. */
   virtual void setup_gpu();
