@@ -180,9 +180,11 @@ void data_store_image::exchange_data_two_sided() {
     if (jj != send_req[p].size()) throw lbann_exception("ERROR 1");
   } //start sends
 
+
   //build map: proc -> global indices that proc owns that I need
   proc_to_indices.clear();
-  for (auto idx : m_my_datastore_indices) {
+  //note: datastore indices are global; no need to consult shuffled_indices
+  for (auto idx : m_my_minibatch_indices_v) {
     int index = (*m_shuffled_indices)[idx];
     int owner = get_index_owner(index);
     proc_to_indices[owner].insert(index);
@@ -192,29 +194,25 @@ void data_store_image::exchange_data_two_sided() {
   m_my_minibatch_data.clear();
   std::vector<std::vector<MPI_Request>> recv_req(m_np);
   std::vector<std::vector<MPI_Status>> recv_status(m_np);
-  for (int p=0; p<m_np; p++) {
-    const std::unordered_set<int> &s = proc_to_indices[p];
-    recv_req[p].resize(s.size());
-    recv_status[p].resize(s.size());
+  for (auto t : proc_to_indices) {
+    int owner = t.first;
     size_t jj = 0;
+    const std::unordered_set<int> &s = t.second;
+    recv_req[owner].resize(s.size());
+    recv_status[owner].resize(s.size());
     for (auto idx : s) {
       for (size_t k=0; k<m_num_img_srcs; k++) {
-        int index = idx*m_num_img_srcs+k;
+        size_t index = idx*m_num_img_srcs+k;
         if (m_file_sizes.find(index) == m_file_sizes.end()) {
           err << __FILE__ << " " << __LINE__ << " :: "
-              << " m_file_sizes.find(" << index << ") failed";
-        throw lbann_exception(err.str());
+              << " m_file_sizes.find(" << index << ") failed"
+              << " m_file_sizes.size(): " << m_file_sizes.size()
+              << " m_my_minibatch_indices_v.size(): " << m_my_minibatch_indices_v.size();
         }
-        if (m_offsets.find(index) == m_offsets.end()) {
-          err << __FILE__ << " " << __LINE__ << " :: "
-              << " m_offets.find(" << index << ") failed";
-          throw lbann_exception(err.str());
-        }
-        int len = m_file_sizes[index];
-        //size_t offset = m_offsets[index];
+        size_t len = m_file_sizes[index];
         m_my_minibatch_data[index].resize(len);
-        MPI_Irecv(m_my_minibatch_data[index].data(), len, MPI_BYTE, p, index, m_mpi_comm, &(recv_req[p][jj++]));
-      }  
+        MPI_Irecv(m_my_minibatch_data[index].data(), len, MPI_BYTE, owner, index, m_mpi_comm, &(recv_req[owner][jj++]));
+      }
     }
   }
 
@@ -230,66 +228,16 @@ void data_store_image::exchange_data_two_sided() {
 }
 
 void data_store_image::exchange_data() {
+  double tm1 = get_time();
   if (m_use_two_sided_comms) {
     exchange_data_two_sided();
+    if (m_master) {
+      std::cerr << "role: " << m_reader->get_role() << " data_store_image::exchange_data() time: " << get_time() - tm1 << std::endl;
+    }
     return;
   }
 
   std::stringstream err;
-
-  #ifdef DEBUG
-  // each processor opens a file and write: base_index, index, offset, file_length,
-  // and owner for each index that it needs for the first epoch. This debug
-  // block was written in an attempt to debug one-sided communication errors.
-  {
-    char b[40];
-    sprintf(b, "debug_%d", m_rank);
-    std::ofstream out(b);
-    out << "m_my_minibatch_indices_v.size(): " << m_my_minibatch_indices_v.size() << "\n";
-  
-    int mysize = m_data.size();
-    std::vector<int> d(m_np);
-    std::iota(d.begin(), d.end(), 0);
-    std::vector<int> d2(m_np, 1);
-    std::vector<int> data_sizes(m_np);
-    MPI_Allgatherv(&mysize, 1, MPI_INT,
-                   data_sizes.data(), d2.data(), d.data(), MPI_INT,
-                   m_mpi_comm);
-  
-    std::stringstream err;
-  
-    for (auto idx : m_my_minibatch_indices_v) {
-      size_t base_index = (*m_shuffled_indices)[idx];
-      for (size_t i=0; i<m_num_img_srcs; i++) {
-        int index = base_index*m_num_img_srcs+i;
-  
-        if (m_file_sizes.find(index) == m_file_sizes.end()) {
-          err << __FILE__ << " :: " << __LINE__ << " :: "
-              << index << " is not a key in m_file_sizes";
-          throw lbann_exception(err.str());
-        }
-  
-        if (m_offsets.find(index) == m_offsets.end()) {
-          err << __FILE__  << " :: " << __LINE__ << " :: "
-            << " m_offsets.find(index) failed";
-          throw lbann_exception(err.str());
-        }
-  
-        int file_len = m_file_sizes[index];
-        int owner = get_index_owner(base_index);
-        size_t offset = m_offsets[index];
-        int end = data_sizes[owner] - (offset+file_len);
-        out << "base: " << base_index << " index: " << index << " offset: " 
-            << offset << " file_len: " << file_len << " owner: " << owner 
-            << " over: " << end << "\n";;
-      }
-    }
-    out.close();
-  }
-  #endif //debug
-
-  // Start of code block for one-sided communication
-  double tm1 = get_time();
   MPI_Win_fence(MPI_MODE_NOSTORE|MPI_MODE_NOPUT, m_win);
   m_my_minibatch_data.clear();
 
@@ -312,7 +260,7 @@ void data_store_image::exchange_data() {
 
       int file_len = m_file_sizes[index];
       int owner = get_index_owner(base_index);
-      int offset = m_offsets[index];
+      size_t offset = m_offsets[index];
       m_my_minibatch_data[index].resize(file_len);
       MPI_Get((void*)m_my_minibatch_data[index].data(), file_len, MPI_BYTE,
               owner, offset, file_len, MPI_BYTE, m_win);
@@ -320,9 +268,8 @@ void data_store_image::exchange_data() {
   }
 
   MPI_Win_fence(MPI_MODE_NOSTORE|MPI_MODE_NOPUT, m_win);
-  double tm2 = get_time();
-  if (m_rank == 0) {
-    std::cerr << "role: " << m_reader->get_role() << " data_store_image::exchange_data() time: " << tm2 - tm1 << std::endl;
+  if (m_master) {
+    std::cerr << "role: " << m_reader->get_role() << " data_store_image::exchange_data() time: " << get_time() - tm1 << std::endl;
   }
 }
 

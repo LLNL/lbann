@@ -29,6 +29,7 @@
 #define __DATA_STORE_IMAGE_HPP__
 
 #include "lbann/data_store/generic_data_store.hpp"
+#include <unordered_map>
 
 namespace lbann {
 
@@ -77,7 +78,7 @@ class data_store_image : public generic_data_store {
 
   /// maps a global index (wrt image_list) to the file's data location 
   /// wrt m_data
-  std::map<size_t, size_t> m_offsets;
+  std::unordered_map<size_t, size_t> m_offsets;
   /// fills in m_file_sizes
   virtual void get_file_sizes() = 0;
 
@@ -99,13 +100,7 @@ class data_store_image : public generic_data_store {
   /// in multi-image scenarios, the number of images in each sample
   unsigned int m_num_img_srcs;
 
-  /// used for extended testing
-  //std::unordered_map<size_t, std::string> m_test_filenames;
-  /// used for extended testing
-  //std::unordered_map<size_t, size_t> m_test_filesizes;
-
   std::vector<unsigned char> m_data;
-
 
   MPI_Win m_win;
 };

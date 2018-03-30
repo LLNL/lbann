@@ -94,7 +94,7 @@ void data_store_pilot2_molecular::setup() {
     if (m_owner) std::cerr << "calling build_nabor_map()\n";
     build_nabor_map();
 
-    MPI_Win_create(m_data.data(), m_data.size()*sizeof(double), sizeof(double), MPI_INFO_NULL, m_comm->get_model_comm().comm, &m_win);
+    MPI_Win_create(m_data.data(), m_data.size()*sizeof(double), sizeof(double), MPI_INFO_NULL, m_mpi_comm, &m_win);
 
     if (m_owner) std::cerr << "calling exchange_data()\n";
     exchange_data();
@@ -148,7 +148,7 @@ void data_store_pilot2_molecular::fill_in_data(
 
 void data_store_pilot2_molecular:: bcast_offsets() {
   int n = m_offsets.size();
-  MPI_Bcast(&n, 1, MPI_INT, m_owner_rank, m_comm->get_model_comm().comm);
+  MPI_Bcast(&n, 1, MPI_INT, m_owner_rank, m_mpi_comm);
   std::vector<int> w(n*2);
 
   size_t jj = 0;
@@ -158,7 +158,7 @@ void data_store_pilot2_molecular:: bcast_offsets() {
       w[jj++] = t.second;
     }
   }
-  MPI_Bcast(w.data(), n*2, MPI_INT, m_owner_rank, m_comm->get_model_comm().comm);
+  MPI_Bcast(w.data(), n*2, MPI_INT, m_owner_rank, m_mpi_comm);
 
   if (! m_owner) {
     for (size_t j=0; j<w.size(); j+= 2) {
@@ -224,7 +224,7 @@ void data_store_pilot2_molecular::build_nabor_map() {
   //bcast neighbor data
   int sz;
   if (m_owner) sz= m_pilot2_reader->get_neighbors_data_size();
-  MPI_Bcast(&sz, 1, MPI_INT, m_owner_rank, m_comm->get_model_comm().comm);
+  MPI_Bcast(&sz, 1, MPI_INT, m_owner_rank, m_mpi_comm);
   double *neighbors_8;
   std::vector<double> work;
   if (m_owner) {
@@ -233,7 +233,7 @@ void data_store_pilot2_molecular::build_nabor_map() {
     work.resize(sz);
     neighbors_8 = work.data();
   }
-  MPI_Bcast(neighbors_8, sz, MPI_DOUBLE, m_owner_rank, m_comm->get_model_comm().comm);
+  MPI_Bcast(neighbors_8, sz, MPI_DOUBLE, m_owner_rank, m_mpi_comm);
 
   //fill in the nabors map
   for (auto data_id : (*m_shuffled_indices)) {

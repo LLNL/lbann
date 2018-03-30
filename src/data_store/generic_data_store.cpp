@@ -37,9 +37,9 @@
 namespace lbann {
 
 generic_data_store::generic_data_store(generic_data_reader *reader, model *m) :
-    m_use_two_sided_comms(false),
+    m_use_two_sided_comms(true),
     m_reader(reader), 
-    m_comm(reader->get_comm()),
+    m_comm(m->get_comm()),
     m_name("generic_data_store"),
     m_rank(m_comm->get_rank_in_model()),
     m_np(m_comm->get_procs_per_model()),
@@ -57,8 +57,9 @@ generic_data_store::generic_data_store(generic_data_reader *reader, model *m) :
     if (opts->has_bool("extended_testing") && opts->get_bool("extended_testing")) {
       m_extended_testing = true;
     }
-    if (opts->has_bool("two_sided") && opts->get_bool("two_sided")) {
-      if (m_master) std::cerr << "generic_data_store::generic_data_store; using two-sided communication\n";
+    if (opts->has_bool("two_sided")) {
+      m_use_two_sided_comms = opts->get_bool("two_sided");
+      if (m_master) std::cerr << "generic_data_store::generic_data_store; using two-sided communication ? " << m_use_two_sided_comms << "\n";
     } else {
       if (m_master) std::cerr << "generic_data_store::generic_data_store; using one-sided communication\n";
     }
@@ -175,15 +176,10 @@ void generic_data_store::exchange_mb_counts() {
   MPI_Allgatherv(&my_num_indices, 1, MPI_INT,
                  m_mb_counts.data(), num.data(), displ.data(), MPI_INT,
                  m_mpi_comm);
-
-  if (m_master) {
-    std::cerr << "minbatch index counts for all procs: ";
-    for (auto t : m_mb_counts) std::cerr << t << " ";
-    std::cerr << "\n";
-  }
 }
 
 void generic_data_store::exchange_mb_indices() {
+  exchange_mb_counts();
   //setup data structures to exchange minibatch indices with all processors
   //displacement vector
   std::vector<int> displ(m_np);
@@ -200,23 +196,14 @@ void generic_data_store::exchange_mb_indices() {
   MPI_Allgatherv(
     m_my_minibatch_indices_v.data(), m_my_minibatch_indices_v.size(), MPI_INT, 
     all_indices.data(), m_mb_counts.data(), displ.data(),
-    MPI_INT, m_comm->get_model_comm().comm);
+    MPI_INT, m_mpi_comm);
 
-  //fill in the final data structer
+  //fill in the final data structure
+  m_all_minibatch_indices.resize(m_np);
   for (int j=0; j<m_np; j++) {
     m_all_minibatch_indices[j].reserve(m_mb_counts[j]);
     for (int i=displ[j]; i<displ[j]+m_mb_counts[j]; i++) {
-      m_all_minibatch_indices[j].push_back(all_indices[j]);
-    }
-  }
-
-  if (m_master) {
-    std::cerr << "\nfirst 10 indices for all procs:\n";
-    for (auto t :  m_all_minibatch_indices) {
-      for (int i=0; i<10; i++) {
-        std::cerr << t[i] << " ";
-      }
-      std::cerr << "\n";
+      m_all_minibatch_indices[j].push_back(all_indices[i]);
     }
   }
 }

@@ -29,6 +29,7 @@
 #define __DATA_STORE_CSV_HPP__
 
 #include "lbann/data_store/generic_data_store.hpp"
+#include <unordered_map>
 
 namespace lbann {
 

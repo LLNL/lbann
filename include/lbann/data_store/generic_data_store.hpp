@@ -32,9 +32,7 @@
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include <vector>
-#include <unordered_map>
 #include <unordered_set>
-#include <set>
 
 namespace lbann {
 
@@ -126,10 +124,9 @@ protected :
   /// fills in m_all_minibatch_indices
   void  exchange_mb_indices();
 
-  /// working space for computing which indices I need to send to which procs;
   /// the contents of these vectors change whenever m_shuffled_indices changes
-  std::vector<std::set<int>> m_work_send;
-  std::vector<std::set<int>> m_work_recv;
+  std::vector<std::unordered_set<int>> m_work_send;
+  std::vector<std::unordered_set<int>> m_work_recv;
   /// fills in m_work_send and m_work_recv
   void compute_send_and_receive_lists();
 
