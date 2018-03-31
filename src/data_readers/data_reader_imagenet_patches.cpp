@@ -28,7 +28,7 @@
 
 #include "lbann/data_readers/data_reader_imagenet_patches.hpp"
 #include "lbann/data_readers/image_utils.hpp"
-#include "lbann/data_store/data_store_imagenet.hpp"
+#include "lbann/data_store/data_store_imagenet_patches.hpp"
 
 #include <omp.h>
 
@@ -182,7 +182,7 @@ void imagenet_reader_patches::setup_data_store(model *m) {
   if (m_data_store != nullptr) {
     delete m_data_store;
   }
-  m_data_store = new data_store_imagenet(this, m);
+  m_data_store = new data_store_imagenet_patches(this, m);
   if (m_data_store != nullptr) {
     m_data_store->setup();
   }

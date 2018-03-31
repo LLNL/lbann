@@ -40,7 +40,8 @@ void data_store_imagenet::setup() {
   }
 
   //sanity check
-  imagenet_reader *reader = dynamic_cast<imagenet_reader*>(m_reader);
+  image_data_reader *reader = dynamic_cast<image_data_reader*>(m_reader);
+  //imagenet_reader *reader = dynamic_cast<imagenet_reader*>(m_reader);
   if (reader == nullptr) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
@@ -81,7 +82,8 @@ void data_store_imagenet::setup() {
 
 
 void data_store_imagenet::test_data() {
-  imagenet_reader *reader = dynamic_cast<imagenet_reader*>(m_reader);
+  image_data_reader *reader = dynamic_cast<image_data_reader*>(m_reader);
+  //imagenet_reader *reader = dynamic_cast<imagenet_reader*>(m_reader);
   const std::vector<std::pair<std::string, int> > & image_list = reader->get_image_list();
   std::vector<unsigned char> b;
   std::vector<unsigned char> *datastore_buf;
@@ -123,7 +125,8 @@ void data_store_imagenet::test_file_sizes() {
   if (m_master) {
     std::cerr << m_rank << " :: STARTING data_store_imagenet::test_file_sizes()\n";
   }
-  imagenet_reader *reader = dynamic_cast<imagenet_reader*>(m_reader);
+  image_data_reader *reader = dynamic_cast<image_data_reader*>(m_reader);
+  //imagenet_reader *reader = dynamic_cast<imagenet_reader*>(m_reader);
   const std::vector<std::pair<std::string, int> > & image_list = reader->get_image_list();
   for (auto t : m_file_sizes) {
     size_t len = get_file_size(m_dir, image_list[t.first].first);
@@ -140,7 +143,8 @@ void data_store_imagenet::test_file_sizes() {
 
 
 void data_store_imagenet::read_files() {
-  imagenet_reader *reader = dynamic_cast<imagenet_reader*>(m_reader);
+  image_data_reader *reader = dynamic_cast<image_data_reader*>(m_reader);
+  //imagenet_reader *reader = dynamic_cast<imagenet_reader*>(m_reader);
   const std::vector<std::pair<std::string, int> > & image_list = reader->get_image_list();
   size_t j = 0;
   for (auto index : m_my_datastore_indices) {
@@ -174,7 +178,8 @@ void data_store_imagenet::read_files() {
 
 void data_store_imagenet::get_file_sizes() {
   if (m_master) std::cerr << "starting data_store_imagenet::get_file_sizes\n";
-  imagenet_reader *reader = dynamic_cast<imagenet_reader*>(m_reader);
+  image_data_reader *reader = dynamic_cast<image_data_reader*>(m_reader);
+  //imagenet_reader *reader = dynamic_cast<imagenet_reader*>(m_reader);
   const std::vector<std::pair<std::string, int> > & image_list = reader->get_image_list();
   //construct a vector of Triples 
   std::vector<Triple> my_file_sizes(m_my_datastore_indices.size());

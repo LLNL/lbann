@@ -5,6 +5,7 @@ set_full_path(THIS_DIR_SOURCES
   data_store_image.cpp
   data_store_multi_images.cpp
   data_store_imagenet.cpp
+  data_store_imagenet_patches.cpp
   data_store_merge_samples.cpp
   data_store_merge_features.cpp
   data_store_pilot2_molecular.cpp
