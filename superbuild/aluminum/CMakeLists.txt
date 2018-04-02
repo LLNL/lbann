@@ -1,13 +1,13 @@
 message(FATAL_ERROR "Aluminum not yet available in superbuild.")
-set(ALUMINUM_URL https://github.com/ndryden/allreduces
-  CACHE STRING "The URL from which to clone aluminum")
+set(ALUMINUM_URL https://github.com/ndryden/Aluminum
+  CACHE STRING "The URL from which to clone Aluminum")
 
 set(ALUMINUM_TAG "master" 
-  CACHE STRING "The git tag to checkout for aluminum")
+  CACHE STRING "The git tag to checkout for Aluminum")
 
 # Where to install LIBALUMINUM
 set (ALUMINUM_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
-  CACHE PATH "The installation location of aluminum.")
+  CACHE PATH "The installation location of Aluminum.")
 
 set(ALUMINUM_MAKE_JOBS "8"
   CACHE INTERNAL "The number of make jobs to run. Max by default.")
@@ -31,4 +31,4 @@ ExternalProject_Add(ALUMINUM
   )
 
   set(ALUMINUM_DIR ${ALUMINUM_CMAKE_INSTALL_PREFIX}
-    CACHE INTERNAL "The install prefix of aluminum.")
+    CACHE INTERNAL "The install prefix of Aluminum.")
