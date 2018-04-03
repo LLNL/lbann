@@ -1,0 +1,15 @@
+data_reader {
+  reader {
+    name: "numpy"
+    role: "train"
+    shuffle: true
+    data_filename: "/p/lscratchf/brainusr/datasets/cancer/pilot1/GDCdata/X_train_norm.npy"
+    validation_percent: 0.1
+    absolute_sample_count: 0
+    percent_of_data_to_use: 1.0
+    disable_labels: true
+    disable_responses: true
+
+  }
+
+}
