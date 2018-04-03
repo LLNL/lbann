@@ -523,7 +523,8 @@ if [ "${CLUSTER}" == "surface" ] || [ "${CLUSTER}" == "ray" ]; then
     if [ "${CLUSTER}" == "ray" ]; then
         export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.0.5-3+cuda8.0_ppc64el
     else
-        export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl-2.0.5+cuda8.0
+        export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.1.15-1+cuda9.1_x86_64
+
     fi
     if [ "${ARCH}" == "ppc64le" ]; then
         export CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda
