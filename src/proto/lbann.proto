@@ -696,6 +696,8 @@ message Layer {
    Unpooling unpooling = 304;
    Hadamard hadamard = 308;
    Constant constant = 309;
+   Reduction reduction = 310;
+   Evaluation evaluation = 311;
 
    // learning Layers
    FullyConnected fully_connected = 11;
@@ -727,6 +729,7 @@ message Layer {
    BentIdentity bent_identity = 40;
    Exponential exponential = 41;
    Swish swish = 42;
+   Power power = 43;
 }
 ///////////////////////
 // MotifLayer //
@@ -784,6 +787,10 @@ message Selu {
 }
 
 message Softmax {
+}
+
+message Power {
+  double exponent = 1;
 }
 
 ///////////////////////////
@@ -887,6 +894,14 @@ message Constant {
   double value=1;
   string num_neurons=2;
 }
+
+message Reduction {
+  string mode=1;
+}
+
+message Evaluation {
+}
+
 /////////////////////
 // learning Layers //
 /////////////////////

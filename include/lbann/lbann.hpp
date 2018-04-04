@@ -55,6 +55,7 @@
 #include "lbann/layers/activations/softplus.hpp"
 #include "lbann/layers/activations/swish.hpp"
 #include "lbann/layers/activations/tanh.hpp"
+#include "lbann/layers/activations/power.hpp"
 
 /// Learning Layers
 #include "lbann/layers/learning/fully_connected.hpp"
@@ -74,6 +75,8 @@
 #include "lbann/layers/transform/noise.hpp"
 #include "lbann/layers/transform/safe_inv.hpp"
 #include "lbann/layers/transform/hadamard.hpp"
+#include "lbann/layers/transform/reduction.hpp"
+#include "lbann/layers/transform/evaluation.hpp"
 
 /// Regularization layers.
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
