@@ -533,7 +533,7 @@ if [ "${CLUSTER}" == "surface" ] || [ "${CLUSTER}" == "ray" ]; then
         CUDATOOLKIT_VERSION=$(basename "$CUDA_PATH" | sed 's/cudatoolkit-//')
        export CUDA_TOOLKIT_ROOT_DIR=${CUDA_PATH}
     else
-        CUDATOOLKIT_VERSION=8.0
+        CUDATOOLKIT_VERSION=9.1
         if [ ${USE_MODULES} -ne 0 ]; then
             module load cudatoolkit/${CUDATOOLKIT_VERSION}
         fi
@@ -541,7 +541,7 @@ if [ "${CLUSTER}" == "surface" ] || [ "${CLUSTER}" == "ray" ]; then
     fi
     # Hack for surface
     if [ "${CLUSTER}" == "surface" ]; then
-        CUDATOOLKIT_VERSION=8.0
+        CUDATOOLKIT_VERSION=9.1
         . /usr/share/[mM]odules/init/bash
         module load cudatoolkit/${CUDATOOLKIT_VERSION}
         
