@@ -342,8 +342,10 @@ class Layer {
   /** Get local portion of error signal tensor. (const) */
   const Mat& get_local_error_signals(int parent_index = 0) const;
 
+  /** Get reference to LBANN communicator. */
+  lbann_comm* get_comm() const { return m_comm; }
   /** Get reference to cuDNN manager. */
-  cudnn::cudnn_manager* get_cudnn_manager() { return m_cudnn; }
+  cudnn::cudnn_manager* get_cudnn_manager() const { return m_cudnn; }
 
  protected:
 
