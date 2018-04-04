@@ -42,7 +42,7 @@ class evaluation_layer : public transform_layer {
 
   evaluation_layer(lbann_comm *comm,
               cudnn::cudnn_manager *cudnn = nullptr)
-    : transform_layer(comm), m_scale(1), m_value(0) {
+    : transform_layer(comm), m_scale(0), m_value(0) {
 
     // Evaluation layer has no children
     m_expected_num_child_layers = 0;
