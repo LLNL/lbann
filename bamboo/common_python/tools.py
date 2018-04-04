@@ -18,7 +18,7 @@ def get_command(cluster, executable, num_nodes=None, partition=None,
                 model_folder=None, model_name=None, model_path=None,
                 num_epochs=None, optimizer_name=None, optimizer_path=None,
                 processes_per_model=None, output_file_name=None,
-                return_tuple=False):
+                error_file_name=None, return_tuple=False):
     # Check parameters for black-listed characters like semi-colons that
     # would terminate the command and allow for an extra command
     blacklist = [';', '--']
@@ -239,12 +239,16 @@ def get_command(cluster, executable, num_nodes=None, partition=None,
         option_mini_batch_size, option_model, option_num_epochs,
         option_optimizer, option_processes_per_model)
 
-    # Create output command
+    # Create redirect command
     command_output = ''
+    command_error = ''
     if output_file_name != None:
         command_output = ' > %s' % output_file_name
+    if error_file_name != None:
+        command_error = ' 2> %s' % error_file_name
+    command_redirect = '%s%s' % (command_output, command_error)
 
-    t = (command_allocate, command_run, command_lbann, command_output)
+    t = (command_allocate, command_run, command_lbann, command_redirect)
 
     if return_tuple:
         return t
