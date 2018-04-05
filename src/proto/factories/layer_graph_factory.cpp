@@ -237,6 +237,12 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
     }
     names_to_layers[name] = l;
 
+    if (proto_layer.freeze()) {
+      if (comm->am_world_master()) {
+        std::cout << "freezing " << l->get_name() << std::endl;
+      }
+      l->freeze();
+    }
     // Add layer to list
     layers.push_back(l);
 

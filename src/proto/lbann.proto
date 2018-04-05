@@ -661,6 +661,7 @@ message Layer {
    string data_layout = 52;
    string weights = 54;
    bool num_neurons_from_data_reader = 53;
+   bool freeze = 5;
 
    repeated WeightsData weights_data = 153;
    string top = 154;

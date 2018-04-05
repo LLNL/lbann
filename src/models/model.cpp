@@ -303,6 +303,9 @@ std::string model::print_layer_description(const Layer* layer) const {
   if(s != "") {
     os << " (" << s << ")";
   }
+  if (layer->is_frozen()) {
+    os << " frozen";
+  }
   return os.str();
 }
 
@@ -356,6 +359,24 @@ void model::remap_pointers(const std::unordered_map<Layer *,Layer *>& layer_map,
     l->set_weights(weights_pointers);
   }
 
+}
+
+void model::freeze_layers_under_frozen_surface() {
+  bool freezing = false;
+  for (size_t i = m_layers.size(); i-- > 0u; ) {
+    auto& l = m_layers[i];
+    if (dynamic_cast<io_layer*>(l) != nullptr) {
+      if (l->is_frozen()) {
+        throw lbann_exception("Frozen io_layer!");
+      }
+      continue;
+    }
+    if (!freezing) {
+      freezing = l->is_frozen();
+    } else {
+      l->freeze();
+    }
+  }
 }
 
 ////////////////////////////////////////////////////////////
@@ -511,6 +532,7 @@ void model::add_dummy_layers() {
       default:
         std::stringstream err;
         err << __FILE__ << " " << __LINE__ << " :: " << "invalid data layout";
+        throw lbann_exception(err.str());
       }
       dummy->set_name(layer->get_name()
                       + "_dummy"
@@ -550,6 +572,7 @@ void model::add_split_layers() {
       default:
         std::stringstream err;
         err << __FILE__ << " " << __LINE__ << " :: " << "invalid data layout";
+        throw lbann_exception(err.str());
       }
       split->set_name(layer->get_name() + "_split");
 
