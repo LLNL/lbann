@@ -52,10 +52,8 @@ void data_store_image::setup() {
     if (m_master) std::cerr << "calling get_minibatch_index_vector\n";
     get_minibatch_index_vector();
 
-    if (m_use_two_sided_comms) {
-       if (m_master) std::cerr << "calling exchange_mb_indices\n";
-       exchange_mb_indices();
-    }
+    if (m_master) std::cerr << "calling exchange_mb_indices\n";
+    exchange_mb_indices();
 
     if (m_master) std::cerr << "calling get_my_datastore_indices\n";
     get_my_datastore_indices();

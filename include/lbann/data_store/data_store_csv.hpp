@@ -73,43 +73,20 @@ protected :
   std::unordered_map<int, size_t> m_offset_mapping;
 
   /// buffers for data that will be passed to the data reader's fetch_datum method
-  std::vector<std::vector<DataType>> m_my_minibatch_data;
-
-  /// maps: a global index to it's associated data in m_data_buffer[j]
-  std::unordered_map<int, int> m_my_data_hash;
+  std::unordered_map<int, std::vector<DataType>> m_my_minibatch_data;
 
   /// retrive data needed for passing to the data reader for the next epoch
   void exchange_data() override;
-  void exchange_data_two_sided();
+  /// returns, in "indices," the set of indices that processor "p"
+  /// needs for the next epoch. Called by exchange_data
+  void get_indices(std::unordered_set<int> &indices, int p);
 
-  /// exchange offsets in m_data (needed for MPI_Get operations)
-  void exchange_offsets();
-
-  /// used for one-sided communication
-  std::vector<DataType> m_data;
   /// will contain the data that this processor owns; for use in two sided
   /// communication. Maps a global index to its associated data
-  std::unordered_map<int, std::vector<DataType>> m_data_two_sided;
+  std::unordered_map<int, std::vector<DataType>> m_data;
 
   /// fills in m_data (the data store)
   void populate_datastore();
-  void populate_datastore_two_sided();
-
-  /// for two-sided communication
-  void exchange_shuffled_indices(
-          std::vector<std::unordered_set<int>> & indices,
-          std::vector<int> &indices_send_counts,
-          std::vector<int> &indices_recv_counts);
-
-  struct Tuple {
-    int global_id;
-    size_t offset;
-  };
-
-  void start_sends_and_recvs() override;
-
-  MPI_Win m_win;
-
 };
 
 }  // namespace lbann

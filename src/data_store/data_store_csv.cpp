@@ -45,9 +45,6 @@ data_store_csv::data_store_csv(
 }
 
 data_store_csv::~data_store_csv() {
-  if (!m_use_two_sided_comms) {
-    MPI_Win_free( &m_win );
-  }  
 }
 
 void data_store_csv::setup() {
@@ -89,10 +86,8 @@ void data_store_csv::setup() {
     if (m_master) std::cerr << "calling get_minibatch_index_vector\n";
     get_minibatch_index_vector();
 
-    if (m_use_two_sided_comms) {
-      if (m_master) std::cerr << "calling get_all_minibatch_indices()\n";
-      exchange_mb_indices();
-    }  
+    if (m_master) std::cerr << "calling exchange_mb_indices()\n";
+    exchange_mb_indices();
 
     if (m_master) std::cerr << "calling get_my_datastore_indices\n";
     get_my_datastore_indices();
@@ -105,14 +100,7 @@ void data_store_csv::setup() {
     MPI_Bcast(&m_vector_size, 1, MPI_INT, 0, m_mpi_comm);
 
     if (m_master) std::cerr << "calling populate_datastore()\n";
-    if (m_use_two_sided_comms) {
-      populate_datastore_two_sided(); 
-    } else {
-      populate_datastore(); 
-    }
-
-    if (m_master) std::cerr << "calling exchange_offsets()\n";
-    exchange_offsets();
+    populate_datastore(); 
 
 #if 0
     if (m_extended_testing) {
@@ -131,21 +119,6 @@ void data_store_csv::setup() {
     }
 #endif
 
-    //allocate buffers to be passed to fetch_datum
-    m_my_minibatch_data.resize(m_my_minibatch_indices_v.size());
-    for (size_t i=0; i< m_my_minibatch_data.size(); i++) {
-      m_my_minibatch_data[i].resize(m_vector_size);
-    }
-
-    if (! m_use_two_sided_comms) {
-      MPI_Win_create(m_data.data(), m_data.size()*sizeof(DataType), sizeof(DataType), MPI_INFO_NULL, m_mpi_comm, &m_win);
-    } 
-
-    else {
-      if (m_master) std::cerr << "data_store_csv::calling exchange_mb_counts\n";
-      exchange_mb_indices();
-    }
-
     if (m_master) std::cerr << "calling exchange_data()\n";
     exchange_data();
   }
@@ -157,12 +130,12 @@ void data_store_csv::setup() {
 
 void data_store_csv::get_data_buf_DataType(int data_id, std::vector<DataType> *&buf) {
   std::stringstream err;
-  if (m_my_data_hash.find(data_id) == m_my_data_hash.end()) {
+  if (m_data.find(data_id) == m_data.end()) {
     err << __FILE__ << " " << __LINE__ << " :: "
-        << "failed to find data_id: " << data_id << " in m_my_data_hash";
+        << "failed to find data_id: " << data_id << " in m_data";
     throw lbann_exception(err.str());
   }
-  int idx = m_my_data_hash[data_id];
+  #if 0
   if (m_extended_testing) {
     static bool first = true;
     if (m_master && first) {
@@ -177,243 +150,72 @@ void data_store_csv::get_data_buf_DataType(int data_id, std::vector<DataType> *&
       throw lbann_exception(err.str());
     }
   }
-
-  buf = &m_my_minibatch_data[idx];
-}
-
-void data_store_csv::exchange_shuffled_indices(
-    std::vector<std::unordered_set<int>> &indices, 
-    std::vector<int> &indices_send_counts, 
-    std::vector<int> &indices_recv_counts) {
-  indices.resize(m_np);
-
-  if (m_master) std::cerr << "starting data_store_csv::collect_and_exchange_send_indices\n";
-
-  //get the sets of indices I need to send to other procs
-  for (int j=0; j<m_np; j++) {
-    std::vector<int> &v = m_all_minibatch_indices[j];
-    for (auto t : v) {
-      int idx = (*m_shuffled_indices)[t];
-      if (m_my_datastore_indices.find(idx) != m_my_datastore_indices.end()) {
-        indices[j].insert(idx);
-      } 
-    }
-  }
-
-  indices_send_counts.resize(m_np);
-  indices_recv_counts.resize(m_np);
-  for (size_t j=0; j<indices.size(); j++) {
-    indices_send_counts[j] = indices[j].size();
-  }
-
-  MPI_Alltoall(indices_send_counts.data(), 1, MPI_INT,
-               indices_recv_counts.data(), 1, MPI_INT, m_mpi_comm);
-  if (m_rank == 1) {
-    std::cerr << "recv counts: ";
-    for (auto t : indices_recv_counts) std::cerr << t << " ";
-    std::cerr << "\nsend counts: ";
-    for (auto t : indices_send_counts) std::cerr << t << " ";
-    std::cerr << "\n\n";
-  }
-}
-
-void data_store_csv::start_sends_and_recvs() {
+  #endif
+  buf = &m_data[data_id];
 }
 
 
-void data_store_csv::exchange_data_two_sided() {
-#if 0
-  std::stringstream err;
-
-  compute_send_and_receive_lists();
-  std::vector<std::unordered_set<int>> indices;
-  std::vector<int> indices_send_counts;
-  std::vector<int> indices_recv_counts;
-  exchange_shuffled_indices(indices, indices_send_counts, indices_recv_counts);
-
-  //at this point, indices_send_counts[j] contains the # of indices this proc
-  //will send to P_j, and recv_counts[j] is the number of indices to receive
-  //from P_j.
-
-  std::vector<MPI_Request> reqs_send(m_np);
-  std::vector<MPI_Request> reqs_recv(m_np);
-
-  int d_size = sizeof(DataType);
-  if (!(d_size == 4 || d_size == 8)) {
-    err << __FILE__  << " :: " << __LINE__ << " :: "
-        << " unknown or unsupported DataType; size is: " <<sizeof(DataType);
-    throw lbann_exception(err.str());
+void data_store_csv::get_indices(std::unordered_set<int> &indices, int p) {
+  indices.clear();
+  std::vector<int> &v = m_all_minibatch_indices[p];
+  for (auto t : v) {
+    indices.insert((*m_shuffled_indices)[t]);
   }
-
-  //setup and start receive buffers
-  std::vector<std::vector<DataType>> recv_buffers(m_np);
-  for (int j=0; j<m_np; j++) {
-    size_t sz = indices_recv_counts[j]*m_vector_size + indices_recv_counts[j] +1;
-    recv_buffers[j].resize(sz);
-    if (d_size == 4) {
-      MPI_Irecv(recv_buffers[j].data(), sz, MPI_FLOAT, j, 0, m_mpi_comm, reqs_recv.data() + j);
-    } else {
-      MPI_Irecv(recv_buffers[j].data(), sz, MPI_DOUBLE, j, 0, m_mpi_comm, reqs_recv.data() + j);
-    }
-  }
-
-  //setup and start send buffers
-  std::vector<std::vector<DataType>> send_buffers(m_np);
-  for (int j=0; j<m_np; j++) {
-if (m_rank)std::cerr << "preparing to send to: " << j << "\n";
-    const std::unordered_set<int> &sendme = indices[j];
-    size_t sz = indices[j].size()*m_vector_size + sendme.size()+1; 
-    send_buffers[j].reserve(sz);
-    send_buffers[j].push_back(sendme.size());
-    for (auto idx : sendme) {
-      send_buffers[j].push_back(idx);
-      if (m_data.find(idx) == m_data.end()) {
-        err << __FILE__  << " :: " << __LINE__ << " :: "
-            << " failed to find " << idx << " in m_data";
-        throw lbann_exception(err.str());
-      }  
-      std::vector<DataType> &v = m_data[idx];
-      for (auto t : v) {
-        send_buffers[j].push_back(t);
-      }
-    }
-    if (send_buffers[j].size() != sz) std::cerr << "\n\nsz/buffer size: " << sz << " / " << send_buffers[j].size() << "\n\n";
-    assert(send_buffers[j].size() == sz);
-    if (d_size == 4) {
-      MPI_Isend(send_buffers[j].data(), send_buffers[j].size(), MPI_FLOAT,
-              j, 0, m_mpi_comm, reqs_send.data()+j);
-    } else {
-      MPI_Isend(send_buffers[j].data(), send_buffers[j].size(), MPI_DOUBLE,
-              j, 0, m_mpi_comm, reqs_send.data()+j);
-    }
-  }
-
-MPI_Barrier(MPI_COMM_WORLD);
-exit(0);
-
-#endif
 }
 
 void data_store_csv::exchange_data() {
-  char b[80];
-  sprintf(b, "debug.%d", m_rank);
-  std::ofstream out(b);
-  if (! out) throw lbann_exception("EROR");
-  out << "m_my_minibatch_indices_v.size(): " << m_my_minibatch_indices_v.size() << "\n"
-      <<" m_my_minibatch_data.size(); " << m_my_minibatch_data.size() << "\n"
-      <<" m_my_minibatch_data[0].size(): " << m_my_minibatch_data[0].size() << "\n"
-      << " m_data.size(): " << m_data.size() << "\n";
-
-  if (m_use_two_sided_comms) {
-    exchange_data_two_sided();
-    return;
-  }
-
-  std::stringstream err;
   double tm1 = get_time();
-  MPI_Win_fence(MPI_MODE_NOSTORE|MPI_MODE_NOPUT, m_win);
-  m_my_data_hash.clear();
+  std::stringstream err;
 
+  //get indices I need for the next epoch, and start receives
+  std::unordered_set<int> indices;
+  get_indices(indices, m_rank);
+  std::vector<MPI_Request> recv_req(indices.size());
+  std::vector<MPI_Status> recv_status(indices.size());
+  m_my_minibatch_data.clear();
   size_t jj = 0;
-  for (auto data_id : m_my_minibatch_indices_v) {
-    size_t idx = (*m_shuffled_indices)[data_id];
-
-    if (jj >= m_my_minibatch_data.size()) {
-      err << __FILE__  << " :: " << __LINE__ << " :: "
-        << " jj: " << jj << " is >= m_my_minibatch_data.size(): "
-        << m_my_minibatch_data.size();
-      throw lbann_exception(err.str());
-    }
-
-    if (m_offset_mapping.find(idx) == m_offset_mapping.end()) {
-      err << __FILE__  << " :: " << __LINE__ << " :: "
-        << " m_offsets.find(idx) failed";
-      throw lbann_exception(err.str());
-    }
-
-    m_my_data_hash[idx] = jj;
-    int owner = get_index_owner(idx);
-    size_t offset = m_offset_mapping[idx];
-
-/*
-out << "calling mpi_get; jj: " << jj << " of " << m_my_minibatch_indices_v.size() << "  data_id: " << idx << " owner: " << owner << " offset: " << offset << "  sz: " << m_vector_size*sizeof(DataType) << " m_data: " << m_data.size()
-<< " ends_at: " << offset+m_vector_size << " diff: " << (int)m_data.size() - (offset+m_vector_size) << "\n";
-out.flush();
-*/
-    MPI_Get(m_my_minibatch_data[jj].data(), m_vector_size*sizeof(DataType), MPI_BYTE,
-              owner, offset, m_vector_size*sizeof(DataType), MPI_BYTE, m_win);
-    ++jj;
+  m_data.clear();
+  for (auto t : indices) {
+    m_my_minibatch_data[t].resize(m_vector_size);
+    MPI_Irecv(
+      m_my_minibatch_data[t].data(), m_vector_size*sizeof(DataType),  MPI_BYTE,
+      t, get_index_owner(t), m_mpi_comm, &(recv_req[jj++]));
   }
-  MPI_Win_fence(MPI_MODE_NOSTORE|MPI_MODE_NOPUT, m_win);
-  double tm2 = get_time();
+
+  //start sends to all processors
+  std::vector<std::vector<MPI_Request>> send_req(m_np);
+  std::vector<std::vector<MPI_Status>> send_status(m_np);
+  for (int p=0; p<m_np; p++) {
+    get_indices(indices, p);
+    send_req[p].resize(indices.size());
+    send_status[p].resize(indices.size());
+    jj = 0;
+    for (auto t : indices) {
+      MPI_Isend(
+        m_data[t].data(), m_vector_size*sizeof(DataType),  MPI_BYTE,
+        t, get_index_owner(t), m_mpi_comm, &(send_req[p][jj++]));
+    }
+  }
+
+  //wait for sends to finish
   if (m_master) {
-    std::cout << "data_store_image::exchange_data() time: " << tm2 - tm1 << std::endl;
-  }
-out.close();
-}
-
-
-void data_store_csv::exchange_offsets() {
-  std::vector<Tuple> my_offsets(m_my_datastore_indices.size());
-  int jj = 0;
-  for (auto t : m_offset_mapping) {
-    my_offsets[jj].global_id = t.first;
-    my_offsets[jj].offset = t.second;
-    jj++;
-  }
-
-  std::vector<Tuple> global_offsets(m_num_global_indices);
-  std::vector<int> disp(m_num_readers); 
-  disp[0] = 0;
-  for (int h=1; h<(int)m_num_readers; h++) {
-    disp[h] = disp[h-1] + m_num_samples[h-1]*sizeof(Tuple);
-  }
-
-  for (size_t j=0; j<m_num_samples.size(); j++) {
-    m_num_samples[j] *= sizeof(Tuple);
-  }
-
-  //@todo: couldn't get m_comm->model_gatherv to work
-  //m_comm->model_gatherv(&my_file_sizes[0], my_file_sizes.size(), 
-   //                     &global_file_sizes[0], &num_images[0], &disp[0]);
-  MPI_Allgatherv(my_offsets.data(), my_offsets.size()*sizeof(Tuple), MPI_BYTE,
-                 global_offsets.data(), &m_num_samples[0], &disp[0], MPI_BYTE,
-                 m_mpi_comm);
-  size_t j = 0;
-  for (auto t : global_offsets) {
-    if (m_offset_mapping.find(t.global_id) != m_offset_mapping.end()) {
-      assert(m_offset_mapping[t.global_id] == t.offset);
+    for (size_t i=0; i<send_req.size(); i++) {
+      MPI_Waitall(send_req[i].size(), send_req[i].data(), send_status[i].data());
     }
-    m_offset_mapping[t.global_id] = t.offset;
-    ++j;
   }
-}
 
-void data_store_csv::populate_datastore_two_sided() {
-  for (auto idx : m_my_datastore_indices) {
-    m_data_two_sided[idx] = m_csv_reader->fetch_line_label_response(idx);
+  //wait for recvs to finish
+  MPI_Waitall(recv_req.size(), recv_req.data(), recv_status.data());
+
+  if (m_master) {
+    std::cout << "role: " << m_reader->get_role() << " data_store_csv::exchange_data() time: " << get_time() - tm1 << std::endl;
   }
 }
 
 void data_store_csv::populate_datastore() {
-  m_data.resize(m_my_datastore_indices.size() * m_vector_size);
-  
-  if (m_master) std::cerr << "populating the data store\n";
-  size_t jj = 0;
-  int j = 0;
   for (auto idx : m_my_datastore_indices) {
-    m_offset_mapping[idx] = jj;
-    std::vector<DataType> v = m_csv_reader->fetch_line_label_response(idx);
-    for (size_t i=0; i<v.size(); i++) {
-      m_data[jj++] = v[i];
-    }
-    if (jj != (1+j)*v.size()) {
-      std::cerr << "ERROR: j: " << j << " v.size(): " << v.size() << " jj: " << jj << "\n";
-      sleep(3);
-    }  
-    assert(jj == (1+j)*v.size());
-    ++j;
-  } 
+    m_data[idx] = m_csv_reader->fetch_line_label_response(idx);
+  }
 }
 
 }  // namespace lbann
