@@ -275,9 +275,6 @@ void Layer::forward_prop() {
 }
 
 void Layer::back_prop() {
-  if (m_frozen) {
-    return;
-  }
   const auto bp_start = get_time();
 
   // Setup matrix data, e.g. input matrices
