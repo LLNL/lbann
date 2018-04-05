@@ -692,10 +692,12 @@ message Layer {
    Slice slice = 301;
    Split split = 302;
    Sum sum = 303;
-   Noise noise = 307;
    Unpooling unpooling = 304;
    Hadamard hadamard = 308;
    Constant constant = 309;
+   Gaussian gaussian = 310;
+   Bernoulli bernoulli = 311;
+   Uniform uniform = 312;
 
    // learning Layers
    FullyConnected fully_connected = 11;
@@ -875,11 +877,6 @@ message Sum {
   string scaling_factors = 1; //should be a space-separated list of doubles, e.g. "1.0 2.0 -1.0"
 }
 
-message Noise {
-  double noise_factor=1;
-  string num_neurons=2;
-}
-
 message Hadamard {
 }
 
@@ -887,6 +884,24 @@ message Constant {
   double value=1;
   string num_neurons=2;
 }
+
+message Gaussian {
+  double mean = 1;
+  double stdev = 2;
+  string neuron_dims = 3;
+}
+
+message Bernoulli {
+  double prob = 1;
+  string neuron_dims = 2;
+}
+
+message Uniform {
+  double min = 1;
+  double max = 2;
+  string neuron_dims = 3;
+}
+
 /////////////////////
 // learning Layers //
 /////////////////////

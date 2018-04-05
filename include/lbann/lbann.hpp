@@ -71,9 +71,11 @@
 #include "lbann/layers/transform/concatenation.hpp"
 #include "lbann/layers/transform/constant.hpp"
 #include "lbann/layers/transform/dummy.hpp"
-#include "lbann/layers/transform/noise.hpp"
 #include "lbann/layers/transform/safe_inv.hpp"
 #include "lbann/layers/transform/hadamard.hpp"
+#include "lbann/layers/transform/gaussian.hpp"
+#include "lbann/layers/transform/bernoulli.hpp"
+#include "lbann/layers/transform/uniform.hpp"
 
 /// Regularization layers.
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
