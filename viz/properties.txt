@@ -20,7 +20,6 @@ layer_names_and_overrides
 learning     convolution             shape=tripleoctagon   color=chartreuse3
 learning     fully_connected 
 learning     deconvolution           shape=octogon
-learning     fully_connected_cuda 
 io           input
 io           target
 io           reconstruction
@@ -35,6 +34,7 @@ activations  softplus
 activations  selu
 activations  tanh
 activations  exponential
+activations  power
 regularizers batch_normalization
 regularizers local_response_normalization
 regularizers dropout
@@ -48,4 +48,7 @@ transform    sum
 transform    noise
 transform    unpooling
 transform    hadamard
+transform    constant
+transform    reduction
+transform    evaluation
 

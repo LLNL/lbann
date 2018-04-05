@@ -100,9 +100,9 @@ class evaluation_layer : public transform_layer {
   virtual void bp_compute() override {
     auto& error_signal = get_error_signals();
     if (m_scale == EvalType(0)) {
-      Zero(error_signal);
+      El::Zero(error_signal);
     } else {
-      Fill(error_signal, DataType(m_scale));
+      El::Fill(error_signal, DataType(m_scale));
     }
   }
 
