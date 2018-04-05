@@ -66,7 +66,8 @@ class evaluation_layer : public transform_layer {
   void set_scale(EvalType scale) { m_scale = scale; }
   
   /** Get evaluated value. */
-  EvalType get_value(bool unscaled = false) const {
+  EvalType get_value(bool unscaled = false) {
+    this->m_comm->wait(m_allreduce_req);
     if (unscaled) {
       return m_value;
     } else {
@@ -84,7 +85,6 @@ class evaluation_layer : public transform_layer {
     const auto& mini_batch_size = this->m_model->get_current_mini_batch_size();
 
     // Compute average value
-    /// @todo Non-blocking allreduce
     EvalType sum = EvalType(0);
     #pragma omp parallel for reduction(+:sum) collapse(2)
     for (El::Int col = 0; col < local_width; ++col) {
@@ -92,8 +92,8 @@ class evaluation_layer : public transform_layer {
         sum += local_input(row, col);
       }
     }
-    m_value = this->m_comm->allreduce(sum / mini_batch_size,
-                                      input.DistComm());
+    m_value = sum / mini_batch_size;
+    this->m_comm->nb_allreduce(&m_value, 1, input.DistComm(), m_allreduce_req);
 
   }
   
@@ -106,10 +106,13 @@ class evaluation_layer : public transform_layer {
     }
   }
 
+ private:
   /** Scaling factor to apply to evaluated value. */
   EvalType m_scale;
   /** Evaluated value. */
   EvalType m_value;
+  /** Non-blocking allreduce request. */
+  Al::request m_allreduce_req;
 
 };
 
