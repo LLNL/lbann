@@ -60,6 +60,9 @@ class recurrent_model : public directed_acyclic_graph_model {
   /** Get model name. */
   std::string name() const override { return "recurrent_model"; }
 
+  //** TODO: Not implemented */
+  void freeze_layers_under_frozen_surface() override {}
+
  protected:
 
   void setup_layer_topology() override;

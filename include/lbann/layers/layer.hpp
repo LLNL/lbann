@@ -347,6 +347,10 @@ class Layer {
   /** Get reference to cuDNN manager. */
   cudnn::cudnn_manager* get_cudnn_manager() const { return m_cudnn; }
 
+  void freeze();
+  void unfreeze();
+  bool is_frozen() const;
+
  protected:
 
   /** Reference to LBANN communicator. */
@@ -483,6 +487,9 @@ class Layer {
 
   /** Reference to cuDNN manager. */
   cudnn::cudnn_manager *m_cudnn;
+
+  /** Avoid back prop if frozen */
+  bool m_frozen;
 
 #ifdef LBANN_HAS_CUDNN
 

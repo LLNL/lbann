@@ -61,6 +61,7 @@ void sequential_model::setup_layer_topology() {
     throw lbann_exception(err.str());
   }
 
+  freeze_layers_under_frozen_surface();
 }
 
 bool sequential_model::save_to_checkpoint(int fd, const char *filename, size_t *bytes) {
