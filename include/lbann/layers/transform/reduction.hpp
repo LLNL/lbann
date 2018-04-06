@@ -95,8 +95,10 @@ class reduction_layer : public transform_layer {
       const auto& input_size = get_num_prev_neurons();
       const auto& mini_batch_size = m_mini_batch_size_per_gpu;
       const auto& input_ldim = input_d.get_leading_dim();
-      const auto& output_ldim = output_d.get_leading_dim();
       const int num_gpus = m_cudnn->get_num_gpus();
+
+      // Stop early if possible
+      if (mini_batch_size == 0) { return; }
 
       // Apply reduction on GPU
       switch (m_mode) {
@@ -114,7 +116,7 @@ class reduction_layer : public transform_layer {
                          input_d.get_locked_data(i), input_ldim,
                          ones_d.get_locked_data(i), 1,
                          DataType(0),
-                         output_d.get_data(i), output_ldim);
+                         output_d.get_data(i), 1);
           }
         }
         break;
@@ -132,7 +134,7 @@ class reduction_layer : public transform_layer {
                          input_d.get_locked_data(i), input_ldim,
                          ones_d.get_locked_data(i), 1,
                          DataType(0),
-                         output_d.get_data(i), output_ldim);
+                         output_d.get_data(i), 1);
           }
         }
         break;
@@ -169,9 +171,11 @@ class reduction_layer : public transform_layer {
       auto& gradient_wrt_input_d = this->m_error_signals_d[0];
       const auto& input_size = get_num_prev_neurons();
       const auto& mini_batch_size = m_mini_batch_size_per_gpu;
-      const auto& gradient_wrt_output_ldim = gradient_wrt_output_d.get_leading_dim();
       const auto& gradient_wrt_input_ldim = gradient_wrt_input_d.get_leading_dim();
       const int num_gpus = m_cudnn->get_num_gpus();
+
+      // Stop early if possible
+      if (mini_batch_size == 0) { return; }
 
       // Apply reduction on GPU
       switch (m_mode) {
@@ -183,12 +187,11 @@ class reduction_layer : public transform_layer {
           for (int i = 0; i < num_gpus; ++i) {
             CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
             cublas::gemm(this->m_cudnn->get_cublas_handle(i),
-                         CUBLAS_OP_N, CUBLAS_OP_T,
+                         CUBLAS_OP_N, CUBLAS_OP_N,
                          input_size, mini_batch_size, 1,
                          DataType(1),
                          ones_d.get_locked_data(i), input_size,
-                         gradient_wrt_output_d.get_locked_data(i),
-                         gradient_wrt_output_ldim,
+                         gradient_wrt_output_d.get_locked_data(i), 1,
                          DataType(0),
                          gradient_wrt_input_d.get_data(i),
                          gradient_wrt_input_ldim);
@@ -207,8 +210,7 @@ class reduction_layer : public transform_layer {
                          input_size, mini_batch_size, 1,
                          DataType(1) / mini_batch_size,
                          ones_d.get_locked_data(i), input_size,
-                         gradient_wrt_output_d.get_locked_data(i),
-                         gradient_wrt_output_ldim,
+                         gradient_wrt_output_d.get_locked_data(i), 1,
                          DataType(0),
                          gradient_wrt_input_d.get_data(i),
                          gradient_wrt_input_ldim);
