@@ -199,10 +199,31 @@ Layer* construct_layer(lbann_comm* comm,
     const auto& dims = parse_list<int>(params.num_neurons());
     return new constant_layer<layout>(comm, params.value(), dims, cudnn);
   }
-  if (proto_layer.has_noise()) {
-    const auto& params = proto_layer.noise();
-    const auto& dims = parse_list<int>(params.num_neurons());
-    return new noise_layer<layout>(comm, dims, params.noise_factor(), cudnn);
+  if (proto_layer.has_gaussian()) {
+    const auto& params = proto_layer.gaussian();
+    const auto& dims = parse_list<int>(params.neuron_dims());
+    return new gaussian_layer<layout>(comm,
+                                      dims,
+                                      params.mean(),
+                                      params.stdev(),
+                                      cudnn);
+  }
+  if (proto_layer.has_bernoulli()) {
+    const auto& params = proto_layer.bernoulli();
+    const auto& dims = parse_list<int>(params.neuron_dims());
+    return new bernoulli_layer<layout>(comm,
+                                       dims,
+                                       params.prob(),
+                                       cudnn);
+  }
+  if (proto_layer.has_uniform()) {
+    const auto& params = proto_layer.uniform();
+    const auto& dims = parse_list<int>(params.neuron_dims());
+    return new uniform_layer<layout>(comm,
+                                     dims,
+                                     params.min(),
+                                     params.max(),
+                                     cudnn);
   }
   if (proto_layer.has_pooling()) {
     const auto& params = proto_layer.pooling();

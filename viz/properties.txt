@@ -45,7 +45,9 @@ transform    concatenation
 transform    slice
 transform    split arrow=red
 transform    sum
-transform    noise
 transform    unpooling
 transform    hadamard
+transform    gaussian
+transform    bernoulli
+transform    uniform
 
