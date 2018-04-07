@@ -2,7 +2,7 @@ import pytest
 import os
 import common_code
 
-def error_if(f, f_symbol, data_field, actual_values, expected_values, model_name, errors, all_values):
+def error_if(f, f_symbol, data_field, actual_values, expected_values, model_name, errors, all_values, frequency_str):
   d = actual_values[data_field]
   if f_symbol == '<':
     # Every time a value is smaller, update archive_value
@@ -15,7 +15,7 @@ def error_if(f, f_symbol, data_field, actual_values, expected_values, model_name
   for model_id in sorted(d.keys()):
     for epoch_id in sorted(d[model_id].keys()):
       actual_value = d[model_id][epoch_id]
-      expected_value = expected_values[model_name][data_field]
+      expected_value = expected_values[model_name + frequency_str][data_field]
 
       if actual_value == None:
         errors.append('d[%s][%s] == None' % (model_id, epoch_id))
@@ -30,24 +30,24 @@ def error_if(f, f_symbol, data_field, actual_values, expected_values, model_name
         archive_value = actual_value
   return archive_value
 
-def run_tests(actual_performance, model_name, dir_name, should_log, compiler_name, cluster):
-  expected_performance = common_code.csv_to_dict('%s/bamboo/integration_tests/expected_values/expected_performance_%s_%s.csv' % (dir_name, compiler_name, cluster))
+def run_tests(actual_performance, model_name, dir_name, should_log, compiler_name, cluster, frequency_str=''):
+  expected_performance = common_code.csv_to_dict('%s/bamboo/integration_tests/expected_values/%s/%s/expected_performance.csv' % (dir_name, cluster, compiler_name))
   errors = []
   all_values = []
   greater_than = lambda x,y: x > y
   less_than = lambda x,y: x < y
-  max_run_time = error_if(greater_than, '>', 'training_run_time', actual_performance, expected_performance, model_name, errors, all_values)
-  max_mean = error_if(greater_than, '>', 'training_mean', actual_performance, expected_performance, model_name, errors, all_values)
-  max_max = error_if(greater_than, '>', 'training_max', actual_performance, expected_performance, model_name, errors, all_values)
-  max_min = error_if(greater_than, '>', 'training_min', actual_performance, expected_performance, model_name, errors, all_values)
-  max_stdev = error_if(greater_than, '>', 'training_stdev', actual_performance, expected_performance, model_name, errors, all_values)
-  min_accuracy = error_if(less_than, '<', 'test_accuracy', actual_performance, expected_performance, model_name, errors, all_values)
+  max_run_time = error_if(greater_than, '>', 'training_run_time', actual_performance, expected_performance, model_name, errors, all_values, frequency_str)
+  max_mean = error_if(greater_than, '>', 'training_mean', actual_performance, expected_performance, model_name, errors, all_values, frequency_str)
+  max_max = error_if(greater_than, '>', 'training_max', actual_performance, expected_performance, model_name, errors, all_values, frequency_str)
+  max_min = error_if(greater_than, '>', 'training_min', actual_performance, expected_performance, model_name, errors, all_values, frequency_str)
+  max_stdev = error_if(greater_than, '>', 'training_stdev', actual_performance, expected_performance, model_name, errors, all_values, frequency_str)
+  min_accuracy = error_if(less_than, '<', 'test_accuracy', actual_performance, expected_performance, model_name, errors, all_values, frequency_str)
 
   if os.environ['LOGNAME'] == 'lbannusr':
     key = 'bamboo_planKey'
     if key in os.environ:
       plan = os.environ[key]
-      if plan in ['LBANN-NIGHTD', 'LBANN-WD', 'LBANN-FOR']:
+      if plan in ['LBANN-NIGHTD', 'LBANN-WD']:
         archive_file = '/usr/workspace/wsb/lbannusr/archives/%s/%s/%s/performance_%s.txt' % (plan, cluster, compiler_name, model_name)
         with open(archive_file, 'a') as archive:
           archive.write('%s, %f, %f, %f, %f, %f, %f\n' % (os.environ['bamboo_buildNumber'], max_run_time, max_mean, max_max, max_min, max_stdev, min_accuracy))
@@ -97,7 +97,7 @@ def skeleton_performance_alexnet(cluster, dir_name, executables, compiler_name, 
   frequency_str = '_nightly'
   if weekly:
     frequency_str = '_weekly'
-  run_tests(actual_performance, model_name + frequency_str, dir_name, should_log, compiler_name, cluster)
+  run_tests(actual_performance, model_name, dir_name, should_log, compiler_name, cluster, frequency_str)
 
 def skeleton_performance_cache_alexnet(cluster, dir_name, executables, weekly, compiler_name):
   if not weekly:
@@ -107,12 +107,15 @@ def skeleton_performance_cache_alexnet(cluster, dir_name, executables, weekly, c
   executable = executables[compiler_name]
   model_name = 'cache_alexnet'
   should_log = False
-  output_file_name= '%s/bamboo/integration_tests/output/%s_%s_output.txt' %(dir_name, model_name, compiler_name)
+  output_file_name = '%s/bamboo/integration_tests/output/%s_%s_output.txt' %(dir_name, model_name, compiler_name)
+  error_file_name = '%s/bamboo/integration_tests/error/%s_%s_error.txt' %(dir_name, model_name, compiler_name) 
   if (cluster in ['catalyst', 'surface']):
     command = 'salloc %s/bamboo/integration_tests/%s.sh > %s' % (dir_name, model_name, output_file_name)
+  elif cluster == 'ray':
+    pytest.skip('Ray is unsupported for skeleton_performance_cache_alexnet')
   else:
-    raise Exception("Unsupported Cluster %s" % cluster)
-  common_code.run_lbann(command, model_name, output_file_name, should_log)
+    raise Exception('Unsupported Cluster %s' % cluster)
+  common_code.run_lbann(command, model_name, output_file_name, error_file_name, should_log)
   actual_performance = common_code.extract_data(output_file_name, DATA_FIELDS, should_log)
   run_tests(actual_performance, model_name, dirname, should_log, compiler_name, cluster)
 

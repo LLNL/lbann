@@ -43,6 +43,7 @@ struct cuBLAS_Caller;
 template <>
 struct cuBLAS_Caller<float> {
   WRAP_CUBLAS(cublasSaxpy, axpy)
+  WRAP_CUBLAS(cublasSdot , dot )
   WRAP_CUBLAS(cublasSnrm2, nrm2)
   WRAP_CUBLAS(cublasSscal, scal)
   WRAP_CUBLAS(cublasSgemv, gemv)
@@ -53,6 +54,7 @@ struct cuBLAS_Caller<float> {
 template <>
 struct cuBLAS_Caller<double> {
   WRAP_CUBLAS(cublasDaxpy, axpy)
+  WRAP_CUBLAS(cublasDdot , dot )
   WRAP_CUBLAS(cublasDnrm2, nrm2)
   WRAP_CUBLAS(cublasDscal, scal)
   WRAP_CUBLAS(cublasDgemv, gemv)
@@ -100,12 +102,37 @@ void axpy(cublasHandle_t const& handle,
   cuBLAS_Caller<DataType>{}.axpy(handle, n, &alpha, x, incx, y, incy);
 }
 
+void dot(cublasHandle_t const& handle,
+         int n,
+         DataType const* x, int incx,
+         DataType const* y, int incy,
+         DataType * result) {
+  cuBLAS_Caller<DataType>{}.dot(handle, n, x, incx, y, incy, result);
+}
+
+DataType dot(cublasHandle_t const& handle,
+             int n,
+             DataType const* x, int incx,
+             DataType const* y, int incy) {
+  DataType result;
+  dot(handle, n, x, incx, y, incy, &result);
+  return result;
+}
+
+void nrm2(cublasHandle_t const& handle,
+          int n,
+          DataType const* x, int incx,
+          DataType * result) {
+  cuBLAS_Caller<DataType>{}.nrm2(handle, n, x, incx, result);
+}
+
 DataType nrm2(cublasHandle_t const& handle,
               int n,
               DataType const* x, int incx) {
   DataType result;
-  cuBLAS_Caller<DataType>{}.nrm2(handle, n, x, incx, &result);
+  nrm2(handle, n, x, incx, &result);
   return result;
+
 }
 
 void scal(cublasHandle_t const& handle,

@@ -1,7 +1,6 @@
 # Add the headers for this directory
 set_full_path(THIS_DIR_HEADERS
   concatenation.hpp
-  noise.hpp
   pooling.hpp
   reshape.hpp
   safe_inv.hpp
@@ -15,6 +14,9 @@ set_full_path(THIS_DIR_HEADERS
   hadamard.hpp
   reduction.hpp
   evaluation.hpp
+  gaussian.hpp
+  bernoulli.hpp
+  uniform.hpp
   )
 
 # Propagate the files up the tree

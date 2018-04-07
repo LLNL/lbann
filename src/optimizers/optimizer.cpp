@@ -116,10 +116,7 @@ std::string optimizer::get_description() const {
 
 weights& optimizer::get_weights() {
   if (!is_initialized()) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to access the weights being optimized before they are set";
-    throw lbann_exception(err.str());
+    LBANN_ERROR("attempted to access the weights being optimized before they are set");
   }
   return *m_weights;
 }
@@ -128,10 +125,7 @@ const AbsDistMat& optimizer::get_gradient() {
 
   // Check if gradient is initialized
   if (!is_initialized()) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to access gradients before they are set up";
-    throw lbann_exception(err.str());
+    LBANN_ERROR("attempted to access gradients before they are set up");
   }
 
   // Perform allreduce on staging matrix if needed
@@ -174,27 +168,20 @@ const cudnn::matrix& optimizer::get_gradient_gpu() {
 
   // Check if gradient is initialized
   if (!is_initialized()) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to access gradients before they are set up";
-    throw lbann_exception(err.str());
+    LBANN_ERROR("attempted to access gradients before they are set up");
   }
   if (m_cudnn == nullptr) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to get GPU gradient, but GPU is not set up";
-    throw lbann_exception(err.str());
+    LBANN_ERROR("attempted to get GPU gradient, but GPU is not set up");
   }
 
   // Check if all gradient sources have made contributions
   m_gradient_sources.erase(nullptr);
   if (!m_gradient_sources.empty()) {
     std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to access gradient before all gradient sources "
+    err << "attempted to access gradient before all gradient sources "
         << "have made contributions "
         << "(missing " << m_gradient_sources.size() << " sources)";
-    throw lbann_exception(err.str());
+    LBANN_ERROR(err.str());
   }
 
   // Perform allreduce on staging matrix if needed
@@ -233,17 +220,14 @@ void optimizer::start_gradient_staging_allreduce() {
     m_gradient_allreduce_finished = false;
   } else {
     #ifndef LBANN_HAS_CUDNN
-    throw lbann_exception("optimizer: cuDNN not detected");
+    LBANN_ERROR("cuDNN not detected");
     #else
     #if defined(LBANN_HAS_ALUMINUM) && defined(LBANN_HAS_NCCL2)
     // Non-blocking GPU allreduce with NCCL
     // Note: We assume each process has one GPU and that the gradient
     // is in STAR,STAR distribution.
     if (m_cudnn->get_num_gpus() != 1) {
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "non-blocking GPU allreduce with NCCL assumes one GPU per process";
-      throw lbann_exception(err.str());
+      LBANN_ERROR("non-blocking GPU allreduce with NCCL assumes one GPU per process");
     }
     StarMat gradient_staging_d;
     gradient_staging_d.Attach(m_gradient_staging_d.get_height(),
@@ -295,17 +279,14 @@ void optimizer::clear_gradient() {
 void optimizer::add_to_gradient(const AbsDistMat& gradient,
                                 DataType scale) {
   if (!is_initialized()) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to access gradients before they are set up";
-    throw lbann_exception(err.str());
+    LBANN_ERROR("attempted to access gradients before they are set up");
   }
   if (scale != DataType(0)) {
     if (m_cudnn == nullptr) {
       El::Axpy(scale, gradient, *m_gradient);
     } else {
       #ifndef LBANN_HAS_CUDNN
-      throw lbann_exception("optimizer: cuDNN not detected");
+      LBANN_ERROR("cuDNN not detected");
       #else
       cudnn::matrix gradient_d(m_cudnn);
       gradient_d.attach_to_work_spaces(gradient.LocalHeight(),
@@ -321,16 +302,10 @@ void optimizer::add_to_gradient(const AbsDistMat& gradient,
 void optimizer::add_to_gradient(const cudnn::matrix& gradient_d,
                                 DataType scale) {
   if (!is_initialized()) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to access gradients before they are set up";
-    throw lbann_exception(err.str());
+    LBANN_ERROR("attempted to access gradients before they are set up");
   }
   if (m_cudnn == nullptr) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to add to GPU gradient, but GPU is not set up";
-    throw lbann_exception(err.str());
+    LBANN_ERROR("attempted to add to GPU gradient, but GPU is not set up");
   }
   if (scale != DataType(0)) {
     for(int i = 0; i < m_cudnn->get_num_gpus(); ++i) {
@@ -347,16 +322,10 @@ void optimizer::add_to_gradient(const cudnn::matrix& gradient_d,
 void optimizer::add_to_gradient_staging(const AbsDistMat& gradient,
                                         DataType scale) {
   if (!is_initialized()) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to access gradients before they are set up";
-    throw lbann_exception(err.str());
+    LBANN_ERROR("attempted to access gradients before they are set up");
   }
   if (m_gradient_allreduce_started) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to add to staging matrix after gradient accumulation has started";
-    throw lbann_exception(err.str());
+    LBANN_ERROR("attempted to add to staging matrix after gradient accumulation has started");
   }
   if (scale != DataType(0)) {
 
@@ -366,7 +335,7 @@ void optimizer::add_to_gradient_staging(const AbsDistMat& gradient,
         El::Zero(*m_gradient_staging);
       } else {
         #ifndef LBANN_HAS_CUDNN
-        throw lbann_exception("optimizer: cuDNN not detected");
+        LBANN_ERROR("cuDNN not detected");
         #else
         m_gradient_staging_d.zero();
         #endif // LBANN_HAS_CUDNN
@@ -379,7 +348,7 @@ void optimizer::add_to_gradient_staging(const AbsDistMat& gradient,
       El::Axpy(scale, gradient, *m_gradient_staging);
     } else {
       #ifndef LBANN_HAS_CUDNN
-      throw lbann_exception("optimizer: cuDNN not detected");
+      LBANN_ERROR("cuDNN not detected");
       #else
       cudnn::matrix gradient_d(m_cudnn,
                                gradient.LocalHeight(),
@@ -399,22 +368,13 @@ void optimizer::add_to_gradient_staging(const AbsDistMat& gradient,
 void optimizer::add_to_gradient_staging(const cudnn::matrix& gradient_d,
                                         DataType scale) {
   if (!is_initialized()) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to access gradients before they are set up";
-    throw lbann_exception(err.str());
+    LBANN_ERROR("attempted to access gradients before they are set up");
   }
   if (m_gradient_allreduce_started) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to add to staging matrix after gradient accumulation has started";
-    throw lbann_exception(err.str());
+    LBANN_ERROR("attempted to add to staging matrix after gradient accumulation has started");
   }
   if (m_cudnn == nullptr) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to add to GPU gradient, but GPU is not set up";
-    throw lbann_exception(err.str());
+    LBANN_ERROR("attempted to add to GPU gradient, but GPU is not set up");
   }
   if (scale != DataType(0)) {
 
@@ -453,10 +413,7 @@ void optimizer::remove_gradient_source(const void* source) {
 
 void optimizer::setup(weights& w) {
   if (is_initialized()) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to setup an optimizer that is already set up";
-    throw lbann_exception(err.str());
+    LBANN_ERROR("attempted to setup an optimizer that is already set up");
   }
   set_weights(w);
 
@@ -486,10 +443,7 @@ void optimizer::setup(weights& w) {
 
 void optimizer::step() {
   if (!is_initialized()) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "optimizer must be set up before performing optimization step";
-    throw lbann_exception(err.str());
+    LBANN_ERROR("optimizer must be set up before performing optimization step");
   }
 
   double step_start = get_time();

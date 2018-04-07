@@ -38,9 +38,9 @@
 #endif // LBANN_HAS_CUDA
 #ifdef LBANN_HAS_ALUMINUM
 #ifdef LBANN_HAS_NCCL2
-#define ALUMINUM_HAS_NCCL
+#define AL_HAS_NCCL
 #endif // LBANN_HAS_ALUMINUM
-#include <allreduce.hpp>
+#include <Al.hpp>
 #endif // LBANN_HAS_ALUMINUM
 
 namespace lbann {
@@ -56,13 +56,13 @@ public:
 
 // Define aliases for Aluminum backends
 #ifdef LBANN_HAS_ALUMINUM
-using mpi_backend = ::allreduces::MPIBackend;
+using mpi_backend = ::Al::MPIBackend;
 #else
 using mpi_backend = lbann::Al::dummy_backend;
 #endif // LBANN_HAS_ALUMINUM
 /// @todo MPI-CUDA backend
 #if defined(LBANN_HAS_ALUMINUM) && defined(LBANN_HAS_NCCL2)
-using nccl_backend = ::allreduces::NCCLBackend;
+using nccl_backend = ::Al::NCCLBackend;
 #else
 using nccl_backend = lbann::Al::dummy_backend;
 #endif // defined(LBANN_HAS_ALUMINUM) && defined(LBANN_HAS_NCCL2)
@@ -428,11 +428,11 @@ class lbann_comm {
     bytes_sent += count * sizeof(T);
 #ifdef LBANN_HAS_ALUMINUM
 #ifdef LBANN_ALUMINUM_MPI_PASSTHROUGH
-    allreduces::AllreduceAlgorithm algo = allreduces::AllreduceAlgorithm::mpi_passthrough;
+    ::Al::AllreduceAlgorithm algo = ::Al::AllreduceAlgorithm::mpi_passthrough;
 #else
-    allreduces::AllreduceAlgorithm algo = allreduces::AllreduceAlgorithm::automatic;
+    ::Al::AllreduceAlgorithm algo = ::Al::AllreduceAlgorithm::automatic;
 #endif
-    allreduces::Allreduce<allreduces::MPIBackend>(
+    ::Al::Allreduce<::Al::MPIBackend>(
       snd, rcv, count, mpi_op_to_al_op(op), *get_al_comm(c), algo);
 #else
     El::mpi::AllReduce(snd, rcv, count, op, c);
@@ -445,11 +445,11 @@ class lbann_comm {
     bytes_sent += count * sizeof(T);
 #ifdef LBANN_HAS_ALUMINUM
 #ifdef LBANN_ALUMINUM_MPI_PASSTHROUGH
-    allreduces::AllreduceAlgorithm algo = allreduces::AllreduceAlgorithm::mpi_passthrough;
+    ::Al::AllreduceAlgorithm algo = ::Al::AllreduceAlgorithm::mpi_passthrough;
 #else
-    allreduces::AllreduceAlgorithm algo = allreduces::AllreduceAlgorithm::automatic;
+    ::Al::AllreduceAlgorithm algo = ::Al::AllreduceAlgorithm::automatic;
 #endif
-    allreduces::Allreduce<allreduces::MPIBackend>(
+    ::Al::Allreduce<::Al::MPIBackend>(
       data, count, mpi_op_to_al_op(op), *get_al_comm(c), algo);
 #else
     El::mpi::AllReduce(data, count, op, c);
@@ -481,7 +481,7 @@ class lbann_comm {
 #ifdef LBANN_HAS_ALUMINUM
     bytes_sent += count * sizeof(T);
     req.mpi_req = Al::mpi_backend::null_req;
-    allreduces::NonblockingAllreduce<allreduces::MPIBackend>(
+    ::Al::NonblockingAllreduce<::Al::MPIBackend>(
       data, count, mpi_op_to_al_op(op), *get_al_comm(c), req.mpi_req);
     bytes_received += count * sizeof(T) * (El::mpi::Size(c) - 1);
 #else
@@ -959,7 +959,7 @@ class lbann_comm {
 
 #ifdef LBANN_HAS_ALUMINUM
   using al_comms_key_type = std::pair<MPI_Comm, std::type_index>;
-  using al_comms_val_type = std::unique_ptr<allreduces::MPICommunicator>;
+  using al_comms_val_type = std::unique_ptr<::Al::MPICommunicator>;
   std::map<al_comms_key_type, al_comms_val_type> m_al_comms;
 
   /** Get an Aluminum communicator.
@@ -968,11 +968,11 @@ class lbann_comm {
    *  type index t. An Aluminum communicator will be created if
    *  needed.
    */
-  allreduces::MPICommunicator* get_al_comm(
+  ::Al::MPICommunicator* get_al_comm(
     El::mpi::Comm c, std::type_index t = std::type_index(typeid(Al::mpi_backend)));
 
   /** Convert an MPI_Op to an Aluminum reduction operator. */
-  allreduces::ReductionOperator mpi_op_to_al_op(El::mpi::Op op);
+  ::Al::ReductionOperator mpi_op_to_al_op(El::mpi::Op op);
 #endif
 
   // Various statistics counters.

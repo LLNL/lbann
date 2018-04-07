@@ -248,9 +248,10 @@ model {
   layer {
     name: "sample_noise"
     data_layout: "model_parallel"
-    noise {
-      noise_factor: 1.0
-      num_neurons: "5"
+    gaussian {
+      mean: 0.0
+      stdev: 1.0
+      neuron_dims: "5"
     }
   }
   layer {
