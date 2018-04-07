@@ -23,44 +23,34 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// data_reader_imagenet .hpp .cpp - data reader class for ImageNet dataset
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_DATA_READER_IMAGENET_HPP
-#define LBANN_DATA_READER_IMAGENET_HPP
-
-#include "data_reader_image.hpp"
-#include "cv_process.hpp"
+#include "lbann/data_store/data_store_imagenet_patches.hpp"
+#include "lbann/data_readers/data_reader_imagenet_patches.hpp"
+#include "lbann/utils/exception.hpp"
+#include "lbann/utils/options.hpp"
+#include "lbann/utils/timer.hpp"
 
 namespace lbann {
-class imagenet_reader : public image_data_reader {
- public:
-  imagenet_reader(bool shuffle) = delete;
-  imagenet_reader(const std::shared_ptr<cv_process>& pp, bool shuffle = true);
-  imagenet_reader(const imagenet_reader&);
-  imagenet_reader& operator=(const imagenet_reader&);
-  ~imagenet_reader() override;
 
-  imagenet_reader* copy() const override { return new imagenet_reader(*this); }
-
-  std::string get_type() const override {
-    return "imagenet_reader";
+void data_store_imagenet_patches::setup() {
+  if (m_rank == 0) {
+    std::cerr << "starting data_store_imagenet_patches::setup() for data reader with role: " << m_reader->get_role() << std::endl;
   }
 
- protected:
-  void set_defaults() override;
-  virtual bool replicate_processor(const cv_process& pp);
-  virtual ::Mat create_datum_view(::Mat& X, const int mb_idx) const;
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
+  set_name("data_store_imagenet_patches");
 
-  /// sets up a data_store.
-  void setup_data_store(model *m) override;
+  //sanity check
+  imagenet_reader_patches *reader = dynamic_cast<imagenet_reader_patches*>(m_reader);
+  if (reader == nullptr) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "dynamic_cast<imagenet_reader_patches*>(m_reader) failed";
+    throw lbann_exception(err.str());
+  }
 
- protected:
-  /// preprocessor duplicated for each omp thread
-  std::vector<std::unique_ptr<cv_process> > m_pps;
-};
+  data_store_imagenet::setup();
+}
+
 
 }  // namespace lbann
-
-#endif  // LBANN_DATA_READER_IMAGENET_HPP

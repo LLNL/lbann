@@ -54,6 +54,10 @@ class image_utils {
 
   // new function, to support sharded data reader and data store functionality
   static bool load_image(std::vector<unsigned char>& image_buf, int& Width, int& Height, int& Type, cv_process& pp, ::Mat& data);
+  
+  // new function, to support sharded data reader and data store functionality
+  static bool load_image(std::vector<unsigned char>& image_buf,
+                         int& Width, int& Height, int& Type, cv_process_patches& pp, std::vector<::Mat>& data); 
 
   // load/save an image into/from an LBANN data block of El::Matrix<DataType> type
   /// Load an image from a file and put it into an LBANN Mat data block

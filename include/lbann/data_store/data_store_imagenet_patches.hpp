@@ -23,44 +23,42 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// data_reader_imagenet .hpp .cpp - data reader class for ImageNet dataset
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_DATA_READER_IMAGENET_HPP
-#define LBANN_DATA_READER_IMAGENET_HPP
+#ifndef __DATA_STORE_IMAGENET_PATCHES_HPP__
+#define __DATA_STORE_IMAGENET_PATCHES_HPP__
 
-#include "data_reader_image.hpp"
-#include "cv_process.hpp"
+#include "lbann/data_store/data_store_imagenet.hpp"
 
 namespace lbann {
-class imagenet_reader : public image_data_reader {
+
+/**
+ * todo
+ */
+
+class data_store_imagenet_patches : public data_store_imagenet {
  public:
-  imagenet_reader(bool shuffle) = delete;
-  imagenet_reader(const std::shared_ptr<cv_process>& pp, bool shuffle = true);
-  imagenet_reader(const imagenet_reader&);
-  imagenet_reader& operator=(const imagenet_reader&);
-  ~imagenet_reader() override;
 
-  imagenet_reader* copy() const override { return new imagenet_reader(*this); }
+  //! ctor
+  data_store_imagenet_patches(generic_data_reader *reader, model *m) :
+    data_store_imagenet(reader, m) {}
 
-  std::string get_type() const override {
-    return "imagenet_reader";
-  }
+  //! copy ctor
+  data_store_imagenet_patches(const data_store_imagenet_patches&) = default;
 
- protected:
-  void set_defaults() override;
-  virtual bool replicate_processor(const cv_process& pp);
-  virtual ::Mat create_datum_view(::Mat& X, const int mb_idx) const;
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
+  //! operator=
+  data_store_imagenet_patches& operator=(const data_store_imagenet_patches&) = default;
 
-  /// sets up a data_store.
-  void setup_data_store(model *m) override;
+  data_store_imagenet_patches * copy() const override { return new data_store_imagenet_patches(*this); }
 
- protected:
-  /// preprocessor duplicated for each omp thread
-  std::vector<std::unique_ptr<cv_process> > m_pps;
+  //! dtor
+  ~data_store_imagenet_patches() override {};
+
+  void setup() override;
+
+ protected :
 };
 
 }  // namespace lbann
 
-#endif  // LBANN_DATA_READER_IMAGENET_HPP
+#endif  // __DATA_STORE_IMAGENET_PATCHES_HPP__

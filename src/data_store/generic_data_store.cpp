@@ -32,51 +32,71 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <numeric>
 
 namespace lbann {
 
-generic_data_store::generic_data_store(lbann_comm *comm, generic_data_reader *reader, model *m) :
-    m_rank(comm->get_rank_in_model()),
-    m_np(comm->get_procs_per_model()),
+generic_data_store::generic_data_store(generic_data_reader *reader, model *m) :
+    m_reader(reader), 
+    m_comm(m->get_comm()),
     m_epoch(0),
     m_in_memory(true),
-    m_comm(comm), m_master(comm->am_world_master()), m_reader(reader),
+    m_master(m_comm->am_world_master()), 
     m_model(m),
     m_dir(m_reader->get_file_dir()),
     m_extended_testing(false),
-    m_collect_minibatch_indices(true)
+    m_collect_minibatch_indices(true),
+    m_mpi_comm(m_comm->get_model_comm().comm)
 {
-    if (options::get()->has_bool("extended_testing") && options::get()->get_bool("extended_testing")) {
+  if (m_comm == nullptr) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << " m_reader->get_comm is nullptr";
+        throw lbann_exception(err.str());
+  }
+  m_rank = m_comm->get_rank_in_model();
+  m_np = m_comm->get_procs_per_model();
+  set_name("generic_data_store");
+  options *opts = options::get();
+  if (m_master) std::cerr << "generic_data_store::generic_data_store; np: " << m_np << "\n";
+    if (opts->has_bool("extended_testing") && opts->get_bool("extended_testing")) {
       m_extended_testing = true;
     }
-  /*
-    if (options::get()->has_bool("ds_in_memory")) {
-      m_in_memory = options::get()->get_bool("ds_in_memory");
+}
+
+void generic_data_store::get_minibatch_index_vector() {
+  size_t s2 = 0;
+  for (auto t1 : (*m_my_minibatch_indices)) {
+    s2 += t1.size();
+  }
+  m_my_minibatch_indices_v.reserve(s2);
+  for (auto t1 : (*m_my_minibatch_indices)) {
+    for (auto t2 : t1) {
+      m_my_minibatch_indices_v.push_back(t2);
     }
-    */
+  }
 }
 
 void generic_data_store::get_my_datastore_indices() {
-  //compute storage
-  size_t n = 0;
-  int stride = m_comm->get_procs_per_model();
-  for (size_t j=m_rank; j<m_num_global_indices; j+=stride) {
-    ++n;
-  }
-  //get the indices
-  m_my_datastore_indices.reserve(n); //these are the indices passed to data_reader::fetch_data
-  m_my_global_indices.reserve(n);   //these are the shuffled indices
-
-  for (size_t j=m_rank; j<m_num_global_indices; j+=stride) {
-    m_my_datastore_indices.push_back(j);
-    m_my_global_indices.push_back((*m_shuffled_indices)[j]);
+  m_num_samples.resize(m_np, 0);
+  std::unordered_set<int> mine;
+  for (size_t j=0; j<m_shuffled_indices->size(); ++j) {
+    int idx = (*m_shuffled_indices)[j];
+    int owner = idx % m_np;
+    m_num_samples[owner] += 1;
+    if (owner == m_rank) {
+      m_my_datastore_indices.insert(idx);
+    }
   }
 }
 
 void generic_data_store::setup() {
   set_shuffled_indices( &(m_reader->get_shuffled_indices()) );
-  set_num_global_indices(); //virtual override in child classes
+  set_num_global_indices();
   m_num_readers = m_reader->get_num_parallel_readers();
+  if (m_master) {
+    std::cerr << "data_reader type is: " << m_reader->get_type() << "\n";
+  }
 
   // get the set of global indices used by this processor in
   // generic_data_reader::fetch_data(). Note that these are
@@ -100,8 +120,7 @@ void generic_data_store::setup() {
     }
     m_reader->set_save_minibatch_entries(false);
   }
-
-  m_minibatch_indices = &(m_reader->get_minibatch_indices());
+  m_my_minibatch_indices = &(m_reader->get_minibatch_indices());
 }
 
 
@@ -124,11 +143,62 @@ size_t generic_data_store::get_file_size(std::string dir, std::string fn) {
 }
 
 void generic_data_store::set_shuffled_indices(const std::vector<int> *indices) {
-    m_shuffled_indices = indices;
-    ++m_epoch;
-    if (m_epoch > 1) {
-      exchange_data();
+  m_shuffled_indices = indices;
+  ++m_epoch;
+  if (m_epoch > 1) {
+    exchange_data();
+  }
+  /*
+  if (m_rank == 0) {
+    bool is_shuffled = false;
+    for (size_t j=1; j<indices->size(); j++) {
+      if ((*indices)[j-1]+1 != (*indices)[j]) {
+        is_shuffled = true;
+        break;
+      }
+    }
+    //std::cerr << "IS_SHUFFLED: " << is_shuffled << "\n";
+  }
+  */
+}
+
+void generic_data_store::exchange_mb_counts() {
+  int my_num_indices = m_my_minibatch_indices_v.size();
+  m_mb_counts.resize(m_np);
+  std::vector<int> num(m_np, 1); //num elements to be received from P_j
+  MPI_Allgather(&my_num_indices, 1, MPI_INT,
+                 m_mb_counts.data(), 1, MPI_INT, m_mpi_comm);
+}
+
+void generic_data_store::exchange_mb_indices() {
+  exchange_mb_counts();
+  //setup data structures to exchange minibatch indices with all processors
+  //displacement vector
+  std::vector<int> displ(m_np);
+  displ[0] = 0;
+  for (size_t j=1; j<m_mb_counts.size(); j++) {
+    displ[j] = displ[j-1] + m_mb_counts[j-1];
+  }
+
+  //recv vector
+  int n = std::accumulate(m_mb_counts.begin(), m_mb_counts.end(), 0);
+  std::vector<int> all_indices(n);
+
+  //receive the indices
+  MPI_Allgatherv(
+    m_my_minibatch_indices_v.data(), m_my_minibatch_indices_v.size(), MPI_INT, 
+    all_indices.data(), m_mb_counts.data(), displ.data(),
+    MPI_INT, m_mpi_comm);
+
+  //fill in the final data structure
+  m_all_minibatch_indices.resize(m_np);
+  for (int j=0; j<m_np; j++) {
+    m_all_minibatch_indices[j].reserve(m_mb_counts[j]);
+    for (int i=displ[j]; i<displ[j]+m_mb_counts[j]; i++) {
+      m_all_minibatch_indices[j].push_back(all_indices[i]);
     }
   }
+}
+
 
 }  // namespace lbann

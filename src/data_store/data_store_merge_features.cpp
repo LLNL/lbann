@@ -25,28 +25,30 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_store/data_store_merge_samples.hpp"
-#include "lbann/data_store/data_store_pilot2_molecular.hpp"
-#include "lbann/data_readers/data_reader_pilot2_molecular.hpp"
-#include "lbann/data_readers/data_reader_merge_samples.hpp"
+#include "lbann/data_store/data_store_merge_features.hpp"
+#include "lbann/data_store/data_store_csv.hpp"
+#include "lbann/data_readers/data_reader_merge_features.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/timer.hpp"
 
 namespace lbann {
 
-data_store_merge_samples::data_store_merge_samples(lbann_comm *comm, generic_data_reader *reader, model *m) :
+data_store_merge_features::data_store_merge_features(generic_data_reader *reader, model *m) :
     generic_data_store(reader, m) {
-  set_name("data_store_merge_samples");
+  set_name("data_store_merge_features");
 }
 
 
-data_store_merge_samples::~data_store_merge_samples() {
+data_store_merge_features::~data_store_merge_features() {
   MPI_Win_free( &m_win );
 }
 
-void data_store_merge_samples::setup() {
-  if (m_rank == 0) std::cerr << "STARTING data_store_merge_samples::setup()\n"; 
+
+
+#if 0
+void data_store_merge_features::setup() {
+  if (m_rank == 0) std::cerr << "STARTING data_store_merge_features::setup()\n"; 
   //double tm1 = get_time();
 
   generic_data_store::setup();
@@ -59,7 +61,7 @@ void data_store_merge_samples::setup() {
   */
 
   if (m_rank == 0) {
-    std::cout << "starting data_store_merge_samples::setup() for data reader with role: " << m_reader->get_role() << std::endl;
+    std::cout << "starting data_store_merge_features::setup() for data reader with role: " << m_reader->get_role() << std::endl;
   }
   
   if (! m_in_memory) {
@@ -71,11 +73,11 @@ void data_store_merge_samples::setup() {
   
   else {
     //sanity check
-    data_reader_merge_samples *reader = dynamic_cast<data_reader_merge_samples*>(m_reader);
+    data_reader_merge_features *reader = dynamic_cast<data_reader_merge_features*>(m_reader);
     if (reader == nullptr) {
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
-          << "dynamic_cast<merge_samples_reader*>(m_reader) failed";
+          << "dynamic_cast<merge_features_reader*>(m_reader) failed";
       throw lbann_exception(err.str());
     }
 
@@ -109,9 +111,10 @@ void data_store_merge_samples::setup() {
   }
 }
 
-void data_store_merge_samples::exchange_data() {
+void data_store_merge_features::exchange_data() {
   //for (auto t : m_subsidiary_stores) {
     
 }
+#endif
 
 }  // namespace lbann

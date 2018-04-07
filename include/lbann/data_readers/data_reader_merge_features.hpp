@@ -68,6 +68,10 @@ class data_reader_merge_features : public generic_compound_data_reader {
     // Todo: Can we merge the dimensions of each reader sensibly?
     return {get_linearized_data_size()};
   }
+
+  /// sets up a data_store.
+  void setup_data_store(model *m) override;
+
  protected:
   bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
   bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;

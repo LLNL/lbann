@@ -25,8 +25,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __DATA_STORE_MERGE_SAMPLES_HPP__
-#define __DATA_STORE_MERGE_SAMPLES_HPP__
+#ifndef __DATA_STORE_MERGE_FEATURES_HPP__
+#define __DATA_STORE_MERGE_FEATURES_HPP__
 
 #include "lbann/data_store/generic_data_store.hpp"
 
@@ -37,38 +37,38 @@ namespace lbann {
  * todo
  */
 
-class data_store_pilot2_molecular;
+//class data_store_pilot2_molecular;
 
-class data_store_merge_samples : public generic_data_store {
+class data_store_merge_features : public generic_data_store {
  public:
 
   //! ctor
-  data_store_merge_samples(lbann_comm *comm, generic_data_reader *reader, model *m); 
+  data_store_merge_features(generic_data_reader *reader, model *m); 
 
   //! copy ctor
-  data_store_merge_samples(const data_store_merge_samples&) = default;
+  data_store_merge_features(const data_store_merge_features&) = default;
 
   //! operator=
-  data_store_merge_samples& operator=(const data_store_merge_samples&) = default;
+  data_store_merge_features& operator=(const data_store_merge_features&) = default;
 
-  data_store_merge_samples * copy() const override { return new data_store_merge_samples(*this); }
+  data_store_merge_features * copy() const override { return new data_store_merge_features(*this); }
 
   //! dtor
-  ~data_store_merge_samples() override;
+  ~data_store_merge_features() override;
 
   void get_data_buf(int data_id, std::vector<unsigned char> *&buf, int multi_idx = 0) override {}
 
-  void setup() override;
+  void setup() override{};
 
  protected :
 
-  void exchange_data() override;
+  void exchange_data() {}
 
   /// this contains a concatenation of the indices in m_minibatch_indices
   /// (see: generic_data_reader.hpp)
   std::vector<int> m_my_minibatch_indices;
 
-  std::vector<data_store_pilot2_molecular*> m_subsidiary_stores;
+  //std::vector<data_store_pilot1_molecular*> m_subsidiary_stores;
 
 
   /// when running in in-memory mode, this buffer will contain
@@ -91,4 +91,4 @@ class data_store_merge_samples : public generic_data_store {
 
 }  // namespace lbann
 
-#endif  // __DATA_STORE_MERGE_SAMPLES_HPP__
+#endif  // __DATA_STORE_MERGE_FEATURES_HPP__

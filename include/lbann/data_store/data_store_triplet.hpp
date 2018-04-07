@@ -23,44 +23,46 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// data_reader_imagenet .hpp .cpp - data reader class for ImageNet dataset
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_DATA_READER_IMAGENET_HPP
-#define LBANN_DATA_READER_IMAGENET_HPP
+#ifndef __DATA_STORE_TRIPLET_HPP__
+#define __DATA_STORE_TRIPLET_HPP__
 
-#include "data_reader_image.hpp"
-#include "cv_process.hpp"
+#include "lbann/data_store/data_store_multi_images.hpp"
 
 namespace lbann {
-class imagenet_reader : public image_data_reader {
+
+/**
+ * todo
+ */
+
+class data_store_triplet : public data_store_multi_images {
  public:
-  imagenet_reader(bool shuffle) = delete;
-  imagenet_reader(const std::shared_ptr<cv_process>& pp, bool shuffle = true);
-  imagenet_reader(const imagenet_reader&);
-  imagenet_reader& operator=(const imagenet_reader&);
-  ~imagenet_reader() override;
 
-  imagenet_reader* copy() const override { return new imagenet_reader(*this); }
-
-  std::string get_type() const override {
-    return "imagenet_reader";
+  //! ctor
+  data_store_triplet(generic_data_reader *reader, model *m) :
+    data_store_multi_images(reader, m) {
+    set_name("data_store_triplet");
   }
 
- protected:
-  void set_defaults() override;
-  virtual bool replicate_processor(const cv_process& pp);
-  virtual ::Mat create_datum_view(::Mat& X, const int mb_idx) const;
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
+  //! copy ctor
+  data_store_triplet(const data_store_triplet&) = default;
 
-  /// sets up a data_store.
-  void setup_data_store(model *m) override;
+  //! operator=
+  data_store_triplet& operator=(const data_store_triplet&) = default;
 
- protected:
-  /// preprocessor duplicated for each omp thread
-  std::vector<std::unique_ptr<cv_process> > m_pps;
+  data_store_triplet * copy() const override { return new data_store_triplet(*this); }
+
+  //! dtor
+  ~data_store_triplet() override {};
+
+  void setup() override;
+
+ protected :
+
+  std::vector<std::string> get_sample(size_t idx) const override;
 };
 
 }  // namespace lbann
 
-#endif  // LBANN_DATA_READER_IMAGENET_HPP
+#endif  // __DATA_STORE_TRIPLET_HPP__
