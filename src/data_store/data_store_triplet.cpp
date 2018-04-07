@@ -45,6 +45,8 @@ void data_store_triplet::setup() {
     std::cerr << "starting data_store_triplet::setup() for data reader with role: " << m_reader->get_role() << std::endl;
   }
 
+  set_name("data_store_triplet");
+
   //sanity check
   data_reader_triplet *reader = dynamic_cast<data_reader_triplet*>(m_reader);
   if (reader == nullptr) {

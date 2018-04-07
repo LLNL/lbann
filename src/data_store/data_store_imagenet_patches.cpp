@@ -38,6 +38,8 @@ void data_store_imagenet_patches::setup() {
     std::cerr << "starting data_store_imagenet_patches::setup() for data reader with role: " << m_reader->get_role() << std::endl;
   }
 
+  set_name("data_store_imagenet_patches");
+
   //sanity check
   imagenet_reader_patches *reader = dynamic_cast<imagenet_reader_patches*>(m_reader);
   if (reader == nullptr) {

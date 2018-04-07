@@ -30,18 +30,17 @@
 #include "lbann/data_readers/data_reader.hpp"
 #include "lbann/utils/timer.hpp"
 
-#undef DEBUG
-
 namespace lbann {
 
 data_store_image::~data_store_image() {
-  MPI_Win_free( &m_win );
 }
 
 void data_store_image::setup() {
 
   if (m_master) std::cerr << "starting data_store_image::setup(); calling generic_data_store::setup()\n";
   generic_data_store::setup();
+
+  set_name("data_store_image");
 
   //@todo needs to be designed and implemented!
   if (! m_in_memory) {
@@ -70,8 +69,6 @@ void data_store_image::setup() {
     tma = get_time();
     read_files();
     if (m_master) std::cerr << "read_files time: " << get_time() - tma << "\n";
-
-    MPI_Win_create((void*)m_data.data(), m_data.size(), 1, MPI_INFO_NULL, m_mpi_comm, &m_win);
 
     if (m_master) std::cerr << "calling exchange_data\n";
     exchange_data();
@@ -134,8 +131,8 @@ void data_store_image::load_file(const std::string &dir, const std::string &fn, 
   in.close();
 }
 
-void data_store_image::exchange_data_two_sided() {
-  if (m_master) std::cerr << "starting exchange_data_two_sided\n";
+void data_store_image::exchange_data() {
+  if (m_master) std::cerr << "starting exchange_data\n";
   std::stringstream err;
 
   //build map: proc -> global indices that proc needs for this epoch, and
@@ -225,61 +222,12 @@ void data_store_image::exchange_data_two_sided() {
   }
 }
 
-void data_store_image::exchange_data() {
-  double tm1 = get_time();
-  if (m_use_two_sided_comms) {
-    exchange_data_two_sided();
-    if (m_master) {
-      std::cerr << "role: " << m_reader->get_role() << " data_store_image::exchange_data() time: " << get_time() - tm1 << std::endl;
-    }
-    return;
-  }
-
-  std::stringstream err;
-  MPI_Win_fence(MPI_MODE_NOSTORE|MPI_MODE_NOPUT, m_win);
-  m_my_minibatch_data.clear();
-
-  for (auto idx : m_my_minibatch_indices_v) {
-    size_t base_index = (*m_shuffled_indices)[idx];
-    for (size_t i=0; i<m_num_img_srcs; i++) {
-      int index = base_index*m_num_img_srcs+i;
-
-      if (m_file_sizes.find(index) == m_file_sizes.end()) {
-        err << __FILE__ << " :: " << __LINE__ << " :: "
-            << index << " is not a key in m_file_sizes";
-        throw lbann_exception(err.str());
-      }
-
-      if (m_offsets.find(index) == m_offsets.end()) {
-        err << __FILE__  << " :: " << __LINE__ << " :: "
-          << " m_offsets.find(index) failed";
-        throw lbann_exception(err.str());
-      }
-
-      int file_len = m_file_sizes[index];
-      int owner = get_index_owner(base_index);
-      size_t offset = m_offsets[index];
-      m_my_minibatch_data[index].resize(file_len);
-      MPI_Get((void*)m_my_minibatch_data[index].data(), file_len, MPI_BYTE,
-              owner, offset, file_len, MPI_BYTE, m_win);
-    }
-  }
-
-  MPI_Win_fence(MPI_MODE_NOSTORE|MPI_MODE_NOPUT, m_win);
-  if (m_master) {
-    std::cerr << "role: " << m_reader->get_role() << " data_store_image::exchange_data() time: " << get_time() - tm1 << std::endl;
-  }
-}
 
 void data_store_image::exchange_file_sizes(std::vector<Triple> &my_file_sizes, int num_global_indices) {
-  std::vector<Triple> global_file_sizes(num_global_indices);
-  std::vector<int> d(m_np);
-  std::iota(d.begin(), d.end(), 0);
-  std::vector<int> d2(m_np, 1);
   std::vector<int> num_bytes(m_np);
   int bytes = my_file_sizes.size()*sizeof(Triple);
-  MPI_Allgatherv(&bytes, 1, MPI_INT,
-                 num_bytes.data(), d2.data(), d.data(), MPI_INT,
+  MPI_Allgather(&bytes, 1, MPI_INT,
+                 num_bytes.data(), 1, MPI_INT,
                  m_mpi_comm);
 
   std::vector<int> disp(m_num_readers); 
@@ -287,17 +235,7 @@ void data_store_image::exchange_file_sizes(std::vector<Triple> &my_file_sizes, i
   for (int h=1; h<(int)m_num_readers; h++) {
     disp[h] = disp[h-1] + num_bytes[h-1];
   }
-
-  #ifdef DEBUG
-  if (m_master) {
-    std::cerr << "\nnum samples: ";
-    for (auto t : num_bytes) std::cerr << t << " ";
-    std::cerr << "\ndispl: ";
-    for (auto t : disp) std::cerr << t << " ";
-    std::cerr << "\n\n";
-    std::cerr << "sizeof(Triple): " << sizeof(Triple) << "\n\n";
-  }
-  #endif
+  std::vector<Triple> global_file_sizes(num_global_indices);
 
   //@todo: couldn't get m_comm->model_gatherv to work
   //m_comm->model_gatherv(&my_file_sizes[0], my_file_sizes.size(), 

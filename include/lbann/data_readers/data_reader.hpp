@@ -778,9 +778,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     * indices are added to m_my_minibatch_indices, but fetch_datum()
     * is not called. This method is added to support data store functionality.
     */
-  void set_save_minibatch_entries(bool b) {
-      m_save_minibatch_indices = b;
-  }
+  void set_save_minibatch_entries(bool b);
 
   /// support of data store functionality
   const std::vector<std::vector<int> > & get_minibatch_indices() const {

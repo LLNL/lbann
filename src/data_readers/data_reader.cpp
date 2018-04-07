@@ -493,4 +493,11 @@ void generic_data_reader::setup_data_store(model *m) {
   m_data_store = nullptr;
 }
 
+void generic_data_reader::set_save_minibatch_entries(bool b) {
+  m_save_minibatch_indices = b;
+  if (b) {
+    m_my_minibatch_indices.reserve(get_num_iterations_per_epoch());
+  }
+}
+
 }  // namespace lbann

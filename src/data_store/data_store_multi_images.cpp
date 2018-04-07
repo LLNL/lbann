@@ -32,11 +32,7 @@
 #include "lbann/utils/timer.hpp"
 
 
-
-#undef DEBUG
-
 namespace lbann {
-using namespace std;
 
 std::vector<std::string> data_store_multi_images::get_sample(size_t idx) const {
   const data_reader_multi_images *reader = dynamic_cast<data_reader_multi_images*>(m_reader);
@@ -50,6 +46,8 @@ void data_store_multi_images::setup() {
   if (m_rank == 0) {
     std::cerr << "starting data_store_multi_images::setup() for data reader with role: " << m_reader->get_role() << std::endl;
   }
+
+  set_name("data_store_multi_images");
 
   //sanity check
   data_reader_multi_images *reader = dynamic_cast<data_reader_multi_images*>(m_reader);
@@ -81,7 +79,7 @@ void data_store_multi_images::setup() {
 
 void data_store_multi_images::get_file_sizes() {
   std::vector<Triple> my_file_sizes(m_my_datastore_indices.size()*m_num_img_srcs);
-  if (m_master) std::cerr << "STARTING data_store_multi_images::get_file_sizes for " << my_file_sizes.size() << " files\n";
+  if (m_master) std::cerr << "STARTING " << get_name() << "::get_file_sizes for " << my_file_sizes.size() << " files\n";
 
   size_t cur_offset = 0;
   std::unordered_map<std::string, size_t> names;
@@ -118,16 +116,6 @@ void data_store_multi_images::get_file_sizes() {
 }
 
 void data_store_multi_images::read_files() {
-
-  #ifdef DEBUG
-  // each processor opens a file and writes base_index, index, offset, and file_lenght
-  // for each of its datastore indices. This was written as an aid to debugging errors
-  // in one-sided communication
-  char b[40];
-  sprintf(b, "read_files_%d", m_rank);
-  std::ofstream out(b);
-  #endif 
-
   std::stringstream err;
   for (auto base_index : m_my_datastore_indices) {
     const std::vector<std::string> sample(get_sample(base_index));
@@ -148,11 +136,6 @@ void data_store_multi_images::read_files() {
       }
       size_t file_len = m_file_sizes[index];
 
-      #ifdef DEBUG
-      out << "base: " << base_index << " index: " << index << " offset: " 
-          << offset << " file_len: " << file_len << "\n";;
-      #endif
-
       if (offset + file_len > m_data.size()) {
         err << __FILE__ << " " << __LINE__ << " :: " 
           << " of " << m_my_datastore_indices.size() << " offset: " << offset
@@ -165,9 +148,6 @@ void data_store_multi_images::read_files() {
       load_file(m_dir, sample[k], m_data.data()+offset, file_len);
     }
   }
-  #ifdef DEBUG
-  out.close();
-  #endif
 }
 
 

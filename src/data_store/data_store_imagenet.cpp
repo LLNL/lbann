@@ -39,6 +39,8 @@ void data_store_imagenet::setup() {
     std::cerr << "starting data_store_imagenet::setup() for data reader with role: " << m_reader->get_role() << std::endl;
   }
 
+  set_name("data_store_imagenet");
+
   //sanity check
   image_data_reader *reader = dynamic_cast<image_data_reader*>(m_reader);
   if (reader == nullptr) {

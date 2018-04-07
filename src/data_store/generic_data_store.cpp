@@ -37,12 +37,8 @@
 namespace lbann {
 
 generic_data_store::generic_data_store(generic_data_reader *reader, model *m) :
-    m_use_two_sided_comms(true),
     m_reader(reader), 
     m_comm(m->get_comm()),
-    m_name("generic_data_store"),
-    m_rank(m_comm->get_rank_in_model()),
-    m_np(m_comm->get_procs_per_model()),
     m_epoch(0),
     m_in_memory(true),
     m_master(m_comm->am_world_master()), 
@@ -52,16 +48,19 @@ generic_data_store::generic_data_store(generic_data_reader *reader, model *m) :
     m_collect_minibatch_indices(true),
     m_mpi_comm(m_comm->get_model_comm().comm)
 {
+  if (m_comm == nullptr) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << " m_reader->get_comm is nullptr";
+        throw lbann_exception(err.str());
+  }
+  m_rank = m_comm->get_rank_in_model();
+  m_np = m_comm->get_procs_per_model();
+  set_name("generic_data_store");
   options *opts = options::get();
   if (m_master) std::cerr << "generic_data_store::generic_data_store; np: " << m_np << "\n";
     if (opts->has_bool("extended_testing") && opts->get_bool("extended_testing")) {
       m_extended_testing = true;
-    }
-    if (opts->has_bool("two_sided")) {
-      m_use_two_sided_comms = opts->get_bool("two_sided");
-      if (m_master) std::cerr << "generic_data_store::generic_data_store; using two-sided communication ? " << m_use_two_sided_comms << "\n";
-    } else {
-      if (m_master) std::cerr << "generic_data_store::generic_data_store; using one-sided communication\n";
     }
 }
 
@@ -95,12 +94,6 @@ void generic_data_store::setup() {
   set_shuffled_indices( &(m_reader->get_shuffled_indices()) );
   set_num_global_indices();
   m_num_readers = m_reader->get_num_parallel_readers();
-  if (m_reader->get_comm() == nullptr) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << " m_reader->get_comm is nullptr";
-        throw lbann_exception(err.str());
-  }
   if (m_master) {
     std::cerr << "data_reader type is: " << m_reader->get_type() << "\n";
   }
@@ -155,27 +148,26 @@ void generic_data_store::set_shuffled_indices(const std::vector<int> *indices) {
   if (m_epoch > 1) {
     exchange_data();
   }
+  /*
   if (m_rank == 0) {
     bool is_shuffled = false;
     for (size_t j=1; j<indices->size(); j++) {
-      if ((*indices)[j]+1 != (*indices)[j]) {
+      if ((*indices)[j-1]+1 != (*indices)[j]) {
         is_shuffled = true;
         break;
       }
     }
-    std::cerr << "IS_SHUFFLED: " << is_shuffled << "\n";
+    //std::cerr << "IS_SHUFFLED: " << is_shuffled << "\n";
   }
+  */
 }
 
 void generic_data_store::exchange_mb_counts() {
   int my_num_indices = m_my_minibatch_indices_v.size();
   m_mb_counts.resize(m_np);
-  std::vector<int> displ(m_np); //displacement vecot
-  std::iota(displ.begin(), displ.end(), 0);
   std::vector<int> num(m_np, 1); //num elements to be received from P_j
-  MPI_Allgatherv(&my_num_indices, 1, MPI_INT,
-                 m_mb_counts.data(), num.data(), displ.data(), MPI_INT,
-                 m_mpi_comm);
+  MPI_Allgather(&my_num_indices, 1, MPI_INT,
+                 m_mb_counts.data(), 1, MPI_INT, m_mpi_comm);
 }
 
 void generic_data_store::exchange_mb_indices() {
@@ -208,28 +200,5 @@ void generic_data_store::exchange_mb_indices() {
   }
 }
 
-void generic_data_store::compute_send_and_receive_lists() {
-  m_work_send.resize(m_np);
-  for (auto &t : m_work_send) {
-    t.clear();
-  }
-  m_work_recv.resize(m_np);
-  for (auto &t : m_work_recv) {
-    t.clear();
-  }
-
-  //get recv indices (what other procs will send to me)
-  for (auto t : m_my_minibatch_indices_v) {
-    int idx = (*m_shuffled_indices)[t];
-    int owner = get_index_owner(idx);
-    m_work_recv[owner].insert(idx);
-  }
-
-  //get indices that I will send to others
-  for (auto idx : m_my_datastore_indices) {
-    int owner = get_index_owner(idx);
-    m_work_send[owner].insert(idx);
-  }
-}
 
 }  // namespace lbann

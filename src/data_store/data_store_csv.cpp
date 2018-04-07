@@ -31,10 +31,6 @@
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/timer.hpp"
 #include <unordered_set>
-#include <set>
-
-using namespace std;
-
 
 namespace lbann {
 
@@ -79,7 +75,8 @@ void data_store_csv::setup() {
           << "num_parallel_readers(): " << reader->get_num_parallel_readers() 
           << " m_np: " << m_np 
           << "; for this data_store num_readers must be the same as procs per model;\n"
-          << " if this isn't acceptable, please notify Dave Hysom so he can fix.\n";
+          << " if this isn't acceptable, please notify Dave Hysom so he can fix.\n"
+          << "reader role: " << m_reader->get_role();
       throw lbann_exception(err.str());
     }
 
@@ -102,23 +99,6 @@ void data_store_csv::setup() {
     if (m_master) std::cerr << "calling populate_datastore()\n";
     populate_datastore(); 
 
-#if 0
-    if (m_extended_testing) {
-      static bool first = true;
-      if (m_master && first) {
-        std::cerr << "\nrunning extended testing (after exchange_offsets)\n\n";
-        first = false;
-      }
-      for (auto data_id : m_my_datastore_indices) {
-        if (m_offset_mapping.find(data_id) == m_offset_mapping.end()) {
-          err << __FILE__ << " " << __LINE__ << " :: "
-              << m_rank << "  m_offset_mapping.find(" << data_id << ") failed";
-          throw lbann_exception(err.str());
-        }
-      }
-    }
-#endif
-
     if (m_master) std::cerr << "calling exchange_data()\n";
     exchange_data();
   }
@@ -130,9 +110,9 @@ void data_store_csv::setup() {
 
 void data_store_csv::get_data_buf_DataType(int data_id, std::vector<DataType> *&buf) {
   std::stringstream err;
-  if (m_data.find(data_id) == m_data.end()) {
+  if (m_my_minibatch_data.find(data_id) == m_my_minibatch_data.end()) {
     err << __FILE__ << " " << __LINE__ << " :: "
-        << "failed to find data_id: " << data_id << " in m_data";
+        << "failed to find data_id: " << data_id << " in m_my_minibatch_data";
     throw lbann_exception(err.str());
   }
   #if 0
@@ -151,9 +131,19 @@ void data_store_csv::get_data_buf_DataType(int data_id, std::vector<DataType> *&
     }
   }
   #endif
-  buf = &m_data[data_id];
+  buf = &m_my_minibatch_data[data_id];
 }
 
+void data_store_csv::get_my_indices(std::unordered_set<int> &indices, int p) {
+  indices.clear();
+  std::vector<int> &v = m_all_minibatch_indices[p];
+  for (auto t : v) {
+    int index = (*m_shuffled_indices)[t];
+    if (m_data.find(index) != m_data.end()) {
+      indices.insert(index);
+    }
+  }
+}
 
 void data_store_csv::get_indices(std::unordered_set<int> &indices, int p) {
   indices.clear();
@@ -174,26 +164,44 @@ void data_store_csv::exchange_data() {
   std::vector<MPI_Status> recv_status(indices.size());
   m_my_minibatch_data.clear();
   size_t jj = 0;
-  m_data.clear();
   for (auto t : indices) {
     m_my_minibatch_data[t].resize(m_vector_size);
+    int owner = get_index_owner(t);
+    if (owner >= m_np or owner < 0) {
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << " ERROR: bad rank for owner in MPI_Irecv; owner: " << owner << " index: " << t << " jj: " << jj+1 << " of " << indices.size();
+      throw lbann_exception(err.str());
+    }
     MPI_Irecv(
       m_my_minibatch_data[t].data(), m_vector_size*sizeof(DataType),  MPI_BYTE,
-      t, get_index_owner(t), m_mpi_comm, &(recv_req[jj++]));
+      owner, t, m_mpi_comm, &(recv_req[jj++]));
   }
 
   //start sends to all processors
   std::vector<std::vector<MPI_Request>> send_req(m_np);
   std::vector<std::vector<MPI_Status>> send_status(m_np);
   for (int p=0; p<m_np; p++) {
-    get_indices(indices, p);
+    get_my_indices(indices, p);
     send_req[p].resize(indices.size());
     send_status[p].resize(indices.size());
     jj = 0;
     for (auto t : indices) {
+      if (m_data.find(t) == m_data.end()) {
+        err << __FILE__ << " " << __LINE__ << " :: "
+            << " m_data.find(" << t << ") failed.";
+        throw lbann_exception(err.str());
+      }
+      if (m_data[t].size() != (size_t)m_vector_size) {
+        err << __FILE__ << " " << __LINE__ << " :: "
+            << " m_data[" << t << "].size = " << m_data[t].size()
+            << " should be: " << m_vector_size << "; " << jj+1
+            << " of " << indices.size()
+            << " m_reader->get_role: " << m_reader->get_role();
+        throw lbann_exception(err.str());
+      }
       MPI_Isend(
         m_data[t].data(), m_vector_size*sizeof(DataType),  MPI_BYTE,
-        t, get_index_owner(t), m_mpi_comm, &(send_req[p][jj++]));
+        p, t, m_mpi_comm, &(send_req[p][jj++]));
     }
   }
 
@@ -215,6 +223,15 @@ void data_store_csv::exchange_data() {
 void data_store_csv::populate_datastore() {
   for (auto idx : m_my_datastore_indices) {
     m_data[idx] = m_csv_reader->fetch_line_label_response(idx);
+    if (m_data[idx].size() != (size_t) m_vector_size) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "m_data[" << idx << "].size() is " << m_data[idx].size()
+          << " but should be: " << m_vector_size
+          << "; m_data.size: " << m_data.size() << "\n";
+      std::cerr << m_rank << " :: " << err.str() << "\n";
+      //throw lbann_exception(err.str());
+    }
   }
 }
 

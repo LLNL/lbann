@@ -81,12 +81,21 @@ protected :
   /// needs for the next epoch. Called by exchange_data
   void get_indices(std::unordered_set<int> &indices, int p);
 
-  /// will contain the data that this processor owns; for use in two sided
-  /// communication. Maps a global index to its associated data
-  std::unordered_map<int, std::vector<DataType>> m_data;
+  /// returns, in "indices," the subset of indices that processor "p"
+  /// needs for the next epoch and that this processor owns. 
+  /// Called by exchange_data
+  void get_my_indices(std::unordered_set<int> &indices, int p);
+
+  /// will contain the data that this processor owns; 
+  /// Maps a global index to its associated data
+  std::map<int, std::vector<DataType>> m_data;
+  //std::unordered_map<int, std::vector<DataType>> m_data;
 
   /// fills in m_data (the data store)
   void populate_datastore();
+
+void printme(const char *fn);
+
 };
 
 }  // namespace lbann

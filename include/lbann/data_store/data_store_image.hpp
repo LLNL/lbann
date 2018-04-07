@@ -64,7 +64,6 @@ class data_store_image : public generic_data_store {
  protected :
 
   void exchange_data() override;
-  void exchange_data_two_sided();
 
   struct Triple {
     int global_index;
@@ -101,8 +100,6 @@ class data_store_image : public generic_data_store {
   unsigned int m_num_img_srcs;
 
   std::vector<unsigned char> m_data;
-
-  MPI_Win m_win;
 };
 
 }  // namespace lbann

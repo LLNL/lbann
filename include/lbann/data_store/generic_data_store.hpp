@@ -83,8 +83,6 @@ class generic_data_store {
 
 protected :
 
-  bool m_use_two_sided_comms;
-
   generic_data_reader *m_reader;
 
   lbann_comm *m_comm;
@@ -124,22 +122,8 @@ protected :
   /// fills in m_all_minibatch_indices
   void  exchange_mb_indices();
 
-  /// the contents of these vectors change whenever m_shuffled_indices changes
-  std::vector<std::unordered_set<int>> m_work_send;
-  std::vector<std::unordered_set<int>> m_work_recv;
-  /// fills in m_work_send and m_work_recv
-  void compute_send_and_receive_lists();
-
-  /// buffers and requests for data exchange using two way comms
-  std::vector<std::vector<DataType>> m_sends; //@todo: move to cvs?
-  std::vector<std::vector<DataType>> m_recvs; //@todo: move to cvs?
-  std::vector<MPI_Request> m_sends_req;
-  std::vector<MPI_Request> m_recv_req;
-  /// fill in m_sends and m_recvs;
-  virtual void start_sends_and_recvs() {}
-
-  /// m_num_samples[j] contains the number of samples (datastore indices)
-  /// that are owned by P_j
+  /// m_num_samples[j] contains the number of samples 
+  /// (datastore indices) that are owned by P_j
   std::vector<int> m_num_samples;
 
   /// the indices that this processor owns;
