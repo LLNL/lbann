@@ -251,7 +251,7 @@ bool lbann_callback_checkpoint::restart(model *m) {
 
   MPI_Bcast(&epoch, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&step,  1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&dir,  sizeof(dir), MPI_CHAR, 0, MPI_COMM_WORLD);
+  MPI_Bcast((void*) &dir,  sizeof(dir), MPI_CHAR, 0, MPI_COMM_WORLD);
   // if we couldn't find the latest epoch, just return
   if (epoch < 0) {
     return false;
