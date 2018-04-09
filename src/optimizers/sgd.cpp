@@ -189,7 +189,7 @@ void sgd::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
  */
 void sgd::set_states_on_host() {
 #ifdef LBANN_HAS_CUDNN
-  set_mat_state_on_host(m_velocity, m_velocity_d);
+  set_mat_state_on_host(m_velocity, m_velocity_d, m_cudnn);
 #endif
 }
 
@@ -199,7 +199,7 @@ void sgd::set_states_on_host() {
  */
 void sgd::set_states_on_device() {
 #ifdef LBANN_HAS_CUDNN
-  set_mat_state_on_device(m_velocity, m_velocity_d);
+  set_mat_state_on_device(m_velocity, m_velocity_d, m_cudnn);
 #endif
 }
 

@@ -461,10 +461,12 @@ std::string weights::get_dims_string(const std::vector<int>& matrix_height_dims,
  * asynchronously. Thus, needs synchronization before accessing the states.
  */
 void weights::set_states_on_host() {
-  get_values();
+#ifdef LBANN_HAS_CUDNN
+  set_mat_state_on_host(m_values, m_values_d, m_cudnn);
   if (m_optimizer != nullptr) {
     m_optimizer->set_states_on_host();
   }
+#endif // __LIB_CUDN
 }
 
 /**
@@ -472,30 +474,12 @@ void weights::set_states_on_host() {
  * asynchronously. Thus, needs synchronization before accessing the states.
  */
 void weights::set_states_on_device() {
-  // Check if states have been setup
-  if (m_values == nullptr) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to access states before they are setup";
-    throw lbann_exception(err.str());
-  }
-
-  #ifdef LBANN_HAS_CUDNN
-  // Copy weights matrix to GPU if needed
-  if (m_cudnn != nullptr) {
-    if (m_values_d.empty() || m_values_d[0] == nullptr) {
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "attempted to set state on device before they are setup";
-      throw lbann_exception(err.str());
-    }
-    m_cudnn->broadcast_to_gpus(m_values_d, m_values->Matrix());
-  }
-  #endif // LBANN_HAS_CUDNN
-
+#ifdef LBANN_HAS_CUDNN
+  set_mat_state_on_device(m_values, m_values_d, m_cudnn);
   if (m_optimizer != nullptr) {
     m_optimizer->set_states_on_device();
   }
+#endif // __LIB_CUDN
 }
 
 bool weights::save_to_checkpoint_shared(lbann::persist& p)

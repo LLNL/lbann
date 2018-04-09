@@ -219,8 +219,8 @@ void adam::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
  */
 void adam::set_states_on_host() {
   #ifdef LBANN_HAS_CUDNN
-  set_mat_state_on_host(m_moment1, m_moment1_d);
-  set_mat_state_on_host(m_moment2, m_moment2_d);
+  set_mat_state_on_host(m_moment1, m_moment1_d, m_cudnn);
+  set_mat_state_on_host(m_moment2, m_moment2_d, m_cudnn);
   #endif // LBANN_HAS_CUDNN
 }
 
@@ -230,8 +230,8 @@ void adam::set_states_on_host() {
  */
 void adam::set_states_on_device() {
   #ifdef LBANN_HAS_CUDNN
-  set_mat_state_on_device(m_moment1, m_moment1_d);
-  set_mat_state_on_device(m_moment2, m_moment2_d);
+  set_mat_state_on_device(m_moment1, m_moment1_d, m_cudnn);
+  set_mat_state_on_device(m_moment2, m_moment2_d, m_cudnn);
   #endif // LBANN_HAS_CUDNN
 }
 

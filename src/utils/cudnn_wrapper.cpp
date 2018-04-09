@@ -1369,5 +1369,62 @@ void copy_lrn_cudnn_desc(const cudnnLRNDescriptor_t& src,
 }
 
 }// namespace cudnn
+
+/**
+ * Copies state from GPU to host only if the data is on GPU, which is done
+ * asynchronously. Thus, needs synchronization before accessing them.
+ * state is the AbsDistMat type pointer on host, and state_d is the DataType
+ * pointer on device
+ */
+void set_mat_state_on_host(AbsDistMat* state, const std::vector<DataType*>& state_d, cudnn::cudnn_manager* m_cudnn) {
+  // Check if states have been setup
+  if (state == nullptr) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "attempted to set states before they are setup";
+    throw lbann_exception(err.str());
+  }
+
+  #ifdef LBANN_HAS_CUDNN
+  if (m_cudnn != nullptr) {
+    if (state_d.empty() || state_d[0] == nullptr) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "attempted to access state on device before they are setup";
+      throw lbann_exception(err.str());
+    }
+    m_cudnn->copy_from_gpu(0, state->Matrix(), state_d[0]);
+  }
+  #endif // LBANN_HAS_CUDNN
+}
+
+/**
+ * Copies state from host to GPU if the data has to be on GPU. This is done
+ * asynchronously. Thus, needs synchronization before accessing them.
+ * state is the AbsDistMat type pointer on host, and state_d is the DataType
+ * pointer on device
+ */
+void set_mat_state_on_device(AbsDistMat* state, std::vector<DataType*>& state_d, cudnn::cudnn_manager* m_cudnn) {
+  // Check if states have been setup
+  if (state == nullptr) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "attempted to access states before they are setup";
+    throw lbann_exception(err.str());
+  }
+
+  #ifdef LBANN_HAS_CUDNN
+  if (m_cudnn != nullptr) {
+    if (state_d.empty() || state_d[0] == nullptr) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "attempted to set state on device before they are setup";
+      throw lbann_exception(err.str());
+    }
+    m_cudnn->broadcast_to_gpus(state_d, state->Matrix());
+  }
+  #endif // LBANN_HAS_CUDNN
+}
+
 }// namespace lbann
 #endif // #ifdef LBANN_HAS_CUDNN
