@@ -47,14 +47,15 @@ class lbann_callback_checkpoint : public lbann_callback {
  * @param checkpoint_per_rank true to save/load a file per mpi rank
  */
   lbann_callback_checkpoint(std::string checkpoint_dir, 
-                            int checkpoint_epochs, int checkpoint_steps, int checkpoint_secs, std::string per_rank_dir, int ckpt_dist_epochs) : 
+                            int checkpoint_epochs, int checkpoint_steps, int checkpoint_secs, std::string per_rank_dir, int ckpt_dist_epochs, int ckpt_dist_steps) : 
     lbann_callback(),
     m_checkpoint_dir(checkpoint_dir),
     m_checkpoint_epochs(checkpoint_epochs), 
     m_checkpoint_steps(checkpoint_steps), 
     m_checkpoint_secs(checkpoint_secs), 
     m_per_rank_dir(per_rank_dir),
-    m_ckpt_dist_epochs(ckpt_dist_epochs) {}
+    m_ckpt_dist_epochs(ckpt_dist_epochs), 
+    m_ckpt_dist_steps(ckpt_dist_steps) {}
   lbann_callback_checkpoint(const lbann_callback_checkpoint&) = default;
   lbann_callback_checkpoint& operator=(const lbann_callback_checkpoint&) = default;
   lbann_callback_checkpoint* copy() const override { return new lbann_callback_checkpoint(*this); }
@@ -87,6 +88,10 @@ class lbann_callback_checkpoint : public lbann_callback {
     m_ckpt_dist_epochs = ckpt_dist_epochs;
   }  
 
+  inline void set_ckpt_dist_steps(int ckpt_dist_steps){
+    m_ckpt_dist_steps = ckpt_dist_steps;
+  }
+
   bool need_checkpoint(model *m);
   bool checkpoint(model *m);
   bool restart(model *m);
@@ -98,9 +103,11 @@ class lbann_callback_checkpoint : public lbann_callback {
   EvalType m_checkpoint_secs;
   std::string m_per_rank_dir;
   int m_ckpt_dist_epochs;
+  int m_ckpt_dist_steps;
   EvalType m_checkpoint_last;
   bool m_epoch_end;
   bool m_val_end;
+  bool m_mb_end;
   bool m_checkpoint_dist;
   bool m_checkpoint_shared;
 };

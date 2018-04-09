@@ -203,67 +203,60 @@ void sgd::set_states_on_device() {
 #endif
 }
 
-  bool sgd::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
-    optimizer::save_to_checkpoint_shared(p, name_prefix);
+  
+bool sgd::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
+  optimizer::save_to_checkpoint_shared(p, name_prefix);
     
-    if(p.get_rank() == 0){
-      pack_scalars(p);
-    }
-
-    char l_name[512];
-    sprintf(l_name, "%s_optimizer_velocity_%lldx%lld", name_prefix.c_str(), m_velocity->Height(), m_velocity->Width());
-    p.write_distmat(persist_type::train, l_name, m_velocity);
-    
-    return true;
-  }
-
-  bool sgd::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
-    optimizer::load_from_checkpoint_shared(p, name_prefix);
-    struct packing_header header;
-    if (p.get_rank() == 0) {
-      unpack_scalars(p, &header);
-    }
-    
-    MPI_Bcast(&header, sizeof(header), MPI_BYTE, 0, MPI_COMM_WORLD);
-
-    unpack_header(header);
-    char l_name[512];
-    sprintf(l_name, "%s_optimizer_velocity_%lldx%lld.bin", name_prefix.c_str(), m_velocity->Height(), m_velocity->Width());
-    
-    // Ensure opt state is copied to other ranks. 
-    // Elemental write does not copy when this conditional passes and we get incorrect results.
-    if(m_velocity->ColStride() == 1 && m_velocity->RowStride() == 1){
-      CircMat temp = *m_velocity; 
-      p.read_distmat(persist_type::train, l_name, &temp);
-      El::Copy(temp,*m_velocity);
-    } else {
-      p.read_distmat(persist_type::train, l_name, m_velocity); 
-    }
-    return true;
-  }
-
-  bool sgd::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
-    optimizer::save_to_checkpoint_distributed(p, name_prefix);
-
+  if(p.get_rank() == 0){
     pack_scalars(p);
-
-    char l_name[512];
-    sprintf(l_name, "%s_optimizer_velocity_%lldx%lld", name_prefix.c_str(), m_velocity->LocalHeight(), m_velocity->LocalWidth());
-    p.write_rank_distmat(persist_type::train, l_name, *m_velocity);
-
-    return true;
   }
 
-  bool sgd::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
-    optimizer::load_from_checkpoint_distributed(p, name_prefix);
-    struct packing_header header;
+  char l_name[512];
+  sprintf(l_name, "%s_optimizer_velocity_%lldx%lld", name_prefix.c_str(), m_velocity->Height(), m_velocity->Width());
+  p.write_distmat(persist_type::train, l_name, m_velocity);
+
+  return true;
+}
+
+bool sgd::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
+  optimizer::load_from_checkpoint_shared(p, name_prefix);
+  struct packing_header header;
+  if (p.get_rank() == 0) {
     unpack_scalars(p, &header);
-
-    char l_name[512];
-    sprintf(l_name, "%s_optimizer_velocity_%lldx%lld", name_prefix.c_str(), m_velocity->LocalHeight(), m_velocity->LocalWidth());
-    p.read_rank_distmat(persist_type::train, l_name, *m_velocity);
-    
-    return true;
   }
+
+  MPI_Bcast(&header, sizeof(header), MPI_BYTE, 0, MPI_COMM_WORLD);
+
+  unpack_header(header);
+  char l_name[512];
+  sprintf(l_name, "%s_optimizer_velocity_%lldx%lld.bin", name_prefix.c_str(), m_velocity->Height(), m_velocity->Width());
+  p.read_distmat(persist_type::train, l_name, m_velocity); 
+
+  return true;
+}
+
+bool sgd::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
+  optimizer::save_to_checkpoint_distributed(p, name_prefix);
+
+  pack_scalars(p);
+
+  char l_name[512];
+  sprintf(l_name, "%s_optimizer_velocity_%lldx%lld", name_prefix.c_str(), m_velocity->LocalHeight(), m_velocity->LocalWidth());
+  p.write_rank_distmat(persist_type::train, l_name, *m_velocity);
+
+  return true;
+}
+
+bool sgd::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
+  optimizer::load_from_checkpoint_distributed(p, name_prefix);
+  struct packing_header header;
+  unpack_scalars(p, &header);
+
+  char l_name[512];
+  sprintf(l_name, "%s_optimizer_velocity_%lldx%lld", name_prefix.c_str(), m_velocity->LocalHeight(), m_velocity->LocalWidth());
+  p.read_rank_distmat(persist_type::train, l_name, *m_velocity);
+
+  return true;
+}
 
 }  // namespace lbann

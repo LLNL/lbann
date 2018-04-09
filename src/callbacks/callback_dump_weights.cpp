@@ -51,9 +51,6 @@ void lbann_callback_dump_weights::dump_weights(model *m, std::string s) {
          + epoch
          + "-" + w->get_name()
          + "-Weights");
-    if(m_basename.back() == '/'){
-      makedir(m_basename.c_str());
-    }
     El::Write(w->get_values(), file, El::ASCII);
   }
 }

@@ -828,7 +828,7 @@ void Layer::deallocate_matrices() {
 }
 
 
-bool Layer::save_to_checkpoint_shared(persist& p, bool val_end) const {
+bool Layer::save_to_checkpoint_shared(persist& p) const {
   return true;
 }
 
@@ -836,7 +836,7 @@ bool Layer::load_from_checkpoint_shared(persist& p) {
   return true;
 }
 
-bool Layer::save_to_checkpoint_distributed(persist& p, bool val_end) const {
+bool Layer::save_to_checkpoint_distributed(persist& p) const {
   return true;
 }
 

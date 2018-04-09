@@ -225,69 +225,39 @@ lbann::persist::persist() {
   m_validate_fd = -1;
 }
 
-void lbann::persist::open_checkpoint(const char *dir, bool per_rank, bool val_end) {
+void lbann::persist::open_checkpoint(const char *dir) {
   // create directory for checkpoint
   lbann::makedir(dir);
 
   // copy checkpoint directory
   strcpy(m_checkpoint_dir, dir);
 
-  // define filename for model state
-  if(per_rank){
-    int all_success;
-    if(!val_end){
-      sprintf(m_model_filename, "%s/model_%d", dir, m_rank);
-
-      sprintf(m_train_filename, "%s/train_%d", dir, m_rank);
-    
-      m_model_fd = lbann::openwrite(m_model_filename);
-      MPI_Allreduce(&m_model_fd, &all_success, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
-      if (!all_success) {
-          // failed to open checkpoint file
-       }
-      
-        m_train_fd = lbann::openwrite(m_train_filename);
-        MPI_Allreduce(&m_train_fd, &all_success, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
-        if (!all_success) {
-          // failed to open checkpoint file
-        }
-    }
-   
-    else if(val_end){
-      sprintf(m_validate_filename, "%s/validate_%d", dir, m_rank);
-      m_validate_fd = lbann::openwrite(m_validate_filename);
-      MPI_Allreduce(&m_validate_fd, &all_success, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
-      if (!all_success) {
-          // failed to open checkpoint file
-      }
-    }
-  }
   // open the file for writing
-  else if(!per_rank && m_rank == 0) {
-     sprintf(m_model_filename, "%s/model", dir);
+  //else if(!per_rank && m_rank == 0) {
+   sprintf(m_model_filename, "%s/model", dir);
 
-    // define filename for train state
-    sprintf(m_train_filename, "%s/train", dir);
+  // define filename for train state
+  sprintf(m_train_filename, "%s/train", dir);
     
-    if(!val_end){
-      m_model_fd = lbann::openwrite(m_model_filename);
-      if (m_model_fd < 0) {
-        // failed to open checkpoint file
-      } 
-
-      m_train_fd = lbann::openwrite(m_train_filename);
-      if (m_train_fd < 0) {
-        // failed to open checkpoint file
-      }
+  if(ckpt_type != callback_type::validation){
+    m_model_fd = lbann::openwrite(m_model_filename);
+    if (m_model_fd < 0) {
+      // failed to open checkpoint file
     } 
-    else if (val_end){
-      sprintf(m_validate_filename, "%s/validate", dir);
-      m_validate_fd = lbann::openwrite(m_validate_filename);
-      if (m_validate_fd < 0) {
-        // failed to open checkpoint file    
-      }
+
+    m_train_fd = lbann::openwrite(m_train_filename);
+    if (m_train_fd < 0) {
+      // failed to open checkpoint file
+    }
+  } 
+  if (ckpt_type == callback_type::validation || ckpt_type == callback_type::batch){
+    sprintf(m_validate_filename, "%s/validate", dir);
+    m_validate_fd = lbann::openwrite(m_validate_filename);
+    if (m_validate_fd < 0) {
+      // failed to open checkpoint file    
     }
   }
+  //}
 }
 
 void lbann::persist::close_checkpoint() {
@@ -308,45 +278,10 @@ void lbann::persist::close_checkpoint() {
   }
 }
 
-void lbann::persist::open_restart(const char *dir, bool per_rank) {
+void lbann::persist::open_restart(const char *dir) {
   // copy checkpoint directory
   strcpy(m_checkpoint_dir, dir);
-  if(per_rank){
-    // define filename for model state
-    sprintf(m_model_filename, "%s/model_%d", dir, m_rank);
-
-    // define filename for train state
-    sprintf(m_train_filename, "%s/train_%d", dir, m_rank);
-
-    sprintf(m_validate_filename, "%s/validate_%d", dir, m_rank);
-    
-    m_model_fd = lbann::openread(m_model_filename);
-    int all_success;
-    MPI_Allreduce(&m_model_fd, &all_success, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
- 
-    if (!all_success) {
-        // restart failed, throw exception
-      throw lbann_exception(std::string("Failed to read file: ") + m_model_filename);
-    }
-      
-    m_train_fd = lbann::openread(m_train_filename);
-    MPI_Allreduce(&m_train_fd, &all_success, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
-    if (!all_success) {
-      // restart failed, throw exception
-      throw lbann_exception(std::string("Failed to read file: ") + m_train_filename);
-    }
-
-    m_validate_fd = lbann::openread(m_validate_filename);
-    MPI_Allreduce(&m_validate_fd, &all_success, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
-    if (!all_success) {
-      // restart failed, throw exception
-      throw lbann_exception(std::string("Failed to read file: ") + m_validate_filename);
-    }
-
-  }
-  
   // open the file for writing
-  if (!per_rank && m_rank == 0) {
     sprintf(m_model_filename, "%s/model", dir);
 
     // define filename for train state
@@ -366,9 +301,9 @@ void lbann::persist::open_restart(const char *dir, bool per_rank) {
     m_validate_fd = lbann::openread(m_validate_filename);
     if (m_validate_fd < 0) {
       // restart failed, throw exception
-      throw lbann_exception(std::string("Failed to read file: ") + m_validate_filename);
+     throw lbann_exception(std::string("Failed to read file: ") + m_validate_filename); 
     }
-  }
+  //}
 }
 
 void lbann::persist::close_restart() {
@@ -460,6 +395,9 @@ bool lbann::persist::read_bytes(persist_type type, const char *name, void *buf, 
     }
     m_bytes += size;
   }
+  else{
+    return false;
+  } 
   return true;
 }
 
@@ -478,126 +416,6 @@ bool lbann::persist::write_uint64(persist_type type, const char *name, uint64_t 
 bool lbann::persist::read_uint64(persist_type type, const char *name, uint64_t *val) {
   return read_bytes(type, name, val, sizeof(uint64_t));
 }
-// First (wrong) hack at per file. works but not ideal. not deleting for now
-/*bool lbann::persist::write_uint64_per_rank(persist_type type, const char *name, uint64_t val) {
-  int size = sizeof(uint64_t);
-  char rank[24]; 
-  sprintf(rank,"_%d",this->get_rank());  
-  std::string filename = m_checkpoint_dir;
-  if (type == persist_type::train) {
-    filename += std::string("/train_") + name + rank;
-  } else if (type == persist_type::model) {
-    filename += std::string("/model_") + name + rank;
-  } else {
-    throw lbann_exception("persist: invalid persist_type");
-  }
-
-  int m_rank_fd = lbann::openwrite(filename.c_str());
-  if (m_rank_fd >= 0) {
-    ssize_t rc = write(m_rank_fd, &val, size);
-    if (rc != (ssize_t) size) {
-      throw lbann_exception(std::string("Failed to write: ") + name);
-      return false;
-    }
-    m_bytes += size;
-  }
-  lbann::closewrite(m_rank_fd,filename.c_str());
-  return true;  
- 
-}
-
-bool lbann::persist::read_uint64_per_rank(persist_type type, const char *name, uint64_t *val) {
-  int size = sizeof(uint64_t);
-  char rank[24]; 
-  sprintf(rank,"_%d",this->get_rank());  
-  std::string filename = m_checkpoint_dir;
-  if (type == persist_type::train) {
-    filename += std::string("/train_") + name + rank;
-  } else if (type == persist_type::model) {
-    filename += std::string("/model_") + name + rank;
-  } else {
-    throw lbann_exception("persist: invalid persist_type");
-  }
-
-  int exists = lbann::exists(filename.c_str());
-  if (! exists) {
-    throw lbann_exception(std::string("Failed to read distmat: ") + filename);
-    return false;
-  }
-  int m_rank_fd = lbann::openread(filename.c_str());
-  if (m_rank_fd >= 0) {
-    ssize_t rc = read(m_rank_fd, val, size);
-    if (rc != (ssize_t) size) {
-      throw lbann_exception(std::string("Failed to read: ") + name);
-      return false;
-    }
-    lbann::closeread(m_rank_fd,filename.c_str());
-    m_bytes += size;
-  }
-    
-  return true;
-
-  //return read_bytes(type, name, val, sizeof(uint64_t));
-}
-
-
-bool lbann::persist::write_int32_contig_per_rank(persist_type type, const char *name, const int32_t *buf, uint64_t count) {
-  size_t bytes = count * sizeof(int32_t);
-  char rank[24]; 
-  sprintf(rank,"_%d",this->get_rank());  
-  std::string filename = m_checkpoint_dir;
-  if (type == persist_type::train) {
-    filename += std::string("/train_") + name + rank;
-  } else if (type == persist_type::model) {
-    filename += std::string("/model_") + name + rank;
-  } else {
-    throw lbann_exception("persist: invalid persist_type");
-  }
-
-  int m_rank_fd = lbann::openwrite(filename.c_str());
-  if (m_rank_fd >= 0) {
-    ssize_t rc = write(m_rank_fd, buf, bytes);
-    if (rc != (ssize_t) bytes) {
-      throw lbann_exception(std::string("Failed to write: ") + name);
-      return false;
-    }
-    m_bytes += bytes;
-  }
-  lbann::closewrite(m_rank_fd,filename.c_str());
-  return true;
-}
-
-bool lbann::persist::read_int32_contig_per_rank(persist_type type, const char *name, int32_t *buf, uint64_t count) {
-  size_t bytes = count * sizeof(int32_t);
-  char rank[24];
-  sprintf(rank,"_%d",this->get_rank());
-  std::string filename = m_checkpoint_dir;
-  if (type == persist_type::train) {
-    filename += std::string("/train_") + name + rank;
-  } else if (type == persist_type::model) {
-    filename += std::string("/model_") + name + rank;
-  } else {
-    throw lbann_exception("persist: invalid persist_type");
-  }
-
-  int exists = lbann::exists(filename.c_str());
-  if (! exists) {
-    throw lbann_exception(std::string("Failed to read distmat: ") + filename);
-    return false;
-  }
-  int m_rank_fd = lbann::openread(filename.c_str());
-  if (m_rank_fd >= 0) {
-    ssize_t rc = read(m_rank_fd, buf, bytes);
-    if (rc != (ssize_t) bytes) {
-      throw lbann_exception(std::string("Failed to read: ") + name);
-      return false;
-    }
-    m_bytes += bytes;
-  }
-  lbann::closeread(m_rank_fd,filename.c_str());
-  return true;
-}*/
-
 
 bool lbann::persist::write_int32_contig(persist_type type, const char *name, const int32_t *buf, uint64_t count) {
   size_t bytes = count * sizeof(int32_t);

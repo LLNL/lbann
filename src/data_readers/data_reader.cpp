@@ -398,14 +398,11 @@ bool lbann::generic_data_reader::load_from_checkpoint_shared(persist& p, const c
   unpack_header(header);
 
   m_shuffled_indices.resize(header.data_size);
-  m_unused_indices.resize(header.unused_data_size);
 
   if (header.data_size > 0ull) {
     MPI_Bcast(&m_shuffled_indices[0], header.data_size, MPI_INT, 0, MPI_COMM_WORLD);
   }
-  if (header.unused_data_size > 0ull) {
-    MPI_Bcast(&m_unused_indices[0], header.unused_data_size, MPI_INT, 0, MPI_COMM_WORLD);
-  }
+  // Adjust current position to deal with fact that it was just loaded to all ranks from rank 0 (differs by rank #)
   m_current_pos += p.get_rank();
   return true;
 }
@@ -415,12 +412,9 @@ bool generic_data_reader::save_to_checkpoint_distributed(persist& p, const char 
   return true;
 }
 
-/** \brief Given directory to store checkpoint files, read state from file and add to number of bytes read */
 bool lbann::generic_data_reader::load_from_checkpoint_distributed(persist& p, const char *name) {
-  // rank 0 reads the training state file
   struct packing_header header;
   unpack_scalars(p,&header,name);
-  //unpack_header(header);
   return true;
 }
 

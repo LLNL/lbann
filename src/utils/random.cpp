@@ -78,28 +78,28 @@ bool save_rng_to_checkpoint_shared(persist& p){
   rng_name = dirname + "/rng_seq_generator";
   std::ofstream rng_seq(rng_name);
   rng_seq << ::data_seq_generator;
-
+#ifdef LBANN_SET_EL_RNG
   rng_name = dirname + "/EL_generator";
   std::ofstream rng_EL(rng_name);
   rng_EL << El::Generator();
-   
+#endif
 #ifdef _OPENMP 
   #pragma omp parallel private(rng_name) 
   {
-    rng_name = dirname + "/rng_generator_" + std::to_string(omp_get_thread_num());
+    rng_name = dirname + "/rng_generator_" + std::to_string(p.get_rank()) + "_" + std::to_string(omp_get_thread_num());
     std::ofstream rng(rng_name);
     rng << ::generator;
     
-    rng_name = dirname + "/rng_fast_generator_" + std::to_string(omp_get_thread_num());
+    rng_name = dirname + "/rng_fast_generator_" + std::to_string(p.get_rank()) + "_" + std::to_string(omp_get_thread_num());
     std::ofstream rng_fast(rng_name);
     rng_fast << ::fast_generator;
   }
 #else
-    rng_name = dirname + "/rng_generator";
+    rng_name = dirname + "/rng_generator_" + std::to_string(p.get_rank();
     std::ofstream rng(rng_name);
     rng << ::generator;
 
-    rng_name = dirname + "/rng_fast_generator";
+    rng_name = dirname + "/rng_fast_generator_" + std::to_string(p.get_rank());
     std::ofstream rng_fast(rng_name);
     rng_fast << ::fast_generator;
 #endif
@@ -115,28 +115,28 @@ bool load_rng_from_checkpoint_shared(persist& p){
   rng_name = dirname + "/rng_seq_generator";
   std::ifstream rng_seq(rng_name);
   rng_seq >> ::data_seq_generator;
-
+#ifdef LBANN_SET_EL_RNG
   rng_name = dirname + "/EL_generator";
   std::ifstream rng_EL(rng_name);
   rng_EL >> El::Generator();
-
+#endif
  #ifdef _OPENMP 
   #pragma omp parallel private(rng_name)
   {
-    rng_name = dirname + "/rng_generator_" + std::to_string(omp_get_thread_num());
+    rng_name = dirname + "/rng_generator_" + std::to_string(p.get_rank()) + "_" + std::to_string(omp_get_thread_num());
     std::ifstream rng(rng_name);
     rng >> ::generator;
     
-    rng_name = dirname + "/rng_fast_generator_" + std::to_string(omp_get_thread_num());
+    rng_name = dirname + "/rng_fast_generator_" + std::to_string(p.get_rank()) + "_" + std::to_string(omp_get_thread_num());
     std::ifstream rng_fast(rng_name);
     rng_fast >> ::fast_generator;
    }
 #else
-    rng_name = dirname + "/rng_generator";
+    rng_name = dirname + "/rng_generator_" + std::to_string(p.get_rank());
     std::ifstream rng(rng_name);
     rng >> ::generator;
 
-    rng_name = dirname + "/rng_fast_generator_" + std::to_string(omp_get_thread_num());
+    rng_name = dirname + "/rng_fast_generator_" + std::to_string(p.get_rank());
     std::ifstream rng_fast(rng_name);
     rng_fast >> ::fast_generator;
    }

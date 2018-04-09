@@ -37,7 +37,14 @@ namespace lbann {
 enum class persist_type {
   train, // data should be saved in file with train data
   model, // data should be saved in file with model data
-  validate, 
+  validate 
+};
+
+enum class callback_type {
+  batch,
+  epoch,
+  validation,
+  invalid
 };
 
 class persist {
@@ -50,9 +57,10 @@ class persist {
   char m_model_filename[1024];
   char m_train_filename[1024];
   char m_validate_filename[1024];
+  callback_type ckpt_type; 
  public:
   char m_checkpoint_dir[1024];
-
+  
  public:
   persist();
   ~persist() {};
@@ -60,10 +68,19 @@ class persist {
   int get_rank() const {
     return m_rank;
   }
-  void open_checkpoint(const char *dir, bool per_rank, bool val_end);
+
+  callback_type get_cb_type() const {
+    return ckpt_type;
+  }
+
+  void set_cb_type(callback_type type){
+    ckpt_type = type;
+  }
+
+  void open_checkpoint(const char *dir);
   void close_checkpoint();
 
-  void open_restart(const char *dir, bool per_rank);
+  void open_restart(const char *dir);
   void close_restart();
 
   uint64_t get_bytes() const {

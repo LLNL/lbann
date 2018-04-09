@@ -32,7 +32,7 @@
 #include <utility>
 
 #include "lbann/callbacks/callback.hpp"
-#include "lbann/io/file_io.hpp"
+
 namespace lbann {
 
 /**

@@ -207,10 +207,10 @@ class Layer {
 
   virtual El::Matrix<El::Int>* get_sample_indices_per_mb() { return nullptr; };
 
-  virtual bool save_to_checkpoint_shared(persist& p,bool val_end) const;
+  virtual bool save_to_checkpoint_shared(persist& p) const;
   virtual bool load_from_checkpoint_shared(persist& p);
 
-  virtual bool save_to_checkpoint_distributed(persist& p,bool val_end) const;
+  virtual bool save_to_checkpoint_distributed(persist& p) const;
   virtual bool load_from_checkpoint_distributed(persist& p);
   
   /** Write layer to proto file */
