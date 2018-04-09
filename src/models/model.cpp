@@ -429,6 +429,31 @@ void model::setup_layer_topology() {
 
 }
 
+void model::setup_layer_execution_order() {
+
+  // Find input layers
+  std::vector<generic_input_layer*> input_layers;
+  std::vector<Layer*> other_layers;
+  for (auto&& l : m_layers) {
+    auto&& input = dynamic_cast<generic_input_layer*>(l);
+    if (input != nullptr) {
+      input_layers.push_back(input);
+    } else {
+      other_layers.push_back(l);
+    }
+  }
+
+  // Make sure input layers are executed first
+  m_layers.clear();
+  m_layers.insert(m_layers.end(),
+                  input_layers.begin(),
+                  input_layers.end());
+  m_layers.insert(m_layers.end(),
+                  other_layers.begin(),
+                  other_layers.end());
+
+}
+
 void model::setup_layers() {
   for (const auto& layer : m_layers) {
     layer->set_model(this);
@@ -599,14 +624,16 @@ void model::add_split_layers() {
 }
 
 int model::get_num_iterations_per_epoch(execution_mode mode) const {
-  if (m_layers.size() == 0u) {
-    return 0;
+  generic_input_layer* input = nullptr;
+  for (auto&& l : m_layers) {
+    input = dynamic_cast<generic_input_layer*>(l);
+    if (input != nullptr) { break; }
   }
-  const auto* layer = dynamic_cast<generic_input_layer*>(m_layers[0]);
-  if (layer == nullptr) {
+  if (input == nullptr) {
     return 0;
+  } else {
+    return input->get_num_iterations_per_epoch(mode);
   }
-  return layer->get_num_iterations_per_epoch(mode);
 }
 
 ////////////////////////////////////////////////////////////
