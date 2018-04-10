@@ -41,12 +41,11 @@ generic_data_store::generic_data_store(generic_data_reader *reader, model *m) :
     m_comm(m->get_comm()),
     m_epoch(0),
     m_in_memory(true),
-    m_master(m_comm->am_world_master()), 
     m_model(m),
     m_dir(m_reader->get_file_dir()),
     m_extended_testing(false),
     m_collect_minibatch_indices(true),
-    m_mpi_comm(m_comm->get_model_comm().comm)
+    m_is_subsidiary_store(false)
 {
   if (m_comm == nullptr) {
     std::stringstream err;
@@ -54,8 +53,11 @@ generic_data_store::generic_data_store(generic_data_reader *reader, model *m) :
         << " m_reader->get_comm is nullptr";
         throw lbann_exception(err.str());
   }
+
+  m_master = m_comm->am_world_master();
   m_rank = m_comm->get_rank_in_model();
   m_np = m_comm->get_procs_per_model();
+  m_mpi_comm = m_comm->get_model_comm().comm;
   set_name("generic_data_store");
   options *opts = options::get();
   if (m_master) std::cerr << "generic_data_store::generic_data_store; np: " << m_np << "\n";

@@ -81,6 +81,44 @@ class generic_data_store {
     m_name = name;
   }
 
+  void set_is_subsidiary_store() {
+    m_is_subsidiary_store = true;
+  }
+
+  bool is_subsidiary_store() {
+    return m_is_subsidiary_store;
+  }
+
+  const std::vector<std::vector<int> > * get_minibatch_indices() const {
+    return m_my_minibatch_indices;
+  }
+
+  void set_minibatch_indices(const std::vector<std::vector<int> > *indices) {
+    m_my_minibatch_indices = indices;
+  }
+
+  //@todo: for optimization, change m_my_minibatch_indices_v to a pointer,
+  //       and properly handle ownership and destruction; this is needed
+  //       to reduce memory requirements in, e.g, data_store_merge_features
+  const std::vector<int>  & get_minibatch_indices_v() const {
+    return m_my_minibatch_indices_v;
+  }
+
+  void set_minibatch_indices_v(const std::vector<int > indices) {
+    m_my_minibatch_indices_v = indices;
+  }
+
+  //@todo: for optimization, change m_my_minibatch_indices_v to a pointer,
+  //       and properly handle ownership and destruction; this is needed
+  //       to reduce memory requirements in, e.g, data_store_merge_features
+  const std::unordered_set<int> & get_datastore_indices() const {
+    return m_my_datastore_indices;
+  }
+
+  void set_datastore_indices(const std::unordered_set<int> &indices) {
+    m_my_datastore_indices = indices;
+  }
+
 protected :
 
   generic_data_reader *m_reader;
@@ -105,6 +143,9 @@ protected :
   /// generic_data_reader::fetch_data(...)
   const std::vector<std::vector<int> > *m_my_minibatch_indices;
   /// contains a concatenation of the indices in m_my_minibatch_indices
+  ///@todo: for optimization, this should be a pointer -- as it is now,
+  ///       in merge_features the vector must be copied to the subsidiary
+  ///       data_store_cvs
   std::vector<int> m_my_minibatch_indices_v;
   /// fills in m_my_minibatch_indices_v
   void get_minibatch_index_vector();
@@ -168,6 +209,13 @@ protected :
   virtual void extended_testing() {}
 
   MPI_Comm m_mpi_comm;
+
+  /// as of now, only applicable to merge_features and merge_samples
+  bool m_is_subsidiary_store;
+
+  /// as of now, only applicable to merge_features and merge_samples
+  //?? std::vector<generic_data_reader*> m_readers
+
 };
 
 }  // namespace lbann
