@@ -3,6 +3,7 @@ set_full_path(THIS_DIR_SOURCES
   kl_divergence.cpp
   objective_function.cpp
   objective_function_term.cpp
+  layer_term.cpp
   )
 
 # Add the subdirectories

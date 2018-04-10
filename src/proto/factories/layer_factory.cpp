@@ -258,6 +258,19 @@ Layer* construct_layer(lbann_comm* comm,
       return new unpooling_layer<data_layout::DATA_PARALLEL>(comm);
     }
   }
+  if (proto_layer.has_reduction()) {
+    const auto& params = proto_layer.reduction();
+    const auto& mode_str = params.mode();
+    reduction_mode mode = reduction_mode::INVALID;
+    if (mode_str == "sum" || mode_str.empty()) { mode = reduction_mode::SUM; }
+    if (mode_str == "average") { mode = reduction_mode::AVERAGE; }
+    if (layout == data_layout::DATA_PARALLEL) {
+      return new reduction_layer<data_layout::DATA_PARALLEL>(comm, mode, cudnn);
+    }
+  }
+  if (proto_layer.has_evaluation()) {
+    return new evaluation_layer<layout>(comm, cudnn);
+  }
 
   // Regularizer layers
   if (proto_layer.has_batch_normalization()) {
@@ -347,6 +360,10 @@ Layer* construct_layer(lbann_comm* comm,
     } else {
       return new selu_layer<layout>(comm);
     }
+  }
+  if (proto_layer.has_power()) {
+    const auto& params = proto_layer.power();
+    return new power_layer<layout>(comm, params.exponent());
   }
 
   // Throw exception if layer has not been constructed

@@ -109,7 +109,16 @@ class constant_layer : public transform_layer {
   #endif // #ifndef LBANN_HAS_CUDNN
   }
 
-  void fp_compute() override {}
+  void fp_compute() override {
+    auto& activations = get_activations();
+    if (m_value == EvalType(0)) {
+      El::Zero(activations);
+    } else {
+      El::Fill(activations, m_value);
+    }
+    
+  }
+
   void bp_compute() override {}
 
  private:
