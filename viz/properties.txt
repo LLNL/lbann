@@ -47,4 +47,6 @@ transform    sum
 transform    noise
 transform    unpooling
 transform    hadamard
+transform    zero
+transform    transform
 
