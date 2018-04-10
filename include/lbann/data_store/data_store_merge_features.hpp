@@ -58,11 +58,11 @@ class data_store_merge_features : public generic_data_store {
 
   void get_data_buf(int data_id, std::vector<unsigned char> *&buf, int multi_idx = 0) override {}
 
-  void setup() override{};
+  void setup() override {};
 
  protected :
 
-  void exchange_data() {}
+  void exchange_data() override {}
 
   /// this contains a concatenation of the indices in m_minibatch_indices
   /// (see: generic_data_reader.hpp)
