@@ -12,6 +12,8 @@ set_full_path(THIS_DIR_HEADERS
   constant.hpp
   dummy.hpp
   hadamard.hpp
+  reduction.hpp
+  evaluation.hpp
   gaussian.hpp
   bernoulli.hpp
   uniform.hpp

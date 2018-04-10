@@ -22,29 +22,36 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// directed_acyclic_graph .hpp .cpp - Directed acyclic graph neural network models
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/models/directed_acyclic_graph.hpp"
-#include <stack>
-#include <unordered_map>
+#ifndef LBANN_OBJECTIVE_FUNCTION_LAYER_TERM_HPP_INCLUDED
+#define LBANN_OBJECTIVE_FUNCTION_LAYER_TERM_HPP_INCLUDED
+
+#include "lbann/objective_functions/objective_function_term.hpp"
+#include "lbann/layers/transform/evaluation.hpp"
 
 namespace lbann {
 
-directed_acyclic_graph_model::directed_acyclic_graph_model(lbann_comm *comm,
-                                                           int mini_batch_size,
-                                                           objective_function *obj_fn,
-                                                           optimizer* default_optimizer)
-  : model(comm, mini_batch_size, obj_fn, default_optimizer) {}
+class layer_term : public objective_function_term {
+ public:
+  layer_term(EvalType scale_factor = EvalType(1));
+  layer_term* copy() const override { return new layer_term(*this); } 
+  std::string name() const override { return "evaluation layer term"; }
 
-void directed_acyclic_graph_model::setup_layer_execution_order() {
-  std::set<int> nodes;
-  std::map<int,std::set<int>> edges;
-  construct_layer_graph(nodes, edges);
-  const auto& sorted_order = graph::topological_sort(nodes, edges);
-  permute_layers(sorted_order);
-  model::setup_layer_execution_order();
-}
+  void set_evaluation_layer(Layer* l);
 
-}  // namespace lbann
+  void setup(model& m) override;
+
+  void start_evaluation() override;
+
+  EvalType finish_evaluation() override;
+
+  void differentiate() override;
+  
+  void compute_weight_regularization() override {};
+
+};
+
+} // namespace lbann
+
+#endif // LBANN_OBJECTIVE_FUNCTION_WEIGHT_REGULARIZATION_KL_DIVERGENCE_HPP_INCLUDED

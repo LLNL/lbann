@@ -234,6 +234,7 @@ message ObjectiveFunction {
   repeated L2WeightRegularization l2_weight_regularization = 21;
   repeated GroupLassoWeightRegularization group_lasso_weight_regularization = 22;
   repeated KLDivergence kl_divergence = 23;
+  repeated LayerTerm layer_term = 25;
 }
 
 message MeanSquaredError {
@@ -288,6 +289,11 @@ message GroupLassoWeightRegularization {
 message KLDivergence {
   string layer1 = 1;
   string layer2 = 2;
+}
+
+message LayerTerm {
+  double scale_factor = 1;
+  string layer = 2;
 }
 
 //========================================================================
@@ -696,9 +702,11 @@ message Layer {
    Unpooling unpooling = 304;
    Hadamard hadamard = 308;
    Constant constant = 309;
-   Gaussian gaussian = 310;
-   Bernoulli bernoulli = 311;
-   Uniform uniform = 312;
+   Reduction reduction = 310;
+   Evaluation evaluation = 311;
+   Gaussian gaussian = 312;
+   Bernoulli bernoulli = 313;
+   Uniform uniform = 314;
 
    // learning Layers
    FullyConnected fully_connected = 11;
@@ -730,6 +738,7 @@ message Layer {
    BentIdentity bent_identity = 40;
    Exponential exponential = 41;
    Swish swish = 42;
+   Power power = 43;
 }
 ///////////////////////
 // MotifLayer //
@@ -787,6 +796,10 @@ message Selu {
 }
 
 message Softmax {
+}
+
+message Power {
+  double exponent = 1;
 }
 
 ///////////////////////////
@@ -884,6 +897,13 @@ message Hadamard {
 message Constant {
   double value=1;
   string num_neurons=2;
+}
+
+message Reduction {
+  string mode=1;
+}
+
+message Evaluation {
 }
 
 message Gaussian {

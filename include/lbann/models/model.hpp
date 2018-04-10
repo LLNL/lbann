@@ -304,7 +304,7 @@ class model {
   /** Set up layer execution order.
    *  Called in setup function.
    */
-  virtual void setup_layer_execution_order() {}
+  virtual void setup_layer_execution_order();
   /** Set up layers.
    *  Called in setup function.
    */

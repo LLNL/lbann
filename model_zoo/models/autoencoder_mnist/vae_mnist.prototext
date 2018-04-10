@@ -1,6 +1,8 @@
+# LBANN implementation of MNIST VAE in Doersch's autoencoder tutorial
+# See https://github.com/cdoersch/vae_tutorial/blob/master/mnist_vae.prototxt
 model {
   name: "directed_acyclic_graph_model"
-  data_layout: "model_parallel"
+  data_layout: "data_parallel"
   mini_batch_size: 100 
   block_size: 256
   num_epochs: 50
@@ -14,12 +16,12 @@ model {
 
   objective_function {
     binary_cross_entropy {}
-    kl_divergence {
-      layer1: "z_mean"
-      layer2: "z_log_sigma" 
+    layer_term {
+      scale_factor: 1.0
+      layer: "klloss"
     }
     l2_weight_regularization {
-      scale_factor: 1e-4
+      scale_factor: 0.0005
     }
   }
 
@@ -55,178 +57,246 @@ model {
   # start of layers
   ###################################################
 
-  # INPUT
+  ######################
+  # Data
+  ######################
   layer {
     name: "data"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     input {
-      io_buffer: "distributed"
+      io_buffer: "partitioned"
     }
   }
 
-  # FULLY_CONNECTED encode1
+  ######################
+  # Encoder
+  ######################
+
   layer {
     parents: "data"
     name: "encode1"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     fully_connected {
-      num_neurons: 256
-      weight_initialization: "he_normal"
+      num_neurons: 1000
       has_bias: true
     }
   }
-
-  # RELU relu1
   layer {
     parents: "encode1"
-    name: "relu1"
-    data_layout: "model_parallel"
-    relu {
-    }
+    name: "encode1neuron"
+    data_layout: "data_parallel"
+    relu {}
   }
-
-  #split
   layer {
-    parents: "relu1"
-    name: "split"
-    data_layout: "model_parallel"
-    split {
-    }
-  }
-  
-  # FULLY_CONNECTED z_mean
-  layer {
-    parents: "split"
-    name: "z_mean"
-    data_layout: "model_parallel"
+    parents: "encode1neuron"
+    name: "encode2"
+    data_layout: "data_parallel"
     fully_connected {
-      num_neurons: 2
-      weight_initialization: "glorot_normal"
+      num_neurons: 500
       has_bias: true
     }
   }
-  # Note: This identity layer is a kludgy solution to a bug in the KL divergence.
-  #   The KL divergence adds to the "prev_error_signal" of z_mean, which is the
-  #   "error_signal" of z_mean's child layer. However, z_mean's child layer is a
-  #   sum layer, which has multiple parents and hence multiple error_signal's.
-  #   Putting this identity layer clears up that ambiguity, but it is not a good
-  #   solution to the problem. The objective function paradigm outlined in 
-  #   issue #193 will be a better long-term solution.
   layer {
-    parents: "z_mean"
-    name: "z_mean_id"
-    data_layout: "model_parallel"
-    identity {}
+    parents: "encode2"
+    name: "encode2neuron"
+    data_layout: "data_parallel"
+    relu {}
   }
-
-  # FULLY_CONNECTED z_log_sigma
   layer {
-    parents: "split"
-    name: "z_log_sigma"
-    data_layout: "model_parallel"
+    parents: "encode2neuron"
+    name: "encode3"
+    data_layout: "data_parallel"
     fully_connected {
-      num_neurons: 2
-      weight_initialization: "glorot_normal"
+      num_neurons: 250
       has_bias: true
     }
   }
-  
-  #scale z_log_sigma by 1/2
   layer {
-     parents: "z_log_sigma"
-     name: "const05_zlogsigma"
-     data_layout: "model_parallel"
-     sum {
-       scaling_factors: "0.5"
-     }
-   }
- 
-  # Exponent exp
+    parents: "encode3"
+    name: "encode3neuron"
+    data_layout: "data_parallel"
+    relu {}
+  }
+
+  ######################
+  # Latent space
+  ######################
+
   layer {
-    parents: "const05_zlogsigma"
-    name: "exp"
-    data_layout: "model_parallel"
-    exponential {
+    parents: "encode3neuron"
+    name: "mu"
+    data_layout: "data_parallel"
+    fully_connected {
+      num_neurons: 30
+      has_bias: true
+    }
+  }
+  layer {
+    parents: "encode3"
+    name: "logsd"
+    data_layout: "data_parallel"
+    fully_connected {
+      num_neurons: 30
+      has_bias: true
     }
   }
 
-  # Noise noise
+  ######################
+  # KL divergence
+  ######################
+
+  layer {
+    parents: "logsd"
+    name: "sd"
+    data_layout: "data_parallel"
+    exponential {}
+  }
+  layer {
+    parents: "sd"
+    name: "var"
+    data_layout: "data_parallel"
+    power {
+      exponent: 2
+    }
+  }
+  layer {
+    parents: "mu"
+    name: "meansq"
+    data_layout: "data_parallel"
+    power {
+      exponent: 2
+    }
+  }
+  layer {
+    parents: "meansq var logsd"
+    name: "kldiv_plus_half"
+    data_layout: "data_parallel"
+    sum {
+      scaling_factors: "0.5 0.5 -1"
+    }
+  }
+  layer {
+    parents: "kldiv_plus_half"
+    name: "kldiv_full"
+    data_layout: "data_parallel"
+    power {
+      exponent: -0.5
+    }
+  }
+  layer {
+    parents: "kldiv_full"
+    name: "kldiv"
+    data_layout: "data_parallel"
+    reduction {
+      mode: "sum"
+    }    
+  }
+  layer {
+    parents: "kldiv"
+    name: "klloss"
+    data_layout: "data_parallel"
+    evaluation {}    
+  }
+
+  ######################
+  # Generate sample  
+  ######################
+
   layer {
     name: "noise"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     gaussian {
-      mean: 0.0
-      stdev: 1.0
-      neuron_dims: "2"
+      neuron_dims: "30"
+      mean: 0
+      stdev: 1
     }
   }
-  
- # Hadamad2 exp_noise
   layer {
-    parents: "exp noise"
-    name: "exp_noise"
-    data_layout: "model_parallel"
-    hadamard {
-    }
+    parents: "noise sd"
+    name: "sdnoise"
+    data_layout: "data_parallel"
+    hadamard {}
+  }
+  layer {
+    parents: "mu sdnoise"
+    name: "sample"
+    data_layout: "data_parallel"
+    sum {}
   }
 
+  ######################
+  # Decoder
+  ######################
 
-  # Sum sum
   layer {
-    parents: "z_mean_id exp_noise"
-    name: "sum"
-    data_layout: "model_parallel"
-    sum {
-    }
-  }
-
-  # FULLY_CONNECTED decode1
-  layer {
-    parents: "sum"
-    name: "decode1"
-    data_layout: "model_parallel"
+    parents: "sample"
+    name: "decode4"
+    data_layout: "data_parallel"
     fully_connected {
-      num_neurons: 256
-      weight_initialization: "he_normal"
+      num_neurons: 250
+      has_bias: true
+    }
+  }
+  layer {
+    parents: "decode4"
+    name: "decode4neuron"
+    data_layout: "data_parallel"
+    relu {}
+  }
+  layer {
+    parents: "decode4neuron"
+    name: "decode3"
+    data_layout: "data_parallel"
+    fully_connected {
+      num_neurons: 500
+      has_bias: true
+    }
+  }
+  layer {
+    parents: "decode3"
+    name: "decode3neuron"
+    data_layout: "data_parallel"
+    relu {}
+  }
+  layer {
+    parents: "decode3neuron"
+    name: "decode2"
+    data_layout: "data_parallel"
+    fully_connected {
+      num_neurons: 1000
+      has_bias: true
+    }
+  }
+  layer {
+    parents: "decode2"
+    name: "decode2neuron"
+    data_layout: "data_parallel"
+    relu {}
+  }
+  layer {
+    parents: "decode2neuron"
+    name: "decode1"
+    data_layout: "data_parallel"
+    fully_connected {
+      num_neurons: 784
       has_bias: true
     }
   }
 
-  # RELU relu2
+  ######################
+  # Reconstruction error
+  ######################
+
   layer {
     parents: "decode1"
-    name: "relu2"
-    data_layout: "model_parallel"
-    relu {
-    }
+    name: "loss_sigmoid"
+    data_layout: "data_parallel"
+    sigmoid {}
   }
-
-  # FULLY_CONNECTED decode0
   layer {
-    parents: "relu2"
-    name: "decode0"
-    data_layout: "model_parallel"
-    num_neurons_from_data_reader: true
-    fully_connected {
-      weight_initialization: "glorot_normal"
-      has_bias: true
-    }
-  }
-
-  # SIGMOID sigmoid
-  layer {
-    parents: "decode0"
-    name: "sigmoid"
-    data_layout: "model_parallel"
-    sigmoid {
-    }
-  }
-
-  # RECONSTRUCTION
-  layer {
-    parents: "sigmoid"
+    parents: "loss_sigmoid"
     name: "reconstruction"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     reconstruction {
       original_layer: "data"
     }

@@ -22,29 +22,48 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// directed_acyclic_graph .hpp .cpp - Directed acyclic graph neural network models
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/models/directed_acyclic_graph.hpp"
-#include <stack>
-#include <unordered_map>
+#ifndef POWER_HPP_INCLUDED
+#define POWER_HPP_INCLUDED
+
+#include "lbann/layers/activations/activation.hpp"
 
 namespace lbann {
 
-directed_acyclic_graph_model::directed_acyclic_graph_model(lbann_comm *comm,
-                                                           int mini_batch_size,
-                                                           objective_function *obj_fn,
-                                                           optimizer* default_optimizer)
-  : model(comm, mini_batch_size, obj_fn, default_optimizer) {}
+/** Power function. */
+template <data_layout T_layout>
+class power_layer : public entrywise_activation_layer {
+ public:
+  power_layer(lbann_comm *comm, EvalType exponent)
+    : entrywise_activation_layer(comm), m_exponent(exponent) {}
+  power_layer* copy() const override { return new power_layer(*this); }
+  std::string get_type() const override { return "power"; }
+  data_layout get_data_layout() const override { return T_layout; }
 
-void directed_acyclic_graph_model::setup_layer_execution_order() {
-  std::set<int> nodes;
-  std::map<int,std::set<int>> edges;
-  construct_layer_graph(nodes, edges);
-  const auto& sorted_order = graph::topological_sort(nodes, edges);
-  permute_layers(sorted_order);
-  model::setup_layer_execution_order();
-}
+ protected:
+  DataType activation(DataType z) const override {
+    if (m_exponent == EvalType(2)) {
+      return z * z;
+    } else {
+      return std::pow(z, m_exponent);
+    }
+  }
+  DataType activation_derivative(DataType z) const override {
+    if (m_exponent == EvalType(2)) {
+      return 2 * z;
+    } else {
+      return m_exponent * std::pow(z, m_exponent - EvalType(1));
+    }
+  }
 
-}  // namespace lbann
+ private:
+
+  /** Exponent for power function. */
+  const EvalType m_exponent;
+
+};
+
+} // namespace lbann
+
+#endif // POWER_HPP_INCLUDED
