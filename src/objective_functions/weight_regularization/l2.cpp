@@ -83,7 +83,7 @@ void l2_weight_regularization::setup(model& m) {
   m_sqsums.resize(m_weights.size(), EvalType(0));
   m_allreduce_started.resize(m_weights.size(), false);
   for (size_t i = 0; i < m_weights.size(); ++i) {
-    m_allreduce_reqs.push_back(std::move(Al::request()));
+    m_allreduce_reqs.emplace_back();
   }
 
 #ifdef LBANN_HAS_CUDNN
