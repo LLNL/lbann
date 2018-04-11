@@ -372,6 +372,15 @@ Layer* construct_layer(lbann_comm* comm,
     const auto& params = proto_layer.power();
     return new power_layer<layout>(comm, params.exponent());
   }
+  if (proto_layer.has_log()) {
+    const auto& params = proto_layer.log();
+    const auto& base = params.base();
+    if (base == 0.0) {
+      return new log_layer<layout>(comm, base);
+    } else {
+      return new log_layer<layout>(comm);
+    }
+  }
 
   // Throw exception if layer has not been constructed
   err << "could not construct layer " << proto_layer.name();

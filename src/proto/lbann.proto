@@ -740,6 +740,7 @@ message Layer {
    Exponential exponential = 41;
    Swish swish = 42;
    Power power = 43;
+   Log log = 44;
 }
 ///////////////////////
 // MotifLayer //
@@ -801,6 +802,10 @@ message Softmax {
 
 message Power {
   double exponent = 1;
+}
+
+message Log {
+  double base = 1;
 }
 
 ///////////////////////////
