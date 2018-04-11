@@ -29,6 +29,8 @@
 
 #include "lbann/layers/activations/activation.hpp"
 
+#define LBANN_ENABLE_LOG_CUTOFF
+
 namespace lbann {
 
 /** Logarithm function. */
@@ -38,7 +40,9 @@ class log_layer : public entrywise_activation_layer {
   log_layer(lbann_comm *comm, DataType base = std::exp(0.0))
     : entrywise_activation_layer(comm),
       m_base(base),
-      m_inv_log_base(1/std::log(base)) {
+      m_inv_log_base(1/std::log(base)),
+      m_min_input(std::max(std::numeric_limits<DataType>::min(),
+                           1 / std::numeric_limits<DataType>::max())) {
     if (m_base <= DataType(0)) {
       LBANN_ERROR("log base must be positive");
     }
@@ -49,14 +53,22 @@ class log_layer : public entrywise_activation_layer {
 
  protected:
   DataType activation(DataType z) const override {
-    if (z <= DataType(0)) {
-      LBANN_ERROR("log input must be positive");
+    if (z < m_min_input) {
+      #ifdef LBANN_ENABLE_LOG_CUTOFF
+      z = m_min_input;
+      #else
+      LBANN_ERROR("invalid input");
+      #endif // LBANN_ENABLE_LOG_CUTOFF
     }
     return std::log(z) * m_inv_log_base;
   }
   DataType activation_derivative(DataType z) const override {
-    if (z <= DataType(0)) {
-      LBANN_ERROR("log input must be positive");
+    if (z < m_min_input) {
+      #ifdef LBANN_ENABLE_LOG_CUTOFF
+      return DataType(0);
+      #else
+      LBANN_ERROR("invalid input");
+      #endif // LBANN_ENABLE_LOG_CUTOFF
     }
     return m_inv_log_base / z;
   }
@@ -67,7 +79,9 @@ class log_layer : public entrywise_activation_layer {
   const DataType m_base;
   /** 1 / ln(m_base). */
   const DataType m_inv_log_base;
-
+  /** Minimum input value. */
+  const DataType m_min_input;
+  
 };
 
 } // namespace lbann
