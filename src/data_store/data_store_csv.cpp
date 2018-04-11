@@ -70,7 +70,7 @@ void data_store_csv::setup() {
     }
     m_csv_reader = reader;
 
-    if (m_np != reader->get_num_parallel_readers()) {
+    if (m_np != reader->get_num_parallel_readers() && ! is_subsidiary_store()) {
       err << __FILE__ << " " << __LINE__ << " :: "
           << "num_parallel_readers(): " << reader->get_num_parallel_readers() 
           << " m_np: " << m_np 
@@ -80,14 +80,18 @@ void data_store_csv::setup() {
       throw lbann_exception(err.str());
     }
 
-    if (m_master) std::cerr << "calling get_minibatch_index_vector\n";
-    get_minibatch_index_vector();
+    if (! is_subsidiary_store()) {
+      if (m_master) std::cerr << "calling get_minibatch_index_vector\n";
+      get_minibatch_index_vector();
+    }
 
     if (m_master) std::cerr << "calling exchange_mb_indices()\n";
     exchange_mb_indices();
 
-    if (m_master) std::cerr << "calling get_my_datastore_indices\n";
-    get_my_datastore_indices();
+    if (! is_subsidiary_store()) {
+      if (m_master) std::cerr << "calling get_my_datastore_indices\n";
+      get_my_datastore_indices();
+    }  
     
     if (m_master) {
       std::cerr << "calling: reader->fetch_line_label_response(" << (*m_shuffled_indices)[0] << ");\n";

@@ -28,6 +28,8 @@
 
 #include "lbann/data_readers/data_reader_merge_features.hpp"
 #include "lbann/data_store/data_store_merge_features.hpp"
+#include "lbann/utils/options.hpp"
+#include "lbann/utils/timer.hpp"
 
 namespace lbann {
 
@@ -60,11 +62,15 @@ data_reader_merge_features::~data_reader_merge_features() {
 }
 
 void data_reader_merge_features::load() {
+if (is_master()) std::cerr << "STARTING data_reader_merge_features::load\n";
+
   // Load each data reader separately.
   for (auto&& reader : m_data_readers) {
+double tm1 = get_time();
     reader->set_comm(m_comm);
     reader->load();
     m_data_size += reader->get_linearized_data_size();
+if (is_master()) std::cerr << "time to set up subsidiary reader: " << get_time() - tm1 << "\n";
   }
   // Verify the readers have the same number of samples.
   int num_samples = m_data_readers[0]->get_num_data();
@@ -79,6 +85,7 @@ void data_reader_merge_features::load() {
   m_shuffled_indices.resize(num_samples);
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
   select_subset_of_data();
+if (is_master()) std::cerr << "DONE STARTING data_reader_merge_features::load\n";
 }
 
 bool data_reader_merge_features::fetch_datum(Mat& X, int data_id, int mb_idx,

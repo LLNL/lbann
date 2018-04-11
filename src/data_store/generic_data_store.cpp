@@ -104,7 +104,7 @@ void generic_data_store::setup() {
   // generic_data_reader::fetch_data(). Note that these are
   // "original' indices, not shuffled indices, i.e, these indices
   // remain constant through all epochs
-  if (m_collect_minibatch_indices) {
+  if (m_collect_minibatch_indices && ! is_subsidiary_store()) {
     if (m_master) { std::cerr << "calling m_model->collect_indices\n"; }
     m_reader->set_save_minibatch_entries(true);
     if (m_reader->get_role() == "train") {
