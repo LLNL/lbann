@@ -707,6 +707,7 @@ message Layer {
    Gaussian gaussian = 312;
    Bernoulli bernoulli = 313;
    Uniform uniform = 314;
+   Crop crop = 315;
 
    // learning Layers
    FullyConnected fully_connected = 11;
@@ -921,6 +922,10 @@ message Uniform {
   double min = 1;
   double max = 2;
   string neuron_dims = 3;
+}
+
+message Crop {
+  string dims = 3;
 }
 
 /////////////////////

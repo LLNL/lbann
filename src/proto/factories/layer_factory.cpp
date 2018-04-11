@@ -271,6 +271,13 @@ Layer* construct_layer(lbann_comm* comm,
   if (proto_layer.has_evaluation()) {
     return new evaluation_layer<layout>(comm, cudnn);
   }
+  if (proto_layer.has_crop()) {
+    const auto& params = proto_layer.crop();
+    const auto& dims = parse_list<int>(params.dims());
+    if (layout == data_layout::DATA_PARALLEL) {
+      return new crop_layer<data_layout::DATA_PARALLEL>(comm, dims, cudnn);
+    }
+  }
 
   // Regularizer layers
   if (proto_layer.has_batch_normalization()) {

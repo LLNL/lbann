@@ -17,6 +17,7 @@ set_full_path(THIS_DIR_HEADERS
   gaussian.hpp
   bernoulli.hpp
   uniform.hpp
+  crop.hpp
   )
 
 # Propagate the files up the tree
