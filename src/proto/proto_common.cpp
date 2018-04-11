@@ -202,7 +202,7 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       data_readers[execution_mode::testing] = reader;
     }
 
-    if (readme.role() == "train") {
+    if (readme.role() == "train" && readme.validation_percent() > 0.) {
       if (name == "mnist") {
         reader_validation = new mnist_reader(shuffle);
         (*(mnist_reader *)reader_validation) = (*(mnist_reader *)reader);
