@@ -202,5 +202,4 @@ void generic_data_store::exchange_mb_indices() {
   }
 }
 
-
 }  // namespace lbann

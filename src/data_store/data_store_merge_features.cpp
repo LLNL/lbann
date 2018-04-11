@@ -43,11 +43,17 @@ data_store_merge_features::data_store_merge_features(generic_data_reader *reader
 data_store_merge_features::~data_store_merge_features() {
 }
 
+void data_store_merge_features::exchange_data() {
+  for (auto store : m_subsidiary_stores) {
+    store->set_shuffled_indices_special(m_shuffled_indices);
+    store->exchange_data();
+  }
+}
 
 void data_store_merge_features::setup() {
   double tm1 = get_time();
   if (m_master) {
-    std::cout << "starting data_store_merge_features::setup() for data reader with role: " << m_reader->get_role() << std::endl;
+    std::cerr << "starting data_store_merge_features::setup() for data reader with role: " << m_reader->get_role() << std::endl;
   }
 
   generic_data_store::setup();
@@ -69,7 +75,6 @@ void data_store_merge_features::setup() {
       throw lbann_exception(err.str());
     }
 
-
     // get list of indices used in calls to generic_data_reader::fetch_data
     if (m_master) std::cerr << "calling get_minibatch_index_vector\n";
     get_minibatch_index_vector();
@@ -77,21 +82,29 @@ void data_store_merge_features::setup() {
     if (m_master) std::cerr << "calling get_my_datastore_indices\n";
     get_my_datastore_indices();
 
+    if (m_master) std::cerr << "calling exchange_mb_indices()\n";
+    exchange_mb_indices();
+
     std::vector<generic_data_reader*> &readers = reader->get_data_readers();
+    m_subsidiary_stores.reserve(readers.size());
     for (auto r : readers) {
-      generic_data_store *store = new data_store_csv(r, m_model);
+      data_store_csv *store = new data_store_csv(r, m_model);
+      m_subsidiary_stores.push_back(store);
       r->set_data_store(store);
       store->set_is_subsidiary_store();
       store->set_minibatch_indices(get_minibatch_indices());
+      store->set_all_minibatch_indices(get_all_minibatch_indices());
       store->set_minibatch_indices_v(get_minibatch_indices_v());
       store->set_datastore_indices(get_datastore_indices());
       store->setup();
+      store->set_shuffled_indices_special(m_shuffled_indices);
+      store->populate_datastore();
+      store->exchange_data();
     }
   }
   if (m_master) {
     std::cerr << "data_store_merge_features::setup() time: " << get_time() - tm1 << "\n";
   }
 }
-
 
 }  // namespace lbann

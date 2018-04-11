@@ -62,8 +62,6 @@ data_reader_merge_features::~data_reader_merge_features() {
 }
 
 void data_reader_merge_features::load() {
-if (is_master()) std::cerr << "STARTING data_reader_merge_features::load\n";
-
   // Load each data reader separately.
   for (auto&& reader : m_data_readers) {
 double tm1 = get_time();
@@ -85,7 +83,6 @@ if (is_master()) std::cerr << "time to set up subsidiary reader: " << get_time()
   m_shuffled_indices.resize(num_samples);
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
   select_subset_of_data();
-if (is_master()) std::cerr << "DONE STARTING data_reader_merge_features::load\n";
 }
 
 bool data_reader_merge_features::fetch_datum(Mat& X, int data_id, int mb_idx,

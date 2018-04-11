@@ -63,6 +63,8 @@ class data_store_csv : public generic_data_store {
 
 protected :
 
+friend data_store_merge_features;
+
   csv_reader *m_csv_reader;
 
   /// size of the vectors that are returned by 
@@ -93,9 +95,6 @@ protected :
 
   /// fills in m_data (the data store)
   void populate_datastore();
-
-void printme(const char *fn);
-
 };
 
 }  // namespace lbann

@@ -64,8 +64,14 @@ class generic_data_store {
   /// called by generic_data_reader::setup_data_store
   virtual void setup();
 
-  /// called by generic_data_reader::update
+  /// called by generic_data_reader::update;
+  /// this method call exchange_data if m_epoch > 1
   void set_shuffled_indices(const std::vector<int> *indices);
+
+  // set shuffled indices without calling exchange_data
+  void set_shuffled_indices_special(const std::vector<int> *indices) {
+    m_shuffled_indices = indices;
+  }
 
   /// called by various image data readers 
   virtual void get_data_buf(int data_id, std::vector<unsigned char> *&buf, int multi_idx = 0) {}
@@ -118,6 +124,19 @@ class generic_data_store {
   void set_datastore_indices(const std::unordered_set<int> &indices) {
     m_my_datastore_indices = indices;
   }
+
+  const std::vector<std::vector<int>> & get_all_minibatch_indices() {
+    return m_all_minibatch_indices;
+  }
+
+  //@todo: for optimization, change m_all_minibatch_indices to a pointer,
+  //       and properly handle ownership and destruction; this is needed
+  //       to reduce memory requirements in, e.g, data_store_merge_features
+  void set_all_minibatch_indices(const std::vector<std::vector<int>> &indices) {
+    m_all_minibatch_indices = indices;
+  }
+
+  virtual void exchange_data() = 0;
 
 protected :
 
@@ -198,8 +217,6 @@ protected :
 
   bool m_collect_minibatch_indices;
 
-  virtual void exchange_data() = 0;
-
   /// returns the processor that owns the data associated
   /// with the index
   int get_index_owner(int idx) {
@@ -212,10 +229,6 @@ protected :
 
   /// as of now, only applicable to merge_features and merge_samples
   bool m_is_subsidiary_store;
-
-  /// as of now, only applicable to merge_features and merge_samples
-  //?? std::vector<generic_data_reader*> m_readers
-
 };
 
 }  // namespace lbann
