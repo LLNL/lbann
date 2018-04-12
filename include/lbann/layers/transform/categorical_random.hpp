@@ -59,10 +59,10 @@ class categorical_random_layer : public transform_layer {
     const auto& input = get_prev_activations();
     const auto& local_input = input.LockedMatrix();
     auto& local_output = get_local_activations();
-
-    // Initialize output and random numbers
     const auto& local_height = local_input.Height();
     const auto& local_width = local_input.Width();
+
+    // Initialize output and random numbers
     const auto& mode = this->m_model->get_execution_mode();
     El::Zero(local_output);
     StarMat rand_mat(input.Grid(), input.Root());
@@ -88,15 +88,10 @@ class categorical_random_layer : public transform_layer {
           }
         }
       } else {
-        // Choose distribution mode
-        DataType max = local_input(local_height-1, col);
-        for (El::Int row = 0; row < local_height-1; ++row) {
-          const auto& prob = local_input(row, col);
-          if (prob > max) {
-            max = prob;
-            index = row;
-          }
-        }
+        // Choose mode of probability distribution
+        const auto& input_ptr = local_input.LockedBuffer(0, col);
+        index = (std::max_element(input_ptr, input_ptr + local_height)
+                 - input_ptr);
       }
 
       // Output a one-hot vector

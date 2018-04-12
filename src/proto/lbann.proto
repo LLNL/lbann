@@ -709,6 +709,7 @@ message Layer {
    Uniform uniform = 314;
    Crop crop = 315;
    CategoricalRandom categorical_random = 316;
+   DiscreteRandom discrete_random = 317;
 
    // learning Layers
    FullyConnected fully_connected = 11;
@@ -935,6 +936,11 @@ message Crop {
 }
 
 message CategoricalRandom {
+}
+
+message DiscreteRandom {
+  string values = 1;
+  string dims = 2;
 }
 
 /////////////////////

@@ -283,6 +283,14 @@ Layer* construct_layer(lbann_comm* comm,
       return new categorical_random_layer<data_layout::DATA_PARALLEL>(comm, cudnn);
     }
   }
+  if (proto_layer.has_discrete_random()) {
+    const auto& params = proto_layer.discrete_random();
+    const auto& values = parse_list<DataType>(params.values());
+    const auto& dims = parse_list<int>(params.dims());
+    if (layout == data_layout::DATA_PARALLEL) {
+      return new discrete_random_layer<data_layout::DATA_PARALLEL>(comm, values, dims, cudnn);
+    }
+  }
 
   // Regularizer layers
   if (proto_layer.has_batch_normalization()) {
