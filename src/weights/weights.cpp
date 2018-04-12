@@ -65,15 +65,6 @@ weights::weights(const weights& other)
     m_optimizer->set_weights(*this);
   }
 
-  #ifdef LBANN_HAS_CUDNN
-  // Copy GPU data
-  if (m_cudnn != nullptr) {
-    m_values_d = m_cudnn->copy(other.m_values_d,
-                               get_matrix_height(),
-                               get_matrix_width());
-  }
-  #endif // LBANN_HAS_CUDNN
-
 }
 
 weights& weights::operator=(const weights& other) {
@@ -93,16 +84,6 @@ weights& weights::operator=(const weights& other) {
   if (m_values != nullptr)      { m_values = m_values->Copy(); }
   if (m_initializer != nullptr) { m_initializer = m_initializer->copy(); }
   if (m_optimizer != nullptr)   { m_optimizer = m_optimizer->copy(); }
-
-  #ifdef LBANN_HAS_CUDNN
-  // Copy GPU data
-  if (m_cudnn != nullptr) {
-    m_cudnn->deallocate_on_gpus(m_values_d);
-    m_values_d = m_cudnn->copy(other.m_values_d,
-                               get_matrix_height(),
-                               get_matrix_width());
-  }
-  #endif // LBANN_HAS_CUDNN
 
   return *this;
 }
@@ -227,12 +208,6 @@ void weights::setup_gpu() {
     throw lbann_exception(err.str());
   }
 
-  // Copy weights matrix to GPU
-  m_cudnn->allocate_on_gpus(m_values_d,
-                            m_values->LocalHeight(),
-                            m_values->LocalWidth());
-  m_cudnn->broadcast_to_gpus(m_values_d, m_values->LockedMatrix());
-
   #endif // LBANN_HAS_CUDNN
 }
 
@@ -268,7 +243,7 @@ void weights::set_optimizer(optimizer* opt) {
   m_optimizer = opt;
 }
 
-const AbsDistMat& weights::get_values() {
+AbsDistMat& weights::get_values() {
 
   // Check if weights matrix has been setup
   if (m_values == nullptr) {
@@ -277,13 +252,6 @@ const AbsDistMat& weights::get_values() {
         << "attempted to access values of weights before they are setup";
     throw lbann_exception(err.str());
   }
-
-  #ifdef LBANN_HAS_CUDNN
-  // Copy weights matrix from GPU if needed
-  if (m_cudnn != nullptr) {
-    m_cudnn->copy_from_gpu(0, m_values->Matrix(), m_values_d[0]);
-  }
-  #endif // LBANN_HAS_CUDNN
 
   return *m_values;
 }
@@ -300,14 +268,6 @@ void weights::set_values(const AbsDistMat& values) {
 
   // Copy input to weights matrix
   El::Copy(values, *m_values);
-
-  #ifdef LBANN_HAS_CUDNN
-  // Copy weights matrix to GPU if needed
-  if (m_cudnn != nullptr) {
-    m_cudnn->broadcast_to_gpus(m_values_d, m_values->Matrix());
-  }
-  #endif // LBANN_HAS_CUDNN
-
 }
 
 void weights::set_value(DataType value, int index) {
@@ -395,17 +355,18 @@ void weights::set_value(DataType value, int row, int col) {
       m_values->SetLocal(local_row, local_col, value);
     }
   } else {
-    // Set value on GPU
-    #ifdef LBANN_HAS_CUDNN
-    Mat cpu_value(1, 1);
-    cpu_value(0, 0) = value;
-    std::vector<DataType*> gpu_value = m_values_d;
-    const int height = get_matrix_height();
-    for (DataType*& pointer : gpu_value) {
-      pointer += row + col * height;
-    }
-    m_cudnn->broadcast_to_gpus(gpu_value, cpu_value);
-    #endif // LBANN_HAS_CUDNN
+    /// @todo FIXME we need to deal with setting individual values
+    // // Set value on GPU
+    // #ifdef LBANN_HAS_CUDNN
+    // Mat cpu_value(1, 1);
+    // cpu_value(0, 0) = value;
+    // std::vector<DataType*> gpu_value = m_values_d;
+    // const int height = get_matrix_height();
+    // for (DataType*& pointer : gpu_value) {
+    //   pointer += row + col * height;
+    // }
+    // m_cudnn->broadcast_to_gpus(gpu_value, cpu_value);
+    // #endif // LBANN_HAS_CUDNN
   }
 
 }
@@ -417,26 +378,9 @@ void weights::get_values_view(AbsDistMat& values_v) {
     El::LockedView(values_v, values);
   }
   else {
-    #ifdef LBANN_HAS_CUDNN
-    if (m_cudnn != nullptr) {
-      m_cudnn->copy_from_gpu(0, m_values->Matrix(), m_values_d[0]);
-    }
-    #endif // LBANN_HAS_CUDNN
     El::Copy(values, values_v);
   }
 }
-
-#ifdef LBANN_HAS_CUDNN
-std::vector<DataType*> weights::get_values_gpu() {
-  if (m_cudnn == nullptr) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to access weights on GPU when GPU is not setup";
-    throw lbann_exception(err.str());
-  }
-  return m_values_d;
-}
-#endif // __LIB_CUDN
 
 std::string weights::get_dims_string(const std::vector<int>& matrix_height_dims,
                                      const std::vector<int>& matrix_width_dims) {

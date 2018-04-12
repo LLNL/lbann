@@ -99,15 +99,6 @@ class constant_layer : public transform_layer {
 
   void setup_gpu() override {
     transform_layer::setup_gpu();
-  #ifndef LBANN_HAS_CUDNN
-    throw lbann_exception("constant_layer: cuDNN not detected");
-  #else
-    auto& activations_d = m_activations_d[0];
-    m_cudnn->set_on_gpus(activations_d.get_data(),
-                         m_value,
-                         activations_d.get_height(),
-                         activations_d.get_width_per_gpu());
-  #endif // #ifndef LBANN_HAS_CUDNN
   }
 
   void fp_compute() override {}

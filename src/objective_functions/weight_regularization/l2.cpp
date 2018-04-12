@@ -100,7 +100,7 @@ EvalType l2_weight_regularization::evaluate() {
       CHECK_CUDA(cudaSetDevice(cudnn->get_gpu(0)));
       const EvalType norm = cublas::nrm2(cudnn->get_cublas_handle(0),
                                          w->get_size(),
-                                         w->get_values_gpu()[0], 1);
+                                         w->get_values().LockedBuffer(), 1);
       sqsum += norm * norm;
     #endif // LBANN_HAS_CUDNN
     } else {
@@ -117,20 +117,7 @@ void l2_weight_regularization::compute_weight_regularization() {
   if (m_scale_factor == EvalType(0)) { return; }
   for (auto&& w : m_weights) {
     auto&& opt = w->get_optimizer();
-    if (w->get_cudnn_manager() != nullptr) {
-    #ifndef LBANN_HAS_CUDNN
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: cuDNN not detected";
-      throw lbann_exception(err.str());
-    #else
-      cudnn::matrix values_d(w->get_cudnn_manager());
-      auto&& values_ptrs = w->get_values_gpu();
-      values_d.attach(values_ptrs, w->get_size());
-      opt->add_to_gradient(values_d, m_scale_factor);
-    #endif // LBANN_HAS_CUDNN
-    } else {
-      opt->add_to_gradient(w->get_values(), m_scale_factor);
-    }
+    opt->add_to_gradient(w->get_values(), m_scale_factor);
   }
 }
 

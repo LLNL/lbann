@@ -277,10 +277,10 @@ class pooling_layer : public transform_layer {
                                       m_pooling_cudnn_desc,
                                       &one,
                                       this->m_prev_activations_cudnn_desc,
-                                      this->m_prev_activations_d[0].get_locked_data(i),
+                                      get_prev_activations().LockedBuffer(),
                                       &zero,
                                       this->m_activations_cudnn_desc,
-                                      this->m_activations_d[0].get_data(i)));
+                                      get_activations().Buffer()));
     }
 
   #endif // #ifndef LBANN_HAS_CUDNN
@@ -307,14 +307,14 @@ class pooling_layer : public transform_layer {
                                        m_pooling_cudnn_desc,
                                        &one,
                                        this->m_activations_cudnn_desc,
-                                       this->m_activations_d[0].get_locked_data(i),
+                                       get_activations().LockedBuffer(),
                                        this->m_prev_error_signals_cudnn_desc,
-                                       this->m_prev_error_signals_d[0].get_locked_data(i),
+                                       get_prev_error_signals().LockedBuffer(),
                                        this->m_prev_activations_cudnn_desc,
-                                       this->m_prev_activations_d[0].get_locked_data(i),
+                                       get_prev_activations().LockedBuffer(),
                                        &one,
                                        this->m_error_signals_cudnn_desc,
-                                       this->m_error_signals_d[0].get_data(i)));
+                                       get_error_signals().Buffer()));
     }
 
   #endif // #ifndef LBANN_HAS_CUDNN

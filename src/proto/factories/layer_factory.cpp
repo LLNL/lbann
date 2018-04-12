@@ -37,10 +37,6 @@ Layer* construct_layer(lbann_comm* comm,
                        const lbann_data::Layer& proto_layer) {
   std::stringstream err;
 
-  // Currently only data-parallel layers have GPU support
-  /// @todo Support for GPU model-parallel layers
-  if (layout == data_layout::MODEL_PARALLEL) { cudnn = nullptr; }
-
   // Input layers
   if (proto_layer.has_input()) {
     const auto& params = proto_layer.input();

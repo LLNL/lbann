@@ -46,6 +46,8 @@ using DMat       = El::Matrix<lbann::DataType, D>;
 using CPUMat     = DMat<El::Device::CPU>;
 using GPUMat     = DMat<El::Device::GPU>;
 using AbsDistMat = El::AbstractDistMatrix<lbann::DataType>;
+template <El::Device D>
+using AbsDistMatReadProxy = El::AbstractDistMatrixReadDeviceProxy<lbann::DataType, D>;
 using ElMat      = El::ElementalMatrix<lbann::DataType>;
 using BlockMat   = El::BlockMatrix<lbann::DataType>;
 template <El::Device D>

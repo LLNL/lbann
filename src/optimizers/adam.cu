@@ -51,8 +51,7 @@ __global__ void adam_kernel(DataType * __restrict__ values,
 
 }
 
-void adam::step_compute_gpu(cudnn::matrix& values_d,
-                            const cudnn::matrix& gradient_d) {
+void adam::step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient) {
 
   // Precompute the bias correction and learning rate.
   m_current_beta1 *= m_beta1;
@@ -70,14 +69,12 @@ void adam::step_compute_gpu(cudnn::matrix& values_d,
   dim3 block_dims, grid_dims;
   block_dims.x = block_size;
   grid_dims.x = (num_entries + block_size - 1) / block_size;
-  for (int i = 0; i < m_cudnn->get_num_gpus(); ++i) {
-    CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-    cudaStream_t stream = this->m_cudnn->get_stream(i);
-    adam_kernel<<<grid_dims, block_dims, 0, stream>>>
-      (values_d.get_data(i), gradient_d.get_locked_data(i),
-       m_moment1_d[i], m_moment2_d[i],
-       num_entries, correction, m_eps, m_beta1, m_beta2);
-  }
+  CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu()));
+  cudaStream_t stream = this->m_cudnn->get_stream();
+  adam_kernel<<<grid_dims, block_dims, 0, stream>>>
+    (values.Buffer(), gradient.LockedBuffer(),
+     m_moment1_d[0], m_moment2_d[0],
+     num_entries, correction, m_eps, m_beta1, m_beta2);
 
 }
 

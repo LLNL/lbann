@@ -929,7 +929,7 @@ std::vector<DataType*> cudnn_manager::copy(const std::vector<DataType*>& gpu_dat
 void cudnn_manager::pin_matrix(AbsDistMat& mat) {
 
     // Get local matrix
-    Mat& mat_local = mat.Matrix();
+    Mat& mat_local = static_cast<CPUMat&>(mat.Matrix());
     const El::Int local_height = mat.LocalHeight();
     const El::Int local_width = mat.LocalWidth();
     const El::Int height = mat.Height();
@@ -984,7 +984,6 @@ void cudnn_manager::pin_matrix(AbsDistMat& mat) {
     } else {
         throw lbann::lbann_exception("cudnn_manager: could not cast AbsDistMat to ElMat or BlockMat");
     }
-
 }
 
 void cudnn_manager::unpin_matrix(AbsDistMat& mat) {

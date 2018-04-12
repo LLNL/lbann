@@ -40,18 +40,18 @@ namespace sigmoid_cuda {
   void fp(cudnn::cudnn_manager& cudnn,
           int height,
           int width_per_gpu,
-          const std::vector<DataType*>& input,
+          const DataType* input,
           int input_leading_dim,
-          std::vector<DataType*>& output,
+          DataType* output,
           int output_leading_dim,
           DataType cutoff);
   void bp(cudnn::cudnn_manager& cudnn,
           int height, int width_per_gpu,
-          const std::vector<DataType*>& input,
+          const DataType* input,
           int input_leading_dim,
-          const std::vector<DataType*>& gradient_wrt_output,
+          const DataType* gradient_wrt_output,
           int gradient_wrt_output_leading_dim,
-          std::vector<DataType*>& gradient_wrt_input,
+          DataType* gradient_wrt_input,
           int gradient_wrt_input_leading_dim,
           DataType cutoff);
 } // namespace sigmoid_cuda
@@ -125,10 +125,10 @@ class sigmoid_layer : public entrywise_activation_layer {
     sigmoid_cuda::fp(*m_cudnn,
                      get_num_neurons(),
                      m_mini_batch_size_per_gpu,
-                     m_prev_activations_d[0].get_locked_data(),
-                     m_prev_activations_d[0].get_leading_dim(),
-                     m_activations_d[0].get_data(),
-                     m_activations_d[0].get_leading_dim(),
+                     get_prev_activations().LockedBuffer(),
+                     get_prev_activations().LDim(),
+                     get_activations().Buffer(),
+                     get_activations().LDim(),
                      m_cutoff);
   #endif // LBANN_HAS_CUDNN
   }
@@ -140,12 +140,12 @@ class sigmoid_layer : public entrywise_activation_layer {
     sigmoid_cuda::bp(*m_cudnn,
                      get_num_neurons(),
                      m_mini_batch_size_per_gpu,
-                     m_prev_activations_d[0].get_locked_data(),
-                     m_prev_activations_d[0].get_leading_dim(),
-                     m_prev_error_signals_d[0].get_locked_data(),
-                     m_prev_error_signals_d[0].get_leading_dim(),
-                     m_error_signals_d[0].get_data(),
-                     m_error_signals_d[0].get_leading_dim(),
+                     get_prev_activations().LockedBuffer(),
+                     get_prev_activations().LDim(),
+                     get_prev_error_signals().LockedBuffer(),
+                     get_prev_error_signals().LDim(),
+                     get_error_signals().Buffer(),
+                     get_error_signals().LDim(),
                      m_cutoff);
   #endif // LBANN_HAS_CUDNN
   }

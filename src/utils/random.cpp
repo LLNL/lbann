@@ -74,11 +74,11 @@ bool save_rng_to_checkpoint_shared(persist& p){
   rng_name = std::string(p.m_checkpoint_dir) + "/rng_seq_generator";
   std::ofstream rng_seq(rng_name);
   rng_seq << ::data_seq_generator;
-  
+
   rng_name = std::string(p.m_checkpoint_dir) + "/rng_generator";
   std::ofstream rng(rng_name);
   rng << ::generator;
-  
+
   rng_name = std::string(p.m_checkpoint_dir) + "/rng_fast_generator";
   std::ofstream rng_fast(rng_name);
   rng_fast << ::fast_generator;
@@ -95,7 +95,7 @@ bool load_rng_from_checkpoint_shared(persist& p){
   rng_name = std::string(p.m_checkpoint_dir) + "/rng_generator";
   std::ifstream rng(rng_name);
   rng >> ::generator;
- 
+
   rng_name = std::string(p.m_checkpoint_dir) + "/rng_fast_generator";
   std::ifstream rng_fast(rng_name);
   rng_fast >> ::fast_generator;
@@ -177,7 +177,7 @@ void bernoulli_fill(AbsDistMat& mat, El::Int m, El::Int n, double p) {
   El::Bernoulli(mat, m, n, p);
 #else
   bernoulli_fill_procdet(mat, m, n, p);
-#endif  // LBANN_PARALLEL_RANDOM_MATRICES  
+#endif  // LBANN_PARALLEL_RANDOM_MATRICES
 }
 
 void uniform_fill(AbsDistMat& mat, El::Int m, El::Int n, DataType center,
@@ -238,4 +238,3 @@ void uniform_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n, DataType center
 }
 
 }  // namespace lbann
-

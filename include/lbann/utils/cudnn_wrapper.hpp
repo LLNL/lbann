@@ -106,7 +106,7 @@ class matrix;
  */
 class matrix {
 #ifdef LBANN_HAS_CUDNN
-  
+
 public:
 
   /** Constructor. */
@@ -224,43 +224,43 @@ class cudnn_manager {
   /** Get GPUs (const). */
   const std::vector<int>& get_gpus() const;
   /** Get ith GPU. */
-  int get_gpu(int i) const;
+  int get_gpu(int i = 0) const;
   /** Get CUDA streams. */
   std::vector<cudaStream_t>& get_streams();
   /** Get CUDA streams (const). */
   const std::vector<cudaStream_t>& get_streams() const;
   /** Get ith CUDA stream. */
-  cudaStream_t& get_stream(int i);
+  cudaStream_t& get_stream(int i = 0);
   /** Get ith CUDA stream (const). */
-  const cudaStream_t& get_stream(int i) const;
+  const cudaStream_t& get_stream(int i = 0) const;
   /** Get cuDNN handles. */
   std::vector<cudnnHandle_t>& get_handles();
   /** Get cuDNN handles (const). */
   const std::vector<cudnnHandle_t>& get_handles() const;
   /** Get ith cuDNN handle. */
-  cudnnHandle_t& get_handle(int i);
+  cudnnHandle_t& get_handle(int i = 0);
   /** Get ith cuDNN handle (const). */
-  const cudnnHandle_t& get_handle(int i) const;
+  const cudnnHandle_t& get_handle(int i = 0) const;
   /** Get CUBLAS handles. */
   std::vector<cublasHandle_t>& get_cublas_handles();
   /** Get CUBLAS handles (const). */
   const std::vector<cublasHandle_t>& get_cublas_handles() const;
   /** Get ith CUBLAS handle. */
-  cublasHandle_t& get_cublas_handle(int i);
+  cublasHandle_t& get_cublas_handle(int i = 0);
   /** Get ith CUBLAS handle (const). */
   const cublasHandle_t& get_cublas_handle(int i) const;
   /** Get GPU work spaces. */
   std::vector<void*> get_work_spaces();
   /** Get ith GPU work space. */
-  void *get_work_space(int i);
+  void *get_work_space(int i = 0);
   /** Get a lower bound on GPU work space sizes (in bytes). */
   size_t get_minimum_work_space_size();
   /** Get GPU work space sizes (in bytes). */
   std::vector<size_t> get_work_space_sizes();
   /** Get ith GPU work space size (in bytes). */
-  size_t get_work_space_size(int i);
+  size_t get_work_space_size(int i = 0);
   /** Set ith GPU work space to occupy all available GPU memory. */
-  void set_maximum_work_space_size(int i);
+  void set_maximum_work_space_size(int i = 0);
   /** Free ith GPU work space. */
   void free_work_space(int i);
   /** Free all GPU work spaces. */

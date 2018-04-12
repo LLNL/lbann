@@ -169,7 +169,7 @@ class weights {
   void set_optimizer(optimizer* opt);
 
   /** Get the weight matrix. */
-  const AbsDistMat& get_values();
+  AbsDistMat& get_values();
   /** Set the weight matrix. */
   void set_values(const AbsDistMat& values);
 
@@ -185,11 +185,6 @@ class weights {
    *  matrix, the matrix values are copied into values_v.
    */
   void get_values_view(AbsDistMat& values_v);
-
-#ifdef LBANN_HAS_CUDNN
-  /** Get the weight matrix on GPU. */
-  std::vector<DataType*> get_values_gpu();
-#endif // LBANN_HAS_CUDNN
 
   bool save_to_checkpoint_shared(persist& p);
   bool load_from_checkpoint_shared(persist& p);
@@ -228,11 +223,6 @@ class weights {
    *  Default is nullptr, which corresponds to no optimizer.
    */
   optimizer* m_optimizer = nullptr;
-
-#ifdef LBANN_HAS_CUDNN
-  /** GPU memory for weights matrix. */
-  std::vector<DataType*> m_values_d;
-#endif // LBANN_HAS_CUDNN
 
   /** Setup GPU objects for weights. */
   virtual void setup_gpu();

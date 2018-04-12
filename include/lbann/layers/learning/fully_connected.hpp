@@ -65,13 +65,6 @@ class fully_connected_layer : public learning_layer {
    */
   AbsDistMat* m_bias_gradient;
 
-#ifdef LBANN_HAS_CUDNN
-  /** GPU memory for linearity gradient. */
-  cudnn::matrix m_linearity_gradient_d;
-  /** GPU memory for bias gradient. */
-  cudnn::matrix m_bias_gradient_d;
-#endif // __LIB_CUNN
-
  public:
 
   fully_connected_layer(lbann_comm *comm,
@@ -123,11 +116,6 @@ class fully_connected_layer : public learning_layer {
       m_bias_gradient = m_bias_gradient->Copy();
     }
 
-#ifdef LBANN_HAS_CUDNN
-    m_linearity_gradient_d = other.m_linearity_gradient_d;
-    m_bias_gradient_d = other.m_bias_gradient_d;
-#endif // LBANN_HAS_CUDNN
-
   }
 
   fully_connected_layer& operator=(const fully_connected_layer& other) {
@@ -144,11 +132,6 @@ class fully_connected_layer : public learning_layer {
     if (m_bias_gradient != nullptr) {
       m_bias_gradient = m_bias_gradient->Copy();
     }
-
-  #ifdef LBANN_HAS_CUDNN
-    m_linearity_gradient_d = other.m_linearity_gradient_d;
-    m_bias_gradient_d = other.m_bias_gradient_d;
-  #endif // LBANN_HAS_CUDNN
 
     return *this;
   }
@@ -246,18 +229,6 @@ class fully_connected_layer : public learning_layer {
 
   void setup_gpu() override {
     learning_layer::setup_gpu();
-#ifndef LBANN_HAS_CUDNN
-    throw lbann_exception("fully_connected_layer: CUDA not detected");
-#else
-    m_linearity_gradient_d = cudnn::matrix(m_cudnn,
-                                           m_linearity_gradient->Height(),
-                                           m_linearity_gradient->Width());
-    if(m_bias_scaling_factor != DataType(0)) {
-      m_bias_gradient_d = cudnn::matrix(m_cudnn,
-                                        m_bias_gradient->Height(),
-                                        m_bias_gradient->Width());
-    }
-#endif // LBANN_HAS_CUDNN
   }
 
   void fp_compute() override;

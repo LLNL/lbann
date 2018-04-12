@@ -237,24 +237,7 @@ class Layer {
    *  appropriate error signal tensor.
    */
   virtual void get_bp_output(AbsDistMat& bp_output, const Layer* parent) const;
-#ifdef LBANN_HAS_CUDNN
-  /** Send forward propagation output to a child layer on GPUs.
-   *  On output, fp_output_d is either a GPU matrix view or copy of
-   *  the appropriate activation tensor. workspace should be a matrix
-   *  in Star,VC format.
-   */
-  virtual void get_gpu_fp_output(cudnn::matrix& fp_output_d,
-                                 AbsDistMat& workspace,
-                                 const Layer* child) const;
-  /** Send backward propagation output to a parent layer on GPUs.
-   *  On output, bp_output_d is either a GPU matrix view or copy of
-   *  the appropriate error signal tensor. workspace should be a
-   *  matrix in Star,VC format.
-   */
-  virtual void get_gpu_bp_output(cudnn::matrix& bp_output_d,
-                                 AbsDistMat& workspace,
-                                 const Layer* parent) const;
-#endif // LBANN_HAS_CUDNN
+
   /** Get dimensions of forward propagation output to a child layer.
    *  Returns the dimensions of the appropriate activations tensor.
    */
@@ -499,15 +482,6 @@ class Layer {
   int m_mini_batch_size_per_gpu;
   /** Maximum number of mini-batch samples per GPU. */
   int m_max_mini_batch_size_per_gpu;
-
-  /** Previous activation matrices on GPUs. */
-  std::vector<cudnn::matrix> m_prev_activations_d;
-  /** Activation matrices on GPUs. */
-  std::vector<cudnn::matrix> m_activations_d;
-  /** Previous error signal matrices on GPUs. */
-  std::vector<cudnn::matrix> m_prev_error_signals_d;
-  /** Error signal matrices on GPUs. */
-  std::vector<cudnn::matrix> m_error_signals_d;
 
   /** cuDNN descriptor for first previous activation tensor. */
   cudnnTensorDescriptor_t m_prev_activations_cudnn_desc;

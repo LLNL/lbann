@@ -61,8 +61,7 @@ __global__ void nesterov_kernel(DataType * __restrict__ values,
 
 }
 
-void sgd::step_compute_gpu(cudnn::matrix& values_d,
-                           const cudnn::matrix& gradient_d) {
+void sgd::step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient) {
 
   // Get matrix dimensions
   const int num_entries = m_weights->get_size();
@@ -70,14 +69,12 @@ void sgd::step_compute_gpu(cudnn::matrix& values_d,
 
   // SGD without momentum
   if (m_momentum == DataType(0)) {
-    for (int i = 0; i < m_cudnn->get_num_gpus(); ++i) {
-      CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-      cublas::axpy(m_cudnn->get_cublas_handle(i),
-                   num_entries,
-                   -m_learning_rate,
-                   gradient_d.get_locked_data(i), 1,
-                   values_d.get_data(i), 1);
-    }
+    CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu()));
+    cublas::axpy(m_cudnn->get_cublas_handle(),
+                 num_entries,
+                 -m_learning_rate,
+                 gradient.LockedBuffer(), 1,
+                 values.Buffer(), 1);
     return;
   }
 
@@ -91,12 +88,12 @@ void sgd::step_compute_gpu(cudnn::matrix& values_d,
     cudaStream_t stream = this->m_cudnn->get_stream(i);
     if (m_nesterov) {
       nesterov_kernel<<<grid_dims, block_dims, 0, stream>>>
-        (values_d.get_data(i), gradient_d.get_locked_data(i),
-         m_velocity_d[i], num_entries, m_learning_rate, m_momentum);
+        (values.Buffer(), gradient.LockedBuffer(),
+         m_velocity->Buffer(), num_entries, m_learning_rate, m_momentum);
     } else {
       momentum_kernel<<<grid_dims, block_dims, 0, stream>>>
-        (values_d.get_data(i), gradient_d.get_locked_data(i),
-         m_velocity_d[i], num_entries, m_learning_rate, m_momentum);
+        (values.Buffer(), gradient.LockedBuffer(),
+         m_velocity->Buffer(), num_entries, m_learning_rate, m_momentum);
     }
   }
 

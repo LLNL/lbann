@@ -119,6 +119,9 @@ class relu_layer : public entrywise_activation_layer {
     return x > DataType(0) ? DataType(1) : DataType(0);
   }
 
+  void fp_compute() override;
+  void bp_compute() override;
+
   void fp_compute_gpu() override {
   #ifndef LBANN_HAS_CUDNN
     throw lbann_exception("relu_layer: cuDNN not detected");
@@ -138,10 +141,10 @@ class relu_layer : public entrywise_activation_layer {
                                          m_activation_cudnn_desc,
                                          &one,
                                          this->m_prev_activations_cudnn_desc,
-                                         this->m_prev_activations_d[0].get_locked_data(i),
+                                         this->m_prev_activations[0]->LockedBuffer(),
                                          &zero,
                                          this->m_activations_cudnn_desc,
-                                         this->m_activations_d[0].get_data(i)));
+                                         this->m_activations[0]->Buffer()));
     }
 
   #endif // LBANN_HAS_CUDNN
@@ -165,21 +168,20 @@ class relu_layer : public entrywise_activation_layer {
                                           m_activation_cudnn_desc,
                                           &one,
                                           this->m_prev_activations_cudnn_desc,
-                                          this->m_prev_activations_d[0].get_locked_data(i),
+                                          this->m_prev_activations[0]->LockedBuffer(),
                                           this->m_prev_error_signals_cudnn_desc,
-                                          this->m_prev_error_signals_d[0].get_locked_data(i),
+                                          this->m_prev_error_signals[0]->LockedBuffer(),
                                           this->m_activations_cudnn_desc,
-                                          this->m_activations_d[0].get_locked_data(i),
+                                          this->m_activations[0]->LockedBuffer(),
                                           &one,
                                           this->m_error_signals_cudnn_desc,
-                                          this->m_error_signals_d[0].get_data(i)));
+                                          this->m_error_signals[0]->Buffer()));
     }
 
   #endif // LBANN_HAS_CUDNN
   }
 
 };
-
 
 } // namespace lbann
 
