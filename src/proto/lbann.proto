@@ -708,6 +708,7 @@ message Layer {
    Bernoulli bernoulli = 313;
    Uniform uniform = 314;
    Crop crop = 315;
+   CategoricalRandom categorical_random = 316;
 
    // learning Layers
    FullyConnected fully_connected = 11;
@@ -931,6 +932,9 @@ message Uniform {
 
 message Crop {
   string dims = 3;
+}
+
+message CategoricalRandom {
 }
 
 /////////////////////

@@ -278,6 +278,11 @@ Layer* construct_layer(lbann_comm* comm,
       return new crop_layer<data_layout::DATA_PARALLEL>(comm, dims, cudnn);
     }
   }
+  if (proto_layer.has_categorical_random()) {
+    if (layout == data_layout::DATA_PARALLEL) {
+      return new categorical_random_layer<data_layout::DATA_PARALLEL>(comm, cudnn);
+    }
+  }
 
   // Regularizer layers
   if (proto_layer.has_batch_normalization()) {

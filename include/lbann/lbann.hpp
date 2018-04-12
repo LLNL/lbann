@@ -81,6 +81,7 @@
 #include "lbann/layers/transform/bernoulli.hpp"
 #include "lbann/layers/transform/uniform.hpp"
 #include "lbann/layers/transform/crop.hpp"
+#include "lbann/layers/transform/categorical_random.hpp"
 
 /// Regularization layers.
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
