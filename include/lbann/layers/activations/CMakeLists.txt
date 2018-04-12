@@ -15,6 +15,7 @@ set_full_path(THIS_DIR_HEADERS
   softplus.hpp
   swish.hpp
   tanh.hpp
+  power.hpp
   )
 
 # Propagate the files up the tree

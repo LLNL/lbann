@@ -103,7 +103,7 @@ static const char *__attribute__((used)) _to_string(execution_mode m) {
 }
 
 /** Pooling layer mode */
-enum class pool_mode {max, average, average_no_pad};
+enum class pool_mode {invalid, max, average, average_no_pad};
 
 /** returns a string representation of the pool_mode */
 std::string get_pool_mode_name(pool_mode m);
@@ -149,6 +149,17 @@ static bool __attribute__((used)) endsWith(const std::string mainStr, const std:
 }
 
 }  // namespace lbann
+
+// Macro to throw an LBANN exception
+#define LBANN_ERROR(message)                                            \
+  do {                                                                  \
+    std::stringstream ss_LBANN_ERROR;                                   \
+    ss_LBANN_ERROR << "LBANN error"                                     \
+                   << " (" << __FILE__ << ":" << __LINE__ << ")"        \
+                   << ": " << message;                                  \
+    throw lbann::lbann_exception(ss_LBANN_ERROR.str());                 \
+  } while(0)
+
 
 /// Print the dimensions and name of a Elemental matrix
 static void __attribute__((used)) _display_matrix(ElMat *m, const char *name) {

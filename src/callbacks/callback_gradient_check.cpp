@@ -185,8 +185,10 @@ DataType lbann_callback_gradient_check::compute_objective_function(model *m) {
   for (size_t l = 1; l < layers.size(); l++) {
     layers[l]->forward_prop();
   }
-  return obj_fn->evaluate(m->get_execution_mode(),
-                          m->get_current_mini_batch_size());
+  obj_fn->start_evaluation(m->get_execution_mode(),
+                           m->get_current_mini_batch_size());
+  return obj_fn->finish_evaluation(m->get_execution_mode(),
+                                   m->get_current_mini_batch_size());
 }
 
 }  // namespace lbann

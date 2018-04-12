@@ -157,9 +157,9 @@ class weights {
   void set_initializer(weights_initializer* initializer);
 
   /** Get weights optimizer. */
-  optimizer* get_optimizer() { return m_optimizer; }
+  optimizer* get_optimizer() { return (m_frozen? nullptr : m_optimizer); }
   /** Get weights optimizer (const). */
-  const optimizer* get_optimizer() const { return m_optimizer; }
+  const optimizer* get_optimizer() const { return (m_frozen? nullptr : m_optimizer); }
   /** Set weights optimizer.
    *  This takes ownership of the optimizer and deallocates it during
    *  destruction.
@@ -189,11 +189,15 @@ class weights {
   std::vector<DataType*> get_values_gpu();
 #endif // LBANN_HAS_CUDNN
 
+  void freeze() { m_frozen = true; }
+  void unfreeze() { m_frozen = false; }
+  bool is_frozen() const { return m_frozen; }
+
   bool save_to_checkpoint_shared(persist& p);
   bool load_from_checkpoint_shared(persist& p);
   
   /** Write weights to proto file */
-  virtual void write_proto(lbann_data::Weights* proto) const;
+  virtual void write_proto(lbann_data::WeightsData* proto) const;
  private:
 
   /** Weights name.
@@ -231,6 +235,9 @@ class weights {
   /** GPU memory for weights matrix. */
   std::vector<DataType*> m_values_d;
 #endif // LBANN_HAS_CUDNN
+
+  /** Avoid weight update if frozen */
+  bool m_frozen;
 
   /** Setup GPU objects for weights. */
   virtual void setup_gpu();

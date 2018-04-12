@@ -206,6 +206,36 @@ void matrix::locked_attach(const std::vector<DataType*>& data,
   m_is_locked = true;
 }
 
+void matrix::attach_to_work_spaces(int height,
+                                   int width_per_gpu,
+                                   int leading_dim) {
+  if (m_cudnn == nullptr) {
+    throw lbann::lbann_exception("cudnn::matrix: attempted to attach matrix without cuDNN manager");
+  }
+  clear();
+
+  // Check if work space size is valid
+  leading_dim = std::max(leading_dim, height);
+  const size_t required_size = leading_dim * width_per_gpu * sizeof(DataType);
+  const size_t work_space_size = m_cudnn->get_minimum_work_space_size();
+  if (work_space_size < required_size) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "insufficient GPU work space "
+        << "(requires " << required_size << " bytes on each GPU, "
+        << "but only have " << work_space_size << " bytes)";
+    throw lbann_exception(err.str());
+  }
+
+  // Attach matrix to work spaces
+  std::vector<DataType*> work_spaces;
+  for (auto&& ptr : m_cudnn->get_work_spaces()) {
+    work_spaces.push_back(static_cast<DataType*>(ptr));
+  }
+  attach(work_spaces, height, width_per_gpu, leading_dim);
+
+}
+
 std::vector<DataType*>& matrix::get_data() {
   if (m_cudnn == nullptr) {
     throw lbann::lbann_exception("cudnn::matrix: attempted access data of matrix without cuDNN manager");
@@ -320,11 +350,20 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus, bool nc
         FORCE_CHECK_CUDNN(cudnnCreate(&m_handles.back()));
         FORCE_CHECK_CUDNN(cudnnSetStream(m_handles.back(), m_streams.back()));
         FORCE_CHECK_CUBLAS(cublasCreate(&m_cublas_handles.back()));
+        FORCE_CHECK_CUBLAS(cublasSetStream(m_cublas_handles.back(), m_streams.back()));
+        FORCE_CHECK_CUBLAS(cublasSetPointerMode(m_cublas_handles.back(), CUBLAS_POINTER_MODE_HOST));
     }
-
 
     // Get number of GPUs for current MPI rank
     m_num_gpus = m_gpus.size();
+
+    // Make sure LBANN communicator knows GPUs and CUDA streams
+    /**  @todo This is a kludge. A better solution would be to
+     *   refactor the cuDNN manager and make the LBANN communicator
+     *   responsible for GPU management.
+     */
+    comm->get_gpus() = m_gpus;
+    comm->get_cuda_streams() = m_streams;
 
     // Initialize work spaces
     m_work_spaces = std::vector<void *>(m_num_gpus, nullptr);
@@ -428,17 +467,12 @@ void cudnn_manager::cudnn_manager::allocate_on_gpus(std::vector<DataType *>& gpu
 void cudnn_manager::cudnn_manager::deallocate_on_gpus(std::vector<DataType *>& gpu_data) {
 
   // Stop early if deallocation is not needed
-  bool deallocation_needed = false;
-  if(gpu_data.empty()) {
-    deallocation_needed = true;
-  } else if((int) gpu_data.size() != m_num_gpus) {
+  if (gpu_data.empty()) { return; }
+  if ((int) gpu_data.size() != m_num_gpus) {
     throw lbann_exception("cudnn_wrapper: number of GPU memory pointers doesn't match number of GPUs");
-  } else {
-    for (const auto& ptr : gpu_data) {
-      if (ptr != nullptr) { deallocation_needed = true; }
-    }
   }
-  if (!deallocation_needed) {
+  if (std::count(gpu_data.begin(), gpu_data.end(), nullptr)
+      == m_num_gpus) {
     gpu_data.clear();
     return;
   }

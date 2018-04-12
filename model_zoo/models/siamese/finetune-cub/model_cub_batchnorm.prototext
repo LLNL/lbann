@@ -1,0 +1,405 @@
+model {
+  name: "sequential_model"
+  data_layout: "data_parallel"
+  mini_batch_size: 64
+  block_size: 256
+  num_epochs: 50
+  num_parallel_readers: 0
+  procs_per_model: 0
+  num_gpus: -1
+
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    cross_entropy {}
+    l2_weight_regularization {
+      scale_factor: 0.0005
+    }
+  }
+
+  ###################################################
+  # Metrics
+  ###################################################
+
+  metric { categorical_accuracy {} }
+  metric {
+    top_k_categorical_accuracy {
+       top_k: 5
+    }
+  }
+
+  ###################################################
+  # Callbacks
+  ###################################################
+  callback {
+    imcomm {
+      intermodel_comm_method: "normal"
+      all_optimizers: true
+    }
+  }
+  callback { print {} }
+  callback { timer {} }
+  callback {
+    poly_learning_rate {
+      power: 0.5
+    }
+  }
+
+  ###################################################
+  # start of replicate layers
+  ###################################################
+
+  layer {
+    name: "data_new"
+    data_layout: "data_parallel"
+    input {
+      io_buffer: "partitioned"
+    }
+  }
+
+  layer {
+    name: "conv1_head0"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 96
+      conv_dims: "11 11"
+      conv_pads: "5 5"
+      conv_strides: "4 4"
+      has_bias: true
+      has_vectors: true
+    }
+  }
+
+  layer {
+    name: "bn_conv1_new"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+      global_stats: true
+    }
+  }
+
+  layer {
+    name: "relu1_new"
+    data_layout: "data_parallel"
+    relu {}
+  }
+
+  layer {
+    name: "pool1_new"
+    data_layout: "data_parallel"
+    pooling {
+      num_dims: 2
+      pool_dims: "3 3"
+      pool_pads: "0 0"
+      pool_strides: "2 2"
+      pool_mode: "max"
+      has_vectors: true
+    }
+  }
+
+  layer {
+    name: "conv2_head0"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims: "5 5"
+      conv_pads: "2 2"
+      conv_strides: "1 1"
+      has_bias: true
+      has_vectors: true
+    }
+  }
+
+  layer {
+    name: "bn_conv2_new"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+      global_stats: true
+    }
+  }
+
+  layer {
+    name: "relu2_new"
+    data_layout: "data_parallel"
+    relu {}
+  }
+
+  layer {
+    name: "pool2_new"
+    data_layout: "data_parallel"
+    pooling {
+      num_dims: 2
+      pool_dims: "3 3"
+      pool_pads: "0 0"
+      pool_strides: "2 2"
+      pool_mode: "max"
+      has_vectors: true
+    }
+  }
+
+  layer {
+    name: "conv3_head0"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels:  384
+      conv_dims: "3 3"
+      conv_pads: "1 1"
+      conv_strides: "1 1"
+      has_bias: true
+      has_vectors: true
+    }
+  }
+
+  layer {
+    name: "bn_conv3_new"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+      global_stats: true
+    }
+  }
+
+  layer {
+    name: "relu3_new"
+    data_layout: "data_parallel"
+    relu {}
+  }
+
+  layer {
+    name: "conv4_head0"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels:  384
+      conv_dims: "3 3"
+      conv_pads: "1 1"
+      conv_strides: "1 1"
+      has_bias: true
+      has_vectors: true
+    }
+  }
+
+  layer {
+    name: "bn_conv4_new"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+      global_stats: true
+    }
+  }
+
+  layer {
+    name: "relu4_new"
+    data_layout: "data_parallel"
+    relu {}
+  }
+
+  layer {
+    name: "conv5_head0"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels:  256
+      conv_dims: "3 3"
+      conv_pads: "1 1"
+      conv_strides: "1 1"
+      has_bias: true
+      has_vectors: true
+    }
+  }
+
+  layer {
+    name: "bn_conv5_new"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+      global_stats: true
+    }
+  }
+
+  layer {
+    name: "relu5_new"
+    data_layout: "data_parallel"
+    relu {}
+  }
+
+  layer {
+    name: "pool5_new"
+    data_layout: "data_parallel"
+    pooling {
+      num_dims: 2
+      pool_dims: "3 3"
+      pool_pads: "0 0"
+      pool_strides: "2 2"
+      pool_mode: "max"
+      has_vectors: true
+    }
+  }
+
+  ######################################
+  # Start of redefined layers
+  ######################################
+
+  layer {
+    name: "conv6_new"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels:  4096
+      conv_dims: "3 3"
+      conv_pads: "1 1"
+      conv_strides: "1 1"
+      has_bias: true
+      has_vectors: true
+    }
+  }
+
+  layer {
+    name: "bn_conv6_new"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+      global_stats: true
+    }
+  }
+
+  layer {
+    name: "relu6_new"
+    data_layout: "data_parallel"
+    relu {}
+  }
+
+  layer {
+    name: "conv6b_new"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels:  1024
+      conv_dims: "1 1"
+      conv_pads: "1 1"
+      conv_strides: "1 1"
+      has_bias: true
+      has_vectors: true
+    }
+  }
+
+  layer {
+    name: "bn_conv6b_new"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+      global_stats: true
+    }
+  }
+
+  layer {
+    name: "relu6b_new"
+    data_layout: "data_parallel"
+    relu {}
+  }
+
+  layer {
+    name: "pool6_new"
+    data_layout: "data_parallel"
+    pooling {
+      num_dims: 2
+      pool_dims: "3 3"
+      pool_pads: "0 0"
+      pool_strides: "2 2"
+      pool_mode: "max"
+      has_vectors: true
+    }
+  }
+
+  ######################################
+  # End of redefined layers
+  ######################################
+
+  layer {
+    name: "fc7_new"
+    data_layout: "data_parallel"
+    fully_connected {
+      num_neurons: 4096
+      has_bias: true
+    }
+  }
+
+  layer {
+    name: "bn_fc7_new"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+      global_stats: true
+    }
+  }
+
+  layer {
+    name: "relu7_new"
+    data_layout: "data_parallel"
+    relu {}
+  }
+
+  layer {
+    name: "drop7_new"
+    data_layout: "data_parallel"
+    dropout {
+      keep_prob: 0.9
+    }
+  }
+
+  layer {
+    name: "fc8_new"
+    data_layout: "data_parallel"
+    fully_connected {
+      num_neurons: 200
+      has_bias: false
+    }
+  }
+
+  layer {
+    name: "prob_new"
+    data_layout: "data_parallel"
+    softmax {}
+  }
+
+  layer {
+    name: "target_new"
+    data_layout: "data_parallel"
+    target {
+      io_buffer: "partitioned"
+      shared_data_reader: true
+    }
+  }
+
+}

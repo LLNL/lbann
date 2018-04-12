@@ -59,8 +59,11 @@ class geom_negloglike : public loss_function {
    *  This function updates the objective function value with the mean
    *  value of the mean squared error across the mini-batch.
    */
-  EvalType evaluate_compute(const AbsDistMat& prediction,
-                            const AbsDistMat& ground_truth) override;
+  void start_evaluate_compute(const AbsDistMat& prediction,
+                              const AbsDistMat& ground_truth) override {}
+
+  EvalType finish_evaluate_compute(const AbsDistMat& prediction,
+                                   const AbsDistMat& ground_truth) override;
 
   /** Compute the gradient of the Geometric negative log-likelihood objective function.
    *  Given a prediction \f$y\f$ and ground truth \f$\hat{y}\f$, the

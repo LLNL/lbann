@@ -32,7 +32,7 @@
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include <vector>
-#include <ostream>
+#include <unordered_set>
 
 namespace lbann {
 
@@ -48,7 +48,7 @@ class generic_data_store {
  public:
 
   //! ctor
-  generic_data_store(lbann_comm *comm, generic_data_reader *reader, model *m); 
+  generic_data_store(generic_data_reader *reader, model *m); 
 
   //! copy ctor
   generic_data_store(const generic_data_store&) = default;
@@ -61,72 +61,113 @@ class generic_data_store {
 
   virtual generic_data_store * copy() const = 0;
 
-  //! returns a pointer to the data reader; may not be necessary
-  generic_data_reader * get_data_reader() {
-    return m_reader;
-  }
-
+  /// called by generic_data_reader::setup_data_store
   virtual void setup();
 
-  virtual void exchange_data() {}
+  /// called by generic_data_reader::update
+  void set_shuffled_indices(const std::vector<int> *indices);
 
-  /// for use during development and testing
-  virtual void test_data() {}
+  /// called by various image data readers 
+  virtual void get_data_buf(int data_id, std::vector<unsigned char> *&buf, int multi_idx = 0) {}
+  virtual void get_data_buf(int data_id, int tid, std::vector<double> *&buf) {}
 
-  void set_shuffled_indices(const std::vector<int> *indices) {
-    m_shuffled_indices = indices;
-    ++m_epoch;
-    if (m_epoch > 1) {
-      exchange_data();
-    }
-    //m_cur_idx = 0;
+  virtual void get_data_buf_DataType(int data_id, std::vector<DataType> *&buf) {}
+
+  const std::string & get_name() const {
+    return m_name;
   }
 
-  virtual void get_data_buf(std::string dir, std::string filename, std::vector<unsigned char> *&buf, int tid) = 0;
+  void set_name(std::string name) {
+    m_name = name;
+  }
 
-  virtual void get_data_buf(int data_id, std::vector<unsigned char> *&buf, int tid) = 0; 
+protected :
 
-  /// for use during development and debugging
-  void print_indices(std::ostream &out);
+  generic_data_reader *m_reader;
 
-  /// for use during development and debugging
-  virtual void test_file_sizes() = 0;
+  lbann_comm *m_comm;
 
- protected :
+  std::string m_name;
+
+  /// returns the number of bytes in dir/fn; it's OK if dir = ""
+  size_t get_file_size(std::string dir, std::string fn);
 
   /// number of indices that m_reader owns (in a global sense);
   /// equal to m_shuffled_indices->size()
   size_t m_num_global_indices;
 
-  /// the indices that will be used locally
-  std::vector<size_t> m_my_minibatch_indices;
+  void set_num_global_indices() {
+    m_num_global_indices = m_shuffled_indices->size();
+  }
 
-  /// the indices that this processor owns
-  std::vector<size_t> m_my_datastore_indices;
+  /// the indices that will be used locally; the inner j-th vector
+  /// contains indices referenced during the j-th call to
+  /// generic_data_reader::fetch_data(...)
+  const std::vector<std::vector<int> > *m_my_minibatch_indices;
+  /// contains a concatenation of the indices in m_my_minibatch_indices
+  std::vector<int> m_my_minibatch_indices_v;
+  /// fills in m_my_minibatch_indices_v
+  void get_minibatch_index_vector();
 
-  /// fills in m_my_datastore_indices
+  /// m_mb_counts[j] contains the number of indices
+  /// passed to data_reader::fetch_data in one epoch
+  std::vector<int> m_mb_counts;
+  /// fills in m_mb_counts
+  void exchange_mb_counts();
+
+  /// m_all_minibatch_indices[j] will contain all indices that
+  /// will be passed to data_reader::fetch_data in one epoch,
+  /// for all processors
+  std::vector<std::vector<int>> m_all_minibatch_indices;
+  /// fills in m_all_minibatch_indices
+  void  exchange_mb_indices();
+
+  /// m_num_samples[j] contains the number of samples 
+  /// (datastore indices) that are owned by P_j
+  std::vector<int> m_num_samples;
+
+  /// the indices that this processor owns;
+  std::unordered_set<int> m_my_datastore_indices;
+  /// fills in m_my_datastore_indices and m_num_samples
   void get_my_datastore_indices();
 
   size_t m_num_readers;
 
-  size_t m_rank;
+  /// this processor's rank
+  int  m_rank;
+
+  /// number of procs in the model
+  int  m_np;
 
   size_t m_epoch;
 
   bool m_in_memory;
 
-  lbann_comm *m_comm;
   bool m_master;
-  generic_data_reader *m_reader;
 
   const std::vector<int> *m_shuffled_indices;
 
-  std::vector<std::vector<unsigned char> > m_buffers;
-
-  /// maps global indices (wrt shuffled_indices) to owning processor
-  std::unordered_map<size_t, size_t> m_owner_mapping;
-
   model *m_model;
+
+  /// base directory for data
+  std::string m_dir;
+
+  /// conduct extensive testing
+  bool m_extended_testing;
+
+  bool m_collect_minibatch_indices;
+
+  virtual void exchange_data() = 0;
+
+  /// returns the processor that owns the data associated
+  /// with the index
+  int get_index_owner(int idx) {
+    return idx % m_np;
+  }
+
+  virtual void extended_testing() {}
+
+  MPI_Comm m_mpi_comm;
 };
 
 }  // namespace lbann

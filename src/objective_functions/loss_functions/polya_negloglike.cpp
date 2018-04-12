@@ -126,8 +126,8 @@ void polya_negloglike::setup(model& m) {
 
 }
 
-EvalType polya_negloglike::evaluate_compute(const AbsDistMat& predictions,
-                                            const AbsDistMat& ground_truth) {
+EvalType polya_negloglike::finish_evaluate_compute(
+  const AbsDistMat& predictions, const AbsDistMat& ground_truth) {
 
   // Initialize workspace
   m_counts->Resize(1, predictions.Width());

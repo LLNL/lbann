@@ -1,0 +1,469 @@
+model {
+  name: "siamese_model"
+  siamese {
+    num_heads: 3
+  }
+  data_layout: "data_parallel"
+  mini_batch_size: 128
+  block_size: 256
+  num_epochs: 20
+  num_parallel_readers: 0
+  procs_per_model: 0
+  num_gpus: -1
+
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    cross_entropy {}
+    l2_weight_regularization {
+      scale_factor: 0.0005
+    }
+  }
+
+  ###################################################
+  # Metrics
+  ###################################################
+
+  metric { categorical_accuracy {} }
+  metric {
+    top_k_categorical_accuracy {
+       top_k: 2
+    }
+  }
+
+  ###################################################
+  # Callbacks
+  ###################################################
+  callback {
+    imcomm {
+      intermodel_comm_method: "normal"
+      all_optimizers: true
+    }
+  }
+  callback { print {} }
+  callback { timer {} }
+  callback {
+    poly_learning_rate {
+      power: 0.5
+    }
+  }
+
+  ###################################################
+  # start of layers
+  ###################################################
+
+  layer {
+    name: "data"
+    children: "slice"
+    data_layout: "data_parallel"
+    input {
+      io_buffer: "partitioned"
+    }
+  }
+
+  layer {
+    parents: "data"
+    name: "slice"
+    children: "conv1"
+    data_layout: "data_parallel"
+    slice {
+      slice_axis: 0
+      slice_points: "0 3 6 9"
+    }
+  }
+
+  layer {
+    parents: "slice"
+    name: "conv1"
+    children: "bn_conv1"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 96
+      conv_dims: "11 11"
+      conv_pads: "0 0"
+      conv_strides: "4 4"
+      has_bias: true
+      has_vectors: true
+    }
+  }
+
+  layer {
+    parents: "conv1"
+    name: "bn_conv1"
+    children: "relu1"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+      global_stats: true
+    }
+  }
+
+  layer {
+    parents: "bn_conv1"
+    name: "relu1"
+    children: "pool1"
+    data_layout: "data_parallel"
+    relu {}
+  }
+
+  layer {
+    parents: "relu1"
+    name: "pool1"
+    children: "conv2"
+    data_layout: "data_parallel"
+    pooling {
+      num_dims: 2
+      pool_dims: "3 3"
+      pool_pads: "0 0"
+      pool_strides: "2 2"
+      pool_mode: "max"
+      has_vectors: true
+    }
+  }
+
+  layer {
+    parents: "pool1"
+    name: "conv2"
+    children: "bn_conv2"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims: "5 5"
+      conv_pads: "2 2"
+      conv_strides: "1 1"
+      has_bias: true
+      has_vectors: true
+    }
+  }
+
+  layer {
+    parents: "conv2"
+    name: "bn_conv2"
+    children: "relu2"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+      global_stats: true
+    }
+  }
+
+  layer {
+    parents: "bn_conv2"
+    name: "relu2"
+    children: "pool2"
+    data_layout: "data_parallel"
+    relu {}
+  }
+
+  layer {
+    parents: "relu2"
+    name: "pool2"
+    children: "conv3"
+    data_layout: "data_parallel"
+    pooling {
+      num_dims: 2
+      pool_dims: "3 3"
+      pool_pads: "0 0"
+      pool_strides: "2 2"
+      pool_mode: "max"
+      has_vectors: true
+    }
+  }
+
+  layer {
+    parents: "pool2"
+    name: "conv3"
+    children: "bn_conv3"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels:  384
+      conv_dims: "3 3"
+      conv_pads: "1 1"
+      conv_strides: "1 1"
+      has_bias: true
+      has_vectors: true
+    }
+  }
+
+  layer {
+    parents: "conv3"
+    name: "bn_conv3"
+    children: "relu3"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+      global_stats: true
+    }
+  }
+
+  layer {
+    parents: "bn_conv3"
+    name: "relu3"
+    children: "conv4"
+    data_layout: "data_parallel"
+    relu {}
+  }
+
+  layer {
+    parents: "relu3"
+    name: "conv4"
+    children: "bn_conv4"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels:  384
+      conv_dims: "3 3"
+      conv_pads: "1 1"
+      conv_strides: "1 1"
+      has_bias: true
+      has_vectors: true
+    }
+  }
+
+  layer {
+    parents: "conv4"
+    name: "bn_conv4"
+    children: "relu4"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+      global_stats: true
+    }
+  }
+
+  layer {
+    parents: "bn_conv4"
+    name: "relu4"
+    children: "conv5"
+    data_layout: "data_parallel"
+    relu {}
+  }
+
+  layer {
+    parents: "relu4"
+    name: "conv5"
+    children: "bn_conv5"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels:  256
+      conv_dims: "3 3"
+      conv_pads: "1 1"
+      conv_strides: "1 1"
+      has_bias: true
+      has_vectors: true
+    }
+  }
+
+  layer {
+    parents: "conv5"
+    name: "bn_conv5"
+    children: "relu5"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+      global_stats: true
+    }
+  }
+
+  layer {
+    parents: "bn_conv5"
+    name: "relu5"
+    children: "pool3"
+    data_layout: "data_parallel"
+    relu {}
+  }
+
+  layer {
+    parents: "relu5"
+    name: "pool3"
+    children: "fc6"
+    data_layout: "data_parallel"
+    pooling {
+      num_dims: 2
+      pool_dims: "3 3"
+      pool_pads: "0 0"
+      pool_strides: "2 2"
+      pool_mode: "max"
+      has_vectors: true
+    }
+  }
+
+  layer {
+    parents: "pool3"
+    name: "fc6"
+    children: "bn_fc6"
+    data_layout: "data_parallel"
+    fully_connected {
+      num_neurons: 4096
+      has_bias: true
+    }
+  }
+
+  layer {
+    parents: "fc6"
+    name: "bn_fc6"
+    children: "relu6"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+      global_stats: true
+    }
+  }
+
+  layer {
+    parents: "bn_fc6"
+    name: "relu6"
+    children: "drop6"
+    data_layout: "data_parallel"
+    relu {}
+  }
+
+  layer {
+    parents: "relu6"
+    name: "drop6"
+    children: "concatenation"
+    data_layout: "data_parallel"
+    dropout {
+      keep_prob: 0.9
+    }
+  }
+
+  layer {
+    parents: "drop6"
+    name: "concatenation"
+    children: "fc7"
+    data_layout: "data_parallel"
+    concatenation {}
+  }
+
+  layer {
+    parents: "concatenation"
+    name: "fc7"
+    children: "bn_fc7"
+    data_layout: "data_parallel"
+    fully_connected {
+      num_neurons: 4096
+      has_bias: true
+    }
+  }
+
+  layer {
+    parents: "fc7"
+    name: "bn_fc7"
+    children: "relu7"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+      global_stats: true
+    }
+  }
+
+  layer {
+    parents: "bn_fc7"
+    name: "relu7"
+    children: "drop7"
+    data_layout: "data_parallel"
+    relu {}
+  }
+
+  layer {
+    parents: "relu7"
+    name: "drop7"
+    children: "fc8"
+    data_layout: "data_parallel"
+    dropout {
+      keep_prob: 0.9
+    }
+  }
+
+  layer {
+    parents: "drop7"
+    name: "fc8"
+    children: "bn_fc8"
+    data_layout: "data_parallel"
+    fully_connected {
+      num_neurons: 4096
+      has_bias: true
+    }
+  }
+
+  layer {
+    parents: "fc8"
+    name: "bn_fc8"
+    children: "relu8"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+      global_stats: true
+    }
+  }
+
+  layer {
+    parents: "bn_fc8"
+    name: "relu8"
+    children: "fc9"
+    data_layout: "data_parallel"
+    relu {}
+  }
+
+  layer {
+    parents: "relu8"
+    name: "fc9"
+    children: "prob"
+    data_layout: "data_parallel"
+    fully_connected {
+      num_neurons: 20
+      has_bias: false
+    }
+  }
+
+  layer {
+    parents: "fc9"
+    name: "prob"
+    children: "target"
+    data_layout: "data_parallel"
+    softmax {}
+  }
+
+  layer {
+    parents: "prob"
+    name: "target"
+    children: ""
+    data_layout: "data_parallel"
+    target {
+      io_buffer: "partitioned"
+      shared_data_reader: true
+    }
+  }
+
+}

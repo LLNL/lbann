@@ -4,7 +4,7 @@ data_reader {
     role: "train"
     shuffle: true
     data_filedir: "/p/lscratche/brainusr/datasets/ILSVRC2012/patches_84h_110x110_13x13-blur-ab_compact/"
-    data_filename: "train.txt"
+    data_filename: "/p/lscratche/brainusr/datasets/ILSVRC2012/birds_and_cars/patches_84h_110x110_13x13-blur-ab_compact/train_list_8h_birds.txt"
     label_filename: ""
     validation_percent: 0.1
     absolute_sample_count: 0
@@ -16,18 +16,26 @@ data_reader {
       raw_width: 110
       raw_height: 110
 
+      subtractor {
+        disable: true
+        image_to_sub: "mean_uniform-110x110x3-6.bin"
+      }
+
+      cropper {
+        disable: false
+        crop_width: 96
+        crop_height: 96
+        crop_randomly: false
+        resized_width: 96
+        resized_height: 96
+      }
+
       colorizer {
         disable: true
       }
 
       augmenter {
         disable: true
-        horizontal_flip: false
-        vertical_flip: false
-        rotation: 0
-        horizontal_shift: 0
-        vertical_shift: 0
-        shear_range: 0
       }
 
       normalizer {
@@ -45,7 +53,7 @@ data_reader {
     role: "test"
     shuffle: true
     data_filedir: "/p/lscratche/brainusr/datasets/ILSVRC2012/patches_84h_110x110_13x13-blur-ab_compact/"
-    data_filename: "val.txt"
+    data_filename: "/p/lscratche/brainusr/datasets/ILSVRC2012/birds_and_cars/patches_84h_110x110_13x13-blur-ab_compact/val_list_8h.txt"
     label_filename: ""
     validation_percent: 1.0
     absolute_sample_count: 0
@@ -57,18 +65,26 @@ data_reader {
       raw_width: 110
       raw_height: 110
 
+      subtractor {
+        disable: true
+        image_to_sub: "mean_uniform-110x110x3-6.bin"
+      }
+
+      cropper {
+        disable: false
+        crop_width: 96
+        crop_height: 96
+        crop_randomly: false
+        resized_width: 96
+        resized_height: 96
+      }
+
       colorizer {
         disable: true
       }
 
       augmenter {
         disable: true
-        horizontal_flip: false
-        vertical_flip: false
-        rotation: 0
-        horizontal_shift: 0
-        vertical_shift: 0
-        shear_range: 0
       }
 
       normalizer {

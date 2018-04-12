@@ -30,6 +30,7 @@
 #include "lbann/base.hpp"
 
 #ifdef LBANN_HAS_CUDA
+#include <cuda_runtime.h>
 #include <cublas_v2.h>
 
 // Error checking macro
@@ -62,6 +63,19 @@ void axpy(cublasHandle_t const& handle,
           DataType alpha,
           DataType const* x, int incx,
           DataType * y, int incy);
+void dot(cublasHandle_t const& handle,
+         int n,
+         DataType const* x, int incx,
+         DataType const* y, int incy,
+         DataType * result);
+DataType dot(cublasHandle_t const& handle,
+             int n,
+             DataType const* x, int incx,
+             DataType const* y, int incy);
+void nrm2(cublasHandle_t const& handle,
+          int n,
+          DataType const* x, int incx,
+          DataType * result);
 DataType nrm2(cublasHandle_t const& handle,
               int n,
               DataType const* x, int incx);

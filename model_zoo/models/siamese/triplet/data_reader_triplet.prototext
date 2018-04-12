@@ -15,18 +15,26 @@ data_reader {
       raw_width: 110
       raw_height: 110
 
+      subtractor {
+        disable: true
+        image_to_sub: "mean_uniform-110x110x3-6.bin"
+      }
+
+      cropper {
+        disable: false
+        crop_width: 96
+        crop_height: 96
+        crop_randomly: false
+        resized_width: 96
+        resized_height: 96
+      }
+
       colorizer {
         disable: true
       }
 
       augmenter {
         disable: true
-        horizontal_flip: false
-        vertical_flip: false
-        rotation: 0
-        horizontal_shift: 0
-        vertical_shift: 0
-        shear_range: 0
       }
 
       normalizer {
@@ -55,18 +63,26 @@ data_reader {
       raw_width: 110
       raw_height: 110
 
+      subtractor {
+        disable: true
+        image_to_sub: "mean_uniform-110x110x3-6.bin"
+      }
+
+      cropper {
+        disable: false
+        crop_width: 96
+        crop_height: 96
+        crop_randomly: false
+        resized_width: 96
+        resized_height: 96
+      }
+
       colorizer {
         disable: true
       }
 
       augmenter {
         disable: true
-        horizontal_flip: false
-        vertical_flip: false
-        rotation: 0
-        horizontal_shift: 0
-        vertical_shift: 0
-        shear_range: 0
       }
 
       normalizer {

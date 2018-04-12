@@ -169,6 +169,7 @@ class model {
   inline void set_effective_mini_batch_size(int mini_batch_size) {
     m_effective_mini_batch_size = mini_batch_size;
   }
+  int get_num_iterations_per_epoch(execution_mode mode) const;
 
   /** Get the current phase (multiple epochs) in layer-wise model training. */
   inline int get_current_phase() const {
@@ -287,6 +288,13 @@ class model {
   virtual void remap_pointers(const std::unordered_map<Layer *,Layer *>& layer_map,
                               const std::unordered_map<weights *,weights *>& weights_map);
 
+  /** In case that a layer is frozen, also freeze layers that precede it if that
+   *  makes senses for the particular model, such as sequential or siamese.
+   *  For othe models, users can manually control the behaivor by indicating
+   *  whether to freeze each layer in the model description prototext.
+   */
+  virtual void freeze_layers_under_frozen_surface();
+
   /** Set up topology of layer graph.
    *  Called in setup function. All layers in connected component of
    *  layer graph are added to the model and all parent/child
@@ -296,7 +304,7 @@ class model {
   /** Set up layer execution order.
    *  Called in setup function.
    */
-  virtual void setup_layer_execution_order() {}
+  virtual void setup_layer_execution_order();
   /** Set up layers.
    *  Called in setup function.
    */
@@ -380,6 +388,21 @@ class model {
   virtual void do_weight_optimize_begin_cbs(weights *w);
   /** Execute callbacks at the end of weight optimization. */
   virtual void do_weight_optimize_end_cbs(weights *w);
+
+ private:
+  /** Search layer graph and add all connected layers. */
+  void add_connected_layers();
+  /** Insert dummy layers after layers with too few children.
+   *  If a layer expects more child layers than it has, add dummy
+   *  layers until it has enough children.
+   */
+  void add_dummy_layers();
+  /** Insert split layers after layers with too many children.
+   *  If a layer expects one child layer but has multiple, add a split
+   *  layer. The split layer will be the original layer's child and
+   *  the split layer's children will be the original children.
+   */
+  void add_split_layers();
 
 };
 

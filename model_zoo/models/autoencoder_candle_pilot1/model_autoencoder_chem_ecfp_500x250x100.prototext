@@ -6,10 +6,9 @@ model {
   data_layout: "model_parallel"
   mini_batch_size: 1024
   block_size: 256
-  num_epochs: 4
+  num_epochs:20 
   num_parallel_readers: 1
   procs_per_model: 0
-  use_cudnn: true
   num_gpus: -1
 
   ###################################################
@@ -82,12 +81,12 @@ model {
   }
 
   ######
-  # RELU relu1
+  # SELU selu1
   ######
   layer {
-    name: "relu1"
+    name: "selu1"
     data_layout: "model_parallel"
-    relu {
+    selu {
     }
   }
 
@@ -105,12 +104,12 @@ model {
   }
 
   #######
-  # RELU relu2
+  # SELU selu2
   #######
   layer {
-    name: "relu2"
+    name: "selu2"
     data_layout: "model_parallel"
-    relu {
+    selu {
     }
   }
 
@@ -128,12 +127,12 @@ model {
   }
 
   #######
-  # RELU relu3
+  # SELU selu3
   #######
   layer {
-    name: "relu3"
+    name: "selu3"
     data_layout: "model_parallel"
-    relu {
+    selu {
     }
   }
 
@@ -152,12 +151,12 @@ model {
   }
 
   #######
-  # RELU relu8
+  # SELU selu8
   #######
   layer {
-    name: "relu8"
+    name: "selu8"
     data_layout: "model_parallel"
-    relu {
+    selu {
     }
   }
 
@@ -175,12 +174,12 @@ model {
   }
 
   #######
-  # RELU relu9
+  # SELU selu9
   #######
   layer {
-    name: "relu9"
+    name: "selu9"
     data_layout: "model_parallel"
-    relu {
+    selu {
     }
   }
 
@@ -198,12 +197,13 @@ model {
   }
 
   #######
-  # RELU relu10 
+  # SELU selu10 
   #######
   layer {
-    name: "relu10"
+    name: "selu10"
     data_layout: "model_parallel"
-    relu {
+    #selu {
+    sigmoid {
     }
   }
 

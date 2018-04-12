@@ -62,7 +62,6 @@ model {
     }
   }
   data_layout: "data_parallel"
-  use_cudnn: true
   layer {
     input_partitioned_minibatch {
     }

@@ -35,7 +35,8 @@ namespace lbann {
 weights::weights(lbann_comm* comm,
                  cudnn::cudnn_manager* cudnn)
   : m_comm(comm),
-    m_cudnn(cudnn) {
+    m_cudnn(cudnn),
+    m_frozen(false) {
 
   // Initialize weights name
   static int num_weights = 0;
@@ -55,7 +56,8 @@ weights::weights(const weights& other)
     m_matrix_width_dims(other.m_matrix_width_dims),
     m_values(other.m_values),
     m_initializer(other.m_initializer),
-    m_optimizer(other.m_optimizer) {
+    m_optimizer(other.m_optimizer),
+    m_frozen(other.m_frozen) {
 
   // Create deep copy of pointers
   if (m_values != nullptr)      { m_values = m_values->Copy(); }
@@ -103,6 +105,8 @@ weights& weights::operator=(const weights& other) {
                                get_matrix_width());
   }
   #endif // LBANN_HAS_CUDNN
+
+  m_frozen = other.m_frozen;
 
   return *this;
 }
@@ -213,15 +217,13 @@ void weights::setup_gpu() {
         << "before initializing CPU weights matrix";
     throw lbann_exception(err.str());
   }
+
+  // Disable GPU if weights matrix is not STAR,STAR
+  /// @todo GPU support for other data layouts
   const El::DistData dist_data(*m_values);
   if (dist_data.colDist != El::STAR || dist_data.rowDist != El::STAR) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to setup weights as a matrix with "
-        << "col_dist=" << dist_data.colDist << ", "
-        << "row_dist=" << dist_data.rowDist << ", "
-        << "but weights matrix with GPU support must have STAR,STAR format";
-    throw lbann_exception(err.str());
+    m_cudnn = nullptr;
+    return;
   }
 
   // Copy weights matrix to GPU
@@ -279,6 +281,7 @@ const AbsDistMat& weights::get_values() {
   // Copy weights matrix from GPU if needed
   if (m_cudnn != nullptr) {
     m_cudnn->copy_from_gpu(0, m_values->Matrix(), m_values_d[0]);
+    m_cudnn->synchronize();
   }
   #endif // LBANN_HAS_CUDNN
 
@@ -301,7 +304,8 @@ void weights::set_values(const AbsDistMat& values) {
   #ifdef LBANN_HAS_CUDNN
   // Copy weights matrix to GPU if needed
   if (m_cudnn != nullptr) {
-    m_cudnn->broadcast_to_gpus(m_values_d, m_values->Matrix());
+    m_cudnn->broadcast_to_gpus(m_values_d, m_values->LockedMatrix());
+    m_cudnn->synchronize();
   }
   #endif // LBANN_HAS_CUDNN
 
@@ -465,7 +469,7 @@ bool weights::save_to_checkpoint_shared(lbann::persist& p)
   return true;
 }
 
-void weights::write_proto(lbann_data::Weights* proto) const {
+void weights::write_proto(lbann_data::WeightsData* proto) const {
 
   // Set proto properties
   proto->Clear();

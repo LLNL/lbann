@@ -90,6 +90,15 @@ class data_reader_multi_images : public imagenet_reader {
     return m_image_list.at(idx);
   }
 
+  /// The number of image sources or the number of siamese heads. e.g., 2;
+  /// this method is added to support data_store functionality
+  unsigned int get_num_img_srcs() const {
+    return m_num_img_srcs;
+  }
+
+  /// sets up a data_store.
+  void setup_data_store(model *m) override;
+
  protected:
   void set_defaults() override;
   virtual std::vector<::Mat> create_datum_views(::Mat& X, const int mb_idx) const;

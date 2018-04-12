@@ -79,12 +79,13 @@ void lbann_callback_check_dataset::on_epoch_end(model *m) {
   std::cout << "Training [" << comm->get_rank_in_model() <<
     "] : I have processed " << training_set.size() << " elements" << std::endl;
 
-  const std::vector<Layer *>& layers = m->get_layers();
-  auto *input = (generic_input_layer *) dynamic_cast<generic_input_layer *> (layers[0]);
-  if (!input) {
-    throw lbann_exception(
-      "lbann_callback_check_dataset: could not get input layer");
+  // Get first input layer in model
+  generic_input_layer* input = nullptr;
+  for (auto&& l : m->get_layers()) {
+    input = dynamic_cast<generic_input_layer*>(l);
+    if (input != nullptr) { break; }
   }
+  if (input == nullptr) { LBANN_ERROR("could not get input layer"); }
 
   int num_samples = training_set.size();
   std::vector<int> vec_num_samples(comm->get_procs_per_model());

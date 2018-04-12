@@ -29,7 +29,7 @@
 
 #include "lbann/data_readers/data_reader_multi_images.hpp"
 #include "lbann/data_readers/image_utils.hpp"
-#include "lbann/data_store/data_store_imagenet.hpp"
+#include "lbann/data_store/data_store_multi_images.hpp"
 #include "lbann/utils/file_utils.hpp"
 #include <fstream>
 #include <sstream>
@@ -109,7 +109,7 @@ bool data_reader_multi_images::fetch_datum(Mat& X, int data_id, int mb_idx, int 
     bool ret = true;
     if (m_data_store != nullptr) {
       std::vector<unsigned char> *image_buf;
-      m_data_store->get_data_buf(data_id, image_buf, tid);
+      m_data_store->get_data_buf(data_id, image_buf, i);
       ret = lbann::image_utils::load_image(*image_buf, width, height, img_type, *(m_pps[tid]), X_v[i]);
     } else {
       ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v[i]);
@@ -212,6 +212,16 @@ void data_reader_multi_images::load() {
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
 
   select_subset_of_data();
+}
+
+void data_reader_multi_images::setup_data_store(model *m) {
+  if (m_data_store != nullptr) {
+    delete m_data_store;
+  }
+  m_data_store = new data_store_multi_images(this, m);
+  if (m_data_store != nullptr) {
+    m_data_store->setup();
+  }
 }
 
 }  // namespace lbann

@@ -58,8 +58,9 @@ class pilot2_molecular_reader : public generic_data_reader {
     return m_num_features * (m_num_neighbors + 1);
   }
   const std::vector<int> get_data_dims() const override {
-    return {m_num_neighbors + 1, (int) m_features.shape[2],
-        (int) m_features.shape[3]};
+    return m_shape;
+    //return {m_num_neighbors + 1, (int) m_features.shape[2],
+    //    (int) m_features.shape[3]};
   }
 
   /// Data format is:
@@ -80,16 +81,65 @@ class pilot2_molecular_reader : public generic_data_reader {
     return scaled_datum;
   }
 
+  /// support for data_store_pilot2_molecular
+  float * get_features_4() {
+    return m_features.data<float>();
+  }
+  double * get_features_8() {
+    return m_features.data<double>();
+  }
+  float * get_neighbors_4() {
+    return m_neighbors.data<float>();
+  }
+  double * get_neighbors_8() {
+    return m_neighbors.data<double>();
+  }
+
+
+  /// support for data_store_pilot2_molecular
+  int get_word_size() const {
+    return m_word_size;
+  }
+
+  /// support for data_store_pilot2_molecular
+  int get_num_neighbors() const {
+    return m_num_neighbors;
+  }
+
+  /// Return the frame data_id is in.
+  /// (made public to support data_store_pilot2_molecular)
+  int get_frame(int data_id) const {
+    return data_id / m_num_samples_per_frame;
+  }
+
+  /// support for data_store_pilot2_molecular
+  int get_num_samples_per_frame() const {
+    return m_num_samples_per_frame;
+  }
+
+  /// support for data_store_pilot2_molecular
+  int get_max_neighborhood() const {
+    return m_max_neighborhood;
+  }
+
+  /// support for data_store_pilot2_molecular
+  int get_num_features() const {
+    return m_num_features;
+  }  
+
+  /// support for data_store_pilot2_molecular
+  int get_neighbors_data_size() {
+    return m_neighbors_data_size;
+  }
+
+  /// sets up a data_store.
+  void setup_data_store(model *m) override;
+
  protected:
   /// Fetch a molecule and its neighbors.
   bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
   /// Fetch molecule data_id into X at molecule offset idx.
   void fetch_molecule(Mat& X, int data_id, int idx, int mb_idx);
-
-  /// Return the frame data_id is in.
-  int get_frame(int data_id) const {
-    return data_id / m_num_samples_per_frame;
-  }
 
   /// Number of samples.
   int m_num_samples = 0;
@@ -108,6 +158,16 @@ class pilot2_molecular_reader : public generic_data_reader {
 
   DataType position_scale_factor = 320.0;
   DataType bond_len_scale_factor = 10.0;
+
+  /// support for data_store_pilot2_molecular
+  std::vector<int> m_shape;
+
+  /// support for data_store_pilot2_molecular
+  int m_word_size;
+  /// support for data_store_pilot2_molecular
+  int m_owner;
+  /// support for data_store_pilot2_molecular
+  int m_neighbors_data_size;
 };
 
 }  // namespace lbann

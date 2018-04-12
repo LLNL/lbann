@@ -55,6 +55,7 @@
 #include "lbann/layers/activations/softplus.hpp"
 #include "lbann/layers/activations/swish.hpp"
 #include "lbann/layers/activations/tanh.hpp"
+#include "lbann/layers/activations/power.hpp"
 
 /// Learning Layers
 #include "lbann/layers/learning/fully_connected.hpp"
@@ -71,9 +72,13 @@
 #include "lbann/layers/transform/concatenation.hpp"
 #include "lbann/layers/transform/constant.hpp"
 #include "lbann/layers/transform/dummy.hpp"
-#include "lbann/layers/transform/noise.hpp"
 #include "lbann/layers/transform/safe_inv.hpp"
 #include "lbann/layers/transform/hadamard.hpp"
+#include "lbann/layers/transform/reduction.hpp"
+#include "lbann/layers/transform/evaluation.hpp"
+#include "lbann/layers/transform/gaussian.hpp"
+#include "lbann/layers/transform/bernoulli.hpp"
+#include "lbann/layers/transform/uniform.hpp"
 
 /// Regularization layers.
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
@@ -107,11 +112,12 @@
 #include "lbann/data_readers/data_reader_merge_features.hpp"
 #include "lbann/data_readers/data_reader_ascii.hpp"
 #include "lbann/data_readers/data_reader_pilot2_molecular.hpp"
+#include "lbann/data_readers/data_reader_mesh.hpp"
 
 /// Data Store
 #include "lbann/data_store/generic_data_store.hpp"
 #include "lbann/data_store/data_store_imagenet.hpp"
-#include "lbann/data_store/data_store_merge_samples.hpp"
+//#include "lbann/data_store/data_store_merge_samples.hpp"
 
 /// Callbacks
 #include "lbann/callbacks/callback_check_init.hpp"
@@ -169,6 +175,7 @@
 #include "lbann/objective_functions/weight_regularization/l2.hpp"
 #include "lbann/objective_functions/weight_regularization/group_lasso.hpp"
 #include "lbann/objective_functions/kl_divergence.hpp"
+#include "lbann/objective_functions/layer_term.hpp"
 
 /// Metrics
 #include "lbann/metrics/categorical_accuracy.hpp"
@@ -176,6 +183,10 @@
 #include "lbann/metrics/mean_squared_error.hpp"
 #include "lbann/metrics/mean_absolute_deviation.hpp"
 #include "lbann/metrics/pearson_correlation.hpp"
+#include "lbann/metrics/r2.hpp"
+#include "lbann/metrics/boolean_accuracy.hpp"
+#include "lbann/metrics/boolean_false_positives.hpp"
+#include "lbann/metrics/boolean_false_negatives.hpp"
 
 /// Utilities, exceptions, etc.
 #include "lbann/utils/exception.hpp"

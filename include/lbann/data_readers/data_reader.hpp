@@ -84,7 +84,9 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_shuffle(shuffle), m_absolute_sample_count(0), m_validation_percent(0.0),
     m_use_percent(1.0),
     m_master(false),
-    m_save_minibatch_indices(false)
+    m_save_minibatch_indices(false),
+    m_compound_rank(0),
+    m_num_global_indices(0)
   {}
   generic_data_reader(const generic_data_reader&) = default;
   generic_data_reader& operator=(const generic_data_reader&) = default;
@@ -95,6 +97,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// set the comm object
   void set_comm(lbann_comm *comm) {
     m_comm = comm;
+    set_master(comm->am_world_master());
   }
 
   /// returns a (possibly nullptr) to comm
@@ -189,24 +192,11 @@ class generic_data_reader : public lbann_image_preprocessor {
   void set_absolute_sample_count(size_t s);
 
   /**
-   * Return the absolute number of data samples that will be used for training
-   * or testing.
-   */
-  size_t get_absolute_sample_count() const;
-
-  /**
    * Set the percentage of the data set to use for training and validation or
    * testing.
    * @param s The percentage used, in the range [0, 1].
    */
   void set_use_percent(double s);
-
-  /**
-   * Returns the percent of the dataset to be used for training or testing.
-   * If training, this is the total for training and validation. Throws if
-   * set_use_percent was not called.
-   */
-  double get_use_percent() const;
 
   /**
    * Sets the percentage of the dataset to be used for validation.
@@ -215,33 +205,11 @@ class generic_data_reader : public lbann_image_preprocessor {
   virtual void set_validation_percent(double s);
 
   /**
-   * Return the percent of the dataset to be used for validation.
-   */
-  double get_validation_percent() const;
-
-  /**
    * Set an idenifier for the dataset.
    * The role should be one of "train", "test", or "validate".
    */
   virtual void set_role(std::string role) {
     m_role = role;
-  }
-
-  /**
-   * Switch the role of the data set, and swap the used percentage
-   * with the heldout percentage.
-   * Typically this changes from "train" to "validate".
-   */
-  virtual void swap_role(std::string role) {
-    m_role = role;
-    if(m_validation_percent == -1) {
-      throw lbann_exception(
-        std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-        " :: generic_data_reader: data reader is swapping roles but has an invalid (-1) holdout percentage");
-    }
-    double old_use_percent = m_use_percent;
-    m_use_percent = m_validation_percent;
-    m_validation_percent = old_use_percent;
   }
 
   /**
@@ -793,27 +761,67 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_world_master_mini_batch_adjustment = (int) header.world_master_mini_batch_adjustment;
   }
   
-  /// returns the data store, which may be a nullptr
-  generic_data_store * get_data_store() {
+  /// returns the data store
+  generic_data_store * get_data_store() const {
+    if (m_data_store == nullptr) {
+      std::stringstream err;
+      err << __FILE__  << " :: " << __LINE__ << " :: "
+          << " m_data_store is nullptr";
+    }
     return m_data_store;
   }
 
-  /// sets up a data_store. @todo: must modify this method
-  /// anytime you derive a class from generic_data_store
-  void setup_data_store(model *m, lbann_comm *comm);
+  /// sets up a data_store.
+  virtual void setup_data_store(model *m);
 
   /** This call changes the functionality of fetch_data(); when set,
     * indices are added to m_my_minibatch_indices, but fetch_datum()
     * is not called. This method is added to support data store functionality.
     */
-  void set_save_minibatch_entries(bool b) {
-      m_save_minibatch_indices = b;
-  }
+  void set_save_minibatch_entries(bool b);
 
+  /// support of data store functionality
   const std::vector<std::vector<int> > & get_minibatch_indices() const {
     return m_my_minibatch_indices;
   }
 
+  /// support of data store functionality
+  int get_compound_rank() {
+    return m_compound_rank;
+  }
+
+  /// support of data store functionality
+  void set_compound_rank(int r) {
+    m_compound_rank = r;
+  }
+
+ protected:
+
+  /**
+   * Return the absolute number of data samples that will be used for training
+   * or testing.
+   */
+  size_t get_absolute_sample_count() const;
+
+  /**
+   * Returns the percent of the dataset to be used for training or testing.
+   * If training, this is the total for training and validation. Throws if
+   * set_use_percent was not called.
+   */
+  double get_use_percent() const;
+
+  /**
+   * Return the percent of the dataset to be used for validation.
+   */
+  double get_validation_percent() const;
+
+  /**
+   * Returns the number of global indices. For train and validation,
+   * this is the sum of their numbers
+   */
+  size_t get_num_global_indices() {
+    return m_num_global_indices;
+  }
  protected:
 
    int m_rank;
@@ -923,13 +931,18 @@ class generic_data_reader : public lbann_image_preprocessor {
   friend class data_reader_merge_features;
   friend class data_reader_merge_samples;
 
- private :
+ protected :
    /// added to support data store functionality
    bool m_save_minibatch_indices;
 
    /// added to support data store functionality
    std::vector<std::vector<int> > m_my_minibatch_indices;
 
+   /// added to support data store functionality
+   int m_compound_rank;
+
+   /// added to support data store functionality
+   size_t m_num_global_indices;
 };
 
 }  // namespace lbann

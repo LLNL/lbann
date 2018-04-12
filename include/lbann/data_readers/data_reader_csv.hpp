@@ -31,6 +31,7 @@
 
 #include "data_reader.hpp"
 #include "image_preprocessor.hpp"
+#include <unordered_map>
 
 namespace lbann {
 
@@ -120,6 +121,17 @@ class csv_reader : public generic_data_reader {
     return {get_linearized_data_size()};
   }
 
+  /**
+   * Return the parsed CSV line and store the label and response in the m_labels
+   * and m_responses vectors, respectively. The label and response are not
+   * present in the vector.
+   * (Made public to support data store functionality)
+   */
+  std::vector<DataType> fetch_line_label_response(int data_id);
+
+  /// sets up a data_store.
+  void setup_data_store(model *m) override;
+
  protected:
   /**
    * Fetch the data associated with data_id.
@@ -131,24 +143,21 @@ class csv_reader : public generic_data_reader {
   /// Fetch the response associated with data_id.
   bool fetch_response(Mat& Y, int data_id, int mb_idx, int tid) override;
 
-  /** Return a raw line from the CSV file. */
-  std::string fetch_raw_line(int data_id);
   /**
    * Return the parsed CSV line. This does not extract the label/response.
    */
   std::vector<DataType> fetch_line(int data_id);
-  /**
-   * Return the parsed CSV line and store the label and response in the m_labels
-   * and m_responses vectors, respectively. The label and response are not
-   * present in the vector.
-   */
-  std::vector<DataType> fetch_line_label_response(int data_id);
 
   /// Skip rows in an ifstream.
   void skip_rows(std::ifstream& s, int rows);
 
   /// Initialize the ifstreams vector.
   void setup_ifstreams();
+
+  /** Return a raw line from the CSV file. 
+   *  (Made public to support data store functionality)
+   */
+  std::string fetch_raw_line(int data_id);
 
   /// String value that separates data.
   char m_separator = ',';

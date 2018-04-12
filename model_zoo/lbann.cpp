@@ -43,8 +43,6 @@ int main(int argc, char *argv[]) {
   lbann_comm *comm = initialize(argc, argv, random_seed);
   bool master = comm->am_world_master();
 
-
-
   if (master) {
     std::cout << "\n\n==============================================================\n"
               << "STARTING lbann with this command line:\n";
@@ -67,6 +65,8 @@ int main(int argc, char *argv[]) {
       finalize(comm);
       return 0;
     }
+
+
 
     //this must be called after call to opts->init();
     //must also specify "--catch-signals" on cmd line
@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
     // Check for cudnn, with user feedback
     cudnn::cudnn_manager *cudnn = nullptr;
 #ifdef LBANN_HAS_CUDNN
-    if (pb_model->use_cudnn()) {
+    if (! pb_model->disable_cuda()) {
       if (master) {
         std::cerr << "code was compiled with LBANN_HAS_CUDNN, and we are using cudnn\n";
       }
@@ -188,19 +188,17 @@ int main(int argc, char *argv[]) {
     // Initialize data readers
     //@todo: code not in place for correctly handling image preprocessing
     std::map<execution_mode, generic_data_reader *> data_readers;
-    init_data_readers(master, pb, data_readers);
-
-    // Construct optimizer
-    optimizer *default_optimizer = init_default_optimizer(comm, cudnn, pb);
+    init_data_readers(comm, pb, data_readers);
 
     // User feedback
     print_parameters(comm, pb);
 
     // Initalize model
-    // @todo: not all callbacks code is in place
-    model *model = init_model(comm, default_optimizer, pb);
-    add_layers(model, data_readers, cudnn, pb);
-    init_callbacks(comm, model, data_readers, pb);
+    auto&& model = proto::construct_model(comm,
+                                          cudnn,
+                                          data_readers,
+                                          pb.optimizer(),
+                                          pb.model());
     model->setup();
 
     //under development; experimental
@@ -209,9 +207,7 @@ int main(int argc, char *argv[]) {
         std::cerr << "\nUSING DATA STORE!\n\n";
       }  
       for (auto r : data_readers) {
-        if (r.second->get_role() == "train") {
-          r.second->setup_data_store(model, comm);
-        }  
+        r.second->setup_data_store(model);
       }  
     }  
 
@@ -220,12 +216,6 @@ int main(int argc, char *argv[]) {
 
     if (comm->am_world_master()) {
       std::cout << std::endl;
-      if (default_optimizer != nullptr) {
-        std::cout << "Default optimizer: " << default_optimizer->get_description();
-      } else {
-        std::cout << "No optimizer";
-      }
-      std::cout << std::endl << std::endl;
       std::cout << "Callbacks:" << std::endl;
       for (lbann_callback *cb : model->get_callbacks()) {
         std::cout << cb->name() << std::endl;
@@ -237,7 +227,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    if (!opts->has_string("exit_after_setup")) {
+    if (! (opts->has_bool("exit_after_setup") && opts->get_bool("exit_after_setup"))) {
 
 #ifndef LBANN_SEQUENTIAL_CONSISTENCY
       // Under normal conditions, reinitialize the random number generator so
@@ -284,7 +274,6 @@ int main(int argc, char *argv[]) {
   } catch (std::exception& e) {
     El::ReportException(e);  // Elemental exceptions
   }
-
 
   // free all resources by El and MPI
   finalize(comm);
