@@ -48,6 +48,134 @@ model {
   }
 
   ###################################################
+  # start of weights
+  ###################################################
+
+  weights {
+    name: "conv6_new_kernel"
+    normal_initializer {
+      mean: 0.0
+      standard_deviation: 0.01
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.01
+        momentum: 0.9
+        decay_rate: 0.0002
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "conv6_new_bias"
+    constant_initializer {
+      value: 0.1
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.02
+        momentum: 0.9
+        decay_rate: 0
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "conv6b_new_kernel"
+    normal_initializer {
+      mean: 0.0
+      standard_deviation: 0.01
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.01
+        momentum: 0.9
+        decay_rate: 0.0002
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "conv6b_new_bias"
+    constant_initializer {
+      value: 0.1
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.02
+        momentum: 0.9
+        decay_rate: 0
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "fc7_new_linearity"
+    normal_initializer {
+      mean: 0.0
+      standard_deviation: 0.005
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.01
+        momentum: 0.9
+        decay_rate: 0.0002
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "fc7_new_bias"
+    constant_initializer {
+      value: 0.1
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.02
+        momentum: 0.9
+        decay_rate: 0
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "fc8_new_linearity"
+    normal_initializer {
+      mean: 0.0
+      standard_deviation: 0.01
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.01
+        momentum: 0.9
+        decay_rate: 0.0002
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "fc8_new_bias"
+    constant_initializer {
+      value: 0.0
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.02
+        momentum: 0.9
+        decay_rate: 0
+        nesterov: false
+      }
+    }
+  }
+
+  ###################################################
   # start of replicate layers
   ###################################################
 
@@ -258,8 +386,11 @@ model {
     }
   }
 
+  ###################################################
+  # end of replicate layers
+  ###################################################
   ######################################
-  # Start of redefined layers
+  # Start of Doersch Layer 6
   ######################################
 
   layer {
@@ -273,6 +404,12 @@ model {
       conv_strides: "1 1"
       has_bias: true
       has_vectors: true
+    }
+    weights_data {
+      name: "conv6_new_kernel"
+    }
+    weights_data {
+      name: "conv6_new_bias"
     }
   }
 
@@ -305,6 +442,12 @@ model {
       conv_strides: "1 1"
       has_bias: true
       has_vectors: true
+    }
+    weights_data {
+      name: "conv6b_new_kernel"
+    }
+    weights_data {
+      name: "conv6b_new_bias"
     }
   }
 
@@ -340,7 +483,7 @@ model {
   }
 
   ######################################
-  # End of redefined layers
+  # End of Doersch Layer 6
   ######################################
 
   layer {
@@ -349,6 +492,12 @@ model {
     fully_connected {
       num_neurons: 4096
       has_bias: true
+    }
+    weights_data {
+      name: "fc7_new_kernel"
+    }
+    weights_data {
+      name: "fc7_new_bias"
     }
   }
 
@@ -384,6 +533,12 @@ model {
     fully_connected {
       num_neurons: 200
       has_bias: false
+    }
+    weights_data {
+      name: "fc8_new_kernel"
+    }
+    weights_data {
+      name: "fc8_new_bias"
     }
   }
 

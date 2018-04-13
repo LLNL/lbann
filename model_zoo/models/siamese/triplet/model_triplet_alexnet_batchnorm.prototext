@@ -49,7 +49,298 @@ model {
       power: 0.5
     }
   }
+#  callback {
+#    checkpoint {
+#      checkpoint_dir: "pretrain"
+#      checkpoint_epochs: 1
+##      checkpoint_steps: 5000
+#    }
+#  }
 
+  ###################################################
+  # start of weights
+  ###################################################
+  # In general it is not necessary to explicitly describe weights whether they are shared or not.
+  # Here, we do so to apply a specific initialization method for each weight.
+
+  weights {
+    name: "conv1_kernel"
+    normal_initializer {
+      mean: 0.0
+      standard_deviation: 0.01
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.007
+        momentum: 0.9
+        decay_rate: 0.0002
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "conv1_bias"
+    constant_initializer {
+      value: 0.0
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.02
+        momentum: 0.9
+        decay_rate: 0
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "conv2_kernel"
+    normal_initializer {
+      mean: 0.0
+      standard_deviation: 0.01
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.008
+        momentum: 0.9
+        decay_rate: 0.0002
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "conv2_bias"
+    constant_initializer {
+      value: 0.1
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.02
+        momentum: 0.9
+        decay_rate: 0
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "conv3_kernel"
+    normal_initializer {
+      mean: 0.0
+      standard_deviation: 0.01
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.009
+        momentum: 0.9
+        decay_rate: 0.0002
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "conv3_bias"
+    constant_initializer {
+      value: 0.0
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.02
+        momentum: 0.9
+        decay_rate: 0
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "conv4_kernel"
+    normal_initializer {
+      mean: 0.0
+      standard_deviation: 0.01
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.01
+        momentum: 0.9
+        decay_rate: 0.0002
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "conv4_bias"
+    constant_initializer {
+      value: 0.1
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.02
+        momentum: 0.9
+        decay_rate: 0
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "conv5_kernel"
+    normal_initializer {
+      mean: 0.0
+      standard_deviation: 0.01
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.009
+        momentum: 0.9
+        decay_rate: 0.0002
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "conv5_bias"
+    constant_initializer {
+      value: 0.1
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.02
+        momentum: 0.9
+        decay_rate: 0
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "fc6_linearity"
+    normal_initializer {
+      mean: 0.0
+      standard_deviation: 0.005
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.008
+        momentum: 0.9
+        decay_rate: 0.0002
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "fc6_bias"
+    constant_initializer {
+      value: 0.1
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.02
+        momentum: 0.9
+        decay_rate: 0
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "fc7_linearity"
+    normal_initializer {
+      mean: 0.0
+      standard_deviation: 0.01
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.007
+        momentum: 0.9
+        decay_rate: 0.0002
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "fc7_bias"
+    constant_initializer {
+      value: 0.0
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.02
+        momentum: 0.9
+        decay_rate: 0
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "fc8_linearity"
+    normal_initializer {
+      mean: 0.0
+      standard_deviation: 0.01
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.006
+        momentum: 0.9
+        decay_rate: 0.0002
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "fc8_bias"
+    constant_initializer {
+      value: 0.0
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.02
+        momentum: 0.9
+        decay_rate: 0
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "fc9_linearity"
+    normal_initializer {
+      mean: 0.0
+      standard_deviation: 0.01
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.005
+        momentum: 0.9
+        decay_rate: 0.0002
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "fc9_bias"
+    constant_initializer {
+      value: 0.0
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.02
+        momentum: 0.9
+        decay_rate: 0
+        nesterov: false
+      }
+    }
+  }
   ###################################################
   # start of layers
   ###################################################
@@ -87,6 +378,12 @@ model {
       conv_strides: "4 4"
       has_bias: true
       has_vectors: true
+    }
+    weights_data {
+      name: "conv1_kernel"
+    }
+    weights_data {
+      name: "conv1_bias"
     }
   }
 
@@ -141,6 +438,12 @@ model {
       has_bias: true
       has_vectors: true
     }
+    weights_data {
+      name: "conv2_kernel"
+    }
+    weights_data {
+      name: "conv2_bias"
+    }
   }
 
   layer {
@@ -194,6 +497,12 @@ model {
       has_bias: true
       has_vectors: true
     }
+    weights_data {
+      name: "conv3_kernel"
+    }
+    weights_data {
+      name: "conv3_bias"
+    }
   }
 
   layer {
@@ -232,6 +541,12 @@ model {
       has_bias: true
       has_vectors: true
     }
+    weights_data {
+      name: "conv4_kernel"
+    }
+    weights_data {
+      name: "conv4_bias"
+    }
   }
 
   layer {
@@ -269,6 +584,12 @@ model {
       conv_strides: "1 1"
       has_bias: true
       has_vectors: true
+    }
+    weights_data {
+      name: "conv5_kernel"
+    }
+    weights_data {
+      name: "conv5_bias"
     }
   }
 
@@ -318,6 +639,12 @@ model {
       num_neurons: 4096
       has_bias: true
     }
+    weights_data {
+      name: "fc6_linearity"
+    }
+    weights_data {
+      name: "fc6_bias"
+    }
   }
 
   layer {
@@ -337,23 +664,13 @@ model {
   layer {
     parents: "bn_fc6"
     name: "relu6"
-    children: "drop6"
+    children: "concatenation"
     data_layout: "data_parallel"
     relu {}
   }
 
   layer {
     parents: "relu6"
-    name: "drop6"
-    children: "concatenation"
-    data_layout: "data_parallel"
-    dropout {
-      keep_prob: 0.9
-    }
-  }
-
-  layer {
-    parents: "drop6"
     name: "concatenation"
     children: "fc7"
     data_layout: "data_parallel"
@@ -368,6 +685,12 @@ model {
     fully_connected {
       num_neurons: 4096
       has_bias: true
+    }
+    weights_data {
+      name: "fc7_linearity"
+    }
+    weights_data {
+      name: "fc7_bias"
     }
   }
 
@@ -388,29 +711,25 @@ model {
   layer {
     parents: "bn_fc7"
     name: "relu7"
-    children: "drop7"
+    children: "fc8"
     data_layout: "data_parallel"
     relu {}
   }
 
   layer {
     parents: "relu7"
-    name: "drop7"
-    children: "fc8"
-    data_layout: "data_parallel"
-    dropout {
-      keep_prob: 0.9
-    }
-  }
-
-  layer {
-    parents: "drop7"
     name: "fc8"
     children: "bn_fc8"
     data_layout: "data_parallel"
     fully_connected {
       num_neurons: 4096
       has_bias: true
+    }
+    weights_data {
+      name: "fc8_linearity"
+    }
+    weights_data {
+      name: "fc8_bias"
     }
   }
 
@@ -445,6 +764,11 @@ model {
       num_neurons: 20
       has_bias: false
     }
+    weights_data {
+      name: "fc9_linearity"
+    }
+    weights_data {
+      name: "fc9_bias"
   }
 
   layer {
