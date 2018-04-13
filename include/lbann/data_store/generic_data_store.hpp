@@ -91,7 +91,7 @@ class generic_data_store {
     m_is_subsidiary_store = true;
   }
 
-  bool is_subsidiary_store() {
+  bool is_subsidiary_store() const {
     return m_is_subsidiary_store;
   }
 
@@ -110,7 +110,7 @@ class generic_data_store {
     return m_my_minibatch_indices_v;
   }
 
-  void set_minibatch_indices_v(const std::vector<int > indices) {
+  void set_minibatch_indices_v(const std::vector<int > &indices) {
     m_my_minibatch_indices_v = indices;
   }
 
