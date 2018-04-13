@@ -1,12 +1,3 @@
-optimizer {
-  sgd {
-    learn_rate: 0.01
-    momentum: 0.9
-    decay_rate: 0.0002
-    nesterov: false
-  }
-}
-
 model {
   name: "siamese_model"
   siamese {
