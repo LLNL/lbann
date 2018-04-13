@@ -886,6 +886,7 @@ void cudnn_manager::set_maximum_work_space_size(int i) {
             FORCE_CHECK_CUDA(status);
         } else {
             work_space = nullptr;
+            work_space_size = free_memory * decay_factor;
         }
     }
 }
