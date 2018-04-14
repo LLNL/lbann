@@ -380,12 +380,7 @@ model {
       has_bias: true
       has_vectors: true
     }
-    weights_data {
-      name: "conv1_kernel"
-    }
-    weights_data {
-      name: "conv1_bias"
-    }
+    weights: "conv1_kernel conv1_bias"
   }
 
   layer {
@@ -438,12 +433,7 @@ model {
       has_bias: true
       has_vectors: true
     }
-    weights_data {
-      name: "conv2_kernel"
-    }
-    weights_data {
-      name: "conv2_bias"
-    }
+    weights: "conv2_kernel conv2_bias"
   }
 
   layer {
@@ -496,12 +486,7 @@ model {
       has_bias: true
       has_vectors: true
     }
-    weights_data {
-      name: "conv3_kernel"
-    }
-    weights_data {
-      name: "conv3_bias"
-    }
+    weights: "conv3_kernel conv3_bias"
   }
 
   layer {
@@ -526,12 +511,7 @@ model {
       has_bias: true
       has_vectors: true
     }
-    weights_data {
-      name: "conv4_kernel"
-    }
-    weights_data {
-      name: "conv4_bias"
-    }
+    weights: "conv4_kernel conv4_bias"
   }
 
   layer {
@@ -556,12 +536,7 @@ model {
       has_bias: true
       has_vectors: true
     }
-    weights_data {
-      name: "conv5_kernel"
-    }
-    weights_data {
-      name: "conv5_bias"
-    }
+    weights: "conv5_kernel conv5_bias"
   }
 
   layer {
@@ -596,12 +571,7 @@ model {
       num_neurons: 4096
       has_bias: true
     }
-    weights_data {
-      name: "fc6_linearity"
-    }
-    weights_data {
-      name: "fc6_bias"
-    }
+    weights: "fc6_linearity fc6_bias"
   }
 
   layer {
@@ -639,12 +609,7 @@ model {
       num_neurons: 4096
       has_bias: true
     }
-    weights_data {
-      name: "fc7_linearity"
-    }
-    weights_data {
-      name: "fc7_bias"
-    }
+    weights: "fc7_linearity fc7_bias"
   }
 
   layer {
@@ -674,12 +639,7 @@ model {
       num_neurons: 4096
       has_bias: true
     }
-    weights_data {
-      name: "fc8_linearity"
-    }
-    weights_data {
-      name: "fc8_bias"
-    }
+    weights: "fc8_linearity fc8_bias"
   }
 
   layer {
@@ -699,12 +659,7 @@ model {
       num_neurons: 20
       has_bias: false
     }
-    weights_data {
-      name: "fc9_linearity"
-    }
-    weights_data {
-      name: "fc9_bias"
-    }
+    weights: "fc9_linearity fc9_bias"
   }
 
   layer {
