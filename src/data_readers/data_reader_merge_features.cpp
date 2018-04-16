@@ -68,7 +68,6 @@ void data_reader_merge_features::load() {
     reader->set_comm(m_comm);
     reader->load();
     m_data_size += reader->get_linearized_data_size();
-    if (is_master()) std::cerr << "data_reader_merge_features::load(); time to set up subsidiary reader: " << get_time() - tm1 << "\n";
     if (is_master()) {
       std::cerr << "time to set up subsidiary reader: " << get_time() - tm1 << "\n";
     }  
