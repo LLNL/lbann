@@ -498,7 +498,7 @@ model {
       num_neurons: 4096
       has_bias: true
     }
-    weights: "fc6_new_kernel fc6_new_bias"
+    weights: "fc6_new_linearity fc6_new_bias"
   }
 
   layer {
@@ -522,7 +522,7 @@ model {
       num_neurons: 4096
       has_bias: true
     }
-    weights: "fc7_new_kernel fc7_new_bias"
+    weights: "fc7_new_linearity fc7_new_bias"
   }
 
   layer {
@@ -548,7 +548,7 @@ model {
       num_neurons: 200
       has_bias: false
     }
-    weights: "fc8_new_kernel fc8_new_bias"
+    weights: "fc8_new_linearity fc8_new_bias"
   }
 
   layer {
