@@ -113,20 +113,13 @@ void data_store_csv::setup() {
 }
 
 void data_store_csv::get_data_buf_DataType(int data_id, std::vector<DataType> *&buf) {
-static int success = 0;
-  std::stringstream err;
   if (m_my_minibatch_data.find(data_id) == m_my_minibatch_data.end()) {
-  std::cerr << m_rank << " :: failed: " << data_id << "; sucess: " << success<< "\n";
+    std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
         << "failed to find data_id: " << data_id << " in m_my_minibatch_data\n"
         << "m_my_minibatch_data.size(): " << m_my_minibatch_data.size() << "\n"
-        << "role: " << m_reader->get_role() 
-        << "; successful calls to this method: " << success;
-    //throw lbann_exception(err.str());
-  }
-
-  else {
-    ++success;
+        << "role: " << m_reader->get_role() ;
+    throw lbann_exception(err.str());
   }
   buf = &m_my_minibatch_data[data_id];
 }
