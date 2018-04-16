@@ -210,7 +210,10 @@ class cudnn_manager {
    *  @param max_num_gpus  Maximum Number of available GPUs. If
    *                       negative, then use all available GPUs.
    */
-  cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus = -1, bool nccl_used = false);
+  cudnn_manager(lbann::lbann_comm *_comm,
+                size_t work_space_size = 1 << 9,
+                int max_num_gpus = -1,
+                bool nccl_used = false);
 
   /** Destructor */
   ~cudnn_manager();
@@ -259,8 +262,8 @@ class cudnn_manager {
   std::vector<size_t> get_work_space_sizes();
   /** Get ith GPU work space size (in bytes). */
   size_t get_work_space_size(int i = 0);
-  /** Set ith GPU work space to occupy all available GPU memory. */
-  void set_maximum_work_space_size(int i = 0);
+  /** Set ith GPU work space size.. */
+  void set_work_space_size(size_t size, int i = 0);
   /** Free ith GPU work space. */
   void free_work_space(int i);
   /** Free all GPU work spaces. */

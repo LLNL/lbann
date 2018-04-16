@@ -273,7 +273,10 @@ const DataType* matrix::get_locked_data(int i) const {
 }
 
 /// It is assumed the number of processes and the number of GPUs on a compute node are equal
-cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus, bool nccl_used)
+cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm,
+                             size_t work_space_size,
+                             int max_num_gpus,
+                             bool nccl_used)
     : comm(_comm) {
 
     // Indicate whether NCCL is used
@@ -367,6 +370,9 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus, bool nc
     // Initialize work spaces
     m_work_spaces = std::vector<void *>(m_num_gpus, nullptr);
     m_work_space_sizes = std::vector<size_t>(m_num_gpus, 0);
+    for (int i = 0; i < m_num_gpus; ++i) {
+      set_work_space_size(work_space_size);
+    }
 
     /// Setting up for NCCL collective calls
     /// NOTE: For whoever makes changes in this file, please make sure following if statement comes last.
@@ -861,37 +867,13 @@ size_t cudnn_manager::get_work_space_size(int i) {
     throw lbann_exception("cudnn_wrapper: tried to access invalid work space size");
   }
   m_work_space_sizes.resize(m_num_gpus, 0);
-  if(m_work_space_sizes[i] <= 0) {
-    set_maximum_work_space_size(i);
-  }
   return m_work_space_sizes[i];
 }
 
-void cudnn_manager::set_maximum_work_space_size(int i) {
-    CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-
-    // Search parameters for work space size
-    const double decay_factor = 0.8;
-    size_t free_memory, total_memory;
-    CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-    CHECK_CUDA(cudaMemGetInfo(&free_memory, &total_memory));
-
-    // Clear work space
-    free_work_space(i);
-
-    // Try allocating work spaces until we find a valid size
-    auto& work_space = m_work_spaces[i];
-    auto& work_space_size = m_work_space_sizes[i];
-    work_space = nullptr;
-    work_space_size = free_memory * decay_factor;
-    while(work_space_size > 0 && work_space == nullptr) {
-        const cudaError_t status = cudaMalloc(&work_space, work_space_size);
-        if(status != cudaErrorMemoryAllocation) {
-            FORCE_CHECK_CUDA(status);
-        } else {
-            work_space = nullptr;
-        }
-    }
+void cudnn_manager::set_work_space_size(size_t size, int i) {
+  free_work_space(i);
+  CHECK_CUDA(cudaSetDevice(m_gpus[i]));
+  FORCE_CHECK_CUDA(cudaMalloc(&m_work_spaces[i], size));
 }
 
 void cudnn_manager::free_work_space(int i) {
