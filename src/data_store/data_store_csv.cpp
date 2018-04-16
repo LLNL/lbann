@@ -70,7 +70,7 @@ void data_store_csv::setup() {
     }
     m_csv_reader = reader;
 
-    if (m_np != reader->get_num_parallel_readers()) {
+    if (m_np != reader->get_num_parallel_readers() && ! is_subsidiary_store()) {
       err << __FILE__ << " " << __LINE__ << " :: "
           << "num_parallel_readers(): " << reader->get_num_parallel_readers() 
           << " m_np: " << m_np 
@@ -80,21 +80,25 @@ void data_store_csv::setup() {
       throw lbann_exception(err.str());
     }
 
+    if (m_master) {
+      std::cerr << "calling: reader->fetch_line_label_response(" << (*m_shuffled_indices)[0] << ");\n";
+      std::vector<DataType> v = reader->fetch_line_label_response(0);
+      m_vector_size = v.size();
+    }
+    MPI_Bcast(&m_vector_size, 1, MPI_INT, 0, m_mpi_comm);
+
+    if (is_subsidiary_store()) {
+      return;
+    }
+
     if (m_master) std::cerr << "calling get_minibatch_index_vector\n";
     get_minibatch_index_vector();
-
+    
     if (m_master) std::cerr << "calling exchange_mb_indices()\n";
     exchange_mb_indices();
 
     if (m_master) std::cerr << "calling get_my_datastore_indices\n";
     get_my_datastore_indices();
-    
-    if (m_master) {
-      std::cerr << "calling: reader->fetch_line_label_response(" << (*m_shuffled_indices)[0] << ");\n";
-      std::vector<DataType> v = reader->fetch_line_label_response((*m_shuffled_indices)[0]);
-      m_vector_size = v.size();
-    }
-    MPI_Bcast(&m_vector_size, 1, MPI_INT, 0, m_mpi_comm);
 
     if (m_master) std::cerr << "calling populate_datastore()\n";
     populate_datastore(); 
@@ -109,28 +113,14 @@ void data_store_csv::setup() {
 }
 
 void data_store_csv::get_data_buf_DataType(int data_id, std::vector<DataType> *&buf) {
-  std::stringstream err;
   if (m_my_minibatch_data.find(data_id) == m_my_minibatch_data.end()) {
+    std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
-        << "failed to find data_id: " << data_id << " in m_my_minibatch_data";
+        << "failed to find data_id: " << data_id << " in m_my_minibatch_data\n"
+        << "m_my_minibatch_data.size(): " << m_my_minibatch_data.size() << "\n"
+        << "role: " << m_reader->get_role() ;
     throw lbann_exception(err.str());
   }
-  #if 0
-  if (m_extended_testing) {
-    static bool first = true;
-    if (m_master && first) {
-      std::cerr << "\nrunning extended testing (in get_data_buf_DataType)\n\n";
-      first = false;
-    }
-    std::vector<DataType> v = m_csv_reader->fetch_line_label_response(data_id);
-    if (v != m_my_minibatch_data[idx]) {
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << " me: " << m_rank << " extended testing failed for data_id "
-          << data_id;
-      throw lbann_exception(err.str());
-    }
-  }
-  #endif
   buf = &m_my_minibatch_data[data_id];
 }
 
@@ -152,6 +142,7 @@ void data_store_csv::get_indices(std::unordered_set<int> &indices, int p) {
     indices.insert((*m_shuffled_indices)[t]);
   }
 }
+
 
 void data_store_csv::exchange_data() {
   double tm1 = get_time();
@@ -216,7 +207,7 @@ void data_store_csv::exchange_data() {
   MPI_Waitall(recv_req.size(), recv_req.data(), recv_status.data());
 
   if (m_master) {
-    std::cout << "role: " << m_reader->get_role() << " data_store_csv::exchange_data() time: " << get_time() - tm1 << std::endl;
+    std::cerr << "role: " << m_reader->get_role() << " data_store_csv::exchange_data() time: " << get_time() - tm1 << std::endl;
   }
 }
 
@@ -229,8 +220,7 @@ void data_store_csv::populate_datastore() {
           << "m_data[" << idx << "].size() is " << m_data[idx].size()
           << " but should be: " << m_vector_size
           << "; m_data.size: " << m_data.size() << "\n";
-      std::cerr << m_rank << " :: " << err.str() << "\n";
-      //throw lbann_exception(err.str());
+      throw lbann_exception(err.str());
     }
   }
 }

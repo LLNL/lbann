@@ -64,8 +64,9 @@ class generic_data_store {
   /// called by generic_data_reader::setup_data_store
   virtual void setup();
 
-  /// called by generic_data_reader::update
-  void set_shuffled_indices(const std::vector<int> *indices);
+  /// called by generic_data_reader::update;
+  /// this method call exchange_data if m_epoch > 1
+  virtual void set_shuffled_indices(const std::vector<int> *indices);
 
   /// called by various image data readers 
   virtual void get_data_buf(int data_id, std::vector<unsigned char> *&buf, int multi_idx = 0) {}
@@ -81,7 +82,58 @@ class generic_data_store {
     m_name = name;
   }
 
+  void set_is_subsidiary_store() {
+    m_is_subsidiary_store = true;
+  }
+
+  bool is_subsidiary_store() const {
+    return m_is_subsidiary_store;
+  }
+
+  const std::vector<std::vector<int> > * get_minibatch_indices() const {
+    return m_my_minibatch_indices;
+  }
+
+  void set_minibatch_indices(const std::vector<std::vector<int> > *indices) {
+    m_my_minibatch_indices = indices;
+  }
+
+  //@todo: for optimization, change m_my_minibatch_indices_v to a pointer,
+  //       and properly handle ownership and destruction; this is needed
+  //       to reduce memory requirements in, e.g, data_store_merge_features
+  const std::vector<int>  & get_minibatch_indices_v() const {
+    return m_my_minibatch_indices_v;
+  }
+
+  void set_minibatch_indices_v(const std::vector<int > &indices) {
+    m_my_minibatch_indices_v = indices;
+  }
+
+  //@todo: for optimization, change m_my_minibatch_indices_v to a pointer,
+  //       and properly handle ownership and destruction; this is needed
+  //       to reduce memory requirements in, e.g, data_store_merge_features
+  const std::unordered_set<int> & get_datastore_indices() const {
+    return m_my_datastore_indices;
+  }
+
+  void set_datastore_indices(const std::unordered_set<int> &indices) {
+    m_my_datastore_indices = indices;
+  }
+
+  const std::vector<std::vector<int>> & get_all_minibatch_indices() const {
+    return m_all_minibatch_indices;
+  }
+
+  //@todo: for optimization, change m_all_minibatch_indices to a pointer,
+  //       and properly handle ownership and destruction; this is needed
+  //       to reduce memory requirements in, e.g, data_store_merge_features
+  void set_all_minibatch_indices(const std::vector<std::vector<int>> &indices) {
+    m_all_minibatch_indices = indices;
+  }
+
 protected :
+
+  virtual void exchange_data() = 0;
 
   generic_data_reader *m_reader;
 
@@ -105,6 +157,9 @@ protected :
   /// generic_data_reader::fetch_data(...)
   const std::vector<std::vector<int> > *m_my_minibatch_indices;
   /// contains a concatenation of the indices in m_my_minibatch_indices
+  ///@todo: for optimization, this should be a pointer -- as it is now,
+  ///       in merge_features the vector must be copied to the subsidiary
+  ///       data_store_cvs
   std::vector<int> m_my_minibatch_indices_v;
   /// fills in m_my_minibatch_indices_v
   void get_minibatch_index_vector();
@@ -155,10 +210,6 @@ protected :
   /// conduct extensive testing
   bool m_extended_testing;
 
-  bool m_collect_minibatch_indices;
-
-  virtual void exchange_data() = 0;
-
   /// returns the processor that owns the data associated
   /// with the index
   int get_index_owner(int idx) {
@@ -168,6 +219,9 @@ protected :
   virtual void extended_testing() {}
 
   MPI_Comm m_mpi_comm;
+
+  /// as of now, only applicable to merge_features and merge_samples
+  bool m_is_subsidiary_store;
 };
 
 }  // namespace lbann

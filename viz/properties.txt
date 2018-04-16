@@ -55,4 +55,6 @@ transform    evaluation
 transform    gaussian
 transform    bernoulli
 transform    uniform
+transform    zero
+transform    noise
 

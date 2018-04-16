@@ -500,4 +500,11 @@ void generic_data_reader::set_save_minibatch_entries(bool b) {
   }
 }
 
+void generic_data_reader::set_data_store(generic_data_store *g) {
+    if (m_data_store != nullptr) {
+      delete m_data_store;
+    }
+    m_data_store = g;
+  }
+
 }  // namespace lbann

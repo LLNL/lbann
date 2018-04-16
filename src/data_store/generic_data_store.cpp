@@ -41,12 +41,10 @@ generic_data_store::generic_data_store(generic_data_reader *reader, model *m) :
     m_comm(m->get_comm()),
     m_epoch(0),
     m_in_memory(true),
-    m_master(m_comm->am_world_master()), 
     m_model(m),
     m_dir(m_reader->get_file_dir()),
     m_extended_testing(false),
-    m_collect_minibatch_indices(true),
-    m_mpi_comm(m_comm->get_model_comm().comm)
+    m_is_subsidiary_store(false)
 {
   if (m_comm == nullptr) {
     std::stringstream err;
@@ -54,8 +52,11 @@ generic_data_store::generic_data_store(generic_data_reader *reader, model *m) :
         << " m_reader->get_comm is nullptr";
         throw lbann_exception(err.str());
   }
+
+  m_master = m_comm->am_world_master();
   m_rank = m_comm->get_rank_in_model();
   m_np = m_comm->get_procs_per_model();
+  m_mpi_comm = m_comm->get_model_comm().comm;
   set_name("generic_data_store");
   options *opts = options::get();
   if (m_master) std::cerr << "generic_data_store::generic_data_store; np: " << m_np << "\n";
@@ -98,28 +99,30 @@ void generic_data_store::setup() {
     std::cerr << "data_reader type is: " << m_reader->get_type() << "\n";
   }
 
+  if (is_subsidiary_store()) {
+    return;
+  }
+
   // get the set of global indices used by this processor in
   // generic_data_reader::fetch_data(). Note that these are
   // "original' indices, not shuffled indices, i.e, these indices
   // remain constant through all epochs
-  if (m_collect_minibatch_indices) {
-    if (m_master) { std::cerr << "calling m_model->collect_indices\n"; }
-    m_reader->set_save_minibatch_entries(true);
-    if (m_reader->get_role() == "train") {
-      m_model->collect_indices(execution_mode::training);
-    } else if (m_reader->get_role() == "validate") {
-      m_model->collect_indices(execution_mode::validation);
-    } else if (m_reader->get_role() == "test") {
-      m_model->collect_indices(execution_mode::testing);
-    } else {
-      std::stringstream s2;
-      s2 << __FILE__ << " " << __LINE__ << " :: "
-         << " bad role; should be train, test, or validate;"
-         << " we got: " << m_reader->get_role();
-        throw lbann_exception(s2.str());
-    }
-    m_reader->set_save_minibatch_entries(false);
+  if (m_master) { std::cerr << "calling m_model->collect_indices\n"; }
+  m_reader->set_save_minibatch_entries(true);
+  if (m_reader->get_role() == "train") {
+    m_model->collect_indices(execution_mode::training);
+  } else if (m_reader->get_role() == "validate") {
+    m_model->collect_indices(execution_mode::validation);
+  } else if (m_reader->get_role() == "test") {
+    m_model->collect_indices(execution_mode::testing);
+  } else {
+    std::stringstream s2;
+    s2 << __FILE__ << " " << __LINE__ << " :: "
+       << " bad role; should be train, test, or validate;"
+       << " we got: " << m_reader->get_role();
+      throw lbann_exception(s2.str());
   }
+  m_reader->set_save_minibatch_entries(false);
   m_my_minibatch_indices = &(m_reader->get_minibatch_indices());
 }
 
@@ -199,6 +202,5 @@ void generic_data_store::exchange_mb_indices() {
     }
   }
 }
-
 
 }  // namespace lbann
