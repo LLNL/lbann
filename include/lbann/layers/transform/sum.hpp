@@ -61,7 +61,6 @@ class sum_layer : public transform_layer {
   #ifdef LBANN_HAS_CUDNN
     // Initialize GPU if available
     if(cudnn) {
-      this->m_using_gpus = true;
       this->m_cudnn = cudnn;
     }
   #endif // LBANN_HAS_CUDNN

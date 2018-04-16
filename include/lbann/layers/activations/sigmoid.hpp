@@ -83,9 +83,6 @@ class sigmoid_layer : public entrywise_activation_layer {
   #ifdef LBANN_HAS_CUDNN
     // Activate GPU if needed
     this->m_cudnn = cudnn;
-    if (this->m_cudnn) {
-      this->m_using_gpus = true;
-    }
   #endif // LBANN_HAS_CUDNN
 
   }

@@ -70,7 +70,6 @@ class local_response_normalization_layer : public regularizer_layer {
     // Initialize cuDNN objects
     m_lrn_cudnn_desc = nullptr;
     if (cudnn) {
-      this->m_using_gpus = true;
       this->m_cudnn = cudnn;
     }
   #endif // LBANN_HAS_CUDNN
@@ -141,7 +140,7 @@ class local_response_normalization_layer : public regularizer_layer {
   }
 
   void fp_compute() override {
-    if (this->m_using_gpus) {
+    if (this->using_gpus()) {
       fp_compute_cudnn();
     } else {
       fp_compute_cpu();
@@ -149,7 +148,7 @@ class local_response_normalization_layer : public regularizer_layer {
   }
 
   void bp_compute() override {
-    if (this->m_using_gpus) {
+    if (this->using_gpus()) {
       bp_compute_cudnn();
     } else {
       bp_compute_cpu();

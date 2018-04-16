@@ -85,11 +85,6 @@ class deconvolution_layer : public base_convolution_layer<Dev> {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "convolution only supports DATA_PARALLEL");
 
-    // Use GPUs if cuDNN manager is available
-    if(this->m_cudnn != nullptr) {
-      this->m_using_gpus = true;
-    }
-
   }
 
   /** Returns description of ctor params */
@@ -109,7 +104,8 @@ class deconvolution_layer : public base_convolution_layer<Dev> {
     }
     s << " num_output_channels: " << this->m_neuron_dims[0]
       << " has_bias: " << this->m_bias_scaling_factor
-      << " dataLayout: " << this->get_data_layout_string(get_data_layout());
+      << " dataLayout: " << this->get_data_layout_string(get_data_layout())
+      << " device alloc: " + this->get_device_allocation_string(get_device_allocation());
     return s.str();
   }
 
@@ -171,7 +167,7 @@ class deconvolution_layer : public base_convolution_layer<Dev> {
  protected:
 
   void fp_compute() override {
-    if(this->m_using_gpus) {
+    if(this->using_gpus()) {
       base_convolution_layer<Dev>::apply_transposed_convolution_cudnn(true);
       base_convolution_layer<Dev>::apply_bias_cudnn();
     } else {
@@ -181,7 +177,7 @@ class deconvolution_layer : public base_convolution_layer<Dev> {
   }
 
   void bp_compute() override {
-    if(this->m_using_gpus) {
+    if(this->using_gpus()) {
       base_convolution_layer<Dev>::compute_gradients_cudnn(true);
       base_convolution_layer<Dev>::apply_convolution_cudnn(false);
     } else {
