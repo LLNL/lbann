@@ -105,7 +105,6 @@ class batch_normalization : public regularizer_layer {
   #ifdef LBANN_HAS_CUDNN
     // Initialize GPU memory if using GPU
     if (cudnn != nullptr) {
-      this->m_using_gpus = true;
       this->m_cudnn = cudnn;
     }
   #endif // LBANN_HAS_CUDNN
@@ -246,12 +245,8 @@ class batch_normalization : public regularizer_layer {
 
   }
 
-  void setup_gpu() override {
-    regularizer_layer::setup_gpu();
-  }
-
   void fp_compute() override {
-    if (this->m_using_gpus) {
+    if (this->using_gpus()) {
       fp_compute_gpu();
     } else {
       fp_compute_cpu();
@@ -259,7 +254,7 @@ class batch_normalization : public regularizer_layer {
   }
 
   void bp_compute() override {
-    if (this->m_using_gpus) {
+    if (this->using_gpus()) {
       bp_compute_gpu();
     } else {
       bp_compute_cpu();

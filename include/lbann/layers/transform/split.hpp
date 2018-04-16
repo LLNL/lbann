@@ -53,7 +53,6 @@ class split_layer : public transform_layer {
   #ifdef LBANN_HAS_CUDNN
     // Initialize GPU if available
     if(cudnn) {
-      this->m_using_gpus = true;
       this->m_cudnn = cudnn;
     }
   #endif // LBANN_HAS_CUDNN
@@ -79,7 +78,7 @@ class split_layer : public transform_layer {
   protected:
 
   void fp_compute() override {
-    if(this->m_using_gpus) {
+    if(this->using_gpus()) {
   #ifndef LBANN_HAS_CUDNN
       throw lbann_exception("split_layer: cuDNN not detected");
   #endif

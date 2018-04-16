@@ -86,8 +86,7 @@ class fully_connected_layer : public learning_layer {
 
 #ifdef LBANN_HAS_CUDNN
     if (cudnn && T_layout == data_layout::DATA_PARALLEL) {
-      this->m_using_gpus = true;
-      this->m_cudnn = cudnn;
+     this->m_cudnn = cudnn;
     }
 #endif // LBANN_HAS_CUDNN
   }
@@ -225,10 +224,6 @@ class fully_connected_layer : public learning_layer {
               this->m_weights[1]->get_matrix_height(),
               this->m_weights[1]->get_matrix_width());
 
-  }
-
-  void setup_gpu() override {
-    learning_layer::setup_gpu();
   }
 
   void fp_compute() override;

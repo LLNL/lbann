@@ -83,11 +83,6 @@ class softmax_layer : public activation_layer {
       m_workspace(nullptr),
       m_min_output(std::sqrt(std::numeric_limits<DataType>::min())) {
     this->m_cudnn = cudnn;
-  #ifdef LBANN_HAS_CUDNN
-    if (this->m_cudnn && T_layout == data_layout::DATA_PARALLEL) {
-      this->m_using_gpus = true;
-    }
-  #endif // LBANN_HAS_CUDNN
   }
 
   softmax_layer(const softmax_layer& other)
@@ -100,7 +95,6 @@ class softmax_layer : public activation_layer {
 
     // Copy GPU objects
     this->m_cudnn = other.m_cudnn;
-    this->m_using_gpus = other.m_using_gpus;
 
   }
 
@@ -149,7 +143,7 @@ class softmax_layer : public activation_layer {
   }
 
   void fp_compute() override {
-    if(this->m_using_gpus) {
+    if(this->using_gpus()) {
       fp_compute_cudnn();
     } else {
       fp_compute_cpu();
@@ -157,7 +151,7 @@ class softmax_layer : public activation_layer {
   }
 
   void bp_compute() override {
-    if(this->m_using_gpus) {
+    if(this->using_gpus()) {
       bp_compute_cudnn();
     } else {
       bp_compute_cpu();

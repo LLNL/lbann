@@ -52,9 +52,6 @@ class relu_layer : public entrywise_activation_layer {
   #ifdef LBANN_HAS_CUDNN
     m_activation_cudnn_desc = nullptr;
     this->m_cudnn = cudnn;
-    if (this->m_cudnn) {
-      this->m_using_gpus = true;
-    }
   #endif // LBANN_HAS_CUDNN
   }
 

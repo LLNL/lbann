@@ -78,7 +78,7 @@ class hadamard_layer : public transform_layer {
   }
 
   void fp_compute() override {
-    if(this->m_using_gpus) {
+    if(this->using_gpus()) {
   #ifndef LBANN_HAS_CUDNN
       throw lbann_exception("hadamard_layer: cuDNN not detected");
   #else
@@ -111,7 +111,7 @@ class hadamard_layer : public transform_layer {
   }
 
   void bp_compute() override {
-    if(this->m_using_gpus) {
+    if(this->using_gpus()) {
   #ifndef LBANN_HAS_CUDNN
       throw lbann_exception("hadamard_layer: cuDNN not detected");
   #else

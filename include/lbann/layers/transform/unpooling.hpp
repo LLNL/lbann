@@ -115,7 +115,7 @@ class unpooling_layer : public transform_layer {
   protected:
 
   void fp_compute() override {
-    if(this->m_using_gpus) {
+    if(this->using_gpus()) {
       throw lbann_exception("unpooling_layer: GPU version not yet implemented");
     } else {
       fp_compute_im2col();
@@ -123,7 +123,7 @@ class unpooling_layer : public transform_layer {
   }
 
   void bp_compute() override {
-    if(this->m_using_gpus) {
+    if(this->using_gpus()) {
       throw lbann_exception("unpooling_layer: GPU version not yet implemented");
     } else {
       bp_compute_im2col();

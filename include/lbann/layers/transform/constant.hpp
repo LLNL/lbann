@@ -57,7 +57,7 @@ class constant_layer : public transform_layer {
   #ifdef LBANN_HAS_CUDNN
     // Initialize GPU memory if using GPU
     if (cudnn) {
-      this->m_using_gpus = true;
+      // this->m_using_gpus = true;
       this->m_cudnn = cudnn;
     }
   #endif // LBANN_HAS_CUDNN
@@ -95,10 +95,6 @@ class constant_layer : public transform_layer {
     if (m_value != DataType(0)) {
       El::Fill(get_activations(), m_value);
     }
-  }
-
-  void setup_gpu() override {
-    transform_layer::setup_gpu();
   }
 
   void fp_compute() override {}

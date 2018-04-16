@@ -116,7 +116,6 @@ class pooling_layer : public transform_layer {
 
     // Initialize GPU memory if using GPU
     if (cudnn) {
-      this->m_using_gpus = true;
       this->m_cudnn = cudnn;
     }
   #endif // LBANN_HAS_CUDNN
@@ -174,6 +173,8 @@ class pooling_layer : public transform_layer {
     }
     s << " pool_mode: " << get_pool_mode_name(this->m_pool_mode);
     s << " dataLayout: " << this->get_data_layout_string(get_data_layout());
+    s << " device alloc: " + this->get_device_allocation_string(get_device_allocation());
+
     return s.str();
   }
 
@@ -240,7 +241,7 @@ class pooling_layer : public transform_layer {
   protected:
 
   void fp_compute() override {
-    if(this->m_using_gpus) {
+    if(this->using_gpus()) {
       fp_compute_cudnn();
     } else {
       fp_compute_im2col();
@@ -248,7 +249,7 @@ class pooling_layer : public transform_layer {
   }
 
   void bp_compute() override {
-    if(this->m_using_gpus) {
+    if(this->using_gpus()) {
       bp_compute_cudnn();
     } else {
       bp_compute_im2col();

@@ -83,7 +83,6 @@ Layer::Layer(const Layer& other) :
   m_expected_num_parent_layers(other.m_expected_num_parent_layers),
   m_expected_num_child_layers(other.m_expected_num_child_layers),
   m_model(other.m_model),
-  m_using_gpus(other.m_using_gpus),
   m_cudnn(other.m_cudnn),
 #ifdef LBANN_HAS_CUDNN
   m_mini_batch_size_per_gpu(other.m_mini_batch_size_per_gpu),
@@ -94,7 +93,8 @@ Layer::Layer(const Layer& other) :
   m_bp_time(other.m_bp_time),
   m_bp_compute_time(other.m_bp_compute_time),
   m_update_time(other.m_update_time),
-  m_name(other.m_name) {
+  m_name(other.m_name),
+  m_using_gpus(other.m_using_gpus) {
 
   // Deep matrix copies
   m_prev_activations   = other.m_prev_activations;
@@ -240,7 +240,7 @@ void Layer::forward_prop() {
 
   #if defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
   // Synchronize GPUs and check for errors
-  if (m_using_gpus) { this->m_cudnn->check_error(); }
+  if (using_gpus()) { this->m_cudnn->check_error(); }
   #endif // defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
 
   // Apply layer's compute function
@@ -256,7 +256,7 @@ void Layer::forward_prop() {
 
   #if defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
   // Synchronize GPUs and check for errors
-  if (m_using_gpus) { this->m_cudnn->check_error(); }
+  if (using_gpus()) { this->m_cudnn->check_error(); }
   #endif // defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
 
   m_fp_time += get_time() - fp_start;
@@ -270,7 +270,7 @@ void Layer::back_prop() {
 
   #if defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
   // Synchronize GPUs and check for errors
-  if (m_using_gpus) { this->m_cudnn->check_error(); }
+  if (using_gpus()) { this->m_cudnn->check_error(); }
   #endif // defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
 
   // Backprop the compute function.
@@ -286,7 +286,7 @@ void Layer::back_prop() {
 
   #if defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
   // Synchronize GPUs and check for errors
-  if (m_using_gpus) { this->m_cudnn->check_error(); }
+  if (using_gpus()) { this->m_cudnn->check_error(); }
   #endif // defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
 
   m_bp_time += get_time() - bp_start;
@@ -461,7 +461,7 @@ void Layer::setup() {
   setup_dims();
   setup_matrices(m_comm->get_model_grid());
   setup_data();
-  if (m_using_gpus) {
+  if (using_gpus()) {
     setup_gpu();
   }
 }
@@ -524,6 +524,7 @@ void Layer::instantiate_matrices<data_layout::MODEL_PARALLEL, El::Device::CPU>(c
     m_activations.push_back(new MCMRMat<El::Device::CPU>(grid));
     m_prev_error_signals.push_back(new MCMRMat<El::Device::CPU>(grid));
   }
+//  m_using_gpus = false;
 }
 
 template <>
@@ -536,6 +537,7 @@ void Layer::instantiate_matrices<data_layout::DATA_PARALLEL, El::Device::CPU>(co
     m_activations.push_back(new StarVCMat<El::Device::CPU>(grid));
     m_prev_error_signals.push_back(new StarVCMat<El::Device::CPU>(grid));
   }
+//  m_using_gpus = false;
 }
 
 ///************************************************************************
@@ -551,6 +553,7 @@ void Layer::instantiate_matrices<data_layout::MODEL_PARALLEL, El::Device::GPU>(c
     m_activations.push_back(new MCMRMat<El::Device::GPU>(grid));
     m_prev_error_signals.push_back(new MCMRMat<El::Device::GPU>(grid));
   }
+  m_using_gpus = true;
 }
 
 template <>
@@ -563,6 +566,7 @@ void Layer::instantiate_matrices<data_layout::DATA_PARALLEL, El::Device::GPU>(co
     m_activations.push_back(new StarVCMat<El::Device::GPU>(grid));
     m_prev_error_signals.push_back(new StarVCMat<El::Device::GPU>(grid));
   }
+  m_using_gpus = true;
 }
 
 void Layer::setup_matrices(const El::Grid& grid) {
@@ -833,7 +837,7 @@ void Layer::fp_setup_data(int mini_batch_size) {
   }
 
   #ifdef LBANN_HAS_CUDNN
-  if(m_using_gpus) {
+  if(using_gpus()) {
     // Determine mini-batch size per GPU
     const int num_gpus = m_cudnn->get_num_gpus();
     const int local_mini_batch_size = (get_num_parents() > 0 ?
@@ -868,7 +872,7 @@ void Layer::fp_setup_data(int mini_batch_size) {
 
   #ifdef LBANN_HAS_CUDNN
   // Set cuDNN tensor descriptors if needed
-  if (m_using_gpus) {
+  if (using_gpus()) {
     const int input_stride = (m_prev_activations.empty() ?
                               m_num_prev_neurons :
                               get_prev_activations().LDim());
@@ -915,7 +919,7 @@ void Layer::bp_setup_data(int mini_batch_size) {
 
   #ifdef LBANN_HAS_CUDNN
   // Set cuDNN tensor descriptors if needed
-  if (m_using_gpus) {
+  if (using_gpus()) {
     // Set tensor descriptors
     const int input_stride = (m_prev_error_signals.empty() ?
                               m_num_neurons :

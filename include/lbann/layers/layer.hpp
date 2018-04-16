@@ -470,9 +470,6 @@ class Layer {
    */
   virtual bool update_compute() { return true; }
 
-  /** Whether current layer is using a GPU implementation. */
-  bool m_using_gpus;
-
   /** Reference to cuDNN manager. */
   cudnn::cudnn_manager *m_cudnn;
 
@@ -512,6 +509,9 @@ class Layer {
   std::string m_name;
 
  private:
+
+  /** Whether current layer is using a GPU implementation. */
+  bool m_using_gpus;
 
   /** Instantiate distributed matrices. */
   template <data_layout T, El::Device Dev>
