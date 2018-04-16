@@ -874,6 +874,7 @@ void cudnn_manager::set_work_space_size(size_t size, int i) {
   free_work_space(i);
   CHECK_CUDA(cudaSetDevice(m_gpus[i]));
   FORCE_CHECK_CUDA(cudaMalloc(&m_work_spaces[i], size));
+  m_work_space_sizes[i] = size;
 }
 
 void cudnn_manager::free_work_space(int i) {
