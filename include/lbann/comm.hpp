@@ -253,12 +253,16 @@ class lbann_comm {
     size_t s2;
     if (rank == root) {
       s2 = broadcast<size_t>(root, size, c);
-      //s2 = broadcast<size_t>(root, size, get_world_comm());
     } else {
       s2 = broadcast<size_t>(root, c);
       data.resize(s2);
     }
     El::mpi::Broadcast(data.data(), s2, root, c);
+    if (rank == root) {
+      bytes_sent += sizeof(T)*size;
+    } else {
+      bytes_received += sizeof(T)*size;
+    }  
   }
   /**
    * Broadcast vector<> to world;
