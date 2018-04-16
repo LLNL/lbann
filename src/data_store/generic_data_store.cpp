@@ -44,7 +44,6 @@ generic_data_store::generic_data_store(generic_data_reader *reader, model *m) :
     m_model(m),
     m_dir(m_reader->get_file_dir()),
     m_extended_testing(false),
-    m_collect_minibatch_indices(true),
     m_is_subsidiary_store(false)
 {
   if (m_comm == nullptr) {
@@ -100,28 +99,30 @@ void generic_data_store::setup() {
     std::cerr << "data_reader type is: " << m_reader->get_type() << "\n";
   }
 
+  if (is_subsidiary_store()) {
+    return;
+  }
+
   // get the set of global indices used by this processor in
   // generic_data_reader::fetch_data(). Note that these are
   // "original' indices, not shuffled indices, i.e, these indices
   // remain constant through all epochs
-  if (m_collect_minibatch_indices && ! is_subsidiary_store()) {
-    if (m_master) { std::cerr << "calling m_model->collect_indices\n"; }
-    m_reader->set_save_minibatch_entries(true);
-    if (m_reader->get_role() == "train") {
-      m_model->collect_indices(execution_mode::training);
-    } else if (m_reader->get_role() == "validate") {
-      m_model->collect_indices(execution_mode::validation);
-    } else if (m_reader->get_role() == "test") {
-      m_model->collect_indices(execution_mode::testing);
-    } else {
-      std::stringstream s2;
-      s2 << __FILE__ << " " << __LINE__ << " :: "
-         << " bad role; should be train, test, or validate;"
-         << " we got: " << m_reader->get_role();
-        throw lbann_exception(s2.str());
-    }
-    m_reader->set_save_minibatch_entries(false);
+  if (m_master) { std::cerr << "calling m_model->collect_indices\n"; }
+  m_reader->set_save_minibatch_entries(true);
+  if (m_reader->get_role() == "train") {
+    m_model->collect_indices(execution_mode::training);
+  } else if (m_reader->get_role() == "validate") {
+    m_model->collect_indices(execution_mode::validation);
+  } else if (m_reader->get_role() == "test") {
+    m_model->collect_indices(execution_mode::testing);
+  } else {
+    std::stringstream s2;
+    s2 << __FILE__ << " " << __LINE__ << " :: "
+       << " bad role; should be train, test, or validate;"
+       << " we got: " << m_reader->get_role();
+      throw lbann_exception(s2.str());
   }
+  m_reader->set_save_minibatch_entries(false);
   m_my_minibatch_indices = &(m_reader->get_minibatch_indices());
 }
 

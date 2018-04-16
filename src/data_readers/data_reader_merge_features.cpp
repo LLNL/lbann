@@ -64,11 +64,13 @@ data_reader_merge_features::~data_reader_merge_features() {
 void data_reader_merge_features::load() {
   // Load each data reader separately.
   for (auto&& reader : m_data_readers) {
-double tm1 = get_time();
+    double tm1 = get_time();
     reader->set_comm(m_comm);
     reader->load();
     m_data_size += reader->get_linearized_data_size();
-    if (is_master()) std::cerr << "data_reader_merge_features::load(); time to set up subsidiary reader: " << get_time() - tm1 << "\n";
+    if (is_master()) {
+      std::cerr << "time to set up subsidiary reader: " << get_time() - tm1 << "\n";
+    }
   }
   // Verify the readers have the same number of samples.
   int num_samples = m_data_readers[0]->get_num_data();
