@@ -66,12 +66,7 @@ class generic_data_store {
 
   /// called by generic_data_reader::update;
   /// this method call exchange_data if m_epoch > 1
-  void set_shuffled_indices(const std::vector<int> *indices);
-
-  // set shuffled indices without calling exchange_data
-  void set_shuffled_indices_special(const std::vector<int> *indices) {
-    m_shuffled_indices = indices;
-  }
+  virtual void set_shuffled_indices(const std::vector<int> *indices);
 
   /// called by various image data readers 
   virtual void get_data_buf(int data_id, std::vector<unsigned char> *&buf, int multi_idx = 0) {}
@@ -125,7 +120,7 @@ class generic_data_store {
     m_my_datastore_indices = indices;
   }
 
-  const std::vector<std::vector<int>> & get_all_minibatch_indices() {
+  const std::vector<std::vector<int>> & get_all_minibatch_indices() const {
     return m_all_minibatch_indices;
   }
 
@@ -136,9 +131,9 @@ class generic_data_store {
     m_all_minibatch_indices = indices;
   }
 
-  virtual void exchange_data() = 0;
-
 protected :
+
+  virtual void exchange_data() = 0;
 
   generic_data_reader *m_reader;
 
@@ -214,8 +209,6 @@ protected :
 
   /// conduct extensive testing
   bool m_extended_testing;
-
-  bool m_collect_minibatch_indices;
 
   /// returns the processor that owns the data associated
   /// with the index
