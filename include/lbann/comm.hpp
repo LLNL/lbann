@@ -242,6 +242,41 @@ class lbann_comm {
     bytes_sent += sizeof(T);
     return val;
   }
+  /** 
+   * Broadcast vector<> over an arbitrary communicator; 
+   * vector<> for non-root processes will be resized as needed.
+   */
+  template <typename T> 
+  void broadcast(int root, std::vector<T> &data, const El::mpi::Comm c) {
+    int rank = get_rank_in_world();
+    size_t size = data.size();
+    size_t s2;
+    if (rank == root) {
+      s2 = broadcast<size_t>(root, size, c);
+      //s2 = broadcast<size_t>(root, size, get_world_comm());
+    } else {
+      s2 = broadcast<size_t>(root, c);
+      data.resize(s2);
+    }
+    El::mpi::Broadcast(data.data(), s2, root, c);
+  }
+  /**
+   * Broadcast vector<> to world;
+   * vector<> for non-root processes will be resized as needed.
+   */
+  template <typename T> 
+  void world_broadcast(int root, std::vector<T> &data) {
+    broadcast(root, data, get_world_comm());
+  }
+  /**
+   * Broadcast vector<> within model;
+   * vector<> for non-root processes will be resized as needed.
+   */
+  template <typename T> 
+  void model_broadcast(int root, std::vector<T> &data) {
+    broadcast(root, data, get_model_comm());
+  }
+
   /** Within-model scalar gather (for non-root processes). */
   template <typename T>
   void model_gather(T snd, int root) {
