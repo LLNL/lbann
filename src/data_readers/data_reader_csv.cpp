@@ -97,18 +97,25 @@ csv_reader::~csv_reader() {
 }
 
 void csv_reader::load() {
-  int rank = m_comm->get_rank_in_world();
-  MPI_Comm world_comm = m_comm->get_world_comm().comm;
+  bool master = m_comm->am_world_master();
   setup_ifstreams();
   std::ifstream& ifs = *m_ifstreams[0];
+  const El::mpi::Comm world_comm = m_comm->get_world_comm();
   // Parse the header to determine how many columns there are.
   // Skip rows if needed.
-  if (!rank) {
+  if (master) {
     skip_rows(ifs, m_skip_rows);
-  } 
-  MPI_Bcast(&m_skip_rows, 1, MPI_INT, 0, world_comm); 
+    m_comm->broadcast<int>(0, m_skip_rows, world_comm);
+  } else {
+    m_skip_rows = m_comm->broadcast<int>(0, world_comm);
+  }
 
-  if (!rank) {
+  //This will be broadcast from root to other procs, and will
+  //then be converted to std::vector<int> m_labels; this is because
+  //El::mpi::Broadcast<std::streampos> doesn't work
+  std::vector<int> index;
+
+  if (master) {
     std::string line;
     std::streampos header_start = ifs.tellg();
     // TODO: Skip comment lines.
@@ -160,7 +167,7 @@ void csv_reader::load() {
     // TODO: Skip comment lines.
     // Used to count the number of label classes.
     std::unordered_set<int> label_classes;
-    m_index.push_back(ifs.tellg());
+    index.push_back(ifs.tellg());
     int line_num = 0;
     while (std::getline(ifs, line)) {
       ++line_num;
@@ -171,7 +178,7 @@ void csv_reader::load() {
           "csv_reader: line " + std::to_string(line_num) +
           " does not have right number of entries");
       }
-      m_index.push_back(ifs.tellg());
+      index.push_back(ifs.tellg());
       // Extract the label.
       if (!m_disable_labels) {
         size_t cur_pos = 0;
@@ -222,30 +229,33 @@ void csv_reader::load() {
       m_num_labels = label_classes.size();
     }
     ifs.clear();
-  } // if (!rank)
+  } // if (master)
 
-  MPI_Bcast(&m_num_cols, 1, MPI_INT, 0, world_comm); 
+  if (master) {
+    m_comm->broadcast<int>(0, m_num_cols, world_comm);
+  } else {
+    m_num_cols = m_comm->broadcast<int>(0, world_comm);
+  }
   m_label_col = m_num_cols - 1;
 
   //bcast the index vector
-  int index_size = m_index.size(); 
-  MPI_Bcast(&index_size, 1, MPI_INT, 0, world_comm); 
-  m_index.resize(index_size);
-  MPI_Bcast(m_index.data(), index_size*sizeof(std::streampos), MPI_BYTE, 0, world_comm); 
-  m_num_samples = index_size - 1;
+  m_comm->world_broadcast<int>(0, index);
+  m_num_samples = index.size() - 1;
+  m_index.reserve(index.size());
+  for (auto t : index) {
+    m_index.push_back(t);
+  }
 
   //optionally bcast the response vector
   if (!m_disable_responses) {
     m_response_col = m_num_cols - 1;
-    m_responses.resize(index_size - 1);
-    MPI_Bcast(m_responses.data(), (index_size - 1)*sizeof(DataType), MPI_BYTE, 0, world_comm); 
+    m_comm->world_broadcast<DataType>(0, m_responses);
   }
 
   //optionally bcast the label vector
   if (!m_disable_labels) {
-    MPI_Bcast(&m_num_labels, 1, MPI_INT, 0, world_comm); 
-    m_labels.resize(m_num_samples);
-    MPI_Bcast(m_labels.data(), m_num_samples, MPI_INT, 0, world_comm); 
+    m_comm->world_broadcast<int>(0, m_labels);
+    m_num_labels = m_labels.size();
   }
 
   // Reset indices.
