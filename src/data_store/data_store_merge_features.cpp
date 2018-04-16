@@ -41,29 +41,24 @@ data_store_merge_features::data_store_merge_features(generic_data_reader *reader
 
 
 data_store_merge_features::~data_store_merge_features() {
-  MPI_Win_free( &m_win );
 }
 
+void data_store_merge_features::exchange_data() {
+  for (auto s : m_subsidiary_stores) {
+    data_store_csv *store = dynamic_cast<data_store_csv*>(s);
+    store->set_shuffled_indices(m_shuffled_indices);
+    store->exchange_data();
+  }
+}
 
-
-#if 0
 void data_store_merge_features::setup() {
-  if (m_rank == 0) std::cerr << "STARTING data_store_merge_features::setup()\n"; 
-  //double tm1 = get_time();
+  double tm1 = get_time();
+  if (m_master) {
+    std::cerr << "starting data_store_merge_features::setup() for data reader with role: " << m_reader->get_role() << std::endl;
+  }
 
   generic_data_store::setup();
 
-/*
-  bool run_tests = false;
-  if (options::get()->has_bool("test_data_store") && options::get()->get_bool("test_data_store")) {
-    run_tests = true;
-  }
-  */
-
-  if (m_rank == 0) {
-    std::cout << "starting data_store_merge_features::setup() for data reader with role: " << m_reader->get_role() << std::endl;
-  }
-  
   if (! m_in_memory) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
@@ -81,40 +76,36 @@ void data_store_merge_features::setup() {
       throw lbann_exception(err.str());
     }
 
-
     // get list of indices used in calls to generic_data_reader::fetch_data
+    if (m_master) std::cerr << "calling get_minibatch_index_vector\n";
     get_minibatch_index_vector();
 
+    if (m_master) std::cerr << "calling get_my_datastore_indices\n";
+    get_my_datastore_indices();
+
+    if (m_master) std::cerr << "calling exchange_mb_indices()\n";
+    exchange_mb_indices();
+
     std::vector<generic_data_reader*> &readers = reader->get_data_readers();
-    for (size_t j=0; j<readers.size(); j++) {
-      readers[j]->get_data_store();
-      pilot2_molecular_reader *pilot2_reader = dynamic_cast<pilot2_molecular_reader*>(m_reader);
-      generic_data_store *store = pilot2_reader->get_data_store();
-      data_store_pilot2_molecular *s = dynamic_cast<data_store_pilot2_molecular*>(store);
-      s->clear_minibatch_indices();
-      m_subsidiary_stores.push_back(s);
-    }
-
-    for (auto t : m_subsidiary_stores) {
-      t->set_no_shuffle();
-    }
-
-    const std::vector<int> &num_samples_psum = reader->get_num_samples_psum();
-    for (auto data_id : m_my_minibatch_indices_v) {
-      for (size_t i = 0; i < m_subsidiary_stores.size(); ++i) {
-        if (data_id < num_samples_psum[i + 1]) {
-          data_id -= num_samples_psum[i];
-          m_subsidiary_stores[i]->add_minibatch_index(data_id);
-        }
-      }
+    m_subsidiary_stores.reserve(readers.size());
+    for (auto r : readers) {
+      data_store_csv *store = new data_store_csv(r, m_model);
+      m_subsidiary_stores.push_back(store);
+      r->set_data_store(store);
+      store->set_is_subsidiary_store();
+      store->set_minibatch_indices(get_minibatch_indices());
+      store->set_all_minibatch_indices(get_all_minibatch_indices());
+      store->set_minibatch_indices_v(get_minibatch_indices_v());
+      store->set_datastore_indices(get_datastore_indices());
+      store->setup();
+      store->set_shuffled_indices(m_shuffled_indices);
+      store->populate_datastore();
+      store->exchange_data();
     }
   }
+  if (m_master) {
+    std::cerr << "data_store_merge_features::setup() time: " << get_time() - tm1 << "\n";
+  }
 }
-
-void data_store_merge_features::exchange_data() {
-  //for (auto t : m_subsidiary_stores) {
-    
-}
-#endif
 
 }  // namespace lbann
