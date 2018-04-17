@@ -200,7 +200,7 @@ class lbann_comm {
   template <typename T>
   T intermodel_broadcast(int root, T val = {}) {
     El::mpi::Broadcast(&val, 1, root, intermodel_comm);
-    if (get_rank_in_model() == root) {
+    if (get_model_rank() == root) {
       bytes_sent += sizeof(T);
     } else {
       bytes_received += sizeof(T);
