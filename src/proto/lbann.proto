@@ -28,6 +28,9 @@ message Reader {
   int64 absolute_sample_count = 11;
   int64 first_n = 200;
   double percent_of_data_to_use = 12;
+  //Hack for GAN
+  bool binary_label = 201;
+  int32 fake_value = 202;
   ImagePreprocessor image_preprocessor = 13;
   int32 modeling_mode = 98; // only for jag
   int32 num_labels = 99; //for imagenet
@@ -439,7 +442,8 @@ message CallbackAdaptiveLearningRate {
 
 message CallbackSaveImages {
   string image_dir = 1;
-  string extension = 2;
+  string layer_names = 2; //layer(s) at which to save images  e.g., "input, reconstruction"
+  string extension = 3;
 }
 
 message CallbackPrint {
@@ -460,7 +464,6 @@ message CallbackSummary {
 
 message CallbackDumpWeights {
   string basename = 1;
-  int64 interval = 2;
 }
 
 message CallbackDumpActivations {
@@ -696,6 +699,7 @@ message Layer {
    Unpooling unpooling = 304;
    Hadamard hadamard = 308;
    Constant constant = 309;
+   Zero zero = 310; 
 
    // learning Layers
    FullyConnected fully_connected = 11;
@@ -886,6 +890,11 @@ message Hadamard {
 message Constant {
   double value=1;
   string num_neurons=2;
+}
+
+message Zero {
+  int64 start_index=1;
+  int64 end_index=2;
 }
 /////////////////////
 // learning Layers //
