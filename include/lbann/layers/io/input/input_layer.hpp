@@ -75,7 +75,10 @@ class input_layer : public generic_input_layer {
 
 template<>
 inline void input_layer<partitioned_io_buffer, data_layout::MODEL_PARALLEL, El::Device::CPU>::validate_data_layout() {
-  static_assert(true, "input_layer with partitioned_io_buffer does not supports MODEL_PARALLEL data layout");
+  std::stringstream err;
+  err << __FILE__ << " " << __LINE__ << " :: "
+      << "input_layer with partitioned_io_buffer does not supports MODEL_PARALLEL data layout";
+  throw lbann_exception(err.str());
 }
 
 template<>
@@ -89,7 +92,10 @@ inline void input_layer<distributed_io_buffer, data_layout::DATA_PARALLEL, El::D
 
 template<>
 inline void input_layer<partitioned_io_buffer, data_layout::MODEL_PARALLEL, El::Device::GPU>::validate_data_layout() {
-  static_assert(true, "input_layer with partitioned_io_buffer does not supports MODEL_PARALLEL data layout");
+  std::stringstream err;
+  err << __FILE__ << " " << __LINE__ << " :: "
+      << "input_layer with partitioned_io_buffer does not supports MODEL_PARALLEL data layout";
+  throw lbann_exception(err.str());
 }
 
 template<>
