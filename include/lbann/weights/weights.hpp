@@ -224,9 +224,6 @@ class weights {
    */
   optimizer* m_optimizer = nullptr;
 
-  /** Setup GPU objects for weights. */
-  virtual void setup_gpu();
-
   /** Get string describing weight tensor dimensions.
    *  height_dims and width_dims are the dimensions of the weight
    *  matrix.
