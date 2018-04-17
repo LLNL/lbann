@@ -204,6 +204,10 @@ Layer* construct_layer(lbann_comm* comm,
     const auto& dims = parse_list<int>(params.num_neurons());
     return new noise_layer<layout>(comm, dims, params.noise_factor(), cudnn);
   }
+  if (proto_layer.has_zero()) {
+    const auto& params = proto_layer.zero();
+    return new zero_layer<layout>(comm, params.first_half(), params.second_half(), cudnn);
+  }
   if (proto_layer.has_pooling()) {
     const auto& params = proto_layer.pooling();
     const auto& mode_str = params.pool_mode();

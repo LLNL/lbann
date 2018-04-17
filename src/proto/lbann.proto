@@ -893,8 +893,8 @@ message Constant {
 }
 
 message Zero {
-  int64 start_index=1;
-  int64 end_index=2;
+  bool first_half=1; //default: true
+  bool second_half=2; //default: true
 }
 /////////////////////
 // learning Layers //
