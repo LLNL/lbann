@@ -60,6 +60,16 @@ Layer* construct_layer(lbann_comm* comm,
                                                             params.for_regression());
     }
   }
+  if (proto_layer.has_repeated_input()) {
+    /// @todo Remove when possible
+    const auto& params = proto_layer.repeated_input();
+    return new repeated_input_layer(comm,
+                                    num_parallel_readers,
+                                    data_readers,
+                                    params.num_steps(),
+                                    !params.data_set_per_model(),
+                                    params.for_regression());
+  }
 
   // Target layers
   if (proto_layer.has_target()) {

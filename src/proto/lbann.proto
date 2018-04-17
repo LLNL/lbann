@@ -691,6 +691,7 @@ message Layer {
 
    // input Layers
    Input input = 2;
+   RepeatedInput repeated_input = 6; // @todo Remove when possible
 
    // transform Layers
    Reshape reshape = 306;
@@ -845,6 +846,13 @@ message Input {
   bool data_set_per_model = 1;  //default: false
   string io_buffer = 2;
   bool for_regression = 3; //default: false
+}
+
+/// @todo Remove when possible
+message RepeatedInput {
+  bool data_set_per_model = 1;  //default: false
+  bool for_regression = 2; //default: false
+  int64 num_steps = 3;
 }
 
 //////////////////////
