@@ -170,45 +170,11 @@ void weights::setup(std::vector<int> matrix_height_dims,
                                              row_dist,
                                              dev);
 
-  // Setup GPU objects
-  if (m_cudnn != nullptr) {
-    setup_gpu();
-  }
-
   // Setup optimizer
   if (m_optimizer != nullptr) {
     m_optimizer->setup(*this);
   }
 
-}
-
-void weights::setup_gpu() {
-  #ifndef LBANN_HAS_CUDNN
-  std::stringstream err;
-  err << __FILE__ << " " << __LINE__ << " :: " << "cuDNN not detected";
-  throw lbann_exception(err.str());
-  #else
-
-  // Check that weights matrix is valid
-  if (m_values == nullptr) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to setup GPU weights matrix "
-        << "before initializing CPU weights matrix";
-    throw lbann_exception(err.str());
-  }
-  const El::DistData dist_data(*m_values);
-  if (dist_data.colDist != El::STAR || dist_data.rowDist != El::STAR) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to setup weights as a matrix with "
-        << "col_dist=" << dist_data.colDist << ", "
-        << "row_dist=" << dist_data.rowDist << ", "
-        << "but weights matrix with GPU support must have STAR,STAR format";
-    throw lbann_exception(err.str());
-  }
-
-  #endif // LBANN_HAS_CUDNN
 }
 
 std::vector<int> weights::get_dims() const {
