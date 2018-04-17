@@ -795,6 +795,9 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_compound_rank = r;
   }
 
+  /// support of data store functionality
+  void set_data_store(generic_data_store *g); 
+
  protected:
 
   /**

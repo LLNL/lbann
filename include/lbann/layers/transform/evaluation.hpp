@@ -82,7 +82,7 @@ class evaluation_layer : public transform_layer {
     const auto& local_input = input.LockedMatrix();
     const El::Int local_height = local_input.Height();
     const El::Int local_width = local_input.Width();
-    const auto& mini_batch_size = this->m_model->get_current_mini_batch_size();
+    const auto& mini_batch_size = input.Width();
 
     // Compute average value
     EvalType sum = EvalType(0);

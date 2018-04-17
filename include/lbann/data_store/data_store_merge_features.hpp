@@ -37,8 +37,6 @@ namespace lbann {
  * todo
  */
 
-//class data_store_pilot2_molecular;
-
 class data_store_merge_features : public generic_data_store {
  public:
 
@@ -56,37 +54,13 @@ class data_store_merge_features : public generic_data_store {
   //! dtor
   ~data_store_merge_features() override;
 
-  void get_data_buf(int data_id, std::vector<unsigned char> *&buf, int multi_idx = 0) override {}
-
-  void setup() override{};
+  void setup() override; 
 
  protected :
 
-  void exchange_data() {}
+   void exchange_data() override;
 
-  /// this contains a concatenation of the indices in m_minibatch_indices
-  /// (see: generic_data_reader.hpp)
-  std::vector<int> m_my_minibatch_indices;
-
-  //std::vector<data_store_pilot1_molecular*> m_subsidiary_stores;
-
-
-  /// when running in in-memory mode, this buffer will contain
-  /// the concatenated data
-  //std::vector<unsigned char> m_data;
-
-  /// allocate mem for m_data
-  //void allocate_memory(); 
-
-  //void read_files();
-
-  /// will contain data to be passed to the data_reader
-  //std::vector<std::vector<unsigned char> > m_my_data;
-
-  /// maps indices wrt shuffled indices to indices in m_my_data
-  //std::unordered_map<size_t, size_t> m_my_data_hash;
-
-  MPI_Win m_win;
+   std::vector<generic_data_store*> m_subsidiary_stores;
 };
 
 }  // namespace lbann
