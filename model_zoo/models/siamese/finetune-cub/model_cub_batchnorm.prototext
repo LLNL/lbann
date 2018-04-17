@@ -48,6 +48,294 @@ model {
   }
 
   ###################################################
+  # start of weights
+  ###################################################
+
+  # The weights of the layers conv1_head0, conv2_head0, conv3_head0, conv4_head0, and conv5_head0
+  # will be initialized as described here but overwritten with pretrained ones.
+  # The optimizer states may not be transferred if lbann2 is used.
+  # The weights of the rest learning layers will be initialized as described below and trained fresh.
+
+  weights {
+    name: "conv1_kernel"
+    normal_initializer {
+      mean: 0.0
+      standard_deviation: 0.01
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.01
+        momentum: 0.9
+        decay_rate: 0.0002
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "conv1_bias"
+    constant_initializer {
+      value: 0.0
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.02
+        momentum: 0.9
+        decay_rate: 0
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "conv2_kernel"
+    normal_initializer {
+      mean: 0.0
+      standard_deviation: 0.01
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.01
+        momentum: 0.9
+        decay_rate: 0.0002
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "conv2_bias"
+    constant_initializer {
+      value: 0.1
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.02
+        momentum: 0.9
+        decay_rate: 0
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "conv3_kernel"
+    normal_initializer {
+      mean: 0.0
+      standard_deviation: 0.01
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.01
+        momentum: 0.9
+        decay_rate: 0.0002
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "conv3_bias"
+    constant_initializer {
+      value: 0.0
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.02
+        momentum: 0.9
+        decay_rate: 0
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "conv4_kernel"
+    normal_initializer {
+      mean: 0.0
+      standard_deviation: 0.01
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.01
+        momentum: 0.9
+        decay_rate: 0.0002
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "conv4_bias"
+    constant_initializer {
+      value: 0.1
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.02
+        momentum: 0.9
+        decay_rate: 0
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "conv5_kernel"
+    normal_initializer {
+      mean: 0.0
+      standard_deviation: 0.01
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.01
+        momentum: 0.9
+        decay_rate: 0.0002
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "conv5_bias"
+    constant_initializer {
+      value: 0.1
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.02
+        momentum: 0.9
+        decay_rate: 0
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "conv6_new_kernel"
+    normal_initializer {
+      mean: 0.0
+      standard_deviation: 0.01
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.01
+        momentum: 0.9
+        decay_rate: 0.0002
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "conv6_new_bias"
+    constant_initializer {
+      value: 0.1
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.02
+        momentum: 0.9
+        decay_rate: 0
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "conv6b_new_kernel"
+    normal_initializer {
+      mean: 0.0
+      standard_deviation: 0.01
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.01
+        momentum: 0.9
+        decay_rate: 0.0002
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "conv6b_new_bias"
+    constant_initializer {
+      value: 0.1
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.02
+        momentum: 0.9
+        decay_rate: 0
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "fc7_new_linearity"
+    normal_initializer {
+      mean: 0.0
+      standard_deviation: 0.005
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.01
+        momentum: 0.9
+        decay_rate: 0.0002
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "fc7_new_bias"
+    constant_initializer {
+      value: 0.1
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.02
+        momentum: 0.9
+        decay_rate: 0
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "fc8_new_linearity"
+    normal_initializer {
+      mean: 0.0
+      standard_deviation: 0.01
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.01
+        momentum: 0.9
+        decay_rate: 0.0002
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "fc8_new_bias"
+    constant_initializer {
+      value: 0.0
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.02
+        momentum: 0.9
+        decay_rate: 0
+        nesterov: false
+      }
+    }
+  }
+
+  ###################################################
   # start of replicate layers
   ###################################################
 
@@ -71,6 +359,7 @@ model {
       has_bias: true
       has_vectors: true
     }
+    weights: "conv1_kernel conv1_bias"
   }
 
   layer {
@@ -116,6 +405,7 @@ model {
       has_bias: true
       has_vectors: true
     }
+    weights: "conv2_kernel conv2_bias"
   }
 
   layer {
@@ -161,6 +451,7 @@ model {
       has_bias: true
       has_vectors: true
     }
+    weights: "conv3_kernel conv3_bias"
   }
 
   layer {
@@ -193,6 +484,7 @@ model {
       has_bias: true
       has_vectors: true
     }
+    weights: "conv4_kernel conv4_bias"
   }
 
   layer {
@@ -225,6 +517,12 @@ model {
       has_bias: true
       has_vectors: true
     }
+    weights: "conv5_kernel conv5_bias"
+
+    # Control whether to freeze the pre-trained layers of this sequential model:
+    # conv1_head0, conv2_head0, conv3_head0, conv4_head0, and conv5_head0.
+    # Setting true for a sequential model freezes the current layer as well as those precedes.
+    freeze: false
   }
 
   layer {
@@ -258,8 +556,11 @@ model {
     }
   }
 
+  ###################################################
+  # end of replicate layers
+  ###################################################
   ######################################
-  # Start of redefined layers
+  # Start of Doersch Layer 6
   ######################################
 
   layer {
@@ -274,6 +575,7 @@ model {
       has_bias: true
       has_vectors: true
     }
+    weights: "conv6_new_kernel conv6_new_bias"
   }
 
   layer {
@@ -306,6 +608,7 @@ model {
       has_bias: true
       has_vectors: true
     }
+    weights: "conv6b_new_kernel conv6b_new_bias"
   }
 
   layer {
@@ -340,7 +643,7 @@ model {
   }
 
   ######################################
-  # End of redefined layers
+  # End of Doersch Layer 6
   ######################################
 
   layer {
@@ -350,6 +653,7 @@ model {
       num_neurons: 4096
       has_bias: true
     }
+    weights: "fc7_new_linearity fc7_new_bias"
   }
 
   layer {
@@ -382,9 +686,12 @@ model {
     name: "fc8_new"
     data_layout: "data_parallel"
     fully_connected {
+      # The number of outputs specific to the dataset used.
+      # E.g., 200 for CUB, and 431 for CompCars.
       num_neurons: 200
       has_bias: false
     }
+    weights: "fc8_new_linearity fc8_new_bias"
   }
 
   layer {
