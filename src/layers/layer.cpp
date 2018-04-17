@@ -331,25 +331,27 @@ void Layer::summarize_matrices(lbann_summary& summarizer, int step) {
   // Summarize activation matrices
   const int num_children = get_num_children();
   for (int i = 0; i < num_children; ++i) {
+    AbsDistMatReadProxy<El::Device::CPU> acts(*m_activations[i]);
     std::string prefix = m_name + "/activations";
     if (num_children > 1) { prefix += std::to_string(i); }
-    summarizer.reduce_mean(prefix + "/mean", *m_activations[i], step);
-    summarizer.reduce_min(prefix + "/min", *m_activations[i], step);
-    summarizer.reduce_max(prefix + "/max", *m_activations[i], step);
-    summarizer.reduce_stdev(prefix + "/stdev", *m_activations[i], step);
-    summarizer.reduce_2norm(prefix + "/2norm2", *m_activations[i], step);
+    summarizer.reduce_mean(prefix + "/mean", acts.GetLocked(), step);
+    summarizer.reduce_min(prefix + "/min", acts.GetLocked(), step);
+    summarizer.reduce_max(prefix + "/max", acts.GetLocked(), step);
+    summarizer.reduce_stdev(prefix + "/stdev", acts.GetLocked(), step);
+    summarizer.reduce_2norm(prefix + "/2norm2", acts.GetLocked(), step);
   }
 
   // Summarize error signal matrices
   const int num_parents = get_num_parents();
   for (int i = 0; i < num_parents; ++i) {
+    AbsDistMatReadProxy<El::Device::CPU> error_signals(*m_error_signals[i]);
     std::string prefix = m_name + "/error_signals";
     if (num_parents > 1) { prefix += std::to_string(i); }
-    summarizer.reduce_mean(prefix + "/mean", *m_error_signals[i], step);
-    summarizer.reduce_min(prefix + "/min", *m_error_signals[i], step);
-    summarizer.reduce_max(prefix + "/max", *m_error_signals[i], step);
-    summarizer.reduce_stdev(prefix + "/stdev", *m_error_signals[i], step);
-    summarizer.reduce_2norm(prefix + "/2norm2", *m_error_signals[i], step);
+    summarizer.reduce_mean(prefix + "/mean", error_signals.GetLocked(), step);
+    summarizer.reduce_min(prefix + "/min", error_signals.GetLocked(), step);
+    summarizer.reduce_max(prefix + "/max", error_signals.GetLocked(), step);
+    summarizer.reduce_stdev(prefix + "/stdev", error_signals.GetLocked(), step);
+    summarizer.reduce_2norm(prefix + "/2norm2", error_signals.GetLocked(), step);
   }
 
 }
