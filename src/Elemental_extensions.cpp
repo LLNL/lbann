@@ -68,10 +68,11 @@ void ColumnSum( const AbstractMatrix<F>& X, AbstractMatrix<F>& sums ) {
       ColumnSum(static_cast<const Matrix<F,Device::CPU>&>(X),
                 static_cast<Matrix<F,Device::CPU>&>(sums));
     }else if ((X.GetDevice() == Device::GPU)) {
-      ColumnSum(static_cast<const Matrix<F,Device::GPU>&>(X),
-                static_cast<Matrix<F,Device::GPU>&>(sums));
+      LogicError("ColumnSum: Unsupported device type.");
+      // ColumnSum(static_cast<const Matrix<F,Device::GPU>&>(X),
+      //           static_cast<Matrix<F,Device::GPU>&>(sums));
     }else {
-      LogicError("Unsupported device type.");
+      LogicError("ColumnSum: Unsupported device type.");
     }
 }
 
@@ -136,10 +137,11 @@ void RowSum(const AbstractMatrix<F>& X, AbstractMatrix<F>& sums) {
       RowSum(static_cast<const Matrix<F,Device::CPU>&>(X),
              static_cast<Matrix<F,Device::CPU>&>(sums));
     }else if ((X.GetDevice() == Device::GPU)) {
-      RowSum(static_cast<const Matrix<F,Device::GPU>&>(X),
-             static_cast<Matrix<F,Device::GPU>&>(sums));
+      LogicError("RowSum: Unsupported device type.");
+      // RowSum(static_cast<const Matrix<F,Device::GPU>&>(X),
+      //        static_cast<Matrix<F,Device::GPU>&>(sums));
     }else {
-      LogicError("Unsupported device type.");
+      LogicError("RowSum: Unsupported device type.");
     }
 }
 
