@@ -76,9 +76,9 @@ class zero_layer : public transform_layer {
       for (int row = 0; row < local_height; ++row) {
         const DataType x = local_input(row, col);
         DataType& y = local_output(row, col);
-        if(first_half)
+        if(m_first_half)
         y = col < local_width/2 ?  DataType(0) : x;
-        if(second_half)
+        if(m_second_half)
         y = col >= local_width/2 ?  DataType(0) : x;
       }
     }
