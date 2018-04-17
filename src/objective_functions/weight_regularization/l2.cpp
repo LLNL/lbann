@@ -115,7 +115,7 @@ void l2_weight_regularization::start_evaluation() {
     for (int gpu = 0; gpu < num_gpus; ++gpu) {
       CHECK_CUDA(cudaSetDevice(m_cudnn->get_gpu(gpu)));
       auto&& handle = m_cudnn->get_cublas_handle(gpu);
-      CHECK_CUDA(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE));
+      CHECK_CUBLAS(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE));
       const auto& weights_start = std::min(gpu * weights_per_gpu, num_weights);
       const auto& weights_end   = std::min((gpu+1) * weights_per_gpu, num_weights);
       for (int i = weights_start; i < weights_end; ++i) {
@@ -126,7 +126,7 @@ void l2_weight_regularization::start_evaluation() {
           cublas::dot(handle, w->get_size(), values_d, 1, values_d, 1, sqsum_d);
         }
       }
-      CHECK_CUDA(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_HOST));
+      CHECK_CUBLAS(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_HOST));
     }
     Mat sqsums(1, num_weights);
     m_cudnn->gather_from_gpus(sqsums, sqsums_d.get_locked_data(), weights_per_gpu);
