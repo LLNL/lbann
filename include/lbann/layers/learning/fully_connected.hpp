@@ -85,7 +85,7 @@ class fully_connected_layer : public learning_layer {
     m_bias_scaling_factor = has_bias ? DataType(1) : DataType(0);
 
 #ifdef LBANN_HAS_CUDNN
-    if (cudnn && T_layout == data_layout::DATA_PARALLEL) {
+    if (cudnn) {
      this->m_cudnn = cudnn;
     }
 #endif // LBANN_HAS_CUDNN
