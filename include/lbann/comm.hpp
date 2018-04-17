@@ -280,6 +280,79 @@ class lbann_comm {
   void model_broadcast(int root, std::vector<T> &data) {
     broadcast(root, data, get_model_comm());
   }
+  /** 
+   * Broadcast T* over an arbitrary communicator; 
+   * all processors must have correctly allocated
+   * memmory for "data"
+   */
+  template <typename T> 
+  void broadcast(int root, size_t size, T *data, const El::mpi::Comm c) {
+    int rank = get_rank_in_world();
+    El::mpi::Broadcast(data, size, root, c);
+    if (rank == root) {
+      bytes_sent += sizeof(T)*size;
+    } else {
+      bytes_received += sizeof(T)*size;
+    }  
+  }
+  /**
+   * Broadcast T* to world;
+   * all processors must have correctly allocated memmory for "data"
+   */
+  template <typename T> 
+  void world_broadcast(int root, size_t size, T *data) {
+    broadcast(root, size, data, get_world_comm());
+  }
+  /**
+   * Broadcast T* to world;
+   * all processors must have correctly allocated memmory for "data"
+   */
+  template <typename T> 
+  void model_broadcast(int root, int size, T *data) {
+    broadcast(root, size, data, get_model_comm());
+  }
+
+  /** 
+   * Allgatherv over an arbitrary communicator;
+   * all vectors must be correctly sized prior to entry.
+   */
+  template <typename T>
+  T all_gather(int root, std::vector<T> &src, std::vector<T> &rcs, std::vector<int> &rcv_counts, std::vector<int> &rcv_disp, const El::mpi::Comm c) {
+    El::mpi::AllGather(src.data(), src.size(), rcv_counts.data(), rcv_disp.data(), c);
+  }
+  /** 
+   * Allgatherv over a model communicator;
+   * all vectors must be correctly sized prior to entry.
+   */
+  template <typename T>
+  T model_all_gather(int root, std::vector<T> &src, std::vector<T> &rcs, std::vector<int> &rcv_counts, std::vector<int> &rcv_disp, const El::mpi::Comm c) {
+    El::mpi::AllGather(src.data(), src.size(), rcv_counts.data(), rcv_disp.data(), get_model_comm());
+  }
+
+  /** 
+   * Allgather for a single element over an arbitrary communicator;
+   * std::vector<T> &data must be correctly sized prior to entry.
+   */
+  template <typename T>
+  T all_gather(int root, T &src, std::vector<T> &data, const El::mpi::Comm c) {
+    El::mpi::AllGather(src, data.data(), data.size(), c);
+  }
+  /** 
+   * Allgather for a single element over the model communicator;
+   * std::vector<T> &data must be correctly sized prior to entry.
+   */
+  template <typename T>
+  T model_all_gather(int root, T &src, std::vector<T> &data) {
+    all_gather(root, src, data, get_model_comm());
+  }
+  /** 
+   * Allgather for a single element over the model communicator;
+   * std::vector<T> &data must be correctly sized prior to entry.
+   */
+  template <typename T>
+  T world_all_gather(int root, T &src, std::vector<T> &data) {
+    all_gather(root, src, data, get_world_comm());
+  }
 
   /** Within-model scalar gather (for non-root processes). */
   template <typename T>
@@ -703,7 +776,6 @@ class lbann_comm {
   inline size_t get_ar_rs_bytes_received() const {
     return ar_rs_bytes_received;
   }
-  /** Return the number of bytes sent in allreduce allgathers. */
   inline size_t get_ar_ag_bytes_sent() const {
     return ar_ag_bytes_sent;
   }

@@ -80,12 +80,15 @@ void data_store_csv::setup() {
       throw lbann_exception(err.str());
     }
 
+    const El::mpi::Comm world_comm = m_comm->get_world_comm();
     if (m_master) {
       std::cerr << "calling: reader->fetch_line_label_response(" << (*m_shuffled_indices)[0] << ");\n";
       std::vector<DataType> v = reader->fetch_line_label_response(0);
       m_vector_size = v.size();
+      m_comm->broadcast<DataType>(0, m_vector_size, world_comm);
+    } else {
+      m_vector_size = m_comm->broadcast<DataType>(0, world_comm);
     }
-    MPI_Bcast(&m_vector_size, 1, MPI_INT, 0, m_mpi_comm);
 
     if (is_subsidiary_store()) {
       return;

@@ -226,9 +226,11 @@ void data_store_image::exchange_data() {
 void data_store_image::exchange_file_sizes(std::vector<Triple> &my_file_sizes, int num_global_indices) {
   std::vector<int> num_bytes(m_np);
   int bytes = my_file_sizes.size()*sizeof(Triple);
-  MPI_Allgather(&bytes, 1, MPI_INT,
-                 num_bytes.data(), 1, MPI_INT,
-                 m_mpi_comm);
+  if (m_master) {
+    m_comm->model_gather(bytes, num_bytes.data());
+  } else {
+    m_comm->model_gather(bytes, 0);
+  }
 
   std::vector<int> disp(m_num_readers); 
   disp[0] = 0;

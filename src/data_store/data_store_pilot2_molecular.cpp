@@ -154,9 +154,15 @@ void data_store_pilot2_molecular::fill_in_data(
 
 void data_store_pilot2_molecular::build_nabor_map() {
   //bcast neighbor data
-  int sz;
-  if (m_owner) sz= m_pilot2_reader->get_neighbors_data_size();
-  MPI_Bcast(&sz, 1, MPI_INT, m_owner_rank, m_mpi_comm);
+  size_t sz;
+  const El::mpi::Comm world_comm = m_comm->get_world_comm();
+
+  if (m_owner) {
+    sz = m_pilot2_reader->get_neighbors_data_size();
+    m_comm->broadcast<size_t>(0, sz, world_comm);
+  } else {
+    sz = m_comm->broadcast<size_t>(0, world_comm);
+  }
   double *neighbors_8;
   std::vector<double> work;
   if (m_owner) {
@@ -165,7 +171,7 @@ void data_store_pilot2_molecular::build_nabor_map() {
     work.resize(sz);
     neighbors_8 = work.data();
   }
-  MPI_Bcast(neighbors_8, sz, MPI_DOUBLE, m_owner_rank, m_mpi_comm);
+  m_comm->world_broadcast<double>(0, sz, neighbors_8);
 
   //fill in the nabors map
   for (auto data_id : (*m_shuffled_indices)) {

@@ -169,8 +169,7 @@ void generic_data_store::exchange_mb_counts() {
   int my_num_indices = m_my_minibatch_indices_v.size();
   m_mb_counts.resize(m_np);
   std::vector<int> num(m_np, 1); //num elements to be received from P_j
-  MPI_Allgather(&my_num_indices, 1, MPI_INT,
-                 m_mb_counts.data(), 1, MPI_INT, m_mpi_comm);
+  m_comm->model_gather<int>(0, my_num_indices, m_mb_counts.data());
 }
 
 void generic_data_store::exchange_mb_indices() {
