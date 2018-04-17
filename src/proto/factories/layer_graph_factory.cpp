@@ -226,7 +226,7 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
               comm,
               data_readers,
               num_parallel_readers,
-              /*cudnn*/ nullptr,
+              nullptr,
               proto_layer
             );
         break;
@@ -252,7 +252,7 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
               comm,
               data_readers,
               num_parallel_readers,
-              /*cudnn*/ nullptr,
+              nullptr,
               proto_layer
             );
         break;
