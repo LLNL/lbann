@@ -40,6 +40,7 @@ void relu_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_compute() {
   entrywise_activation_layer::fp_compute_cpu();
 }
 
+#ifdef LBANN_HAS_GPU
 /** GPU implementation of forward prop computation. */
 template <>
 void relu_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
@@ -51,6 +52,7 @@ template <>
 void relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
   fp_compute_gpu();
 }
+#endif // LBANN_HAS_GPUs
 
 /** CPU implementation of backward prop computation. */
 template <>
@@ -64,6 +66,7 @@ void relu_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_compute() {
   entrywise_activation_layer::bp_compute_cpu();
 }
 
+#ifdef LBANN_HAS_GPU
 /** GPU implementation of backward prop computation. */
 template <>
 void relu_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute() {
@@ -75,5 +78,6 @@ template <>
 void relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
   bp_compute_gpu();
 }
+#endif // LBANN_HAS_GPUs
 
 } // namespace lbann
