@@ -37,14 +37,16 @@ namespace lbann {
 template <data_layout T_layout>
 class log_layer : public entrywise_activation_layer {
  public:
-  log_layer(lbann_comm *comm, DataType base = std::exp(0.0))
+  log_layer(lbann_comm *comm, DataType base = std::exp(1.0))
     : entrywise_activation_layer(comm),
       m_base(base),
       m_inv_log_base(1/std::log(base)),
       m_min_input(std::max(std::numeric_limits<DataType>::min(),
                            1 / std::numeric_limits<DataType>::max())) {
     if (m_base <= DataType(0)) {
-      LBANN_ERROR("log base must be positive");
+      std::stringstream err;
+      err << "log base (" << m_base << ") is not positive";
+      LBANN_ERROR(err.str());
     }
   }
   log_layer* copy() const override { return new log_layer(*this); }

@@ -398,7 +398,7 @@ Layer* construct_layer(lbann_comm* comm,
   if (proto_layer.has_log()) {
     const auto& params = proto_layer.log();
     const auto& base = params.base();
-    if (base == 0.0) {
+    if (base != 0.0) {
       return new log_layer<layout>(comm, base);
     } else {
       return new log_layer<layout>(comm);
