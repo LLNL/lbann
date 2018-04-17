@@ -464,6 +464,12 @@ void Layer::setup() {
   setup_matrices(m_comm->get_model_grid());
   setup_data();
   if (using_gpus()) {
+    if(m_cudnn == nullptr) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "layer " << m_name << " is trying to use GPUs but has an invalid pointer to the cudnn object";
+      throw lbann_exception(err.str());
+    }
     setup_gpu();
   }
 }
