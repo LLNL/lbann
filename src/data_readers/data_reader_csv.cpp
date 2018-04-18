@@ -105,10 +105,8 @@ void csv_reader::load() {
   // Skip rows if needed.
   if (master) {
     skip_rows(ifs, m_skip_rows);
-    m_comm->broadcast<int>(0, m_skip_rows, world_comm);
-  } else {
-    m_skip_rows = m_comm->broadcast<int>(0, world_comm);
   }
+  m_comm->broadcast<int>(0, m_skip_rows, world_comm);
 
   //This will be broadcast from root to other procs, and will
   //then be converted to std::vector<int> m_labels; this is because
@@ -231,11 +229,7 @@ void csv_reader::load() {
     ifs.clear();
   } // if (master)
 
-  if (master) {
-    m_comm->broadcast<int>(0, m_num_cols, world_comm);
-  } else {
-    m_num_cols = m_comm->broadcast<int>(0, world_comm);
-  }
+  m_comm->broadcast<int>(0, m_num_cols, world_comm);
   m_label_col = m_num_cols - 1;
 
   //bcast the index vector
