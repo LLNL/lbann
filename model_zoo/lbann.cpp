@@ -204,11 +204,11 @@ int main(int argc, char *argv[]) {
     if (opts->has_bool("use_data_store") && opts->get_bool("use_data_store")) {
       if (master) {
         std::cerr << "\nUSING DATA STORE!\n\n";
-      }  
+      }
       for (auto r : data_readers) {
         r.second->setup_data_store(model);
-      }  
-    }  
+      }
+    }
 
     // restart model from checkpoint if we have one
     //@todo
