@@ -611,7 +611,7 @@ void cudnn_manager::cudnn_manager::set_on_gpus(std::vector<DataType *>& gpu_data
                                                int width_per_gpu) {
   if(!gpu_data.empty()) {
     for(int i=0; i<m_num_gpus; ++i) {
-      set_on_gpu(i, gpu_data[i], height, width_per_gpu);
+      set_on_gpu(i, gpu_data[i], val, height, width_per_gpu);
     }
   }
 }
@@ -886,6 +886,7 @@ void cudnn_manager::set_maximum_work_space_size(int i) {
             FORCE_CHECK_CUDA(status);
         } else {
             work_space = nullptr;
+            work_space_size *= decay_factor;
         }
     }
 }

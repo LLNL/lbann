@@ -92,13 +92,13 @@ class reduction_layer : public transform_layer {
       // GPU data
       const auto& input_d = this->m_prev_activations_d[0];
       auto& output_d = this->m_activations_d[0];
-      const auto& input_size = get_num_prev_neurons();
-      const auto& mini_batch_size = m_mini_batch_size_per_gpu;
+      const auto& input_size = input_d.get_height();
       const auto& input_ldim = input_d.get_leading_dim();
+      const auto& output_ldim = output_d.get_leading_dim();
       const int num_gpus = m_cudnn->get_num_gpus();
 
       // Stop early if possible
-      if (mini_batch_size == 0) { return; }
+      if (m_mini_batch_size_per_gpu == 0) { return; }
 
       // Apply reduction on GPU
       switch (m_mode) {
@@ -111,12 +111,12 @@ class reduction_layer : public transform_layer {
             CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
             cublas::gemv(this->m_cudnn->get_cublas_handle(i),
                          CUBLAS_OP_T,
-                         input_size, mini_batch_size,
+                         input_size, m_mini_batch_size_per_gpu,
                          DataType(1),
                          input_d.get_locked_data(i), input_ldim,
                          ones_d.get_locked_data(i), 1,
                          DataType(0),
-                         output_d.get_data(i), 1);
+                         output_d.get_data(i), output_ldim);
           }
         }
         break;
@@ -129,12 +129,12 @@ class reduction_layer : public transform_layer {
             CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
             cublas::gemv(this->m_cudnn->get_cublas_handle(i),
                          CUBLAS_OP_T,
-                         input_size, mini_batch_size,
+                         input_size, m_mini_batch_size_per_gpu,
                          DataType(1) / input_size,
                          input_d.get_locked_data(i), input_ldim,
                          ones_d.get_locked_data(i), 1,
                          DataType(0),
-                         output_d.get_data(i), 1);
+                         output_d.get_data(i), output_ldim);
           }
         }
         break;
@@ -171,6 +171,7 @@ class reduction_layer : public transform_layer {
       auto& gradient_wrt_input_d = this->m_error_signals_d[0];
       const auto& input_size = get_num_prev_neurons();
       const auto& mini_batch_size = m_mini_batch_size_per_gpu;
+      const auto& gradient_wrt_output_ldim = gradient_wrt_output_d.get_leading_dim();
       const auto& gradient_wrt_input_ldim = gradient_wrt_input_d.get_leading_dim();
       const int num_gpus = m_cudnn->get_num_gpus();
 
@@ -191,7 +192,8 @@ class reduction_layer : public transform_layer {
                          input_size, mini_batch_size, 1,
                          DataType(1),
                          ones_d.get_locked_data(i), input_size,
-                         gradient_wrt_output_d.get_locked_data(i), 1,
+                         gradient_wrt_output_d.get_locked_data(i),
+                         gradient_wrt_output_ldim,
                          DataType(0),
                          gradient_wrt_input_d.get_data(i),
                          gradient_wrt_input_ldim);
@@ -210,7 +212,8 @@ class reduction_layer : public transform_layer {
                          input_size, mini_batch_size, 1,
                          DataType(1) / mini_batch_size,
                          ones_d.get_locked_data(i), input_size,
-                         gradient_wrt_output_d.get_locked_data(i), 1,
+                         gradient_wrt_output_d.get_locked_data(i),
+                         gradient_wrt_output_ldim,
                          DataType(0),
                          gradient_wrt_input_d.get_data(i),
                          gradient_wrt_input_ldim);
