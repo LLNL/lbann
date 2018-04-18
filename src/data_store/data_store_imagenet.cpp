@@ -39,12 +39,14 @@ void data_store_imagenet::setup() {
     std::cerr << "starting data_store_imagenet::setup() for data reader with role: " << m_reader->get_role() << std::endl;
   }
 
+  set_name("data_store_imagenet");
+
   //sanity check
-  imagenet_reader *reader = dynamic_cast<imagenet_reader*>(m_reader);
+  image_data_reader *reader = dynamic_cast<image_data_reader*>(m_reader);
   if (reader == nullptr) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
-        << "dynamic_cast<imagenet_reader*>(m_reader) failed";
+        << "dynamic_cast<image_data_reader*>(m_reader) failed";
     throw lbann_exception(err.str());
   }
 
@@ -81,11 +83,11 @@ void data_store_imagenet::setup() {
 
 
 void data_store_imagenet::test_data() {
-  imagenet_reader *reader = dynamic_cast<imagenet_reader*>(m_reader);
+  image_data_reader *reader = dynamic_cast<image_data_reader*>(m_reader);
   const std::vector<std::pair<std::string, int> > & image_list = reader->get_image_list();
   std::vector<unsigned char> b;
   std::vector<unsigned char> *datastore_buf;
-  for (auto t : m_my_minibatch_indices) {
+  for (auto t : m_my_minibatch_indices_v) {
     int idx = (*m_shuffled_indices)[t];
 
     //read directly from file
@@ -123,7 +125,7 @@ void data_store_imagenet::test_file_sizes() {
   if (m_master) {
     std::cerr << m_rank << " :: STARTING data_store_imagenet::test_file_sizes()\n";
   }
-  imagenet_reader *reader = dynamic_cast<imagenet_reader*>(m_reader);
+  image_data_reader *reader = dynamic_cast<image_data_reader*>(m_reader);
   const std::vector<std::pair<std::string, int> > & image_list = reader->get_image_list();
   for (auto t : m_file_sizes) {
     size_t len = get_file_size(m_dir, image_list[t.first].first);
@@ -140,10 +142,10 @@ void data_store_imagenet::test_file_sizes() {
 
 
 void data_store_imagenet::read_files() {
-  imagenet_reader *reader = dynamic_cast<imagenet_reader*>(m_reader);
+  image_data_reader *reader = dynamic_cast<image_data_reader*>(m_reader);
   const std::vector<std::pair<std::string, int> > & image_list = reader->get_image_list();
-  for (size_t j=0; j<m_my_global_indices.size(); j++) {
-    size_t index = m_my_global_indices[j];
+  size_t j = 0;
+  for (auto index : m_my_datastore_indices) {
     if (m_offsets.find(index) == m_offsets.end()) {
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: " 
@@ -161,24 +163,26 @@ void data_store_imagenet::read_files() {
     if (offset + file_len > m_data.size()) {
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: " << " j: " << j 
-        << " of " << m_my_global_indices.size() << " offset: " << offset
+        << " of " << m_my_minibatch_indices_v.size() << " offset: " << offset
         << " file_len: " << file_len << " offset+file_len: "
         << offset+file_len << " m_data.size(): " << m_data.size()
         << "\noffset+file_len must be <= m_data.size()";
       throw lbann_exception(err.str());
     }
     load_file(m_dir, image_list[index].first, &m_data[offset], file_len);
+    ++j;
   }
 }
 
 void data_store_imagenet::get_file_sizes() {
-  imagenet_reader *reader = dynamic_cast<imagenet_reader*>(m_reader);
+  if (m_master) std::cerr << "starting data_store_imagenet::get_file_sizes\n";
+  image_data_reader *reader = dynamic_cast<image_data_reader*>(m_reader);
   const std::vector<std::pair<std::string, int> > & image_list = reader->get_image_list();
   //construct a vector of Triples 
-  std::vector<Triple> my_file_sizes(m_my_global_indices.size());
+  std::vector<Triple> my_file_sizes(m_my_datastore_indices.size());
   size_t cur_offset = 0;
-  for (size_t j=0; j<m_my_global_indices.size(); j++) {
-    size_t index = m_my_global_indices[j];
+  size_t j = 0;
+  for (auto index : m_my_datastore_indices) {
     my_file_sizes[j].global_index = index;
     my_file_sizes[j].num_bytes = get_file_size(m_dir, image_list[index].first);
     my_file_sizes[j].offset = cur_offset;
@@ -190,37 +194,11 @@ void data_store_imagenet::get_file_sizes() {
         << " file size is 0 (" << m_dir << "/" + image_list[index].first;
       throw lbann_exception(err.str());
     }
+    ++j;
   }
 
   exchange_file_sizes(my_file_sizes, m_num_global_indices);
 }
 
-void data_store_imagenet::setup_extended_testing() {
-  if (m_master) {
-    std::cout << "STARTING data_store_multi_images::setup_extended_testing()\n";
-  }
-  std::pair<std::vector<std::string>, int> sample;
-  imagenet_reader *reader = dynamic_cast<imagenet_reader*>(m_reader);
-  const std::vector<std::pair<std::string, int> > & image_list = reader->get_image_list();
-  for (size_t j=0; j<m_shuffled_indices->size(); j++) {
-      size_t index = (*m_shuffled_indices)[j];
-
-      std::string imagepath = m_dir + image_list[index].first;
-      m_test_filenames[index] = imagepath;
-
-      std::ifstream in(imagepath.c_str(), std::ios::in | std::ios::binary);
-      if (! in.good()) {
-        std::stringstream err;
-        err << __FILE__ << " " << __LINE__ << " :: "
-            << "failed to open " << imagepath << " for reading";
-        throw lbann_exception(err.str());
-      }
-
-      in.seekg(0, std::ios::end);
-      size_t sz = in.tellg();
-      in.close();
-      m_test_filesizes[index] = sz;
-  }
-}
 
 }  // namespace lbann

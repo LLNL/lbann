@@ -29,10 +29,12 @@
 #define __DATA_STORE_PILOT2_MOLECULAR_HPP__
 
 #include "lbann/data_store/generic_data_store.hpp"
+#include <unordered_map>
 
 namespace lbann {
 
 class pilot2_molecular_reader;
+class data_store_merge_samples;
 
 /**
  * todo
@@ -42,7 +44,7 @@ class data_store_pilot2_molecular : public generic_data_store {
  public:
 
   //! ctor
-  data_store_pilot2_molecular(lbann_comm *comm, generic_data_reader *reader, model *m);
+  data_store_pilot2_molecular(generic_data_reader *reader, model *m);
 
   //! copy ctor
   data_store_pilot2_molecular(const data_store_pilot2_molecular&) = default;
@@ -59,50 +61,59 @@ class data_store_pilot2_molecular : public generic_data_store {
 
   void setup() override;
 
+  /// needed to support data_reader_merge_samples (compound reader)
+  void clear_minibatch_indices() {
+    m_my_minibatch_indices_v.clear();
+  }
+
+  /// needed to support data_reader_merge_samples (compound reader)
+  void add_minibatch_index(int idx) {
+    m_my_minibatch_indices_v.push_back(idx);
+  }
+
+  /// needed to support data_reader_merge_samples (compound reader)
+  void set_no_shuffle() {
+    m_shuffle = false;
+  }
+
  protected :
+
+   friend data_store_merge_samples;
 
    pilot2_molecular_reader *m_pilot2_reader;
 
-  /// fills in m_data and m_offsets
+  /// fills in m_data 
   void construct_data_store();
   /// the data store. Note that this will break if word size = 4;
   /// only meaningful on the owning processor
-  std::vector<double> m_data;
+  std::unordered_map<int, std::vector<double>> m_data;
   /// called by construct_data_store()
   void fill_in_data(
     const int data_id, 
-    size_t &jj, 
     const int num_samples_per_frame, 
     const int num_features, 
     double *features);
 
-  /// bcasts m_offsets from owning processor to other procs
-  void bcast_offsets();
-  /// maps a shuffled index to the offset, wrt m_data, where the
-  /// molecule's features (and neighboring molecules) begins
-  std::unordered_map<int, int> m_offsets;
-
   /// maps: a shuffled index to the corresponding molecule's neighbors' indices
   std::unordered_map<int, std::vector<int> > m_neighbors;
-  /// fills in m_my_ids
+  /// fills in m_neighbors
   void build_nabor_map();
 
-  /// fills in m_my_minibatch_indices via one-sided MPI calls
-  void exchange_data() override; 
+  /// fills in m_my_molecules using non-blocking MPI send/recv
+  void exchange_data() override;
 
   /// contains the data of all molecules required by this processor
-  /// to execute one epoch
-  /// @todo: if num_nabors gets large enough this may need to be re-designed
-  std::vector<std::vector<double> > m_my_molecules;
-  /// maps moleclue keys in m_my_molecules
-  std::unordered_map<size_t, size_t> m_molecule_hash;
+  /// to execute one epoch. Maps: molecule data_id to set of neighbors (including
+  /// self: data_id); this is the set of molecules required in one call
+  /// to fetch_datum by the data reader
+  std::unordered_map<int, std::vector<double>> m_my_molecules;
+
+  /// returns, in 's,' the set of molecules required for processor 'p'
+  /// for the next epoch
+  void get_required_molecules(std::unordered_set<int> &s, int p);
 
   /// the buffers that will be passed to data_readers::fetch_datum
   std::vector<std::vector<double> > m_data_buffer;
-
-  /// this contains a concatenation of the indices in m_minibatch_indices
-  /// (see: generic_data_reader.hpp)
-  std::vector<size_t> m_my_minibatch_indices;
 
   /// the process that "owns" the data, i.e, this is the only process
   /// whose m_reader will load data from disk
@@ -111,7 +122,8 @@ class data_store_pilot2_molecular : public generic_data_store {
   /// true if this processor "owns" the data
   bool m_owner;
 
-  MPI_Win m_win;
+  /// support for data_store_merge_samples
+  bool m_shuffle;
 };
 
 }  // namespace lbann

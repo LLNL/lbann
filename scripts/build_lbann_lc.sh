@@ -10,6 +10,12 @@ ARCH=$(uname -m)
 ################################################################
 
 COMPILER=gnu
+if [ "${CLUSTER}" == "pascal" ]; then
+	# The latest GCC version on Pascal is 7, which is not supported by nvcc.
+	# Version 6.1.0 does not work with CUDA 9.1, either.
+	COMPILER=gnu
+	module load gcc/4.9.3
+fi
 if [ "${ARCH}" == "x86_64" ]; then
     MPI=mvapich2
 elif [ "${ARCH}" == "ppc64le" ]; then
@@ -29,14 +35,11 @@ else
     export VTUNE_DIR=/usr/local/tools/vtune
 fi
 if [ "${ARCH}" == "x86_64" ]; then
-    export CUDNN_DIR=/usr/gapps/brain/installs/cudnn/v5
     if [ "${CLUSTER}" == "quartz" ]; then
         IPPROOT=/p/lscratchh/brainusr/ippicv_lnx
     else
         IPPROOT=/p/lscratchf/brainusr/ippicv_lnx
     fi
-elif [ "${ARCH}" == "ppc64le" ]; then
-    export CUDNN_DIR=/usr/gapps/brain/cuda/targets/ppc64le-linux
 fi
 
 ELEMENTAL_MATH_LIBS=
@@ -59,6 +62,7 @@ WITH_CUDA=
 WITH_TOPO_AWARE=ON
 INSTRUMENT=
 WITH_ALUMINUM=OFF
+WITH_TBINF=OFF
 RECONFIGURE=0
 # In case that autoconf fails during on-demand buid on surface, try the newer
 # version of autoconf installed under '/p/lscratche/brainusr/autoconf/bin'
@@ -508,12 +512,16 @@ export CMAKE_PREFIX_PATH=${MPI_HOME}:${CMAKE_PREFIX_PATH}
 export MPI_C_COMPILER=${MPI_DIR}/bin/mpicc
 export MPI_CXX_COMPILER=${MPI_DIR}/bin/mpicxx
 export MPI_Fortran_COMPILER=${MPI_DIR}/bin/mpifort
+if [ "${MPI}" == "spectrum-mpi" ]; then
+    WITH_SPECTRUM=ON
+fi
 
 ################################################################
 # Initialize GPU libraries
 ################################################################
 
-if [ "${CLUSTER}" == "surface" ] || [ "${CLUSTER}" == "ray" ]; then
+if [ "${CLUSTER}" == "surface" ] || [ "${CLUSTER}" == "ray" ] ||
+   [ "${CLUSTER}" == "pascal" ]; then
     HAS_GPU=1
     WITH_CUDA=${WITH_CUDA:-ON}
     WITH_CUDNN=ON
@@ -522,29 +530,50 @@ if [ "${CLUSTER}" == "surface" ] || [ "${CLUSTER}" == "ray" ]; then
     if [ "${CLUSTER}" == "ray" ]; then
         export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.0.5-3+cuda8.0_ppc64el
     else
-        export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl-2.0.5+cuda8.0
+        export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.1.15-1+cuda9.1_x86_64
     fi
-    if [ "${ARCH}" == "ppc64le" ]; then
-        export CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda
-        CUDATOOLKIT_VERSION=$(ls -l ${CUDA_TOOLKIT_ROOT_DIR} | awk '{print $NF}' | cut -d '-' -f 2)
-    elif [ -n "${CUDA_PATH}" ]; then
-        CUDATOOLKIT_VERSION=$(basename "$CUDA_PATH" | sed 's/cudatoolkit-//')
-       export CUDA_TOOLKIT_ROOT_DIR=${CUDA_PATH}
-    else
-        CUDATOOLKIT_VERSION=8.0
-        if [ ${USE_MODULES} -ne 0 ]; then
-            module load cudatoolkit/${CUDATOOLKIT_VERSION}
-        fi
-        export CUDA_TOOLKIT_ROOT_DIR=/opt/cudatoolkit-${CUDATOOLKIT_VERSION}
-    fi
-    # Hack for surface
-    if [ "${CLUSTER}" == "surface" ]; then
-        CUDATOOLKIT_VERSION=8.0
-        . /usr/share/[mM]odules/init/bash
-        module load cudatoolkit/${CUDATOOLKIT_VERSION}
 
-        export CUDA_TOOLKIT_ROOT_DIR=/opt/cudatoolkit-${CUDATOOLKIT_VERSION}
-    fi
+    # Hack for surface
+	if [ "${CLUSTER}" == "surface" ]; then
+        . /usr/share/[mM]odules/init/bash
+		CUDA_TOOLKIT_MODULE=cudatoolkit/9.1
+	elif [ "${CLUSTER}" == "ray" ]; then
+		CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda
+	fi
+fi
+
+if [ "${WITH_CUDA}" == "ON" ]; then
+	# Defines CUDA_TOOLKIT_ROOT_DIR
+	if [ -z "${CUDA_TOOLKIT_ROOT_DIR}" ]; then
+		if [ -n "${CUDA_PATH}" ]; then
+			CUDA_TOOLKIT_ROOT_DIR=${CUDA_PATH}
+		elif [ -n "${CUDA_HOME}" ]; then
+			CUDA_TOOLKIT_ROOT_DIR=${CUDA_HOME}
+		elif [ -n "${CUDA_TOOLKIT_MODULE}" -o ${USE_MODULES} -ne 0 ]; then
+			CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda}
+			module load ${CUDA_TOOLKIT_MODULE}
+			CUDA_TOOLKIT_ROOT_DIR=${CUDA_HOME:-${CUDA_PATH}}
+		fi
+	fi
+	if [ -n "${CUDA_TOOLKIT_ROOT_DIR}" -a -d "${CUDA_TOOLKIT_ROOT_DIR}" ]; then
+		export CUDA_TOOLKIT_ROOT_DIR
+	else
+		echo "Could not find CUDA"
+		exit 1
+	fi
+	# Defines CUDA_TOOLKIT_VERSION
+	#CUDA_TOOLKIT_VERSION=$(ls -l ${CUDA_TOOLKIT_ROOT_DIR} | awk '{print $NF}' | cut -d '-' -f 2)
+	CUDA_TOOLKIT_VERSION=$(${CUDA_TOOLKIT_ROOT_DIR}/bin/nvcc --version | grep -oE "V[0-9]+\.[0-9]+" | sed 's/V//')
+
+	# CUDNN
+	if [ -z "${CUDNN_DIR}" ]; then
+		CUDNN_DIR=/usr/gapps/brain/cudnn/cudnn-7.1.1/cuda-${CUDA_TOOLKIT_VERSION}_${ARCH}
+	fi
+	if [ ! -d "${CUDNN_DIR}" ]; then
+		echo "Could not find cuDNN at $CUDNN_DIR"
+		exit 1
+	fi
+	export CUDNN_DIR
 else
     HAS_GPU=0
     WITH_CUDA=${WITH_CUDA:-OFF}
@@ -667,10 +696,12 @@ ${CMAKE_PATH}/cmake \
 -D LBANN_WITH_CUDA=${WITH_CUDA} \
 -D LBANN_WITH_NVPROF=${WITH_NVPROF} \
 -D LBANN_WITH_VTUNE=${WITH_VTUNE} \
+-D LBANN_WITH_TBINF=${WITH_TBINF} \
 -D LBANN_WITH_TOPO_AWARE=${WITH_TOPO_AWARE} \
 -D LBANN_SEQUENTIAL_INITIALIZATION=${SEQ_INIT} \
 -D LBANN_WITH_ALUMINUM=${WITH_ALUMINUM} \
--D LBANN_ALUMINUM_DIR=${ALUMINUM_DIR}
+-D LBANN_ALUMINUM_DIR=${ALUMINUM_DIR} \
+-D LBANN_BUILT_WITH_SPECTRUM=${WITH_SPECTRUM} \
 ${SUPERBUILD_DIR}
 EOF
 )

@@ -104,10 +104,7 @@ std::string optimizer::get_description() const {
 
 weights& optimizer::get_weights() {
   if (!is_initialized()) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to access the weights being optimized before they are set";
-    throw lbann_exception(err.str());
+    LBANN_ERROR("attempted to access the weights being optimized before they are set");
   }
   return *m_weights;
 }
@@ -116,10 +113,7 @@ const AbsDistMat& optimizer::get_gradient() {
 
   // Check if gradient is initialized
   if (!is_initialized()) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to access gradients before they are set up";
-    throw lbann_exception(err.str());
+    LBANN_ERROR("attempted to access gradients before they are set up");
   }
 
   // Perform allreduce on staging matrix if needed
@@ -170,10 +164,7 @@ void optimizer::clear_gradient() {
 void optimizer::add_to_gradient(const AbsDistMat& gradient,
                                 DataType scale) {
   if (!is_initialized()) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to access gradients before they are set up";
-    throw lbann_exception(err.str());
+    LBANN_ERROR("attempted to access gradients before they are set up");
   }
   if (scale != DataType(0)) {
     El::Axpy(scale, gradient, *m_gradient);
@@ -183,16 +174,10 @@ void optimizer::add_to_gradient(const AbsDistMat& gradient,
 void optimizer::add_to_gradient_staging(const AbsDistMat& gradient,
                                         DataType scale) {
   if (!is_initialized()) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to access gradients before they are set up";
-    throw lbann_exception(err.str());
+    LBANN_ERROR("attempted to access gradients before they are set up");
   }
   if (m_gradient_allreduce_started) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to add to staging matrix after gradient accumulation has started";
-    throw lbann_exception(err.str());
+    LBANN_ERROR("attempted to add to staging matrix after gradient accumulation has started");
   }
   if (scale != DataType(0)) {
 
@@ -224,10 +209,7 @@ void optimizer::remove_gradient_source(const void* source) {
 
 void optimizer::setup(weights& w) {
   if (is_initialized()) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to setup an optimizer that is already set up";
-    throw lbann_exception(err.str());
+    LBANN_ERROR("attempted to setup an optimizer that is already set up");
   }
   set_weights(w);
 
@@ -251,10 +233,7 @@ void optimizer::setup(weights& w) {
 
 void optimizer::step() {
   if (!is_initialized()) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "optimizer must be set up before performing optimization step";
-    throw lbann_exception(err.str());
+    LBANN_ERROR("optimizer must be set up before performing optimization step");
   }
 
   double step_start = get_time();

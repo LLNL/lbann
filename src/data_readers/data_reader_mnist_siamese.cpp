@@ -29,7 +29,7 @@
 
 #include "lbann/data_readers/data_reader_mnist_siamese.hpp"
 #include "lbann/data_readers/image_utils.hpp"
-#include "lbann/data_store/data_store_imagenet.hpp"
+#include "lbann/data_store/data_store_multi_images.hpp"
 #include "lbann/utils/file_utils.hpp"
 #include <fstream>
 #include <sstream>
@@ -315,6 +315,14 @@ void data_reader_mnist_siamese::shuffle_indices() {
     std::shuffle(m_shuffled_indices2.begin(), m_shuffled_indices2.end(),
                  get_data_seq_generator());
   }
+}
+
+
+void data_reader_mnist_siamese::setup_data_store(model *m) {
+  if (m_data_store != nullptr) {
+    delete m_data_store;
+  }
+  m_data_store = nullptr;
 }
 
 }  // namespace lbann

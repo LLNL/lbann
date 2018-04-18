@@ -38,9 +38,9 @@
 #endif // LBANN_HAS_CUDA
 #ifdef LBANN_HAS_ALUMINUM
 #ifdef LBANN_HAS_NCCL2
-#define ALUMINUM_HAS_NCCL
+#define AL_HAS_NCCL
 #endif // LBANN_HAS_ALUMINUM
-#include <allreduce.hpp>
+#include <Al.hpp>
 #endif // LBANN_HAS_ALUMINUM
 
 namespace lbann {
@@ -51,27 +51,28 @@ namespace Al {
 class dummy_backend {
 public:
   using req_type = int;
+  static constexpr req_type null_req = 0;
 };
 
 // Define aliases for Aluminum backends
 #ifdef LBANN_HAS_ALUMINUM
-using mpi_backend = ::allreduces::MPIBackend;
+using mpi_backend = ::Al::MPIBackend;
 #else
 using mpi_backend = lbann::Al::dummy_backend;
 #endif // LBANN_HAS_ALUMINUM
 /// @todo MPI-CUDA backend
 #if defined(LBANN_HAS_ALUMINUM) && defined(LBANN_HAS_NCCL2)
-using nccl_backend = ::allreduces::NCCLBackend;
+using nccl_backend = ::Al::NCCLBackend;
 #else
 using nccl_backend = lbann::Al::dummy_backend;
 #endif // defined(LBANN_HAS_ALUMINUM) && defined(LBANN_HAS_NCCL2)
 
 // Wrapper for Aluminum non-blocking routine requests
 struct request {
-  std::unique_ptr<mpi_backend::req_type> mpi_req;
+  mpi_backend::req_type mpi_req = mpi_backend::null_req;
   /// @todo MPI-CUDA backend
 #ifdef LBANN_HAS_NCCL2
-  std::unique_ptr<nccl_backend::req_type> nccl_req;
+  nccl_backend::req_type nccl_req = nccl_backend::null_req;
 #endif // LBANN_HAS_NCCL2
 };
 
@@ -241,6 +242,45 @@ class lbann_comm {
     bytes_sent += sizeof(T);
     return val;
   }
+  /** 
+   * Broadcast vector<> over an arbitrary communicator; 
+   * vector<> for non-root processes will be resized as needed.
+   */
+  template <typename T> 
+  void broadcast(int root, std::vector<T> &data, const El::mpi::Comm c) {
+    int rank = get_rank_in_world();
+    size_t size = data.size();
+    size_t s2;
+    if (rank == root) {
+      s2 = broadcast<size_t>(root, size, c);
+    } else {
+      s2 = broadcast<size_t>(root, c);
+      data.resize(s2);
+    }
+    El::mpi::Broadcast(data.data(), s2, root, c);
+    if (rank == root) {
+      bytes_sent += sizeof(T)*size;
+    } else {
+      bytes_received += sizeof(T)*size;
+    }  
+  }
+  /**
+   * Broadcast vector<> to world;
+   * vector<> for non-root processes will be resized as needed.
+   */
+  template <typename T> 
+  void world_broadcast(int root, std::vector<T> &data) {
+    broadcast(root, data, get_world_comm());
+  }
+  /**
+   * Broadcast vector<> within model;
+   * vector<> for non-root processes will be resized as needed.
+   */
+  template <typename T> 
+  void model_broadcast(int root, std::vector<T> &data) {
+    broadcast(root, data, get_model_comm());
+  }
+
   /** Within-model scalar gather (for non-root processes). */
   template <typename T>
   void model_gather(T snd, int root) {
@@ -426,8 +466,13 @@ class lbann_comm {
   void allreduce(T *snd, int count, T *rcv, const El::mpi::Comm c, El::mpi::Op op = El::mpi::SUM) {
     bytes_sent += count * sizeof(T);
 #ifdef LBANN_HAS_ALUMINUM
-    allreduces::Allreduce<allreduces::MPIBackend>(
-      snd, rcv, count, mpi_op_to_al_op(op), *get_al_comm(c));
+#ifdef LBANN_ALUMINUM_MPI_PASSTHROUGH
+    ::Al::AllreduceAlgorithm algo = ::Al::AllreduceAlgorithm::mpi_passthrough;
+#else
+    ::Al::AllreduceAlgorithm algo = ::Al::AllreduceAlgorithm::automatic;
+#endif
+    ::Al::Allreduce<::Al::MPIBackend>(
+      snd, rcv, count, mpi_op_to_al_op(op), *get_al_comm(c), algo);
 #else
     El::mpi::AllReduce(snd, rcv, count, op, c);
 #endif
@@ -438,8 +483,13 @@ class lbann_comm {
   void allreduce(T *data, int count, const El::mpi::Comm c, El::mpi::Op op = El::mpi::SUM) {
     bytes_sent += count * sizeof(T);
 #ifdef LBANN_HAS_ALUMINUM
-    allreduces::Allreduce<allreduces::MPIBackend>(
-      data, count, mpi_op_to_al_op(op), *get_al_comm(c));
+#ifdef LBANN_ALUMINUM_MPI_PASSTHROUGH
+    ::Al::AllreduceAlgorithm algo = ::Al::AllreduceAlgorithm::mpi_passthrough;
+#else
+    ::Al::AllreduceAlgorithm algo = ::Al::AllreduceAlgorithm::automatic;
+#endif
+    ::Al::Allreduce<::Al::MPIBackend>(
+      data, count, mpi_op_to_al_op(op), *get_al_comm(c), algo);
 #else
     El::mpi::AllReduce(data, count, op, c);
 #endif
@@ -459,6 +509,24 @@ class lbann_comm {
                     Al::request& req,
                     El::mpi::Op op = El::mpi::SUM,
                     std::type_index t = std::type_index(typeid(Al::mpi_backend)));
+  /** Non-blocking in-place scalar-array allreduce.
+   *  If LBANN has not been built with Aluminum, then this calls a blocking
+   *  allreduce.
+   *  This currently only supports host pointers (i.e. the MPI backend).
+   */
+  template <typename T>
+  void nb_allreduce(T *data, int count, const El::mpi::Comm c, Al::request& req,
+                    El::mpi::Op op = El::mpi::SUM) {
+#ifdef LBANN_HAS_ALUMINUM
+    bytes_sent += count * sizeof(T);
+    req.mpi_req = Al::mpi_backend::null_req;
+    ::Al::NonblockingAllreduce<::Al::MPIBackend>(
+      data, count, mpi_op_to_al_op(op), *get_al_comm(c), req.mpi_req);
+    bytes_received += count * sizeof(T) * (El::mpi::Size(c) - 1);
+#else
+    allreduce(data, count, c, op);
+#endif  // LBANN_HAS_ALUMINUM
+  }
 
   /** Wait for a non-blocking request to complete. */
   template <typename T>
@@ -577,8 +645,8 @@ class lbann_comm {
     bytes_sent += sizeof(T) * send_count;
     bytes_received += sizeof(T) * recv_count;
     El::mpi::SendRecv(snd, send_count, get_world_rank(send_model, send_rank),
-                  rcv, recv_count, get_world_rank(recv_model, recv_rank),
-                  get_world_comm());
+                      rcv, recv_count, get_world_rank(recv_model, recv_rank),
+                      get_world_comm());
   }
   template <typename T>
   void sendrecv(const T *snd, int send_count, int send_model,
@@ -933,7 +1001,7 @@ class lbann_comm {
 
 #ifdef LBANN_HAS_ALUMINUM
   using al_comms_key_type = std::pair<MPI_Comm, std::type_index>;
-  using al_comms_val_type = std::unique_ptr<allreduces::MPICommunicator>;
+  using al_comms_val_type = std::unique_ptr<::Al::MPICommunicator>;
   std::map<al_comms_key_type, al_comms_val_type> m_al_comms;
 
   /** Get an Aluminum communicator.
@@ -942,11 +1010,11 @@ class lbann_comm {
    *  type index t. An Aluminum communicator will be created if
    *  needed.
    */
-  allreduces::MPICommunicator* get_al_comm(
+  ::Al::MPICommunicator* get_al_comm(
     El::mpi::Comm c, std::type_index t = std::type_index(typeid(Al::mpi_backend)));
 
   /** Convert an MPI_Op to an Aluminum reduction operator. */
-  allreduces::ReductionOperator mpi_op_to_al_op(El::mpi::Op op);
+  ::Al::ReductionOperator mpi_op_to_al_op(El::mpi::Op op);
 #endif
 
   // Various statistics counters.

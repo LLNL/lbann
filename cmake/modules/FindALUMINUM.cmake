@@ -6,20 +6,20 @@
 # Also creates an imported target ALUMINUM
 
 # Find the header
-find_path(ALUMINUM_INCLUDE_DIRS allreduce.hpp
+find_path(ALUMINUM_INCLUDE_DIRS Al.hpp
   HINTS ${ALUMINUM_DIR} $ENV{ALUMINUM_DIR}
   PATH_SUFFIXES include src
   NO_DEFAULT_PATH
   DOC "Directory with ALUMINUM header.")
-find_path(ALUMINUM_INCLUDE_DIRS allreduce.hpp)
+find_path(ALUMINUM_INCLUDE_DIRS Al.hpp)
 
 # Find the library
-find_library(ALUMINUM_LIBRARY allreduce
+find_library(ALUMINUM_LIBRARY Al
   HINTS ${ALUMINUM_DIR} $ENV{ALUMINUM_DIR}
   PATH_SUFFIXES lib64 lib
   NO_DEFAULT_PATH
   DOC "The ALUMINUM library.")
-find_library(ALUMINUM_LIBRARY allreduce)
+find_library(ALUMINUM_LIBRARY Al)
 
 # Standard handling of the package arguments
 include(FindPackageHandleStandardArgs)

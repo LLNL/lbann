@@ -61,7 +61,7 @@ lbann_comm::lbann_comm(int ppm, const El::mpi::Comm world) :
   // Don't have argc/argv here, but MPI should already be init'd.
   int argc_dummy = 0;
   char** argv_dummy = nullptr;
-  allreduces::Initialize(argc_dummy, argv_dummy);
+  ::Al::Initialize(argc_dummy, argv_dummy);
 #endif
   // Set up the initial model split
   split_models(procs_per_model);
@@ -87,7 +87,7 @@ lbann_comm::~lbann_comm() {
   }
 #ifdef LBANN_HAS_ALUMINUM
   m_al_comms.clear();
-  allreduces::Finalize();
+  ::Al::Finalize();
 #endif
 }
 
@@ -151,8 +151,8 @@ void lbann_comm::allreduce(AbsDistMat& m,
                           " non-contiguous matrices");
   }
   auto&& comm = get_al_comm(c, t);
-  if (t == std::type_index(typeid(allreduces::MPIBackend))) {
-    allreduces::Allreduce<allreduces::MPIBackend>(
+  if (t == std::type_index(typeid(::Al::MPIBackend))) {
+    ::Al::Allreduce<::Al::MPIBackend>(
       m.Buffer(),
       local_size,
       mpi_op_to_al_op(op),
@@ -160,12 +160,12 @@ void lbann_comm::allreduce(AbsDistMat& m,
   }
   /// @todo MPI-CUDA backend
 #ifdef LBANN_HAS_NCCL2
-  if (t == std::type_index(typeid(allreduces::NCCLBackend))) {
-    allreduces::Allreduce<allreduces::NCCLBackend>(
+  if (t == std::type_index(typeid(::Al::NCCLBackend))) {
+    ::Al::Allreduce<::Al::NCCLBackend>(
       m.Buffer(),
       local_size,
       mpi_op_to_al_op(op),
-      *static_cast<allreduces::NCCLCommunicator*>(comm));
+      *static_cast<::Al::NCCLCommunicator*>(comm));
   }
 #endif // LBANN_HAS_NCCL2
 #else
@@ -186,27 +186,24 @@ void lbann_comm::nb_allreduce(AbsDistMat& m,
     throw lbann_exception("Aluminum does not support allreduces on"
                           " non-contiguous matrices");
   }
-  req = Al::request(); // Reset request
   auto&& comm = get_al_comm(c, t);
-  if (t == std::type_index(typeid(allreduces::MPIBackend))) {
-    req.mpi_req.reset(new Al::mpi_backend::req_type);
-    allreduces::NonblockingAllreduce<allreduces::MPIBackend>(
+  if (t == std::type_index(typeid(::Al::MPIBackend))) {
+    ::Al::NonblockingAllreduce<::Al::MPIBackend>(
       m.Buffer(),
       local_size,
       mpi_op_to_al_op(op),
       *comm,
-      *req.mpi_req);
+      req.mpi_req);
   }
   /// @todo MPI-CUDA backend
 #ifdef LBANN_HAS_NCCL2
-  if (t == std::type_index(typeid(allreduces::NCCLBackend))) {
-    req.nccl_req.reset(new Al::nccl_backend::req_type);
-    allreduces::NonblockingAllreduce<allreduces::NCCLBackend>(
+  if (t == std::type_index(typeid(::Al::NCCLBackend))) {
+    ::Al::NonblockingAllreduce<::Al::NCCLBackend>(
       m.Buffer(),
       local_size,
       mpi_op_to_al_op(op),
-      *static_cast<allreduces::NCCLCommunicator*>(comm),
-      *req.nccl_req);
+      *static_cast<::Al::NCCLCommunicator*>(comm),
+      req.nccl_req);
   }
 #endif // LBANN_HAS_NCCL2
   bytes_received += sizeof(DataType) * local_size * (El::mpi::Size(c) - 1);
@@ -217,29 +214,28 @@ void lbann_comm::nb_allreduce(AbsDistMat& m,
 
 void lbann_comm::wait(Al::request& req) {
 #ifdef LBANN_HAS_ALUMINUM
-  if (req.mpi_req.get() != nullptr) {
-    allreduces::Wait<allreduces::MPIBackend>(*req.mpi_req);
+  if (req.mpi_req != Al::mpi_backend::null_req) {
+    ::Al::Wait<::Al::MPIBackend>(req.mpi_req);
   }
   /// @todo MPI-CUDA backend
 #ifdef LBANN_HAS_NCCL2
-  if (req.nccl_req.get() != nullptr) {
-    allreduces::Wait<allreduces::NCCLBackend>(*req.nccl_req);
+  if (req.nccl_req != Al::nccl_backend::null_req) {
+    ::Al::Wait<::Al::NCCLBackend>(req.nccl_req);
   }
 #endif // LBANN_HAS_NCCL2
 #endif // LBANN_HAS_ALUMINUM
-  req = Al::request(); // Reset request
 }
 
 bool lbann_comm::test(Al::request& req) {
   bool req_test = true;
 #ifdef LBANN_HAS_ALUMINUM
-  if (req.mpi_req.get() != nullptr) {
-    req_test = req_test && allreduces::Test<allreduces::MPIBackend>(*req.mpi_req);
+  if (req.mpi_req != Al::mpi_backend::null_req) {
+    req_test = req_test && ::Al::Test<::Al::MPIBackend>(req.mpi_req);
   }
   /// @todo MPI-CUDA backend
 #ifdef LBANN_HAS_NCCL2
-  if (req.nccl_req.get() != nullptr) {
-    req_test = req_test && allreduces::Test<allreduces::NCCLBackend>(*req.nccl_req);
+  if (req.nccl_req != Al::nccl_backend::null_req) {
+    req_test = req_test && ::Al::Test<::Al::NCCLBackend>(req.nccl_req);
   }
 #endif // LBANN_HAS_NCCL2
 #endif // LBANN_HAS_ALUMINUM
@@ -1091,19 +1087,19 @@ uint8_t *lbann_comm::get_collective_buffer(size_t size, size_t idx) {
 }
 
 #ifdef LBANN_HAS_ALUMINUM
-allreduces::MPICommunicator* lbann_comm::get_al_comm(El::mpi::Comm c,
-                                                     std::type_index t) {
+::Al::MPICommunicator* lbann_comm::get_al_comm(El::mpi::Comm c,
+                                               std::type_index t) {
 
   // Construct Aluminum communicator if needed
   const al_comms_key_type key(c.comm, t);
   if (m_al_comms.count(key) == 0) {
-    if (t == std::type_index(typeid(allreduces::MPIBackend))) {
-      m_al_comms[key] = al_comms_val_type(new allreduces::MPICommunicator(c.comm));
+    if (t == std::type_index(typeid(::Al::MPIBackend))) {
+      m_al_comms[key] = al_comms_val_type(new ::Al::MPICommunicator(c.comm));
     }
     /// @todo MPI-CUDA backend
     #ifdef LBANN_HAS_NCCL2
-    if (t == std::type_index(typeid(allreduces::NCCLBackend))) {
-      auto&& val = new allreduces::NCCLCommunicator(c.comm, get_gpus());
+    if (t == std::type_index(typeid(::Al::NCCLBackend))) {
+      auto&& val = new ::Al::NCCLCommunicator(c.comm, get_gpus());
       m_al_comms[key] = al_comms_val_type(val);
     }
     #endif // LBANN_HAS_NCCL2
@@ -1118,15 +1114,15 @@ allreduces::MPICommunicator* lbann_comm::get_al_comm(El::mpi::Comm c,
 
 }
 
-allreduces::ReductionOperator lbann_comm::mpi_op_to_al_op(El::mpi::Op op) {
+::Al::ReductionOperator lbann_comm::mpi_op_to_al_op(El::mpi::Op op) {
   if (op == El::mpi::SUM) {
-    return allreduces::ReductionOperator::sum;
+    return ::Al::ReductionOperator::sum;
   } else if (op == El::mpi::PROD) {
-    return allreduces::ReductionOperator::prod;
+    return ::Al::ReductionOperator::prod;
   } else if (op == El::mpi::MIN) {
-    return allreduces::ReductionOperator::min;
+    return ::Al::ReductionOperator::min;
   } else if (op == El::mpi::MAX) {
-    return allreduces::ReductionOperator::max;
+    return ::Al::ReductionOperator::max;
   } else {
     throw lbann_exception("Reduction operator not supported in Aluminum");
   }

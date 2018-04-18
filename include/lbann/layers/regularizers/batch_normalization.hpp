@@ -235,6 +235,18 @@ class batch_normalization : public regularizer_layer {
     this->m_weights[2]->setup(this->m_neuron_dims[0], Dev);
     this->m_weights[3]->setup(this->m_neuron_dims[0], Dev);
 
+    if (m_frozen) {
+      this->m_weights[0]->freeze();
+      this->m_weights[1]->freeze();
+      this->m_weights[2]->freeze();
+      this->m_weights[3]->freeze();
+    } else {
+      if (this->m_weights[0]->is_frozen() || this->m_weights[1]->is_frozen() ||
+          this->m_weights[2]->is_frozen() || this->m_weights[3]->is_frozen()) {
+        throw lbann_exception("batch_normalization: layer is not frozen but weights are");
+      }
+    }
+
     // Initialize matrices
     El::Zeros(*m_mean, this->m_neuron_dims[0], 1);
     El::Zeros(*m_var, this->m_neuron_dims[0], 1);

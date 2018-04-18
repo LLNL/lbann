@@ -53,6 +53,12 @@ Layer* construct_layer(lbann_comm* comm,
                        cudnn::cudnn_manager* cudnn,
                        const lbann_data::Layer& proto_layer);
 
+/** Construct weights specified with prototext. */
+weights* construct_weights(lbann_comm* comm,
+                           cudnn::cudnn_manager* cudnn,
+                           const lbann_data::Optimizer& proto_opt,
+                           const lbann_data::Weights& proto_weights);
+
 /** Construct a callback specified with prototext. */
 lbann_callback* construct_callback(lbann_comm* comm,
                                    const lbann_data::Callback& proto_cb,

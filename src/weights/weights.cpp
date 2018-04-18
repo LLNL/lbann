@@ -35,7 +35,8 @@ namespace lbann {
 weights::weights(lbann_comm* comm,
                  cudnn::cudnn_manager* cudnn)
   : m_comm(comm),
-    m_cudnn(cudnn) {
+    m_cudnn(cudnn),
+    m_frozen(false) {
 
   // Initialize weights name
   static int num_weights = 0;
@@ -55,7 +56,8 @@ weights::weights(const weights& other)
     m_matrix_width_dims(other.m_matrix_width_dims),
     m_values(other.m_values),
     m_initializer(other.m_initializer),
-    m_optimizer(other.m_optimizer) {
+    m_optimizer(other.m_optimizer),
+    m_frozen(other.m_frozen) {
 
   // Create deep copy of pointers
   if (m_values != nullptr)      { m_values = m_values->Copy(); }
@@ -84,6 +86,8 @@ weights& weights::operator=(const weights& other) {
   if (m_values != nullptr)      { m_values = m_values->Copy(); }
   if (m_initializer != nullptr) { m_initializer = m_initializer->copy(); }
   if (m_optimizer != nullptr)   { m_optimizer = m_optimizer->copy(); }
+
+  m_frozen = other.m_frozen;
 
   return *this;
 }
@@ -378,7 +382,7 @@ bool weights::save_to_checkpoint_shared(lbann::persist& p)
   return true;
 }
 
-void weights::write_proto(lbann_data::Weights* proto) const {
+void weights::write_proto(lbann_data::WeightsData* proto) const {
 
   // Set proto properties
   proto->Clear();

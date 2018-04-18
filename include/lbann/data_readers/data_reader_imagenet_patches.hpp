@@ -54,6 +54,8 @@ class imagenet_reader_patches : public image_data_reader {
     return {m_num_patches*m_image_num_channels, m_image_height, m_image_width};
   }
 
+  void setup_data_store(model *m) override;
+
  protected:
   void set_defaults() override;
   virtual bool replicate_processor(const cv_process_patches& pp);

@@ -29,6 +29,7 @@
 
 #include "lbann/layers/transform/transform.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/cublas_wrapper.hpp"
 
 namespace lbann {
 
@@ -179,6 +180,11 @@ class slice_layer : public transform_layer {
     }
 
   }
+
+  /** Get slice points. */
+  std::vector<int>& get_slice_points() { return m_slice_points; }
+  /** Get slice points (const). */
+  const std::vector<int>& get_slice_points() const { return m_slice_points; }
 
   protected:
 

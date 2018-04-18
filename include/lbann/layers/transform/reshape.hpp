@@ -41,6 +41,8 @@ class reshape_layer : public transform_layer {
     transform_layer(comm) {
     this->m_num_neuron_dims = num_dims;
     this->m_neuron_dims.assign(dims, dims+num_dims);
+    this->m_num_neurons = std::accumulate(dims, dims+num_dims, 1,
+                                          std::multiplies<int>());
   }
   reshape_layer* copy() const override { return new reshape_layer(*this); }
   std::string get_type() const override { return "reshape"; }

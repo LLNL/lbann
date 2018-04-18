@@ -159,9 +159,9 @@ class weights {
   void set_initializer(weights_initializer* initializer);
 
   /** Get weights optimizer. */
-  optimizer* get_optimizer() { return m_optimizer; }
+  optimizer* get_optimizer() { return (m_frozen? nullptr : m_optimizer); }
   /** Get weights optimizer (const). */
-  const optimizer* get_optimizer() const { return m_optimizer; }
+  const optimizer* get_optimizer() const { return (m_frozen? nullptr : m_optimizer); }
   /** Set weights optimizer.
    *  This takes ownership of the optimizer and deallocates it during
    *  destruction.
@@ -186,11 +186,15 @@ class weights {
    */
   void get_values_view(AbsDistMat& values_v);
 
+  void freeze() { m_frozen = true; }
+  void unfreeze() { m_frozen = false; }
+  bool is_frozen() const { return m_frozen; }
+
   bool save_to_checkpoint_shared(persist& p);
   bool load_from_checkpoint_shared(persist& p);
 
   /** Write weights to proto file */
-  virtual void write_proto(lbann_data::Weights* proto) const;
+  virtual void write_proto(lbann_data::WeightsData* proto) const;
  private:
 
   /** Weights name.
@@ -223,6 +227,9 @@ class weights {
    *  Default is nullptr, which corresponds to no optimizer.
    */
   optimizer* m_optimizer = nullptr;
+
+  /** Avoid weight update if frozen */
+  bool m_frozen;
 
   /** Get string describing weight tensor dimensions.
    *  height_dims and width_dims are the dimensions of the weight

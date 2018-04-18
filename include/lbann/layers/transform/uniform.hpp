@@ -24,30 +24,33 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYER_NOISE_HPP_INCLUDED
-#define LBANN_LAYER_NOISE_HPP_INCLUDED
+#ifndef LBANN_LAYER_UNIFORM_HPP_INCLUDED
+#define LBANN_LAYER_UNIFORM_HPP_INCLUDED
 
 #include "lbann/layers/transform/transform.hpp"
 #include "lbann/utils/random.hpp"
 
 namespace lbann {
 
-/** Layer draws outputs from a Gaussian distribution.
- *  During validation and testing, the layer outputs zeros.
+/** Activations are drawn from uniform distribution.
+ *  During validation and testing, the layer outputs the distribution
+ *  mean.
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
-class noise_layer : public transform_layer {
+class uniform_layer : public transform_layer {
  private:
-  /** Noise factor */
-  DataType m_noise_factor;
+  /** Uniform distribution mean. */
+  DataType m_min;
+  /** Uniform distribution standard deviation. */
+  DataType m_max;
 
  public:
-  noise_layer(lbann_comm *comm,
-              const std::vector<int>& neuron_dims,
-              DataType noise_factor=DataType(1.0),
-              cudnn::cudnn_manager *cudnn = nullptr)
-    : transform_layer(comm),
-      m_noise_factor(noise_factor) {
+  uniform_layer(lbann_comm *comm,
+                 const std::vector<int>& neuron_dims,
+                 DataType min = DataType(0),
+                 DataType max = DataType(1),
+                 cudnn::cudnn_manager *cudnn = nullptr)
+    : transform_layer(comm), m_min(min), m_max(max) {
 
     // Record neuron dimensions
     this->m_neuron_dims = neuron_dims;
@@ -57,20 +60,23 @@ class noise_layer : public transform_layer {
                                           1,
                                           std::multiplies<int>());
 
-    // Constant layer has no parents
+    // Uniform layer has no parents
     m_expected_num_parent_layers = 0;
+
   }
-  noise_layer* copy() const override { return new noise_layer(*this); }
-  std::string get_type() const override { return "noise"; }
+  uniform_layer* copy() const override { return new uniform_layer(*this); }
+  std::string get_type() const override { return "uniform"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
   /** Returns description of ctor params */
   std::string get_description() const override {
-    std::stringstream s;
-     s << "noise_layer  noise_factor: " << m_noise_factor
-       << " dataLayout: " << this->get_data_layout_string(get_data_layout());
-     return s.str();
+    std::stringstream ss;
+    ss << "uniform_layer" << "  "
+       << "min: " << m_min << " "
+       << "max: " << m_max << " "
+       << "dataLayout: " << this->get_data_layout_string(get_data_layout());
+     return ss.str();
   }
 
  protected:
@@ -87,21 +93,20 @@ class noise_layer : public transform_layer {
   }
 
   void fp_compute() override {
+    const auto& mean = (m_max + m_min) / 2;
+    const auto& radius = (m_max - m_min) / 2;
     auto& output = get_activations();
     if (this->m_model->get_execution_mode() == execution_mode::training) {
-      gaussian_fill(output,
-                    output.Height(), output.Width(),
-                    DataType(0), m_noise_factor);
+      uniform_fill(output, output.Height(), output.Width(), mean, radius);
     } else {
-      El::Zero(output);
+      El::Fill(output, mean);
     }
   }
 
-  void bp_compute() override {
-  }
+  void bp_compute() override {}
 
 };
 
 } // namespace lbann
 
-#endif // LBANN_LAYER_NOISE_HPP_INCLUDED
+#endif // LBANN_LAYER_UNIFORM_HPP_INCLUDED

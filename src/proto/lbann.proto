@@ -234,6 +234,7 @@ message ObjectiveFunction {
   repeated L2WeightRegularization l2_weight_regularization = 21;
   repeated GroupLassoWeightRegularization group_lasso_weight_regularization = 22;
   repeated KLDivergence kl_divergence = 23;
+  repeated LayerTerm layer_term = 25;
 }
 
 message MeanSquaredError {
@@ -290,6 +291,11 @@ message KLDivergence {
   string layer2 = 2;
 }
 
+message LayerTerm {
+  double scale_factor = 1;
+  string layer = 2;
+}
+
 //========================================================================
 // Metrics
 //========================================================================
@@ -303,6 +309,9 @@ message Metric {
   MeanAbsoluteError mean_absolute_error = 6;
   PearsonCorrelation pearson_correlation = 5;
   R2 r2 = 7;
+  BooleanAccuracy boolean_accuracy = 8;
+  BooleanFalsePositives boolean_false_positives = 9;
+  BooleanFalseNegatives boolean_false_negatives = 10;
 }
 
 message CategoricalAccuracy {
@@ -319,6 +328,15 @@ message PearsonCorrelation {
 }
 
 message R2 {
+}
+
+message BooleanAccuracy {
+}
+
+message BooleanFalsePositives {
+}
+
+message BooleanFalseNegatives {
 }
 
 //========================================================================
@@ -567,11 +585,37 @@ message CallbackSaveModel {
 // Weights
 //========================================================================
 
-//
-// weight initialization should be one of:
-//    zero, uniform, normal, glorot_normal, he_normal, he_uniform
-// see: lbann/include/lbann/lbann_base.hpp
-//
+message Weights {
+
+  string name = 1;
+  Optimizer optimizer = 2;
+
+  ConstantInitializer constant_initializer = 20;
+  UniformInitializer uniform_initializer = 21;
+  NormalInitializer normal_initializer = 22;
+  GlorotNormalInitializer glorot_normal_initializer = 23;
+  GlorotUniformInitializer glorot_uniform_initializer = 24;
+  HeNormalInitializer he_normal_initializer = 25;
+  HeUniformInitializer he_uniform_initializer = 26;
+
+}
+
+// Weight initializers
+message ConstantInitializer {
+  double value = 1;
+}
+message UniformInitializer {
+  double min = 1;
+  double max = 2;
+}
+message NormalInitializer {
+  double mean = 1;
+  double standard_deviation = 2;
+}
+message GlorotNormalInitializer {}
+message GlorotUniformInitializer {}
+message HeNormalInitializer {}
+message HeUniformInitializer {}
 
 //note: I'd like to put this enum inside of Layer, but if I do the enum values
 //      become, e.g, Layer_Imcomm_EXCLUDE, which is just ugly
@@ -584,12 +628,12 @@ enum Imcomm {
                 //in the CallbackImComm is set to true or false
 }
 
-message WeightShape {
+// Weight data for exporting
+message WeightsShape {
   repeated int64 dim = 1 [packed = true];
 }
-
-message Weights {
-  WeightShape shape = 5;
+message WeightsData {
+  WeightsShape shape = 5;
   string name = 1;
   int64 height = 2;
   int64 width = 3;
@@ -621,11 +665,12 @@ message Layer {
    string parents = 151;
    string children = 152;
    string data_layout = 52;
-   string device_allocation = 54;
+   string device_allocation = 55;
+   string weights = 54;
    bool num_neurons_from_data_reader = 53;
+   bool freeze = 5;
 
-
-   repeated Weights weights = 153;
+   repeated WeightsData weights_data = 153;
    string top = 154;
    string bottom = 155;
    string type = 156;
@@ -655,10 +700,14 @@ message Layer {
    Slice slice = 301;
    Split split = 302;
    Sum sum = 303;
-   Noise noise = 307;
    Unpooling unpooling = 304;
    Hadamard hadamard = 308;
    Constant constant = 309;
+   Reduction reduction = 310;
+   Evaluation evaluation = 311;
+   Gaussian gaussian = 312;
+   Bernoulli bernoulli = 313;
+   Uniform uniform = 314;
 
    // learning Layers
    FullyConnected fully_connected = 11;
@@ -690,6 +739,7 @@ message Layer {
    BentIdentity bent_identity = 40;
    Exponential exponential = 41;
    Swish swish = 42;
+   Power power = 43;
 }
 ///////////////////////
 // MotifLayer //
@@ -747,6 +797,10 @@ message Selu {
 }
 
 message Softmax {
+}
+
+message Power {
+  double exponent = 1;
 }
 
 ///////////////////////////
@@ -838,11 +892,6 @@ message Sum {
   string scaling_factors = 1; //should be a space-separated list of doubles, e.g. "1.0 2.0 -1.0"
 }
 
-message Noise {
-  double noise_factor=1;
-  string num_neurons=2;
-}
-
 message Hadamard {
 }
 
@@ -850,6 +899,31 @@ message Constant {
   double value=1;
   string num_neurons=2;
 }
+
+message Reduction {
+  string mode=1;
+}
+
+message Evaluation {
+}
+
+message Gaussian {
+  double mean = 1;
+  double stdev = 2;
+  string neuron_dims = 3;
+}
+
+message Bernoulli {
+  double prob = 1;
+  string neuron_dims = 2;
+}
+
+message Uniform {
+  double min = 1;
+  double max = 2;
+  string neuron_dims = 3;
+}
+
 /////////////////////
 // learning Layers //
 /////////////////////

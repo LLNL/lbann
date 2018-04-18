@@ -38,7 +38,8 @@ namespace lbann {
 
 Layer::Layer(lbann_comm *comm)
   : m_comm(comm),
-    m_cudnn(nullptr) {
+    m_cudnn(nullptr),
+    m_frozen(false) {
 
   // Initialize layer name
   static int num_layers = 0;
@@ -84,6 +85,7 @@ Layer::Layer(const Layer& other) :
   m_expected_num_child_layers(other.m_expected_num_child_layers),
   m_model(other.m_model),
   m_cudnn(other.m_cudnn),
+  m_frozen(other.m_frozen),
 #ifdef LBANN_HAS_CUDNN
   m_mini_batch_size_per_gpu(other.m_mini_batch_size_per_gpu),
   m_max_mini_batch_size_per_gpu(other.m_max_mini_batch_size_per_gpu),
@@ -140,6 +142,7 @@ Layer& Layer::operator=(const Layer& other) {
   m_model = other.m_model;
   m_using_gpus = other.m_using_gpus;
   m_cudnn = other.m_cudnn;
+  m_frozen = other.m_frozen;
 #ifdef LBANN_HAS_CUDNN
   m_mini_batch_size_per_gpu = other.m_mini_batch_size_per_gpu;
   m_max_mini_batch_size_per_gpu = other.m_max_mini_batch_size_per_gpu;
@@ -293,6 +296,7 @@ void Layer::back_prop() {
 }
 
 bool Layer::update() {
+  if (m_frozen) { return true; }
   // Apply any updates.
   const auto update_compute_start = get_time();
   const auto layer_done = update_compute();
@@ -456,6 +460,29 @@ void Layer::clear_error_signals(int mini_batch_size) {
     get_error_signals(i).Resize(get_num_prev_neurons(i), mini_batch_size);
     El::Zero(get_error_signals(i));
   }
+}
+
+void Layer::freeze() {
+  m_frozen = true;
+  for(auto& w : m_weights) {
+    w->freeze();
+  }
+}
+
+void Layer::unfreeze() {
+  m_frozen = false;
+  for(auto& w : m_weights) {
+    w->unfreeze();
+  }
+}
+
+bool Layer::is_frozen() const {
+  for(auto& w : m_weights) {
+    if (w->is_frozen() != m_frozen) {
+      throw lbann_exception("layer and weights of them are inconsistently frozen");
+    }
+  }
+  return m_frozen;
 }
 
 void Layer::setup() {
@@ -825,7 +852,7 @@ void Layer::write_proto(lbann_data::Layer* proto) const {
   proto->set_top(get_name());
   //Add weights
   for (weights *w : m_weights) {
-    auto weight_proto = proto->add_weights();
+    auto weight_proto = proto->add_weights_data();
     w->write_proto(weight_proto);
   }
 }

@@ -65,8 +65,11 @@ class cross_entropy_with_uncertainty : public loss_function {
    *  the predictions matrix should have non-negative entries that add up 
    *  to one.
    */
-  EvalType evaluate_compute(const AbsDistMat& prediction,
-                            const AbsDistMat& ground_truth) override;
+  void start_evaluate_compute(const AbsDistMat& prediction,
+                              const AbsDistMat& ground_truth) override {}
+
+  EvalType finish_evaluate_compute(const AbsDistMat& prediction,
+                                   const AbsDistMat& ground_truth) override;
 
   /** Compute the gradient of the cross entropy objective function.
    *  Given a predicted distribution \f$y\f$ and ground truth

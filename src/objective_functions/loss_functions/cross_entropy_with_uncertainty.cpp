@@ -92,8 +92,8 @@ void cross_entropy_with_uncertainty::setup(model& m) {
 
 }
 
-EvalType cross_entropy_with_uncertainty::evaluate_compute(const AbsDistMat& predictions,
-                                                          const AbsDistMat& ground_truth) {
+EvalType cross_entropy_with_uncertainty::finish_evaluate_compute(
+  const AbsDistMat& predictions, const AbsDistMat& ground_truth) {
 
   // Initialize workspace
   m_prediction_sums->Resize(1, predictions.Width());

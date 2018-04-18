@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/models/siamese.hpp"
+#include "lbann/layers/io/io_layer.hpp"
 
 namespace lbann {
 
@@ -38,6 +39,20 @@ siamese_model::siamese_model(lbann_comm *comm,
   : directed_acyclic_graph_model(comm, mini_batch_size, obj_fn, default_optimizer),
     m_num_heads(num_heads) {}
 
+void siamese_model::freeze_layers_under_frozen_surface() {
+  // Assuming m_layers is topologically sorted
+  for (size_t i = m_layers.size(); i-- > 0u; ) {
+    const auto layer = m_layers[i];
+    if (layer->is_frozen()) {
+      for (const auto& parent : layer->get_parent_layers()) {
+        if (dynamic_cast<const io_layer*>(parent) == nullptr) {
+          const_cast<Layer *>(parent)->freeze();
+        }
+      }
+    }
+  }
+}
+
 void siamese_model::setup_layer_topology() {
 
   /** @todo Handle case where heads have already been initialized. */
@@ -46,7 +61,7 @@ void siamese_model::setup_layer_topology() {
   // Initialize network with master head
   directed_acyclic_graph_model::setup_layer_topology();
   setup_layer_execution_order();
-  
+
   // Determine layers in master head
   int heads_start = m_layers.size();
   int heads_end = -1;
@@ -127,6 +142,7 @@ void siamese_model::setup_layer_topology() {
   // Make sure all parent/child relationships are reciprocated
   directed_acyclic_graph_model::setup_layer_topology();
 
+  freeze_layers_under_frozen_surface();
 }
 
 void siamese_model::setup_layers() {
