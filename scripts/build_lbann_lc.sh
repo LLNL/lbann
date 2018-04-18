@@ -473,29 +473,31 @@ else
     MPI_DOTKIT=$(use | grep ${MPI} | sed 's/ //g')
     if [ -z "${MPI_DOTKIT}" ]; then
         if [ "${COMPILER}" == "gnu" ] || [ "${COMPILER}" == "intel" ] || [ "${COMPILER}" == "pgi" ] ; then
-            MPI_DOTKIT=${MPI}-${COMPILER}
+            MPI_COMPILER=-${COMPILER}
         elif [ "${COMPILER}" == "clang" ]; then
-            MPI_DOTKIT=${MPI}-gnu
+            MPI_COMPILER=-gnu
         fi
         # The default MVAPICH version does not work on surface
         if [ "${CLUSTER}" == "surface" -a "${MPI}" == "mvapich2" ]; then
-            MPI_DOTKIT+="-2.2"
-        fi
-        use ${MPI_DOTKIT}
-        if [ -z "$(use | grep ${MPI_DOTKIT})" ]; then
-            echo "Could not load dotkit (${MPI_DOTKIT})"
-            exit 1
-        fi
-    fi
-    if [ "${BUILD_TYPE}" == "Debug" ] && [ -z "$(echo ${MPI_DOTKIT} | grep debug)" ]; then
-        unuse ${MPI_DOTKIT}
-        #MPI_DOTKIT=$(echo ${MPI_DOTKIT} | awk 'BEGIN{FS="-"}{printf("%s-%s-debug-%s\n",$1,$2,$3)}')
-        MPI_DOTKIT=$(echo ${MPI_DOTKIT} | awk 'BEGIN{FS="-"}{printf("%s-%s-debug\n",$1,$2)}')
-        use ${MPI_DOTKIT}
-        if [ -z "$(use | grep ${MPI_DOTKIT})" ]; then
-            echo "Could not load dotkit (${MPI_DOTKIT})"
-            exit 1
-        fi
+            MPI_VERSION="-2.2"
+		else
+			MPI_VERSION=""
+		fi
+	else
+		MPI_COMPILER=-$(echo ${MPI_DOTKIT} | awk 'BEGIN{FS="-"}{print $2}')
+		MPI_VERSION=-$(echo ${MPI_DOTKIT} |  awk 'BEGIN{FS="-"}{print $NF}')
+	fi
+	if [ "${BUILD_TYPE}" == "Debug" ]; then
+		MPI_DEBUG="-debug"
+	else
+		MPI_DEBUG=""
+	fi
+	MPI_DOTKIT=${MPI}${MPI_COMPILER}${MPI_DEBUG}${MPI_VERSION}
+	echo "Using ${MPI_DOTKIT}"
+    use ${MPI_DOTKIT}
+    if [ -z "$(use | grep ${MPI_DOTKIT})" ]; then
+        echo "Could not load dotkit (${MPI_DOTKIT})"
+        exit 1
     fi
     if [ "${COMPILER}" == "gnu" ] || [ "${COMPILER}" == "intel" ] || [ "${COMPILER}" == "pgi" ]; then
         if [ "`echo ${MPI_DOTKIT} | grep ${COMPILER}`" == "" ] ; then
