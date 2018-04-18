@@ -462,7 +462,7 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_com
                  m_bias_gradient->Buffer(), 1);
     bias_optimizer->add_to_gradient_staging(
                                             *m_bias_gradient,
-                                            m_bias_scaling_factor / this->m_model->get_effective_mini_batch_size());
+                                            m_bias_scaling_factor / mini_batch_size);
   }
 
   // Compute gradient w.r.t. linearity if needed
