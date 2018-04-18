@@ -40,7 +40,6 @@
 using EGrid      = El::Grid;
 using Grid       = El::Grid;
 using AbsMat     = El::AbstractMatrix<lbann::DataType>;
-using Mat        = El::Matrix<lbann::DataType, El::Device::CPU>; // Temporarily define as CPUMat
 template <El::Device D>
 using DMat       = El::Matrix<lbann::DataType, D>;
 using CPUMat     = DMat<El::Device::CPU>;
@@ -69,6 +68,7 @@ using StarMRMat  = El::DistMatrix<lbann::DataType, El::STAR, El::MR  , El::ELEME
 
 // Deprecated typedefs for Elemental matrices
 using DistMat         = MCMRMat<El::Device::CPU>;
+using Mat        = El::Matrix<lbann::DataType, El::Device::CPU>; // Temporarily define as CPUMat
 
 // Datatype for model evaluation
 // Examples: timing, metrics, objective functions
