@@ -197,7 +197,7 @@ class lbann_comm {
    * Broadcast over an arbitrary communicator, returns the broadcast value
    */
   template <typename T>
-  T broadcast(int root, T& val, const El::mpi::Comm c) {
+  void broadcast(int root, T& val, const El::mpi::Comm c) {
     if (El::mpi::TypeMap<T>() == MPI_DATATYPE_NULL) {
       const int bytes =  static_cast<int>(sizeof(T));
       El::mpi::Broadcast<unsigned char>(reinterpret_cast<unsigned char*>(&val), bytes, root, c); // or std::byte in c++17
@@ -205,27 +205,24 @@ class lbann_comm {
       El::mpi::Broadcast(&val, 1, root, c);
     }
     count_bytes_broadcast(sizeof(T), El::mpi::Rank(c), root);
-    return val;
   }
   /**
    * Inter-model broadcast, returns the broadcast value.
    * Root process specifies root and val, other processes just root.
    */
   template <typename T>
-  T intermodel_broadcast(int root, T val = {}) {
+  void intermodel_broadcast(int root, T& val) {
     broadcast(root, val, intermodel_comm);
     count_bytes_broadcast(sizeof(T), get_model_rank(), root);
-    return val;
   }
   /**
    * Within-model broadcast, returns the broadcast value.
    * Root process specifies root and val, other processes just root.
    */
   template <typename T>
-  T model_broadcast(int root, T val = {}) {
+  void model_broadcast(int root, T& val) {
     broadcast(root, val, model_comm);
     count_bytes_broadcast(sizeof(T), get_rank_in_model(), root);
-    return val;
   }
   /**
    * Broadcast a buffer over an arbitrary communicator assuming that
