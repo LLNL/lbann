@@ -78,7 +78,7 @@ model {
   }
   
   weights {
-     name: "gen_fc_weights"
+     name: "gen_fc1_weights"
      optimizer { }
      glorot_uniform_initializer {}
   }
@@ -89,10 +89,10 @@ model {
     name: "fc1"
     parents: "noise"
     data_layout: "data_parallel"
-    #weights: "gen_fc_weights"
+    weights: "gen_fc1_weights"
     fully_connected {
       num_neurons: 256 
-      weight_initialization: "glorot_uniform"
+     # weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }
@@ -118,14 +118,20 @@ model {
   #############
   # FC 2
   #############
+  
+  weights {
+     name: "gen_fc2_weights"
+     optimizer { }
+     glorot_uniform_initializer {}
+  }
   layer {
     name: "fc2"
     parents: "fc1_bn"
     data_layout: "data_parallel"
-    #weights: "gen_fc_weights"
+    weights: "gen_fc2_weights"
     fully_connected {
       num_neurons: 512 
-      weight_initialization: "glorot_uniform"
+      #weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }
@@ -151,14 +157,20 @@ model {
   #############
   # FC 3
   #############
+  
+  weights {
+     name: "gen_fc3_weights"
+     optimizer { }
+     glorot_uniform_initializer {}
+  }
   layer {
     name: "fc3"
     parents: "fc2_bn"
     data_layout: "data_parallel"
-    #weights: "gen_fc_weights"
+    weights: "gen_fc3_weights"
     fully_connected {
       num_neurons: 1024 
-      weight_initialization: "glorot_uniform"
+     # weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }
@@ -184,14 +196,20 @@ model {
   #############
   # FC 4
   #############
+  
+  weights {
+     name: "gen_fc4_weights"
+     optimizer { }
+     glorot_uniform_initializer {}
+  }
   layer {
     name: "fc4"
     parents: "fc3_bn"
     data_layout: "data_parallel"
-    #weights: "gen_fc_weights"
+    weights: "gen_fc4_weights"
     fully_connected {
       num_neurons: 784 
-      weight_initialization: "glorot_uniform"
+      #weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }

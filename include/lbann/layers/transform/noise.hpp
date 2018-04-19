@@ -87,13 +87,13 @@ class noise_layer : public transform_layer {
 
   void fp_compute() override {
     auto& output = get_activations();
-    if (this->m_model->get_execution_mode() == execution_mode::training) {
+    //if (this->m_model->get_execution_mode() == execution_mode::training) {
       gaussian_fill(output,
                     output.Height(), output.Width(),
                     DataType(0), m_noise_factor);
-    } else {
+    /*} else {
       El::Zero(output);
-    }
+    }*/
   }
 
   void bp_compute() override {
