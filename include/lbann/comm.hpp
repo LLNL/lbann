@@ -213,7 +213,6 @@ class lbann_comm {
   template <typename T>
   void intermodel_broadcast(int root, T& val) {
     broadcast(root, val, intermodel_comm);
-    count_bytes_broadcast(sizeof(T), get_model_rank(), root);
   }
   /**
    * Within-model broadcast, returns the broadcast value.
@@ -222,7 +221,6 @@ class lbann_comm {
   template <typename T>
   void model_broadcast(int root, T& val) {
     broadcast(root, val, model_comm);
-    count_bytes_broadcast(sizeof(T), get_rank_in_model(), root);
   }
   /**
    * Broadcast a buffer over an arbitrary communicator assuming that
