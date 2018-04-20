@@ -175,7 +175,7 @@ class lbann_comm {
                      rank) != world_ranks_on_node.end();
   }
 
-  /** Get default number of threads per process. 
+  /** Get default number of threads per process.
    *  This is the number of OpenMP threads to use for parallel
    *  regions, provided omp_set_num_threads has not been called or the
    *  num_threads directive has not been provided.
@@ -194,81 +194,75 @@ class lbann_comm {
   void intermodel_broadcast_matrix(Mat& mat, int root);
   void intermodel_broadcast_matrix(AbsDistMat& mat, int root);
   /**
+   * Broadcast over an arbitrary communicator, returns the broadcast value
+   */
+  template <typename T>
+  void broadcast(int root, T& val, const El::mpi::Comm c) {
+    if (El::mpi::TypeMap<T>() == MPI_DATATYPE_NULL) {
+      const int bytes =  static_cast<int>(sizeof(T));
+      El::mpi::Broadcast<unsigned char>(reinterpret_cast<unsigned char*>(&val), bytes, root, c); // or std::byte in c++17
+    } else {
+      El::mpi::Broadcast(&val, 1, root, c);
+    }
+    count_bytes_broadcast(sizeof(T), El::mpi::Rank(c), root);
+  }
+  /**
    * Inter-model broadcast, returns the broadcast value.
    * Root process specifies root and val, other processes just root.
    */
   template <typename T>
-  T intermodel_broadcast(int root, T val = {}) {
-    El::mpi::Broadcast(&val, 1, root, intermodel_comm);
-    if (get_rank_in_model() == root) {
-      bytes_sent += sizeof(T);
-    } else {
-      bytes_received += sizeof(T);
-    }
-    return val;
+  void intermodel_broadcast(int root, T& val) {
+    broadcast(root, val, intermodel_comm);
   }
   /**
    * Within-model broadcast, returns the broadcast value.
    * Root process specifies root and val, other processes just root.
    */
   template <typename T>
-  T model_broadcast(int root, T val = {}) {
-    El::mpi::Broadcast(&val, 1, root, model_comm);
-    if (get_rank_in_model() == root) {
-      bytes_sent += sizeof(T);
+  void model_broadcast(int root, T& val) {
+    broadcast(root, val, model_comm);
+  }
+  /**
+   * Broadcast a buffer over an arbitrary communicator assuming that
+   * the buffer space is already allocated.
+   */
+  template <typename T>
+  void broadcast(const int root, T* data, const int count, const El::mpi::Comm c) {
+    if (El::mpi::TypeMap<T>() == MPI_DATATYPE_NULL) {
+      El::mpi::Broadcast<unsigned char>(reinterpret_cast<unsigned char*>(data), sizeof(T)*count, root, c);
     } else {
-      bytes_received += sizeof(T);
+      El::mpi::Broadcast(data, count, root, c);
     }
-    return val;
+    count_bytes_broadcast(sizeof(T)*count, El::mpi::Rank(c), root);
   }
   /**
-   * Broadcast over an arbitrary communicator, returns the broadcast value
-   * (for non-root processes).
+   * Resize vector<> over an arbitrary communicator to match the one on root.
    */
   template <typename T>
-  T broadcast(int root, const El::mpi::Comm c) {
-    T val = {};
-    El::mpi::Broadcast(&val, 1, root, c);
-    bytes_received += sizeof(T);
-    return val;
+  size_t resize(const int root, std::vector<T> &data, const El::mpi::Comm c) {
+    size_t count = data.size();
+    El::mpi::Broadcast(&count, 1, root, c);
+    count_bytes_broadcast(sizeof(size_t), El::mpi::Rank(c), root);
+    data.resize(count);
+    return count;
   }
   /**
-   * Broadcast over an arbitrary communicator, returns the broadcast value
-   * (for root processes).
-   */
-  template <typename T>
-  T broadcast(int root, T val, const El::mpi::Comm c) {
-    El::mpi::Broadcast(&val, 1, root, c);
-    bytes_sent += sizeof(T);
-    return val;
-  }
-  /** 
-   * Broadcast vector<> over an arbitrary communicator; 
+   * Broadcast vector<> over an arbitrary communicator;
    * vector<> for non-root processes will be resized as needed.
    */
-  template <typename T> 
-  void broadcast(int root, std::vector<T> &data, const El::mpi::Comm c) {
-    int rank = get_rank_in_world();
-    size_t size = data.size();
-    size_t s2;
-    if (rank == root) {
-      s2 = broadcast<size_t>(root, size, c);
-    } else {
-      s2 = broadcast<size_t>(root, c);
-      data.resize(s2);
+  template <typename T>
+  void broadcast(const int root, std::vector<T> &data, const El::mpi::Comm c) {
+    const int count = static_cast<int>(resize(root, data, c));
+    if (count <= 0) {
+      return;
     }
-    El::mpi::Broadcast(data.data(), s2, root, c);
-    if (rank == root) {
-      bytes_sent += sizeof(T)*size;
-    } else {
-      bytes_received += sizeof(T)*size;
-    }  
+    broadcast<T>(root, data.data(), count, c);
   }
   /**
    * Broadcast vector<> to world;
    * vector<> for non-root processes will be resized as needed.
    */
-  template <typename T> 
+  template <typename T>
   void world_broadcast(int root, std::vector<T> &data) {
     broadcast(root, data, get_world_comm());
   }
@@ -276,10 +270,11 @@ class lbann_comm {
    * Broadcast vector<> within model;
    * vector<> for non-root processes will be resized as needed.
    */
-  template <typename T> 
+  template <typename T>
   void model_broadcast(int root, std::vector<T> &data) {
     broadcast(root, data, get_model_comm());
   }
+<<<<<<< HEAD
   /** 
    * Broadcast T* over an arbitrary communicator; 
    * all processors must have correctly allocated
@@ -352,6 +347,16 @@ class lbann_comm {
   template <typename T>
   T world_all_gather(int root, T &src, std::vector<T> &data) {
     all_gather(root, src, data, get_world_comm());
+  }
+  /**
+   * Keep track of the number of broadcast bytes transmitted and received
+   */
+  void count_bytes_broadcast(const size_t bytes, const int rank, const int root) {
+    if (rank == root) {
+      bytes_sent += bytes;
+    } else {
+      bytes_received += bytes;
+    }
   }
 
   /** Within-model scalar gather (for non-root processes). */
@@ -1056,7 +1061,7 @@ class lbann_comm {
   int rank_in_node;
   /** The list of world ranks that are on this compute node. */
   std::vector<int> world_ranks_on_node;
-  /** Default number of threads per process. 
+  /** Default number of threads per process.
    *  This is the number of OpenMP threads to use for parallel
    *  regions, provided omp_set_num_threads has not been called or the
    *  num_threads directive has not been provided.
