@@ -32,7 +32,19 @@ layer_term::layer_term(EvalType scale_factor)
   : objective_function_term(scale_factor) {}
 
 void layer_term::set_evaluation_layer(Layer* l) {
-  this->m_layers.assign(1, l);
+  if (l == nullptr) {
+    this->m_layers.clear();
+  } else {
+    this->m_layers.assign(1, l);
+  }
+}
+
+Layer* layer_term::get_evaluation_layer() {
+  if (m_layers.empty()) {
+    return nullptr;
+  } else {
+    return this->m_layers.front();
+  }
 }
 
 void layer_term::setup(model& m) {

@@ -241,11 +241,6 @@ def configure_model(model):
     l = new_layer(model, 'obj', 'prob', 'log')
     l = new_layer(model, 'obj_eval', 'obj', 'evaluation')
 
-    # Target layer
-    l = new_layer(model, 'target', 'classification_probs', 'target')
-    l.target.io_buffer = 'partitioned'
-    l.target.shared_data_reader = True
-
 if __name__ == "__main__":
 
     # Make sure protobuf Python implementation is built

@@ -84,28 +84,7 @@ class hadamard_layer : public transform_layer {
       throw lbann_exception("hadamard_layer: no GPU implementation");
   #endif // LBANN_HAS_CUDNN
     } else {
-
-      // Get local matrices
-      std::vector<const Mat*> local_inputs;
-      for (const auto& input : this->m_prev_activations) {
-        local_inputs.push_back(&input->LockedMatrix());
-      }
-      auto& local_output = get_local_activations();
-
-      // Compute entrywise product
-      const int local_height = local_output.Height();
-      const int local_width = local_output.Width();
-      #pragma omp parallel for collapse(2)
-      for (int col = 0; col < local_width; ++col) {
-        for (int row = 0; row < local_height; ++row) {
-          DataType y = DataType(1);
-          for (const auto& local_input : local_inputs) {
-            y *= (*local_input)(row, col);
-          }
-          local_output(row, col) = y;
-        }
-      }
-
+      fp_compute_cpu();
     }
   }
 
@@ -117,39 +96,89 @@ class hadamard_layer : public transform_layer {
       throw lbann_exception("hadamard_layer: no GPU implementation");
   #endif // LBANN_HAS_CUDNN
     } else {
+      bp_compute_cpu();
+    }
+  }
 
-      // Get local matrices
-      std::vector<const Mat*> local_inputs;
-      for (const auto& input : this->m_prev_activations) {
-        local_inputs.push_back(&input->LockedMatrix());
-      }
-      auto& local_gradient_wrt_output = get_local_prev_error_signals();
-      std::vector<Mat*> local_gradient_wrt_inputs;
-      for (auto& gradient_wrt_input : this->m_error_signals) {
-        local_gradient_wrt_inputs.push_back(&gradient_wrt_input->Matrix());
-      }
+ private:
 
-      // Compute derivative of entrywise product
-      const int local_height = local_gradient_wrt_output.Height();
-      const int local_width = local_gradient_wrt_output.Width();
-      const int num_parents = get_num_parents();
-      #pragma omp parallel for collapse(2)
-      for (int col = 0; col < local_width; ++col) {
-        for (int row = 0; row < local_height; ++row) {
-          const DataType dy = local_gradient_wrt_output(row, col);
-          for (int parent = 0; parent < num_parents; ++parent) {
-            DataType dx = dy;
-            for (int i = 0; i < num_parents; ++i) {
-              if (i != parent) {
-                dx *= (*local_inputs[i])(row, col);
-              }
+  void fp_compute_cpu() {
+
+    // Return quickly if layer has fewer than two parents
+    const int num_parents = get_num_parents();
+    if (num_parents == 0) {
+      El::Fill(get_activations(), DataType(1));
+      return;
+    }
+    if (num_parents == 1) {
+      El::Copy(get_prev_activations(), get_activations());
+      return;
+    }
+
+    // Get local matrices
+    auto& local_input0 = get_local_prev_activations(0);
+    std::vector<const Mat*> local_inputs;
+    for (int i = 1; i < num_parents; ++i) {
+      local_inputs.push_back(&get_local_prev_activations(i));
+    }
+    auto& local_output = get_local_activations();
+
+    // Compute entrywise product
+    const int local_height = local_output.Height();
+    const int local_width = local_output.Width();
+    #pragma omp parallel for collapse(2)
+    for (int col = 0; col < local_width; ++col) {
+      for (int row = 0; row < local_height; ++row) {
+        DataType y = local_input0(row, col);
+        for (const auto& local_input : local_inputs) {
+          y *= (*local_input)(row, col);
+        }
+        local_output(row, col) = y;
+      }
+    }
+    
+  }  
+
+  void bp_compute_cpu() {
+
+    // Return quickly if layer has fewer than two parents
+    const int num_parents = get_num_parents();
+    if (num_parents == 0) { return; }
+    if (num_parents == 1) {
+      El::Axpy(DataType(1), get_prev_error_signals(), get_error_signals());
+      return;
+    }
+
+    // Get local matrices
+    std::vector<const Mat*> local_inputs;
+    for (const auto& input : this->m_prev_activations) {
+      local_inputs.push_back(&input->LockedMatrix());
+    }
+    auto& local_gradient_wrt_output = get_local_prev_error_signals();
+    std::vector<Mat*> local_gradient_wrt_inputs;
+    for (auto& gradient_wrt_input : this->m_error_signals) {
+      local_gradient_wrt_inputs.push_back(&gradient_wrt_input->Matrix());
+    }
+
+    // Compute derivative of entrywise product
+    const int local_height = local_gradient_wrt_output.Height();
+    const int local_width = local_gradient_wrt_output.Width();
+    #pragma omp parallel for collapse(2)
+    for (int col = 0; col < local_width; ++col) {
+      for (int row = 0; row < local_height; ++row) {
+        const DataType dy = local_gradient_wrt_output(row, col);
+        for (int parent = 0; parent < num_parents; ++parent) {
+          DataType dx = dy;
+          for (int i = 0; i < num_parents; ++i) {
+            if (i != parent) {
+              dx *= (*local_inputs[i])(row, col);
             }
-            (*local_gradient_wrt_inputs[parent])(row, col) += dx;
           }
+          (*local_gradient_wrt_inputs[parent])(row, col) += dx;
         }
       }
-
     }
+
   }
 
 };

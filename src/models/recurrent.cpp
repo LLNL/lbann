@@ -22,19 +22,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// recurrent .hpp .cpp - Recurrent neural network models
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <algorithm>
 #include "lbann/models/recurrent.hpp"
 #include "lbann/layers/io/input/generic_input_layer.hpp"
-#include "lbann/layers/io/target/generic_target_layer.hpp"
 #include "lbann/layers/transform/slice.hpp"
 #include "lbann/layers/transform/split.hpp"
 #include "lbann/layers/transform/concatenation.hpp"
 #include "lbann/layers/transform/constant.hpp"
 #include "lbann/layers/transform/dummy.hpp"
+#include "lbann/objective_functions/layer_term.hpp"
 
 namespace lbann {
 
@@ -48,14 +46,11 @@ void unroll_input_layer(int unroll_depth,
                         std::vector<Layer*>& layers,
                         std::unordered_map<const Layer*,Layer*>& prev_step_layer,
                         std::unordered_map<const Layer*,Layer*>& next_step_layer) {
-    std::stringstream err;
 
   // We expect first layer to be an input layer
   auto&& input = dynamic_cast<generic_input_layer*>(layers.front());
   if (input == nullptr) {
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "expected the first layer to be an input layer";
-    throw lbann_exception(err.str());
+    LBANN_ERROR("expected the first layer to be an input layer");
   }
   
   // Determine slice points
@@ -81,8 +76,7 @@ void unroll_input_layer(int unroll_depth,
     split = new split_layer<data_layout::MODEL_PARALLEL>(comm, cudnn);
     break;
   default:
-    err << __FILE__ << " " << __LINE__ << " :: " << "invalid data layout";
-    throw lbann_exception(err.str());
+    LBANN_ERROR("invalid data layout");
   }
   slice->set_name(input->get_name() + "_slice");
   split->set_name(input->get_name() + "_split");
@@ -112,62 +106,6 @@ void unroll_input_layer(int unroll_depth,
 
 }
 
-/** Setup target layer to match unrolled network.
- *  The last layer is assumed to be a target layer. A concatenation
- *  layer is inserted before the target layer.
- */
-void unroll_target_layer(int unroll_depth,
-                         std::vector<Layer*>& layers,
-                         std::unordered_map<const Layer*,Layer*>& prev_step_layer,
-                         std::unordered_map<const Layer*,Layer*>& next_step_layer) {
-  std::stringstream err;
-
-  // We expect last layer to be a target layer
-  auto&& target = dynamic_cast<generic_target_layer*>(layers.back());
-  if (target == nullptr) {
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "expected the last layer to be a target layer";
-    throw lbann_exception(err.str());
-  }
-
-  // Construct concatenation layer
-  Layer* concat = nullptr;
-  auto&& comm = target->get_comm();
-  switch (target->get_data_layout()) {
-  case data_layout::DATA_PARALLEL:
-    concat = new concatenation_layer<data_layout::DATA_PARALLEL>(comm, 0, nullptr);
-    break;
-  case data_layout::MODEL_PARALLEL:
-    concat = new concatenation_layer<data_layout::MODEL_PARALLEL>(comm, 0, nullptr);
-    break;
-  default:
-    err << __FILE__ << " " << __LINE__ << " :: " << "invalid data layout";
-    throw lbann_exception(err.str());
-  }
-  concat->set_name(target->get_name() + "_concat");
-  layers.insert(layers.end() - 1, concat);
-
-  // Setup relationships between concatenation layer and parent layers
-  for (auto&& parent : target->get_parent_layers()) {
-    concat->add_parent_layer(parent);
-    auto& parent_children = const_cast<Layer*>(parent)->get_child_layers();
-    std::replace(parent_children.begin(), parent_children.end(),
-                 static_cast<Layer*>(target), concat);
-  }
-  target->clear_parent_layers();
-
-  // Setup relationship between target layer and concatenation layer
-  concat->add_child_layer(target);
-  target->add_parent_layer(concat);
-
-  // Target layer and concatenation layer are not unrolled any further
-  prev_step_layer[target] = target;
-  prev_step_layer[concat] = concat;
-  next_step_layer[target] = target;
-  next_step_layer[concat] = concat;
-
-}
-
 /** Duplicate layer network to achieve desired recurrence depth.
  *  The layers within each recurrence step have the same topology as
  *  the original network.
@@ -178,7 +116,7 @@ void add_unrolled_layers(int unroll_depth,
                          std::unordered_map<const Layer*,Layer*>& next_step_layer) {
 
   // Unroll network to desired depth
-  std::vector<Layer*> previous_step(layers.begin() + 2, layers.end() - 2);
+  std::vector<Layer*> previous_step(layers.begin() + 2, layers.end());
   const int num_step_layers = previous_step.size();
   for (int step = 1; step < unroll_depth; ++step) {
     
@@ -201,7 +139,7 @@ void add_unrolled_layers(int unroll_depth,
     }
 
     // Add current step layers to model
-    layers.insert(layers.end() - 2, current_step.begin(), current_step.end());
+    layers.insert(layers.end(), current_step.begin(), current_step.end());
     previous_step = current_step;
 
   }
@@ -237,14 +175,13 @@ void add_placeholder_layers(std::vector<Layer*>& layers,
       if (!is_visited[parent] && prev_step_layer[parent] == nullptr) {
         if (parent->get_num_neurons() <= 0) {
           std::stringstream err;
-          err << __FILE__ << " " << __LINE__ << " :: "
-              << l->get_name() << " has ambiguous neuron "
+          err << l->get_name() << " has ambiguous neuron "
               << "dimensions since it depends on "
               << parent->get_name() << ", which does not have "
               << "specified neuron dimensions. Consider inserting a "
               << "reshape layer after " << parent->get_name() << " "
               << "to explicitly specify neuron dimensions.";
-          throw lbann_exception(err.str());
+          LBANN_ERROR(err.str());
         }
         Layer* placeholder = nullptr;
         auto&& comm = parent->get_comm();
@@ -264,9 +201,7 @@ void add_placeholder_layers(std::vector<Layer*>& layers,
                             );
           break;
         default:
-          std::stringstream err;
-          err << __FILE__ << " " << __LINE__ << " :: " << "invalid data layout";
-          throw lbann_exception(err.str());
+          LBANN_ERROR("invalid data layout");
         }
         placeholder->set_name(parent->get_name() + "_input_placeholder");
         placeholder->add_child_layer(l);
@@ -292,9 +227,7 @@ void add_placeholder_layers(std::vector<Layer*>& layers,
           placeholder = new dummy_layer<data_layout::MODEL_PARALLEL>(comm);
           break;
         default:
-          std::stringstream err;
-          err << __FILE__ << " " << __LINE__ << " :: " << "invalid data layout";
-          throw lbann_exception(err.str());
+          LBANN_ERROR("invalid data layout");
         }
         placeholder->set_name(child->get_name() + "_output_placeholder");
         placeholder->add_parent_layer(l);
@@ -310,7 +243,7 @@ void add_placeholder_layers(std::vector<Layer*>& layers,
   layers.insert(layers.begin() + 2,
                 input_placeholders.begin(),
                 input_placeholders.end());
-  layers.insert(layers.end() - 2,
+  layers.insert(layers.end(),
                 output_placeholders.begin(),
                 output_placeholders.end());
 
@@ -344,6 +277,41 @@ void setup_unrolled_layer_pointers(std::vector<Layer*>& layers,
   
 }
 
+void unroll_objective_function(objective_function& obj,
+                               const std::unordered_map<const Layer*,Layer*>& next_step_layer) {
+  
+  // Create layer terms for unrolled evaluation layers
+  std::vector<objective_function_term*> new_terms;
+  for (auto&& term : obj.get_terms()) {
+    auto&& l = dynamic_cast<layer_term*>(term);
+    if (l != nullptr) {
+      auto&& eval = l->get_evaluation_layer();
+      if (next_step_layer.count(eval) > 0) {
+        eval = dynamic_cast<evaluation_layer<data_layout::DATA_PARALLEL>*>(next_step_layer.at(eval));
+      } else {
+        eval = nullptr;
+      }
+      while (eval != nullptr) {
+        auto&& new_term = l->copy();
+        new_term->set_evaluation_layer(eval);
+        new_terms.push_back(new_term);
+        if (next_step_layer.count(eval) > 0) {
+          eval = dynamic_cast<evaluation_layer<data_layout::DATA_PARALLEL>*>(next_step_layer.at(eval));
+        } else {
+          eval = nullptr;
+        }
+      }
+    }
+  }
+  
+  // Add new terms to objective function
+  for (auto&& term : new_terms) {
+    obj.add_term(term);
+  }
+
+}
+
+
 } // namespace
   
 recurrent_model::recurrent_model(lbann_comm *comm,
@@ -371,21 +339,16 @@ void recurrent_model::setup_layer_topology() {
   }
 
   // Unroll layers
-  if (m_layers.size() < 2) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "expected the first layer to be an input layer "
-        << "and the last to be a target layer";
-    throw lbann_exception(err.str());
-
+  if (m_layers.empty()) {
+    LBANN_ERROR("expected the first layer to be an input layer");
   }
   m_previous_step_layer.clear();
   m_next_step_layer.clear();
   unroll_input_layer(m_unroll_depth, m_layers, m_previous_step_layer, m_next_step_layer);
-  unroll_target_layer(m_unroll_depth, m_layers, m_previous_step_layer, m_next_step_layer);
   add_unrolled_layers(m_unroll_depth, m_layers, m_previous_step_layer, m_next_step_layer);
   add_placeholder_layers(m_layers, m_previous_step_layer, m_next_step_layer);
   setup_unrolled_layer_pointers(m_layers, m_previous_step_layer, m_next_step_layer);
+  unroll_objective_function(*this->m_objective_function, m_next_step_layer);
 
   // Make sure unrolled topology is a DAG
   directed_acyclic_graph_model::setup_layer_topology();
@@ -414,10 +377,9 @@ void recurrent_model::setup_layers() {
       }
       if (slice_dp == nullptr && slice_mp == nullptr) {
         std::stringstream err;
-        err << __FILE__ << " " << __LINE__ << " :: "
-            << "expected the second layer to be a slice layer, "
+        err << "expected the second layer to be a slice layer, "
             << "but " << l->get_name() << " is " << l->get_type();
-        throw lbann_exception(err.str());
+        LBANN_ERROR(err.str());
       }
     }
   

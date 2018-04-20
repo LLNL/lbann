@@ -8,7 +8,7 @@ model {
   procs_per_model: 0
   num_gpus: -1
   recurrent {
-    unroll_depth : 1
+    unroll_depth : 4
   }
 
   ###################################################
