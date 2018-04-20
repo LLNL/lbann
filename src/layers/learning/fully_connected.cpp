@@ -57,11 +57,13 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL>::fp_compute_cpu() {
   // Note: Perform GEMMs independently if possible
   const auto& linearity = m_weights[0]->get_values();
   if (linearity.DistSize() == 1) {
-    El::Gemm(El::NORMAL, El::NORMAL,
+    El::Gemm(m_apply_linearity_transpose ? El::TRANSPOSE : El::NORMAL,
+             El::NORMAL,
              DataType(1), linearity.LockedMatrix(), input.LockedMatrix(),
              DataType(0), output.Matrix());
   } else {
-    El::Gemm(El::NORMAL, El::NORMAL,
+    El::Gemm(m_apply_linearity_transpose ? El::TRANSPOSE : El::NORMAL,
+             El::NORMAL,
              DataType(1), linearity, input,
              DataType(0), output);
   }
@@ -112,16 +114,28 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL>::bp_compute_cpu() {
   optimizer* linearity_optimizer = this->m_weights[0]->get_optimizer();
   if (linearity_optimizer != nullptr) {
     if (linearity.DistSize() == 1) {
-      El::Gemm(El::NORMAL, El::TRANSPOSE,
-               DataType(1), local_gradient_wrt_output, local_input,
-               DataType(0), m_linearity_gradient->Matrix());
+      if (m_apply_linearity_transpose) {
+        El::Gemm(El::NORMAL, El::TRANSPOSE,
+                 DataType(1), local_input, local_gradient_wrt_output,
+                 DataType(0), m_linearity_gradient->Matrix());
+      } else {
+        El::Gemm(El::NORMAL, El::TRANSPOSE,
+                 DataType(1), local_gradient_wrt_output, local_input,
+                 DataType(0), m_linearity_gradient->Matrix());
+      }
       linearity_optimizer->add_to_gradient_staging(
         *m_linearity_gradient,
         DataType(1) / mini_batch_size);
     } else {
-      El::Gemm(El::NORMAL, El::TRANSPOSE,
-               DataType(1), gradient_wrt_output, input,
-               DataType(0), *m_linearity_gradient);
+      if (m_apply_linearity_transpose) {
+        El::Gemm(El::NORMAL, El::TRANSPOSE,
+                 DataType(1), input, gradient_wrt_output,
+                 DataType(0), *m_linearity_gradient);
+      } else {
+        El::Gemm(El::NORMAL, El::TRANSPOSE,
+                 DataType(1), gradient_wrt_output, input,
+                 DataType(0), *m_linearity_gradient);
+      }
       linearity_optimizer->add_to_gradient(
         *m_linearity_gradient,
         DataType(1) / mini_batch_size);
@@ -131,11 +145,13 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL>::bp_compute_cpu() {
   // Compute gradient w.r.t. input
   // Note: Perform GEMMs independently if possible
   if (linearity.DistSize() == 1) {
-    El::Gemm(El::TRANSPOSE, El::NORMAL,
+    El::Gemm(m_apply_linearity_transpose ? El::NORMAL : El::TRANSPOSE,
+             El::NORMAL,
              DataType(1), local_linearity, local_gradient_wrt_output,
              DataType(1), local_gradient_wrt_input);
   } else {
-    El::Gemm(El::TRANSPOSE, El::NORMAL,
+    El::Gemm(m_apply_linearity_transpose ? El::NORMAL : El::TRANSPOSE,
+             El::NORMAL,
              DataType(1), linearity, gradient_wrt_output,
              DataType(1), gradient_wrt_input);
   }
@@ -151,7 +167,8 @@ void fully_connected_layer<data_layout::DATA_PARALLEL>::fp_compute_cpu() {
 
   // Apply linearity
   const auto& local_linearity = m_weights[0]->get_values().LockedMatrix();
-  El::Gemm(El::NORMAL, El::NORMAL,
+  El::Gemm(m_apply_linearity_transpose ? El::TRANSPOSE : El::NORMAL,
+           El::NORMAL,
            DataType(1), local_linearity, local_input,
            DataType(0), local_output);
 
@@ -195,16 +212,23 @@ void fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_cpu() {
   // Compute gradient w.r.t. linearity if needed
   optimizer* linearity_optimizer = this->m_weights[0]->get_optimizer();
   if (linearity_optimizer != nullptr) {
-    El::Gemm(El::NORMAL, El::TRANSPOSE,
-             DataType(1), local_gradient_wrt_output, local_input,
-             DataType(0), m_linearity_gradient->Matrix());
+    if (m_apply_linearity_transpose) {
+      El::Gemm(El::NORMAL, El::TRANSPOSE,
+               DataType(1), local_input, local_gradient_wrt_output, 
+               DataType(0), m_linearity_gradient->Matrix());
+    } else {
+      El::Gemm(El::NORMAL, El::TRANSPOSE,
+               DataType(1), local_gradient_wrt_output, local_input,
+               DataType(0), m_linearity_gradient->Matrix());
+    }
     linearity_optimizer->add_to_gradient_staging(
       *m_linearity_gradient,
       DataType(1) / mini_batch_size);
   }
 
   // Compute gradient w.r.t. input
-  El::Gemm(El::TRANSPOSE, El::NORMAL,
+  El::Gemm(m_apply_linearity_transpose ? El::NORMAL : El::TRANSPOSE,
+           El::NORMAL,
            DataType(1), local_linearity, local_gradient_wrt_output,
            DataType(1), local_gradient_wrt_input);
 

@@ -65,6 +65,9 @@ class fully_connected_layer : public learning_layer {
    */
   AbsDistMat* m_bias_gradient;
 
+  /** Whether the linearity matrix transpose is applied. */
+  bool m_apply_linearity_transpose;
+
 #ifdef LBANN_HAS_CUDNN
   /** GPU memory for linearity gradient. */
   cudnn::matrix m_linearity_gradient_d;
@@ -76,12 +79,14 @@ class fully_connected_layer : public learning_layer {
 
   fully_connected_layer(lbann_comm *comm,
                         int num_neurons,  // TODO: accept a vector for neuron dims
+                        bool apply_linearity_transpose = false,
                         weights* weight = nullptr,
                         bool has_bias = true,
                         cudnn::cudnn_manager *cudnn = nullptr)
     : learning_layer(comm),
       m_linearity_gradient(nullptr),
-      m_bias_gradient(nullptr) {
+      m_bias_gradient(nullptr),
+      m_apply_linearity_transpose(apply_linearity_transpose) {
 
     // Initialize neuron tensor dimensions
     this->m_num_neurons = num_neurons;
@@ -110,7 +115,8 @@ class fully_connected_layer : public learning_layer {
 
   fully_connected_layer(const fully_connected_layer& other) :
     learning_layer(other),
-    m_bias_scaling_factor(other.m_bias_scaling_factor) {
+    m_bias_scaling_factor(other.m_bias_scaling_factor),
+    m_apply_linearity_transpose(other.m_apply_linearity_transpose) {
     
     // Deep matrix copies
     m_linearity_gradient = other.m_linearity_gradient;
@@ -132,6 +138,7 @@ class fully_connected_layer : public learning_layer {
   fully_connected_layer& operator=(const fully_connected_layer& other) {
     learning_layer::operator=(other);
     m_bias_scaling_factor = other.m_bias_scaling_factor;
+    m_apply_linearity_transpose = other.m_apply_linearity_transpose;
 
     // Deep matrix copies
     deallocate_matrices();
@@ -223,9 +230,15 @@ class fully_connected_layer : public learning_layer {
       col_dist = El::MC;
       row_dist = El::MR;
     }
-    this->m_weights[0]->setup(this->m_num_neurons,
-                              this->m_num_prev_neurons,
-                              col_dist, row_dist);
+    if (m_apply_linearity_transpose) {
+      this->m_weights[0]->setup(this->m_num_prev_neurons,
+                                this->m_num_neurons,
+                                col_dist, row_dist);
+    } else {
+      this->m_weights[0]->setup(this->m_num_neurons,
+                                this->m_num_prev_neurons,
+                                col_dist, row_dist);
+    }
     this->m_weights[1]->setup(this->m_num_neurons,
                               1,
                               get_activations().DistData().colDist,
@@ -314,10 +327,12 @@ class fully_connected_layer : public learning_layer {
     for (int i=0; i<num_gpus; ++i) {
       CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
       cublas::gemm(this->m_cudnn->get_cublas_handle(i),
-                   CUBLAS_OP_N, CUBLAS_OP_N,
+                   m_apply_linearity_transpose ? CUBLAS_OP_T : CUBLAS_OP_N,
+                   CUBLAS_OP_N,
                    output_size, mini_batch_size, input_size,
                    DataType(1),
-                   linearity_d[i], output_size,
+                   linearity_d[i],
+                   m_apply_linearity_transpose ? input_size : output_size,
                    input_d.get_locked_data(i), input_ldim,
                    DataType(0),
                    output_d.get_data(i), output_ldim);
@@ -402,14 +417,25 @@ class fully_connected_layer : public learning_layer {
     if (linearity_optimizer != nullptr) {
       for (int i = 0; i < num_gpus; ++i) {
         CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-        cublas::gemm(this->m_cudnn->get_cublas_handle(i),
-                     CUBLAS_OP_N, CUBLAS_OP_T,
-                     output_size, input_size, mini_batch_size,
-                     DataType(1),
-                     gradient_wrt_output_d.get_locked_data(i), gradient_wrt_output_ldim,
-                     input_d.get_locked_data(i), input_ldim,
-                     DataType(0),
-                     m_linearity_gradient_d.get_data(i), output_size);
+        if (m_apply_linearity_transpose) {
+          cublas::gemm(this->m_cudnn->get_cublas_handle(i),
+                       CUBLAS_OP_N, CUBLAS_OP_T,
+                       input_size, output_size, mini_batch_size,
+                       DataType(1),
+                       input_d.get_locked_data(i), input_ldim,
+                       gradient_wrt_output_d.get_locked_data(i), gradient_wrt_output_ldim,
+                       DataType(0),
+                       m_linearity_gradient_d.get_data(i), input_size);
+        } else {
+          cublas::gemm(this->m_cudnn->get_cublas_handle(i),
+                       CUBLAS_OP_N, CUBLAS_OP_T,
+                       output_size, input_size, mini_batch_size,
+                       DataType(1),
+                       gradient_wrt_output_d.get_locked_data(i), gradient_wrt_output_ldim,
+                       input_d.get_locked_data(i), input_ldim,
+                       DataType(0),
+                       m_linearity_gradient_d.get_data(i), output_size);
+        }
       }
       linearity_optimizer->add_to_gradient_staging(
         m_linearity_gradient_d,
@@ -421,10 +447,12 @@ class fully_connected_layer : public learning_layer {
       for (int i = 0; i < num_gpus; ++i) {
         CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
         cublas::gemm(this->m_cudnn->get_cublas_handle(i),
-                     CUBLAS_OP_T, CUBLAS_OP_N,
+                     m_apply_linearity_transpose ? CUBLAS_OP_N : CUBLAS_OP_T,
+                     CUBLAS_OP_N,
                      input_size, mini_batch_size, output_size,
                      DataType(1),
-                     linearity_d[i], output_size,
+                     linearity_d[i],
+                     m_apply_linearity_transpose ? input_size : output_size,
                      gradient_wrt_output_d.get_locked_data(i), gradient_wrt_output_ldim,
                      DataType(1),
                      gradient_wrt_input_d.get_data(i), gradient_wrt_input_ldim);
