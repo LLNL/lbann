@@ -65,13 +65,6 @@ class data_store_image : public generic_data_store {
 
   void exchange_data() override;
 
-  struct Triple {
-    int global_index;
-    int num_bytes;
-    size_t offset;
-    int rank;
-  };
-
   /// maps a global index (wrt image_list) to number of bytes in the file
   std::unordered_map<size_t, size_t> m_file_sizes;
 
@@ -82,7 +75,11 @@ class data_store_image : public generic_data_store {
   virtual void get_file_sizes() = 0;
 
   /// called by get_file_sizes
-  virtual void exchange_file_sizes(std::vector<Triple> &my_file_sizes, int num_global_indices);
+  void exchange_file_sizes(
+    std::vector<int> &global_indices,
+    std::vector<int> &num_bytes,
+    std::vector<size_t> &offsets,
+    int num_global_indices);
 
   /// allocate mem for m_data
   void allocate_memory(); 

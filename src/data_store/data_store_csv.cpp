@@ -85,10 +85,8 @@ void data_store_csv::setup() {
       std::cerr << "calling: reader->fetch_line_label_response(" << (*m_shuffled_indices)[0] << ");\n";
       std::vector<DataType> v = reader->fetch_line_label_response(0);
       m_vector_size = v.size();
-      m_comm->broadcast<DataType>(0, m_vector_size, world_comm);
-    } else {
-      m_vector_size = m_comm->broadcast<DataType>(0, world_comm);
     }
+    m_comm->broadcast<int>(0, m_vector_size, world_comm);
 
     if (is_subsidiary_store()) {
       return;
@@ -151,11 +149,12 @@ void data_store_csv::exchange_data() {
   double tm1 = get_time();
   std::stringstream err;
 
+
   //get indices I need for the next epoch, and start receives
   std::unordered_set<int> indices;
   get_indices(indices, m_rank);
-  std::vector<MPI_Request> recv_req(indices.size());
-  std::vector<MPI_Status> recv_status(indices.size());
+  std::vector<El::mpi::Request<DataType>> recv_req(indices.size());
+
   m_my_minibatch_data.clear();
   size_t jj = 0;
   for (auto t : indices) {
@@ -163,21 +162,17 @@ void data_store_csv::exchange_data() {
     int owner = get_index_owner(t);
     if (owner >= m_np or owner < 0) {
       err << __FILE__ << " " << __LINE__ << " :: "
-          << " ERROR: bad rank for owner in MPI_Irecv; owner: " << owner << " index: " << t << " jj: " << jj+1 << " of " << indices.size();
+          << " ERROR: bad rank for owner in nb_recv; owner: " << owner << " index: " << t << " jj: " << jj+1 << " of " << indices.size();
       throw lbann_exception(err.str());
     }
-    MPI_Irecv(
-      m_my_minibatch_data[t].data(), m_vector_size*sizeof(DataType),  MPI_BYTE,
-      owner, t, m_mpi_comm, &(recv_req[jj++]));
+    m_comm->nb_recv<DataType>(m_my_minibatch_data[t].data(), m_vector_size, 0, owner, recv_req[jj++]);
   }
 
   //start sends to all processors
-  std::vector<std::vector<MPI_Request>> send_req(m_np);
-  std::vector<std::vector<MPI_Status>> send_status(m_np);
+  std::vector<std::vector<El::mpi::Request<DataType>>> send_req(m_np);
   for (int p=0; p<m_np; p++) {
     get_my_indices(indices, p);
     send_req[p].resize(indices.size());
-    send_status[p].resize(indices.size());
     jj = 0;
     for (auto t : indices) {
       if (m_data.find(t) == m_data.end()) {
@@ -193,21 +188,19 @@ void data_store_csv::exchange_data() {
             << " m_reader->get_role: " << m_reader->get_role();
         throw lbann_exception(err.str());
       }
-      MPI_Isend(
-        m_data[t].data(), m_vector_size*sizeof(DataType),  MPI_BYTE,
-        p, t, m_mpi_comm, &(send_req[p][jj++]));
+      m_comm->nb_send<DataType>(m_data[t].data(), m_vector_size, 0, p, send_req[p][jj++]);
     }
   }
 
   //wait for sends to finish
   if (m_master) {
     for (size_t i=0; i<send_req.size(); i++) {
-      MPI_Waitall(send_req[i].size(), send_req[i].data(), send_status[i].data());
+      m_comm->wait_all(send_req[i]);
     }
   }
 
   //wait for recvs to finish
-  MPI_Waitall(recv_req.size(), recv_req.data(), recv_status.data());
+  m_comm->wait_all(recv_req);
 
   if (m_master) {
     std::cerr << "role: " << m_reader->get_role() << " data_store_csv::exchange_data() time: " << get_time() - tm1 << std::endl;

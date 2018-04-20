@@ -187,10 +187,7 @@ void generic_data_store::exchange_mb_indices() {
   std::vector<int> all_indices(n);
 
   //receive the indices
-  MPI_Allgatherv(
-    m_my_minibatch_indices_v.data(), m_my_minibatch_indices_v.size(), MPI_INT, 
-    all_indices.data(), m_mb_counts.data(), displ.data(),
-    MPI_INT, m_mpi_comm);
+  m_comm->all_gather<int>(m_my_minibatch_indices_v, all_indices, m_mb_counts, displ, m_comm->get_world_comm());
 
   //fill in the final data structure
   m_all_minibatch_indices.resize(m_np);

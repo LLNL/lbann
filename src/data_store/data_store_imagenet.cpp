@@ -178,26 +178,22 @@ void data_store_imagenet::get_file_sizes() {
   if (m_master) std::cerr << "starting data_store_imagenet::get_file_sizes\n";
   image_data_reader *reader = dynamic_cast<image_data_reader*>(m_reader);
   const std::vector<std::pair<std::string, int> > & image_list = reader->get_image_list();
-  //construct a vector of Triples 
-  std::vector<Triple> my_file_sizes(m_my_datastore_indices.size());
+
+  std::vector<int> global_indices(m_my_datastore_indices.size());
+  std::vector<int> bytes(m_my_datastore_indices.size());
+  std::vector<size_t> offsets(m_my_datastore_indices.size());
+
   size_t cur_offset = 0;
   size_t j = 0;
   for (auto index : m_my_datastore_indices) {
-    my_file_sizes[j].global_index = index;
-    my_file_sizes[j].num_bytes = get_file_size(m_dir, image_list[index].first);
-    my_file_sizes[j].offset = cur_offset;
-    my_file_sizes[j].rank = m_rank;
-    cur_offset += my_file_sizes[j].num_bytes;
-    if (my_file_sizes[j].num_bytes == 0) {
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: " << " j: " << j 
-        << " file size is 0 (" << m_dir << "/" + image_list[index].first;
-      throw lbann_exception(err.str());
-    }
+    global_indices[j] = index;
+    bytes[j] = get_file_size(m_dir, image_list[index].first);
+    offsets[j] = cur_offset;
+    cur_offset += bytes[j];
     ++j;
   }
 
-  exchange_file_sizes(my_file_sizes, m_num_global_indices);
+  exchange_file_sizes(global_indices, bytes, offsets, m_num_global_indices);
 }
 
 

@@ -41,7 +41,6 @@ data_store_pilot2_molecular::data_store_pilot2_molecular(
 }
 
 data_store_pilot2_molecular::~data_store_pilot2_molecular() {
-  //MPI_Win_free( &m_win );
 }
 
 void data_store_pilot2_molecular::setup() {
@@ -155,14 +154,11 @@ void data_store_pilot2_molecular::fill_in_data(
 void data_store_pilot2_molecular::build_nabor_map() {
   //bcast neighbor data
   size_t sz;
-  const El::mpi::Comm world_comm = m_comm->get_world_comm();
-
   if (m_owner) {
     sz = m_pilot2_reader->get_neighbors_data_size();
-    m_comm->broadcast<size_t>(0, sz, world_comm);
-  } else {
-    sz = m_comm->broadcast<size_t>(0, world_comm);
   }
+  m_comm->broadcast<size_t>(0, sz, m_comm->get_world_comm());
+
   double *neighbors_8;
   std::vector<double> work;
   if (m_owner) {
@@ -265,27 +261,23 @@ void data_store_pilot2_molecular::exchange_data() {
   //start receives for my required molecules
   m_my_molecules.clear();
   int num_features = m_pilot2_reader->get_num_features();
-  std::vector<MPI_Request> recv_req(required_molecules.size());
-  std::vector<MPI_Status> recv_status(required_molecules.size());
+  std::vector<El::mpi::Request<double>> recv_req(m_np);
   size_t jj = 0;
   for (auto t : required_molecules) {
     m_my_molecules[t].resize(num_features);
-    MPI_Irecv(m_my_molecules[t].data(), num_features, MPI_DOUBLE, m_owner_rank, t, m_mpi_comm, &(recv_req[jj++]));
+    m_comm->nb_recv<double>(m_my_molecules[t].data(), num_features, 0, m_owner_rank, recv_req[jj++]);
   }
 
   //owner starts sends
-  std::vector<std::vector<MPI_Request>> send_req;
-  std::vector<std::vector<MPI_Status>> send_status;
+  std::vector<std::vector<El::mpi::Request<double>>> send_req;
   if (m_owner) {
     send_req.resize(m_np);
-    send_status.resize(m_np);
     for (int p = 0; p<m_np; p++) {
       jj = 0;
       get_required_molecules(required_molecules, p);
       send_req[p].resize(required_molecules.size());
-      send_status[p].resize(required_molecules.size());
       for (auto t : required_molecules) {
-        MPI_Isend(m_data[t].data(), num_features, MPI_DOUBLE, p, t, m_mpi_comm, &(send_req[p][jj++]));
+        m_comm->nb_send<double>(m_data[t].data(), num_features, 0, p, send_req[p][jj++]);
       }
     }
   }
@@ -293,12 +285,12 @@ void data_store_pilot2_molecular::exchange_data() {
   //wait for sends to finish
   if (m_owner) {
     for (size_t i=0; i<send_req.size(); i++) {
-      MPI_Waitall(send_req[i].size(), send_req[i].data(), send_status[i].data());
+      m_comm->wait_all<double>(send_req[i]);
     }
   }
 
   //wait for recvs to finish
-  MPI_Waitall(recv_req.size(), recv_req.data(), recv_status.data());
+  m_comm->wait_all<double>(recv_req);
 
   if (m_owner) {
     std::cout << "role: " << m_reader->get_role() << " data_store_pilot2_molecular::exchange_data() time: " << get_time() - tm1 << std::endl;

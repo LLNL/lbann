@@ -78,8 +78,9 @@ void data_store_multi_images::setup() {
 }
 
 void data_store_multi_images::get_file_sizes() {
-  std::vector<Triple> my_file_sizes(m_my_datastore_indices.size()*m_num_img_srcs);
-  if (m_master) std::cerr << "STARTING " << get_name() << "::get_file_sizes for " << my_file_sizes.size() << " files\n";
+  std::vector<int> global_indices(m_my_datastore_indices.size()*m_num_img_srcs);
+  std::vector<int> bytes(m_my_datastore_indices.size()*m_num_img_srcs);
+  std::vector<size_t> offsets(m_my_datastore_indices.size()*m_num_img_srcs);
 
   size_t cur_offset = 0;
   std::unordered_map<std::string, size_t> names;
@@ -96,23 +97,15 @@ void data_store_multi_images::get_file_sizes() {
         names[sample[k]] = file_len;
       }
 
-      my_file_sizes[jj].global_index = index;
-      my_file_sizes[jj].num_bytes = file_len;
-      my_file_sizes[jj].offset = cur_offset;
-      my_file_sizes[jj].rank = m_rank;
-      cur_offset += my_file_sizes[jj].num_bytes;
-
-      if (my_file_sizes[jj].num_bytes == 0) {
-        std::stringstream err;
-        err << __FILE__ << " " << __LINE__ << " :: "
-          << " file size is 0";
-        throw lbann_exception(err.str());
-      }
+      global_indices[jj] = index;
+      bytes[jj] = file_len;
+      offsets[jj] = cur_offset;
+      cur_offset += file_len;
       ++jj;
     }
   }
 
-  exchange_file_sizes(my_file_sizes, m_num_global_indices*m_num_img_srcs);
+  exchange_file_sizes(global_indices, bytes, offsets, m_num_global_indices*m_num_img_srcs);
 }
 
 void data_store_multi_images::read_files() {

@@ -148,11 +148,9 @@ void data_store_image::exchange_data() {
   }
 
   //start sends
-  std::vector<std::vector<MPI_Request>> send_req(m_np);
-  std::vector<std::vector<MPI_Status>> send_status(m_np);
+  std::vector<std::vector<El::mpi::Request<unsigned char>>> send_req(m_np);
   for (int p=0; p<m_np; p++) {
     send_req[p].resize(proc_to_indices[p].size()*m_num_img_srcs);
-    send_status[p].resize(proc_to_indices[p].size()*m_num_img_srcs);
     size_t jj = 0;
     for (auto idx : proc_to_indices[p]) {
       for (size_t k=0; k<m_num_img_srcs; k++) {
@@ -169,7 +167,8 @@ void data_store_image::exchange_data() {
         }
         int len = m_file_sizes[index];
         size_t offset = m_offsets[index];
-        MPI_Isend(m_data.data()+offset, len, MPI_BYTE, p, index, m_mpi_comm, &(send_req[p][jj++]));
+        m_comm->nb_send<unsigned char>(m_data.data()+offset, len, 0, p, send_req[p][jj++]);
+
       }
     }
     if (jj != send_req[p].size()) throw lbann_exception("ERROR 1");
@@ -187,14 +186,12 @@ void data_store_image::exchange_data() {
   
   //start recvs
   m_my_minibatch_data.clear();
-  std::vector<std::vector<MPI_Request>> recv_req(m_np);
-  std::vector<std::vector<MPI_Status>> recv_status(m_np);
+  std::vector<std::vector<El::mpi::Request<unsigned char>>> recv_req(m_np);
   for (auto t : proc_to_indices) {
     int owner = t.first;
     size_t jj = 0;
     const std::unordered_set<int> &s = t.second;
     recv_req[owner].resize(s.size()*m_num_img_srcs);
-    recv_status[owner].resize(s.size()*m_num_img_srcs);
     for (auto idx : s) {
       for (size_t k=0; k<m_num_img_srcs; k++) {
         size_t index = idx*m_num_img_srcs+k;
@@ -206,30 +203,35 @@ void data_store_image::exchange_data() {
         }
         size_t len = m_file_sizes[index];
         m_my_minibatch_data[index].resize(len);
-        MPI_Irecv(m_my_minibatch_data[index].data(), len, MPI_BYTE, owner, index, m_mpi_comm, &(recv_req[owner][jj++]));
+        m_comm->nb_recv<unsigned char>(m_my_minibatch_data[index].data(), len, 0, owner, recv_req[owner][jj++]);
       }
     }
   }
 
   //wait for sends to finish
   for (size_t i=0; i<send_req.size(); i++) {
-    MPI_Waitall(send_req[i].size(), send_req[i].data(), send_status[i].data());
+    m_comm->wait_all<unsigned char>(send_req[i]);
   }
 
   //wait for recvs to finish
   for (size_t i=0; i<recv_req.size(); i++) {
-    MPI_Waitall(recv_req[i].size(), recv_req[i].data(), recv_status[i].data());
+    m_comm->wait_all<unsigned char>(recv_req[i]);
   }
 }
 
 
-void data_store_image::exchange_file_sizes(std::vector<Triple> &my_file_sizes, int num_global_indices) {
+void data_store_image::exchange_file_sizes(
+  std::vector<int> &global_indices,
+  std::vector<int> &bytes,
+  std::vector<size_t> &offsets,
+  int num_global_indices) {
+
   std::vector<int> num_bytes(m_np);
-  int bytes = my_file_sizes.size()*sizeof(Triple);
+  int nbytes = global_indices.size();
   if (m_master) {
-    m_comm->model_gather(bytes, num_bytes.data());
+    m_comm->model_gather<int>(nbytes, num_bytes.data());
   } else {
-    m_comm->model_gather(bytes, 0);
+    m_comm->model_gather<int>(nbytes, 0);
   }
 
   std::vector<int> disp(m_num_readers); 
@@ -237,27 +239,17 @@ void data_store_image::exchange_file_sizes(std::vector<Triple> &my_file_sizes, i
   for (int h=1; h<(int)m_num_readers; h++) {
     disp[h] = disp[h-1] + num_bytes[h-1];
   }
-  std::vector<Triple> global_file_sizes(num_global_indices);
+  std::vector<int> all_global_indices(num_global_indices);
+  std::vector<int> all_bytes(num_global_indices);
+  std::vector<size_t> all_offsets(num_global_indices);
 
-  //@todo: couldn't get m_comm->model_gatherv to work
-  //m_comm->model_gatherv(&my_file_sizes[0], my_file_sizes.size(), 
-   //                     &global_file_sizes[0], &num_images[0], &disp[0]);
-  MPI_Allgatherv(my_file_sizes.data(), my_file_sizes.size()*sizeof(Triple), MPI_BYTE,
-                 global_file_sizes.data(), num_bytes.data(), disp.data(), MPI_BYTE,
-                 m_mpi_comm);
+  m_comm->all_gather<int>(global_indices, all_global_indices, bytes, disp, m_comm->get_world_comm());
+  m_comm->all_gather<int>(num_bytes, all_bytes, num_bytes, disp, m_comm->get_world_comm());
+  m_comm->all_gather<size_t>(offsets, all_offsets, num_bytes, disp, m_comm->get_world_comm());
 
-  size_t j = 0;
-  for (auto t : global_file_sizes) {
-    m_file_sizes[t.global_index] = t.num_bytes;
-    m_offsets[t.global_index] = t.offset;
-    if (t.num_bytes <= 0) {
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: " 
-        << "num_bytes  <= 0 (" << t.num_bytes << ")"
-        << " for # " << j << " of " << global_file_sizes.size();
-      throw lbann_exception(err.str());
-    }
-    //m_owner_mapping[t.global_index] = t.rank;
+  for (size_t j=0; j<all_global_indices.size(); j++) {
+    m_file_sizes[all_global_indices[j]] = all_bytes[j];
+    m_offsets[all_global_indices[j]] = all_offsets[j];
     ++j;
   }
 }
