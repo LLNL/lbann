@@ -250,8 +250,8 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_comp
   const int input_size = get_num_prev_neurons();
   const int output_size = get_num_neurons();
   const int mini_batch_size = m_mini_batch_size_per_gpu;
-  const int input_ldim = input.LocalHeight();
-  const int output_ldim = output.LocalHeight();
+  const int input_ldim = input.LDim();
+  const int output_ldim = output.LDim();
 
   // Stop early if possible
   if (mini_batch_size == 0) { return; }
@@ -307,9 +307,9 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_comp
   const int input_size = get_num_prev_neurons();
   const int output_size = get_num_neurons();
   const int mini_batch_size = m_mini_batch_size_per_gpu;
-  const int input_ldim = input.LocalHeight();
-  const int gradient_wrt_output_ldim = gradient_wrt_output.LocalHeight();
-  const int gradient_wrt_input_ldim = gradient_wrt_input.LocalHeight();
+  const int input_ldim = input.LDim();
+  const int gradient_wrt_output_ldim = gradient_wrt_output.LDim();
+  const int gradient_wrt_input_ldim = gradient_wrt_input.LDim();
 
   // Compute gradient w.r.t. bias if needed
   optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
@@ -392,30 +392,17 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_com
 
   // Apply bias if needed
   if(m_bias_scaling_factor != DataType(0)) {
-    const auto& bias = m_weights[1]->get_values().LockedBuffer();
-
-    // Matrix parameters
-    const int output_size = get_num_neurons();
-    const int mini_batch_size = m_mini_batch_size_per_gpu;
-    const int output_ldim = output.LocalHeight();
+    const auto& bias = m_weights[1]->get_values();
 
     // Initialize work space with a bias scaling vector
-    GPUMat bias_scaling_vector(mini_batch_size, 1);
+    GPUMat bias_scaling_vector(input.LocalWidth(), 1);
     El::Fill(bias_scaling_vector, m_bias_scaling_factor);
 
-    // Apply bias with outer product
-    CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu()));
-    cublas::gemm(this->m_cudnn->get_cublas_handle(),
-                 CUBLAS_OP_N, CUBLAS_OP_T,
-                 output_size, mini_batch_size, 1,
-                 DataType(1),
-                 bias, output_size,
-                 bias_scaling_vector.Buffer(), mini_batch_size,
-                 DataType(1),
-                 output.Buffer(), output_ldim);
-
+    // Apply bias with outer product locally - No need to use global GEMM
+    El::Gemm(El::NORMAL, El::TRANSPOSE,
+             DataType(1), bias.LockedMatrix(), bias_scaling_vector,
+             DataType(1), output.Matrix());
   }
-
 #endif // LBANN_HAS_CUDNN
 }
 
@@ -437,29 +424,21 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_com
   const auto& local_gradient_wrt_output = gradient_wrt_output.LockedMatrix();
   auto& local_gradient_wrt_input = gradient_wrt_input.Matrix();
 
-  // Matrix parameters
-  const int output_size = get_num_neurons();
-  const int gradient_wrt_output_ldim = gradient_wrt_output.LocalHeight();
-
   // Compute gradient w.r.t. bias if needed
   optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
   if (m_bias_scaling_factor != DataType(0)
       && bias_optimizer != nullptr) {
 
     // Initialize work space with a bias scaling vector
-    GPUMat bias_scaling_vector(mini_batch_size, 1);
+    GPUMat bias_scaling_vector(gradient_wrt_output.LocalWidth()/*mini_batch_size*/, 1);
     El::Fill(bias_scaling_vector, m_bias_scaling_factor);
 
-    // Obtain gradient with a sum over rows
-    CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu()));
-    cublas::gemv(this->m_cudnn->get_cublas_handle(),
-                 CUBLAS_OP_N,
-                 output_size, mini_batch_size,
-                 DataType(1),
-                 gradient_wrt_output.LockedBuffer(), gradient_wrt_output_ldim,
-                 bias_scaling_vector.Buffer(), 1,
-                 DataType(0),
-                 m_bias_gradient->Buffer(), 1);
+    // Obtain gradient with a sum over rows locally - No need to use global GEMV
+#if 0
+    El::Gemv(El::NORMAL, DataType(1),
+             gradient_wrt_output.LockedMatrix(), bias_scaling_vector,
+             DataType(0), m_bias_gradient->Matrix());
+#endif
     bias_optimizer->add_to_gradient_staging(
                                             *m_bias_gradient,
                                             m_bias_scaling_factor / mini_batch_size);
