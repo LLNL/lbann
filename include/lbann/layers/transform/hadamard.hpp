@@ -33,6 +33,27 @@
 
 namespace lbann {
 
+#ifdef LBANN_HAS_CUDNN
+namespace hadamard_cuda {
+void fp(cudnn::cudnn_manager& cudnn,
+        int height,
+        int width_per_gpu,
+        const std::vector<std::vector<lbann::DataType*>>& inputs,
+        const std::vector<int>& input_leading_dims,
+        std::vector<lbann::DataType*>& output,
+        int output_leading_dim);
+void bp(cudnn::cudnn_manager& cudnn,
+        int height,
+        int width_per_gpu,
+        const std::vector<std::vector<lbann::DataType*>>& inputs,
+        const std::vector<int>& input_leading_dims,
+        const std::vector<lbann::DataType*>& gradient_wrt_output,
+        int gradient_wrt_output_leading_dim,
+        std::vector<std::vector<lbann::DataType*>>& gradient_wrt_inputs,
+        const std::vector<int>& gradient_wrt_input_leading_dims);
+} // namespace hadamard_cuda
+#endif // LBANN_HAS_CUDNN
+
 /** Hadamard layer.
  *  This layer computes the entrywise product of the input tensors.
  */
@@ -46,6 +67,14 @@ class hadamard_layer : public transform_layer {
 
     // Hadamard layer has no limit on parents
     m_expected_num_parent_layers = -1;
+
+  #ifdef LBANN_HAS_CUDNN
+    // Initialize GPU memory if using GPU
+    if (cudnn) {
+      this->m_using_gpus = true;
+      this->m_cudnn = cudnn;
+    }
+  #endif // LBANN_HAS_CUDNN
 
   }
 
@@ -77,25 +106,17 @@ class hadamard_layer : public transform_layer {
   }
 
   void fp_compute() override {
-    if(this->m_using_gpus) {
-  #ifndef LBANN_HAS_CUDNN
-      throw lbann_exception("hadamard_layer: cuDNN not detected");
-  #else
-      throw lbann_exception("hadamard_layer: no GPU implementation");
-  #endif // LBANN_HAS_CUDNN
-    } else {
+    if (this->m_using_gpus) {
+      fp_compute_gpu();
+    } else { 
       fp_compute_cpu();
     }
   }
 
   void bp_compute() override {
-    if(this->m_using_gpus) {
-  #ifndef LBANN_HAS_CUDNN
-      throw lbann_exception("hadamard_layer: cuDNN not detected");
-  #else
-      throw lbann_exception("hadamard_layer: no GPU implementation");
-  #endif // LBANN_HAS_CUDNN
-    } else {
+    if (this->m_using_gpus) {
+      bp_compute_gpu();
+    } else { 
       bp_compute_cpu();
     }
   }
@@ -179,6 +200,54 @@ class hadamard_layer : public transform_layer {
       }
     }
 
+  }
+
+  void fp_compute_gpu() {
+  #ifndef LBANN_HAS_CUDNN
+    LBANN_ERROR("cuDNN not detected");
+  #else
+    std::vector<std::vector<lbann::DataType*>> inputs;
+    std::vector<int> input_leading_dims;
+    for (auto&& input : m_prev_activations_d) {
+      inputs.push_back(input.get_locked_data());
+      input_leading_dims.push_back(input.get_leading_dim());
+    }
+    hadamard_cuda::fp(*m_cudnn,
+                      get_num_neurons(),
+                      m_mini_batch_size_per_gpu,
+                      inputs,
+                      input_leading_dims,
+                      m_activations_d[0].get_data(),
+                      m_activations_d[0].get_leading_dim());
+  #endif // LBANN_HAS_CUDNN
+  }
+
+  void bp_compute_gpu() {
+  #ifndef LBANN_HAS_CUDNN
+    LBANN_ERROR("cuDNN not detected");
+  #else
+    std::vector<std::vector<lbann::DataType*>> inputs;
+    std::vector<int> input_leading_dims;
+    std::vector<std::vector<lbann::DataType*>> gradient_wrt_inputs;
+    std::vector<int> gradient_wrt_input_leading_dims;
+    for (auto&& input : m_prev_activations_d) {
+      inputs.push_back(input.get_locked_data());
+      input_leading_dims.push_back(input.get_leading_dim());
+    }
+    for (auto&& gradient_wrt_input : m_error_signals_d) {
+      gradient_wrt_inputs.push_back(gradient_wrt_input.get_data());
+      gradient_wrt_input_leading_dims.push_back(gradient_wrt_input.get_leading_dim());
+    }
+    hadamard_cuda::bp(*m_cudnn,
+                      get_num_neurons(),
+                      m_mini_batch_size_per_gpu,
+                      inputs,
+                      input_leading_dims,
+                      m_prev_error_signals_d[0].get_locked_data(),
+                      m_prev_error_signals_d[0].get_leading_dim(),
+                      gradient_wrt_inputs,
+                      gradient_wrt_input_leading_dims);
+  #endif // LBANN_HAS_CUDNN
   }
 
 };
