@@ -214,8 +214,18 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
     const auto& num_parallel_readers = proto_model.num_parallel_readers();
 
     const auto& device_allocation_str = proto_layer.device_allocation();
-    El::Device device_allocation = El::Device::CPU;
-    if (device_allocation_str.empty())  { device_allocation = El::Device::CPU; }
+    El::Device default_device_allocation = El::Device::CPU;
+    if (cudnn != nullptr) { default_device_allocation = El::Device::GPU; }
+    El::Device device_allocation;
+    if (device_allocation_str.empty())  {
+      // Input and Target layers are not allowed on the GPUs force the
+      // default to be the CPU
+      if (proto_layer.has_input() || proto_layer.has_target()) {
+        device_allocation = El::Device::CPU;
+      }else {
+        device_allocation = default_device_allocation;
+      }
+    }
     if (device_allocation_str == "cpu") { device_allocation = El::Device::CPU; }
     if (device_allocation_str == "gpu") { device_allocation = El::Device::GPU; }
 
