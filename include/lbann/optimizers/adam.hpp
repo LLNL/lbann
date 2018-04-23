@@ -88,13 +88,6 @@ class adam : public optimizer {
   /** Second moment estimates. */
   AbsDistMat *m_moment2;
 
-#ifdef LBANN_HAS_CUDNN
-  /** GPU memory for first moment estimates. */
-  std::vector<DataType*> m_moment1_d;
-  /** GPU memory for second moment estimates. */
-  std::vector<DataType*> m_moment2_d;
-#endif // LBANN_HAS_CUDNN
-
 //************************************************************************
 // Checkpointing
 //************************************************************************
