@@ -8,6 +8,7 @@ if (LBANN_HAS_CUDA)
   set_full_path(THIS_DIR_CU_SOURCES
     sigmoid.cu
     softmax.cu
+    tanh.cu
     )
 endif ()
 

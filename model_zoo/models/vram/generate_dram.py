@@ -183,14 +183,14 @@ def configure_model(model):
     add_lstm(model, 'lstm2', 'lstm1', 10)
     
     # Emission network
-    l = new_layer(model, 'emission_fc', 'lstm2', 'fully_connected')
-    l.fully_connected.num_neurons = 2 * num_locs
+    l = new_layer(model, 'emission_y_fc', 'lstm2', 'fully_connected')
+    l.fully_connected.num_neurons = num_locs
     l.fully_connected.has_bias = False
-    l = new_layer(model, 'emission_slice', 'emission_fc', 'slice')
-    l.children = 'emission_y_probs emission_x_probs'
-    l.slice.slice_points = str_list([0, num_locs, 2 * num_locs])
-    l = new_layer(model, 'emission_y_probs', 'emission_slice', 'softmax')
-    l = new_layer(model, 'emission_x_probs', 'emission_slice', 'softmax')
+    l = new_layer(model, 'emission_x_fc', 'lstm2', 'fully_connected')
+    l.fully_connected.num_neurons = num_locs
+    l.fully_connected.has_bias = False
+    l = new_layer(model, 'emission_y_probs', 'emission_y_fc', 'softmax')
+    l = new_layer(model, 'emission_x_probs', 'emission_x_fc', 'softmax')
     l = new_layer(model, 'emission_y', 'emission_y_probs', 'categorical_random')
     l = new_layer(model, 'emission_x', 'emission_x_probs', 'categorical_random')
     l = new_layer(model, 'locy', 'emission_y', 'discrete_random')

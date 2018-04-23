@@ -351,7 +351,7 @@ Layer* construct_layer(lbann_comm* comm,
     return new sigmoid_layer<layout>(comm, cudnn);
   }
   if (proto_layer.has_tanh()) {
-    return new tanh_layer<layout>(comm);
+    return new tanh_layer<layout>(comm, cudnn);
   }
   if (proto_layer.has_atan()) {
     return new atan_layer<layout>(comm);

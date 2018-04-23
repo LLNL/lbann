@@ -69,10 +69,10 @@ class hadamard_layer : public transform_layer {
     m_expected_num_parent_layers = -1;
 
   #ifdef LBANN_HAS_CUDNN
-    // Initialize GPU memory if using GPU
-    if (cudnn) {
-      this->m_using_gpus = true;
+    // Activate GPU if needed
+    if (cudnn != nullptr && T_layout == data_layout::DATA_PARALLEL) {
       this->m_cudnn = cudnn;
+      this->m_using_gpus = true;
     }
   #endif // LBANN_HAS_CUDNN
 

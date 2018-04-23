@@ -24,32 +24,99 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef TANH_HPP_INCLUDED
-#define TANH_HPP_INCLUDED
+#ifndef LBANN_LAYER_ACTIVATION_TANH_HPP_INCLUDED
+#define LBANN_LAYER_ACTIVATION_TANH_HPP_INCLUDED
 
 #include "lbann/layers/activations/activation.hpp"
+#include "lbann/utils/cudnn_wrapper.hpp"
 
 namespace lbann {
+
+#ifdef LBANN_HAS_CUDNN
+namespace tanh_cuda {
+  void fp(cudnn::cudnn_manager& cudnn,
+          int height,
+          int width_per_gpu,
+          const std::vector<DataType*>& input,
+          int input_leading_dim,
+          std::vector<DataType*>& output,
+          int output_leading_dim);
+  void bp(cudnn::cudnn_manager& cudnn,
+          int height, int width_per_gpu,
+          const std::vector<DataType*>& input,
+          int input_leading_dim,
+          const std::vector<DataType*>& gradient_wrt_output,
+          int gradient_wrt_output_leading_dim,
+          std::vector<DataType*>& gradient_wrt_input,
+          int gradient_wrt_input_leading_dim);
+} // namespace tanh_cuda
+#endif // LBANN_HAS_CUDNN
 
 /** Hyperbolic tangent activation function. */
 template <data_layout T_layout>
 class tanh_layer : public entrywise_activation_layer {
  public:
-  tanh_layer(lbann_comm *comm) : entrywise_activation_layer(comm) {}
+  tanh_layer(lbann_comm *comm,
+             cudnn::cudnn_manager *cudnn = nullptr)
+    : entrywise_activation_layer(comm) {
+
+  #ifdef LBANN_HAS_CUDNN
+    // Activate GPU if needed
+    if (cudnn != nullptr && T_layout == data_layout::DATA_PARALLEL) {
+      this->m_cudnn = cudnn;
+      this->m_using_gpus = true;
+    }
+  #endif // LBANN_HAS_CUDNN
+
+  }
+
   tanh_layer* copy() const override { return new tanh_layer(*this); }
   std::string get_type() const override { return "tanh"; }
   data_layout get_data_layout() const override { return T_layout; }
 
  protected:
-  DataType activation(DataType z) const override {
-    return std::tanh(z);
+
+  DataType activation(DataType x) const override {
+    return std::tanh(x);
   }
-  DataType activation_derivative(DataType z) const override {
-    const DataType coshz = std::cosh(z);
-    return 1 / (coshz * coshz);
+
+  DataType activation_derivative(DataType x) const override {
+    const DataType coshx = std::cosh(x);
+    return 1 / (coshx * coshx);
   }
+
+  void fp_compute_gpu() override {
+  #ifndef LBANN_HAS_CUDNN
+    LBANN_ERROR("cuDNN not detected");
+  #else
+    tanh_cuda::fp(*m_cudnn,
+                  get_num_neurons(),
+                  m_mini_batch_size_per_gpu,
+                  m_prev_activations_d[0].get_locked_data(),
+                  m_prev_activations_d[0].get_leading_dim(),
+                  m_activations_d[0].get_data(),
+                  m_activations_d[0].get_leading_dim());
+  #endif // LBANN_HAS_CUDNN
+  }
+
+  void bp_compute_gpu() override {
+  #ifndef LBANN_HAS_CUDNN
+    LBANN_ERROR("cuDNN not detected");
+  #else
+    tanh_cuda::bp(*m_cudnn,
+                  get_num_neurons(),
+                  m_mini_batch_size_per_gpu,
+                  m_prev_activations_d[0].get_locked_data(),
+                  m_prev_activations_d[0].get_leading_dim(),
+                  m_prev_error_signals_d[0].get_locked_data(),
+                  m_prev_error_signals_d[0].get_leading_dim(),
+                  m_error_signals_d[0].get_data(),
+                  m_error_signals_d[0].get_leading_dim());
+  #endif // LBANN_HAS_CUDNN
+  }
+
 };
 
 } // namespace lbann
 
-#endif // TANH_HPP_INCLUDED
+#endif // LBANN_LAYER_ACTIVATION_TANH_HPP_INCLUDED
