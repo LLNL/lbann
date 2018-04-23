@@ -82,7 +82,7 @@ class adam : public optimizer {
   /** beta1 ^ iteration. */
   DataType m_current_beta1;
   /** beta2 ^ iteration. */
-   DataType m_current_beta2;
+  DataType m_current_beta2;
   /** First moment estimates. */
   AbsDistMat *m_moment1;
   /** Second moment estimates. */
