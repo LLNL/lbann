@@ -85,6 +85,8 @@ int lbann::generic_data_reader::fetch_data(Mat& X) {
   const int mb_size = std::min(
     El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
     X.Width());
+   //Hack for GAN
+   m_mb_size = mb_size;
 
   if (!m_save_minibatch_indices) {
     El::Zeros(X, X.Height(), X.Width());
@@ -147,6 +149,8 @@ int lbann::generic_data_reader::fetch_labels(Mat& Y) {
 
   El::Zeros(Y, Y.Height(), Y.Width());
 
+  //Hack for GAN
+  m_mb_size = mb_size;
 //  if (m_data_store != nullptr) {
     //@todo: get it to work, then add omp support
     //m_data_store->fetch_labels(...);

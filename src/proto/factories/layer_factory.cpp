@@ -225,6 +225,10 @@ Layer* construct_layer(lbann_comm* comm,
                                      params.max(),
                                      cudnn);
   }
+  if (proto_layer.has_zero()) {
+    const auto& params = proto_layer.zero();
+    return new zero_layer<layout>(comm, params.first_half(), params.second_half(), cudnn);
+  }
   if (proto_layer.has_pooling()) {
     const auto& params = proto_layer.pooling();
     const auto& mode_str = params.pool_mode();
