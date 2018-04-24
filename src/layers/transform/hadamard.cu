@@ -31,10 +31,9 @@ namespace {
 __global__ void ones_kernel(int height, int width,
                             lbann::DataType* x,
                             int x_ldim) {
-  const int size = height * width;
   const int tid = threadIdx.x + blockIdx.x * blockDim.x;
   const int num_threads = blockDim.x * gridDim.x;
-  for (int pos = tid; pos < size; pos += num_threads) {
+  for (int pos = tid; pos < height * width; pos += num_threads) {
     const auto& row = pos % height;
     const auto& col = pos / height;
     x[row + col * x_ldim] = lbann::DataType(1);
@@ -48,10 +47,9 @@ __global__ void mult_kernel(int height, int width,
                             int y_ldim,
                             lbann::DataType* __restrict__ z,
                             int z_ldim) {
-  const int size = height * width;
   const int tid = threadIdx.x + blockIdx.x * blockDim.x;
   const int num_threads = blockDim.x * gridDim.x;
-  for (int pos = tid; pos < size; pos += num_threads) {
+  for (int pos = tid; pos < height * width; pos += num_threads) {
     const auto& row = pos % height;
     const auto& col = pos / height;
     z[row + col * z_ldim] = x[row + col * x_ldim] * y[row + col * y_ldim];
@@ -63,10 +61,9 @@ __global__ void mult_assign_kernel(int height, int width,
                                    int x_ldim,
                                    lbann::DataType* __restrict__ y,
                                    int y_ldim) {
-  const int size = height * width;
   const int tid = threadIdx.x + blockIdx.x * blockDim.x;
   const int num_threads = blockDim.x * gridDim.x;
-  for (int pos = tid; pos < size; pos += num_threads) {
+  for (int pos = tid; pos < height * width; pos += num_threads) {
     const auto& row = pos % height;
     const auto& col = pos / height;
     y[row + col * y_ldim] *= x[row + col * x_ldim];

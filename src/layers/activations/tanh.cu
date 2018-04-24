@@ -46,10 +46,9 @@ __global__ void fp_kernel(int height, int width,
                           int input_leading_dim,
                           lbann::DataType* __restrict__ output,
                           int output_leading_dim) {
-  const int size = height * width;
   const int tid = threadIdx.x + blockIdx.x * blockDim.x;
   const int num_threads = blockDim.x * gridDim.x;
-  for (int pos = tid; pos < size; pos += num_threads) {
+  for (int pos = tid; pos < height * width; pos += num_threads) {
     const auto& row = pos % height;
     const auto& col = pos / height;
     const auto& x = input[row + col * input_leading_dim];
@@ -64,10 +63,9 @@ __global__ void bp_kernel(int height, int width,
                           int gradient_wrt_output_leading_dim,
                           lbann::DataType* __restrict__ gradient_wrt_input,
                           int gradient_wrt_input_leading_dim) {
-  const int size = height * width;
   const int tid = threadIdx.x + blockIdx.x * blockDim.x;
   const int num_threads = blockDim.x * gridDim.x;
-  for (int pos = tid; pos < size; pos += num_threads) {
+  for (int pos = tid; pos < height * width; pos += num_threads) {
     const auto& row = pos % height;
     const auto& col = pos / height;
     const auto& x = input[row + col * input_leading_dim];

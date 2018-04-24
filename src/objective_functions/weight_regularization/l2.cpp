@@ -116,8 +116,8 @@ void l2_weight_regularization::start_evaluation() {
       CHECK_CUDA(cudaSetDevice(m_cudnn->get_gpu(gpu)));
       auto&& handle = m_cudnn->get_cublas_handle(gpu);
       CHECK_CUBLAS(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE));
-      const auto& weights_start = std::min(gpu * weights_per_gpu, num_weights);
-      const auto& weights_end   = std::min((gpu+1) * weights_per_gpu, num_weights);
+      const int weights_start = std::min(gpu * weights_per_gpu, num_weights);
+      const int weights_end   = std::min((gpu+1) * weights_per_gpu, num_weights);
       for (int i = weights_start; i < weights_end; ++i) {
         const auto& w = m_weights[i];
         if (w->get_cudnn_manager() != nullptr) {

@@ -156,7 +156,7 @@ static bool __attribute__((used)) endsWith(const std::string mainStr, const std:
     std::stringstream ss_LBANN_ERROR;                                   \
     ss_LBANN_ERROR << "LBANN error"                                     \
                    << " (" << __FILE__ << ":" << __LINE__ << ")"        \
-                   << ": " << message;                                  \
+                   << ": " << (message);                                \
     throw lbann::lbann_exception(ss_LBANN_ERROR.str());                 \
   } while(0)
 
