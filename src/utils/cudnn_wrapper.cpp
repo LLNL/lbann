@@ -351,6 +351,7 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus, bool nc
         FORCE_CHECK_CUDNN(cudnnSetStream(m_handles.back(), m_streams.back()));
         FORCE_CHECK_CUBLAS(cublasCreate(&m_cublas_handles.back()));
         FORCE_CHECK_CUBLAS(cublasSetStream(m_cublas_handles.back(), m_streams.back()));
+        FORCE_CHECK_CUBLAS(cublasSetPointerMode(m_cublas_handles.back(), CUBLAS_POINTER_MODE_HOST));
     }
 
     // Get number of GPUs for current MPI rank
@@ -610,7 +611,7 @@ void cudnn_manager::cudnn_manager::set_on_gpus(std::vector<DataType *>& gpu_data
                                                int width_per_gpu) {
   if(!gpu_data.empty()) {
     for(int i=0; i<m_num_gpus; ++i) {
-      set_on_gpu(i, gpu_data[i], height, width_per_gpu);
+      set_on_gpu(i, gpu_data[i], val, height, width_per_gpu);
     }
   }
 }

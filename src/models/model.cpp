@@ -303,6 +303,9 @@ std::string model::print_layer_description(const Layer* layer) const {
   if(s != "") {
     os << " (" << s << ")";
   }
+  if (layer->is_frozen()) {
+    os << " frozen";
+  }
   return os.str();
 }
 
@@ -358,6 +361,24 @@ void model::remap_pointers(const std::unordered_map<Layer *,Layer *>& layer_map,
 
 }
 
+void model::freeze_layers_under_frozen_surface() {
+  bool freezing = false;
+  for (size_t i = m_layers.size(); i-- > 0u; ) {
+    auto& l = m_layers[i];
+    if (dynamic_cast<io_layer*>(l) != nullptr) {
+      if (l->is_frozen()) {
+        throw lbann_exception("Frozen io_layer!");
+      }
+      continue;
+    }
+    if (!freezing) {
+      freezing = l->is_frozen();
+    } else {
+      l->freeze();
+    }
+  }
+}
+
 ////////////////////////////////////////////////////////////
 // Setup
 ////////////////////////////////////////////////////////////
@@ -405,6 +426,31 @@ void model::setup_layer_topology() {
   // Add utility layers if needed
   add_dummy_layers();
   add_split_layers();
+
+}
+
+void model::setup_layer_execution_order() {
+
+  // Find input layers
+  std::vector<generic_input_layer*> input_layers;
+  std::vector<Layer*> other_layers;
+  for (auto&& l : m_layers) {
+    auto&& input = dynamic_cast<generic_input_layer*>(l);
+    if (input != nullptr) {
+      input_layers.push_back(input);
+    } else {
+      other_layers.push_back(l);
+    }
+  }
+
+  // Make sure input layers are executed first
+  m_layers.clear();
+  m_layers.insert(m_layers.end(),
+                  input_layers.begin(),
+                  input_layers.end());
+  m_layers.insert(m_layers.end(),
+                  other_layers.begin(),
+                  other_layers.end());
 
 }
 
@@ -511,6 +557,7 @@ void model::add_dummy_layers() {
       default:
         std::stringstream err;
         err << __FILE__ << " " << __LINE__ << " :: " << "invalid data layout";
+        throw lbann_exception(err.str());
       }
       dummy->set_name(layer->get_name()
                       + "_dummy"
@@ -550,6 +597,7 @@ void model::add_split_layers() {
       default:
         std::stringstream err;
         err << __FILE__ << " " << __LINE__ << " :: " << "invalid data layout";
+        throw lbann_exception(err.str());
       }
       split->set_name(layer->get_name() + "_split");
 
@@ -576,14 +624,16 @@ void model::add_split_layers() {
 }
 
 int model::get_num_iterations_per_epoch(execution_mode mode) const {
-  if (m_layers.size() == 0u) {
-    return 0;
+  generic_input_layer* input = nullptr;
+  for (auto&& l : m_layers) {
+    input = dynamic_cast<generic_input_layer*>(l);
+    if (input != nullptr) { break; }
   }
-  const auto* layer = dynamic_cast<generic_input_layer*>(m_layers[0]);
-  if (layer == nullptr) {
+  if (input == nullptr) {
     return 0;
+  } else {
+    return input->get_num_iterations_per_epoch(mode);
   }
-  return layer->get_num_iterations_per_epoch(mode);
 }
 
 ////////////////////////////////////////////////////////////
@@ -671,7 +721,8 @@ bool model::evaluate_mini_batch(execution_mode mode) {
   reset_mode_and_model(mode);
   do_batch_begin_cbs(mode);
   forward_prop(mode);
-  m_objective_function->evaluate(mode, get_current_mini_batch_size());
+  m_objective_function->start_evaluation(mode, get_current_mini_batch_size());
+  m_objective_function->finish_evaluation(mode, get_current_mini_batch_size());
   for (const auto& m : m_metrics) {
     m->evaluate(mode, get_current_mini_batch_size());
   }
@@ -697,8 +748,9 @@ bool model::train_mini_batch() {
   // Forward prop step
   clear_gradients();
   forward_prop(execution_mode::training);
-  m_objective_function->evaluate(execution_mode::training,
-                                 get_current_mini_batch_size());
+  // Result is not needed until the end of the mini-batch.
+  m_objective_function->start_evaluation(execution_mode::training,
+                                         get_current_mini_batch_size());
   for (const auto& m : m_metrics) {
     m->evaluate(execution_mode::training,
                 get_current_mini_batch_size());
@@ -709,6 +761,10 @@ bool model::train_mini_batch() {
   m_objective_function->differentiate();
   backward_prop();
   m_objective_function->compute_weight_regularization();
+
+  // Finish evaluation.
+  m_objective_function->finish_evaluation(execution_mode::training,
+                                          get_current_mini_batch_size());
 
   // Update step
   update_weights();
@@ -1058,6 +1114,15 @@ void model::summarize_stats(lbann_summary& summarizer) {
     m_objective_function->get_differentiation_time(),
     get_cur_step());
   m_objective_function->reset_counters();
+  double total_metric_time = 0.0;
+  for (auto&& m : m_metrics) {
+    total_metric_time += m->get_evaluate_time();
+    m->reset_counters();
+  }
+  summarizer.reduce_scalar(
+    "metric_evaluation_time",
+    total_metric_time,
+    get_cur_step());
 }
 
 void model::summarize_matrices(lbann_summary& summarizer) {

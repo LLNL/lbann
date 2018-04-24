@@ -199,10 +199,31 @@ Layer* construct_layer(lbann_comm* comm,
     const auto& dims = parse_list<int>(params.num_neurons());
     return new constant_layer<layout>(comm, params.value(), dims, cudnn);
   }
-  if (proto_layer.has_noise()) {
-    const auto& params = proto_layer.noise();
-    const auto& dims = parse_list<int>(params.num_neurons());
-    return new noise_layer<layout>(comm, dims, params.noise_factor(), cudnn);
+  if (proto_layer.has_gaussian()) {
+    const auto& params = proto_layer.gaussian();
+    const auto& dims = parse_list<int>(params.neuron_dims());
+    return new gaussian_layer<layout>(comm,
+                                      dims,
+                                      params.mean(),
+                                      params.stdev(),
+                                      cudnn);
+  }
+  if (proto_layer.has_bernoulli()) {
+    const auto& params = proto_layer.bernoulli();
+    const auto& dims = parse_list<int>(params.neuron_dims());
+    return new bernoulli_layer<layout>(comm,
+                                       dims,
+                                       params.prob(),
+                                       cudnn);
+  }
+  if (proto_layer.has_uniform()) {
+    const auto& params = proto_layer.uniform();
+    const auto& dims = parse_list<int>(params.neuron_dims());
+    return new uniform_layer<layout>(comm,
+                                     dims,
+                                     params.min(),
+                                     params.max(),
+                                     cudnn);
   }
   if (proto_layer.has_zero()) {
     const auto& params = proto_layer.zero();
@@ -241,6 +262,19 @@ Layer* construct_layer(lbann_comm* comm,
       return new unpooling_layer<data_layout::DATA_PARALLEL>(comm);
     }
   }
+  if (proto_layer.has_reduction()) {
+    const auto& params = proto_layer.reduction();
+    const auto& mode_str = params.mode();
+    reduction_mode mode = reduction_mode::INVALID;
+    if (mode_str == "sum" || mode_str.empty()) { mode = reduction_mode::SUM; }
+    if (mode_str == "average") { mode = reduction_mode::AVERAGE; }
+    if (layout == data_layout::DATA_PARALLEL) {
+      return new reduction_layer<data_layout::DATA_PARALLEL>(comm, mode, cudnn);
+    }
+  }
+  if (proto_layer.has_evaluation()) {
+    return new evaluation_layer<layout>(comm, cudnn);
+  }
 
   // Regularizer layers
   if (proto_layer.has_batch_normalization()) {
@@ -255,7 +289,7 @@ Layer* construct_layer(lbann_comm* comm,
   }
   if (proto_layer.has_dropout()) {
     const auto& params = proto_layer.dropout();
-    return new dropout<layout>(comm, params.keep_prob());
+    return new dropout<layout>(comm, params.keep_prob(), cudnn);
   }
   if (proto_layer.has_local_response_normalization()) {
     const auto& params = proto_layer.local_response_normalization();
@@ -330,6 +364,10 @@ Layer* construct_layer(lbann_comm* comm,
     } else {
       return new selu_layer<layout>(comm);
     }
+  }
+  if (proto_layer.has_power()) {
+    const auto& params = proto_layer.power();
+    return new power_layer<layout>(comm, params.exponent());
   }
 
   // Throw exception if layer has not been constructed

@@ -10,7 +10,6 @@ model {
   num_epochs: 40
   num_parallel_readers: 0
   procs_per_model: 0
-  use_cudnn: true
   num_gpus: -1
 
   ###################################################
@@ -19,10 +18,10 @@ model {
 
   objective_function {
     binary_cross_entropy {}
-    #mean_squared_error {} 
-    kl_divergence {
-      layer1: "z_mean"
-      layer2: "z_log_sigma" 
+    #mean_squared_error {}
+    layer_term {
+      scale_factor: 1.0
+      layer: "kl_divergence"
     }
     l2_weight_regularization {
       scale_factor: 1e-4
@@ -61,7 +60,9 @@ model {
   # start of layers
   ###################################################
 
-  # INPUT
+  ######################
+  # Data
+  ######################
   layer {
     name: "data"
     data_layout: "model_parallel"
@@ -70,9 +71,11 @@ model {
     }
   }
 
-  #ENCODER
-  ############################
-  # FULLY_CONNECTED encode1
+  ######################
+  # Encoder
+  ######################
+
+  # encode1
   layer {
     parents: "data"
     name: "encode1"
@@ -83,17 +86,12 @@ model {
       has_bias: true
     }
   }
-
-  # ELU encode1_elu
   layer {
     parents: "encode1"
     name: "encode1_elu"
     data_layout: "model_parallel"
-    elu {
-    }
+    elu {}
   }
-
-  #DROPOUT encode1_dropout 
   layer {
     parents: "encode1_elu"
     name: "encode1_dropout"
@@ -103,7 +101,7 @@ model {
     }
   }
 
-  # FULLY_CONNECTED encode2
+  # encode2
   layer {
     parents: "encode1_dropout"
     name: "encode2"
@@ -114,17 +112,12 @@ model {
       has_bias: true
     }
   }
-
-  # TANH encode2_tanh
   layer {
     parents: "encode2"
     name: "encode2_tanh"
     data_layout: "model_parallel"
-    tanh {
-    }
+    tanh {}
   }
-
-  #DROPOUT encode2_dropout 
   layer {
     parents: "encode2_tanh"
     name: "encode2_dropout"
@@ -134,7 +127,7 @@ model {
     }
   }
 
-  # FULLY_CONNECTED encode3
+  # encode3
   layer {
     parents: "encode2_dropout"
     name: "encode3"
@@ -145,17 +138,12 @@ model {
       has_bias: true
     }
   }
-
-  # TANH encode3_tanh
   layer {
     parents: "encode3"
     name: "encode3_tanh"
     data_layout: "model_parallel"
-    tanh {
-    }
+    tanh {}
   }
-
-  #DROPOUT encode3_dropout 
   layer {
     parents: "encode3_tanh"
     name: "encode3_dropout"
@@ -165,21 +153,12 @@ model {
     }
   }
 
+  ######################
+  # Latent space
+  ######################
 
-  #split
   layer {
     parents: "encode3_dropout"
-    name: "split"
-    data_layout: "model_parallel"
-    split {
-    }
-  }
-
-  ###############LATENT SPACE
-
-  # FULLY_CONNECTED z_mean
-  layer {
-    parents: "split"
     name: "z_mean"
     data_layout: "model_parallel"
     fully_connected {
@@ -188,23 +167,8 @@ model {
       has_bias: true
     }
   }
-  # Note: This identity layer is a kludgy solution to a bug in the KL divergence.
-  #   The KL divergence adds to the "prev_error_signal" of z_mean, which is the
-  #   "error_signal" of z_mean's child layer. However, z_mean's child layer is a
-  #   sum layer, which has multiple parents and hence multiple error_signal's.
-  #   Putting this identity layer clears up that ambiguity, but it is not a good
-  #   solution to the problem. The objective function paradigm outlined in 
-  #   issue #193 will be a better long-term solution.
   layer {
-    parents: "z_mean"
-    name: "z_mean_id"
-    data_layout: "model_parallel"
-    identity {}
-  }
-
-  # FULLY_CONNECTED z_log_sigma
-  layer {
-    parents: "split"
+    parents: "encode3_dropout"
     name: "z_log_sigma"
     data_layout: "model_parallel"
     fully_connected {
@@ -213,61 +177,103 @@ model {
       has_bias: true
     }
   }
-  
-  #scale z_log_sigma by 1/2
-  layer {
-     parents: "z_log_sigma"
-     name: "const05_zlogsigma"
-     data_layout: "model_parallel"
-     sum {
-       scaling_factors: "0.5"
-     }
-   }
- 
-  # Exponent exp
-  layer {
-    parents: "const05_zlogsigma"
-    name: "exp"
-    data_layout: "model_parallel"
-    exponential {
-    }
-  }
 
-  # Noise noise
+  ######################
+  # KL divergence
+  ######################
+
   layer {
-    name: "noise"
+    name: "kl_one"
     data_layout: "model_parallel"
-    noise {
-      noise_factor: 1.0
+    constant {
+      value: 1.0
       num_neurons: "5"
     }
   }
-  
- # Hadamad2 exp_noise
   layer {
-    parents: "exp noise"
-    name: "exp_noise"
+    parents: "z_mean"
+    name: "kl_z_mean2"
     data_layout: "model_parallel"
-    hadamard {
-    }
+    power {
+      exponent: 2.0
+    }    
   }
-
-
-  # Sum sum
   layer {
-    parents: "z_mean_id exp_noise"
-    name: "sum"
+    parents: "z_log_sigma"
+    name: "kl_exp"
+    data_layout: "model_parallel"
+    exponential {}
+  }
+  layer {
+    parents: "kl_one z_log_sigma kl_z_mean2 kl_exp"
+    name: "kl_full"
     data_layout: "model_parallel"
     sum {
+      scaling_factors: "-0.5 -0.5 0.5 0.5"
     }
   }
-
-###DECODER
-
-
-  # FULLY_CONNECTED decode3
   layer {
-    parents: "sum"
+    parents: "kl_full"
+    name: "kl_sum"
+    data_layout: "data_parallel"
+    reduction {
+      mode: "sum"
+    }
+  }
+  layer {
+    parents: "kl_sum"
+    name: "kl_divergence"
+    data_layout: "data_parallel"
+    evaluation {}
+  }
+
+  ######################
+  # Sample from latent space
+  ######################
+
+  layer {
+    parents: "z_log_sigma"
+    name: "sample_half"
+    data_layout: "model_parallel"
+    sum {
+      scaling_factors: "0.5"
+    }    
+  }
+  layer {
+    parents: "sample_half"
+    name: "sample_exp"
+    data_layout: "model_parallel"
+    exponential {}
+  }
+  layer {
+    name: "sample_noise"
+    data_layout: "model_parallel"
+    gaussian {
+      mean: 0.0
+      stdev: 1.0
+      neuron_dims: "5"
+    }
+  }
+  layer {
+    parents: "sample_exp sample_noise"
+    name: "sample_exp_noise"
+    data_layout: "model_parallel"
+    hadamard {}
+  }
+  layer {
+    parents: "z_mean sample_exp_noise"
+    name: "sample"
+    data_layout: "model_parallel"
+    sum {}
+  }
+
+  ######################
+  # Decoder
+  ######################
+
+  # decode3
+  layer {
+    parents: "sample"
     name: "decode3"
     data_layout: "model_parallel"
     fully_connected {
@@ -276,17 +282,12 @@ model {
       has_bias: true
     }
   }
-
-  # TANH decode3_tanh
   layer {
     parents: "decode3"
     name: "decode3_tanh"
     data_layout: "model_parallel"
-    tanh {
-    }
+    tanh {}
   }
-
-  #DROPOUT decode3_dropout 
   layer {
     parents: "decode3_tanh"
     name: "decode3_dropout"
@@ -296,7 +297,7 @@ model {
     }
   }
 
-  # FULLY_CONNECTED decode2
+  # decode2
   layer {
     parents: "decode3_dropout"
     name: "decode2"
@@ -307,17 +308,12 @@ model {
       has_bias: true
     }
   }
-
-  # TANH decode2_tanh
   layer {
     parents: "decode2"
     name: "decode2_tanh"
     data_layout: "model_parallel"
-    tanh {
-    }
+    tanh {}
   }
-
-  #DROPOUT decode2_dropout 
   layer {
     parents: "decode2_tanh"
     name: "decode2_dropout"
@@ -325,9 +321,9 @@ model {
     dropout {
       keep_prob: 0.95
     }
-   }
+  }
 
-  # FULLY_CONNECTED decode1
+  # decode1
   layer {
     parents: "decode2_dropout"
     name: "decode1"
@@ -338,8 +334,6 @@ model {
       has_bias: true
     }
   }
-
-  # ELU decode1_elu
   layer {
     parents: "decode1"
     name: "decode1_elu"
@@ -347,8 +341,6 @@ model {
     elu {
     }
   }
-  
-  #DROPOUT decode1_dropout 
   layer {
     parents: "decode1_elu"
     name: "decode1_dropout"
@@ -356,9 +348,9 @@ model {
     dropout {
       keep_prob: 0.95
     }
-   }
+  }
 
-  # FULLY_CONNECTED decode0
+  # decode0
   layer {
     parents: "decode1_dropout"
     name: "decode0"
@@ -369,17 +361,17 @@ model {
       has_bias: true
     }
   }
-
-  # SIGMOID sigmoid
   layer {
     parents: "decode0"
     name: "sigmoid"
     data_layout: "model_parallel"
-    sigmoid {
-    }
+    sigmoid {}
   }
 
-  # RECONSTRUCTION
+  ######################
+  # Reconstruction
+  ######################
+
   layer {
     parents: "sigmoid"
     name: "reconstruction"

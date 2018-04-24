@@ -61,12 +61,17 @@ class directed_acyclic_graph_model : public model {
 
  protected:
 
+  /** For general DAG models, users need to manually specify each layer to
+   *  freeze in the model description prototext.
+   */
+  void freeze_layers_under_frozen_surface() override {}
+
   /** Set up layer execution order.
    *  Called in setup function. A topological sort applied is to the
    *  layer list so that we can traverse a directed acyclic graph
    *  without violating dependencies.
    */
-  virtual void setup_layer_execution_order() override;
+  void setup_layer_execution_order() override;
 
 };
 

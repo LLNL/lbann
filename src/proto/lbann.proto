@@ -237,6 +237,7 @@ message ObjectiveFunction {
   repeated L2WeightRegularization l2_weight_regularization = 21;
   repeated GroupLassoWeightRegularization group_lasso_weight_regularization = 22;
   repeated KLDivergence kl_divergence = 23;
+  repeated LayerTerm layer_term = 25;
 }
 
 message MeanSquaredError {
@@ -291,6 +292,11 @@ message GroupLassoWeightRegularization {
 message KLDivergence {
   string layer1 = 1;
   string layer2 = 2;
+}
+
+message LayerTerm {
+  double scale_factor = 1;
+  string layer = 2;
 }
 
 //========================================================================
@@ -664,6 +670,7 @@ message Layer {
    string data_layout = 52;
    string weights = 54;
    bool num_neurons_from_data_reader = 53;
+   bool freeze = 5;
 
    repeated WeightsData weights_data = 153;
    string top = 154;
@@ -695,11 +702,15 @@ message Layer {
    Slice slice = 301;
    Split split = 302;
    Sum sum = 303;
-   Noise noise = 307;
    Unpooling unpooling = 304;
    Hadamard hadamard = 308;
    Constant constant = 309;
-   Zero zero = 310; 
+   Zero zero = 315; 
+   Reduction reduction = 310;
+   Evaluation evaluation = 311;
+   Gaussian gaussian = 312;
+   Bernoulli bernoulli = 313;
+   Uniform uniform = 314;
 
    // learning Layers
    FullyConnected fully_connected = 11;
@@ -731,6 +742,7 @@ message Layer {
    BentIdentity bent_identity = 40;
    Exponential exponential = 41;
    Swish swish = 42;
+   Power power = 43;
 }
 ///////////////////////
 // MotifLayer //
@@ -788,6 +800,10 @@ message Selu {
 }
 
 message Softmax {
+}
+
+message Power {
+  double exponent = 1;
 }
 
 ///////////////////////////
@@ -879,11 +895,6 @@ message Sum {
   string scaling_factors = 1; //should be a space-separated list of doubles, e.g. "1.0 2.0 -1.0"
 }
 
-message Noise {
-  double noise_factor=1;
-  string num_neurons=2;
-}
-
 message Hadamard {
 }
 
@@ -892,10 +903,36 @@ message Constant {
   string num_neurons=2;
 }
 
+
 message Zero {
   bool first_half=1; //default: true
   bool second_half=2; //default: true
 }
+
+message Reduction {
+  string mode=1;
+}
+
+message Evaluation {
+}
+
+message Gaussian {
+  double mean = 1;
+  double stdev = 2;
+  string neuron_dims = 3;
+}
+
+message Bernoulli {
+  double prob = 1;
+  string neuron_dims = 2;
+}
+
+message Uniform {
+  double min = 1;
+  double max = 2;
+  string neuron_dims = 3;
+}
+
 /////////////////////
 // learning Layers //
 /////////////////////

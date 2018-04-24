@@ -30,18 +30,20 @@
 
 #include "lbann/data_store/generic_data_store.hpp"
 
+
 namespace lbann {
 
 /**
  * todo
  */
 
+class data_store_pilot2_molecular;
+
 class data_store_merge_samples : public generic_data_store {
  public:
 
   //! ctor
-  data_store_merge_samples(lbann_comm *comm, generic_data_reader *reader, model *m) :
-    generic_data_store(comm, reader, m) {}
+  data_store_merge_samples(lbann_comm *comm, generic_data_reader *reader, model *m); 
 
   //! copy ctor
   data_store_merge_samples(const data_store_merge_samples&) = default;
@@ -60,7 +62,14 @@ class data_store_merge_samples : public generic_data_store {
 
  protected :
 
-  void exchange_data() override {}
+  void exchange_data() override;
+
+  /// this contains a concatenation of the indices in m_minibatch_indices
+  /// (see: generic_data_reader.hpp)
+  std::vector<int> m_my_minibatch_indices;
+
+  std::vector<data_store_pilot2_molecular*> m_subsidiary_stores;
+
 
   /// when running in in-memory mode, this buffer will contain
   /// the concatenated data

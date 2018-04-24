@@ -63,8 +63,9 @@ class kl_divergence : public objective_function_term {
   /** Setup KL divergence regularization term. */
   void setup(model& m) override;
 
+  void start_evaluation() override;
   /** Get the value of the KL divergence regularization term. */
-  EvalType evaluate() override;
+  EvalType finish_evaluation() override;
 
   /** Regularization terms are applied to the objective function.
   *Add kl_loss to gradient/error signal.*/

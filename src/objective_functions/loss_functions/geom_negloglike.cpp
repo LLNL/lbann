@@ -28,8 +28,8 @@
 
 namespace lbann {
 
-EvalType geom_negloglike::evaluate_compute(const AbsDistMat& predictions,
-                                           const AbsDistMat& ground_truth) {
+EvalType geom_negloglike::finish_evaluate_compute(
+  const AbsDistMat& predictions, const AbsDistMat& ground_truth) {
 
   // Local matrices
   const Mat& predictions_local = predictions.LockedMatrix();

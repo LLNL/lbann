@@ -208,6 +208,46 @@ bool lbann::image_utils::load_image(const std::string& filename,
 #endif // LBANN_HAS_OPENCV
 }
 
+//XX
+/**
+ *  @param filename The name of the image file to read in
+ *  @param Width    The width of a patch from the image read
+ *  @param Height   The height of a patch from the image read
+ *  @param Type     The type of the image patches (OpenCV code used for cv::Mat)
+ *  @param pp       The pre-processing parameters
+ *  @param data     The pre-processed image data to be stored in El::Matrix<DataType> format
+ */
+bool lbann::image_utils::load_image(std::vector<unsigned char>& image_buf,
+                                    int& Width, int& Height, int& Type, cv_process_patches& pp, std::vector<::Mat>& data) {
+#ifdef LBANN_HAS_OPENCV
+  cv::Mat image = cv::imdecode(image_buf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+
+  std::vector<cv::Mat> patches;
+  bool ok = !image.empty() && pp.preprocess(image, patches);
+  if ((patches.size() == 0u) || (patches.size() != data.size())) {
+    return false;
+  }
+
+  for(size_t i=0u; ok && (i < patches.size()); ++i) {
+    ok = cv_utils::copy_cvMat_to_buf(patches[i], data[i], pp);
+  }
+
+  // Disabling normalizer is needed because normalizer is not necessarily
+  // called during preprocessing but implicitly applied during data copying to
+  // reduce overhead.
+  pp.disable_lazy_normalizer();
+
+  _LBANN_MILD_EXCEPTION(!ok, "Image preprocessing or copying failed.", false)
+
+  Width  = patches[0].cols;
+  Height = patches[0].rows;
+  Type   = patches[0].type();
+  return ok;
+#else
+  return false;
+#endif // LBANN_HAS_OPENCV
+}
+
 /**
  *  @param filename The name of the image file to write
  *  @param Width    The width of the image to be written
@@ -332,6 +372,9 @@ bool lbann::image_utils::export_image(const std::string& fileExt, std::vector<uc
   return false;
 #endif // LBANN_HAS_OPENCV
 }
+
+
+
 
 bool lbann::image_utils::load_image(std::vector<unsigned char>& image_buf,
                                     int& Width, int& Height, int& Type, cv_process& pp, ::Mat& data) {

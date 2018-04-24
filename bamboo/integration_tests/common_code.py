@@ -5,26 +5,30 @@ import csv, os, pprint, re, time
 
 # Set up the command ##########################################################
 def get_command(cluster, dir_name, model_folder, model_name, executable,
-                output_file_name, compiler_name):
+                output_file_name, error_file_name, compiler_name, weekly=False):
     if model_name in ['alexnet', 'conv_autoencoder_imagenet']:
+        data_reader_percent = 0.01
+        if weekly:
+            data_reader_percent = 0.10
         command = tools.get_command(
             cluster=cluster, executable=executable, num_nodes=16,
             partition='pbatch', time_limit=600, num_processes=32,
             dir_name=dir_name,
-            data_filedir_train='/p/gscratchr/brainusr/datasets/ILSVRC2012/original/train/',
-            data_filename_train='/p/gscratchr/brainusr/datasets/ILSVRC2012/labels/train.txt',
-            data_filedir_test='/p/lscratche/brainusr/datasets/ILSVRC2012/original/val/',
-            data_filename_test='/p/lscratche/brainusr/datasets/ILSVRC2012/original/labels/val.txt',
-            data_reader_name='imagenet', data_reader_percent=0.10,
+            data_filedir_train_ray='/p/gscratchr/brainusr/datasets/ILSVRC2012/original/train/',
+            data_filename_train_ray='/p/gscratchr/brainusr/datasets/ILSVRC2012/labels/train.txt',
+            data_filedir_test_ray='/p/lscratche/brainusr/datasets/ILSVRC2012/original/val/',
+            data_filename_test_ray='/p/lscratche/brainusr/datasets/ILSVRC2012/original/labels/val.txt',
+            data_reader_name='imagenet', data_reader_percent=data_reader_percent,
             model_folder=model_folder, model_name=model_name, num_epochs=20,
-            optimizer_name='adagrad', output_file_name=output_file_name)
+            optimizer_name='adagrad', output_file_name=output_file_name,
+            error_file_name=error_file_name)
     elif model_name in ['conv_autoencoder_mnist', 'lenet_mnist']:
         if (model_name == 'lenet_mnist') and (compiler_name in ['clang4', 'intel18']):
             partition = 'pbatch'
             time_limit = 600
         else:
             partition = 'pdebug'
-            time_limit = 10
+            time_limit = 30
         if (cluster == 'ray') and (model_name == 'conv_autoencoder_mnist'):
             num_processes = 20
         else:
@@ -36,14 +40,14 @@ def get_command(cluster, dir_name, model_folder, model_name, executable,
             data_filedir_ray='/p/gscratchr/brainusr/datasets/MNIST',
             data_reader_name='mnist', model_folder=model_folder,
             model_name=model_name, num_epochs=5, optimizer_name='adagrad',
-            output_file_name=output_file_name)
+            output_file_name=output_file_name, error_file_name=error_file_name)
     else:
         raise Exception('Invalid model: %s' % model_name)
     return command
 
 # Run LBANN ###################################################################
 
-def run_lbann(command, model_name, output_file_name, should_log):
+def run_lbann(command, model_name, output_file_name, error_file_name, should_log):
     print('About to run: %s' % command)
     print('%s began waiting in the queue at ' % model_name + time.strftime('%H:%M:%S', time.localtime()))
     value = os.system(command)
@@ -52,8 +56,12 @@ def run_lbann(command, model_name, output_file_name, should_log):
         output_file = open(output_file_name, 'r')
         for line in output_file:
             print('%s: %s' % (output_file_name, line))
+        error_file = open(error_file_name, 'r')
+        for line in error_file:
+            print('%s: %s' % (error_file_name, line))
     if value != 0:
-        raise Exception('Model %s crashed with command %s and output value %d' % (model_name, command, value))
+        error_string = 'Model %s crashed with command %s and output value %d' % (model_name, command, value)
+        raise Exception(error_string)
 
 # Extract data from output ####################################################
 
@@ -138,13 +146,15 @@ def extract_data(output_file_name, data_fields, should_log):
 
 # Skeleton ####################################################################
 
-def skeleton(cluster, dir_name, executable, model_folder, model_name, data_fields, should_log, compiler_name=None):
+def skeleton(cluster, dir_name, executable, model_folder, model_name, data_fields, should_log, compiler_name=None, weekly=False):
     if compiler_name == None:
         output_file_name = '%s/bamboo/integration_tests/output/%s_output.txt' % (dir_name, model_name)
+        error_file_name = '%s/bamboo/integration_tests/error/%s_error.txt' % (dir_name, model_name)
     else:
         output_file_name = '%s/bamboo/integration_tests/output/%s_%s_output.txt' %(dir_name, model_name, compiler_name)
-    command = get_command(cluster, dir_name, model_folder, model_name, executable, output_file_name, compiler_name)
-    run_lbann(command, model_name, output_file_name, should_log)
+        error_file_name = '%s/bamboo/integration_tests/error/%s_%s_error.txt' %(dir_name, model_name, compiler_name)
+    command = get_command(cluster, dir_name, model_folder, model_name, executable, output_file_name, error_file_name, compiler_name, weekly=weekly)
+    run_lbann(command, model_name, output_file_name, error_file_name, should_log)
     return extract_data(output_file_name, data_fields, should_log)
 
 # Misc. functions  ############################################################

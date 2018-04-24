@@ -68,8 +68,8 @@ namespace binary_cross_entropy_debug {
 } // namespace binary_cross_entropy_debug
 #endif // LBANN_DEBUG
 
-EvalType binary_cross_entropy::evaluate_compute(const AbsDistMat& predictions,
-                                                const AbsDistMat& ground_truth) {
+EvalType binary_cross_entropy::finish_evaluate_compute(
+  const AbsDistMat& predictions, const AbsDistMat& ground_truth) {
 
   // Local matrices
   const Mat& predictions_local = predictions.LockedMatrix();
