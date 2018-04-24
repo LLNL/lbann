@@ -68,7 +68,8 @@ class zero_layer : public transform_layer {
  protected:
 
   void fp_compute() override {
-    const auto& local_input = get_local_prev_activations();
+    const auto& input = get_prev_activations();
+    const auto& local_input = input.LockedMatrix();
     auto& local_output = get_local_activations();
     const int local_height = local_input.Height();
     const int local_width = local_input.Width();
@@ -77,15 +78,31 @@ class zero_layer : public transform_layer {
         const DataType x = local_input(row, col);
         DataType& y = local_output(row, col);
         if(m_first_half)
-        y = col < local_width/2 ?  DataType(0) : x;
+        y = input.GlobalCol(col) < local_width/2 ?  DataType(0) : x;
         if(m_second_half)
-        y = col >= local_width/2 ?  DataType(0) : x;
+        y = input.GlobalCol(col) >= local_width/2 ?  DataType(0) : x;
       }
     }
   }
 
   void bp_compute() override {
+    const auto& input = get_prev_error_signals();
+    const auto& local_gradient_wrt_output = get_local_prev_error_signals();
+    auto& local_gradient_wrt_input = get_local_error_signals();
+    const int local_height = input.LocalHeight();
+    const int local_width = input.LocalWidth();
+    for (int col = 0; col < local_width; ++col) {
+      for (int row = 0; row < local_height; ++row) {
+        const DataType dy = local_gradient_wrt_output(row, col);
+        DataType& dx = local_gradient_wrt_input(row, col);
+        if(m_first_half)
+        dx += input.GlobalCol(col) < local_width/2 ?  DataType(0) : dy;
+        if(m_second_half)
+        dx += input.GlobalCol(col) >= local_width/2 ?  DataType(0) : dy;
+      }
+    }
   }
+
 
 };
 

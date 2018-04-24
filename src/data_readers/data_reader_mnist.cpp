@@ -70,7 +70,8 @@ bool mnist_reader::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
   } else {
     if(m_gan_label_value) Y.Set(m_gan_label_value,mb_idx,1); //fake sample is set to 1; adversarial model
     else { //fake sample (second half of minibatch is set to 0;discriminator model
-      mb_idx < (m_mb_size/2) ? Y.Set(1,mb_idx,1) : Y.Set(m_gan_label_value,mb_idx,1);
+      //mb_idx < (m_mb_size/2) ? Y.Set(1,mb_idx,1) : Y.Set(m_gan_label_value,mb_idx,1);
+      mb_idx < (get_current_mini_batch_size()/2) ? Y.Set(1,mb_idx,1) : Y.Set(m_gan_label_value,mb_idx,1);
     }
   } 
   return true;

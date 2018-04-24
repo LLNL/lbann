@@ -942,7 +942,6 @@ class generic_data_reader : public lbann_image_preprocessor {
   //var to support GAN
   bool m_gan_labelling; //boolean flag of whether its GAN binary label, default is false
   int m_gan_label_value; //zero(0) or 1 label value for discriminator, default is 0
-  int m_mb_size; //tracks minibatch size 
   
 };
 
