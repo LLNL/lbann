@@ -80,7 +80,7 @@ model {
   weights {
      name: "gen_fc1_weights"
      optimizer { }
-     glorot_uniform_initializer {}
+     glorot_normal_initializer {}
   }
   #############
   # FC 1
@@ -92,7 +92,7 @@ model {
     weights: "gen_fc1_weights"
     fully_connected {
       num_neurons: 256 
-     # weight_initialization: "glorot_uniform"
+     # weight_initialization: "glorot_normal"
       has_bias: true
     }
   }
@@ -122,7 +122,7 @@ model {
   weights {
      name: "gen_fc2_weights"
      optimizer { }
-     glorot_uniform_initializer {}
+     glorot_normal_initializer {}
   }
   layer {
     name: "fc2"
@@ -131,7 +131,7 @@ model {
     weights: "gen_fc2_weights"
     fully_connected {
       num_neurons: 512 
-      #weight_initialization: "glorot_uniform"
+      #weight_initialization: "glorot_normal"
       has_bias: true
     }
   }
@@ -161,7 +161,7 @@ model {
   weights {
      name: "gen_fc3_weights"
      optimizer { }
-     glorot_uniform_initializer {}
+     glorot_normal_initializer {}
   }
   layer {
     name: "fc3"
@@ -170,7 +170,7 @@ model {
     weights: "gen_fc3_weights"
     fully_connected {
       num_neurons: 1024 
-     # weight_initialization: "glorot_uniform"
+     # weight_initialization: "glorot_normal"
       has_bias: true
     }
   }
@@ -200,7 +200,7 @@ model {
   weights {
      name: "gen_fc4_weights"
      optimizer { }
-     glorot_uniform_initializer {}
+     glorot_normal_initializer {}
   }
   layer {
     name: "fc4"
@@ -209,7 +209,7 @@ model {
     weights: "gen_fc4_weights"
     fully_connected {
       num_neurons: 784 
-      #weight_initialization: "glorot_uniform"
+      #weight_initialization: "glorot_normal"
       has_bias: true
     }
   }
@@ -277,7 +277,7 @@ model {
     #weights: "gen_fc_weights"
     fully_connected {
       num_neurons: 512 
-      weight_initialization: "glorot_uniform"
+      weight_initialization: "glorot_normal"
       has_bias: true
     }
   }
@@ -297,7 +297,7 @@ model {
     #weights: "gen_fc_weights"
     fully_connected {
       num_neurons: 256 
-      weight_initialization: "glorot_uniform"
+      weight_initialization: "glorot_normal"
       has_bias: true
     }
   }

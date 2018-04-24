@@ -79,7 +79,7 @@ model {
   weights {
      name: "gen_fc_weights"
      optimizer { }
-     glorot_uniform_initializer {}
+     glorot_normal_initializer {}
   }
   #############
   # FC 1
@@ -91,7 +91,7 @@ model {
     #weights: "gen_fc_weights"
     fully_connected {
       num_neurons: 256 
-      weight_initialization: "glorot_uniform"
+      weight_initialization: "glorot_normal"
       has_bias: true
     }
   }
@@ -124,7 +124,7 @@ model {
     #weights: "gen_fc_weights"
     fully_connected {
       num_neurons: 512 
-      weight_initialization: "glorot_uniform"
+      weight_initialization: "glorot_normal"
       has_bias: true
     }
   }
@@ -157,7 +157,7 @@ model {
     #weights: "gen_fc_weights"
     fully_connected {
       num_neurons: 1024 
-      weight_initialization: "glorot_uniform"
+      weight_initialization: "glorot_normal"
       has_bias: true
     }
   }
@@ -190,7 +190,7 @@ model {
     #weights: "gen_fc_weights"
     fully_connected {
       num_neurons: 784 
-      weight_initialization: "glorot_uniform"
+      weight_initialization: "glorot_normal"
       has_bias: true
     }
   }
@@ -239,26 +239,37 @@ model {
 
 #DISCRIMINATOR MODEL
   
+  weights {
+     name: "dis_flatten_weights"
+     optimizer { }
+     he_normal_initializer {}
+  }
  # FULLY_CONNECTED dis_flatten
   layer {
     parents: "sum"
     name: "dis_flatten_proxy"
     data_layout: "data_parallel"
+    weights: "dis_flatten_weights"
     fully_connected {
       num_neurons: 784
-      weight_initialization: "he_normal"
+      #weight_initialization: "he_normal"
       has_bias: true
     }
   }
 
+  weights {
+     name: "dis_fc1_weights"
+     optimizer { }
+     glorot_normal_initializer {}
+  }
   layer {
     name: "dis_fc1_proxy"
     parents: "dis_flatten_proxy"
     data_layout: "data_parallel"
-    #weights: "gen_fc_weights"
+    weights: "dis_fc1_weights"
     fully_connected {
       num_neurons: 512 
-      weight_initialization: "glorot_uniform"
+      #weight_initialization: "glorot_normal"
       has_bias: true
     }
   }
@@ -271,14 +282,19 @@ model {
     }
   }
 
+  weights {
+     name: "dis_fc2_weights"
+     optimizer { }
+     glorot_normal_initializer {}
+  }
   layer {
     parents: "dis_fc1_relu"
     name: "dis_fc2_proxy"
     data_layout: "data_parallel"
-    #weights: "gen_fc_weights"
+    weights: "dis_fc2_weights"
     fully_connected {
       num_neurons: 256 
-      weight_initialization: "glorot_uniform"
+      #weight_initialization: "glorot_normal"
       has_bias: true
     }
   }
@@ -292,13 +308,19 @@ model {
   }
 
  # FULLY_CONNECTED fc1
+  weights {
+     name: "dis_fc3_weights"
+     optimizer { }
+     glorot_normal_initializer {}
+  }
   layer {
     parents: "dis_fc2_relu"
     name: "dis_fc3_proxy"
     data_layout: "data_parallel"
+    weights: "dis_fc3_weights"
     fully_connected {
       num_neurons: 2
-      weight_initialization: "he_normal"
+      #weight_initialization: "he_normal"
       has_bias: true
     }
   }
