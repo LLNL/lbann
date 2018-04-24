@@ -194,7 +194,7 @@ class lbann_comm {
   void intermodel_broadcast_matrix(Mat& mat, int root);
   void intermodel_broadcast_matrix(AbsDistMat& mat, int root);
   /**
-   * Broadcast over an arbitrary communicator, returns the broadcast value
+   * Broadcast over an arbitrary communicator
    */
   template <typename T>
   void broadcast(int root, T& val, const El::mpi::Comm c) {
@@ -308,6 +308,22 @@ class lbann_comm {
   template <typename T>
   void model_all_gather(std::vector<T> &src, std::vector<T> &rcs, std::vector<int> &rcv_counts, std::vector<int> &rcv_disp, const El::mpi::Comm c) {
     all_gather(src, rcs, rcv_counts, rcv_disp, get_model_comm());
+  }
+  /** 
+   * Allgather for a single element over an arbitrary communicator;
+   * std::vector<T> &data must be correctly sized prior to entry.
+   */
+  template <typename T>
+  void all_gather(T &src, std::vector<T> &data, const El::mpi::Comm c) {
+    El::mpi::AllGather(&src, 1, data.data(), 1, c);
+  }
+  /** 
+   * Allgather for a single element over the model communicator;
+   * std::vector<T> &data must be correctly sized prior to entry.
+   */
+  template <typename T>
+  void model_all_gather(T &src, std::vector<T> &data) {
+    all_gather(src, data, get_model_comm());
   }
 
   /** Within-model scalar gather (for non-root processes). */
@@ -608,6 +624,12 @@ class lbann_comm {
     bytes_sent += sizeof(T) * count;
     El::mpi::ISend(data, count, get_world_rank(model, rank), get_world_comm(), req);
   }
+  template <typename T>
+  void nb_tagged_send(const T *data, int count, int rank, int tag,
+               El::mpi::Request<T>& req, const El::mpi::Comm c) {
+    bytes_sent += sizeof(T) * count;
+    El::mpi::TaggedISend(data, count, rank, tag, c, req);
+  }
   template <typename T> void nb_send(const T *data, int count, int model,
                                      El::mpi::Request<T>& req) {
     nb_send(data, count, model, rank_in_model, req);
@@ -654,6 +676,13 @@ class lbann_comm {
                req);
     bytes_received += sizeof(T) * count;
   }
+  template <typename T> void nb_tagged_recv(
+               T *data, int count, int rank, int tag,
+               El::mpi::Request<T>& req, const El::mpi::Comm c) {
+    El::mpi::TaggedIRecv(data, count, rank, tag, c, req);
+    bytes_received += sizeof(T) * count;
+  }
+
   template <typename T> void nb_recv(T *data, int count, int model,
                                      El::mpi::Request<T>& req) {
     nb_recv(data, count, model, rank_in_model, req);
