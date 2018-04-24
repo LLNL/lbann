@@ -113,7 +113,8 @@ void l2_weight_regularization::start_evaluation() {
       const auto& w = m_weights[i];
       if (w->get_cudnn_manager() != nullptr) {
         const auto& values = w->get_values();
-        m_sqsums[i] = cublas::dot(handle, w->get_size(), values.LockedBuffer(), 1, values.LockedBuffer(), 1);
+        // Use a local Dot on each GPU and non-blocking reductions to aggregate results later
+        m_sqsums[i] = cublas::dot(handle, values.LocalHeight() * values.LocalWidth(), values.LockedBuffer(), 1, values.LockedBuffer(), 1);
         get_comm().nb_allreduce(&(m_sqsums[i]), 1, values.DistComm(),
                                 m_allreduce_reqs[i], El::mpi::SUM);
         m_allreduce_started[i] = true;
