@@ -21,9 +21,13 @@ BUILD_TYPE=Release
 COMPILER=gcc@4.9.3
 DTYPE=float
 EL_VER=hydrogen-develop
-MPI=mvapich2
+if [ "${CLUSTER}" == "ray" -o "${CLUSTER}" == "sierra" ]; then
+  MPI=spectrum-mpi
+else
+  MPI=mvapich2
+fi
 VARIANTS=
-GPU=0
+GPU=0 # ignored for surface, ray, sierra
 
 #Help function
 function HELP {
@@ -95,10 +99,13 @@ ARCH=`uname -m`
 
 PLATFORM=
 FEATURE=
-if [ "${GPU}" == "1" -o "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" ]; then
+if [ "${GPU}" == "1" -o "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" -o "${CLUSTER}" == "sierra" ]; then
   if [ "${CLUSTER}" == "flash" ]; then
     PLATFORM="+gpu ^cuda@7.5 ^cudnn@5.1"
     FEATURE="_gpu_cuda-7.5_cudnn-5.1"
+  elif [ "${CLUSETER}" == "sierra" ]; then
+    PLATFORM="+gpu ^cuda@9.1.76 ^cudnn@7.0"
+    FEATURE="_gpu_cuda-9.1.76_cudnn-7.0"
   else
     PLATFORM="+gpu"
     FEATURE="_gpu"
