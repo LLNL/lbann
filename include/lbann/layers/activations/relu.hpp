@@ -114,14 +114,11 @@ class relu_layer : public entrywise_activation_layer {
     if (using_gpus()) {
       const auto& input = get_prev_activations();
       const auto& output = get_activations();
-      cudnn::set_tensor_cudnn_desc(m_prev_activations_cudnn_desc,
-                                   static_cast<int>(input.LocalWidth()),
-                                   { static_cast<int>(input.LocalHeight()) },
-                                   static_cast<int>(input.LDim()));
-      cudnn::set_tensor_cudnn_desc(m_activations_cudnn_desc,
-                                   static_cast<int>(output.LocalWidth()),
-                                   { static_cast<int>(output.LocalHeight()) },
-                                   static_cast<int>(output.LDim()));
+      const std::vector<int> dims(1, input.LocalHeight());
+      cudnn::set_tensor_cudnn_desc(this->m_prev_activations_cudnn_desc,
+                                   input.LocalWidth(), dims, input.LDim());
+      cudnn::set_tensor_cudnn_desc(this->m_activations_cudnn_desc,
+                                   output.LocalWidth(), dims, output.LDim());
     }
   #endif // LBANN_HAS_CUDNN
   }
@@ -132,14 +129,15 @@ class relu_layer : public entrywise_activation_layer {
     if (using_gpus()) {
       const auto& gradient_wrt_output = get_prev_error_signals();
       const auto& gradient_wrt_input = get_error_signals();
-      cudnn::set_tensor_cudnn_desc(m_prev_error_signals_cudnn_desc,
-                                   static_cast<int>(gradient_wrt_output.LocalWidth()),
-                                   { static_cast<int>(gradient_wrt_output.LocalHeight()) },
-                                   static_cast<int>(gradient_wrt_output.LDim()));
-      cudnn::set_tensor_cudnn_desc(m_error_signals_cudnn_desc,
-                                   static_cast<int>(gradient_wrt_input.LocalWidth()),
-                                   { static_cast<int>(gradient_wrt_input.LocalHeight()) },
-                                   static_cast<int>(gradient_wrt_input.LDim()));
+      const std::vector<int> dims(1, gradient_wrt_output.LocalHeight());
+      cudnn::set_tensor_cudnn_desc(this->m_prev_error_signals_cudnn_desc,
+                                   gradient_wrt_output.LocalWidth(),
+                                   dims,
+                                   gradient_wrt_output.LDim());
+      cudnn::set_tensor_cudnn_desc(this->m_error_signals_cudnn_desc,
+                                   gradient_wrt_input.LocalWidth(),
+                                   dims,
+                                   gradient_wrt_input.LDim());
     }
   #endif // LBANN_HAS_CUDNN
   }

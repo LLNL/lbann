@@ -125,6 +125,12 @@ class dropout : public regularizer_layer {
     LBANN_ERROR("cuDNN not detected");
   #else
 
+    // cuDNN tensor descriptor for local GPU data
+    const auto& input = get_prev_activations();
+    const std::vector<int> dims(1, input.LocalHeight());
+    cudnn::set_tensor_cudnn_desc(this->m_prev_activations_cudnn_desc,
+                                 input.LocalWidth(), dims, input.LDim());
+
     // Allocate work spaces
     size_t size;
     CHECK_CUDNN(cudnnDropoutGetStatesSize(this->m_cudnn->get_handle(0), &size));
@@ -173,6 +179,37 @@ class dropout : public regularizer_layer {
     }
   #endif // LBANN_HAS_CUDNN
     regularizer_layer::fp_setup_data(mini_batch_size);
+  #ifdef LBANN_HAS_CUDNN
+    if (using_gpus()) {
+      // Set cuDNN tensor descriptor for local GPU data
+      const auto& input = get_prev_activations();
+      const auto& output = get_activations();
+      const std::vector<int> dims(1, input.LocalHeight());
+      cudnn::set_tensor_cudnn_desc(m_prev_activations_cudnn_desc,
+                                   input.LocalWidth(), dims, input.LDim());
+      cudnn::set_tensor_cudnn_desc(m_activations_cudnn_desc,
+                                   output.LocalWidth(), dims, output.LDim());
+    }
+  #endif // LBANN_HAS_CUDNN
+  }
+
+  void bp_setup_data(int mini_batch_size) override {
+    regularizer_layer::bp_setup_data(mini_batch_size);
+  #ifdef LBANN_HAS_CUDNN
+    if (using_gpus()) {
+      const auto& gradient_wrt_output = get_prev_error_signals();
+      const auto& gradient_wrt_input = get_error_signals();
+      const std::vector<int> dims(1, gradient_wrt_output.LocalHeight());
+      cudnn::set_tensor_cudnn_desc(m_prev_error_signals_cudnn_desc,
+                                   gradient_wrt_output.LocalWidth(),
+                                   dims,
+                                   gradient_wrt_output.LDim());
+      cudnn::set_tensor_cudnn_desc(m_error_signals_cudnn_desc,
+                                   gradient_wrt_input.LocalWidth(),
+                                   dims,
+                                   gradient_wrt_input.LDim());
+    }
+  #endif // LBANN_HAS_CUDNN
   }
 
   void fp_compute_cpu() {
@@ -266,8 +303,8 @@ class dropout : public regularizer_layer {
       CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu()));
       cublas::geam(this->m_cudnn->get_cublas_handle(0),
                    CUBLAS_OP_N, CUBLAS_OP_N,
-                   gradient_wrt_input.Height(),
-                   this->m_mini_batch_size_per_gpu,
+                   gradient_wrt_input.LocalHeight(),
+                   gradient_wrt_input.LocalWidth(),
                    DataType(1),
                    gradient_wrt_output.LockedBuffer(),
                    gradient_wrt_output.LDim(),
