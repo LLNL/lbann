@@ -115,13 +115,13 @@ class relu_layer : public entrywise_activation_layer {
       const auto& input = get_prev_activations();
       const auto& output = get_activations();
       cudnn::set_tensor_cudnn_desc(m_prev_activations_cudnn_desc,
-                                   input.LocalWidth(),
-                                   { input.LocalHeight() },
-                                   input.LDim());
+                                   static_cast<int>(input.LocalWidth()),
+                                   { static_cast<int>(input.LocalHeight()) },
+                                   static_cast<int>(input.LDim()));
       cudnn::set_tensor_cudnn_desc(m_activations_cudnn_desc,
-                                   output.LocalWidth(),
-                                   { output.LocalHeight() },
-                                   output.LDim());
+                                   static_cast<int>(output.LocalWidth()),
+                                   { static_cast<int>(output.LocalHeight()) },
+                                   static_cast<int>(output.LDim()));
     }
   #endif // LBANN_HAS_CUDNN
   }
@@ -133,13 +133,13 @@ class relu_layer : public entrywise_activation_layer {
       const auto& gradient_wrt_output = get_prev_error_signals();
       const auto& gradient_wrt_input = get_error_signals();
       cudnn::set_tensor_cudnn_desc(m_prev_error_signals_cudnn_desc,
-                                   gradient_wrt_output.LocalWidth(),
-                                   { gradient_wrt_output.LocalHeight() },
-                                   gradient_wrt_output.LDim());
+                                   static_cast<int>(gradient_wrt_output.LocalWidth()),
+                                   { static_cast<int>(gradient_wrt_output.LocalHeight()) },
+                                   static_cast<int>(gradient_wrt_output.LDim()));
       cudnn::set_tensor_cudnn_desc(m_error_signals_cudnn_desc,
-                                   gradient_wrt_input.LocalWidth(),
-                                   { gradient_wrt_input.LocalHeight() },
-                                   gradient_wrt_input.LDim());
+                                   static_cast<int>(gradient_wrt_input.LocalWidth()),
+                                   { static_cast<int>(gradient_wrt_input.LocalHeight()) },
+                                   static_cast<int>(gradient_wrt_input.LDim()));
     }
   #endif // LBANN_HAS_CUDNN
   }
