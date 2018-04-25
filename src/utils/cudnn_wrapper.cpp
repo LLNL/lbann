@@ -1144,7 +1144,10 @@ void set_tensor_cudnn_desc(cudnnTensorDescriptor_t& desc,
     // Note: cuDNN tensors should have at least 4 dimension
     leading_dim = std::max(height, leading_dim);
     const std::vector<int> dims = {1, 1, width, height};
-    const std::vector<int> strides = {leading_dim, leading_dim, leading_dim, 1};
+    const std::vector<int> strides = {width * leading_dim,
+                                      width * leading_dim,
+                                      leading_dim,
+                                      1};
 
     // Set cuDNN tensor descriptor
     CHECK_CUDNN(cudnnSetTensorNdDescriptor(desc,
