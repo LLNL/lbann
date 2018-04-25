@@ -52,7 +52,7 @@ template <>
 void relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
   fp_compute_gpu();
 }
-#endif // LBANN_HAS_GPUs
+#endif // LBANN_HAS_GPU
 
 /** CPU implementation of backward prop computation. */
 template <>
@@ -78,6 +78,6 @@ template <>
 void relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
   bp_compute_gpu();
 }
-#endif // LBANN_HAS_GPUs
+#endif // LBANN_HAS_GPU
 
 } // namespace lbann
