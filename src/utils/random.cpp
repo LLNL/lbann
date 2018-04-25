@@ -70,7 +70,7 @@ rng_gen& get_data_seq_generator() {
   return ::data_seq_generator;
 }
 
-bool save_rng_to_checkpoint_shared(persist& p){
+bool save_rng_to_checkpoint_shared(persist& p, const lbann_comm* comm) {
   std::string dirname = std::string(p.m_checkpoint_dir) + "/rng_state";
   makedir(dirname.c_str());
   std::string rng_name;
@@ -83,23 +83,31 @@ bool save_rng_to_checkpoint_shared(persist& p){
   std::ofstream rng_EL(rng_name);
   rng_EL << El::Generator();
 #endif
+
+  std::string rank_in_world;
+  if (comm == nullptr) {
+    rank_in_world = std::to_string(El::mpi::Rank(El::mpi::COMM_WORLD));
+  } else {
+    rank_in_world = std::to_string(comm->get_rank_in_world());
+
+  }
 #ifdef _OPENMP 
   #pragma omp parallel private(rng_name) 
   {
-    rng_name = dirname + "/rng_generator_" + std::to_string(p.get_rank()) + "_" + std::to_string(omp_get_thread_num());
+    rng_name = dirname + "/rng_generator_" + rank_in_world + "_" + std::to_string(omp_get_thread_num());
     std::ofstream rng(rng_name);
     rng << ::generator;
-    
-    rng_name = dirname + "/rng_fast_generator_" + std::to_string(p.get_rank()) + "_" + std::to_string(omp_get_thread_num());
+
+    rng_name = dirname + "/rng_fast_generator_" + rank_in_world + "_" + std::to_string(omp_get_thread_num());
     std::ofstream rng_fast(rng_name);
     rng_fast << ::fast_generator;
   }
 #else
-    rng_name = dirname + "/rng_generator_" + std::to_string(p.get_rank();
+    rng_name = dirname + "/rng_generator_" + rank_in_world;
     std::ofstream rng(rng_name);
     rng << ::generator;
 
-    rng_name = dirname + "/rng_fast_generator_" + std::to_string(p.get_rank());
+    rng_name = dirname + "/rng_fast_generator_" + rank_in_world;
     std::ofstream rng_fast(rng_name);
     rng_fast << ::fast_generator;
 #endif
@@ -107,7 +115,7 @@ bool save_rng_to_checkpoint_shared(persist& p){
    return true;
 }
 
-bool load_rng_from_checkpoint_shared(persist& p){
+bool load_rng_from_checkpoint_shared(persist& p, const lbann_comm* comm) {
   
   std::string dirname = std::string(p.m_checkpoint_dir) + "/rng_state";
   std::string rng_name;
@@ -120,23 +128,31 @@ bool load_rng_from_checkpoint_shared(persist& p){
   std::ifstream rng_EL(rng_name);
   rng_EL >> El::Generator();
 #endif
+
+  std::string rank_in_world;
+  if (comm == nullptr) {
+    rank_in_world = std::to_string(El::mpi::Rank(El::mpi::COMM_WORLD));
+  } else {
+    rank_in_world = std::to_string(comm->get_rank_in_world());
+  }
+
  #ifdef _OPENMP 
   #pragma omp parallel private(rng_name)
   {
-    rng_name = dirname + "/rng_generator_" + std::to_string(p.get_rank()) + "_" + std::to_string(omp_get_thread_num());
+    rng_name = dirname + "/rng_generator_" + rank_in_world + "_" + std::to_string(omp_get_thread_num());
     std::ifstream rng(rng_name);
     rng >> ::generator;
-    
-    rng_name = dirname + "/rng_fast_generator_" + std::to_string(p.get_rank()) + "_" + std::to_string(omp_get_thread_num());
+
+    rng_name = dirname + "/rng_fast_generator_" + rank_in_world + "_" + std::to_string(omp_get_thread_num());
     std::ifstream rng_fast(rng_name);
     rng_fast >> ::fast_generator;
    }
 #else
-    rng_name = dirname + "/rng_generator_" + std::to_string(p.get_rank());
+    rng_name = dirname + "/rng_generator_" + rank_in_world;
     std::ifstream rng(rng_name);
     rng >> ::generator;
 
-    rng_name = dirname + "/rng_fast_generator_" + std::to_string(p.get_rank());
+    rng_name = dirname + "/rng_fast_generator_" + rank_in_world;
     std::ifstream rng_fast(rng_name);
     rng_fast >> ::fast_generator;
    }

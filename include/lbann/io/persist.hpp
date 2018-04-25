@@ -49,7 +49,6 @@ enum class callback_type {
 
 class persist {
  protected:
-  int m_rank;
   uint64_t m_bytes;
   int m_model_fd;
   int m_train_fd;
@@ -64,10 +63,6 @@ class persist {
  public:
   persist();
   ~persist() {};
-
-  int get_rank() const {
-    return m_rank;
-  }
 
   callback_type get_cb_type() const {
     return ckpt_type;

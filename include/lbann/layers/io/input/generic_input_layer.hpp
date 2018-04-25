@@ -636,7 +636,7 @@ class generic_input_layer : public io_layer {
       if ((it != this->m_data_readers.end()) && it->second) {
         (it->second)->save_to_checkpoint_shared(p, "data_reader_testing");
       }
-      if (p.get_rank() == 0) {
+      if (m_comm->am_model_master()) {
         p.write_uint64(persist_type::train, "reader_train_processed",
                        (uint64_t) m_training_dataset.get_num_samples_processed());
         p.write_uint64(persist_type::train, "reader_train_total",
@@ -650,7 +650,7 @@ class generic_input_layer : public io_layer {
       }
     }
     if(p.get_cb_type() == callback_type::validation || p.get_cb_type() == callback_type::batch){
-      if (p.get_rank() == 0) {
+      if (m_comm->am_model_master()) {
         p.write_uint64(persist_type::validate, "reader_validate_processed",
                        (uint64_t) m_validation_dataset.get_num_samples_processed());
         p.write_uint64(persist_type::validate, "reader_validate_total",
@@ -691,7 +691,7 @@ class generic_input_layer : public io_layer {
     // rank 0 reads the file
     dataset_header header;
     // Assume we are loading from a epoch end checkpoint
-    if (p.get_rank() == 0) {
+    if (m_comm->am_model_master()) {
       p.read_uint64(persist_type::train, "reader_train_processed",    &header.train_proc);
       p.read_uint64(persist_type::train, "reader_train_total",        &header.train_total);
       p.read_uint64(persist_type::train, "reader_test_processed",     &header.test_proc);

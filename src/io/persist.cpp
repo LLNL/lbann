@@ -213,9 +213,6 @@ bool lbann::persist::read_rank_distmat(persist_type type, const char *name, AbsD
  ****************************************************/
 
 lbann::persist::persist() {
-  // lookup our MPI rank
-  MPI_Comm_rank(MPI_COMM_WORLD, &m_rank);
-
   // initialize number of bytes written
   m_bytes = 0;
 
@@ -233,7 +230,6 @@ void lbann::persist::open_checkpoint(const char *dir) {
   strcpy(m_checkpoint_dir, dir);
 
   // open the file for writing
-  //else if(!per_rank && m_rank == 0) {
    sprintf(m_model_filename, "%s/model", dir);
 
   // define filename for train state

@@ -204,7 +204,7 @@ void hypergradient_adam::step_compute(AbsDistMat& values,
 bool hypergradient_adam::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
   if(p.get_cb_type() == callback_type::batch)
     optimizer::save_to_checkpoint_shared(p,name_prefix);
-  if (p.get_rank() == 0) {
+  if (m_comm->am_model_master()) {
     pack_scalars(p);
   }
  
@@ -225,11 +225,11 @@ bool hypergradient_adam::load_from_checkpoint_shared(persist& p, std::string nam
   if(p.get_cb_type() == callback_type::batch)
     optimizer::load_from_checkpoint_shared(p,name_prefix);
   struct packing_header header;
-  if (p.get_rank() == 0) {
+  if (m_comm->am_model_master()) {
     unpack_scalars(p, &header);
   }
  
-  MPI_Bcast(&header, sizeof(header), MPI_BYTE, 0, MPI_COMM_WORLD);
+  m_comm->model_broadcast(0, header);
 
   unpack_header(header);
 

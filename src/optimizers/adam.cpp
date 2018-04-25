@@ -238,7 +238,7 @@ void adam::set_states_on_device() {
 bool adam::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
   optimizer::save_to_checkpoint_shared(p, name_prefix);
 
-  if (p.get_rank() == 0) {
+  if (m_comm->am_model_master()) {
     pack_scalars(p);
   }
 
@@ -255,11 +255,11 @@ bool adam::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
 bool adam::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
   optimizer::load_from_checkpoint_shared(p, name_prefix);
   struct packing_header header;
-  if (p.get_rank() == 0) {
+  if (m_comm->am_model_master()) {
     unpack_scalars(p, &header);
   }
 
-  MPI_Bcast(&header, sizeof(header), MPI_BYTE, 0, MPI_COMM_WORLD);
+  m_comm->model_broadcast(0, header);
 
   unpack_header(header);
 

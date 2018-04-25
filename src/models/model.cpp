@@ -1152,7 +1152,7 @@ struct lbann_model_header {
 bool model::save_to_checkpoint_shared(persist& p) {
   // write out fields we need to save for model
   if (p.get_cb_type() != callback_type::validation) {
-    if(p.get_rank() == 0){  
+    if (m_comm->am_model_master()) {
 
       p.write_uint32(persist_type::train, "execution_mode",     (uint32_t) m_execution_mode);
       p.write_uint32(persist_type::train, "terminate_training", (uint32_t) m_terminate_training);
@@ -1182,17 +1182,17 @@ bool model::save_to_checkpoint_shared(persist& p) {
       }
     }
     if(p.get_cb_type() == callback_type::batch){
-      save_rng_to_checkpoint_shared(p);
+      save_rng_to_checkpoint_shared(p, m_comm);
       for (const auto& m : m_metrics) {
         m->save_to_checkpoint_shared(p);
       }
     }
   }
   else{ 
-    if(p.get_rank() == 0){
+    if (m_comm->am_model_master()) {
       p.write_uint64(persist_type::validate, "current_validataion_step",       (uint64_t) m_current_validation_step);
     }
-    save_rng_to_checkpoint_shared(p);
+    save_rng_to_checkpoint_shared(p, m_comm);
     for (size_t l = 0; l < m_layers.size(); l++) {
       if (! m_layers[l]->save_to_checkpoint_shared(p)) {
         return false; 
@@ -1210,7 +1210,7 @@ bool model::load_from_checkpoint_shared(persist& p) {
   // read state from file
   struct lbann_model_header header;
   // Assume checkpoint reload from epoch end not step end
-  if (p.get_rank() == 0) {
+  if (m_comm->am_model_master()) {
     p.read_uint32(persist_type::train, "execution_mode",     &header.execution_mode);
     p.read_uint32(persist_type::train, "terminate_training", &header.terminate_training);
     p.read_uint64(persist_type::train, "current_epoch",      &header.current_epoch);
@@ -1222,10 +1222,10 @@ bool model::load_from_checkpoint_shared(persist& p) {
     p.read_uint32(persist_type::train, "current_phase",      &header.current_phase);
     p.read_uint32(persist_type::train, "persist_callback_type",     &header.callback_type);
   }
-  load_rng_from_checkpoint_shared(p);
+  load_rng_from_checkpoint_shared(p, m_comm);
   // TODO: this assumes homogeneous processors
   // broadcast state from rank 0
-  MPI_Bcast(&header, sizeof(header), MPI_BYTE, 0, MPI_COMM_WORLD);
+  m_comm->model_broadcast(0, header);
   // set our member params from values read from disk
   m_execution_mode     = (execution_mode) header.execution_mode;
   m_terminate_training = (bool)           header.terminate_training;
@@ -1284,7 +1284,7 @@ bool model::save_to_checkpoint_distributed(persist& p){
       }
     }
     if(p.get_cb_type() == callback_type::batch){
-       save_rng_to_checkpoint_shared(p);
+       save_rng_to_checkpoint_shared(p, m_comm);
       for (const auto& m : m_metrics) {
         m->save_to_checkpoint_distributed(p);
       }
@@ -1293,7 +1293,7 @@ bool model::save_to_checkpoint_distributed(persist& p){
   
   else {
     p.write_uint64(persist_type::validate, "current_validataion_step",       (uint64_t) m_current_validation_step);
-    save_rng_to_checkpoint_shared(p);
+    save_rng_to_checkpoint_shared(p, m_comm);
     
     for (size_t l = 0; l < m_layers.size(); l++) { 
       if (! m_layers[l]->save_to_checkpoint_distributed(p)) {
@@ -1331,7 +1331,7 @@ bool model::load_from_checkpoint_distributed(persist& p){
   m_current_phase      =                  header.current_phase; 
   
   p.set_cb_type((callback_type) header.callback_type);
-  load_rng_from_checkpoint_shared(p);
+  load_rng_from_checkpoint_shared(p, m_comm);
 
   for (weights *w : m_weights) {
     w->load_from_checkpoint_distributed(p);
