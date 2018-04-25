@@ -146,13 +146,6 @@ void data_store_imagenet::read_files() {
   const std::vector<std::pair<std::string, int> > & image_list = reader->get_image_list();
   size_t j = 0;
   for (auto index : m_my_datastore_indices) {
-    if (m_offsets.find(index) == m_offsets.end()) {
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: " 
-          << " m_offsets.find(index) failed for index: " << index;
-      throw lbann_exception(err.str());
-    }
-    size_t offset = m_offsets[index];
     if (m_file_sizes.find(index) == m_file_sizes.end()) {
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: " 
@@ -160,16 +153,8 @@ void data_store_imagenet::read_files() {
       throw lbann_exception(err.str());
     }
     size_t file_len = m_file_sizes[index];
-    if (offset + file_len > m_data.size()) {
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: " << " j: " << j 
-        << " of " << m_my_minibatch_indices_v.size() << " offset: " << offset
-        << " file_len: " << file_len << " offset+file_len: "
-        << offset+file_len << " m_data.size(): " << m_data.size()
-        << "\noffset+file_len must be <= m_data.size()";
-      throw lbann_exception(err.str());
-    }
-    load_file(m_dir, image_list[index].first, &m_data[offset], file_len);
+    m_data[index].resize(file_len);
+    load_file(m_dir, image_list[index].first, m_data[index].data(), file_len);
     ++j;
   }
 }
@@ -181,19 +166,15 @@ void data_store_imagenet::get_file_sizes() {
 
   std::vector<int> global_indices(m_my_datastore_indices.size());
   std::vector<int> bytes(m_my_datastore_indices.size());
-  std::vector<size_t> offsets(m_my_datastore_indices.size());
 
-  size_t cur_offset = 0;
   size_t j = 0;
   for (auto index : m_my_datastore_indices) {
     global_indices[j] = index;
     bytes[j] = get_file_size(m_dir, image_list[index].first);
-    offsets[j] = cur_offset;
-    cur_offset += bytes[j];
     ++j;
   }
 
-  exchange_file_sizes(global_indices, bytes, offsets, m_num_global_indices);
+  exchange_file_sizes(global_indices, bytes, m_num_global_indices);
 }
 
 

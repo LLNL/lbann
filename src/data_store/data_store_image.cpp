@@ -48,24 +48,21 @@ void data_store_image::setup() {
   } 
   
   else {
-    if (m_master) std::cerr << "calling get_minibatch_index_vector\n";
+    if (m_master) std::cerr << "data_store_image - calling get_minibatch_index_vector\n";
     get_minibatch_index_vector();
 
-    if (m_master) std::cerr << "calling exchange_mb_indices\n";
+    if (m_master) std::cerr << "data_store_image - calling exchange_mb_indices\n";
     exchange_mb_indices();
 
-    if (m_master) std::cerr << "calling get_my_datastore_indices\n";
+    if (m_master) std::cerr << "data_store_image - calling get_my_datastore_indices\n";
     get_my_datastore_indices();
 
-    if (m_master) std::cerr << "calling get_file_sizes\n";
+    if (m_master) std::cerr << "data_store_image - calling get_file_sizes\n";
     double tma = get_time();
     get_file_sizes();
-    if (m_master) std::cerr << "get_file_sizes time: " << get_time() - tma << "\n";
+    if (m_master) std::cerr << "data_store_image - get_file_sizes time: " << get_time() - tma << " num files: " << m_file_sizes.size() << "\n";
 
-    if (m_master) std::cerr << "calling allocate_memory\n";
-    allocate_memory();
-
-    if (m_master) std::cerr << "calling read_files\n";
+    if (m_master) std::cerr << "data_store_image - calling read_files\n";
     tma = get_time();
     read_files();
     if (m_master) std::cerr << "read_files time: " << get_time() - tma << "\n";
@@ -74,7 +71,7 @@ void data_store_image::setup() {
     exchange_data();
 
     if (m_extended_testing) {
-      if (m_master) std::cerr << "calling extended_testing\n";
+      if (m_master) std::cerr << "data_store_image - calling extended_testing\n";
       extended_testing();
     }
   }
@@ -93,16 +90,6 @@ void data_store_image::get_data_buf(int data_id, std::vector<unsigned char> *&bu
   }
 
   buf = &m_my_minibatch_data[index];
-}
-
-void data_store_image::allocate_memory() {
-  size_t m = 0;
-  for (auto t : m_my_datastore_indices) {
-    for (size_t i=0; i<m_num_img_srcs; i++) {
-      m += m_file_sizes[t*m_num_img_srcs+i];
-    }    
-  }    
-  m_data.resize(m);
 }
 
 void data_store_image::load_file(const std::string &dir, const std::string &fn, unsigned char *p, size_t sz) {
@@ -132,7 +119,7 @@ void data_store_image::load_file(const std::string &dir, const std::string &fn, 
 }
 
 void data_store_image::exchange_data() {
-  if (m_master) std::cerr << "starting exchange_data\n";
+  double tm1 = get_time();
   std::stringstream err;
 
   //build map: proc -> global indices that proc needs for this epoch, and
@@ -160,20 +147,15 @@ void data_store_image::exchange_data() {
               << " m_file_sizes.find(" << index << ") failed";
           throw lbann_exception(err.str());
         }
-        if (m_offsets.find(index) == m_offsets.end()) {
-          err << __FILE__ << " " << __LINE__ << " :: "
-              << " m_offets.find(" << index << ") failed";
-          throw lbann_exception(err.str());
-        }
         int len = m_file_sizes[index];
-        size_t offset = m_offsets[index];
-        m_comm->nb_send<unsigned char>(m_data.data()+offset, len, 0, p, send_req[p][jj++]);
+        m_comm->nb_tagged_send<unsigned char>(
+            m_data[index].data(), len, p, index, 
+            send_req[p][jj++], m_comm->get_model_comm());
 
       }
     }
     if (jj != send_req[p].size()) throw lbann_exception("ERROR 1");
   } //start sends
-
 
   //build map: proc -> global indices that proc owns that I need
   proc_to_indices.clear();
@@ -203,7 +185,9 @@ void data_store_image::exchange_data() {
         }
         size_t len = m_file_sizes[index];
         m_my_minibatch_data[index].resize(len);
-        m_comm->nb_recv<unsigned char>(m_my_minibatch_data[index].data(), len, 0, owner, recv_req[owner][jj++]);
+        m_comm->nb_tagged_recv<unsigned char>(
+            m_my_minibatch_data[index].data(), len, owner, 
+            index, recv_req[owner][jj++], m_comm->get_model_comm());
       }
     }
   }
@@ -217,40 +201,37 @@ void data_store_image::exchange_data() {
   for (size_t i=0; i<recv_req.size(); i++) {
     m_comm->wait_all<unsigned char>(recv_req[i]);
   }
+
+  if (m_master) {
+    std::cerr << "role: " << m_reader->get_role() 
+              << "; time for exchange_data: " << get_time() - tm1 << "\n";
+  }
 }
 
 
 void data_store_image::exchange_file_sizes(
-  std::vector<int> &global_indices,
-  std::vector<int> &bytes,
-  std::vector<size_t> &offsets,
+  std::vector<int> &my_global_indices,
+  std::vector<int> &my_num_bytes,
   int num_global_indices) {
 
-  std::vector<int> num_bytes(m_np);
-  int nbytes = global_indices.size();
-  if (m_master) {
-    m_comm->model_gather<int>(nbytes, num_bytes.data());
-  } else {
-    m_comm->model_gather<int>(nbytes, 0);
-  }
+  std::vector<int> rcv_counts(m_np);
+  int nbytes = my_global_indices.size();
+  m_comm->model_all_gather<int>(nbytes, rcv_counts);
 
   std::vector<int> disp(m_num_readers); 
   disp[0] = 0;
   for (int h=1; h<(int)m_num_readers; h++) {
-    disp[h] = disp[h-1] + num_bytes[h-1];
+    disp[h] = disp[h-1] + rcv_counts[h-1];
   }
   std::vector<int> all_global_indices(num_global_indices);
-  std::vector<int> all_bytes(num_global_indices);
-  std::vector<size_t> all_offsets(num_global_indices);
+  std::vector<int> all_num_bytes(num_global_indices);
 
-  m_comm->all_gather<int>(global_indices, all_global_indices, bytes, disp, m_comm->get_world_comm());
-  m_comm->all_gather<int>(num_bytes, all_bytes, num_bytes, disp, m_comm->get_world_comm());
-  m_comm->all_gather<size_t>(offsets, all_offsets, num_bytes, disp, m_comm->get_world_comm());
+  m_comm->all_gather<int>(my_global_indices, all_global_indices, rcv_counts, disp, m_comm->get_world_comm());
+
+  m_comm->all_gather<int>(my_num_bytes, all_num_bytes, rcv_counts, disp, m_comm->get_world_comm());
 
   for (size_t j=0; j<all_global_indices.size(); j++) {
-    m_file_sizes[all_global_indices[j]] = all_bytes[j];
-    m_offsets[all_global_indices[j]] = all_offsets[j];
-    ++j;
+    m_file_sizes[all_global_indices[j]] = all_num_bytes[j];
   }
 }
 

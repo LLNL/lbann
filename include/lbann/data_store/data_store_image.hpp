@@ -78,11 +78,7 @@ class data_store_image : public generic_data_store {
   void exchange_file_sizes(
     std::vector<int> &global_indices,
     std::vector<int> &num_bytes,
-    std::vector<size_t> &offsets,
     int num_global_indices);
-
-  /// allocate mem for m_data
-  void allocate_memory(); 
 
   /// buffers that will be passed to reader::fetch_datum
   std::unordered_map<int, std::vector<unsigned char> > m_my_minibatch_data;
@@ -96,7 +92,7 @@ class data_store_image : public generic_data_store {
   /// in multi-image scenarios, the number of images in each sample
   unsigned int m_num_img_srcs;
 
-  std::vector<unsigned char> m_data;
+  std::unordered_map<int, std::vector<unsigned char>> m_data;
 };
 
 }  // namespace lbann

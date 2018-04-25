@@ -226,7 +226,6 @@ void data_store_pilot2_molecular::get_data_buf(int data_id, int tid, std::vector
       jj += num_features;
     }
   }
-
   buf = &v;
 }
 
@@ -261,11 +260,14 @@ void data_store_pilot2_molecular::exchange_data() {
   //start receives for my required molecules
   m_my_molecules.clear();
   int num_features = m_pilot2_reader->get_num_features();
-  std::vector<El::mpi::Request<double>> recv_req(m_np);
+
+  std::vector<El::mpi::Request<double>> recv_req(required_molecules.size());
   size_t jj = 0;
-  for (auto t : required_molecules) {
-    m_my_molecules[t].resize(num_features);
-    m_comm->nb_recv<double>(m_my_molecules[t].data(), num_features, 0, m_owner_rank, recv_req[jj++]);
+  for (auto data_id : required_molecules) {
+    m_my_molecules[data_id].resize(num_features);
+    m_comm->nb_tagged_recv<double>(
+          m_my_molecules[data_id].data(), num_features, m_owner_rank, 
+          data_id, recv_req[jj++], m_comm->get_world_comm());
   }
 
   //owner starts sends
@@ -276,8 +278,10 @@ void data_store_pilot2_molecular::exchange_data() {
       jj = 0;
       get_required_molecules(required_molecules, p);
       send_req[p].resize(required_molecules.size());
-      for (auto t : required_molecules) {
-        m_comm->nb_send<double>(m_data[t].data(), num_features, 0, p, send_req[p][jj++]);
+      for (auto data_id : required_molecules) {
+        m_comm->nb_tagged_send<double>(
+           m_data[data_id].data(), num_features, p, 
+           data_id, send_req[p][jj++], m_comm->get_world_comm());
       }
     }
   }

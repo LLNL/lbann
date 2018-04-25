@@ -145,31 +145,18 @@ size_t generic_data_store::get_file_size(std::string dir, std::string fn) {
   return st.st_size;   
 }
 
-void generic_data_store::set_shuffled_indices(const std::vector<int> *indices) {
+void generic_data_store::set_shuffled_indices(const std::vector<int> *indices, bool exchange_indices) {
   m_shuffled_indices = indices;
   ++m_epoch;
-  if (m_epoch > 1) {
+  if (m_epoch > 1 && exchange_indices) {
     exchange_data();
   }
-  /*
-  if (m_rank == 0) {
-    bool is_shuffled = false;
-    for (size_t j=1; j<indices->size(); j++) {
-      if ((*indices)[j-1]+1 != (*indices)[j]) {
-        is_shuffled = true;
-        break;
-      }
-    }
-    //std::cerr << "IS_SHUFFLED: " << is_shuffled << "\n";
-  }
-  */
 }
 
 void generic_data_store::exchange_mb_counts() {
   int my_num_indices = m_my_minibatch_indices_v.size();
   m_mb_counts.resize(m_np);
-  std::vector<int> num(m_np, 1); //num elements to be received from P_j
-  m_comm->model_gather<int>(0, my_num_indices, m_mb_counts.data());
+  m_comm->model_all_gather<int>(my_num_indices, m_mb_counts);
 }
 
 void generic_data_store::exchange_mb_indices() {
