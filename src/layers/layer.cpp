@@ -676,18 +676,22 @@ void Layer::setup_gpu() {
   }
 
   // Set tensor descriptors
-  cudnn::set_tensor_cudnn_desc(m_prev_activations_cudnn_desc,
-                               m_mini_batch_size_per_gpu,
-                               m_prev_neuron_dims);
-  cudnn::set_tensor_cudnn_desc(m_activations_cudnn_desc,
-                               m_mini_batch_size_per_gpu,
-                               m_neuron_dims);
-  cudnn::set_tensor_cudnn_desc(m_prev_error_signals_cudnn_desc,
-                               m_mini_batch_size_per_gpu,
-                               m_neuron_dims);
-  cudnn::set_tensor_cudnn_desc(m_error_signals_cudnn_desc,
-                               m_mini_batch_size_per_gpu,
-                               m_prev_neuron_dims);
+  if (get_num_prev_neurons() > 0) {
+    cudnn::set_tensor_cudnn_desc(m_prev_activations_cudnn_desc,
+                                 m_mini_batch_size_per_gpu,
+                                 m_prev_neuron_dims);
+    cudnn::set_tensor_cudnn_desc(m_error_signals_cudnn_desc,
+                                 m_mini_batch_size_per_gpu,
+                                 m_prev_neuron_dims);
+  }
+  if (get_num_neurons() > 0) {
+    cudnn::set_tensor_cudnn_desc(m_activations_cudnn_desc,
+                                 m_mini_batch_size_per_gpu,
+                                 m_neuron_dims);
+    cudnn::set_tensor_cudnn_desc(m_prev_error_signals_cudnn_desc,
+                                 m_mini_batch_size_per_gpu,
+                                 m_neuron_dims);
+  }
 #endif // LBANN_HAS_CUDNN
 }
 
@@ -929,14 +933,18 @@ void Layer::fp_setup_data(int mini_batch_size) {
     const int output_stride = (m_activations_d.empty() ?
                                m_num_neurons :
                                m_activations_d[0].get_leading_dim());
-    cudnn::set_tensor_cudnn_desc(m_prev_activations_cudnn_desc,
-                                 m_mini_batch_size_per_gpu,
-                                 m_prev_neuron_dims,
-                                 input_stride);
-    cudnn::set_tensor_cudnn_desc(m_activations_cudnn_desc,
-                                 m_mini_batch_size_per_gpu,
-                                 m_neuron_dims,
-                                 output_stride);
+    if (get_num_prev_neurons() > 0) {
+      cudnn::set_tensor_cudnn_desc(m_prev_activations_cudnn_desc,
+                                   m_mini_batch_size_per_gpu,
+                                   m_prev_neuron_dims,
+                                   input_stride);
+    }
+    if (get_num_neurons() > 0) {
+      cudnn::set_tensor_cudnn_desc(m_activations_cudnn_desc,
+                                   m_mini_batch_size_per_gpu,
+                                   m_neuron_dims,
+                                   output_stride);
+    }
   }
   #endif // LBANN_HAS_CUDNN
 
@@ -985,14 +993,18 @@ void Layer::bp_setup_data(int mini_batch_size) {
     const int output_stride = (m_error_signals_d.empty() ?
                                m_num_prev_neurons :
                                m_error_signals_d[0].get_leading_dim());
-    cudnn::set_tensor_cudnn_desc(m_prev_error_signals_cudnn_desc,
-                                 m_mini_batch_size_per_gpu,
-                                 m_neuron_dims,
-                                 input_stride);
-    cudnn::set_tensor_cudnn_desc(m_error_signals_cudnn_desc,
-                                 m_mini_batch_size_per_gpu,
-                                 m_prev_neuron_dims,
-                                 output_stride);
+    if (get_num_neurons() > 0) {
+      cudnn::set_tensor_cudnn_desc(m_prev_error_signals_cudnn_desc,
+                                   m_mini_batch_size_per_gpu,
+                                   m_neuron_dims,
+                                   input_stride);
+    }
+    if (get_num_prev_neurons() > 0) {
+      cudnn::set_tensor_cudnn_desc(m_error_signals_cudnn_desc,
+                                   m_mini_batch_size_per_gpu,
+                                   m_prev_neuron_dims,
+                                   output_stride);
+    }
   }
   #endif // LBANN_HAS_CUDNN
 

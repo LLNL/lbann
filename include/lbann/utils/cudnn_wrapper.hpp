@@ -99,12 +99,12 @@
       const cudnnStatus_t status_FORCE_CHECK_CUDNN = (cudnn_call);      \
       if (status_FORCE_CHECK_CUDNN != CUDNN_STATUS_SUCCESS) {           \
         cudaDeviceReset();                                              \
-        LBANN_ERROR(std::string("CUDNN error: ")                        \
+        LBANN_ERROR(std::string("cuDNN error: ")                        \
                     + cudnnGetErrorString(status_FORCE_CHECK_CUDNN));   \
       }                                                                 \
     }                                                                   \
-    /* Check for CUDA errors. */                                        \
     {                                                                   \
+      /* Check for CUDA errors. */                                      \
       cudaError_t status_FORCE_CHECK_CUDNN = cudaDeviceSynchronize();   \
       if (status_FORCE_CHECK_CUDNN == cudaSuccess)                      \
           status_FORCE_CHECK_CUDNN = cudaGetLastError();                \
