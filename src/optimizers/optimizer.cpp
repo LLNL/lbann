@@ -258,7 +258,7 @@ void optimizer::step() {
 #ifdef LBANN_HAS_CUDNN
 void optimizer::step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient) {
   /// @todo Automatically use CPU implementation
-  LBANN_ERROR("no GPU implementation detected")
+  LBANN_ERROR("no GPU implementation detected");
 }
 #endif // LBANN_HAS_CUDNN
 
