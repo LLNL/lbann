@@ -125,6 +125,9 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
           reader_csv->set_skip_cols(readme.skip_cols());
           reader_csv->set_skip_rows(readme.skip_rows());
           reader_csv->set_has_header(readme.has_header());
+          reader_csv->set_absolute_sample_count( readme.absolute_sample_count() );
+          reader_csv->set_use_percent( readme.percent_of_data_to_use() );
+          reader_csv->set_first_n( readme.first_n() );
           npy_readers.push_back(reader_csv);
         } else {
           err << __FILE__ << " " << __LINE__ << " :: unknown format for merged data reader: "
