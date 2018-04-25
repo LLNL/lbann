@@ -86,6 +86,8 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_master(false),
     m_save_minibatch_indices(false),
     m_compound_rank(0),
+    m_gan_labelling(false), //default, not GAN
+    m_gan_label_value(0),  //If GAN, default for fake label, discriminator model
     m_num_global_indices(0)
   {}
   generic_data_reader(const generic_data_reader&) = default;
@@ -795,6 +797,11 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_compound_rank = r;
   }
 
+  void set_gan_labelling(bool has_gan_labelling) {
+     m_gan_labelling = has_gan_labelling;
+  }
+  void set_gan_label_value(int gan_label_value) { m_gan_label_value = gan_label_value; }
+  
   /// support of data store functionality
   void set_data_store(generic_data_store *g); 
 
@@ -943,6 +950,11 @@ class generic_data_reader : public lbann_image_preprocessor {
 
    /// added to support data store functionality
    int m_compound_rank;
+
+  
+  //var to support GAN
+  bool m_gan_labelling; //boolean flag of whether its GAN binary label, default is false
+  int m_gan_label_value; //zero(0) or 1 label value for discriminator, default is 0
 
    /// added to support data store functionality
    size_t m_num_global_indices;

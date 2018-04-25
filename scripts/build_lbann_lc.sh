@@ -458,62 +458,64 @@ if [ "${MPI}" == "spectrum" ]; then
     MPI=spectrum-mpi
 fi
 
-if [ ${USE_MODULES} -ne 0 ]; then
-    if [ -z "$(module list 2>&1 | grep ${MPI})" ]; then
-        MPI=$(module --terse spider ${MPI} 2>&1 | sed '/^$/d' | tail -1)
-        module load ${MPI}
-    fi
-    if [ -z "$(module list 2>&1 | grep ${MPI})" ]; then
-        echo "Could not load module (${MPI})"
-        exit 1
-    fi
-    MPI_DIR=$(module show ${MPI} 2>&1 | grep '\"PATH\"' | cut -d ',' -f 2 | cut -d ')' -f 1 | sed 's/\/bin//' | sed 's/\"//g')
-else
-    # The idea here is to check if the module of the specified mpi type is loaded
-    MPI_DOTKIT=$(use | grep ${MPI} | sed 's/ //g')
-    if [ -z "${MPI_DOTKIT}" ]; then
-        if [ "${COMPILER}" == "gnu" ] || [ "${COMPILER}" == "intel" ] || [ "${COMPILER}" == "pgi" ] ; then
-            MPI_COMPILER=-${COMPILER}
-        elif [ "${COMPILER}" == "clang" ]; then
-            MPI_COMPILER=-gnu
-        fi
-        # The default MVAPICH version does not work on surface
-        if [ "${CLUSTER}" == "surface" -a "${MPI}" == "mvapich2" ]; then
-            MPI_VERSION="-2.2"
-		else
-			MPI_VERSION=""
+if [ -z "${MPI_HOME}" ]; then
+	if [ ${USE_MODULES} -ne 0 ]; then
+		if [ -z "$(module list 2>&1 | grep ${MPI})" ]; then
+			MPI=$(module --terse spider ${MPI} 2>&1 | sed '/^$/d' | tail -1)
+			module load ${MPI}
 		fi
+		if [ -z "$(module list 2>&1 | grep ${MPI})" ]; then
+			echo "Could not load module (${MPI})"
+			exit 1
+		fi
+		MPI_HOME=$(module show ${MPI} 2>&1 | grep '\"PATH\"' | cut -d ',' -f 2 | cut -d ')' -f 1 | sed 's/\/bin//' | sed 's/\"//g')
 	else
-		MPI_COMPILER=-$(echo ${MPI_DOTKIT} | awk 'BEGIN{FS="-"}{print $2}')
-		MPI_VERSION=-$(echo ${MPI_DOTKIT} |  awk 'BEGIN{FS="-"}{print $NF}')
+		# The idea here is to check if the module of the specified mpi type is loaded
+		MPI_DOTKIT=$(use | grep ${MPI} | sed 's/ //g')
+		if [ -z "${MPI_DOTKIT}" ]; then
+			if [ "${COMPILER}" == "gnu" ] || [ "${COMPILER}" == "intel" ] || [ "${COMPILER}" == "pgi" ] ; then
+				MPI_COMPILER=-${COMPILER}
+			elif [ "${COMPILER}" == "clang" ]; then
+				MPI_COMPILER=-gnu
+			fi
+			# The default MVAPICH version does not work on surface
+			if [ "${CLUSTER}" == "surface" -a "${MPI}" == "mvapich2" ]; then
+				MPI_VERSION="-2.2"
+			else
+				MPI_VERSION=""
+			fi
+		else
+			MPI_COMPILER=-$(echo ${MPI_DOTKIT} | awk 'BEGIN{FS="-"}{print $2}')
+			MPI_VERSION=-$(echo ${MPI_DOTKIT} |  awk 'BEGIN{FS="-"}{print $NF}')
+		fi
+		if [ "${BUILD_TYPE}" == "Debug" ]; then
+			MPI_DEBUG="-debug"
+		else
+			MPI_DEBUG=""
+		fi
+		MPI_DOTKIT=${MPI}${MPI_COMPILER}${MPI_DEBUG}${MPI_VERSION}
+		echo "Using ${MPI_DOTKIT}"
+		use ${MPI_DOTKIT}
+		if [ -z "$(use | grep ${MPI_DOTKIT})" ]; then
+			echo "Could not load dotkit (${MPI_DOTKIT})"
+			exit 1
+		fi
+		if [ "${COMPILER}" == "gnu" ] || [ "${COMPILER}" == "intel" ] || [ "${COMPILER}" == "pgi" ]; then
+			if [ "`echo ${MPI_DOTKIT} | grep ${COMPILER}`" == "" ] ; then
+				echo "switch to an MPI version that is consistent with (${COMPILER}) compilers"
+				exit 1
+			fi
+		fi
+		MPI_HOME=$(use -hv ${MPI_DOTKIT} | grep 'dk_alter PATH' | awk '{print $3}' | sed 's/\/bin//')
 	fi
-	if [ "${BUILD_TYPE}" == "Debug" ]; then
-		MPI_DEBUG="-debug"
-	else
-		MPI_DEBUG=""
-	fi
-	MPI_DOTKIT=${MPI}${MPI_COMPILER}${MPI_DEBUG}${MPI_VERSION}
-	echo "Using ${MPI_DOTKIT}"
-    use ${MPI_DOTKIT}
-    if [ -z "$(use | grep ${MPI_DOTKIT})" ]; then
-        echo "Could not load dotkit (${MPI_DOTKIT})"
-        exit 1
-    fi
-    if [ "${COMPILER}" == "gnu" ] || [ "${COMPILER}" == "intel" ] || [ "${COMPILER}" == "pgi" ]; then
-        if [ "`echo ${MPI_DOTKIT} | grep ${COMPILER}`" == "" ] ; then
-            echo "switch to an MPI version that is consistent with (${COMPILER}) compilers"
-            exit 1
-        fi
-    fi
-    MPI_DIR=$(use -hv ${MPI_DOTKIT} | grep 'dk_alter PATH' | awk '{print $3}' | sed 's/\/bin//')
 fi
 
 # Get MPI compilers
-export MPI_HOME=${MPI_DIR}
+export MPI_HOME
 export CMAKE_PREFIX_PATH=${MPI_HOME}:${CMAKE_PREFIX_PATH}
-export MPI_C_COMPILER=${MPI_DIR}/bin/mpicc
-export MPI_CXX_COMPILER=${MPI_DIR}/bin/mpicxx
-export MPI_Fortran_COMPILER=${MPI_DIR}/bin/mpifort
+export MPI_C_COMPILER=${MPI_HOME}/bin/mpicc
+export MPI_CXX_COMPILER=${MPI_HOME}/bin/mpicxx
+export MPI_Fortran_COMPILER=${MPI_HOME}/bin/mpifort
 if [ "${MPI}" == "spectrum-mpi" ]; then
     WITH_SPECTRUM=ON
 fi

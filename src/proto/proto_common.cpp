@@ -180,6 +180,9 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
     reader->set_use_percent( readme.percent_of_data_to_use() );
     reader->set_first_n( readme.first_n() );
 
+    reader->set_gan_labelling(readme.gan_labelling());
+    reader->set_gan_label_value(readme.gan_label_value());
+
     if (set_up_generic_preprocessor) {
       init_generic_preprocessor(readme, master, reader);
     }

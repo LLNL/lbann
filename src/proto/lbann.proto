@@ -28,6 +28,9 @@ message Reader {
   int64 absolute_sample_count = 11;
   int64 first_n = 200;
   double percent_of_data_to_use = 12;
+  //for GAN model
+  bool gan_labelling = 201;
+  int32 gan_label_value = 202;
   ImagePreprocessor image_preprocessor = 13;
   int32 modeling_mode = 98; // only for jag
   int32 num_labels = 99; //for imagenet
@@ -182,6 +185,7 @@ message Model {
 
   int64 mini_batch_size = 12;
   int64 num_epochs = 4;
+  int64 super_steps = 121; //multiple steps/epochs currently use in GAN 
   int64 block_size = 50;
   int64 procs_per_model = 51;
   int64 num_gpus = 53;
@@ -445,7 +449,8 @@ message CallbackAdaptiveLearningRate {
 
 message CallbackSaveImages {
   string image_dir = 1;
-  string extension = 2;
+  string layer_names = 2; //layer(s) at which to save images  e.g., "input, reconstruction"
+  string extension = 3;
 }
 
 message CallbackPrint {
@@ -466,7 +471,6 @@ message CallbackSummary {
 
 message CallbackDumpWeights {
   string basename = 1;
-  int64 interval = 2;
 }
 
 message CallbackDumpActivations {
@@ -702,6 +706,7 @@ message Layer {
    Unpooling unpooling = 304;
    Hadamard hadamard = 308;
    Constant constant = 309;
+   Zero zero = 315; 
    Reduction reduction = 310;
    Evaluation evaluation = 311;
    Gaussian gaussian = 312;
@@ -897,6 +902,12 @@ message Hadamard {
 message Constant {
   double value=1;
   string num_neurons=2;
+}
+
+
+message Zero {
+  bool first_half=1; //default: true
+  bool second_half=2; //default: true
 }
 
 message Reduction {

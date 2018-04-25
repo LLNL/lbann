@@ -42,6 +42,7 @@
 #endif // LBANN_HAS_ALUMINUM
 #include <Al.hpp>
 #endif // LBANN_HAS_ALUMINUM
+#include "detect_El_mpi.hpp"
 
 namespace lbann {
 
@@ -193,48 +194,55 @@ class lbann_comm {
   /** Broadcast mat over the inter-model communicator starting from root. */
   void intermodel_broadcast_matrix(Mat& mat, int root);
   void intermodel_broadcast_matrix(AbsDistMat& mat, int root);
-  /**
-   * Broadcast over an arbitrary communicator
-   */
+
+  /// Broadcast a scalar value over an arbitrary communicator
+  template < typename T, bool S = is_instantiated_El_mpi_type<T>::value >
+  void broadcast(int root, T& val, const El::mpi::Comm c);
+
   template <typename T>
-  void broadcast(int root, T& val, const El::mpi::Comm c) {
-    if (El::mpi::TypeMap<T>() == MPI_DATATYPE_NULL) {
-      const int bytes =  static_cast<int>(sizeof(T));
-      El::mpi::Broadcast<unsigned char>(reinterpret_cast<unsigned char*>(&val), bytes, root, c); // or std::byte in c++17
-    } else {
-      El::mpi::Broadcast(&val, 1, root, c);
-    }
-    count_bytes_broadcast(sizeof(T), El::mpi::Rank(c), root);
+  void broadcast_custom(int root, T& val, const El::mpi::Comm c) const;
+  template <typename T>
+  void broadcast_native(int root, T& val, const El::mpi::Comm c) const;
+
+  /// World broadcast of a scalar.
+  template <typename T>
+  void world_broadcast(int root, T& val) {
+    broadcast(root, val, get_world_comm());
   }
-  /**
-   * Inter-model broadcast, returns the broadcast value.
-   * Root process specifies root and val, other processes just root.
-   */
+  /// Inter-model broadcast of a scalar.
   template <typename T>
   void intermodel_broadcast(int root, T& val) {
-    broadcast(root, val, intermodel_comm);
+    broadcast(root, val, get_intermodel_comm());
   }
-  /**
-   * Within-model broadcast, returns the broadcast value.
-   * Root process specifies root and val, other processes just root.
-   */
+  /// Within-model broadcast of a scalar.
   template <typename T>
   void model_broadcast(int root, T& val) {
-    broadcast(root, val, model_comm);
+    broadcast(root, val, get_model_comm());
   }
+
   /**
    * Broadcast a buffer over an arbitrary communicator assuming that
    * the buffer space is already allocated.
    */
+  template < typename T, bool S = is_instantiated_El_mpi_type<T>::value >
+  void broadcast(const int root, T* data, const int count, const El::mpi::Comm c);
+
+  /// World broadcast of a buffer.
   template <typename T>
-  void broadcast(const int root, T* data, const int count, const El::mpi::Comm c) {
-    if (El::mpi::TypeMap<T>() == MPI_DATATYPE_NULL) {
-      El::mpi::Broadcast<unsigned char>(reinterpret_cast<unsigned char*>(data), sizeof(T)*count, root, c);
-    } else {
-      El::mpi::Broadcast(data, count, root, c);
-    }
-    count_bytes_broadcast(sizeof(T)*count, El::mpi::Rank(c), root);
+  void world_broadcast(const int root, T* data, const int count) {
+    broadcast(root, data, count, get_world_comm());
   }
+  /// Inter-model broadcast of a buffer.
+  template <typename T>
+  void intermodel_broadcast(const int root, T* data, const int count) {
+    broadcast(root, data, count, get_intermodel_comm());
+  }
+  /// Within-model broadcast of a buffer.
+  template <typename T>
+  void model_broadcast(const int root, T* data, const int count) {
+    broadcast(root, data, count, get_model_comm());
+  }
+
   /**
    * Resize vector<> over an arbitrary communicator to match the one on root.
    */
@@ -246,6 +254,7 @@ class lbann_comm {
     data.resize(count);
     return count;
   }
+
   /**
    * Broadcast vector<> over an arbitrary communicator;
    * vector<> for non-root processes will be resized as needed.
@@ -258,10 +267,7 @@ class lbann_comm {
     }
     broadcast<T>(root, data.data(), count, c);
   }
-  /**
-   * Broadcast vector<> to world;
-   * vector<> for non-root processes will be resized as needed.
-   */
+  /// Broadcast vector<> to world.
   template <typename T>
   void world_broadcast(int root, std::vector<T> &data) {
     broadcast(root, data, get_world_comm());
@@ -278,10 +284,17 @@ class lbann_comm {
    * Broadcast vector<> within model;
    * vector<> for non-root processes will be resized as needed.
    */
+  /// Broadcast vector<> across models.
+  template <typename T>
+  void intermodel_broadcast(int root, std::vector<T> &data) {
+    broadcast(root, data, get_intermodel_comm());
+  }
+  /// Broadcast vector<> within model.
   template <typename T>
   void model_broadcast(int root, std::vector<T> &data) {
     broadcast(root, data, get_model_comm());
   }
+
   /**
    * Keep track of the number of broadcast bytes transmitted and received
    */
@@ -1125,6 +1138,43 @@ class lbann_comm {
   uint8_t *get_collective_buffer(size_t size, size_t idx = 0);
 
 };
+
+template <typename T, bool S>
+void lbann_comm::broadcast(int root, T& val, const El::mpi::Comm c) {
+  if (S) {
+    // Avoid linking error from uninstantiated El::mpi routine if !S by converting T to El::byte
+    using TT = typename interpret_as_byte_if_needed<S, T>::type;
+    broadcast_native<TT>(root, reinterpret_cast<TT&>(val), c);
+  } else {
+    broadcast_custom(root, val, c);
+  }
+  count_bytes_broadcast(sizeof(T), El::mpi::Rank(c), root);
 }
+
+template <typename T>
+void lbann_comm::broadcast_native(int root, T& val, const El::mpi::Comm c) const {
+  El::mpi::Broadcast(val, root, c);
+}
+
+template <typename T>
+void lbann_comm::broadcast_custom(int root, T& val, const El::mpi::Comm c) const {
+ const int bytes =  static_cast<int>(sizeof(T));
+ El::mpi::Broadcast<El::byte>(reinterpret_cast<El::byte*>(&val), bytes, root, c);
+}
+
+template <typename T, bool S>
+void lbann_comm::broadcast(const int root, T* data, const int count, const El::mpi::Comm c) {
+  const int size = static_cast<int>(S? count : sizeof(T)*count);
+  // Avoid linking error from uninstantiated El::mpi routine if !S by converting T to El::byte
+  using TT = typename interpret_as_byte_if_needed<S, T>::type;
+  El::mpi::Broadcast<TT>(reinterpret_cast<TT*>(data), size, root, c);
+  count_bytes_broadcast(sizeof(T)*count, El::mpi::Rank(c), root);
+}
+
+/// Broadcast std::string over an arbitrary communicator.
+template<>
+void lbann_comm::broadcast<std::string>(const int root, std::string& str, const El::mpi::Comm c);
+
+} // namespace lbann
 
 #endif  // LBANN_COMM_HPP_INCLUDED

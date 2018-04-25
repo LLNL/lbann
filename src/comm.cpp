@@ -250,6 +250,13 @@ void lbann_comm::intermodel_broadcast_matrix(AbsDistMat& mat, int root) {
   El::Broadcast(mat, intermodel_comm, root);
 }
 
+template<>
+void lbann_comm::broadcast<std::string>(const int root, std::string& str, const El::mpi::Comm c) {
+  std::vector<char> data(str.begin(), str.end());
+  broadcast(root, data, c);
+  str.assign(data.begin(), data.end());
+}
+
 void lbann_comm::intermodel_barrier() {
   ++num_intermodel_barriers;
   barrier(intermodel_comm);
