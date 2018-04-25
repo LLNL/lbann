@@ -1,0 +1,4265 @@
+model {
+  name: "directed_acyclic_graph_model"
+  data_layout: "data_parallel"
+  mini_batch_size: 256
+  block_size: 256
+  num_epochs: 10
+  num_parallel_readers: 0
+  procs_per_model: 0
+  num_gpus: -1
+  ###################################################
+  # Objective function
+  ###################################################
+  objective_function {
+    cross_entropy {
+    }
+    l2_weight_regularization {
+      scale_factor: 1e-4
+    }
+  }
+  ###################################################
+  # Metrics
+  ###################################################
+  metric {
+    categorical_accuracy {
+    }
+  }
+  metric {
+    top_k_categorical_accuracy {
+      top_k: 5
+    }
+  }
+  ###################################################
+  # Callbacks
+  ###################################################
+  callback { print {} }
+  callback { timer {} }
+  callback {
+    imcomm {
+      intermodel_comm_method: "normal"
+      all_optimizers: true
+    }
+  }
+  callback {
+    checkpoint {
+      checkpoint_dir: "ckpt"
+      checkpoint_epochs: 1
+    }
+  }
+  ###################################################
+  # Layers
+  ###################################################
+  layer {
+    name: "initial_layer_input"
+    data_layout: "data_parallel"
+    input {
+      io_buffer: "partitioned"
+    }
+  }
+  layer {
+    parents: "initial_layer_input"
+    name: "initial_layer_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "initial_layer_norm"
+    name: "initial_layer_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "initial_layer_relu"
+    name: "initial_layer_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 64
+      conv_dims_i: 7
+      conv_pads_i: 3
+      conv_strides_i: 2
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "initial_layer_conv"
+    name: "initial_layer_pool"
+    data_layout: "data_parallel"
+    pooling {
+      num_dims: 2
+      pool_dims_i: 3
+      pool_strides_i: 2
+      pool_mode: "max"
+    }
+  }
+  layer {
+    parents: "initial_layer_pool"
+    name: "dense_block_1_dense_layer_1_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_1_concatenation"
+    name: "dense_block_1_dense_layer_1_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_1_part_1_norm"
+    name: "dense_block_1_dense_layer_1_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_1_part_1_relu"
+    name: "dense_block_1_dense_layer_1_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_1_part_1_conv"
+    name: "dense_block_1_dense_layer_1_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_1_part_2_norm"
+    name: "dense_block_1_dense_layer_1_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_1_part_2_relu"
+    name: "dense_block_1_dense_layer_1_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_1_part_2_conv"
+    name: "dense_block_1_dense_layer_2_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_2_concatenation"
+    name: "dense_block_1_dense_layer_2_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_2_part_1_norm"
+    name: "dense_block_1_dense_layer_2_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_2_part_1_relu"
+    name: "dense_block_1_dense_layer_2_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_2_part_1_conv"
+    name: "dense_block_1_dense_layer_2_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_2_part_2_norm"
+    name: "dense_block_1_dense_layer_2_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_2_part_2_relu"
+    name: "dense_block_1_dense_layer_2_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_1_part_2_conv dense_block_1_dense_layer_2_part_2_conv"
+    name: "dense_block_1_dense_layer_3_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_3_concatenation"
+    name: "dense_block_1_dense_layer_3_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_3_part_1_norm"
+    name: "dense_block_1_dense_layer_3_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_3_part_1_relu"
+    name: "dense_block_1_dense_layer_3_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_3_part_1_conv"
+    name: "dense_block_1_dense_layer_3_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_3_part_2_norm"
+    name: "dense_block_1_dense_layer_3_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_3_part_2_relu"
+    name: "dense_block_1_dense_layer_3_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_1_part_2_conv dense_block_1_dense_layer_2_part_2_conv dense_block_1_dense_layer_3_part_2_conv"
+    name: "dense_block_1_dense_layer_4_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_4_concatenation"
+    name: "dense_block_1_dense_layer_4_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_4_part_1_norm"
+    name: "dense_block_1_dense_layer_4_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_4_part_1_relu"
+    name: "dense_block_1_dense_layer_4_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_4_part_1_conv"
+    name: "dense_block_1_dense_layer_4_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_4_part_2_norm"
+    name: "dense_block_1_dense_layer_4_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_4_part_2_relu"
+    name: "dense_block_1_dense_layer_4_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_1_part_2_conv dense_block_1_dense_layer_2_part_2_conv dense_block_1_dense_layer_3_part_2_conv dense_block_1_dense_layer_4_part_2_conv"
+    name: "dense_block_1_dense_layer_5_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_5_concatenation"
+    name: "dense_block_1_dense_layer_5_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_5_part_1_norm"
+    name: "dense_block_1_dense_layer_5_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_5_part_1_relu"
+    name: "dense_block_1_dense_layer_5_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_5_part_1_conv"
+    name: "dense_block_1_dense_layer_5_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_5_part_2_norm"
+    name: "dense_block_1_dense_layer_5_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_5_part_2_relu"
+    name: "dense_block_1_dense_layer_5_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_1_part_2_conv dense_block_1_dense_layer_2_part_2_conv dense_block_1_dense_layer_3_part_2_conv dense_block_1_dense_layer_4_part_2_conv dense_block_1_dense_layer_5_part_2_conv"
+    name: "dense_block_1_dense_layer_6_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_6_concatenation"
+    name: "dense_block_1_dense_layer_6_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_6_part_1_norm"
+    name: "dense_block_1_dense_layer_6_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_6_part_1_relu"
+    name: "dense_block_1_dense_layer_6_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_6_part_1_conv"
+    name: "dense_block_1_dense_layer_6_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_6_part_2_norm"
+    name: "dense_block_1_dense_layer_6_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_6_part_2_relu"
+    name: "dense_block_1_dense_layer_6_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_1_dense_layer_6_part_2_conv"
+    name: "transition_layer_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "transition_layer_1_norm"
+    name: "transition_layer_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "transition_layer_1_relu"
+    name: "transition_layer_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "transition_layer_1_conv"
+    name: "transition_layer_1_pool"
+    data_layout: "data_parallel"
+    pooling {
+      num_dims: 2
+      pool_dims_i: 2
+      pool_strides_i: 2
+      pool_mode: "average"
+    }
+  }
+  layer {
+    parents: "transition_layer_1_pool"
+    name: "dense_block_2_dense_layer_1_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_1_concatenation"
+    name: "dense_block_2_dense_layer_1_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_1_part_1_norm"
+    name: "dense_block_2_dense_layer_1_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_1_part_1_relu"
+    name: "dense_block_2_dense_layer_1_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_1_part_1_conv"
+    name: "dense_block_2_dense_layer_1_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_1_part_2_norm"
+    name: "dense_block_2_dense_layer_1_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_1_part_2_relu"
+    name: "dense_block_2_dense_layer_1_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_1_part_2_conv"
+    name: "dense_block_2_dense_layer_2_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_2_concatenation"
+    name: "dense_block_2_dense_layer_2_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_2_part_1_norm"
+    name: "dense_block_2_dense_layer_2_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_2_part_1_relu"
+    name: "dense_block_2_dense_layer_2_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_2_part_1_conv"
+    name: "dense_block_2_dense_layer_2_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_2_part_2_norm"
+    name: "dense_block_2_dense_layer_2_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_2_part_2_relu"
+    name: "dense_block_2_dense_layer_2_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_1_part_2_conv dense_block_2_dense_layer_2_part_2_conv"
+    name: "dense_block_2_dense_layer_3_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_3_concatenation"
+    name: "dense_block_2_dense_layer_3_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_3_part_1_norm"
+    name: "dense_block_2_dense_layer_3_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_3_part_1_relu"
+    name: "dense_block_2_dense_layer_3_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_3_part_1_conv"
+    name: "dense_block_2_dense_layer_3_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_3_part_2_norm"
+    name: "dense_block_2_dense_layer_3_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_3_part_2_relu"
+    name: "dense_block_2_dense_layer_3_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_1_part_2_conv dense_block_2_dense_layer_2_part_2_conv dense_block_2_dense_layer_3_part_2_conv"
+    name: "dense_block_2_dense_layer_4_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_4_concatenation"
+    name: "dense_block_2_dense_layer_4_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_4_part_1_norm"
+    name: "dense_block_2_dense_layer_4_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_4_part_1_relu"
+    name: "dense_block_2_dense_layer_4_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_4_part_1_conv"
+    name: "dense_block_2_dense_layer_4_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_4_part_2_norm"
+    name: "dense_block_2_dense_layer_4_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_4_part_2_relu"
+    name: "dense_block_2_dense_layer_4_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_1_part_2_conv dense_block_2_dense_layer_2_part_2_conv dense_block_2_dense_layer_3_part_2_conv dense_block_2_dense_layer_4_part_2_conv"
+    name: "dense_block_2_dense_layer_5_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_5_concatenation"
+    name: "dense_block_2_dense_layer_5_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_5_part_1_norm"
+    name: "dense_block_2_dense_layer_5_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_5_part_1_relu"
+    name: "dense_block_2_dense_layer_5_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_5_part_1_conv"
+    name: "dense_block_2_dense_layer_5_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_5_part_2_norm"
+    name: "dense_block_2_dense_layer_5_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_5_part_2_relu"
+    name: "dense_block_2_dense_layer_5_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_1_part_2_conv dense_block_2_dense_layer_2_part_2_conv dense_block_2_dense_layer_3_part_2_conv dense_block_2_dense_layer_4_part_2_conv dense_block_2_dense_layer_5_part_2_conv"
+    name: "dense_block_2_dense_layer_6_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_6_concatenation"
+    name: "dense_block_2_dense_layer_6_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_6_part_1_norm"
+    name: "dense_block_2_dense_layer_6_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_6_part_1_relu"
+    name: "dense_block_2_dense_layer_6_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_6_part_1_conv"
+    name: "dense_block_2_dense_layer_6_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_6_part_2_norm"
+    name: "dense_block_2_dense_layer_6_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_6_part_2_relu"
+    name: "dense_block_2_dense_layer_6_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_1_part_2_conv dense_block_2_dense_layer_2_part_2_conv dense_block_2_dense_layer_3_part_2_conv dense_block_2_dense_layer_4_part_2_conv dense_block_2_dense_layer_5_part_2_conv dense_block_2_dense_layer_6_part_2_conv"
+    name: "dense_block_2_dense_layer_7_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_7_concatenation"
+    name: "dense_block_2_dense_layer_7_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_7_part_1_norm"
+    name: "dense_block_2_dense_layer_7_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_7_part_1_relu"
+    name: "dense_block_2_dense_layer_7_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_7_part_1_conv"
+    name: "dense_block_2_dense_layer_7_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_7_part_2_norm"
+    name: "dense_block_2_dense_layer_7_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_7_part_2_relu"
+    name: "dense_block_2_dense_layer_7_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_1_part_2_conv dense_block_2_dense_layer_2_part_2_conv dense_block_2_dense_layer_3_part_2_conv dense_block_2_dense_layer_4_part_2_conv dense_block_2_dense_layer_5_part_2_conv dense_block_2_dense_layer_6_part_2_conv dense_block_2_dense_layer_7_part_2_conv"
+    name: "dense_block_2_dense_layer_8_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_8_concatenation"
+    name: "dense_block_2_dense_layer_8_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_8_part_1_norm"
+    name: "dense_block_2_dense_layer_8_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_8_part_1_relu"
+    name: "dense_block_2_dense_layer_8_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_8_part_1_conv"
+    name: "dense_block_2_dense_layer_8_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_8_part_2_norm"
+    name: "dense_block_2_dense_layer_8_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_8_part_2_relu"
+    name: "dense_block_2_dense_layer_8_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_1_part_2_conv dense_block_2_dense_layer_2_part_2_conv dense_block_2_dense_layer_3_part_2_conv dense_block_2_dense_layer_4_part_2_conv dense_block_2_dense_layer_5_part_2_conv dense_block_2_dense_layer_6_part_2_conv dense_block_2_dense_layer_7_part_2_conv dense_block_2_dense_layer_8_part_2_conv"
+    name: "dense_block_2_dense_layer_9_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_9_concatenation"
+    name: "dense_block_2_dense_layer_9_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_9_part_1_norm"
+    name: "dense_block_2_dense_layer_9_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_9_part_1_relu"
+    name: "dense_block_2_dense_layer_9_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_9_part_1_conv"
+    name: "dense_block_2_dense_layer_9_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_9_part_2_norm"
+    name: "dense_block_2_dense_layer_9_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_9_part_2_relu"
+    name: "dense_block_2_dense_layer_9_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_1_part_2_conv dense_block_2_dense_layer_2_part_2_conv dense_block_2_dense_layer_3_part_2_conv dense_block_2_dense_layer_4_part_2_conv dense_block_2_dense_layer_5_part_2_conv dense_block_2_dense_layer_6_part_2_conv dense_block_2_dense_layer_7_part_2_conv dense_block_2_dense_layer_8_part_2_conv dense_block_2_dense_layer_9_part_2_conv"
+    name: "dense_block_2_dense_layer_10_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_10_concatenation"
+    name: "dense_block_2_dense_layer_10_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_10_part_1_norm"
+    name: "dense_block_2_dense_layer_10_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_10_part_1_relu"
+    name: "dense_block_2_dense_layer_10_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_10_part_1_conv"
+    name: "dense_block_2_dense_layer_10_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_10_part_2_norm"
+    name: "dense_block_2_dense_layer_10_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_10_part_2_relu"
+    name: "dense_block_2_dense_layer_10_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_1_part_2_conv dense_block_2_dense_layer_2_part_2_conv dense_block_2_dense_layer_3_part_2_conv dense_block_2_dense_layer_4_part_2_conv dense_block_2_dense_layer_5_part_2_conv dense_block_2_dense_layer_6_part_2_conv dense_block_2_dense_layer_7_part_2_conv dense_block_2_dense_layer_8_part_2_conv dense_block_2_dense_layer_9_part_2_conv dense_block_2_dense_layer_10_part_2_conv"
+    name: "dense_block_2_dense_layer_11_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_11_concatenation"
+    name: "dense_block_2_dense_layer_11_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_11_part_1_norm"
+    name: "dense_block_2_dense_layer_11_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_11_part_1_relu"
+    name: "dense_block_2_dense_layer_11_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_11_part_1_conv"
+    name: "dense_block_2_dense_layer_11_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_11_part_2_norm"
+    name: "dense_block_2_dense_layer_11_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_11_part_2_relu"
+    name: "dense_block_2_dense_layer_11_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_1_part_2_conv dense_block_2_dense_layer_2_part_2_conv dense_block_2_dense_layer_3_part_2_conv dense_block_2_dense_layer_4_part_2_conv dense_block_2_dense_layer_5_part_2_conv dense_block_2_dense_layer_6_part_2_conv dense_block_2_dense_layer_7_part_2_conv dense_block_2_dense_layer_8_part_2_conv dense_block_2_dense_layer_9_part_2_conv dense_block_2_dense_layer_10_part_2_conv dense_block_2_dense_layer_11_part_2_conv"
+    name: "dense_block_2_dense_layer_12_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_12_concatenation"
+    name: "dense_block_2_dense_layer_12_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_12_part_1_norm"
+    name: "dense_block_2_dense_layer_12_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_12_part_1_relu"
+    name: "dense_block_2_dense_layer_12_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_12_part_1_conv"
+    name: "dense_block_2_dense_layer_12_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_12_part_2_norm"
+    name: "dense_block_2_dense_layer_12_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_12_part_2_relu"
+    name: "dense_block_2_dense_layer_12_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_2_dense_layer_12_part_2_conv"
+    name: "transition_layer_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "transition_layer_2_norm"
+    name: "transition_layer_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "transition_layer_2_relu"
+    name: "transition_layer_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 224
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "transition_layer_2_conv"
+    name: "transition_layer_2_pool"
+    data_layout: "data_parallel"
+    pooling {
+      num_dims: 2
+      pool_dims_i: 2
+      pool_strides_i: 2
+      pool_mode: "average"
+    }
+  }
+  layer {
+    parents: "transition_layer_2_pool"
+    name: "dense_block_3_dense_layer_1_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_1_concatenation"
+    name: "dense_block_3_dense_layer_1_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_1_part_1_norm"
+    name: "dense_block_3_dense_layer_1_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_1_part_1_relu"
+    name: "dense_block_3_dense_layer_1_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_1_part_1_conv"
+    name: "dense_block_3_dense_layer_1_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_1_part_2_norm"
+    name: "dense_block_3_dense_layer_1_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_1_part_2_relu"
+    name: "dense_block_3_dense_layer_1_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_1_part_2_conv"
+    name: "dense_block_3_dense_layer_2_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_2_concatenation"
+    name: "dense_block_3_dense_layer_2_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_2_part_1_norm"
+    name: "dense_block_3_dense_layer_2_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_2_part_1_relu"
+    name: "dense_block_3_dense_layer_2_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_2_part_1_conv"
+    name: "dense_block_3_dense_layer_2_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_2_part_2_norm"
+    name: "dense_block_3_dense_layer_2_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_2_part_2_relu"
+    name: "dense_block_3_dense_layer_2_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_1_part_2_conv dense_block_3_dense_layer_2_part_2_conv"
+    name: "dense_block_3_dense_layer_3_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_3_concatenation"
+    name: "dense_block_3_dense_layer_3_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_3_part_1_norm"
+    name: "dense_block_3_dense_layer_3_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_3_part_1_relu"
+    name: "dense_block_3_dense_layer_3_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_3_part_1_conv"
+    name: "dense_block_3_dense_layer_3_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_3_part_2_norm"
+    name: "dense_block_3_dense_layer_3_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_3_part_2_relu"
+    name: "dense_block_3_dense_layer_3_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_1_part_2_conv dense_block_3_dense_layer_2_part_2_conv dense_block_3_dense_layer_3_part_2_conv"
+    name: "dense_block_3_dense_layer_4_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_4_concatenation"
+    name: "dense_block_3_dense_layer_4_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_4_part_1_norm"
+    name: "dense_block_3_dense_layer_4_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_4_part_1_relu"
+    name: "dense_block_3_dense_layer_4_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_4_part_1_conv"
+    name: "dense_block_3_dense_layer_4_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_4_part_2_norm"
+    name: "dense_block_3_dense_layer_4_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_4_part_2_relu"
+    name: "dense_block_3_dense_layer_4_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_1_part_2_conv dense_block_3_dense_layer_2_part_2_conv dense_block_3_dense_layer_3_part_2_conv dense_block_3_dense_layer_4_part_2_conv"
+    name: "dense_block_3_dense_layer_5_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_5_concatenation"
+    name: "dense_block_3_dense_layer_5_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_5_part_1_norm"
+    name: "dense_block_3_dense_layer_5_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_5_part_1_relu"
+    name: "dense_block_3_dense_layer_5_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_5_part_1_conv"
+    name: "dense_block_3_dense_layer_5_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_5_part_2_norm"
+    name: "dense_block_3_dense_layer_5_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_5_part_2_relu"
+    name: "dense_block_3_dense_layer_5_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_1_part_2_conv dense_block_3_dense_layer_2_part_2_conv dense_block_3_dense_layer_3_part_2_conv dense_block_3_dense_layer_4_part_2_conv dense_block_3_dense_layer_5_part_2_conv"
+    name: "dense_block_3_dense_layer_6_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_6_concatenation"
+    name: "dense_block_3_dense_layer_6_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_6_part_1_norm"
+    name: "dense_block_3_dense_layer_6_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_6_part_1_relu"
+    name: "dense_block_3_dense_layer_6_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_6_part_1_conv"
+    name: "dense_block_3_dense_layer_6_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_6_part_2_norm"
+    name: "dense_block_3_dense_layer_6_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_6_part_2_relu"
+    name: "dense_block_3_dense_layer_6_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_1_part_2_conv dense_block_3_dense_layer_2_part_2_conv dense_block_3_dense_layer_3_part_2_conv dense_block_3_dense_layer_4_part_2_conv dense_block_3_dense_layer_5_part_2_conv dense_block_3_dense_layer_6_part_2_conv"
+    name: "dense_block_3_dense_layer_7_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_7_concatenation"
+    name: "dense_block_3_dense_layer_7_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_7_part_1_norm"
+    name: "dense_block_3_dense_layer_7_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_7_part_1_relu"
+    name: "dense_block_3_dense_layer_7_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_7_part_1_conv"
+    name: "dense_block_3_dense_layer_7_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_7_part_2_norm"
+    name: "dense_block_3_dense_layer_7_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_7_part_2_relu"
+    name: "dense_block_3_dense_layer_7_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_1_part_2_conv dense_block_3_dense_layer_2_part_2_conv dense_block_3_dense_layer_3_part_2_conv dense_block_3_dense_layer_4_part_2_conv dense_block_3_dense_layer_5_part_2_conv dense_block_3_dense_layer_6_part_2_conv dense_block_3_dense_layer_7_part_2_conv"
+    name: "dense_block_3_dense_layer_8_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_8_concatenation"
+    name: "dense_block_3_dense_layer_8_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_8_part_1_norm"
+    name: "dense_block_3_dense_layer_8_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_8_part_1_relu"
+    name: "dense_block_3_dense_layer_8_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_8_part_1_conv"
+    name: "dense_block_3_dense_layer_8_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_8_part_2_norm"
+    name: "dense_block_3_dense_layer_8_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_8_part_2_relu"
+    name: "dense_block_3_dense_layer_8_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_1_part_2_conv dense_block_3_dense_layer_2_part_2_conv dense_block_3_dense_layer_3_part_2_conv dense_block_3_dense_layer_4_part_2_conv dense_block_3_dense_layer_5_part_2_conv dense_block_3_dense_layer_6_part_2_conv dense_block_3_dense_layer_7_part_2_conv dense_block_3_dense_layer_8_part_2_conv"
+    name: "dense_block_3_dense_layer_9_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_9_concatenation"
+    name: "dense_block_3_dense_layer_9_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_9_part_1_norm"
+    name: "dense_block_3_dense_layer_9_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_9_part_1_relu"
+    name: "dense_block_3_dense_layer_9_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_9_part_1_conv"
+    name: "dense_block_3_dense_layer_9_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_9_part_2_norm"
+    name: "dense_block_3_dense_layer_9_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_9_part_2_relu"
+    name: "dense_block_3_dense_layer_9_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_1_part_2_conv dense_block_3_dense_layer_2_part_2_conv dense_block_3_dense_layer_3_part_2_conv dense_block_3_dense_layer_4_part_2_conv dense_block_3_dense_layer_5_part_2_conv dense_block_3_dense_layer_6_part_2_conv dense_block_3_dense_layer_7_part_2_conv dense_block_3_dense_layer_8_part_2_conv dense_block_3_dense_layer_9_part_2_conv"
+    name: "dense_block_3_dense_layer_10_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_10_concatenation"
+    name: "dense_block_3_dense_layer_10_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_10_part_1_norm"
+    name: "dense_block_3_dense_layer_10_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_10_part_1_relu"
+    name: "dense_block_3_dense_layer_10_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_10_part_1_conv"
+    name: "dense_block_3_dense_layer_10_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_10_part_2_norm"
+    name: "dense_block_3_dense_layer_10_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_10_part_2_relu"
+    name: "dense_block_3_dense_layer_10_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_1_part_2_conv dense_block_3_dense_layer_2_part_2_conv dense_block_3_dense_layer_3_part_2_conv dense_block_3_dense_layer_4_part_2_conv dense_block_3_dense_layer_5_part_2_conv dense_block_3_dense_layer_6_part_2_conv dense_block_3_dense_layer_7_part_2_conv dense_block_3_dense_layer_8_part_2_conv dense_block_3_dense_layer_9_part_2_conv dense_block_3_dense_layer_10_part_2_conv"
+    name: "dense_block_3_dense_layer_11_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_11_concatenation"
+    name: "dense_block_3_dense_layer_11_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_11_part_1_norm"
+    name: "dense_block_3_dense_layer_11_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_11_part_1_relu"
+    name: "dense_block_3_dense_layer_11_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_11_part_1_conv"
+    name: "dense_block_3_dense_layer_11_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_11_part_2_norm"
+    name: "dense_block_3_dense_layer_11_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_11_part_2_relu"
+    name: "dense_block_3_dense_layer_11_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_1_part_2_conv dense_block_3_dense_layer_2_part_2_conv dense_block_3_dense_layer_3_part_2_conv dense_block_3_dense_layer_4_part_2_conv dense_block_3_dense_layer_5_part_2_conv dense_block_3_dense_layer_6_part_2_conv dense_block_3_dense_layer_7_part_2_conv dense_block_3_dense_layer_8_part_2_conv dense_block_3_dense_layer_9_part_2_conv dense_block_3_dense_layer_10_part_2_conv dense_block_3_dense_layer_11_part_2_conv"
+    name: "dense_block_3_dense_layer_12_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_12_concatenation"
+    name: "dense_block_3_dense_layer_12_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_12_part_1_norm"
+    name: "dense_block_3_dense_layer_12_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_12_part_1_relu"
+    name: "dense_block_3_dense_layer_12_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_12_part_1_conv"
+    name: "dense_block_3_dense_layer_12_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_12_part_2_norm"
+    name: "dense_block_3_dense_layer_12_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_12_part_2_relu"
+    name: "dense_block_3_dense_layer_12_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_1_part_2_conv dense_block_3_dense_layer_2_part_2_conv dense_block_3_dense_layer_3_part_2_conv dense_block_3_dense_layer_4_part_2_conv dense_block_3_dense_layer_5_part_2_conv dense_block_3_dense_layer_6_part_2_conv dense_block_3_dense_layer_7_part_2_conv dense_block_3_dense_layer_8_part_2_conv dense_block_3_dense_layer_9_part_2_conv dense_block_3_dense_layer_10_part_2_conv dense_block_3_dense_layer_11_part_2_conv dense_block_3_dense_layer_12_part_2_conv"
+    name: "dense_block_3_dense_layer_13_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_13_concatenation"
+    name: "dense_block_3_dense_layer_13_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_13_part_1_norm"
+    name: "dense_block_3_dense_layer_13_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_13_part_1_relu"
+    name: "dense_block_3_dense_layer_13_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_13_part_1_conv"
+    name: "dense_block_3_dense_layer_13_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_13_part_2_norm"
+    name: "dense_block_3_dense_layer_13_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_13_part_2_relu"
+    name: "dense_block_3_dense_layer_13_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_1_part_2_conv dense_block_3_dense_layer_2_part_2_conv dense_block_3_dense_layer_3_part_2_conv dense_block_3_dense_layer_4_part_2_conv dense_block_3_dense_layer_5_part_2_conv dense_block_3_dense_layer_6_part_2_conv dense_block_3_dense_layer_7_part_2_conv dense_block_3_dense_layer_8_part_2_conv dense_block_3_dense_layer_9_part_2_conv dense_block_3_dense_layer_10_part_2_conv dense_block_3_dense_layer_11_part_2_conv dense_block_3_dense_layer_12_part_2_conv dense_block_3_dense_layer_13_part_2_conv"
+    name: "dense_block_3_dense_layer_14_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_14_concatenation"
+    name: "dense_block_3_dense_layer_14_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_14_part_1_norm"
+    name: "dense_block_3_dense_layer_14_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_14_part_1_relu"
+    name: "dense_block_3_dense_layer_14_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_14_part_1_conv"
+    name: "dense_block_3_dense_layer_14_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_14_part_2_norm"
+    name: "dense_block_3_dense_layer_14_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_14_part_2_relu"
+    name: "dense_block_3_dense_layer_14_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_1_part_2_conv dense_block_3_dense_layer_2_part_2_conv dense_block_3_dense_layer_3_part_2_conv dense_block_3_dense_layer_4_part_2_conv dense_block_3_dense_layer_5_part_2_conv dense_block_3_dense_layer_6_part_2_conv dense_block_3_dense_layer_7_part_2_conv dense_block_3_dense_layer_8_part_2_conv dense_block_3_dense_layer_9_part_2_conv dense_block_3_dense_layer_10_part_2_conv dense_block_3_dense_layer_11_part_2_conv dense_block_3_dense_layer_12_part_2_conv dense_block_3_dense_layer_13_part_2_conv dense_block_3_dense_layer_14_part_2_conv"
+    name: "dense_block_3_dense_layer_15_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_15_concatenation"
+    name: "dense_block_3_dense_layer_15_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_15_part_1_norm"
+    name: "dense_block_3_dense_layer_15_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_15_part_1_relu"
+    name: "dense_block_3_dense_layer_15_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_15_part_1_conv"
+    name: "dense_block_3_dense_layer_15_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_15_part_2_norm"
+    name: "dense_block_3_dense_layer_15_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_15_part_2_relu"
+    name: "dense_block_3_dense_layer_15_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_1_part_2_conv dense_block_3_dense_layer_2_part_2_conv dense_block_3_dense_layer_3_part_2_conv dense_block_3_dense_layer_4_part_2_conv dense_block_3_dense_layer_5_part_2_conv dense_block_3_dense_layer_6_part_2_conv dense_block_3_dense_layer_7_part_2_conv dense_block_3_dense_layer_8_part_2_conv dense_block_3_dense_layer_9_part_2_conv dense_block_3_dense_layer_10_part_2_conv dense_block_3_dense_layer_11_part_2_conv dense_block_3_dense_layer_12_part_2_conv dense_block_3_dense_layer_13_part_2_conv dense_block_3_dense_layer_14_part_2_conv dense_block_3_dense_layer_15_part_2_conv"
+    name: "dense_block_3_dense_layer_16_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_16_concatenation"
+    name: "dense_block_3_dense_layer_16_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_16_part_1_norm"
+    name: "dense_block_3_dense_layer_16_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_16_part_1_relu"
+    name: "dense_block_3_dense_layer_16_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_16_part_1_conv"
+    name: "dense_block_3_dense_layer_16_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_16_part_2_norm"
+    name: "dense_block_3_dense_layer_16_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_16_part_2_relu"
+    name: "dense_block_3_dense_layer_16_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_1_part_2_conv dense_block_3_dense_layer_2_part_2_conv dense_block_3_dense_layer_3_part_2_conv dense_block_3_dense_layer_4_part_2_conv dense_block_3_dense_layer_5_part_2_conv dense_block_3_dense_layer_6_part_2_conv dense_block_3_dense_layer_7_part_2_conv dense_block_3_dense_layer_8_part_2_conv dense_block_3_dense_layer_9_part_2_conv dense_block_3_dense_layer_10_part_2_conv dense_block_3_dense_layer_11_part_2_conv dense_block_3_dense_layer_12_part_2_conv dense_block_3_dense_layer_13_part_2_conv dense_block_3_dense_layer_14_part_2_conv dense_block_3_dense_layer_15_part_2_conv dense_block_3_dense_layer_16_part_2_conv"
+    name: "dense_block_3_dense_layer_17_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_17_concatenation"
+    name: "dense_block_3_dense_layer_17_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_17_part_1_norm"
+    name: "dense_block_3_dense_layer_17_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_17_part_1_relu"
+    name: "dense_block_3_dense_layer_17_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_17_part_1_conv"
+    name: "dense_block_3_dense_layer_17_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_17_part_2_norm"
+    name: "dense_block_3_dense_layer_17_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_17_part_2_relu"
+    name: "dense_block_3_dense_layer_17_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_1_part_2_conv dense_block_3_dense_layer_2_part_2_conv dense_block_3_dense_layer_3_part_2_conv dense_block_3_dense_layer_4_part_2_conv dense_block_3_dense_layer_5_part_2_conv dense_block_3_dense_layer_6_part_2_conv dense_block_3_dense_layer_7_part_2_conv dense_block_3_dense_layer_8_part_2_conv dense_block_3_dense_layer_9_part_2_conv dense_block_3_dense_layer_10_part_2_conv dense_block_3_dense_layer_11_part_2_conv dense_block_3_dense_layer_12_part_2_conv dense_block_3_dense_layer_13_part_2_conv dense_block_3_dense_layer_14_part_2_conv dense_block_3_dense_layer_15_part_2_conv dense_block_3_dense_layer_16_part_2_conv dense_block_3_dense_layer_17_part_2_conv"
+    name: "dense_block_3_dense_layer_18_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_18_concatenation"
+    name: "dense_block_3_dense_layer_18_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_18_part_1_norm"
+    name: "dense_block_3_dense_layer_18_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_18_part_1_relu"
+    name: "dense_block_3_dense_layer_18_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_18_part_1_conv"
+    name: "dense_block_3_dense_layer_18_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_18_part_2_norm"
+    name: "dense_block_3_dense_layer_18_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_18_part_2_relu"
+    name: "dense_block_3_dense_layer_18_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_1_part_2_conv dense_block_3_dense_layer_2_part_2_conv dense_block_3_dense_layer_3_part_2_conv dense_block_3_dense_layer_4_part_2_conv dense_block_3_dense_layer_5_part_2_conv dense_block_3_dense_layer_6_part_2_conv dense_block_3_dense_layer_7_part_2_conv dense_block_3_dense_layer_8_part_2_conv dense_block_3_dense_layer_9_part_2_conv dense_block_3_dense_layer_10_part_2_conv dense_block_3_dense_layer_11_part_2_conv dense_block_3_dense_layer_12_part_2_conv dense_block_3_dense_layer_13_part_2_conv dense_block_3_dense_layer_14_part_2_conv dense_block_3_dense_layer_15_part_2_conv dense_block_3_dense_layer_16_part_2_conv dense_block_3_dense_layer_17_part_2_conv dense_block_3_dense_layer_18_part_2_conv"
+    name: "dense_block_3_dense_layer_19_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_19_concatenation"
+    name: "dense_block_3_dense_layer_19_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_19_part_1_norm"
+    name: "dense_block_3_dense_layer_19_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_19_part_1_relu"
+    name: "dense_block_3_dense_layer_19_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_19_part_1_conv"
+    name: "dense_block_3_dense_layer_19_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_19_part_2_norm"
+    name: "dense_block_3_dense_layer_19_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_19_part_2_relu"
+    name: "dense_block_3_dense_layer_19_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_1_part_2_conv dense_block_3_dense_layer_2_part_2_conv dense_block_3_dense_layer_3_part_2_conv dense_block_3_dense_layer_4_part_2_conv dense_block_3_dense_layer_5_part_2_conv dense_block_3_dense_layer_6_part_2_conv dense_block_3_dense_layer_7_part_2_conv dense_block_3_dense_layer_8_part_2_conv dense_block_3_dense_layer_9_part_2_conv dense_block_3_dense_layer_10_part_2_conv dense_block_3_dense_layer_11_part_2_conv dense_block_3_dense_layer_12_part_2_conv dense_block_3_dense_layer_13_part_2_conv dense_block_3_dense_layer_14_part_2_conv dense_block_3_dense_layer_15_part_2_conv dense_block_3_dense_layer_16_part_2_conv dense_block_3_dense_layer_17_part_2_conv dense_block_3_dense_layer_18_part_2_conv dense_block_3_dense_layer_19_part_2_conv"
+    name: "dense_block_3_dense_layer_20_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_20_concatenation"
+    name: "dense_block_3_dense_layer_20_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_20_part_1_norm"
+    name: "dense_block_3_dense_layer_20_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_20_part_1_relu"
+    name: "dense_block_3_dense_layer_20_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_20_part_1_conv"
+    name: "dense_block_3_dense_layer_20_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_20_part_2_norm"
+    name: "dense_block_3_dense_layer_20_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_20_part_2_relu"
+    name: "dense_block_3_dense_layer_20_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_1_part_2_conv dense_block_3_dense_layer_2_part_2_conv dense_block_3_dense_layer_3_part_2_conv dense_block_3_dense_layer_4_part_2_conv dense_block_3_dense_layer_5_part_2_conv dense_block_3_dense_layer_6_part_2_conv dense_block_3_dense_layer_7_part_2_conv dense_block_3_dense_layer_8_part_2_conv dense_block_3_dense_layer_9_part_2_conv dense_block_3_dense_layer_10_part_2_conv dense_block_3_dense_layer_11_part_2_conv dense_block_3_dense_layer_12_part_2_conv dense_block_3_dense_layer_13_part_2_conv dense_block_3_dense_layer_14_part_2_conv dense_block_3_dense_layer_15_part_2_conv dense_block_3_dense_layer_16_part_2_conv dense_block_3_dense_layer_17_part_2_conv dense_block_3_dense_layer_18_part_2_conv dense_block_3_dense_layer_19_part_2_conv dense_block_3_dense_layer_20_part_2_conv"
+    name: "dense_block_3_dense_layer_21_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_21_concatenation"
+    name: "dense_block_3_dense_layer_21_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_21_part_1_norm"
+    name: "dense_block_3_dense_layer_21_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_21_part_1_relu"
+    name: "dense_block_3_dense_layer_21_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_21_part_1_conv"
+    name: "dense_block_3_dense_layer_21_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_21_part_2_norm"
+    name: "dense_block_3_dense_layer_21_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_21_part_2_relu"
+    name: "dense_block_3_dense_layer_21_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_1_part_2_conv dense_block_3_dense_layer_2_part_2_conv dense_block_3_dense_layer_3_part_2_conv dense_block_3_dense_layer_4_part_2_conv dense_block_3_dense_layer_5_part_2_conv dense_block_3_dense_layer_6_part_2_conv dense_block_3_dense_layer_7_part_2_conv dense_block_3_dense_layer_8_part_2_conv dense_block_3_dense_layer_9_part_2_conv dense_block_3_dense_layer_10_part_2_conv dense_block_3_dense_layer_11_part_2_conv dense_block_3_dense_layer_12_part_2_conv dense_block_3_dense_layer_13_part_2_conv dense_block_3_dense_layer_14_part_2_conv dense_block_3_dense_layer_15_part_2_conv dense_block_3_dense_layer_16_part_2_conv dense_block_3_dense_layer_17_part_2_conv dense_block_3_dense_layer_18_part_2_conv dense_block_3_dense_layer_19_part_2_conv dense_block_3_dense_layer_20_part_2_conv dense_block_3_dense_layer_21_part_2_conv"
+    name: "dense_block_3_dense_layer_22_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_22_concatenation"
+    name: "dense_block_3_dense_layer_22_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_22_part_1_norm"
+    name: "dense_block_3_dense_layer_22_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_22_part_1_relu"
+    name: "dense_block_3_dense_layer_22_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_22_part_1_conv"
+    name: "dense_block_3_dense_layer_22_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_22_part_2_norm"
+    name: "dense_block_3_dense_layer_22_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_22_part_2_relu"
+    name: "dense_block_3_dense_layer_22_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_1_part_2_conv dense_block_3_dense_layer_2_part_2_conv dense_block_3_dense_layer_3_part_2_conv dense_block_3_dense_layer_4_part_2_conv dense_block_3_dense_layer_5_part_2_conv dense_block_3_dense_layer_6_part_2_conv dense_block_3_dense_layer_7_part_2_conv dense_block_3_dense_layer_8_part_2_conv dense_block_3_dense_layer_9_part_2_conv dense_block_3_dense_layer_10_part_2_conv dense_block_3_dense_layer_11_part_2_conv dense_block_3_dense_layer_12_part_2_conv dense_block_3_dense_layer_13_part_2_conv dense_block_3_dense_layer_14_part_2_conv dense_block_3_dense_layer_15_part_2_conv dense_block_3_dense_layer_16_part_2_conv dense_block_3_dense_layer_17_part_2_conv dense_block_3_dense_layer_18_part_2_conv dense_block_3_dense_layer_19_part_2_conv dense_block_3_dense_layer_20_part_2_conv dense_block_3_dense_layer_21_part_2_conv dense_block_3_dense_layer_22_part_2_conv"
+    name: "dense_block_3_dense_layer_23_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_23_concatenation"
+    name: "dense_block_3_dense_layer_23_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_23_part_1_norm"
+    name: "dense_block_3_dense_layer_23_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_23_part_1_relu"
+    name: "dense_block_3_dense_layer_23_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_23_part_1_conv"
+    name: "dense_block_3_dense_layer_23_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_23_part_2_norm"
+    name: "dense_block_3_dense_layer_23_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_23_part_2_relu"
+    name: "dense_block_3_dense_layer_23_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_1_part_2_conv dense_block_3_dense_layer_2_part_2_conv dense_block_3_dense_layer_3_part_2_conv dense_block_3_dense_layer_4_part_2_conv dense_block_3_dense_layer_5_part_2_conv dense_block_3_dense_layer_6_part_2_conv dense_block_3_dense_layer_7_part_2_conv dense_block_3_dense_layer_8_part_2_conv dense_block_3_dense_layer_9_part_2_conv dense_block_3_dense_layer_10_part_2_conv dense_block_3_dense_layer_11_part_2_conv dense_block_3_dense_layer_12_part_2_conv dense_block_3_dense_layer_13_part_2_conv dense_block_3_dense_layer_14_part_2_conv dense_block_3_dense_layer_15_part_2_conv dense_block_3_dense_layer_16_part_2_conv dense_block_3_dense_layer_17_part_2_conv dense_block_3_dense_layer_18_part_2_conv dense_block_3_dense_layer_19_part_2_conv dense_block_3_dense_layer_20_part_2_conv dense_block_3_dense_layer_21_part_2_conv dense_block_3_dense_layer_22_part_2_conv dense_block_3_dense_layer_23_part_2_conv"
+    name: "dense_block_3_dense_layer_24_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_24_concatenation"
+    name: "dense_block_3_dense_layer_24_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_24_part_1_norm"
+    name: "dense_block_3_dense_layer_24_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_24_part_1_relu"
+    name: "dense_block_3_dense_layer_24_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_24_part_1_conv"
+    name: "dense_block_3_dense_layer_24_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_24_part_2_norm"
+    name: "dense_block_3_dense_layer_24_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_24_part_2_relu"
+    name: "dense_block_3_dense_layer_24_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_3_dense_layer_24_part_2_conv"
+    name: "transition_layer_3_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "transition_layer_3_norm"
+    name: "transition_layer_3_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "transition_layer_3_relu"
+    name: "transition_layer_3_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 416
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "transition_layer_3_conv"
+    name: "transition_layer_3_pool"
+    data_layout: "data_parallel"
+    pooling {
+      num_dims: 2
+      pool_dims_i: 2
+      pool_strides_i: 2
+      pool_mode: "average"
+    }
+  }
+  layer {
+    parents: "transition_layer_3_pool"
+    name: "dense_block_4_dense_layer_1_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_1_concatenation"
+    name: "dense_block_4_dense_layer_1_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_1_part_1_norm"
+    name: "dense_block_4_dense_layer_1_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_1_part_1_relu"
+    name: "dense_block_4_dense_layer_1_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_1_part_1_conv"
+    name: "dense_block_4_dense_layer_1_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_1_part_2_norm"
+    name: "dense_block_4_dense_layer_1_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_1_part_2_relu"
+    name: "dense_block_4_dense_layer_1_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_1_part_2_conv"
+    name: "dense_block_4_dense_layer_2_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_2_concatenation"
+    name: "dense_block_4_dense_layer_2_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_2_part_1_norm"
+    name: "dense_block_4_dense_layer_2_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_2_part_1_relu"
+    name: "dense_block_4_dense_layer_2_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_2_part_1_conv"
+    name: "dense_block_4_dense_layer_2_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_2_part_2_norm"
+    name: "dense_block_4_dense_layer_2_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_2_part_2_relu"
+    name: "dense_block_4_dense_layer_2_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_1_part_2_conv dense_block_4_dense_layer_2_part_2_conv"
+    name: "dense_block_4_dense_layer_3_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_3_concatenation"
+    name: "dense_block_4_dense_layer_3_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_3_part_1_norm"
+    name: "dense_block_4_dense_layer_3_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_3_part_1_relu"
+    name: "dense_block_4_dense_layer_3_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_3_part_1_conv"
+    name: "dense_block_4_dense_layer_3_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_3_part_2_norm"
+    name: "dense_block_4_dense_layer_3_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_3_part_2_relu"
+    name: "dense_block_4_dense_layer_3_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_1_part_2_conv dense_block_4_dense_layer_2_part_2_conv dense_block_4_dense_layer_3_part_2_conv"
+    name: "dense_block_4_dense_layer_4_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_4_concatenation"
+    name: "dense_block_4_dense_layer_4_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_4_part_1_norm"
+    name: "dense_block_4_dense_layer_4_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_4_part_1_relu"
+    name: "dense_block_4_dense_layer_4_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_4_part_1_conv"
+    name: "dense_block_4_dense_layer_4_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_4_part_2_norm"
+    name: "dense_block_4_dense_layer_4_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_4_part_2_relu"
+    name: "dense_block_4_dense_layer_4_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_1_part_2_conv dense_block_4_dense_layer_2_part_2_conv dense_block_4_dense_layer_3_part_2_conv dense_block_4_dense_layer_4_part_2_conv"
+    name: "dense_block_4_dense_layer_5_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_5_concatenation"
+    name: "dense_block_4_dense_layer_5_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_5_part_1_norm"
+    name: "dense_block_4_dense_layer_5_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_5_part_1_relu"
+    name: "dense_block_4_dense_layer_5_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_5_part_1_conv"
+    name: "dense_block_4_dense_layer_5_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_5_part_2_norm"
+    name: "dense_block_4_dense_layer_5_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_5_part_2_relu"
+    name: "dense_block_4_dense_layer_5_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_1_part_2_conv dense_block_4_dense_layer_2_part_2_conv dense_block_4_dense_layer_3_part_2_conv dense_block_4_dense_layer_4_part_2_conv dense_block_4_dense_layer_5_part_2_conv"
+    name: "dense_block_4_dense_layer_6_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_6_concatenation"
+    name: "dense_block_4_dense_layer_6_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_6_part_1_norm"
+    name: "dense_block_4_dense_layer_6_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_6_part_1_relu"
+    name: "dense_block_4_dense_layer_6_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_6_part_1_conv"
+    name: "dense_block_4_dense_layer_6_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_6_part_2_norm"
+    name: "dense_block_4_dense_layer_6_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_6_part_2_relu"
+    name: "dense_block_4_dense_layer_6_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_1_part_2_conv dense_block_4_dense_layer_2_part_2_conv dense_block_4_dense_layer_3_part_2_conv dense_block_4_dense_layer_4_part_2_conv dense_block_4_dense_layer_5_part_2_conv dense_block_4_dense_layer_6_part_2_conv"
+    name: "dense_block_4_dense_layer_7_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_7_concatenation"
+    name: "dense_block_4_dense_layer_7_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_7_part_1_norm"
+    name: "dense_block_4_dense_layer_7_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_7_part_1_relu"
+    name: "dense_block_4_dense_layer_7_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_7_part_1_conv"
+    name: "dense_block_4_dense_layer_7_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_7_part_2_norm"
+    name: "dense_block_4_dense_layer_7_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_7_part_2_relu"
+    name: "dense_block_4_dense_layer_7_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_1_part_2_conv dense_block_4_dense_layer_2_part_2_conv dense_block_4_dense_layer_3_part_2_conv dense_block_4_dense_layer_4_part_2_conv dense_block_4_dense_layer_5_part_2_conv dense_block_4_dense_layer_6_part_2_conv dense_block_4_dense_layer_7_part_2_conv"
+    name: "dense_block_4_dense_layer_8_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_8_concatenation"
+    name: "dense_block_4_dense_layer_8_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_8_part_1_norm"
+    name: "dense_block_4_dense_layer_8_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_8_part_1_relu"
+    name: "dense_block_4_dense_layer_8_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_8_part_1_conv"
+    name: "dense_block_4_dense_layer_8_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_8_part_2_norm"
+    name: "dense_block_4_dense_layer_8_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_8_part_2_relu"
+    name: "dense_block_4_dense_layer_8_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_1_part_2_conv dense_block_4_dense_layer_2_part_2_conv dense_block_4_dense_layer_3_part_2_conv dense_block_4_dense_layer_4_part_2_conv dense_block_4_dense_layer_5_part_2_conv dense_block_4_dense_layer_6_part_2_conv dense_block_4_dense_layer_7_part_2_conv dense_block_4_dense_layer_8_part_2_conv"
+    name: "dense_block_4_dense_layer_9_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_9_concatenation"
+    name: "dense_block_4_dense_layer_9_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_9_part_1_norm"
+    name: "dense_block_4_dense_layer_9_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_9_part_1_relu"
+    name: "dense_block_4_dense_layer_9_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_9_part_1_conv"
+    name: "dense_block_4_dense_layer_9_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_9_part_2_norm"
+    name: "dense_block_4_dense_layer_9_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_9_part_2_relu"
+    name: "dense_block_4_dense_layer_9_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_1_part_2_conv dense_block_4_dense_layer_2_part_2_conv dense_block_4_dense_layer_3_part_2_conv dense_block_4_dense_layer_4_part_2_conv dense_block_4_dense_layer_5_part_2_conv dense_block_4_dense_layer_6_part_2_conv dense_block_4_dense_layer_7_part_2_conv dense_block_4_dense_layer_8_part_2_conv dense_block_4_dense_layer_9_part_2_conv"
+    name: "dense_block_4_dense_layer_10_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_10_concatenation"
+    name: "dense_block_4_dense_layer_10_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_10_part_1_norm"
+    name: "dense_block_4_dense_layer_10_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_10_part_1_relu"
+    name: "dense_block_4_dense_layer_10_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_10_part_1_conv"
+    name: "dense_block_4_dense_layer_10_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_10_part_2_norm"
+    name: "dense_block_4_dense_layer_10_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_10_part_2_relu"
+    name: "dense_block_4_dense_layer_10_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_1_part_2_conv dense_block_4_dense_layer_2_part_2_conv dense_block_4_dense_layer_3_part_2_conv dense_block_4_dense_layer_4_part_2_conv dense_block_4_dense_layer_5_part_2_conv dense_block_4_dense_layer_6_part_2_conv dense_block_4_dense_layer_7_part_2_conv dense_block_4_dense_layer_8_part_2_conv dense_block_4_dense_layer_9_part_2_conv dense_block_4_dense_layer_10_part_2_conv"
+    name: "dense_block_4_dense_layer_11_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_11_concatenation"
+    name: "dense_block_4_dense_layer_11_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_11_part_1_norm"
+    name: "dense_block_4_dense_layer_11_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_11_part_1_relu"
+    name: "dense_block_4_dense_layer_11_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_11_part_1_conv"
+    name: "dense_block_4_dense_layer_11_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_11_part_2_norm"
+    name: "dense_block_4_dense_layer_11_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_11_part_2_relu"
+    name: "dense_block_4_dense_layer_11_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_1_part_2_conv dense_block_4_dense_layer_2_part_2_conv dense_block_4_dense_layer_3_part_2_conv dense_block_4_dense_layer_4_part_2_conv dense_block_4_dense_layer_5_part_2_conv dense_block_4_dense_layer_6_part_2_conv dense_block_4_dense_layer_7_part_2_conv dense_block_4_dense_layer_8_part_2_conv dense_block_4_dense_layer_9_part_2_conv dense_block_4_dense_layer_10_part_2_conv dense_block_4_dense_layer_11_part_2_conv"
+    name: "dense_block_4_dense_layer_12_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_12_concatenation"
+    name: "dense_block_4_dense_layer_12_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_12_part_1_norm"
+    name: "dense_block_4_dense_layer_12_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_12_part_1_relu"
+    name: "dense_block_4_dense_layer_12_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_12_part_1_conv"
+    name: "dense_block_4_dense_layer_12_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_12_part_2_norm"
+    name: "dense_block_4_dense_layer_12_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_12_part_2_relu"
+    name: "dense_block_4_dense_layer_12_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_1_part_2_conv dense_block_4_dense_layer_2_part_2_conv dense_block_4_dense_layer_3_part_2_conv dense_block_4_dense_layer_4_part_2_conv dense_block_4_dense_layer_5_part_2_conv dense_block_4_dense_layer_6_part_2_conv dense_block_4_dense_layer_7_part_2_conv dense_block_4_dense_layer_8_part_2_conv dense_block_4_dense_layer_9_part_2_conv dense_block_4_dense_layer_10_part_2_conv dense_block_4_dense_layer_11_part_2_conv dense_block_4_dense_layer_12_part_2_conv"
+    name: "dense_block_4_dense_layer_13_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_13_concatenation"
+    name: "dense_block_4_dense_layer_13_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_13_part_1_norm"
+    name: "dense_block_4_dense_layer_13_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_13_part_1_relu"
+    name: "dense_block_4_dense_layer_13_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_13_part_1_conv"
+    name: "dense_block_4_dense_layer_13_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_13_part_2_norm"
+    name: "dense_block_4_dense_layer_13_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_13_part_2_relu"
+    name: "dense_block_4_dense_layer_13_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_1_part_2_conv dense_block_4_dense_layer_2_part_2_conv dense_block_4_dense_layer_3_part_2_conv dense_block_4_dense_layer_4_part_2_conv dense_block_4_dense_layer_5_part_2_conv dense_block_4_dense_layer_6_part_2_conv dense_block_4_dense_layer_7_part_2_conv dense_block_4_dense_layer_8_part_2_conv dense_block_4_dense_layer_9_part_2_conv dense_block_4_dense_layer_10_part_2_conv dense_block_4_dense_layer_11_part_2_conv dense_block_4_dense_layer_12_part_2_conv dense_block_4_dense_layer_13_part_2_conv"
+    name: "dense_block_4_dense_layer_14_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_14_concatenation"
+    name: "dense_block_4_dense_layer_14_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_14_part_1_norm"
+    name: "dense_block_4_dense_layer_14_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_14_part_1_relu"
+    name: "dense_block_4_dense_layer_14_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_14_part_1_conv"
+    name: "dense_block_4_dense_layer_14_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_14_part_2_norm"
+    name: "dense_block_4_dense_layer_14_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_14_part_2_relu"
+    name: "dense_block_4_dense_layer_14_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_1_part_2_conv dense_block_4_dense_layer_2_part_2_conv dense_block_4_dense_layer_3_part_2_conv dense_block_4_dense_layer_4_part_2_conv dense_block_4_dense_layer_5_part_2_conv dense_block_4_dense_layer_6_part_2_conv dense_block_4_dense_layer_7_part_2_conv dense_block_4_dense_layer_8_part_2_conv dense_block_4_dense_layer_9_part_2_conv dense_block_4_dense_layer_10_part_2_conv dense_block_4_dense_layer_11_part_2_conv dense_block_4_dense_layer_12_part_2_conv dense_block_4_dense_layer_13_part_2_conv dense_block_4_dense_layer_14_part_2_conv"
+    name: "dense_block_4_dense_layer_15_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_15_concatenation"
+    name: "dense_block_4_dense_layer_15_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_15_part_1_norm"
+    name: "dense_block_4_dense_layer_15_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_15_part_1_relu"
+    name: "dense_block_4_dense_layer_15_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_15_part_1_conv"
+    name: "dense_block_4_dense_layer_15_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_15_part_2_norm"
+    name: "dense_block_4_dense_layer_15_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_15_part_2_relu"
+    name: "dense_block_4_dense_layer_15_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_1_part_2_conv dense_block_4_dense_layer_2_part_2_conv dense_block_4_dense_layer_3_part_2_conv dense_block_4_dense_layer_4_part_2_conv dense_block_4_dense_layer_5_part_2_conv dense_block_4_dense_layer_6_part_2_conv dense_block_4_dense_layer_7_part_2_conv dense_block_4_dense_layer_8_part_2_conv dense_block_4_dense_layer_9_part_2_conv dense_block_4_dense_layer_10_part_2_conv dense_block_4_dense_layer_11_part_2_conv dense_block_4_dense_layer_12_part_2_conv dense_block_4_dense_layer_13_part_2_conv dense_block_4_dense_layer_14_part_2_conv dense_block_4_dense_layer_15_part_2_conv"
+    name: "dense_block_4_dense_layer_16_concatenation"
+    data_layout: "data_parallel"
+    concatenation {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_16_concatenation"
+    name: "dense_block_4_dense_layer_16_part_1_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_16_part_1_norm"
+    name: "dense_block_4_dense_layer_16_part_1_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_16_part_1_relu"
+    name: "dense_block_4_dense_layer_16_part_1_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_16_part_1_conv"
+    name: "dense_block_4_dense_layer_16_part_2_norm"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.900000
+      scale_init: 1.000000
+      bias_init: 0.000000
+      epsilon: 0.000010
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_16_part_2_norm"
+    name: "dense_block_4_dense_layer_16_part_2_relu"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_16_part_2_relu"
+    name: "dense_block_4_dense_layer_16_part_2_conv"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 32
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "dense_block_4_dense_layer_16_part_2_conv"
+    name: "classification_layer_pool"
+    data_layout: "data_parallel"
+    pooling {
+      num_dims: 2
+      pool_dims_i: 7
+      pool_strides_i: 2
+      pool_mode: "average"
+    }
+  }
+  layer {
+    parents: "classification_layer_pool"
+    name: "classification_layer_fc"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 1000
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "classification_layer_fc"
+    name: "classification_layer_softmax"
+    data_layout: "model_parallel"
+    softmax {
+    }
+  }
+  layer {
+    parents: "classification_layer_softmax"
+    name: "classification_layer_target"
+    data_layout: "data_parallel"
+    target {
+      io_buffer: "partitioned"
+      shared_data_reader: true
+    }
+  }
+}
