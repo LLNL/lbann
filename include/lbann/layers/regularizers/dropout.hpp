@@ -86,8 +86,8 @@ class dropout : public regularizer_layer {
     m_reserve_space = other.m_reserve_space;
     if (m_dropout_cudnn_desc != nullptr) {
       CHECK_CUDNN(cudnnDestroyDropoutDescriptor(m_dropout_cudnn_desc));
-      m_dropout_cudnn_desc = nullptr;
     }
+    m_dropout_cudnn_desc = nullptr;
     if (other.m_dropout_cudnn_desc != nullptr) {
       setup_dropout_cudnn_desc();
     }
@@ -97,7 +97,9 @@ class dropout : public regularizer_layer {
 
   ~dropout() override {
   #ifdef LBANN_HAS_CUDNN
-    CHECK_CUDNN(cudnnDestroyDropoutDescriptor(m_dropout_cudnn_desc));
+    if (m_dropout_cudnn_desc != nullptr) {
+      CHECK_CUDNN(cudnnDestroyDropoutDescriptor(m_dropout_cudnn_desc));
+    }
   #endif // LBANN_HAS_CUDNN
   }
 
