@@ -185,6 +185,7 @@ message Model {
 
   int64 mini_batch_size = 12;
   int64 num_epochs = 4;
+  int64 super_steps = 121; //multiple steps/epochs currently use in GAN 
   int64 block_size = 50;
   int64 procs_per_model = 51;
   int64 num_gpus = 53;

@@ -2,8 +2,9 @@
 model {
   name: "directed_acyclic_graph_model"
   data_layout: "model_parallel"
-  mini_batch_size: 64 
+  mini_batch_size: 128 
   block_size: 256
+  super_steps: 100
   num_epochs: 8
   num_parallel_readers: 0
   procs_per_model: 0
@@ -71,12 +72,12 @@ model {
   layer {
     name: "noise"
     data_layout: "data_parallel"
-    noise {
-      noise_factor: 1.0
-      num_neurons: "100"
+    gaussian {
+      mean: 0.0
+      stdev: 1.0
+      neuron_dims: "100"
     }
   }
-  
   weights {
      name: "gen_fc1_weights"
      optimizer { }

@@ -73,8 +73,7 @@ int main(int argc, char *argv[]) {
     const auto layers1 = model_1->get_layers();
     const auto layers2 = model_2->get_layers();
     int super_step = 1;
-    //@todo fix/set max_super_step from prototext
-    int max_super_step = pb_model.num_epochs(); 
+    int max_super_step = pb_model.super_steps(); 
     while (super_step <= max_super_step) {
       if (master)  std::cerr << "\nSTARTING train - discriminator model at step " << super_step <<"\n\n";
       //@todo freeze generator layers in this step
