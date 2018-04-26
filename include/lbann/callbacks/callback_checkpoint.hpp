@@ -105,9 +105,7 @@ class lbann_callback_checkpoint : public lbann_callback {
   int m_ckpt_dist_epochs;
   int m_ckpt_dist_steps;
   EvalType m_checkpoint_last;
-  bool m_epoch_end;
-  bool m_val_end;
-  bool m_mb_end;
+  persist p;
   bool m_checkpoint_dist;
   bool m_checkpoint_shared;
 };

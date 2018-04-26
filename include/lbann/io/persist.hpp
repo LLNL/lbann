@@ -82,6 +82,10 @@ class persist {
     return m_bytes;
   }
 
+  void reset_bytes() {
+    m_bytes = 0;
+  }
+
   bool write_rank_distmat(persist_type type, const char *name, const AbsDistMat& M);
   bool read_rank_distmat(persist_type type, const char *name, AbsDistMat& M);
 

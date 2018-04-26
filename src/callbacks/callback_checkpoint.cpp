@@ -32,36 +32,32 @@
 namespace lbann {
 // Load from checkpoint occurs during setup callbacks
 void lbann_callback_checkpoint::setup(model *m) {
-  m_epoch_end = false;
-  m_val_end = false;
-  m_mb_end = false;
+  p.set_cb_type(callback_type::invalid);
   restart(m);
 }
 // Interval defined with checkpoint_epochs or ckpt_dist_epochs
 void lbann_callback_checkpoint::on_epoch_end(model *m) {
-  m_epoch_end = true;
+  p.set_cb_type(callback_type::epoch);
   if(need_checkpoint(m)){
     checkpoint(m);
   }
-  
-  m_epoch_end = false;
-  
+  p.set_cb_type(callback_type::invalid);
 }
  // Interval defined with checkpoint_epochs or ckpt_dist_epochs
 void lbann_callback_checkpoint::on_validation_end(model *m) {
-  m_val_end = true;
+  p.set_cb_type(callback_type::validation);
   if(need_checkpoint(m)){
     checkpoint(m);
   }
-  m_val_end = false;
+  p.set_cb_type(callback_type::invalid);
 }
  // Interval defined with checkpoint_steps or ckpt_dist_steps
 void lbann_callback_checkpoint::on_batch_end(model *m) {
-  m_mb_end = true;
+  p.set_cb_type(callback_type::batch);
   if(need_checkpoint(m)){
     checkpoint(m);
   }
-  m_mb_end = false;
+  p.set_cb_type(callback_type::invalid);
 }
 
 // Decide if we need to trigger a checkpoint for either mode, based on prototext defined intervals
@@ -82,11 +78,11 @@ bool lbann_callback_checkpoint::need_checkpoint(model *m) {
   lbann_comm *comm = m->get_comm();
   int cur_epoch = m->get_cur_epoch();
   // If we are at the end of a training epoch and the training epoch lands on defined interval, ckpt
-  if (!m_checkpoint_shared && m_checkpoint_epochs > 0 && (m_epoch_end || m_val_end) ){
+  if (!m_checkpoint_shared && m_checkpoint_epochs > 0 && (p.get_cb_type() == callback_type::epoch || p.get_cb_type() == callback_type::validation)){
       m_checkpoint_shared = (cur_epoch > 0) && (cur_epoch % m_checkpoint_epochs == 0);
     }
     
-  if(!m_checkpoint_dist && m_ckpt_dist_epochs > 0 && (m_epoch_end || m_val_end)){
+  if(!m_checkpoint_dist && m_ckpt_dist_epochs > 0 && (p.get_cb_type() == callback_type::epoch || p.get_cb_type() == callback_type::validation)){
       m_checkpoint_dist = (cur_epoch > 0) && (cur_epoch % m_ckpt_dist_epochs == 0);
   }
   
@@ -164,15 +160,6 @@ bool lbann_callback_checkpoint::checkpoint(model *m) {
   // read current epoch and step counters from model
   El::Timer timer;
   char epochdir[1024];
-  persist p;
-  // set our persist callback type state
-  if(m_val_end)
-      p.set_cb_type(callback_type::validation);
-  else if(m_mb_end)
-      p.set_cb_type(callback_type::batch);
-  else
-      p.set_cb_type(callback_type::epoch);
-  
   char dir[1024];
   int epoch = -1;
   int step = -1 ;
@@ -218,7 +205,7 @@ bool lbann_callback_checkpoint::checkpoint(model *m) {
   if(m_checkpoint_shared){
     strcpy(dir, m_checkpoint_dir.c_str());
     makedir(dir);
-    snprintf(epochdir, sizeof(epochdir), "%s/shared.epoch.%d.step.%d", dir, epoch, step);
+    snprintf(epochdir, sizeof(epochdir), "%s/shared.model.%d.epoch.%d.step.%d", dir, comm->get_model_rank(), epoch, step);
     if (comm->am_model_master()) {
       p.open_checkpoint(epochdir);
     }
@@ -246,6 +233,7 @@ bool lbann_callback_checkpoint::checkpoint(model *m) {
   }
   // record last checkpoint time in case checkpoint_secs interval defined.
   m_checkpoint_last = MPI_Wtime();
+  p.reset_bytes();
   return true;
 }
 
@@ -333,25 +321,26 @@ bool lbann_callback_checkpoint::restart(model *m) {
   }
   
   char epochdir[1024];
-  persist p;
   // Create dir to restart from based off last recorded checkpoint (or overriden values in last.shared[distributed].checkpoint
   if(!shared){
     snprintf(epochdir, sizeof(epochdir), "%s/rank.%d.epoch.%d.step.%d", dir, comm->get_rank_in_model(), epoch, step);
     p.open_restart(epochdir);
     m->load_from_checkpoint_distributed(p);
+    p.close_restart();
   }
-  else{
-    sprintf(epochdir, "%s/shared.epoch.%d.step.%d", dir, epoch, step);
+  else {
+    sprintf(epochdir, "%s/shared.model.%d.epoch.%d.step.%d", dir, comm->get_model_rank(), epoch, step);
     if (comm->am_model_master()) {
       p.open_restart(epochdir);
     }
     // Ensure all ranks have access to checkpoint dir, needed for loading rank specific rng state
     comm->model_broadcast(0, &(p.m_checkpoint_dir[0]), sizeof(p.m_checkpoint_dir));
     m->load_from_checkpoint_shared(p);
+    if(comm->am_model_master())
+      p.close_restart();
   }
   
   // close our checkpoint
-  p.close_restart();
   uint64_t bytes_count = p.get_bytes();
   // let user know we've completed reading our restart
   if (comm->am_model_master()) {
@@ -365,6 +354,7 @@ bool lbann_callback_checkpoint::restart(model *m) {
           );
     fflush(stdout);
   }
+  p.reset_bytes();
   return true;
 }
 
