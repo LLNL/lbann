@@ -453,13 +453,20 @@ cudnnDataType_t get_cudnn_data_type();
 
 /** Set cuDNN tensor descriptor.
  *  num_samples is interpreted as the first tensor dimension, followed
- *  by the entries in sample_dims. desc is created or destroyed if
- *  needed.
+ *  by the entries in sample_dims. desc is created if needed.
  */
 void set_tensor_cudnn_desc(cudnnTensorDescriptor_t& desc,
                            int num_samples,
                            const std::vector<int>& sample_dims,
                            int sample_stride = 0);
+
+/** Set cuDNN tensor descriptor for a matrix.
+ *  desc is created if needed.
+ */
+void set_tensor_cudnn_desc(cudnnTensorDescriptor_t& desc,
+                           int height,
+                           int width = 1,
+                           int leading_dim = 0);
 
 /** Copy cuDNN tensor descriptor.
  *  dst is created or destroyed if needed.
