@@ -66,7 +66,7 @@ class generic_data_store {
 
   /// called by generic_data_reader::update;
   /// this method call exchange_data if m_epoch > 1
-  virtual void set_shuffled_indices(const std::vector<int> *indices);
+  virtual void set_shuffled_indices(const std::vector<int> *indices, bool exchange_indices = true);
 
   /// called by various image data readers 
   virtual void get_data_buf(int data_id, std::vector<unsigned char> *&buf, int multi_idx = 0) {}

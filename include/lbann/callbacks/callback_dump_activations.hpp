@@ -64,6 +64,8 @@ class lbann_callback_dump_activations : public lbann_callback {
     return new lbann_callback_dump_activations(*this);
   }
   void on_forward_prop_end(model *m, Layer *l) override;
+  /** Write activations to file on epoch end. */
+  void on_epoch_end(model *m) override;
   /** Write activations/inferences to file on test end. */
   void on_test_end(model *m) override;
   std::string name() const override { return "dump activations"; }
@@ -72,6 +74,7 @@ class lbann_callback_dump_activations : public lbann_callback {
   std::string m_basename;
   /** List of layers at which to save activations/inferences*/
   std::vector<std::string> m_layer_names;
+  void dump_activations(model& m, std::string tag);
 
 };
 

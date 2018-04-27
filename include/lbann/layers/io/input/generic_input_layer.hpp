@@ -215,7 +215,7 @@ class generic_input_layer : public io_layer {
 
       /// Let each rank know this size of the current mini-batch
       /// Note that this field has to be updated before distributing the data
-      num_samples_in_batch = Layer::m_comm->model_broadcast(((distributed_io_buffer*) io_buffer)->current_root_rank(mode), num_samples_in_batch);
+      Layer::m_comm->model_broadcast(((distributed_io_buffer*) io_buffer)->current_root_rank(mode), num_samples_in_batch);
       this->m_model->set_current_mini_batch_size(num_samples_in_batch
                                                  + get_current_world_master_mini_batch_adjustment(m_comm->get_model_rank()));
 

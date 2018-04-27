@@ -65,13 +65,6 @@ class data_store_image : public generic_data_store {
 
   void exchange_data() override;
 
-  struct Triple {
-    int global_index;
-    int num_bytes;
-    size_t offset;
-    int rank;
-  };
-
   /// maps a global index (wrt image_list) to number of bytes in the file
   std::unordered_map<size_t, size_t> m_file_sizes;
 
@@ -82,10 +75,10 @@ class data_store_image : public generic_data_store {
   virtual void get_file_sizes() = 0;
 
   /// called by get_file_sizes
-  virtual void exchange_file_sizes(std::vector<Triple> &my_file_sizes, int num_global_indices);
-
-  /// allocate mem for m_data
-  void allocate_memory(); 
+  void exchange_file_sizes(
+    std::vector<int> &global_indices,
+    std::vector<int> &num_bytes,
+    int num_global_indices);
 
   /// buffers that will be passed to reader::fetch_datum
   std::unordered_map<int, std::vector<unsigned char> > m_my_minibatch_data;
@@ -99,7 +92,7 @@ class data_store_image : public generic_data_store {
   /// in multi-image scenarios, the number of images in each sample
   unsigned int m_num_img_srcs;
 
-  std::vector<unsigned char> m_data;
+  std::unordered_map<int, std::vector<unsigned char>> m_data;
 };
 
 }  // namespace lbann
