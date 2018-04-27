@@ -12,6 +12,7 @@ def skeleton_models(cluster, executables, compiler_name):
     host = re.sub("\d+", "", hostname)
     opt = 'adagrad'
     defective_models = []
+    working_models = []
     tell_Dylan = []
     for subdir, dirs, files in os.walk(lbann_dir + '/model_zoo/models/'):
         if 'greedy' in subdir:
@@ -59,14 +60,18 @@ def skeleton_models(cluster, executables, compiler_name):
                         print("Error detected in " + model_path)
                         #defective_models.append(file_name)
                         defective_models.append(cmd)
-    if len(defective_models) != 0:
-        print("ERRORS: The following models exited with errors")
+                    else:
+                       working_models.append(cmd)
+    num_defective = len(defective_models)
+    if num_defective != 0:
+        print('Working models: %d. Defective models: %d', len(working_models), num_defective)
+        print('ERRORS: The following models exited with errors')
         for i in defective_models:
             print('ERRORS', i)
         print('ERRORS: tell Dylan: the following models have unknown data readers:')
         for i in tell_Dylan :
             print('ERRORS', i)
-    assert len(defective_models) == 0
+    assert num_defective == 0
 
 def test_unit_models_clang4(cluster, exes):
     skeleton_models(cluster, exes, 'clang4')
