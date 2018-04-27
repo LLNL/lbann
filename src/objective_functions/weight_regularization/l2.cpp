@@ -112,7 +112,7 @@ void l2_weight_regularization::start_evaluation() {
     for (int i = 0; i < num_weights; ++i) {
       const auto& w = m_weights[i];
       if (w->get_cudnn_manager() != nullptr) {
-        const auto& values_d = w->get_values_gpu()[0];
+        auto values_d = w->get_values_gpu()[0];
         m_sqsums[i] = cublas::dot(handle, w->get_size(), values_d, 1, values_d, 1);
       }
     }
