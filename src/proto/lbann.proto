@@ -714,7 +714,7 @@ message Layer {
    Gaussian gaussian = 312;
    Bernoulli bernoulli = 313;
    Uniform uniform = 314;
-   Crop crop = 315;
+   Crop crop = 318;
    CategoricalRandom categorical_random = 316;
    DiscreteRandom discrete_random = 317;
 
