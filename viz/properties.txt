@@ -47,6 +47,8 @@ transform    split arrow=red
 transform    sum
 transform    unpooling
 transform    hadamard
+transform    zero
+transform    transform
 transform    constant
 transform    reduction
 transform    evaluation

@@ -78,10 +78,9 @@ void data_store_multi_images::setup() {
 }
 
 void data_store_multi_images::get_file_sizes() {
-  std::vector<Triple> my_file_sizes(m_my_datastore_indices.size()*m_num_img_srcs);
-  if (m_master) std::cerr << "STARTING " << get_name() << "::get_file_sizes for " << my_file_sizes.size() << " files\n";
+  std::vector<int> global_indices(m_my_datastore_indices.size()*m_num_img_srcs);
+  std::vector<int> bytes(m_my_datastore_indices.size()*m_num_img_srcs);
 
-  size_t cur_offset = 0;
   std::unordered_map<std::string, size_t> names;
   size_t jj = 0;
   for (auto base_index : m_my_datastore_indices) {
@@ -96,23 +95,13 @@ void data_store_multi_images::get_file_sizes() {
         names[sample[k]] = file_len;
       }
 
-      my_file_sizes[jj].global_index = index;
-      my_file_sizes[jj].num_bytes = file_len;
-      my_file_sizes[jj].offset = cur_offset;
-      my_file_sizes[jj].rank = m_rank;
-      cur_offset += my_file_sizes[jj].num_bytes;
-
-      if (my_file_sizes[jj].num_bytes == 0) {
-        std::stringstream err;
-        err << __FILE__ << " " << __LINE__ << " :: "
-          << " file size is 0";
-        throw lbann_exception(err.str());
-      }
+      global_indices[jj] = index;
+      bytes[jj] = file_len;
       ++jj;
     }
   }
 
-  exchange_file_sizes(my_file_sizes, m_num_global_indices*m_num_img_srcs);
+  exchange_file_sizes(global_indices, bytes, m_num_global_indices*m_num_img_srcs);
 }
 
 void data_store_multi_images::read_files() {
@@ -121,31 +110,14 @@ void data_store_multi_images::read_files() {
     const std::vector<std::string> sample(get_sample(base_index));
     for (size_t k=0; k<sample.size(); k++) {
       size_t index = base_index * m_num_img_srcs + k;
-
-      if (m_offsets.find(index) == m_offsets.end()) {
-        err << __FILE__ << " " << __LINE__ << " :: " 
-            << " m_offsets.find(index) failed for index: " << index;
-        throw lbann_exception(err.str());
-      }
-      size_t offset = m_offsets[index];
-
       if (m_file_sizes.find(index) == m_file_sizes.end()) {
         err << __FILE__ << " " << __LINE__ << " :: " 
             << " m_file_sizes.find(index) failed for index: " << index;
         throw lbann_exception(err.str());
       }
       size_t file_len = m_file_sizes[index];
-
-      if (offset + file_len > m_data.size()) {
-        err << __FILE__ << " " << __LINE__ << " :: " 
-          << " of " << m_my_datastore_indices.size() << " offset: " << offset
-          << " file_len: " << file_len << " offset+file_len: "
-          << offset+file_len << " m_data.size(): " << m_data.size()
-          << "\noffset+file_len must be <= m_data.size()";
-        throw lbann_exception(err.str());
-      }  
-
-      load_file(m_dir, sample[k], m_data.data()+offset, file_len);
+      m_data[index].resize(file_len);
+      load_file(m_dir, sample[k], m_data[index].data(), file_len);
     }
   }
 }

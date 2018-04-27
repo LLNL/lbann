@@ -272,6 +272,18 @@ class lbann_comm {
   void world_broadcast(int root, std::vector<T> &data) {
     broadcast(root, data, get_world_comm());
   }
+  /**
+   * Broadcast T* to world;
+   * all processors must have correctly allocated memmory for "data"
+   */
+  template <typename T> 
+  void world_broadcast(int root, size_t size, T *data) {
+    broadcast(root, data, size, get_world_comm());
+  }
+  /**
+   * Broadcast vector<> within model;
+   * vector<> for non-root processes will be resized as needed.
+   */
   /// Broadcast vector<> across models.
   template <typename T>
   void intermodel_broadcast(int root, std::vector<T> &data) {
@@ -292,6 +304,39 @@ class lbann_comm {
     } else {
       bytes_received += bytes;
     }
+  }
+
+  /** 
+   * Allgatherv over an arbitrary communicator;
+   * all vectors must be correctly sized prior to entry.
+   */
+  template <typename T>
+  void all_gather(std::vector<T> &src, std::vector<T> &rcs, std::vector<int> &rcv_counts, std::vector<int> &rcv_disp, El::mpi::Comm c) {
+    El::mpi::AllGather<T>(src.data(), src.size(), rcs.data(), rcv_counts.data(), rcv_disp.data(), c);
+  }
+  /** 
+   * Allgatherv over a model communicator;
+   * all vectors must be correctly sized prior to entry.
+   */
+  template <typename T>
+  void model_all_gather(std::vector<T> &src, std::vector<T> &rcs, std::vector<int> &rcv_counts, std::vector<int> &rcv_disp, const El::mpi::Comm c) {
+    all_gather(src, rcs, rcv_counts, rcv_disp, get_model_comm());
+  }
+  /** 
+   * Allgather for a single element over an arbitrary communicator;
+   * std::vector<T> &data must be correctly sized prior to entry.
+   */
+  template <typename T>
+  void all_gather(T &src, std::vector<T> &data, const El::mpi::Comm c) {
+    El::mpi::AllGather(&src, 1, data.data(), 1, c);
+  }
+  /** 
+   * Allgather for a single element over the model communicator;
+   * std::vector<T> &data must be correctly sized prior to entry.
+   */
+  template <typename T>
+  void model_all_gather(T &src, std::vector<T> &data) {
+    all_gather(src, data, get_model_comm());
   }
 
   /** Within-model scalar gather (for non-root processes). */
@@ -541,6 +586,12 @@ class lbann_comm {
 #endif  // LBANN_HAS_ALUMINUM
   }
 
+  /** Wait for a all non-blocking requests to complete. */
+  template <typename T>
+  void wait_all(std::vector<El::mpi::Request<T>>& req) {
+    El::mpi::WaitAll(req.size(), req.data());
+  }
+
   /** Wait for a non-blocking request to complete. */
   template <typename T>
   void wait(El::mpi::Request<T>& req) {
@@ -585,6 +636,12 @@ class lbann_comm {
                El::mpi::Request<T>& req) {
     bytes_sent += sizeof(T) * count;
     El::mpi::ISend(data, count, get_world_rank(model, rank), get_world_comm(), req);
+  }
+  template <typename T>
+  void nb_tagged_send(const T *data, int count, int rank, int tag,
+               El::mpi::Request<T>& req, const El::mpi::Comm c) {
+    bytes_sent += sizeof(T) * count;
+    El::mpi::TaggedISend(data, count, rank, tag, c, req);
   }
   template <typename T> void nb_send(const T *data, int count, int model,
                                      El::mpi::Request<T>& req) {
@@ -632,6 +689,13 @@ class lbann_comm {
                req);
     bytes_received += sizeof(T) * count;
   }
+  template <typename T> void nb_tagged_recv(
+               T *data, int count, int rank, int tag,
+               El::mpi::Request<T>& req, const El::mpi::Comm c) {
+    El::mpi::TaggedIRecv(data, count, rank, tag, c, req);
+    bytes_received += sizeof(T) * count;
+  }
+
   template <typename T> void nb_recv(T *data, int count, int model,
                                      El::mpi::Request<T>& req) {
     nb_recv(data, count, model, rank_in_model, req);

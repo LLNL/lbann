@@ -145,32 +145,18 @@ size_t generic_data_store::get_file_size(std::string dir, std::string fn) {
   return st.st_size;   
 }
 
-void generic_data_store::set_shuffled_indices(const std::vector<int> *indices) {
+void generic_data_store::set_shuffled_indices(const std::vector<int> *indices, bool exchange_indices) {
   m_shuffled_indices = indices;
   ++m_epoch;
-  if (m_epoch > 1) {
+  if (m_epoch > 1 && exchange_indices) {
     exchange_data();
   }
-  /*
-  if (m_rank == 0) {
-    bool is_shuffled = false;
-    for (size_t j=1; j<indices->size(); j++) {
-      if ((*indices)[j-1]+1 != (*indices)[j]) {
-        is_shuffled = true;
-        break;
-      }
-    }
-    //std::cerr << "IS_SHUFFLED: " << is_shuffled << "\n";
-  }
-  */
 }
 
 void generic_data_store::exchange_mb_counts() {
   int my_num_indices = m_my_minibatch_indices_v.size();
   m_mb_counts.resize(m_np);
-  std::vector<int> num(m_np, 1); //num elements to be received from P_j
-  MPI_Allgather(&my_num_indices, 1, MPI_INT,
-                 m_mb_counts.data(), 1, MPI_INT, m_mpi_comm);
+  m_comm->model_all_gather<int>(my_num_indices, m_mb_counts);
 }
 
 void generic_data_store::exchange_mb_indices() {
@@ -188,10 +174,7 @@ void generic_data_store::exchange_mb_indices() {
   std::vector<int> all_indices(n);
 
   //receive the indices
-  MPI_Allgatherv(
-    m_my_minibatch_indices_v.data(), m_my_minibatch_indices_v.size(), MPI_INT, 
-    all_indices.data(), m_mb_counts.data(), displ.data(),
-    MPI_INT, m_mpi_comm);
+  m_comm->all_gather<int>(m_my_minibatch_indices_v, all_indices, m_mb_counts, displ, m_comm->get_world_comm());
 
   //fill in the final data structure
   m_all_minibatch_indices.resize(m_np);

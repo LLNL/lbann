@@ -80,12 +80,12 @@ void data_store_csv::setup() {
       throw lbann_exception(err.str());
     }
 
+    const El::mpi::Comm world_comm = m_comm->get_world_comm();
     if (m_master) {
-      std::cerr << "calling: reader->fetch_line_label_response(" << (*m_shuffled_indices)[0] << ");\n";
       std::vector<DataType> v = reader->fetch_line_label_response(0);
       m_vector_size = v.size();
     }
-    MPI_Bcast(&m_vector_size, 1, MPI_INT, 0, m_mpi_comm);
+    m_comm->broadcast<int>(0, m_vector_size, world_comm);
 
     if (is_subsidiary_store()) {
       return;
@@ -113,14 +113,16 @@ void data_store_csv::setup() {
 }
 
 void data_store_csv::get_data_buf_DataType(int data_id, std::vector<DataType> *&buf) {
+static int n = 0;
   if (m_my_minibatch_data.find(data_id) == m_my_minibatch_data.end()) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
         << "failed to find data_id: " << data_id << " in m_my_minibatch_data\n"
         << "m_my_minibatch_data.size(): " << m_my_minibatch_data.size() << "\n"
-        << "role: " << m_reader->get_role() ;
+        << "role: " << m_reader->get_role() << "  n: " << n;
     throw lbann_exception(err.str());
   }
+  n += 1;
   buf = &m_my_minibatch_data[data_id];
 }
 
@@ -151,60 +153,54 @@ void data_store_csv::exchange_data() {
   //get indices I need for the next epoch, and start receives
   std::unordered_set<int> indices;
   get_indices(indices, m_rank);
-  std::vector<MPI_Request> recv_req(indices.size());
-  std::vector<MPI_Status> recv_status(indices.size());
+  std::vector<El::mpi::Request<DataType>> recv_req(indices.size());
+
   m_my_minibatch_data.clear();
   size_t jj = 0;
-  for (auto t : indices) {
-    m_my_minibatch_data[t].resize(m_vector_size);
-    int owner = get_index_owner(t);
+  for (auto data_id : indices) {
+    m_my_minibatch_data[data_id].resize(m_vector_size);
+    int owner = get_index_owner(data_id);
     if (owner >= m_np or owner < 0) {
       err << __FILE__ << " " << __LINE__ << " :: "
-          << " ERROR: bad rank for owner in MPI_Irecv; owner: " << owner << " index: " << t << " jj: " << jj+1 << " of " << indices.size();
+          << " ERROR: bad rank for owner in nb_recv; owner: " << owner << " data_id: " << data_id << " jj: " << jj+1 << " of " << indices.size();
       throw lbann_exception(err.str());
     }
-    MPI_Irecv(
-      m_my_minibatch_data[t].data(), m_vector_size*sizeof(DataType),  MPI_BYTE,
-      owner, t, m_mpi_comm, &(recv_req[jj++]));
+    m_comm->nb_tagged_recv<DataType>(m_my_minibatch_data[data_id].data(), m_vector_size, owner, data_id, recv_req[jj++], m_comm->get_model_comm());
   }
 
   //start sends to all processors
-  std::vector<std::vector<MPI_Request>> send_req(m_np);
-  std::vector<std::vector<MPI_Status>> send_status(m_np);
+  std::vector<std::vector<El::mpi::Request<DataType>>> send_req(m_np);
   for (int p=0; p<m_np; p++) {
     get_my_indices(indices, p);
     send_req[p].resize(indices.size());
-    send_status[p].resize(indices.size());
     jj = 0;
-    for (auto t : indices) {
-      if (m_data.find(t) == m_data.end()) {
+    for (auto data_id : indices) {
+      if (m_data.find(data_id) == m_data.end()) {
         err << __FILE__ << " " << __LINE__ << " :: "
-            << " m_data.find(" << t << ") failed.";
+            << " m_data.find(" << data_id << ") failed.";
         throw lbann_exception(err.str());
       }
-      if (m_data[t].size() != (size_t)m_vector_size) {
+      if (m_data[data_id].size() != (size_t)m_vector_size) {
         err << __FILE__ << " " << __LINE__ << " :: "
-            << " m_data[" << t << "].size = " << m_data[t].size()
+            << " m_data[" << data_id << "].size = " << m_data[data_id].size()
             << " should be: " << m_vector_size << "; " << jj+1
             << " of " << indices.size()
             << " m_reader->get_role: " << m_reader->get_role();
         throw lbann_exception(err.str());
       }
-      MPI_Isend(
-        m_data[t].data(), m_vector_size*sizeof(DataType),  MPI_BYTE,
-        p, t, m_mpi_comm, &(send_req[p][jj++]));
+      m_comm->nb_tagged_send<DataType>(m_data[data_id].data(), m_vector_size, p, data_id, send_req[p][jj++], m_comm->get_model_comm());
     }
   }
 
   //wait for sends to finish
   if (m_master) {
     for (size_t i=0; i<send_req.size(); i++) {
-      MPI_Waitall(send_req[i].size(), send_req[i].data(), send_status[i].data());
+      m_comm->wait_all(send_req[i]);
     }
   }
 
   //wait for recvs to finish
-  MPI_Waitall(recv_req.size(), recv_req.data(), recv_status.data());
+  m_comm->wait_all(recv_req);
 
   if (m_master) {
     std::cerr << "role: " << m_reader->get_role() << " data_store_csv::exchange_data() time: " << get_time() - tm1 << std::endl;
