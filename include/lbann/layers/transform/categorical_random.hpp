@@ -59,6 +59,7 @@ class categorical_random_layer : public transform_layer {
     const auto& input = get_prev_activations();
     const auto& local_input = input.LockedMatrix();
     auto& local_output = get_local_activations();
+    const auto& width = input.Width();
     const auto& local_height = local_input.Height();
     const auto& local_width = local_input.Width();
 
@@ -67,7 +68,7 @@ class categorical_random_layer : public transform_layer {
     El::Zero(local_output);
     StarMat rand_mat(input.Grid(), input.Root());
     if (mode == execution_mode::training) {
-      uniform_fill(rand_mat, 1, local_width, DataType(0.5), DataType(0.5));
+      uniform_fill(rand_mat, 1, width, DataType(0.5), DataType(0.5));
     }
 
     // Process each mini-batch sample

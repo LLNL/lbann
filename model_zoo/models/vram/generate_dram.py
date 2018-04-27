@@ -21,10 +21,11 @@ def str_list(l):
         raise TypeError('str_list expects a list or a string')
 
 # Construct a new layer and add it to the model
-def new_layer(model, name, parents, layer_type):
+def new_layer(model, name, parents, layer_type, device = ''):
     l = model.layer.add()
     l.name = name
     l.parents = str_list(parents)
+    l.device_allocation = device
     exec('l.' + layer_type + '.SetInParent()')
     return l
 
@@ -129,27 +130,28 @@ def configure_model(model):
     l.reshape.dims = str_list(label_dims)
 
     # Useful constants
-    l = new_layer(model, 'zero1', '', 'constant')
+    l = new_layer(model, 'zero1', '', 'constant', 'cpu')
     l.constant.value = 0.0
     l.constant.num_neurons = '1'
-    l = new_layer(model, 'zero3', '', 'constant')
+    l = new_layer(model, 'zero3', '', 'constant', 'cpu')
     l.constant.value = 0.0
     l.constant.num_neurons = '3'
-    l = new_layer(model, 'one1', '', 'constant')
+    l = new_layer(model, 'one1', '', 'constant', 'cpu')
     l.constant.value = 1.0
     l.constant.num_neurons = '1'
 
     # Glimpse position
     num_locs = 4
     locs = map(lambda i: 2.0 * i / num_locs - 1.0, range(num_locs))
-    l = new_layer(model, 'scaled_locy', 'locy one1', 'sum')
+    l = new_layer(model, 'scaled_locy', 'locy one1', 'sum', 'cpu')
     l.sum.scaling_factors = '0.5 0.5'
-    l = new_layer(model, 'scaled_locx', 'locx one1', 'sum')
+    l = new_layer(model, 'scaled_locx', 'locx one1', 'sum', 'cpu')
     l.sum.scaling_factors = '0.5 0.5'
     l = new_layer(model,
                   'scaled_loc',
                   'zero1 scaled_locy scaled_locx',
-                  'concatenation')
+                  'concatenation',
+                  'cpu')
 
     # Extract glimpse data
     crop1_dims = [1, 6, 6]

@@ -90,17 +90,19 @@ class discrete_random_layer : public transform_layer {
   void fp_compute() override {
 
     // Input and output matrices
-    const auto& local_input = get_local_prev_activations();
+    const auto& input = get_prev_activations();
+    const auto& local_input = input.LockedMatrix();
     auto& output = get_activations();
     auto& local_output = output.Matrix();
     const int num_values = m_values.size();
     const auto& num_outputs = local_output.Height();
-    const auto& local_width = local_input.Width();
+    const auto& width = input.Width();
+    const auto& local_width = input.LocalWidth();
 
     // Initialize random numbers
     const auto& mode = this->m_model->get_execution_mode();
     if (mode == execution_mode::training) {
-      uniform_fill(output, 1, local_width, DataType(0.5), DataType(0.5));
+      uniform_fill(output, 1, width, DataType(0.5), DataType(0.5));
     }
 
     // Process each mini-batch sample

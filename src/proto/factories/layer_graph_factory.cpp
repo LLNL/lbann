@@ -191,6 +191,9 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
     if (layout_str == "data_parallel")  { layout = data_layout::DATA_PARALLEL; }
     if (layout_str == "model_parallel") { layout = data_layout::MODEL_PARALLEL; }
     const auto& num_parallel_readers = proto_model.num_parallel_readers();
+    const auto& device_allocation_str = proto_layer.device_allocation();
+    auto layer_cudnn = cudnn;
+    if (device_allocation_str == "cpu") { layer_cudnn = nullptr; }
 
     // Construct layer
     Layer* l = nullptr;
@@ -200,7 +203,7 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
             comm,
             data_readers,
             num_parallel_readers,
-            cudnn,
+            layer_cudnn,
             proto_layer
           );
       break;
@@ -209,7 +212,7 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
             comm,
             data_readers,
             num_parallel_readers,
-            cudnn,
+            layer_cudnn,
             proto_layer
           );
       break;
