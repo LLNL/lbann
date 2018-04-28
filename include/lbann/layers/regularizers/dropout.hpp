@@ -128,11 +128,9 @@ class dropout : public regularizer_layer {
     // Allocate work spaces
     size_t size;
     CHECK_CUDNN(cudnnDropoutGetStatesSize(this->m_cudnn->get_handle(0), &size));
-    size = (size + sizeof(DataType) - 1) / sizeof(DataType);
-    El::Zeros(m_states, size, 1);
+    El::Zeros(m_states, (size + sizeof(DataType) - 1) / sizeof(DataType), 1);
     CHECK_CUDNN(cudnnDropoutGetReserveSpaceSize(this->m_prev_activations_cudnn_desc, &size));
-    size = (size + sizeof(DataType) - 1) / sizeof(DataType);
-    El::Zeros(m_reserve_space, size, 1);
+    El::Zeros(m_reserve_space, (size + sizeof(DataType) - 1) / sizeof(DataType), 1);
 
     // Initialize cuDNN descriptors
     setup_dropout_cudnn_desc();
@@ -159,21 +157,6 @@ class dropout : public regularizer_layer {
   }
 
  private:
-
-  void fp_setup_data(int mini_batch_size) override {
-  #ifdef LBANN_HAS_CUDNN
-    if (using_gpus()) {
-      // Make sure GPU output is not a view during training
-      const auto& mode = this->m_model->get_execution_mode();
-      auto& output = get_activations();
-      if (mode == execution_mode::training && output.Viewing()) {
-        const auto& input = get_prev_activations();
-        El::Zeros(output, input.LocalHeight(), input.LocalWidth());
-      }
-    }
-  #endif // LBANN_HAS_CUDNN
-    regularizer_layer::fp_setup_data(mini_batch_size);
-  }
 
   void fp_compute_cpu() {
 
@@ -238,6 +221,13 @@ class dropout : public regularizer_layer {
       return;
     }
 
+    // Resize GPU work space if needed
+    size_t size;
+    CHECK_CUDNN(cudnnDropoutGetReserveSpaceSize(this->m_prev_activations_cudnn_desc, &size));
+    if (size > m_reserve_space.Height() * sizeof(DataType)) {
+      m_reserve_space.Resize((size + sizeof(DataType) - 1) / sizeof(DataType), 1);
+    }
+
     // Apply dropout on the GPU
     CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu()));
     CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(),
@@ -287,7 +277,7 @@ class dropout : public regularizer_layer {
 
   #ifdef LBANN_HAS_CUDNN
   /** Setup cuDNN dropout descriptors.
-   *  It is assumed that m_states_d has already been initialized.
+   *  It is assumed that m_states has already been initialized.
    */
   void setup_dropout_cudnn_desc() {
     CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu()));
