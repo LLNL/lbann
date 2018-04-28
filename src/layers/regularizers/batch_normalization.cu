@@ -39,7 +39,11 @@
       std::cerr << "CUDA error: " << cudaGetErrorString(status) << "\n"; \
       std::cerr << "Error at " << __FILE__ << ":" << __LINE__ << "\n";  \
       cudaDeviceReset();                                                \
-      throw lbann::lbann_exception("CUDA error");                       \
+      std::stringstream err;                                            \
+        err << __FILE__ << " " << __LINE__ << ":: "                     \
+            << "CUDA error; status: " << status << " errorString: "     \
+            << cudaGetErrorString(err)                                  \
+        throw lbann::lbann_exception(err.str());                        \
     }                                                                   \
   } while (0)
 #ifdef LBANN_DEBUG
