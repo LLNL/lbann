@@ -1030,8 +1030,7 @@ void cudnn_manager::check_error() {
             cudaDeviceReset();
             std::stringstream err;
             err << __FILE__ << " " << __LINE__ << ":: "
-                << "CUDA error; status: " << status
-                << " error string: " << cudaGetErrorString(status);
+                << "CUDA error; err string: " << cudaGetErrorString(status);
             throw lbann::lbann_exception(err.str());
         }
     }

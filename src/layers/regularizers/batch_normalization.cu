@@ -36,12 +36,12 @@
   do {                                                                  \
     const cudaError_t status = cuda_call;                               \
     if (status != cudaSuccess) {                                        \
+      cudaDeviceReset();                                                \
       std::cerr << "CUDA error: " << cudaGetErrorString(status) << "\n"; \
       std::cerr << "Error at " << __FILE__ << ":" << __LINE__ << "\n";  \
-      cudaDeviceReset();                                                \
       std::stringstream err;                                            \
         err << __FILE__ << " " << __LINE__ << ":: "                     \
-            << "CUDA error; status: " << status << " errorString: "     \
+            << "CUDA error;  err string: "                              \
             << cudaGetErrorString(err)                                  \
         throw lbann::lbann_exception(err.str());                        \
     }                                                                   \
