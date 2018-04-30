@@ -157,7 +157,7 @@ void data_store_pilot2_molecular::build_nabor_map() {
   if (m_owner) {
     sz = m_pilot2_reader->get_neighbors_data_size();
   }
-  m_comm->broadcast<size_t>(0, sz, m_comm->get_world_comm());
+  m_comm->world_broadcast<size_t>(0, sz);
 
   double *neighbors_8;
   std::vector<double> work;
@@ -167,7 +167,7 @@ void data_store_pilot2_molecular::build_nabor_map() {
     work.resize(sz);
     neighbors_8 = work.data();
   }
-  m_comm->world_broadcast<double>(0, sz, neighbors_8);
+  m_comm->world_broadcast<double>(0, neighbors_8, sz);
 
   //fill in the nabors map
   for (auto data_id : (*m_shuffled_indices)) {

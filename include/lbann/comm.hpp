@@ -273,14 +273,6 @@ class lbann_comm {
     broadcast(root, data, get_world_comm());
   }
   /**
-   * Broadcast T* to world;
-   * all processors must have correctly allocated memmory for "data"
-   */
-  template <typename T> 
-  void world_broadcast(int root, size_t size, T *data) {
-    broadcast(root, data, size, get_world_comm());
-  }
-  /**
    * Broadcast vector<> within model;
    * vector<> for non-root processes will be resized as needed.
    */
