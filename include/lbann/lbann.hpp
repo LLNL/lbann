@@ -184,6 +184,7 @@
 #include "lbann/objective_functions/layer_term.hpp"
 
 /// Metrics
+#include "lbann/metrics/layer_metric.hpp"
 #include "lbann/metrics/categorical_accuracy.hpp"
 #include "lbann/metrics/top_k_categorical_accuracy.hpp"
 #include "lbann/metrics/mean_squared_error.hpp"
