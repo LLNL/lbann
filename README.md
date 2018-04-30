@@ -56,24 +56,9 @@ By default, MVAPICH2 builds for PSM.  For an ibverbs build of MVAPICH2, use the 
 
     ../scripts/spack_receipes/build_lbann.sh -c gcc@7.1.0 -b openblas -m 'mvapich2 fabrics=mrail'
 
-## Running LBANN with Singularity
+## LBANN Container Builds
 
-[Singularity](http://singularity.lbl.gov/)
-
-Users can run LBANN inside a singularity container by grabbing the lbann.def found in the singularity directory, and running the following commands. 
-```
-singularity create -s 8000 lbann.img
-sudo singularity bootstrap lbann.img lbann.def
-```
-*Note: Bootstrapping the image requires root access.*
-
-This will create a container called lbann.img which can be used to invoke lbann on any system with singularity and openmpi installed.
-To run LBANN use mpirun and singularity's execute command:
-```
-salloc -N2
-mpirun -np 4 singularity exec -B /p:/p lbann.img /lbann/spack_builds/singularity_optimizied_test/model_zoo/lbann  mpirun -np 4 singularity exec -B /p:/p lbann.img /lbann/spack_builds/singularity_optimizied_test/model_zoo/lbann  --model=/lbann/model_zoo/tests/model_mnist_distributed_io.prototext --reader=/lbann/model_zoo/data_readers/data_reader_mnist.prototext --optimizer=/lbann/model_zoo/optimizers/opt_adagrad.prototext 
-```
-Note: User must include the -B singularity command, to bind any necessary files to the container. This includes user generated prototext files, and any datasets needed. Alternatively, system admins are capable of allowing a singularity container to utilize the host's filesystem. This is done by changing the MOUNT HOSTFS in the singularity config file.
+We provide basic container defintion files, and instructions for their use, in the containers subdirectory. We currently support Docker and Singularity.
 
 ## Cmake (Non LC or OSX Systems/Script alternative)
    1. Ensure the following dependencies are installed
