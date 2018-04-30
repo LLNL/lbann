@@ -299,7 +299,8 @@ void lbann::persist::open_restart(const char *dir) {
   m_validate_fd = lbann::openread(m_validate_filename);
   if (m_validate_fd < 0) {
     // restart failed, throw exception
-    throw lbann_exception(std::string("Failed to read file: ") + m_validate_filename); 
+      std::cout << "Failed to read " << m_validate_filename << " Not an error if validation percent = 0" << std::endl;
+    //throw lbann_exception(std::string("Failed to read file: ") + m_validate_filename); 
   }
 }
 

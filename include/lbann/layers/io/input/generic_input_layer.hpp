@@ -696,8 +696,10 @@ class generic_input_layer : public io_layer {
       p.read_uint64(persist_type::train, "reader_train_total",        &header.train_total);
       p.read_uint64(persist_type::train, "reader_test_processed",     &header.test_proc);
       p.read_uint64(persist_type::train, "reader_test_total",         &header.test_total);
-      p.read_uint64(persist_type::validate, "reader_validate_processed", &header.validate_proc);
-      p.read_uint64(persist_type::validate, "reader_validate_total",     &header.validate_total);
+      if(m_data_readers[execution_mode::validation] != nullptr){
+        p.read_uint64(persist_type::validate, "reader_validate_processed", &header.validate_proc);
+        p.read_uint64(persist_type::validate, "reader_validate_total",     &header.validate_total);
+      }
     }
     
     it = this->m_data_readers.find(execution_mode::validation);
@@ -712,8 +714,10 @@ class generic_input_layer : public io_layer {
     m_training_dataset.total_samples()           = (long) header.train_total;
     m_testing_dataset.num_samples_processed()    = (long) header.test_proc;
     m_testing_dataset.total_samples()            = (long) header.test_total;
-    m_validation_dataset.num_samples_processed() = (long) header.validate_proc;
-    m_validation_dataset.total_samples()         = (long) header.validate_total;
+    if(m_data_readers[execution_mode::validation] != nullptr){
+      m_validation_dataset.num_samples_processed() = (long) header.validate_proc;
+      m_validation_dataset.total_samples()         = (long) header.validate_total;
+    }
     return true;
   }
 
@@ -772,9 +776,10 @@ class generic_input_layer : public io_layer {
     p.read_uint64(persist_type::train, "reader_train_total",        &header.train_total);
     p.read_uint64(persist_type::train, "reader_test_processed",     &header.test_proc);
     p.read_uint64(persist_type::train, "reader_test_total",         &header.test_total);
-    p.read_uint64(persist_type::validate, "reader_validate_processed", &header.validate_proc);
-    p.read_uint64(persist_type::validate, "reader_validate_total",     &header.validate_total);
-      
+    if(m_data_readers[execution_mode::validation] != nullptr){
+      p.read_uint64(persist_type::validate, "reader_validate_processed", &header.validate_proc);
+      p.read_uint64(persist_type::validate, "reader_validate_total",     &header.validate_total);
+    }
     it = this->m_data_readers.find(execution_mode::validation);
     if ((it != this->m_data_readers.end()) && it->second) {
       (it->second)->load_from_checkpoint_distributed(p, "data_reader_validation");
@@ -785,8 +790,10 @@ class generic_input_layer : public io_layer {
     m_training_dataset.total_samples()           = (long) header.train_total;
     m_testing_dataset.num_samples_processed()    = (long) header.test_proc;
     m_testing_dataset.total_samples()            = (long) header.test_total;
-    m_validation_dataset.num_samples_processed() = (long) header.validate_proc;
-    m_validation_dataset.total_samples()         = (long) header.validate_total;
+    if(m_data_readers[execution_mode::validation] != nullptr){
+      m_validation_dataset.num_samples_processed() = (long) header.validate_proc;
+      m_validation_dataset.total_samples()         = (long) header.validate_total;
+    }
     return true;
   }
 
