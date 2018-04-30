@@ -62,7 +62,7 @@ void data_store_image::setup() {
     double tma = get_time();
     get_file_sizes();
     size_t num_bytes = get_global_num_file_bytes();
-    if (m_master) std::cerr << "data_store_image - get_file_sizes time: " << get_time() - tma << " num files: " << m_file_sizes.size() << " data set size: " << ((double)num_bytes/1000000) << " MB\n";
+    if (m_master) std::cerr << "data_store_image - get_file_sizes time: " << get_time() - tma << " global num files: " << m_file_sizes.size() << " data set size: " << ((double)num_bytes/1000000) << " MB\n";
 
     if (m_master) std::cerr << "data_store_image - calling report_memory_constrains\n";
     report_memory_constraints();
