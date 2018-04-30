@@ -244,6 +244,7 @@ void csv_reader::load() {
   //bcast the index vector
   m_comm->world_broadcast<long long>(0, index);
   m_num_samples = index.size() - 1;
+  if (m_master) std::cerr << "num samples: " << m_num_samples << "\n";
 
   m_index.reserve(index.size());
   for (auto t : index) {

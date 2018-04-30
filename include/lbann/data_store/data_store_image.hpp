@@ -92,7 +92,22 @@ class data_store_image : public generic_data_store {
   /// in multi-image scenarios, the number of images in each sample
   unsigned int m_num_img_srcs;
 
+  /// the actual data store!
   std::unordered_map<int, std::vector<unsigned char>> m_data;
+
+  /// returns memory required to hold p's files in memory
+  size_t get_my_num_file_bytes();
+
+  /// returns number of bytes in the data set
+  size_t get_global_num_file_bytes();
+
+  /// parses /proc/meminfo to determine available memory; returned 
+  /// value is memory in kB
+  size_t get_available_memory();
+
+  /// attempts to determine if there is sufficient RAM for
+  /// in-memory data store; may call MPI_Abort
+  void report_memory_constraints();
 };
 
 }  // namespace lbann
