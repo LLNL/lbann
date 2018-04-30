@@ -316,6 +316,7 @@ message Metric {
   BooleanAccuracy boolean_accuracy = 8;
   BooleanFalsePositives boolean_false_positives = 9;
   BooleanFalseNegatives boolean_false_negatives = 10;
+  LayerMetric layer_metric = 11;
 }
 
 message CategoricalAccuracy {
@@ -341,6 +342,11 @@ message BooleanFalsePositives {
 }
 
 message BooleanFalseNegatives {
+}
+
+message LayerMetric {
+  string unit = 1;
+  string layer = 2;
 }
 
 //========================================================================
