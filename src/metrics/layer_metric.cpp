@@ -66,7 +66,7 @@ EvalType layer_metric::evaluate(execution_mode mode,
 
   const auto& start = get_time();
   auto&& eval = dynamic_cast<evaluation_layer<data_layout::DATA_PARALLEL>*>(m_evaluation_layer);
-  EvalType total_value = eval->get_value(true);
+  EvalType total_value = eval->get_value(true) * mini_batch_size;
   if (m_unit == "%") { total_value *= 100; }
   get_evaluate_time() += get_time() - start;
 
