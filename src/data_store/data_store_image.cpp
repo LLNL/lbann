@@ -263,7 +263,7 @@ size_t data_store_image::get_my_num_file_bytes() {
             << " m_file_sizes.size(): " << m_file_sizes.size();
         throw lbann_exception(err.str());
       }  
-      count += m_file_sizes[idx];
+      count += m_file_sizes[index];
     }
   }
   return count;
