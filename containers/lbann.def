@@ -1,0 +1,66 @@
+Bootstrap: debootstrap
+MirrorURL: http://us.archive.ubuntu.com/ubuntu/
+OSVersion: xenial
+Include: build-essential gcc g++ gfortran autotools-dev automake wget git curl python vim unzip
+
+%post -c /bin/bash
+        echo "Running post section"
+        cd /
+        umask 022
+        apt-get -y install software-properties-common
+        add-apt-repository main
+        add-apt-repository universe
+        apt-get -y update
+        apt-get -y install dkms infiniband-diags libibverbs* ibacm librdmacm* \
+        libmlx4* libmlx5* mstflint libibcm.* libibmad.* libibumad* opensm srptools \
+        libmlx4-dev librdmacm-dev rdmacm-utils ibverbs-utils perftest vlan ibutils \
+        libibverbs-dev libmlx4-1 libnl-3-200 libnl-route-3-200 libnl-route-3-dev \
+        libnl-utils
+        # path to mlx IB libraries in Ubuntu
+        echo "export LD_LIBRARY_PATH=/usr/lib/libibverbs:$LD_LIBRARY_PATH" >> /environment
+        apt-get -y install zlib1g-dev
+
+        # Install Spack
+        export GIT_SSL_NO_VERIFY=true
+        git clone https://github.com/spack/spack.git
+        cd spack
+        cd ..
+        export SPACK_ROOT=/spack
+        . $SPACK_ROOT/share/spack/setup-env.sh
+
+        # install gcc 4.9.3
+        spack -k install --dirty --no-checksum gcc@4.9.3
+        GCC="$(spack location --install-dir gcc@4.9.3)"
+        spack compiler add $GCC
+        cd /
+        wget --no-check-certificate https://www.open-mpi.org/software/ompi/v2.0/downloads/openmpi-2.0.2.tar.gz
+        gzip -d openmpi-2.0.2.tar
+        tar -xvf openmpi-2.0.2.tar
+        cd openmpi-2.0.2
+        ./configure #--prefix=/usr/local CC=$GCC/bin/gcc CXX=$GCC/bin/g++ F77=$GCC/bin/gfortran FC=$GCC/bin/gfortran
+        make all install
+        export MPI_HOME=/usr/local
+        export MPI_C_COMPILER=${MPI_DIR}/bin/mpicc
+        export MPI_CXX_COMPILER=${MPI_DIR}/bin/mpicxx
+        export MPI_Fortran_COMPILER=${MPI_DIR}/bin/mpifort
+        OPENMPI="
+packages:
+  openmpi:
+    paths:
+      openmpi@2.0.2: /usr/local
+    buildable: False
+"
+        echo "${OPENMPI}" > $SPACK_ROOT/etc/spack/packages.yaml
+        # install LBANN + openmpi
+        export FORCE_UNSAFE_CONFIGURE=1
+        cd /
+        git clone https://github.com/LLNL/lbann.git
+        cd lbann
+        mkdir spack_builds
+        cd spack_builds
+        spack -k setup lbann@local %gcc@4.9.3 build_type=Release  cflags="-O3 -g -march=ivybridge -mtune=ivybridge" cxxflags="-O3 -g -march=ivybridge -mtune=ivybridge" fflags="-O3 -g -march=ivybridge -mtune=ivybridge" ^elemental@hydrogen-develop ^openmpi@2.0.2 ^cmake@3.9.0
+        mkdir singularity
+        cd singularity
+        ../spconfig.py ../..
+        make -j3 all
+        spack uninstall -y lbann
