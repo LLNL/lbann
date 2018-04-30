@@ -33,6 +33,7 @@
 #include "lbann/layers/transform/constant.hpp"
 #include "lbann/layers/transform/dummy.hpp"
 #include "lbann/objective_functions/layer_term.hpp"
+#include "lbann/metrics/layer_metric.hpp"
 
 namespace lbann {
 
@@ -107,40 +108,79 @@ void unroll_input_layer(int unroll_depth,
 }
 
 /** Duplicate layer network to achieve desired recurrence depth.
- *  The layers within each recurrence step have the same topology as
- *  the original network.
+ *  Layers, objective function layer terms, and layer metrics are
+ *  duplicated. The layers within each recurrence step have the same
+ *  topology as the original network.
  */
-void add_unrolled_layers(int unroll_depth,
-                         std::vector<Layer*>& layers,
-                         std::unordered_map<const Layer*,Layer*>& prev_step_layer,
-                         std::unordered_map<const Layer*,Layer*>& next_step_layer) {
+void unroll_network(int unroll_depth,
+                    std::vector<Layer*>& layers,
+                    objective_function& obj,
+                    std::vector<metric*>& metrics,
+                    std::unordered_map<const Layer*,Layer*>& prev_step_layer,
+                    std::unordered_map<const Layer*,Layer*>& next_step_layer) {
+
+  // Get layers, objective function terms, and metrics to unroll
+  std::vector<Layer*> previous_layers(layers.begin() + 2, layers.end());
+  std::vector<layer_term*> previous_layer_terms;
+  std::vector<layer_metric*> previous_layer_metrics;
+  for (auto&& t : obj.get_terms()) {
+    auto&& term = dynamic_cast<layer_term*>(t);
+    if (term != nullptr) { previous_layer_terms.push_back(term); }
+  }
+  for (auto&& m : metrics) {
+    auto&& met = dynamic_cast<layer_metric*>(m);
+    if (met != nullptr) { previous_layer_metrics.push_back(met); }
+  }
 
   // Unroll network to desired depth
-  std::vector<Layer*> previous_step(layers.begin() + 2, layers.end());
-  const int num_step_layers = previous_step.size();
+  const int num_step_layers = previous_layers.size();
   for (int step = 1; step < unroll_depth; ++step) {
     
-    // Construct current step by copying layers from previous step
-    std::vector<Layer*> current_step;
-    for (const auto& previous_layer : previous_step) {
+    // Copy objects from previous unroll step
+    std::vector<Layer*> current_layers;
+    std::vector<layer_term*> current_layer_terms;
+    std::vector<layer_metric*> current_layer_metrics;
+    for (const auto& previous_layer : previous_layers) {
       auto&& current_layer = previous_layer->copy();
-      current_step.push_back(current_layer);
+      current_layers.push_back(current_layer);
       prev_step_layer[current_layer] = previous_layer;
       next_step_layer[previous_layer] = current_layer;
     }
+    for (auto&& previous_term : previous_layer_terms) {
+      current_layer_terms.push_back(previous_term->copy());
+    }
+    for (auto&& previous_metric : previous_layer_metrics) {
+      current_layer_metrics.push_back(previous_metric->copy());
+    }
 
-    // Fix pointers within current step
-    for (const auto& current_layer : current_step) {
+    // Fix layer pointers within current step
+    for (const auto& current_layer : current_layers) {
       auto layer_pointers = current_layer->get_layer_pointers();
       for (auto& layer_pointer : layer_pointers) {
         layer_pointer = next_step_layer[layer_pointer];
       }
       current_layer->set_layer_pointers(layer_pointers);
     }
+    for (auto&& current_term : current_layer_terms) {
+      auto&& eval = next_step_layer[current_term->get_evaluation_layer()];
+      current_term->set_evaluation_layer(eval);
+    }
+    for (auto&& current_metric : current_layer_metrics) {
+      auto&& eval = next_step_layer[current_metric->get_evaluation_layer()];
+      current_metric->set_evaluation_layer(eval);
+    }
 
-    // Add current step layers to model
-    layers.insert(layers.end(), current_step.begin(), current_step.end());
-    previous_step = current_step;
+    // Add current step objects to model
+    layers.insert(layers.end(), current_layers.begin(), current_layers.end());
+    for (auto&& term : current_layer_terms) {
+      obj.add_term(term);
+    }
+    for (auto&& met : current_layer_metrics) {
+      metrics.push_back(met);
+    }
+    previous_layers = current_layers;
+    previous_layer_terms = current_layer_terms;
+    previous_layer_metrics = current_layer_metrics;
 
   }
 
@@ -277,41 +317,6 @@ void setup_unrolled_layer_pointers(std::vector<Layer*>& layers,
   
 }
 
-void unroll_objective_function(objective_function& obj,
-                               const std::unordered_map<const Layer*,Layer*>& next_step_layer) {
-  
-  // Create layer terms for unrolled evaluation layers
-  std::vector<objective_function_term*> new_terms;
-  for (auto&& term : obj.get_terms()) {
-    auto&& l = dynamic_cast<layer_term*>(term);
-    if (l != nullptr) {
-      auto&& eval = l->get_evaluation_layer();
-      if (next_step_layer.count(eval) > 0) {
-        eval = dynamic_cast<evaluation_layer<data_layout::DATA_PARALLEL>*>(next_step_layer.at(eval));
-      } else {
-        eval = nullptr;
-      }
-      while (eval != nullptr) {
-        auto&& new_term = l->copy();
-        new_term->set_evaluation_layer(eval);
-        new_terms.push_back(new_term);
-        if (next_step_layer.count(eval) > 0) {
-          eval = dynamic_cast<evaluation_layer<data_layout::DATA_PARALLEL>*>(next_step_layer.at(eval));
-        } else {
-          eval = nullptr;
-        }
-      }
-    }
-  }
-  
-  // Add new terms to objective function
-  for (auto&& term : new_terms) {
-    obj.add_term(term);
-  }
-
-}
-
-
 } // namespace
   
 recurrent_model::recurrent_model(lbann_comm *comm,
@@ -345,10 +350,10 @@ void recurrent_model::setup_layer_topology() {
   m_previous_step_layer.clear();
   m_next_step_layer.clear();
   unroll_input_layer(m_unroll_depth, m_layers, m_previous_step_layer, m_next_step_layer);
-  add_unrolled_layers(m_unroll_depth, m_layers, m_previous_step_layer, m_next_step_layer);
+  unroll_network(m_unroll_depth, m_layers, *m_objective_function, m_metrics,
+                 m_previous_step_layer, m_next_step_layer);
   add_placeholder_layers(m_layers, m_previous_step_layer, m_next_step_layer);
   setup_unrolled_layer_pointers(m_layers, m_previous_step_layer, m_next_step_layer);
-  unroll_objective_function(*this->m_objective_function, m_next_step_layer);
 
   // Make sure unrolled topology is a DAG
   directed_acyclic_graph_model::setup_layer_topology();
